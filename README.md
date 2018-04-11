@@ -26,7 +26,7 @@ beta[3] = 1
 beta[4] = 1
 X = matrix(rnorm(n*p),nrow=n,ncol=p)
 y = X %*% beta + rnorm(n)
-res =susie(X,y,niter=20,L=10,calc_elbo = TRUE)
+res =susie(X,y,L=10)
 coef(res)
 plot(y,predict(res))
 ```
