@@ -3,7 +3,7 @@ Type: Package
 Title: Fit Sum of Single Effects linear regression model
 Version: 0.1.0
 Author: Matthew Stephens 
-Maintainer: mstephens@uchicago.edu
+Maintainer: <mstephens@uchicago.edu>
 Description: Fits a sparse regression model with up to $L$ effects, where $L$ is user-specified.
     The fitting procedure uses a fast new variational Bayes approach (unpublished data).
 License: MIT

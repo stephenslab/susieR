@@ -1,0 +1,64 @@
+---
+title: "Intro"
+author: "Matthew Stephens"
+date: "April 11, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+
+This is just a quick document to show some examples of `susie` in action.
+
+
+# Simple simulation
+
+Here we simulate data with four non-zero effects.
+```{r}
+library(susieR)
+set.seed(1)
+n = 1000
+p = 1000
+beta = rep(0,p)
+beta[1] = 1
+beta[2] = 1
+beta[3] = 1
+beta[4] = 1
+X = matrix(rnorm(n*p),nrow=n,ncol=p)
+y = X %*% beta + rnorm(n)
+
+res =susie(X,y,L=10)
+plot(coef(res))
+plot(y,predict(res))
+```
+
+
+# Trend filtering
+
+This is an example of using susie to do trend filtering.
+
+```{r}
+set.seed(1)
+n=1000
+delta = matrix(1,nrow=n,ncol=n)
+for(i in 1:(n-1)){
+  for(j in (i+1):n){
+    delta[i,j] = -1
+  }
+}
+
+beta = c(rep(0,100),rep(1,100),rep(3,100),rep(-2,100),rep(0,600))
+y = beta + rnorm(n)
+s = susie(delta,y,sigma2=1,L=10)
+```
+
+Plot results: the truth is green, and susie estimate is red.
+```{r}
+plot(y)
+lines(predict(s),col=2,lwd=3)
+lines(beta,col=3,lwd=3)
+```
+

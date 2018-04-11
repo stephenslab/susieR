@@ -4,23 +4,23 @@
 \alias{susie}
 \title{Bayesian sum of single-effect (susie) linear regression of Y on X}
 \usage{
-susie(X, Y, sa2 = 1, sigma2 = NULL, niter = 100, L = 5,
-  calc_elbo = FALSE)
+susie(X, Y, L = 10, sa2 = 1, sigma2 = NULL, max_iter = 100,
+  tol = 0.01)
 }
 \arguments{
 \item{X}{an n by p matrix of covariates}
 
 \item{Y}{an n vector}
 
+\item{L}{maximum number of non-zero effects}
+
 \item{sa2}{the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )}
 
 \item{sigma2}{the residual variance (defaults to variance of Y)}
 
-\item{niter}{number of iterations of vb method}
+\item{max_iter}{maximum number of iterations to perform}
 
-\item{L}{number of single effects}
-
-\item{calc_elbo}{indicates whether to compute the evidence lower bound (could slow things down; useful for testing)}
+\item{tol}{convergence tolerance;}
 }
 \value{
 a susie fit, which is a list with some or all of the following elements\cr
@@ -54,7 +54,7 @@ beta[3] = 1
 beta[4] = 1
 X = matrix(rnorm(n*p),nrow=n,ncol=p)
 y = X \%*\% beta + rnorm(n)
-res =susie(X,y,niter=10,L=5,calc_elbo = TRUE)
+res =susie(X,y,L=10)
 coef(res)
 plot(y,predict(res))
 }

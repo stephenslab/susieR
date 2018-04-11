@@ -5,13 +5,13 @@
 #' sum_l b_l is a p vector of effects to be estimated.
 #' The assumption is that each b_l has exactly one non-zero element, with all elements
 #' equally likely to be non-zero. The prior on the non-zero element is N(0,var=sa2*s2).
-#' @param Y an n vector
 #' @param X an n by p matrix of covariates
+#' @param Y an n vector
+#' @param L maximum number of non-zero effects
 #' @param sa2 the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )
 #' @param sigma2 the residual variance (defaults to variance of Y)
-#' @param niter number of iterations of vb method
-#' @param L number of single effects
-#' @param calc_elbo indicates whether to compute the evidence lower bound (could slow things down; useful for testing)
+#' @param max_iter maximum number of iterations to perform
+#' @param tol convergence tolerance;
 #' @return a susie fit, which is a list with some or all of the following elements\cr
 #' \item{alpha}{an L by p matrix of posterior inclusion probabilites}
 #' \item{mu}{an L by p matrix of posterior means}
@@ -19,7 +19,7 @@
 #' \item{Xr}{an n vector of fitted values, equal to X times colSums(alpha*mu))}
 #' \item{sigma2}{residual variance}
 #' \item{sa2}{scaled prior variance}
-#' \item{elbo}{vector of values of elbo achieved (if calc_elbo is TRUE)}
+#' \item{elbo}{vector of values of elbo achieved (objective function)}
 #' @examples
 #' set.seed(1)
 #' n = 1000
@@ -31,11 +31,11 @@
 #' beta[4] = 1
 #' X = matrix(rnorm(n*p),nrow=n,ncol=p)
 #' y = X %*% beta + rnorm(n)
-#' res =susie(X,y,niter=10,L=5,calc_elbo = TRUE)
+#' res =susie(X,y,L=10)
 #' coef(res)
 #' plot(y,predict(res))
 #' @export
-susie = function(X,Y,sa2=1,sigma2=NULL,niter=100,L=5,calc_elbo=FALSE){
+susie = function(X,Y,L=10,sa2=1,sigma2=NULL,max_iter=100,tol=1e-2){
   if(is.null(sigma2)){
     sigma2=var(Y)
   }
@@ -60,18 +60,20 @@ susie = function(X,Y,sa2=1,sigma2=NULL,niter=100,L=5,calc_elbo=FALSE){
 
 
   #intialize elbo to NA
-  elbo = rep(NA,niter)
+  elbo = rep(NA,max_iter+1)
 
   #initialize susie fit
   s = list(alpha=matrix(0,nrow=L,ncol=p), mu=matrix(0,nrow=L,ncol=p),
            postvar = matrix(0,nrow=L,ncol=p), Xr=rep(0,n), sigma2= sigma2, sa2= sa2)
 
-  for(i in 1:niter){
+  elbo[1] = elbo(X,Y,s)
+  for(i in 1:max_iter){
     s = update_each_effect(X, Y, s)
-    if(calc_elbo){
-      elbo[i] = elbo(X,Y,s)
-    }
+    elbo[i+1] = elbo(X,Y,s)
+    if((elbo[i+1]-elbo[i])<tol) break;
   }
+  elbo = elbo[1:(i+1)] #remove trailing NAs
+
   res = c(s,list(elbo=elbo))
   class(res) <- "susie"
   return(res)
