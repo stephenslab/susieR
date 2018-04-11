@@ -30,3 +30,7 @@ res =susie(X,y,L=10)
 coef(res)
 plot(y,predict(res))
 ```
+
+# More
+
+Take a look at the vignettes subdirectory for more examples.
