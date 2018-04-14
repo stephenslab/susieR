@@ -6,13 +6,13 @@
 #' equally likely to be non-zero. The prior on the non-zero element is N(0,var=sa2*s2).
 #' @param Y an n vector
 #' @param X an n by p matrix of covariates
-#' @param sa2 the scale prior variance
+#' @param sa2 the scaled prior variance (so prior variance is sa2*s2)
 #' @param s2 the residual variance
 #' @return a list with elements: \cr
 #' \item{alpha}{vector of posterior inclusion probabilities. ie alpha[i] is posterior probability that
 #'  that b[i] is non-zero}
 #' \item{mu}{vector of posterior means (conditional on inclusion)}
-#' \item{postvar}{vector of posterior variances (conditional on inclusion)}
+#' \item{mu2}{vector of posterior second moments (conditional on inclusion)}
 #' \item{bf}{vector of Bayes factors for each variable}
 single_effect_regression = function(Y,X,sa2=1,s2=1){
   d = colSums(X^2)
@@ -27,7 +27,9 @@ single_effect_regression = function(Y,X,sa2=1,s2=1){
   w = exp(lbf-max(lbf)) # w is proportional to BF, but subtract max for numerical stability
   alpha = w/sum(w) # posterior prob on each SNP
 
-  postvar = (1/sa2 + d/s2)^(-1) # posterior variance
-  postmean = (d/s2) * postvar * betahat
-  return(list(alpha=alpha,mu=postmean,postvar=postvar,lbf=lbf))
+  post_var = (1/sa2 + d/s2)^(-1) # posterior variance
+  post_mean = (d/s2) * post_var * betahat
+  post_mean2 = post_var + post_mean^2 # second moment
+
+  return(list(alpha=alpha,mu=post_mean,mu2 = post_mean2,lbf=lbf))
 }

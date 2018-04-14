@@ -11,14 +11,15 @@
 #' @param sa2 the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )
 #' @param sigma2 the residual variance (defaults to variance of Y)
 #' @param max_iter maximum number of iterations to perform
-#' @param tol convergence tolerance;
+#' @param tol convergence tolerance
+#' @param estimate_sigma2 indicates whether to estimate residual variance
 #' @return a susie fit, which is a list with some or all of the following elements\cr
 #' \item{alpha}{an L by p matrix of posterior inclusion probabilites}
-#' \item{mu}{an L by p matrix of posterior means}
-#' \item{postvar}{an L by p matrix of posterior variances}
+#' \item{mu}{an L by p matrix of posterior means (conditional on inclusion)}
+#' \item{mu2}{an L by p matrix of posterior second moments (conditional on inclusion)}
 #' \item{Xr}{an n vector of fitted values, equal to X times colSums(alpha*mu))}
 #' \item{sigma2}{residual variance}
-#' \item{sa2}{scaled prior variance}
+#' \item{sa2}{scaled prior variance; ie prior variance is sigma2*sa2}
 #' \item{elbo}{vector of values of elbo achieved (objective function)}
 #' @examples
 #' set.seed(1)
@@ -35,7 +36,7 @@
 #' coef(res)
 #' plot(y,predict(res))
 #' @export
-susie = function(X,Y,L=10,sa2=1,sigma2=NULL,max_iter=100,tol=1e-2){
+susie = function(X,Y,L=10,sa2=1,sigma2=NULL,max_iter=100,tol=1e-2,estimate_sigma2=TRUE){
   if(is.null(sigma2)){
     sigma2=var(Y)
   }
@@ -63,12 +64,18 @@ susie = function(X,Y,L=10,sa2=1,sigma2=NULL,max_iter=100,tol=1e-2){
   elbo = rep(NA,max_iter+1)
 
   #initialize susie fit
-  s = list(alpha=matrix(0,nrow=L,ncol=p), mu=matrix(0,nrow=L,ncol=p),
-           postvar = matrix(0,nrow=L,ncol=p), Xr=rep(0,n), sigma2= sigma2, sa2= sa2)
+  s = list(alpha=matrix(1/p,nrow=L,ncol=p), mu=matrix(0,nrow=L,ncol=p),
+           mu2 = matrix(0,nrow=L,ncol=p), Xr=rep(0,n), sigma2= sigma2, sa2= sa2)
+  class(s) <- "susie"
 
   elbo[1] = elbo(X,Y,s)
   for(i in 1:max_iter){
     s = update_each_effect(X, Y, s)
+    if(estimate_sigma2){
+      new_sigma2 = estimate_residual_variance(X,Y,s)
+      s$sa2 = (s$sa2*s$sigma2)/new_sigma2 # this is so prior variance does not change with update
+      s$sigma2 = new_sigma2
+    }
     elbo[i+1] = elbo(X,Y,s)
     if((elbo[i+1]-elbo[i])<tol) break;
   }

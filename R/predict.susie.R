@@ -1,3 +1,5 @@
+#' @param s a susie fit
+#' @return a p vector of estimated regression coefficients
 #' @export
 coef.susie = function(s){
   colSums(s$alpha*s$mu)

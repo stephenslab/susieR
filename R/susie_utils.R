@@ -1,7 +1,7 @@
 # This computes the average lfsr across SNPs for each l, weighted by the
 # posterior inclusion probability alpha
 lfsr_fromfit = function(res){
-  pos_prob = pnorm(0,mean=t(res$mu),sd=sqrt(res$s))
+  pos_prob = pnorm(0,mean=t(res$mu),sd=sqrt(res$mu2-res$mu^2))
   neg_prob = 1-pos_prob
   1-rowSums(res$alpha*t(pmax(pos_prob,neg_prob)))
 }
@@ -58,4 +58,10 @@ pplot = function(X,y,res,pos=NULL,b=NULL,CImax = 400,...){
       points(pos[which(in_CI(res)[i,]>0)],-logp[which(in_CI(res)[i,]>0)],col=i+2)
   }
 
+}
+
+
+# return residuals from Y after removing susie fit
+get_R = function(X,Y,s){
+  Y- X %*%  coef(s)
 }

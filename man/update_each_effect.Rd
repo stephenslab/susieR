@@ -7,6 +7,10 @@
 update_each_effect(X, Y, s_init)
 }
 \arguments{
+\item{X}{an n by p matrix of covariantes}
+
+\item{Y}{an n vector of data}
+
 \item{s_init}{a list with elements sigma2, sa2, alpha, mu, Xr}
 }
 \description{

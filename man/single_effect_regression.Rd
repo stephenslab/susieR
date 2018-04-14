@@ -11,7 +11,7 @@ single_effect_regression(Y, X, sa2 = 1, s2 = 1)
 
 \item{X}{an n by p matrix of covariates}
 
-\item{sa2}{the scale prior variance}
+\item{sa2}{the scaled prior variance (so prior variance is sa2*s2)}
 
 \item{s2}{the residual variance}
 }
@@ -20,7 +20,7 @@ a list with elements: \cr
 \item{alpha}{vector of posterior inclusion probabilities. ie alpha[i] is posterior probability that
  that b[i] is non-zero}
 \item{mu}{vector of posterior means (conditional on inclusion)}
-\item{postvar}{vector of posterior variances (conditional on inclusion)}
+\item{mu2}{vector of posterior second moments (conditional on inclusion)}
 \item{bf}{vector of Bayes factors for each variable}
 }
 \description{

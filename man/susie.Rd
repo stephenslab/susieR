@@ -5,7 +5,7 @@
 \title{Bayesian sum of single-effect (susie) linear regression of Y on X}
 \usage{
 susie(X, Y, L = 10, sa2 = 1, sigma2 = NULL, max_iter = 100,
-  tol = 0.01)
+  tol = 0.01, estimate_sigma2 = TRUE)
 }
 \arguments{
 \item{X}{an n by p matrix of covariates}
@@ -20,17 +20,19 @@ susie(X, Y, L = 10, sa2 = 1, sigma2 = NULL, max_iter = 100,
 
 \item{max_iter}{maximum number of iterations to perform}
 
-\item{tol}{convergence tolerance;}
+\item{tol}{convergence tolerance}
+
+\item{estimate_sigma2}{indicates whether to estimate residual variance}
 }
 \value{
 a susie fit, which is a list with some or all of the following elements\cr
 \item{alpha}{an L by p matrix of posterior inclusion probabilites}
-\item{mu}{an L by p matrix of posterior means}
-\item{postvar}{an L by p matrix of posterior variances}
+\item{mu}{an L by p matrix of posterior means (conditional on inclusion)}
+\item{mu2}{an L by p matrix of posterior second moments (conditional on inclusion)}
 \item{Xr}{an n vector of fitted values, equal to X times colSums(alpha*mu))}
 \item{sigma2}{residual variance}
-\item{sa2}{scaled prior variance}
-\item{elbo}{vector of values of elbo achieved (if calc_elbo is TRUE)}
+\item{sa2}{scaled prior variance; ie prior variance is sigma2*sa2}
+\item{elbo}{vector of values of elbo achieved (objective function)}
 }
 \description{
 Bayesian sum of single-effect (susie) linear regression of Y on X
