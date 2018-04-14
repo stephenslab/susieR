@@ -4,7 +4,7 @@
 \alias{single_effect_regression}
 \title{Bayesian single-effect linear regression of Y on X}
 \usage{
-single_effect_regression(Y, X, sa2 = 1, s2 = 1)
+single_effect_regression(Y, X, sa2 = 1, s2 = 1, optimize_sa2 = FALSE)
 }
 \arguments{
 \item{Y}{an n vector}
