@@ -7,7 +7,7 @@ estimate_residual_variance = function(X,Y, s){
   # d = colSums(X^2)
   # post_var = s$alpha*s$mu2 - (s$alpha*s$mu)^2
   # V = colSums(post_var)
-  # n = nrow(X)
+  n = nrow(X)
   return( (1/n)* get_ER2(X,Y,s) )
 }
 

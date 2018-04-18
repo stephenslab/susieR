@@ -24,8 +24,12 @@ single_effect_regression = function(Y,X,sa2=1,s2=1,optimize_sa2=FALSE){
     if(loglik.grad(0,Y,X,s2)<0){
       V=0
     } else {
-      V.o = optim(par=V,fn=negloglik.logscale,gr = negloglik.grad.logscale, X=X,Y=Y,s2=s2,method="BFGS")
-      V = exp(V.o$par)
+      #V.o = optim(par=log(V),fn=negloglik.logscale,gr = negloglik.grad.logscale, X=X,Y=Y,s2=s2,method="BFGS")
+      #if(V.o$convergence!=0){
+      #  warning("optimization over prior variance failed to converge")
+      #}
+      V.u=uniroot(negloglik.grad.logscale,c(-10,10),extendInt = "upX",Y=Y,X=X,s2=s2)
+      V = exp(V.u$root)
     }
   }
 
@@ -39,23 +43,38 @@ single_effect_regression = function(Y,X,sa2=1,s2=1,optimize_sa2=FALSE){
   post_var = (1/V + d/s2)^(-1) # posterior variance
   post_mean = (d/s2) * post_var * betahat
   post_mean2 = post_var + post_mean^2 # second moment
-
-  return(list(alpha=alpha,mu=post_mean,mu2 = post_mean2,lbf=lbf,sa2=V/s2))
+  loglik = maxlbf + log(mean(w)) + sum(dnorm(Y,0,sqrt(s2),log=TRUE))
+  #SER_loglik(V,Y,X,s2)
+  return(list(alpha=alpha,mu=post_mean,mu2 = post_mean2,lbf=lbf,sa2=V/s2, loglik = loglik))
 }
 
-# compute loglik (up to a constant that depends on s2 but not on sa2)
-loglik = function(V,Y,X,s2){
+# compute loglik for the SER
+SER_loglik = function(V,Y,X,s2){
   d = colSums(X^2)
   betahat = (1/d) * t(X) %*% Y
   shat2 = s2/d
+  n = nrow(X)
 
   lbf = dnorm(betahat,0,sqrt(V+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
-  #log(bf) on each SNP
 
   maxlbf = max(lbf)
-  w = exp(lbf-maxlbf) # w =BF/BFmax
-  return(maxlbf + log(mean(w)))
+  w = exp(lbf-maxlbf)
+  return(maxlbf + log(mean(w)) + sum(dnorm(Y,0,sqrt(s2),log=TRUE)))
 }
+
+# very slow brute force version for testing
+SER_loglik2 = function(V,Y,X,s2){
+  n = nrow(X)
+  p = ncol(X)
+  ll = rep(0,p)
+  for(j in 1:p){
+    ll[j] = mvtnorm::dmvnorm(Y,sigma=V*(X[,j] %*% t(X[,j])) + s2*diag(n),log=TRUE)
+  }
+  maxll = max(ll)
+  w = exp(ll-maxll)# w =BF/BFmax
+  return(maxll + log(mean(w)))
+}
+
 
 loglik.grad = function(V,Y,X,s2){
   d = colSums(X^2)

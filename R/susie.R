@@ -8,11 +8,14 @@
 #' @param X an n by p matrix of covariates
 #' @param Y an n vector
 #' @param L maximum number of non-zero effects
-#' @param sa2 the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )
-#' @param sigma2 the residual variance (defaults to variance of Y)
+#' @param prior_variance the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )
+#' @param residual_variance the residual variance (defaults to variance of Y)
 #' @param max_iter maximum number of iterations to perform
 #' @param tol convergence tolerance
-#' @param estimate_sigma2 indicates whether to estimate residual variance
+#' @param estimate_residual_variance indicates whether to estimate residual variance
+#' @param estimate_prior_variance indicates whether to estimate prior (currently not recommended as not working as well)
+#' @param s_init a previous susie fit with which to initialize
+#' @param verbose if true outputs some progress messages
 #' @return a susie fit, which is a list with some or all of the following elements\cr
 #' \item{alpha}{an L by p matrix of posterior inclusion probabilites}
 #' \item{mu}{an L by p matrix of posterior means (conditional on inclusion)}
@@ -36,52 +39,73 @@
 #' coef(res)
 #' plot(y,predict(res))
 #' @export
-susie = function(X,Y,L=10,sa2=1,sigma2=NULL,max_iter=100,tol=1e-2,estimate_sigma2=TRUE){
-  if(is.null(sigma2)){
-    sigma2=var(Y)
-  }
-
+susie = function(X,Y,L=10,prior_variance=1,residual_variance=NULL,max_iter=100,tol=1e-2,estimate_residual_variance=TRUE,estimate_prior_variance = FALSE, s_init = NULL, verbose=FALSE){
   # Check input X.
   if (!is.double(X) || !is.matrix(X))
     stop("Input X must be a double-precision matrix")
-
-
   p = ncol(X)
   n = nrow(X)
-  if(length(sa2)==1){
-    sa2 = rep(sa2,L)
+
+  # initialize susie fit
+  if(!is.null(s_init)){
+    if(!missing(L) || !missing(prior_variance) || !missing(residual_variance))
+      stop("if provide s_init then L, sa2 and sigma2 must not be provided")
+    s = s_init
+  } else {
+
+    if(is.null(residual_variance)){
+      residual_variance=var(Y)
+    }
+    residual_variance= as.numeric(residual_variance) #avoid problems with dimension if entered as matrix
+
+
+    if(length(prior_variance)==1){
+      prior_variance = rep(prior_variance,L)
+    }
+
+    # Check inputs sigma and sa.
+    if (length(residual_variance) != 1)
+      stop("Inputs residual_variance must be scalar")
+    # Check inputs sigma and sa.
+    if (length(prior_variance) != L)
+      stop("Inputs prior_variance must be of length 1 or L")
+
+  #initialize susie fit
+   s = list(alpha=matrix(1/p,nrow=L,ncol=p), mu=matrix(0,nrow=L,ncol=p),
+           mu2 = matrix(0,nrow=L,ncol=p), Xr=rep(0,n), sigma2= residual_variance, sa2= prior_variance, KL = rep(NA,L))
+    class(s) <- "susie"
   }
-
-  # Check inputs sigma and sa.
-  if (length(sigma2) != 1)
-    stop("Inputs sigma2 must be scalar")
-  # Check inputs sigma and sa.
-  if (length(sa2) != L)
-    stop("Inputs sigma2 must be of length 1 or L")
-
 
   #intialize elbo to NA
   elbo = rep(NA,max_iter+1)
+  elbo2 = rep(NA,max_iter+1)
 
-  #initialize susie fit
-  s = list(alpha=matrix(1/p,nrow=L,ncol=p), mu=matrix(0,nrow=L,ncol=p),
-           mu2 = matrix(0,nrow=L,ncol=p), Xr=rep(0,n), sigma2= sigma2, sa2= sa2)
-  class(s) <- "susie"
+  elbo[1] = -Inf;
+#  elbo2[1] = -Inf;
 
-  elbo[1] = elbo(X,Y,s)
   for(i in 1:max_iter){
-    s = update_each_effect(X, Y, s)
-    if(estimate_sigma2){
+    #s = add_null_effect(s,0)
+    s = update_each_effect(X, Y, s, estimate_prior_variance)
+    if(verbose){
+        print(paste0("objective:",susie_get_objective(X,Y,s)))
+    }
+    if(estimate_residual_variance){
       new_sigma2 = estimate_residual_variance(X,Y,s)
       s$sa2 = (s$sa2*s$sigma2)/new_sigma2 # this is so prior variance does not change with update
       s$sigma2 = new_sigma2
+      if(verbose){
+        print(paste0("objective:",susie_get_objective(X,Y,s)))
+      }
     }
-    elbo[i+1] = elbo(X,Y,s)
+    #s = remove_null_effects(s)
+
+ #   elbo2[i+1] = susie_get_objective(X,Y,s) #
+    elbo[i+1] = susie_get_objective(X,Y,s)
     if((elbo[i+1]-elbo[i])<tol) break;
   }
   elbo = elbo[1:(i+1)] #remove trailing NAs
 
-  res = c(s,list(elbo=elbo))
-  class(res) <- "susie"
-  return(res)
+  s$elbo <- elbo
+  s$elbo2 <- elbo2
+  return(s)
 }

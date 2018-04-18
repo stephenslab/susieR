@@ -4,8 +4,9 @@
 \alias{susie}
 \title{Bayesian sum of single-effect (susie) linear regression of Y on X}
 \usage{
-susie(X, Y, L = 10, sa2 = 1, sigma2 = NULL, max_iter = 100,
-  tol = 0.01, estimate_sigma2 = TRUE)
+susie(X, Y, L = 10, prior_variance = 1, residual_variance = NULL,
+  max_iter = 100, tol = 0.01, estimate_residual_variance = TRUE,
+  estimate_prior_variance = FALSE, s_init = NULL, verbose = FALSE)
 }
 \arguments{
 \item{X}{an n by p matrix of covariates}
@@ -14,15 +15,21 @@ susie(X, Y, L = 10, sa2 = 1, sigma2 = NULL, max_iter = 100,
 
 \item{L}{maximum number of non-zero effects}
 
-\item{sa2}{the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )}
+\item{prior_variance}{the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )}
 
-\item{sigma2}{the residual variance (defaults to variance of Y)}
+\item{residual_variance}{the residual variance (defaults to variance of Y)}
 
 \item{max_iter}{maximum number of iterations to perform}
 
 \item{tol}{convergence tolerance}
 
-\item{estimate_sigma2}{indicates whether to estimate residual variance}
+\item{estimate_residual_variance}{indicates whether to estimate residual variance}
+
+\item{estimate_prior_variance}{indicates whether to estimate prior (currently not recommended as not working as well)}
+
+\item{s_init}{a previous susie fit with which to initialize}
+
+\item{verbose}{if true outputs some progress messages}
 }
 \value{
 a susie fit, which is a list with some or all of the following elements\cr
