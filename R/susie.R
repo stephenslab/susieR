@@ -78,10 +78,7 @@ susie = function(X,Y,L=10,prior_variance=1,residual_variance=NULL,max_iter=100,t
 
   #intialize elbo to NA
   elbo = rep(NA,max_iter+1)
-  elbo2 = rep(NA,max_iter+1)
-
   elbo[1] = -Inf;
-#  elbo2[1] = -Inf;
 
   for(i in 1:max_iter){
     #s = add_null_effect(s,0)
@@ -99,13 +96,10 @@ susie = function(X,Y,L=10,prior_variance=1,residual_variance=NULL,max_iter=100,t
     }
     #s = remove_null_effects(s)
 
- #   elbo2[i+1] = susie_get_objective(X,Y,s) #
     elbo[i+1] = susie_get_objective(X,Y,s)
     if((elbo[i+1]-elbo[i])<tol) break;
   }
   elbo = elbo[1:(i+1)] #remove trailing NAs
-
   s$elbo <- elbo
-  s$elbo2 <- elbo2
   return(s)
 }

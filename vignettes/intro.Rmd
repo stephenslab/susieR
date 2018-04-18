@@ -53,7 +53,7 @@ for(i in 1:(n-1)){
 beta = c(rep(0,100),rep(1,100),rep(3,100),rep(-2,100),rep(0,600))
 y = beta + rnorm(n)
 delta[,2:1000] = scale(delta[,2:1000])
-s = susie(delta,y,L=10,sigma2=1)
+s = susie(delta,y,L=10)
 ```
 
 Plot results: the truth is green, and susie estimate is red.
@@ -68,9 +68,9 @@ s$sigma2
 Try something harder where the beta increases linearly:
 ```{r}
 set.seed(1)
-beta = seq(0,1,length=1000)
+beta = seq(0,2,length=1000)
 y = beta + rnorm(n)
-s = susie(delta,y,sigma2=1,L=10)
+s = susie(delta,y,L=10)
 plot(y)
 lines(predict(s),col=2,lwd=3)
 lines(beta,col=3,lwd=3)
@@ -93,7 +93,7 @@ What happens if we have trend plus sudden change.
 ```{r}
 beta = beta + c(rep(0,500),rep(2,500))
 y = beta + rnorm(n)
-s = susie(delta,y,sigma2=1,L=10)
+s = susie(delta,y,L=10)
 plot(y)
 lines(predict(s),col=2,lwd=3)
 lines(beta,col=3,lwd=3)

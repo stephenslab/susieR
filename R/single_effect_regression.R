@@ -44,35 +44,8 @@ single_effect_regression = function(Y,X,sa2=1,s2=1,optimize_sa2=FALSE){
   post_mean = (d/s2) * post_var * betahat
   post_mean2 = post_var + post_mean^2 # second moment
   loglik = maxlbf + log(mean(w)) + sum(dnorm(Y,0,sqrt(s2),log=TRUE))
-  #SER_loglik(V,Y,X,s2)
+
   return(list(alpha=alpha,mu=post_mean,mu2 = post_mean2,lbf=lbf,sa2=V/s2, loglik = loglik))
-}
-
-# compute loglik for the SER
-SER_loglik = function(V,Y,X,s2){
-  d = colSums(X^2)
-  betahat = (1/d) * t(X) %*% Y
-  shat2 = s2/d
-  n = nrow(X)
-
-  lbf = dnorm(betahat,0,sqrt(V+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
-
-  maxlbf = max(lbf)
-  w = exp(lbf-maxlbf)
-  return(maxlbf + log(mean(w)) + sum(dnorm(Y,0,sqrt(s2),log=TRUE)))
-}
-
-# very slow brute force version for testing
-SER_loglik2 = function(V,Y,X,s2){
-  n = nrow(X)
-  p = ncol(X)
-  ll = rep(0,p)
-  for(j in 1:p){
-    ll[j] = mvtnorm::dmvnorm(Y,sigma=V*(X[,j] %*% t(X[,j])) + s2*diag(n),log=TRUE)
-  }
-  maxll = max(ll)
-  w = exp(ll-maxll)# w =BF/BFmax
-  return(maxll + log(mean(w)))
 }
 
 
@@ -129,50 +102,3 @@ lbf = function(V,shat2,T2){
 
 
 
-
-
-#
-# em_update_prior_variance_single_regression = function(Y,X,sa2,s2){
-#   d = colSums(X^2)
-#   sa2 = s2*sa2 # scale by residual variance
-#   betahat = (1/d) * t(X) %*% Y
-#   shat2 = s2/d
-#
-#   lbf = dnorm(betahat,0,sqrt(sa2+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
-#   #log(bf) on each SNP
-#
-#   maxlbf = max(lbf)
-#   w = exp(lbf-max(lbf)) # w is proportional to BF, but subtract max for numerical stability
-#   alpha = w/sum(w) # posterior prob on each SNP
-#
-#   t2 = betahat^2/shat2 # t-squared
-#   # if(min(d)==max(d)){
-#   #       vmax = shat2[1]*(sum(alpha*t2)-1)
-#   # }
-#   #
-#   # this is the derivative of the complete data log-likelihood wrt v = prior variance
-#   cdll_negloglik = function(v){
-#     lbf = dnorm(betahat,0,sqrt(v+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
-#     return(-sum(alpha*lbf))
-#   }
-#
-#   cdll_negloglik.logscale = function(v){
-#     lbf = dnorm(betahat,0,sqrt(exp(v)+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
-#     return(-sum(alpha*lbf))
-#   }
-#
-#
-#   cdll_negderiv = function(v){-0.5*sum(alpha * (1/(v+shat2)) * ((shat2/(shat2+v))*t2 -1))}
-#   v_upper = max(shat2*(t2-1)) # upper bound on vhat
-#
-#
-#
-#
-#   if(v_upper>0 && cdll_deriv(0)>0){
-#     v_init = v_upper/2
-#     v_opt = optim(log(vinit), cdll_negloglik.logscale, method="BFGS")
-#   #  v_opt = uniroot(cdll_deriv,interval = c(0,v_upper), extendInt = "downX") #$root
-#   } else{}
-#     v_opt = 0
-#   }
-# }

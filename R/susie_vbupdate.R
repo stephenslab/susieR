@@ -8,7 +8,7 @@ update_each_effect <- function (X, Y, s_init, estimate_prior_variance=FALSE) {
   # Repeat for each effect to update
   s = s_init
   L = nrow(s$alpha)
- # s$Xr = X %*% colSums(s$alpha * s$mu) # should not need - check !!
+
   if(L>0){
     for (l in 1:L){
     # remove lth effect from fitted values
@@ -26,7 +26,6 @@ update_each_effect <- function (X, Y, s_init, estimate_prior_variance=FALSE) {
       s$sa2[l] <- res$sa2
       s$KL[l] <- -res$loglik + SER_posterior_e_loglik(X,R,s$sigma2,res$alpha*res$mu,res$alpha*res$mu2)
 
-      #print(susie_get_objective(X,Y,s))
       s$Xr <- s$Xr + X %*% (s$alpha[l,]*s$mu[l,])
     }
   }

@@ -1,0 +1,63 @@
+---
+title: "optimize"
+author: "Matthew Stephens"
+date: "4/15/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Diagnose optimization issues with Lei's example
+```{r}
+set.seed(777)
+devtools::load_all(".")
+X <- matrix(rnorm(1010 * 1000), 1010, 1000)
+beta <- rep(0, 1000)
+beta[1 : 200] <- 100
+y <- X %*% beta + rnorm(1010)
+s = susie(X,y,L=1,estimate_sa2 = TRUE)
+Y = y-s$Xr
+s2 = s$sigma2
+x = seq(1,100000,length=100)
+l  = rep(0,100)
+lg = rep(0,100)
+for(i in 1:100){
+  l[i] = loglik(x[i],Y,X,s2)
+  lg[i] = loglik.grad(x[i],Y,X,s2)
+}
+plot(x,l)
+plot(x,lg)
+# > which.max(l)
+# [1] 23
+# > lg[23]
+# [1] -2.398905e-07
+# > lg[22]
+# [1] 6.282734e-07
+
+lx = log(x)
+l2=l
+lg2=lg
+for(i in 1:100){
+  l2[i] = negloglik.logscale(lx[i],Y,X,s2)
+  lg2[i] = negloglik.grad.logscale(lx[i],Y,X,s2)
+}
+plot(lx,l2)
+plot(lx,lg2)
+
+y = seq(0,20,length=100)
+l3=l2
+lg3=lg2
+for(i in 1:100){
+  l3[i] = negloglik.logscale(y[i],Y,X,s2)
+  lg3[i] = negloglik.grad.logscale(y[i],Y,X,s2)
+}
+plot(y,l3)
+plot(y,lg3)
+uniroot(negloglik.grad.logscale,c(-20,20),extendInt = "upX",Y=Y,X=X,s2=s2)
+
+```
+
+So, to summarize, problem seems to be that optim has issues with
+very flat initial gradient near 0.

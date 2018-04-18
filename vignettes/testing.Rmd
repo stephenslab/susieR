@@ -1,0 +1,71 @@
+---
+title: "test.Rmd"
+author: "Matthew Stephens"
+date: "4/14/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# simulate data
+
+This is Lei's example
+```{r}
+set.seed(777)
+library(susieR)
+X <- matrix(rnorm(1010 * 1000), 1010, 1000)
+beta <- rep(0, 1000)
+beta[1 : 200] <- 100
+y <- X %*% beta + rnorm(1010)
+s = susie(X,y,L=200)
+
+plot(coef(s),beta)
+s$sigma2
+
+# fit <- lm(y ~ X - 1)
+# mlr.p <- log(summary(fit)$coefficients[, 4])
+# 
+mar.p <- c()
+mar.betahat = c()
+for (i in 1 : 1000) {
+ fit <- lm(y ~ X[, i] - 1)
+  mar.p[i] <- log(summary(fit)$coefficients[, 4])
+  mar.betahat[i] <- summary(fit)$coefficients[, 1]
+}
+# 
+# pdf("pvalue.pdf", width = 10, height = 5)
+# par(mfrow = c(1, 2))
+# plot(mlr.p, ylab = "log(p-value)", main = "Multiple Linear Regression")
+# abline(h = log(0.05 / 1000), lty = 2, col = "red")
+# legend("right", lty = 2, col = "red", "log(0.05/p)")
+# 
+# plot(mar.p, ylab = "log(p-value)", main = "One-on-One Linear Regression")
+# abline(h = log(0.05 / 1000), lty = 2, col = "red")
+```
+
+Notice that the coefficients are monotonic with betahat. Some shrinkage of zero values is evident, but it is not enough... presumably because sigma2 is way over-estimated. And further we see excessive shrinkage of true signals, presumably because sa2 is too small.
+```{r}
+plot(coef(s),mar.betahat)
+```
+
+
+Here we try fixing sigma2 to true value.
+```{r}
+s2 = susie(X,y,L=300,sigma2=1,estimate_sigma2=FALSE)
+plot(coef(s2),beta)
+```
+it works!!
+
+```{r}
+plot(s$alpha[1,])
+plot(s$alpha[2,])
+```
+
+Try with larger prior on effect sizes
+```{r}
+s3 = susie(X,y,L=200, sa2 = 100)
+```
+
+
