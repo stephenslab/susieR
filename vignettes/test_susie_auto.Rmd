@@ -1,0 +1,36 @@
+---
+title: "Test susie auto"
+author: "Matthew Stephens"
+date: "5/2/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+The goal here is to test the function `susie_auto` which tries
+to make susie run well even in some tricky situations (eg where $L$ is big,
+which susie is not well suited to).
+
+This is an example Lei Sun showed us from the paper demonstrating that
+false positives occur early on the Lasso path. Here I change L to 20 instead
+of 200 to make it run fast to begin with.
+```{r}
+set.seed(777)
+library(susieR)
+L <- 20
+X <- matrix(rnorm(1010 * 1000), 1010, 1000)
+beta <- rep(0, 1000)
+beta[1 : L] <- 100
+y <- X %*% beta + rnorm(1010)
+```
+
+```{r}
+system.time(s <- susie_auto(X,y,verbose=TRUE))
+system.time(s2 <- susie_auto(X,y,L_init=25,verbose=TRUE))
+s
+s2
+```
+
+
