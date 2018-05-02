@@ -4,7 +4,7 @@
 \alias{susie_auto}
 \title{An attempt to automate reliable running of susie even on hard problems}
 \usage{
-susie_auto(X, Y, L_init = 1, L_max = 512, verbose = FALSE)
+susie_auto(X, Y, L_init = 1, L_max = 512, verbose = FALSE, init_tol = 1)
 }
 \arguments{
 \item{X}{an n by p matrix of covariates}
@@ -12,6 +12,8 @@ susie_auto(X, Y, L_init = 1, L_max = 512, verbose = FALSE)
 \item{Y}{an n vector}
 
 \item{L_init}{the initial value of L to consider}
+
+\item{init_tol}{the tolerance to pass to susie during early runs (set big to run faster)}
 
 \item{Lmax}{the maximum value of L to consider}
 }
@@ -22,4 +24,5 @@ An attempt to automate reliable running of susie even on hard problems
 Currently runs a 3-stage strategy for each L: first fit susie with very small residual error,
 then estimate residual error, then estimate prior variance. If the last step estimates
 some prior variances to be 0 then stop. Otherwise double L and repeat.
+Initial runs are done with lax tolerance (init_tol); final run done with default tolerance.
 }

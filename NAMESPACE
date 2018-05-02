@@ -3,4 +3,5 @@
 S3method(coef,susie)
 S3method(predict,susie)
 export(susie)
+export(susie_auto)
 export(susie_get_objective)
