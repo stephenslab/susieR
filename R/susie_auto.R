@@ -22,6 +22,7 @@ susie_auto = function(X,Y,L_init = 1, L_max= 512, verbose=FALSE, init_tol = 1){
   while(!converged & (L<=L_max)){
     for(i in 1:L){
       s.2 = add_null_effect(s.2) # add in L more effects
+      s.2$sigma2 = 0.01*sd(Y)^2 # set residual variance to be small again for next iteration
     }
     L=2*L
     if(verbose){

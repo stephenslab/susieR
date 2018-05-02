@@ -27,10 +27,20 @@ y <- X %*% beta + rnorm(1010)
 ```
 
 ```{r}
-system.time(s <- susie_auto(X,y,verbose=TRUE))
-system.time(s2 <- susie_auto(X,y,L_init=25,verbose=TRUE))
-s
-s2
+s <- susie_auto(X,y,verbose=TRUE)
+s$sa2
 ```
 
+
+Now try L=200
+```{r}
+set.seed(777)
+L <- 200
+X <- matrix(rnorm(1010 * 1000), 1010, 1000)
+beta <- rep(0, 1000)
+beta[1 : L] <- 100
+y <- X %*% beta + rnorm(1010)
+s2 <- susie_auto(X,y,verbose=TRUE)
+s2$sa2
+```
 
