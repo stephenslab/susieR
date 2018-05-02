@@ -50,6 +50,8 @@ for(i in 1:(n-1)){
   }
 }
 
+#delta = t(genlasso::getDtf(n,0))
+#delta=cbind(rep(1,n),delta)
 beta = c(rep(0,100),rep(1,100),rep(3,100),rep(-2,100),rep(0,600))
 y = beta + rnorm(n)
 delta[,2:1000] = scale(delta[,2:1000])
@@ -79,7 +81,7 @@ lines(beta,col=3,lwd=3)
 Compare with the lasso based solution
 ```{r}
 library("genlasso")
-y.tf = trendfilter(y,ord=1)
+y.tf = trendfilter(y,ord=0)
 y.tf.cv = cv.trendfilter(y.tf)
 plot(y)
 lines(predict(s),col=2,lwd=3)
@@ -99,7 +101,7 @@ lines(predict(s),col=2,lwd=3)
 lines(beta,col=3,lwd=3)
 
 # trend
-y.tf = trendfilter(y,ord=1)
+y.tf = trendfilter(y,ord=0)
 y.tf.cv = cv.trendfilter(y.tf)
 lines(y.tf$fit[,which(y.tf$lambda==y.tf.cv$lambda.min)],col=4,lwd=3)
 ```

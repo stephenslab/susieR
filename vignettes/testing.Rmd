@@ -51,21 +51,70 @@ plot(coef(s),mar.betahat)
 ```
 
 
-Here we try fixing sigma2 to true value.
+Here we try fixing $L$ and residual variance to true value.
 ```{r}
-s2 = susie(X,y,L=300,sigma2=1,estimate_sigma2=FALSE)
-plot(coef(s2),beta)
+strue = susie(X,y,L=200,residual_variance =1,estimate_residual_variance =FALSE)
+plot(coef(strue),beta)
+strue$elbo
 ```
 it works!!
 
 ```{r}
-plot(s$alpha[1,])
-plot(s$alpha[2,])
+plot(strue$alpha[1,])
+plot(strue$alpha[2,])
 ```
 
-Try with larger prior on effect sizes
+Try with very small residual variance
 ```{r}
-s3 = susie(X,y,L=200, sa2 = 100)
+s3 = susie(X,y,L=200, residual_variance = 0.01,estimate_residual_variance = FALSE)
+plot(coef(s3))
+s4 = susie(X,y,s_init = s3)
+plot(coef(s4))
+s4$elbo
+```
+That is weird it goes away from the solution!
+
+Try with estimating prior:
+```{r}
+s5 = susie(X,y,s_init = s3, estimate_prior_variance = TRUE)
+plot(coef(s5))
+s5$elbo
+sqrt(s5$sa2)
+sqrt(s4$sa2)
+```
+much better!
+
+
+Now try too many effects
+```{r}
+s3.300 = susie(X,y,L=300, residual_variance = 0.01,estimate_residual_variance = FALSE)
+s5.300 = susie(X,y,s_init = s3.300, estimate_prior_variance = TRUE)
+plot(coef(s3.300))
+plot(coef(s5.300))
+s3.300$elbo
+s5.300$elbo
+sum(s5.300$sa2>0)
 ```
 
+Now try too many effects but just a very small number of iterations for initial case:
+```{r}
+s3.300.5 = susie(X,y,L=300, residual_variance = 0.01,estimate_residual_variance = FALSE, max_iter = 5)
+s5.300.5 = susie(X,y,s_init = s3.300.5, estimate_prior_variance = TRUE)
+plot(coef(s3.300.5))
+plot(coef(s5.300.5))
+s3.300.5$elbo
+s5.300.5$elbo
+plot(colSums(s5.300.5$alpha))
+```
+
+Q: does the initial run with small variance gradually find the smaller effects, or does it get them from the first iteration?
+Could look at that by doing one iteration at a time.
+```{r}
+s3.300.1 = susie(X,y,L=300, residual_variance = 0.01,estimate_residual_variance = FALSE, max_iter = 1)
+plot(coef(s3.300.1))
+s3.300.2 = susie(X,y,s_init=s3.300.1,estimate_residual_variance = FALSE, max_iter = 1)
+plot(coef(s3.300.2))
+s3.300 = susie(X,y,s_init=s3.300.2,estimate_residual_variance = TRUE)
+
+```
 
