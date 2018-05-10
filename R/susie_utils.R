@@ -25,11 +25,15 @@ in_CI_x = function(x){
 # Return binary matrix indicating which variables are in CI of each
 # of effect
 in_CI = function(res){
-  t(apply(res$alpha,1,in_CI_x))
+  if (class(res) == "susie")
+    res = res$alpha
+  t(apply(res,1,in_CI_x))
 }
 
 n_in_CI = function(res){
-  apply(res$alpha,1,n_in_CI_x)
+  if (class(res) == "susie")
+    res = res$alpha
+  apply(res,1,n_in_CI_x)
 }
 
 # computes z score for association between each
