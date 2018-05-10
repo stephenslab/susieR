@@ -20,7 +20,11 @@ susie(X, Y, L = 10, prior_variance = 1, residual_variance = NULL,
 
 \item{residual_variance}{the residual variance (defaults to variance of Y)}
 
-\item{standardize}{logical flag for whether to standardize X to unit variance prior to fitting.}
+\item{standardize}{logical flag for whether to standardize columns of X to unit variance prior to fitting.
+Note that `prior_variance` specifies the prior on the coefficients of X after standardization (if performed).
+If you do not standardize you may need
+to think carefully about specifying
+`prior_variance`. Whatever the value of standardize, the coefficients (returned from `coef`) are for X on the original input scale.}
 
 \item{intercept}{Should intercept be fitted (default=TRUE) or set to zero (FALSE)}
 

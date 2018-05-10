@@ -10,7 +10,11 @@
 #' @param L maximum number of non-zero effects
 #' @param prior_variance the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )
 #' @param residual_variance the residual variance (defaults to variance of Y)
-#' @param standardize logical flag for whether to standardize X to unit variance prior to fitting.
+#' @param standardize logical flag for whether to standardize columns of X to unit variance prior to fitting.
+#' Note that `prior_variance` specifies the prior on the coefficients of X after standardization (if performed).
+#' If you do not standardize you may need
+#' to think carefully about specifying
+#' `prior_variance`. Whatever the value of standardize, the coefficients (returned from `coef`) are for X on the original input scale.
 #' @param intercept Should intercept be fitted (default=TRUE) or set to zero (FALSE)
 #' @param max_iter maximum number of iterations to perform
 #' @param tol convergence tolerance
