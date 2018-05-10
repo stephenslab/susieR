@@ -1,10 +1,10 @@
 #' @title extract regression coefficients from susie fit
 #' @param s a susie fit
-#' @return a p vector of estimated regression coefficients
+#' @return a p+1 vector, the first element being an intercept, and the remaining p elements being estimated regression coefficients
 #' @method coef susie
 #' @export
 coef.susie = function(s){
-  colSums(s$alpha*s$mu)
+  c(s$intercept,colSums(s$alpha*s$mu)/s$X_column_scale_factors )
 }
 
 #' @title predict future observations or extract coefficients from susie fit
@@ -22,7 +22,7 @@ predict.susie = function(s,newx = NULL,type=c("response","coefficients")){
     return(coef(s))
   }
 
-  if(missing(newx)){return(s$Xr)}
+  if(missing(newx)){return(s$fitted)}
 
-  return(newx %*% coef(s))
+  return(s$intercept + newx %*% coef(s)[-1])
 }

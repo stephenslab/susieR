@@ -5,8 +5,9 @@
 \title{Bayesian sum of single-effect (susie) linear regression of Y on X}
 \usage{
 susie(X, Y, L = 10, prior_variance = 1, residual_variance = NULL,
-  max_iter = 100, tol = 0.01, estimate_residual_variance = TRUE,
-  estimate_prior_variance = FALSE, s_init = NULL, verbose = FALSE)
+  standardize = TRUE, intercept = TRUE, max_iter = 100, tol = 0.01,
+  estimate_residual_variance = TRUE, estimate_prior_variance = FALSE,
+  s_init = NULL, verbose = FALSE)
 }
 \arguments{
 \item{X}{an n by p matrix of covariates}
@@ -18,6 +19,10 @@ susie(X, Y, L = 10, prior_variance = 1, residual_variance = NULL,
 \item{prior_variance}{the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )}
 
 \item{residual_variance}{the residual variance (defaults to variance of Y)}
+
+\item{standardize}{logical flag for whether to standardize X to unit variance prior to fitting.}
+
+\item{intercept}{Should intercept be fitted (default=TRUE) or set to zero (FALSE)}
 
 \item{max_iter}{maximum number of iterations to perform}
 

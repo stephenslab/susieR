@@ -10,6 +10,8 @@
 #' @param L maximum number of non-zero effects
 #' @param prior_variance the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )
 #' @param residual_variance the residual variance (defaults to variance of Y)
+#' @param standardize logical flag for whether to standardize X to unit variance prior to fitting.
+#' @param intercept Should intercept be fitted (default=TRUE) or set to zero (FALSE)
 #' @param max_iter maximum number of iterations to perform
 #' @param tol convergence tolerance
 #' @param estimate_residual_variance indicates whether to estimate residual variance
@@ -39,12 +41,26 @@
 #' coef(res)
 #' plot(y,predict(res))
 #' @export
-susie = function(X,Y,L=10,prior_variance=1,residual_variance=NULL,max_iter=100,tol=1e-2,estimate_residual_variance=TRUE,estimate_prior_variance = FALSE, s_init = NULL, verbose=FALSE){
+susie = function(X,Y,L=10,prior_variance=1,residual_variance=NULL,standardize=TRUE,intercept=TRUE,max_iter=100,tol=1e-2,estimate_residual_variance=TRUE,estimate_prior_variance = FALSE, s_init = NULL, verbose=FALSE){
   # Check input X.
   if (!is.double(X) || !is.matrix(X))
     stop("Input X must be a double-precision matrix")
   p = ncol(X)
   n = nrow(X)
+  mean_y = mean(Y)
+
+  if(intercept){ # center Y and X
+    Y = Y-mean_y
+    X = scale(X,center=TRUE, scale = FALSE)
+  } else {
+    attr(X,"scaled:center")=rep(0,p)
+  }
+
+  if(standardize){
+    X = scale(X,center=FALSE, scale=TRUE)
+  } else {
+    attr(X,"scaled:scale")=rep(1,p)
+  }
 
   # initialize susie fit
   if(!is.null(s_init)){
@@ -101,5 +117,16 @@ susie = function(X,Y,L=10,prior_variance=1,residual_variance=NULL,max_iter=100,t
   }
   elbo = elbo[1:(i+1)] #remove trailing NAs
   s$elbo <- elbo
+
+  if(intercept){
+    s$intercept = mean_y - sum(attr(X,"scaled:center")* (colSums(s$alpha*s$mu)/attr(X,"scaled:scale")))# estimate intercept (unshrunk)
+    s$fitted = s$Xr + mean_y
+  } else {
+    s$intercept = 0
+    s$fitted = s$Xr
+  }
+
+  s$X_column_scale_factors = attr(X,"scaled:scale")
+
   return(s)
 }
