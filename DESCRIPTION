@@ -1,7 +1,7 @@
 Package: susieR
 Type: Package
 Title: Fit Sum of Single Effects linear regression model
-Version: 0.1.5
+Version: 0.1.6
 Author: Matthew Stephens 
 Maintainer: <mstephens@uchicago.edu>
 Description: Fits a sparse regression model with up to $L$ effects, where $L$ is user-specified.
