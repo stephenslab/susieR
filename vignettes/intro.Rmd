@@ -49,12 +49,11 @@ for(i in 1:(n-1)){
     delta[i,j] = -1
   }
 }
-
+delta = delta[,-1] # remove intercept as included by default
 #delta = t(genlasso::getDtf(n,0))
 #delta=cbind(rep(1,n),delta)
 beta = c(rep(0,100),rep(1,100),rep(3,100),rep(-2,100),rep(0,600))
 y = beta + rnorm(n)
-delta[,2:1000] = scale(delta[,2:1000])
 s = susie(delta,y,L=10)
 ```
 
