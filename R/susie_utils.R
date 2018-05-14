@@ -1,9 +1,18 @@
 # This computes the average lfsr across SNPs for each l, weighted by the
 # posterior inclusion probability alpha
-lfsr_fromfit = function(res){
+lfsr_fromfit = function(res, option = c('set', 'effect')){
   pos_prob = pnorm(0,mean=t(res$mu),sd=sqrt(res$mu2-res$mu^2))
   neg_prob = 1-pos_prob
-  1-rowSums(res$alpha*t(pmax(pos_prob,neg_prob)))
+  if (option == 'set') return (1-rowSums(res$alpha*t(pmax(pos_prob,neg_prob))))
+  else return (1-colSums(res$alpha*t(pmax(pos_prob,neg_prob))))
+}
+
+get_effect_lfsr = function(res) {
+  lfsr_fromfit(res, 'effect')
+}
+
+get_set_lfsr = function(res) {
+  lfsr_fromfit(res, 'set')
 }
 
 #find how many variables in the 95% CI
