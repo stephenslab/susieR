@@ -17,6 +17,3 @@ SER_posterior_e_loglik(X, Y, s2, Eb, Eb2)
 
 \item{Eb2}{the posterior second moment of b (p vector) (alpha * mu2)}
 }
-\description{
-posterior expected loglikelihood for a single effect regression
-}
