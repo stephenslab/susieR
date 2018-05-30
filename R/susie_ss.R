@@ -32,9 +32,8 @@
 #' beta[4] = 1
 #' X = matrix(rnorm(n*p),nrow=n,ncol=p)
 #' y = X %*% beta + rnorm(n)
-#' res =susie_ss(XtX,Xty,L=10)
+#' res =susie_ss(XtX=t(X)%*%X,Xty=t(X)%*%y, residual_variance = var(y))
 #' coef(res)
-#' plot(y,predict(res))
 #' @export
 susie_ss = function(XtX,Xty,L=10,prior_variance=0.2,residual_variance=NULL,estimate_prior_variance = FALSE, max_iter=100,s_init = NULL, verbose=FALSE){
   # Check input XtX.
@@ -97,7 +96,7 @@ susie_ss = function(XtX,Xty,L=10,prior_variance=0.2,residual_variance=NULL,estim
   }
   # elbo = elbo[1:(i+1)] #remove trailing NAs
   # s$elbo <- elbo
-
+  s$intercept = 0
   s$Xtfitted = s$XtXr
 
   s$X_column_scale_factors = 1
