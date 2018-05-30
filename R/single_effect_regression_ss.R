@@ -68,38 +68,3 @@ loglik.grad_ss = function(V,Xty,dXtX,s2){
 # to improve numerical optimization
 # negloglik.logscale_ss = function(lV, XtY,dXtX,s2){-loglik(exp(lV),XtY,dXtX,s2)}
 negloglik.grad.logscale_ss = function(lV,Xty,dXtX,s2){-exp(lV)*loglik.grad_ss(exp(lV),Xty,dXtX,s2)}
-
-#
-# numDeriv::grad(negloglik.logscale,0, X =X, Y=Y,s2=s2)
-# negloglik.grad.logscale(0,Y,X,s2)
-#
-# numDeriv::grad(loglik, 0.1, X =X, Y=Y,s2=s2)
-# loglik.grad(0.1,X,Y,s2)
-#
-# numDeriv::grad(loglik, 1, X =X, Y=Y,s2=s2)
-# loglik.grad(1,X,Y,s2)
-
-# set.seed(1)
-# n = 1000
-# p = 1000
-# beta = rep(0,p)
-# beta[1] = 1
-# X = matrix(rnorm(n*p),nrow=n,ncol=p)
-# Y = X %*% beta + rnorm(n)
-# s2 = 1
-# optim(par=0,fn=negloglik.logscale,gr = negloglik.grad.logscale, X=X,Y=Y,s2=s2,method="BFGS")
-
-
-# vector of gradients of logBF_j for each j, with respect to prior variance V
-lbf.grad = function(V,shat2,T2){
-  0.5* (1/(V+shat2)) * ((shat2/(V+shat2))*T2-1)
-}
-
-lbf = function(V,shat2,T2){
-  0.5*log(shat2/(V+shat2)) + 0.5*T2*(V/(V+shat2))
-}
-
-
-
-
-
