@@ -9,8 +9,12 @@ test_that("Results from summary stat vs original data",{
   X = scale(X,center=TRUE, scale = FALSE)
 
   res = susie(X, y, intercept = FALSE, standardize = FALSE,
-              estimate_residual_variance=FALSE)
+              estimate_residual_variance=FALSE, estimate_prior_variance = TRUE)
 
-  res2 = susie_ss(t(X)%*%X, t(X)%*%y, max_iter = 5, residual_variance = var(y))
-  expect_equal(coef(res2), coef(res)[-1])
+  res2 = susie_ss(t(X)%*%X, t(X)%*%y, max_iter = 3,
+                  residual_variance = var(y),
+                  estimate_prior_variance = TRUE)
+  expect_equal(coef(res2), coef(res))
+
+  expect_equal(res2$sa2, res$sa2)
 })

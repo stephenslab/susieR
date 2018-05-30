@@ -29,7 +29,7 @@ single_effect_regression_ss = function(Xty,dXtX,sa2=1,s2=1,optimize_sa2=FALSE){
       #if(V.o$convergence!=0){
       #  warning("optimization over prior variance failed to converge")
       #}
-      V.u=uniroot(negloglik.grad.logscale,c(-10,10),extendInt = "upX",Xty=Xty,dXtX=d,s2=s2)
+      V.u=uniroot(negloglik.grad.logscale_ss,c(-10,10),extendInt = "upX",Xty=Xty,dXtX=d,s2=s2)
       V = exp(V.u$root)
     }
   }
