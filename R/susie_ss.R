@@ -36,8 +36,8 @@
 #' coef(res)
 #' plot(y,predict(res))
 #' @export
-susie_ss = function(XtX,Xty,L=10,prior_variance=0.2,residual_variance=NULL,estimate_prior_variance = FALSE, max_iter=100,tol=1e-2,s_init = NULL, verbose=FALSE){
-  # Check input X.
+susie_ss = function(XtX,Xty,L=10,prior_variance=0.2,residual_variance=NULL,estimate_prior_variance = FALSE, max_iter=100,s_init = NULL, verbose=FALSE){
+  # Check input XtX.
   if (!is.double(XtX) || !is.matrix(XtX))
     stop("Input XtX must be a double-precision matrix")
   p = ncol(XtX)
