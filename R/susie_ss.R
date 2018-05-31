@@ -20,6 +20,7 @@
 #' @param intercept a value to assign to the intercept (since the intercept cannot be estimated from centered summary data). This
 #' value will be used by coef.susie() to assign an intercept value, for consistency with the non-summary-statistic version of this function \code{susie}.
 #' Set to NULL if you want coef.susie() not to include an intercept term (and so only return a p vector).
+#' @param tol convergence tolerance based on alpha
 #' @return a susie fit, which is a list with some or all of the following elements\cr
 #' \item{alpha}{an L by p matrix of posterior inclusion probabilites}
 #' \item{mu}{an L by p matrix of posterior means (conditional on inclusion)}
@@ -43,7 +44,7 @@
 #' res =susie_ss(XtX=t(X) %*% X,Xty= t(X) %*% y, 1)
 #' coef(res)
 #' @export
-susie_ss = function(XtX,Xty,var_y = 1, L=10,prior_variance=0.2,residual_variance=NULL,estimate_prior_variance = FALSE, max_iter=100,s_init = NULL, verbose=FALSE, intercept=0){
+susie_ss = function(XtX,Xty,var_y = 1, L=10,prior_variance=0.2,residual_variance=NULL,estimate_prior_variance = FALSE, max_iter=100,s_init = NULL, verbose=FALSE, intercept=0, tol=1e-4){
   # Check input XtX.
   if (!is.double(XtX) || !is.matrix(XtX))
     stop("Input XtX must be a double-precision matrix")
@@ -83,8 +84,14 @@ susie_ss = function(XtX,Xty,var_y = 1, L=10,prior_variance=0.2,residual_variance
   # elbo = rep(NA,max_iter+1)
   # elbo[1] = -Inf;
 
+  alpha_new = s$alpha
   for(i in 1:max_iter){
+    alpha_old = alpha_new
     s = update_each_effect_ss(XtX, Xty, s, estimate_prior_variance)
+    alpha_new = s$alpha
+
+    if(max(abs(alpha_new - alpha_old))<tol) break;
+
     if(verbose){
       print(paste0("objective:",'not available'))
       # commented out because objective function computation not implemented for summary data
