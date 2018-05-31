@@ -1,15 +1,16 @@
 #' @title Bayesian sum of single-effect (susie) linear regression using summary stat
-#' @details Performs sum of single-effect (susie) linear regression of Y on X when
+#' @details Performs sum of single-effect (susie) linear regression of y on X when
 #' only summary statistics are available. The summary data required are
-#' the p by p matrix X'X and the p vector X'y. Both the columns of X and the vector y
+#' the p by p matrix X'X, the p vector X'y, and the sample variance of y, or (1/n)y'y. Both the columns of X and the vector y
 #' should be centered to have mean 0 before
-#' computing these summary statistics; you may also want to scale each column of X (see examples).
+#' computing these summary statistics; you may also want to scale each column of X and y to have variance 1 (see examples).
 #' This function fits the regression model y= sum_l Xb_l + e, where elements of e are iid N(0,var=residual_variance) and the
 #' sum_l b_l is a p vector of effects to be estimated.
 #' The assumption is that each b_l has exactly one non-zero element, with all elements
 #' equally likely to be non-zero. The prior on the non-zero element is N(0,var=prior_variance*residual_variance).
-#' @param XtX a p by p matrix, X'X
-#' @param Xty a p vector, X'y
+#' @param XtX a p by p matrix, X'X, where columns of X are centered to have mean 0
+#' @param Xty a p vector, X'y, where columns of X are centered and y is centered to have mean 0
+#' @param var_y the (sample) variance of the vector y
 #' @param L maximum number of non-zero effects
 #' @param prior_variance the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )
 #' @param residual_variance the residual variance (defaults to variance of Y)
@@ -38,11 +39,11 @@
 #' X = matrix(rnorm(n*p),nrow=n,ncol=p)
 #' y = X %*% beta + rnorm(n)
 #' X = scale(X,center=TRUE, scale=TRUE)
-#' y = y - mean(y)
-#' res =susie_ss(XtX=t(X) %*% X,Xty= t(X) %*% y, residual_variance = var(y))
+#' y = (y - mean(y))/sd(y)
+#' res =susie_ss(XtX=t(X) %*% X,Xty= t(X) %*% y, 1)
 #' coef(res)
 #' @export
-susie_ss = function(XtX,Xty,L=10,prior_variance=0.2,residual_variance=NULL,estimate_prior_variance = FALSE, max_iter=100,s_init = NULL, verbose=FALSE, intercept=0){
+susie_ss = function(XtX,Xty,var_y = 1, L=10,prior_variance=0.2,residual_variance=NULL,estimate_prior_variance = FALSE, max_iter=100,s_init = NULL, verbose=FALSE, intercept=0){
   # Check input XtX.
   if (!is.double(XtX) || !is.matrix(XtX))
     stop("Input XtX must be a double-precision matrix")
@@ -56,7 +57,7 @@ susie_ss = function(XtX,Xty,L=10,prior_variance=0.2,residual_variance=NULL,estim
   } else {
 
     if(is.null(residual_variance)){
-      residual_variance = readline(prompt="What is the variance of Y?")
+      residual_variance = var_y
     }
     residual_variance= as.numeric(residual_variance) #avoid problems with dimension if entered as matrix
 

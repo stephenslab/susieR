@@ -11,8 +11,7 @@ test_that("Results from summary stat vs original data",{
   res = susie(X, y, intercept = FALSE, standardize = FALSE,
               estimate_residual_variance=FALSE, estimate_prior_variance = TRUE)
 
-  res2 = susie_ss(t(X)%*%X, t(X)%*%y, max_iter = 3,
-                  residual_variance = var(y),
+  res2 = susie_ss(t(X)%*%X, t(X)%*%y, var(y), max_iter = 3,
                   estimate_prior_variance = TRUE)
   expect_equal(coef(res2), coef(res))
 

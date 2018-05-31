@@ -4,14 +4,16 @@
 \alias{susie_ss}
 \title{Bayesian sum of single-effect (susie) linear regression using summary stat}
 \usage{
-susie_ss(XtX, Xty, L = 10, prior_variance = 0.2, residual_variance = NULL,
-  estimate_prior_variance = FALSE, max_iter = 100, s_init = NULL,
-  verbose = FALSE, intercept = 0)
+susie_ss(XtX, Xty, var_y = 1, L = 10, prior_variance = 0.2,
+  residual_variance = NULL, estimate_prior_variance = FALSE,
+  max_iter = 100, s_init = NULL, verbose = FALSE, intercept = 0)
 }
 \arguments{
-\item{XtX}{a p by p matrix, X'X}
+\item{XtX}{a p by p matrix, X'X, where columns of X are centered to have mean 0}
 
-\item{Xty}{a p vector, X'y}
+\item{Xty}{a p vector, X'y, where columns of X are centered and y is centered to have mean 0}
+
+\item{var_y}{the (sample) variance of the vector y}
 
 \item{L}{maximum number of non-zero effects}
 
@@ -42,11 +44,11 @@ a susie fit, which is a list with some or all of the following elements\cr
 Bayesian sum of single-effect (susie) linear regression using summary stat
 }
 \details{
-Performs sum of single-effect (susie) linear regression of Y on X when
+Performs sum of single-effect (susie) linear regression of y on X when
 only summary statistics are available. The summary data required are
-the p by p matrix X'X and the p vector X'y. Both the columns of X and the vector y
+the p by p matrix X'X, the p vector X'y, and the sample variance of y, or (1/n)y'y. Both the columns of X and the vector y
 should be centered to have mean 0 before
-computing these summary statistics; you may also want to scale each column of X (see examples).
+computing these summary statistics; you may also want to scale each column of X and y to have variance 1 (see examples).
 This function fits the regression model y= sum_l Xb_l + e, where elements of e are iid N(0,var=residual_variance) and the
 sum_l b_l is a p vector of effects to be estimated.
 The assumption is that each b_l has exactly one non-zero element, with all elements
@@ -64,7 +66,7 @@ beta[4] = 1
 X = matrix(rnorm(n*p),nrow=n,ncol=p)
 y = X \%*\% beta + rnorm(n)
 X = scale(X,center=TRUE, scale=TRUE)
-y = y - mean(y)
-res =susie_ss(XtX=t(X) \%*\% X,Xty= t(X) \%*\% y, residual_variance = var(y))
+y = (y - mean(y))/sd(y)
+res =susie_ss(XtX=t(X) \%*\% X,Xty= t(X) \%*\% y, 1)
 coef(res)
 }
