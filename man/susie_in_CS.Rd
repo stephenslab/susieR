@@ -13,6 +13,9 @@ inclusion probability matrix alpha}
 \value{
 a l by p binary matrix
 }
+\description{
+Variables in susie confidence sets
+}
 \details{
 It returns a binary matrix indicating which variables are in CS
 of each effect

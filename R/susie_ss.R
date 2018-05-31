@@ -1,19 +1,24 @@
 #' @title Bayesian sum of single-effect (susie) linear regression using summary stat
-#' @details Performs sum of single-effect (susie) linear regression of Y on X.
-#' That is, this function
-#' fits the regression model Y= sum_l Xb_l + e, where elements of e are iid N(0,s2) and the
+#' @details Performs sum of single-effect (susie) linear regression of Y on X when
+#' only summary statistics are available. The summary data required are
+#' the p by p matrix X'X and the p vector X'y. Both the columns of X and the vector y
+#' should be centered to have mean 0 before
+#' computing these summary statistics; you may also want to scale each column of X (see examples).
+#' This function fits the regression model y= sum_l Xb_l + e, where elements of e are iid N(0,var=residual_variance) and the
 #' sum_l b_l is a p vector of effects to be estimated.
 #' The assumption is that each b_l has exactly one non-zero element, with all elements
-#' equally likely to be non-zero. The prior on the non-zero element is N(0,var=sa2*s2).
-#' Only the summary statistics t(X)Y and t(X)X are available.
-#' @param XtX a p by p matrix, t(X)X
-#' @param XtY a p vector
+#' equally likely to be non-zero. The prior on the non-zero element is N(0,var=prior_variance*residual_variance).
+#' @param XtX a p by p matrix, X'X
+#' @param Xty a p vector, X'y
 #' @param L maximum number of non-zero effects
 #' @param prior_variance the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )
 #' @param residual_variance the residual variance (defaults to variance of Y)
 #' @param estimate_prior_variance indicates whether to estimate prior (currently not recommended as not working as well)
 #' @param max_iter maximum number of iterations to perform
 #' @param s_init a previous susie fit with which to initialize
+#' @param intercept a value to assign to the intercept (since the intercept cannot be estimated from centered summary data). This
+#' value will be used by coef.susie() to assign an intercept value, for consistency with the non-summary-statistic version of this function \code{susie}.
+#' Set to NULL if you want coef.susie() not to include an intercept term (and so only return a p vector).
 #' @return a susie fit, which is a list with some or all of the following elements\cr
 #' \item{alpha}{an L by p matrix of posterior inclusion probabilites}
 #' \item{mu}{an L by p matrix of posterior means (conditional on inclusion)}
@@ -32,10 +37,12 @@
 #' beta[4] = 1
 #' X = matrix(rnorm(n*p),nrow=n,ncol=p)
 #' y = X %*% beta + rnorm(n)
-#' res =susie_ss(XtX=t(X)%*%X,Xty=t(X)%*%y, residual_variance = var(y))
+#' X = scale(X,center=TRUE, scale=TRUE)
+#' y = y - mean(y)
+#' res =susie_ss(XtX=t(X) %*% X,Xty= t(X) %*% y, residual_variance = var(y))
 #' coef(res)
 #' @export
-susie_ss = function(XtX,Xty,L=10,prior_variance=0.2,residual_variance=NULL,estimate_prior_variance = FALSE, max_iter=100,s_init = NULL, verbose=FALSE){
+susie_ss = function(XtX,Xty,L=10,prior_variance=0.2,residual_variance=NULL,estimate_prior_variance = FALSE, max_iter=100,s_init = NULL, verbose=FALSE, intercept=0){
   # Check input XtX.
   if (!is.double(XtX) || !is.matrix(XtX))
     stop("Input XtX must be a double-precision matrix")
@@ -79,6 +86,7 @@ susie_ss = function(XtX,Xty,L=10,prior_variance=0.2,residual_variance=NULL,estim
     s = update_each_effect_ss(XtX, Xty, s, estimate_prior_variance)
     if(verbose){
       print(paste0("objective:",'not available'))
+      # commented out because objective function computation not implemented for summary data
       # susie_get_objective(X,Y,s)
     }
     # if(estimate_residual_variance){
@@ -96,7 +104,7 @@ susie_ss = function(XtX,Xty,L=10,prior_variance=0.2,residual_variance=NULL,estim
   }
   # elbo = elbo[1:(i+1)] #remove trailing NAs
   # s$elbo <- elbo
-  s$intercept = 0
+  s$intercept = intercept
   s$Xtfitted = s$XtXr
 
   s$X_column_scale_factors = 1
