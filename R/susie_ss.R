@@ -90,7 +90,7 @@ susie_ss = function(XtX,Xty,var_y = 1, L=10,prior_variance=0.2,residual_variance
     s = update_each_effect_ss(XtX, Xty, s, estimate_prior_variance)
     alpha_new = s$alpha
 
-    if(max(abs(alpha_new - alpha_old))<tol) break;
+    if(max(abs(alpha_new - alpha_old)) < tol) break;
 
     if(verbose){
       print(paste0("objective:",'not available'))
