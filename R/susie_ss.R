@@ -82,7 +82,7 @@ susie_ss = function(XtX,Xty,L=10,prior_variance=0.2,residual_variance=NULL,estim
   #intialize elbo to NA
   # elbo = rep(NA,max_iter+1)
   # elbo[1] = -Inf;
-  alpha_old = s$alpha; alpha_new = s$alpha
+  alpha_new = s$alpha
   for(i in 1:max_iter){
     alpha_old = alpha_new
     s = update_each_effect_ss(XtX, Xty, s, estimate_prior_variance)
