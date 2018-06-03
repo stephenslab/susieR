@@ -1,16 +1,16 @@
 #' @title Bayesian sum of single-effect (susie) linear regression using summary stat
-#' @details Performs sum of single-effect (susie) linear regression of y on X when
+#' @details Performs sum of single-effect (susie) linear regression of Y on X when
 #' only summary statistics are available. The summary data required are
-#' the p by p matrix X'X, the p vector X'y, and the sample variance of y, or (1/n)y'y. Both the columns of X and the vector y
+#' the p by p matrix X'X, the p vector X'Y, and the sample variance of Y, or (1/n)Y'Y. Both the columns of X and the vector Y
 #' should be centered to have mean 0 before
-#' computing these summary statistics; you may also want to scale each column of X and y to have variance 1 (see examples).
-#' This function fits the regression model y= sum_l Xb_l + e, where elements of e are iid N(0,var=residual_variance) and the
+#' computing these summary statistics; you may also want to scale each column of X and Y to have variance 1 (see examples).
+#' This function fits the regression model Y = sum_l Xb_l + e, where elements of e are iid N(0,var=residual_variance) and the
 #' sum_l b_l is a p vector of effects to be estimated.
 #' The assumption is that each b_l has exactly one non-zero element, with all elements
 #' equally likely to be non-zero. The prior on the non-zero element is N(0,var=prior_variance*residual_variance).
 #' @param XtX a p by p matrix, X'X, where columns of X are centered to have mean 0
 #' @param XtY a p vector, X'Y, where columns of X are centered and Y is centered to have mean 0
-#' @param var_y the (sample) variance of the vector y
+#' @param var_y the (sample) variance of the vector Y
 #' @param L maximum number of non-zero effects
 #' @param prior_variance the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )
 #' @param residual_variance the residual variance (defaults to variance of Y)
