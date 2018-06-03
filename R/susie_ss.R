@@ -9,7 +9,7 @@
 #' The assumption is that each b_l has exactly one non-zero element, with all elements
 #' equally likely to be non-zero. The prior on the non-zero element is N(0,var=prior_variance*residual_variance).
 #' @param XtX a p by p matrix, X'X, where columns of X are centered to have mean 0
-#' @param Xty a p vector, X'y, where columns of X are centered and y is centered to have mean 0
+#' @param XtY a p vector, X'Y, where columns of X are centered and Y is centered to have mean 0
 #' @param var_y the (sample) variance of the vector y
 #' @param L maximum number of non-zero effects
 #' @param prior_variance the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )
@@ -41,10 +41,10 @@
 #' y = X %*% beta + rnorm(n)
 #' X = scale(X,center=TRUE, scale=TRUE)
 #' y = (y - mean(y))/sd(y)
-#' res =susie_ss(XtX=t(X) %*% X,Xty= t(X) %*% y, 1)
+#' res =susie_ss(XtX=t(X) %*% X,XtY= c(y %*% X), 1)
 #' coef(res)
 #' @export
-susie_ss = function(XtX,Xty,var_y = 1, L=10,prior_variance=0.2,residual_variance=NULL,estimate_prior_variance = FALSE, max_iter=100,s_init = NULL, verbose=FALSE, intercept=0, tol=1e-4){
+susie_ss = function(XtX,XtY,var_y = 1, L=10,prior_variance=0.2,residual_variance=NULL,estimate_prior_variance = FALSE, max_iter=100,s_init = NULL, verbose=FALSE, intercept=0, tol=1e-4){
   # Check input XtX.
   if (!is.double(XtX) || !is.matrix(XtX))
     stop("Input XtX must be a double-precision matrix")
@@ -87,7 +87,7 @@ susie_ss = function(XtX,Xty,var_y = 1, L=10,prior_variance=0.2,residual_variance
   alpha_new = s$alpha
   for(i in 1:max_iter){
     alpha_old = alpha_new
-    s = update_each_effect_ss(XtX, Xty, s, estimate_prior_variance)
+    s = update_each_effect_ss(XtX, XtY, s, estimate_prior_variance)
     alpha_new = s$alpha
 
     if(max(abs(alpha_new - alpha_old)) < tol) break;

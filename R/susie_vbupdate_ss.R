@@ -1,9 +1,9 @@
 #' @title update each effect once
 #' @param XtX a p by p matrix, t(X)X
-#' @param Xty a p vector
+#' @param XtY a p vector
 #' @param s_init a list with elements sigma2, sa2, alpha, mu, XtXr
 #' @param estimate_prior_variance says whether to estimate prior variance (sa2)
-update_each_effect_ss <- function (XtX, Xty, s_init, estimate_prior_variance=FALSE) {
+update_each_effect_ss <- function (XtX, XtY, s_init, estimate_prior_variance=FALSE) {
 
   # Repeat for each effect to update
   s = s_init
@@ -15,7 +15,7 @@ update_each_effect_ss <- function (XtX, Xty, s_init, estimate_prior_variance=FAL
       s$XtXr = s$XtXr - XtX %*% (s$alpha[l,] * s$mu[l,])
 
       #compute residuals
-      XtR = Xty - s$XtXr
+      XtR = XtY - s$XtXr
 
       res = single_effect_regression_ss(XtR,diag(XtX),s$sa2[l],s$sigma2,estimate_prior_variance)
 
