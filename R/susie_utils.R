@@ -78,3 +78,8 @@ pplot = function(X,y,res,pos=NULL,b=NULL,CSmax = 400,...){
 get_R = function(X,Y,s){
   Y- X %*%  coef(s)
 }
+
+# get number of iterations
+susie_get_niter <- function(res) {
+  return(res$niter)
+}
