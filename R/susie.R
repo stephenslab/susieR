@@ -121,6 +121,7 @@ susie = function(X,Y,L=10,prior_variance=0.2,residual_variance=NULL,standardize=
   }
   elbo = elbo[1:(i+1)] #remove trailing NAs
   s$elbo <- elbo
+  s$niter <- i
 
   if(intercept){
     s$intercept = mean_y - sum(attr(X,"scaled:center")* (colSums(s$alpha*s$mu)/attr(X,"scaled:scale")))# estimate intercept (unshrunk)
