@@ -12,14 +12,14 @@ susie_get_lfsr = function(res){
 
 #find how many variables in the 95% CS
 # x is a probability vector
-n_in_CS_x = function(x){
-  sum(cumsum(sort(x,decreasing = TRUE))<0.95)+1
+n_in_CS_x = function(x, coverage = 0.95){
+  sum(cumsum(sort(x,decreasing = TRUE))<coverage)+1
 }
 
 # return binary vector indicating if each point is in CS
 # x is a probability vector
-in_CS_x = function(x){
-  n = n_in_CS_x(x)
+in_CS_x = function(x, coverage = 0.95){
+  n = n_in_CS_x(x, coverage)
   o = order(x,decreasing=TRUE)
   result = rep(0,length(x))
   result[o[1:n]] = 1
@@ -31,18 +31,19 @@ in_CS_x = function(x){
 #' of each effect
 #' @param fitted a susie fit, the output of `susieR::susie()`, or simply the posterior
 #' inclusion probability matrix alpha
+#' @param coverage coverage of susie confident sets.
 #' @return a l by p binary matrix
 #' @export
-susie_in_CS = function(res){
+susie_in_CS = function(res, coverage = 0.95){
   if (class(res) == "susie")
     res = res$alpha
-  t(apply(res,1,in_CS_x))
+  t(apply(res,1,function(x) in_CS_x(x, coverage)))
 }
 
-n_in_CS = function(res){
+n_in_CS = function(res, coverage = 0.95){
   if (class(res) == "susie")
     res = res$alpha
-  apply(res,1,n_in_CS_x)
+  apply(res,1,function(x) n_in_CS_x(x, coverage))
 }
 
 # computes z score for association between each
