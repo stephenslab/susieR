@@ -4,11 +4,11 @@
 \alias{single_effect_regression_ss}
 \title{Bayesian single-effect linear regression of Y on X}
 \usage{
-single_effect_regression_ss(Xty, dXtX, sa2 = 1, s2 = 1,
+single_effect_regression_ss(XtY, dXtX, sa2 = 1, s2 = 1,
   optimize_sa2 = FALSE)
 }
 \arguments{
-\item{Xty}{an p vector}
+\item{XtY}{an p vector}
 
 \item{dXtX}{an p vector, diagonal elements of t(X)X}
 
@@ -23,9 +23,6 @@ a list with elements: \cr
 \item{mu}{vector of posterior means (conditional on inclusion)}
 \item{mu2}{vector of posterior second moments (conditional on inclusion)}
 \item{bf}{vector of Bayes factors for each variable}
-}
-\description{
-Bayesian single-effect linear regression of Y on X
 }
 \details{
 Performs single-effect linear regression of Y on X. That is, this function

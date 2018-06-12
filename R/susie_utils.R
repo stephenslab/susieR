@@ -26,6 +26,8 @@ in_CS_x = function(x, coverage = 0.95){
   return(result)
 }
 
+# returns an l by p binary matrix
+# indicating which variables are in susie confidence sets
 in_CS = function(res, coverage = 0.95){
   if (class(res) == "susie")
     res = res$alpha
@@ -38,16 +40,60 @@ n_in_CS = function(res, coverage = 0.95){
   apply(res,1,function(x) n_in_CS_x(x, coverage))
 }
 
-#' @title Variables in susie confidence sets
-#' @details It returns a binary matrix indicating which variables are in CS
-#' of each effect
+#' @title Extract confidence sets from fitted SuSiE model
+#' @details It reports indices of variables in each confidence set identified,
+#' as well as summaries of correlation between variables within each set.
 #' @param fitted a susie fit, the output of `susieR::susie()`, or simply the posterior
-#' inclusion probability matrix alpha
-#' @param coverage coverage of susie confident sets.
-#' @return a l by p binary matrix
+#' inclusion probability matrix alpha.
+#' @param X N by P matrix of variables.
+#' When provided, correlation between variables will be computed and used to remove
+#' confidence sets whose minimum correlation between variables is smaller than `min_abs_corr` (see below).
+#' @param Xcorr P by P matrix of correlations between variables.
+#' when provided, it will be used to remove confidence sets
+#' whose minimum correlation between variables is smaller than `min_abs_corr` (see below).
+#' @param coverage coverage of confident sets.
+#' @param min_abs_corr minimum of absolute value of correlation allowed in a confidence set.
+#' Default set to 0.5 to correspond to squared correlation of 0.25,
+#' a commonly used threshold for genotype data in genetics studies.
+#' @return a list of `cs` and `purity`
 #' @export
-susie_in_CS = function(res, coverage = 0.95) {
-  in_CS(res, coverage)
+susie_get_CS = function(fitted,
+                        X = NULL, Xcorr = NULL,
+                        coverage = 0.95,
+                        min_abs_corr = 0.5) {
+  if (class(fitted) == "susie")
+    fitted = fitted$alpha
+  if (!is.null(X) && !is.null(Xcorr)) {
+    stop("Only one of X or Xcorr should be specified")
+  }
+  if (!is.null(X) && ncol(X) != length(fitted[1,])) {
+    stop("Column of X matrix does not match length of fitted posterior")
+  }
+  if (!is.null(Xcorr) && ncol(Xcorr) != length(fitted[1,])) {
+    stop("Dimension of Xcorr matrix does not match length of fitted posterior")
+  }
+  if (!is.null(Xcorr) && !isSymmetric(Xcorr)) {
+    stop("Xcorr matrix must be symmetric")
+  }
+  if (!is.null(X)) Xcorr = cor(X)
+  # L by P binary matrix
+  status = in_CS(fitted, coverage)
+  # an L list of CS positions
+  cs = lapply(1:nrow(status), function(i) which(status[i,]!=0))
+  cs = cs[lapply(cs, length) > 0]
+  # compute and filter by "purity"
+  if (is.null(Xcorr)) {
+    return(list(cs=cs, purity=NA))
+  } else {
+    get_purity = function(pos, corr) {
+      value = abs(corr[pos, pos])
+      c(min(value), mean(value), median(value))
+    }
+    purity = data.frame(do.call(rbind, lapply(1:length(cs), function(i) get_purity(cs[[i]], Xcorr))))
+    colnames(purity) = c('min.abs.corr', 'mean.abs.corr', 'median.abs.corr')
+    is_pure = which(purity$min.abs.corr > min_abs_corr)
+    return(list(cs = cs[is_pure], purity = purity[is_pure,]))
+  }
 }
 
 # compute standard error for regression coef

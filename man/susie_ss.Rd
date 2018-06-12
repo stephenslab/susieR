@@ -4,16 +4,17 @@
 \alias{susie_ss}
 \title{Bayesian sum of single-effect (susie) linear regression using summary stat}
 \usage{
-susie_ss(XtX, Xty, var_y = 1, L = 10, prior_variance = 0.2,
+susie_ss(XtX, XtY, var_y = 1, L = 10, prior_variance = 0.2,
   residual_variance = NULL, estimate_prior_variance = FALSE,
-  max_iter = 100, s_init = NULL, verbose = FALSE, intercept = 0)
+  max_iter = 100, s_init = NULL, verbose = FALSE, intercept = 0,
+  tol = 1e-04)
 }
 \arguments{
 \item{XtX}{a p by p matrix, X'X, where columns of X are centered to have mean 0}
 
-\item{Xty}{a p vector, X'y, where columns of X are centered and y is centered to have mean 0}
+\item{XtY}{a p vector, X'Y, where columns of X are centered and Y is centered to have mean 0}
 
-\item{var_y}{the (sample) variance of the vector y}
+\item{var_y}{the (sample) variance of the vector Y}
 
 \item{L}{maximum number of non-zero effects}
 
@@ -30,6 +31,8 @@ susie_ss(XtX, Xty, var_y = 1, L = 10, prior_variance = 0.2,
 \item{intercept}{a value to assign to the intercept (since the intercept cannot be estimated from centered summary data). This
 value will be used by coef.susie() to assign an intercept value, for consistency with the non-summary-statistic version of this function \code{susie}.
 Set to NULL if you want coef.susie() not to include an intercept term (and so only return a p vector).}
+
+\item{tol}{convergence tolerance based on alpha}
 }
 \value{
 a susie fit, which is a list with some or all of the following elements\cr
@@ -40,16 +43,13 @@ a susie fit, which is a list with some or all of the following elements\cr
 \item{sigma2}{residual variance}
 \item{sa2}{scaled prior variance; ie prior variance is sigma2*sa2}
 }
-\description{
-Bayesian sum of single-effect (susie) linear regression using summary stat
-}
 \details{
-Performs sum of single-effect (susie) linear regression of y on X when
+Performs sum of single-effect (susie) linear regression of Y on X when
 only summary statistics are available. The summary data required are
-the p by p matrix X'X, the p vector X'y, and the sample variance of y, or (1/n)y'y. Both the columns of X and the vector y
+the p by p matrix X'X, the p vector X'Y, and the sample variance of Y, or (1/n)Y'Y. Both the columns of X and the vector Y
 should be centered to have mean 0 before
-computing these summary statistics; you may also want to scale each column of X and y to have variance 1 (see examples).
-This function fits the regression model y= sum_l Xb_l + e, where elements of e are iid N(0,var=residual_variance) and the
+computing these summary statistics; you may also want to scale each column of X and Y to have variance 1 (see examples).
+This function fits the regression model Y = sum_l Xb_l + e, where elements of e are iid N(0,var=residual_variance) and the
 sum_l b_l is a p vector of effects to be estimated.
 The assumption is that each b_l has exactly one non-zero element, with all elements
 equally likely to be non-zero. The prior on the non-zero element is N(0,var=prior_variance*residual_variance).
@@ -67,6 +67,6 @@ X = matrix(rnorm(n*p),nrow=n,ncol=p)
 y = X \%*\% beta + rnorm(n)
 X = scale(X,center=TRUE, scale=TRUE)
 y = (y - mean(y))/sd(y)
-res =susie_ss(XtX=t(X) \%*\% X,Xty= t(X) \%*\% y, 1)
+res =susie_ss(XtX=t(X) \%*\% X,XtY= c(y \%*\% X), 1)
 coef(res)
 }

@@ -4,17 +4,14 @@
 \alias{update_each_effect_ss}
 \title{update each effect once}
 \usage{
-update_each_effect_ss(XtX, Xty, s_init, estimate_prior_variance = FALSE)
+update_each_effect_ss(XtX, XtY, s_init, estimate_prior_variance = FALSE)
 }
 \arguments{
 \item{XtX}{a p by p matrix, t(X)X}
 
-\item{Xty}{a p vector}
+\item{XtY}{a p vector}
 
 \item{s_init}{a list with elements sigma2, sa2, alpha, mu, XtXr}
 
 \item{estimate_prior_variance}{says whether to estimate prior variance (sa2)}
-}
-\description{
-update each effect once
 }
