@@ -26,15 +26,7 @@ in_CS_x = function(x, coverage = 0.95){
   return(result)
 }
 
-#' @title Variables in susie confidence sets
-#' @details It returns a binary matrix indicating which variables are in CS
-#' of each effect
-#' @param fitted a susie fit, the output of `susieR::susie()`, or simply the posterior
-#' inclusion probability matrix alpha
-#' @param coverage coverage of susie confident sets.
-#' @return a l by p binary matrix
-#' @export
-susie_in_CS = function(res, coverage = 0.95){
+in_CS = function(res, coverage = 0.95){
   if (class(res) == "susie")
     res = res$alpha
   t(apply(res,1,function(x) in_CS_x(x, coverage)))
@@ -46,16 +38,50 @@ n_in_CS = function(res, coverage = 0.95){
   apply(res,1,function(x) n_in_CS_x(x, coverage))
 }
 
-# computes z score for association between each
-# column of X and y
-calc_z = function(X,y){
-  z = rep(0,ncol(X))
-  for(i in 1:ncol(X)){
-    z[i] = summary(lm(y ~ X[,i]))$coeff[2,3]
-  }
-  return(z)
+#' @title Variables in susie confidence sets
+#' @details It returns a binary matrix indicating which variables are in CS
+#' of each effect
+#' @param fitted a susie fit, the output of `susieR::susie()`, or simply the posterior
+#' inclusion probability matrix alpha
+#' @param coverage coverage of susie confident sets.
+#' @return a l by p binary matrix
+#' @export
+susie_in_CS = function(res, coverage = 0.95) {
+  in_CS(res, coverage)
 }
 
+# compute standard error for regression coef
+calc_stderr = function(X, residuals) {
+    # S = (X'X)^-1 \Sigma
+    sqrt(diag(sum(residuals^2) / (nrow(X) - 2) * chol2inv(chol(t(X) %*% X))))
+  }
+
+# univariate regression between each column of X and y
+# Remove covariates if Z is not NULL
+univariate_regression = function(X, y, Z=NULL, return_residue=FALSE) {
+  if (!is.null(Z)) {
+    y = .lm.fit(Z, y)$residuals
+  }
+  output = do.call(rbind,
+                   lapply(1:ncol(X), function(i) {
+                     g = .lm.fit(cbind(1, X[,i]), y)
+                     return(c(coef(g)[2], calc_stderr(cbind(1, X[,i]), g$residuals)[2]))
+                   })
+                   )
+  if (return_residue) {
+    return(list(betahat = output[,1], sebetahat = output[,2],
+                residuals = y))
+  } else {
+    return(list(betahat = output[,1], sebetahat = output[,2]))
+  }
+}
+
+# computes z score (t-statistic) for association between each
+# column of X and y
+calc_z = function(X,y){
+  out = univariate_regression(X,y)
+  return(out$betahat/out$sebetahat)
+}
 
 # plot p values of data and color in the 95% CSs
 # for simulated data, specify b = true effects (highlights in red)
