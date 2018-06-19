@@ -14,3 +14,6 @@
 
 \item{type}{if this is coefficients, then calls coef.susie}
 }
+\description{
+predict future observations or extract coefficients from susie fit
+}

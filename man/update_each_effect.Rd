@@ -15,3 +15,6 @@ update_each_effect(X, Y, s_init, estimate_prior_variance = FALSE)
 
 \item{estimate_prior_variance}{says whether to estimate prior variance (sa2)}
 }
+\description{
+update each effect once
+}

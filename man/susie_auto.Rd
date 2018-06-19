@@ -17,6 +17,9 @@ susie_auto(X, Y, L_init = 1, L_max = 512, verbose = FALSE, init_tol = 1)
 
 \item{Lmax}{the maximum value of L to consider}
 }
+\description{
+An attempt to automate reliable running of susie even on hard problems
+}
 \details{
 Currently runs a 3-stage strategy for each L: first fit susie with very small residual error,
 then estimate residual error, then estimate prior variance. If the last step estimates

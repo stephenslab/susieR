@@ -43,6 +43,9 @@ a susie fit, which is a list with some or all of the following elements\cr
 \item{sigma2}{residual variance}
 \item{sa2}{scaled prior variance; ie prior variance is sigma2*sa2}
 }
+\description{
+Bayesian sum of single-effect (susie) linear regression using summary stat
+}
 \details{
 Performs sum of single-effect (susie) linear regression of Y on X when
 only summary statistics are available. The summary data required are
