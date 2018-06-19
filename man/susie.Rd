@@ -24,7 +24,8 @@ susie(X, Y, L = 10, prior_variance = 0.2, residual_variance = NULL,
 Note that `prior_variance` specifies the prior on the coefficients of X after standardization (if performed).
 If you do not standardize you may need
 to think carefully about specifying
-`prior_variance`. Whatever the value of standardize, the coefficients (returned from `coef`) are for X on the original input scale.}
+`prior_variance`. Whatever the value of standardize, the coefficients (returned from `coef`) are for X on the original input scale.
+Any column of X that has zero variance is not standardized, but left as is.}
 
 \item{intercept}{Should intercept be fitted (default=TRUE) or set to zero (FALSE)}
 
@@ -49,6 +50,9 @@ a susie fit, which is a list with some or all of the following elements\cr
 \item{sigma2}{residual variance}
 \item{sa2}{scaled prior variance; ie prior variance is sigma2*sa2}
 \item{elbo}{vector of values of elbo achieved (objective function)}
+}
+\description{
+Bayesian sum of single-effect (susie) linear regression of Y on X
 }
 \details{
 Performs sum of single-effect (susie) linear regression of Y on X.

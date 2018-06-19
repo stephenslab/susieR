@@ -17,7 +17,9 @@
 single_effect_regression = function(Y,X,sa2=1,s2=1,optimize_sa2=FALSE){
   d = colSums(X^2)
   V = s2*sa2 # scale by residual variance
-  betahat = (1/d) * t(X) %*% Y
+  XtY = t(X) %*% Y
+
+  betahat = (1/d) * XtY
   shat2 = s2/d
 
   if(optimize_sa2){
@@ -36,12 +38,14 @@ single_effect_regression = function(Y,X,sa2=1,s2=1,optimize_sa2=FALSE){
   lbf = dnorm(betahat,0,sqrt(V+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
   #log(bf) on each SNP
 
+  lbf[shat2==Inf] = 0 # deal with special case of infinite shat2 (eg happens if X does not vary)
+
   maxlbf = max(lbf)
   w = exp(lbf-maxlbf) # w is proportional to BF, but subtract max for numerical stability
   alpha = w/sum(w) # posterior prob on each SNP
 
   post_var = (1/V + d/s2)^(-1) # posterior variance
-  post_mean = (d/s2) * post_var * betahat
+  post_mean = (1/s2) * post_var * XtY
   post_mean2 = post_var + post_mean^2 # second moment
   loglik = maxlbf + log(mean(w)) + sum(dnorm(Y,0,sqrt(s2),log=TRUE))
 
