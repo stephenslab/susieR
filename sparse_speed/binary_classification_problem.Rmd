@@ -1,0 +1,130 @@
+---
+title: "Binary Classification Analysis on Single-cell Data"
+author: "Kaiqian Zhang"
+date: "6/20/2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+devtools::install_github("stephenslab/susieR")
+library(Matrix)
+library(glmnet)
+library(susieR)
+library(matrixStats)
+```
+
+## Data
+```{r}
+setwd("~/Desktop/M/single_cell_project/data")
+b.data = readMM('b_filtered/hg19/matrix.mtx')
+cd34.data = readMM('cd34_filtered/hg19/matrix.mtx')
+jurkat.data = readMM('jurkat_filtered/hg19/matrix.mtx')
+monocytes.data = readMM('monocytes_filtered/hg19/matrix.mtx')
+regulatory.t.data = readMM('regulatory_t_filtered/hg19/matrix.mtx')
+```
+
+## Sample X and set a binary y
+```{r}
+set.seed(1)
+# First X1: consider B cells and monocytes cells classification problem
+b.cells = b.data[,sample(ncol(b.data),1000)]
+monocytes.cells = monocytes.data[,sample(ncol(monocytes.data),1000)]
+# Second X2: consider B cells and T cells classification problem
+regulatory.t.cells = regulatory.t.data[,sample(ncol(regulatory.t.data),1000)]
+
+# X1.raw is a n=2000 by p=32738 matrix
+# X1 is a n=2000 by p=14125 matrix after removing columns with all zeros
+X1.raw = t(cbind(b.cells,monocytes.cells))
+keepX1 = which(colSums(X1.raw)!=0)
+X1 = X1.raw[,keepX1]
+# X2.raw is a n=2000 by p=32738 matrix
+# X2 is also a n=2000 by p=14125 matrix after removing columns with all zeros
+X2.raw = t(cbind(b.cells,regulatory.t.cells))
+keepX2 = which(colSums(X2.raw)!=0)
+X2 = X2.raw[,keepX1]
+# y.binary is a 2000-vector
+y.binary = c(rep(1,1000), rep(0, 1000))
+```
+
+## X1: run glmnet 
+```{r}
+X1.fit.glmnet = cv.glmnet(X1, y.binary, family = "binomial") # Perform logistic regression in glmnet
+```
+
+```{r}
+plot(X1.fit.glmnet)
+X1.coef.glmnet = coef(X1.fit.glmnet, s = "lambda.min")
+length(which(X1.coef.glmnet!=0)-1)
+```
+
+## X1: run susieR
+
+I run approximately 40 mins for this susie L=50.  
+```{r}
+# Consider susie using L=50, suggested by glmnet 47
+X1.susie = susie(as.matrix(X1), y.binary, L=50)
+```
+
+susie shows that we only need 13 features to distinguish B cells and monocytes cells (also have some overlappings). Compared to glmnet, we need 48 features to seperate B cells from monocytes cells. 
+
+```{r}
+X1.susie.CS = susie_get_CS(X1.susie)
+X1.susie.CS.size = c()
+for (i in 1:50){
+  X1.susie.CS.size = c(X1.susie.CS.size,length(X1.susie.CS[[1]][[i]]))
+}
+for (j in 1:15){
+  print(X1.susie.CS[[1]][[j]])
+}
+X1.susie.CS.size
+```
+
+## X2: run glmnet
+
+glmnet shows that we need 23 features to distinguish B cells from regulatory-T cells.
+```{r}
+X2.fit.glmnet = cv.glmnet(X2, y.binary, family = "binomial") # Perform logistic regression in glmnet
+```
+
+```{r}
+plot(X2.fit.glmnet)
+X2.coef.glmnet = coef(X2.fit.glmnet, s = "lambda.min")
+length(which(X2.coef.glmnet!=0)-1)
+```
+
+```{r}
+which(X2.coef.glmnet!=0)-1
+```
+## X2: run susieR
+```{r}
+# Consider susie using L=30, suggested by glmnet 24
+X2.susie = susie(as.matrix(X2), y.binary, L=30)
+```
+
+susie shows that we only need 8 features to distinguish B cells from regulatory-T cells (also have 2 overlappings). Compared to glmnet, we need 24 features to seperate B cells from regulatory-T cells.
+```{r}
+X2.susie.CS = susie_get_CS(X2.susie)
+X2.susie.CS.size = c()
+for (i in 1:30){
+  X2.susie.CS.size = c(X2.susie.CS.size,length(X2.susie.CS[[1]][[i]]))
+}
+for (j in 1:9){
+  print(X2.susie.CS[[1]][[j]])
+}
+X2.susie.CS.size
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
