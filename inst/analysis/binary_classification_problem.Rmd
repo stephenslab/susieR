@@ -5,7 +5,7 @@ date: "6/20/2018"
 output: pdf_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup}
 knitr::opts_chunk$set(echo = TRUE)
 devtools::install_github("stephenslab/susieR")
 library(Matrix)
@@ -60,7 +60,7 @@ length(which(X1.coef.glmnet!=0)-1)
 
 ## X1: run susieR
 
-I run approximately 40 mins for this susie L=50.  
+I run approximately 40 mins for this susie L=50.
 ```{r}
 # Consider susie using L=50, suggested by glmnet 47
 X1.susie = susie(as.matrix(X1), y.binary, L=50)
@@ -102,7 +102,10 @@ which(X2.coef.glmnet!=0)-1
 X2.susie = susie(as.matrix(X2), y.binary, L=30)
 ```
 
-susie shows that we only need 8 features to distinguish B cells from regulatory-T cells (also have 2 overlappings). Compared to glmnet, we need 24 features to seperate B cells from regulatory-T cells.
+susie shows that we only need 8 features to distinguish B cells from
+regulatory-T cells (also have 2 overlappings). Compared to glmnet, we
+need 24 features to seperate B cells from regulatory-T cells.
+
 ```{r}
 X2.susie.CS = susie_get_CS(X2.susie)
 X2.susie.CS.size = c()
