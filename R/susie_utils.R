@@ -40,6 +40,11 @@ n_in_CS = function(res, coverage = 0.95){
   apply(res,1,function(x) n_in_CS_x(x, coverage))
 }
 
+get_purity = function(pos, corr) {
+  value = abs(corr[pos, pos])
+  c(min(value), mean(value), median(value))
+}
+
 #' @title Extract confidence sets from fitted SuSiE model
 #' @details It reports indices of variables in each confidence set identified,
 #' as well as summaries of correlation between variables within each set.
@@ -83,12 +88,8 @@ susie_get_CS = function(fitted,
   cs = cs[lapply(cs, length) > 0]
   # compute and filter by "purity"
   if (is.null(Xcorr)) {
-    return(list(cs=cs, purity=NA))
+    return(list(cs=cs, purity=NULL))
   } else {
-    get_purity = function(pos, corr) {
-      value = abs(corr[pos, pos])
-      c(min(value), mean(value), median(value))
-    }
     purity = data.frame(do.call(rbind, lapply(1:length(cs), function(i) get_purity(cs[[i]], Xcorr))))
     colnames(purity) = c('min.abs.corr', 'mean.abs.corr', 'median.abs.corr')
     is_pure = which(purity$min.abs.corr > min_abs_corr)
