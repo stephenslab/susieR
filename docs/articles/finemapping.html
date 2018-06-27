@@ -185,10 +185,9 @@
 ## $cs_index
 ## [1] 1 2 3</code></pre>
 </div>
-</div>
-<div id="posterior-inclusion-probability" class="section level2">
-<h2 class="hasAnchor">
-<a href="#posterior-inclusion-probability" class="anchor"></a>Posterior inclusion probability</h2>
+<div id="posterior-inclusion-probability" class="section level3">
+<h3 class="hasAnchor">
+<a href="#posterior-inclusion-probability" class="anchor"></a>Posterior inclusion probability</h3>
 <p>Previously we’ve determined that summing over 3 single effect regression models is approperate for our application. Here we summarize the variable selection results by computing posterior inclusion probability for SuSiE model:</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb18-1" data-line-number="1">pip =<span class="st"> </span>susieR<span class="op">::</span><span class="kw"><a href="http://www.rdocumentation.org/packages/susieR/topics/susie_get_PIP">susie_get_PIP</a></span>(fitted, sets<span class="op">$</span>cs_index)</a></code></pre></div>
 <div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="kw">plot</span>(pip, <span class="dt">pch=</span><span class="dv">16</span>, <span class="dt">ylab=</span><span class="st">'effect size'</span>)</a>
@@ -220,6 +219,7 @@
 ## [20,]  400 4.827361
 ## [21,]  398 4.751205
 ## [22,]  401 4.723184</code></pre>
+</div>
 </div>
 <div id="fine-mapping-with-other-methods" class="section level2">
 <h2 class="hasAnchor">
@@ -349,7 +349,6 @@
 <li><a href="#the-data-set">The data-set</a></li>
       <li><a href="#simple-regression-summary-statistics">Simple regression summary statistics</a></li>
       <li><a href="#fine-mapping-with-susier">Fine-mapping with <code>susieR</code></a></li>
-      <li><a href="#posterior-inclusion-probability">Posterior inclusion probability</a></li>
       <li><a href="#fine-mapping-with-other-methods">Fine-mapping with other methods</a></li>
       </ul>
 </li>

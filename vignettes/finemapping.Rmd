@@ -105,7 +105,7 @@ sets = susieR::susie_get_CS(fitted,
 print(sets)
 ```
 
-## Posterior inclusion probability
+### Posterior inclusion probability
 
 Previously we've determined that summing over 3 single effect regression models is approperate for our application. Here we summarize the variable selection results by computing posterior inclusion probability for SuSiE model:
 
