@@ -2,6 +2,7 @@ pandoc: 2.2.1
 pkgdown: 1.1.0
 pkgdown_sha: ~
 articles:
+  finemapping: finemapping.html
   mwe: mwe.html
   trend_filtering: trend_filtering.html
 

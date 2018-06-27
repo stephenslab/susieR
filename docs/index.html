@@ -93,7 +93,7 @@
 <li><p>When any changes are made to <code>roxygen2</code> markup, simply run <code><a href="http://www.rdocumentation.org/packages/devtools/topics/document">devtools::document()</a></code> to update package <code>NAMESPACE</code> and documentation files.</p></li>
 <li><p>Run <code><a href="http://pkgdown.r-lib.org/reference/build_site.html">pkgdown::build_site()</a></code> to build the website. Getting <code>pkgdown</code> to work properly can be frustrating due to numerous &amp; fragile dependencies. If <code>pkgdown</code> does not work for you out of the box you can use this <code>docker</code> command to run all vignettes and build the site:</p></li>
 </ul>
-<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ex">docker</span> run --rm --security-opt label:disable -t -P -w <span class="va">$PWD</span> -v /tmp:/tmp -v <span class="va">$PWD</span>:<span class="va">$PWD</span> \</a>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ex">docker</span> run --rm --security-opt label:disable -t -P -w <span class="va">$PWD</span> -v <span class="va">$PWD</span>:<span class="va">$PWD</span> \</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">    -u <span class="va">$UID</span>:<span class="va">${GROUPS[0]}</span> -e HOME=/home/<span class="va">$USER</span> -e USER=<span class="va">$USER</span> gaow/susie \</a>
 <a class="sourceLine" id="cb2-3" data-line-number="3">    R --slave -e <span class="st">"pkgdown::build_site(lazy=TRUE, examples=FALSE)"</span></a></code></pre></div>
 </div>

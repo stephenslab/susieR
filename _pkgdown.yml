@@ -22,4 +22,5 @@ articles:
       statistical methods.
     contents:
     - mwe
+    - finemapping
     - trend_filtering

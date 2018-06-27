@@ -107,7 +107,7 @@
 
     </div>
 
-    <pre class="usage"><span class='fu'>susie_get_CS</span>(<span class='no'>fitted</span>, <span class='kw'>X</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>Xcorr</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>coverage</span> <span class='kw'>=</span> <span class='fl'>0.95</span>,
+    <pre class="usage"><span class='fu'>susie_get_CS</span>(<span class='no'>fitted</span>, <span class='kw'>X</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>Xcorr</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>coverage</span> <span class='kw'>=</span> <span class='fl'>0.9</span>,
   <span class='kw'>min_abs_corr</span> <span class='kw'>=</span> <span class='fl'>0.5</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -132,7 +132,7 @@ whose minimum correlation between variables is smaller than `min_abs_corr` (see 
     </tr>
     <tr>
       <th>coverage</th>
-      <td><p>coverage of confident sets.</p></td>
+      <td><p>coverage of confident sets. Default to 0.9 for 90% confidence interval.</p></td>
     </tr>
     <tr>
       <th>min_abs_corr</th>
@@ -144,7 +144,7 @@ a commonly used threshold for genotype data in genetics studies.</p></td>
     
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>a list of `cs` and `purity`</p>
+    <p>a list of `cs`, and additionally `purity` and selected `cs_index` if `X` or `Xcorr` was provided.</p>
     
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
