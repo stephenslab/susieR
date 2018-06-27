@@ -19,7 +19,7 @@ confidence sets whose minimum correlation between variables is smaller than `min
 when provided, it will be used to remove confidence sets
 whose minimum correlation between variables is smaller than `min_abs_corr` (see below).}
 
-\item{coverage}{coverage of confident sets. Default to 0.9 for 90% confidence interval.}
+\item{coverage}{coverage of confident sets. Default to 0.9 for 90\% confidence interval.}
 
 \item{min_abs_corr}{minimum of absolute value of correlation allowed in a confidence set.
 Default set to 0.5 to correspond to squared correlation of 0.25,

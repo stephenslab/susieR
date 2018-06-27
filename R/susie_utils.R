@@ -56,7 +56,7 @@ get_purity = function(pos, corr) {
 #' @param Xcorr P by P matrix of correlations between variables.
 #' when provided, it will be used to remove confidence sets
 #' whose minimum correlation between variables is smaller than `min_abs_corr` (see below).
-#' @param coverage coverage of confident sets. Default to 0.9 for 90% confidence interval.
+#' @param coverage coverage of confident sets. Default to 0.9 for 90\% confidence interval.
 #' @param min_abs_corr minimum of absolute value of correlation allowed in a confidence set.
 #' Default set to 0.5 to correspond to squared correlation of 0.25,
 #' a commonly used threshold for genotype data in genetics studies.
