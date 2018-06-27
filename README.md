@@ -43,7 +43,7 @@ If `pkgdown` does not work for you out of the box you can use this `docker`
 command to run all vignettes and build the site:
 
 ```bash
-docker run --rm --security-opt label:disable -t -P -w $PWD -v /tmp:/tmp -v $PWD:$PWD \
+docker run --rm --security-opt label:disable -t -P -w $PWD -v $PWD:$PWD \
 	-u $UID:${GROUPS[0]} -e HOME=/home/$USER -e USER=$USER gaow/susie \
 	R --slave -e "pkgdown::build_site(lazy=TRUE, examples=FALSE)"
 ```
