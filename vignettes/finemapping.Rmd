@@ -85,7 +85,7 @@ sets = susieR::susie_get_CS(fitted,
                             min_abs_corr = 0.1)
 ```
 
-Notice that by passing to `susie_get_CS` function the data matrix `X`, we further filter the sets identified by removing those having absolute correlation between any pairs of variables in the set greater than specified value, which is 0.1 in the function call above. We call this a "purity" filter.
+Notice that by passing to `susie_get_CS` function the data matrix `X`, we further filter the sets identified by removing those having absolute correlation between any pairs of variables in the set smaller than specified value, which is 0.1 in the function call above. We call this a "purity" filter.
 
 ```{r}
 print(sets)

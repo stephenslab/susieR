@@ -136,7 +136,7 @@
 <a class="sourceLine" id="cb12-2" data-line-number="2">                            <span class="dt">coverage =</span> <span class="fl">0.95</span>,</a>
 <a class="sourceLine" id="cb12-3" data-line-number="3">                            <span class="dt">X=</span> dat<span class="op">$</span>data<span class="op">$</span>X, </a>
 <a class="sourceLine" id="cb12-4" data-line-number="4">                            <span class="dt">min_abs_corr =</span> <span class="fl">0.1</span>)</a></code></pre></div>
-<p>Notice that by passing to <code>susie_get_CS</code> function the data matrix <code>X</code>, we further filter the sets identified by removing those having absolute correlation between any pairs of variables in the set greater than specified value, which is 0.1 in the function call above. We call this a “purity” filter.</p>
+<p>Notice that by passing to <code>susie_get_CS</code> function the data matrix <code>X</code>, we further filter the sets identified by removing those having absolute correlation between any pairs of variables in the set smaller than specified value, which is 0.1 in the function call above. We call this a “purity” filter.</p>
 <div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="kw">print</span>(sets)</a></code></pre></div>
 <pre><code>## $cs
 ## $cs[[1]]
