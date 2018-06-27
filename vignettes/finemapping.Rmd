@@ -14,7 +14,7 @@ This vignettes demonstrates `susieR` in the context of genetic fine-mapping.
 We use simulated data of expression level of a gene ($y$) in $N \approx 600$ individuals. 
 We want to identify with the genotype matrix $X_{N\times P}$ ($P=1000$) the genetic variables that causes changes in expression level.
 
-The simulated data-set is [available here](https://github.com/stephenslab/susieR/blob/master/inst/data/N3finemapping.rds), as part of the `susieR` package. It is a simulate to have exactly 3 non-zero effects.
+The simulated data-set is [available here](https://github.com/stephenslab/susieR/blob/master/inst/data/N3finemapping.rds), as part of the `susieR` package. It is simulated to have exactly 3 non-zero effects.
 
 ## The data-set
 
@@ -118,10 +118,11 @@ plot(pip, pch=16, ylab='PIP')
 points(signal_index, pip[signal_index], col = "red", pch = 16)
 ```
 
-The true causal variables are colored red. Of interest is the cluster around position 400. The true signal is 403 but apparently it does not have the highest PIP. This is consistent with its ranking in original z-score in that CS:
+The true causal variables are colored red. Of interest is the cluster around position 400. The true signal is 403 but apparently it does not have the highest PIP. To compare ranking of PIP and original z-score in that CS:
 
 ```{r}
-z3 = cbind(sets$cs[[3]], z_scores[sets$cs[[3]]])
+z3 = cbind(sets$cs[[3]], z_scores[sets$cs[[3]]], pip[sets$cs[[3]]])
+colnames(z3) = c('position', 'z-score', 'PIP')
 z3[order(z3[,2], decreasing = TRUE),]
 ```
 
@@ -180,6 +181,12 @@ plot(pip, pch=16, ylab='PIP')
 points(signal_index, pip[signal_index], col = "red", pch = 16)
 ```
 
+```{r}
+z3 = cbind(sets$cs[[3]], z_scores[sets$cs[[3]]], pip[sets$cs[[3]]])
+colnames(z3) = c('position', 'z-score', 'PIP')
+z3[order(z3[,2], decreasing = TRUE),]
+```
+
 #### 95% CS
 
 CAVIAR provides single 95% confidence sets as follows:
@@ -220,6 +227,12 @@ snp = dap[[1]]$snp
 pip = snp[order(as.numeric(snp$snp)),]$snp_prob
 plot(pip, pch=16, ylab='PIP')
 points(signal_index, pip[signal_index], col = "red", pch = 16)
+```
+
+```{r}
+z3 = cbind(sets$cs[[3]], z_scores[sets$cs[[3]]], pip[sets$cs[[3]]])
+colnames(z3) = c('position', 'z-score', 'PIP')
+z3[order(z3[,2], decreasing = TRUE),]
 ```
 
 #### 95% CS
