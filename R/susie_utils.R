@@ -10,15 +10,15 @@ susie_get_lfsr = function(res){
   1-rowSums(res$alpha*t(pmax(pos_prob,neg_prob)))
 }
 
-#find how many variables in the 95% CS
+#find how many variables in the CS
 # x is a probability vector
-n_in_CS_x = function(x, coverage = 0.95){
+n_in_CS_x = function(x, coverage = 0.9){
   sum(cumsum(sort(x,decreasing = TRUE))<coverage)+1
 }
 
 # return binary vector indicating if each point is in CS
 # x is a probability vector
-in_CS_x = function(x, coverage = 0.95){
+in_CS_x = function(x, coverage = 0.9){
   n = n_in_CS_x(x, coverage)
   o = order(x,decreasing=TRUE)
   result = rep(0,length(x))
@@ -28,13 +28,13 @@ in_CS_x = function(x, coverage = 0.95){
 
 # returns an l by p binary matrix
 # indicating which variables are in susie confidence sets
-in_CS = function(res, coverage = 0.95){
+in_CS = function(res, coverage = 0.9){
   if (class(res) == "susie")
     res = res$alpha
   t(apply(res,1,function(x) in_CS_x(x, coverage)))
 }
 
-n_in_CS = function(res, coverage = 0.95){
+n_in_CS = function(res, coverage = 0.9){
   if (class(res) == "susie")
     res = res$alpha
   apply(res,1,function(x) n_in_CS_x(x, coverage))
@@ -56,15 +56,15 @@ get_purity = function(pos, corr) {
 #' @param Xcorr P by P matrix of correlations between variables.
 #' when provided, it will be used to remove confidence sets
 #' whose minimum correlation between variables is smaller than `min_abs_corr` (see below).
-#' @param coverage coverage of confident sets.
+#' @param coverage coverage of confident sets. Default to 0.9 for 90% confidence interval.
 #' @param min_abs_corr minimum of absolute value of correlation allowed in a confidence set.
 #' Default set to 0.5 to correspond to squared correlation of 0.25,
 #' a commonly used threshold for genotype data in genetics studies.
-#' @return a list of `cs` and `purity`
+#' @return a list of `cs`, and additionally `purity` and selected `cs_index` if `X` or `Xcorr` was provided.
 #' @export
 susie_get_CS = function(fitted,
                         X = NULL, Xcorr = NULL,
-                        coverage = 0.95,
+                        coverage = 0.9,
                         min_abs_corr = 0.5) {
   if (class(fitted) == "susie")
     fitted = fitted$alpha
@@ -88,13 +88,28 @@ susie_get_CS = function(fitted,
   cs = cs[lapply(cs, length) > 0]
   # compute and filter by "purity"
   if (is.null(Xcorr)) {
-    return(list(cs=cs, purity=NULL))
+    return(list(cs=cs))
   } else {
     purity = data.frame(do.call(rbind, lapply(1:length(cs), function(i) get_purity(cs[[i]], Xcorr))))
     colnames(purity) = c('min.abs.corr', 'mean.abs.corr', 'median.abs.corr')
     is_pure = which(purity$min.abs.corr > min_abs_corr)
-    return(list(cs = cs[is_pure], purity = purity[is_pure,]))
+    return(list(cs = cs[is_pure], purity = purity[is_pure,], cs_index = is_pure))
   }
+}
+
+#' @title Compute posterior inclusion probability (PIP) for all variables
+#' @param fitted a susie fit, the output of `susieR::susie()`, or simply the posterior
+#' inclusion probability matrix alpha.
+#' @param include_index index of single effect models to consider when calculating PIP. Default to NULL.
+#' @return a vector of posterior inclusion probability.
+#' @export
+susie_get_PIP = function(fitted, include_index = NULL) {
+  if (class(fitted) == "susie")
+    fitted = fitted$alpha
+  if (!is.null(include_index)) {
+    fitted = fitted[include_index,,drop=FALSE]
+  }
+  return(as.vector(1 - apply(1 - fitted, 2, prod)))
 }
 
 # compute standard error for regression coef
@@ -130,7 +145,7 @@ calc_z = function(X,y){
   return(out$betahat/out$sebetahat)
 }
 
-# plot p values of data and color in the 95% CSs
+# plot p values of data and color in the CSs
 # for simulated data, specify b = true effects (highlights in red)
 pplot = function(X,y,res,pos=NULL,b=NULL,CSmax = 400,...){
   z = calc_z(X,y)
