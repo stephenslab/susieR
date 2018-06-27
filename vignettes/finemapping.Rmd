@@ -135,7 +135,7 @@ alias docker-susie="docker run --rm --security-opt label:disable -t -h susie -P 
 
 Now you are set to run the aforementioned fine-mapping programs.
 
-### FINEMAP
+### Run `FINEMAP`
 
 We use default `FINEMAP` priors, and set maximum number of causal variables to 3.
 
@@ -143,7 +143,7 @@ We use default `FINEMAP` priors, and set maximum number of causal variables to 3
 docker-susie finemap.R input=\"N3finemapping.rds\" output=\"N3finemapping.FINEMAP\" args=\"--n-causal-max\ 3\"
 ```
 
-### CAVIAR
+### Run `CAVIAR`
 
 We set `CAVIAR` prior probability of a variable being causal to 1 / P, and set maximum number of causal variables to 3.
 
@@ -151,7 +151,7 @@ We set `CAVIAR` prior probability of a variable being causal to 1 / P, and set m
 docker-susie caviar.R input=\"N3finemapping.rds\" output=\"N3finemapping.CAVIAR\" args=\"-g\ 0.001\ -c\ 3\"
 ```
 
-### DAP-G
+### Run `DAP-G`
 
 We use full data vesion of DAP-G, that is, the input is the data matrices not summary statistics.
 
@@ -167,7 +167,7 @@ finemap = readRDS(system.file("data", "N3finemapping.FINEMAP.rds", package = "su
 dap = readRDS(system.file("data", "N3finemapping.DAP.rds", package = "susieR"))
 ```
 
-### CAVIAR
+### `CAVIAR` results
 
 #### PIP
 
@@ -188,7 +188,7 @@ print(caviar[[1]]$set)
 
 which captures positions 653, 773 and 403.
 
-### FINEMAP
+### `FINEMAP` results
 
 #### PIP
 
@@ -209,7 +209,7 @@ head(finemap[[1]]$set, 10)
 
 The top ranking configurations correctly captures position 653 and 773, but not 403. It requires post-processing to come up with a single 95% set similar to that of CAVIAR with all 3 causal variables captured. The result from running `finemap.R` provided has been truncated to the minimum set of configurations having cumulative probability of 95%.
 
-### DAP-G
+### `DAP-G` results
 
 #### PIP
 

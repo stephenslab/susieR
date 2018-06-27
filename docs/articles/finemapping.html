@@ -227,21 +227,24 @@
 <p>In <a href="https://github.com/stephenslab/susieR/tree/master/inst/code">this folder</a> we provide scripts to run <code>CAVIAR</code>, <code>FINEMAP</code> (version 1.1) and <code>DAP-G</code> on the same data-set for a comparison. The scripts along with software dependencies are also available from the docker image for <code>susieR</code> demonstrations. To run from the docker image <code>gaow/susie</code>, first <a href="https://www.docker.com/community-edition">install docker</a>, then set command-line alias <code>docker-susie</code>:</p>
 <div class="sourceCode" id="cb22"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb22-1" data-line-number="1"><span class="bu">alias</span> docker-susie=<span class="st">"docker run --rm --security-opt label:disable -t -h susie -P -w </span><span class="va">$PWD</span><span class="st"> -v </span><span class="va">$PWD</span><span class="st">:</span><span class="va">$PWD</span><span class="st"> -u </span><span class="va">$UID</span><span class="st">:</span><span class="va">${GROUPS[0]}</span><span class="st"> -e HOME=/home/</span><span class="va">$USER</span><span class="st"> -e USER=</span><span class="va">$USER</span><span class="st"> gaow/susie"</span></a></code></pre></div>
 <p>Now you are set to run the aforementioned fine-mapping programs.</p>
-<div id="finemap" class="section level3">
+<div id="run-finemap" class="section level3">
 <h3 class="hasAnchor">
-<a href="#finemap" class="anchor"></a>FINEMAP</h3>
+<a href="#run-finemap" class="anchor"></a>Run <code>FINEMAP</code>
+</h3>
 <p>We use default <code>FINEMAP</code> priors, and set maximum number of causal variables to 3.</p>
 <pre><code>docker-susie finemap.R input=\"N3finemapping.rds\" output=\"N3finemapping.FINEMAP\" args=\"--n-causal-max\ 3\"</code></pre>
 </div>
-<div id="caviar" class="section level3">
+<div id="run-caviar" class="section level3">
 <h3 class="hasAnchor">
-<a href="#caviar" class="anchor"></a>CAVIAR</h3>
+<a href="#run-caviar" class="anchor"></a>Run <code>CAVIAR</code>
+</h3>
 <p>We set <code>CAVIAR</code> prior probability of a variable being causal to 1 / P, and set maximum number of causal variables to 3.</p>
 <pre><code>docker-susie caviar.R input=\"N3finemapping.rds\" output=\"N3finemapping.CAVIAR\" args=\"-g\ 0.001\ -c\ 3\"</code></pre>
 </div>
-<div id="dap-g" class="section level3">
+<div id="run-dap-g" class="section level3">
 <h3 class="hasAnchor">
-<a href="#dap-g" class="anchor"></a>DAP-G</h3>
+<a href="#run-dap-g" class="anchor"></a>Run <code>DAP-G</code>
+</h3>
 <p>We use full data vesion of DAP-G, that is, the input is the data matrices not summary statistics.</p>
 <pre><code>docker-susie dap-g.py N3finemapping.rds N3finemapping.DAP -ld_control 0.20 --all</code></pre>
 <p>For convenience we include these results as part of the <code>susieR</code> package data files:</p>
@@ -249,9 +252,9 @@
 <a class="sourceLine" id="cb26-2" data-line-number="2">finemap =<span class="st"> </span><span class="kw">readRDS</span>(<span class="kw">system.file</span>(<span class="st">"data"</span>, <span class="st">"N3finemapping.FINEMAP.rds"</span>, <span class="dt">package =</span> <span class="st">"susieR"</span>))</a>
 <a class="sourceLine" id="cb26-3" data-line-number="3">dap =<span class="st"> </span><span class="kw">readRDS</span>(<span class="kw">system.file</span>(<span class="st">"data"</span>, <span class="st">"N3finemapping.DAP.rds"</span>, <span class="dt">package =</span> <span class="st">"susieR"</span>))</a></code></pre></div>
 </div>
-<div id="caviar-1" class="section level3">
+<div id="caviar-results" class="section level3">
 <h3 class="hasAnchor">
-<a href="#caviar-1" class="anchor"></a>CAVIAR</h3>
+<a href="#caviar-results" class="anchor"></a><code>CAVIAR</code> results</h3>
 <div id="pip" class="section level4">
 <h4 class="hasAnchor">
 <a href="#pip" class="anchor"></a>PIP</h4>
@@ -272,9 +275,9 @@
 <p>which captures positions 653, 773 and 403.</p>
 </div>
 </div>
-<div id="finemap-1" class="section level3">
+<div id="finemap-results" class="section level3">
 <h3 class="hasAnchor">
-<a href="#finemap-1" class="anchor"></a>FINEMAP</h3>
+<a href="#finemap-results" class="anchor"></a><code>FINEMAP</code> results</h3>
 <div id="pip-1" class="section level4">
 <h4 class="hasAnchor">
 <a href="#pip-1" class="anchor"></a>PIP</h4>
@@ -303,9 +306,9 @@
 <p>The top ranking configurations correctly captures position 653 and 773, but not 403. It requires post-processing to come up with a single 95% set similar to that of CAVIAR with all 3 causal variables captured. The result from running <code>finemap.R</code> provided has been truncated to the minimum set of configurations having cumulative probability of 95%.</p>
 </div>
 </div>
-<div id="dap-g-1" class="section level3">
+<div id="dap-g-results" class="section level3">
 <h3 class="hasAnchor">
-<a href="#dap-g-1" class="anchor"></a>DAP-G</h3>
+<a href="#dap-g-results" class="anchor"></a><code>DAP-G</code> results</h3>
 <div id="pip-2" class="section level4">
 <h4 class="hasAnchor">
 <a href="#pip-2" class="anchor"></a>PIP</h4>
