@@ -51,9 +51,6 @@ a susie fit, which is a list with some or all of the following elements\cr
 \item{sa2}{scaled prior variance; ie prior variance is sigma2*sa2}
 \item{elbo}{vector of values of elbo achieved (objective function)}
 }
-\description{
-Bayesian sum of single-effect (susie) linear regression of Y on X
-}
 \details{
 Performs sum of single-effect (susie) linear regression of Y on X.
 That is, this function

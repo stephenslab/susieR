@@ -28,9 +28,6 @@ a commonly used threshold for genotype data in genetics studies.}
 \value{
 a list of `cs` and `purity`
 }
-\description{
-Extract confidence sets from fitted SuSiE model
-}
 \details{
 It reports indices of variables in each confidence set identified,
 as well as summaries of correlation between variables within each set.
