@@ -114,7 +114,7 @@ pip = susieR::susie_get_PIP(fitted, sets$cs_index)
 ```
 
 ```{r}
-plot(pip, pch=16, ylab='effect size')
+plot(pip, pch=16, ylab='PIP')
 points(signal_index, pip[signal_index], col = "red", pch = 16)
 ```
 
@@ -159,6 +159,8 @@ We use full data vesion of DAP-G, that is, the input is the data matrices not su
 docker-susie dap-g.py N3finemapping.rds N3finemapping.DAP -ld_control 0.20 --all
 ```
 
+### Load results
+
 For convenience we include these results as part of the `susieR` package data files:
 
 ```{r}
@@ -174,7 +176,7 @@ dap = readRDS(system.file("data", "N3finemapping.DAP.rds", package = "susieR"))
 ```{r}
 snp = caviar[[1]]$snp
 pip = snp[order(as.numeric(snp$snp)),]$snp_prob
-plot(pip, pch=16, ylab='effect size')
+plot(pip, pch=16, ylab='PIP')
 points(signal_index, pip[signal_index], col = "red", pch = 16)
 ```
 
@@ -195,7 +197,7 @@ which captures positions 653, 773 and 403.
 ```{r}
 snp = finemap[[1]]$snp
 pip = snp[order(as.numeric(snp$snp)),]$snp_prob
-plot(pip, pch=16, ylab='effect size')
+plot(pip, pch=16, ylab='PIP')
 points(signal_index, pip[signal_index], col = "red", pch = 16)
 ```
 
@@ -216,7 +218,7 @@ The top ranking configurations correctly captures position 653 and 773, but not 
 ```{r}
 snp = dap[[1]]$snp
 pip = snp[order(as.numeric(snp$snp)),]$snp_prob
-plot(pip, pch=16, ylab='effect size')
+plot(pip, pch=16, ylab='PIP')
 points(signal_index, pip[signal_index], col = "red", pch = 16)
 ```
 
@@ -228,4 +230,4 @@ Similar to SuSiE, DAP-G provides per-signal 95% CS:
 dap[[1]]$set
 ```
 
-Using an average $r^2$ filter of 0.2 ($r=0.44$ compared to SuSiE's $r=0.1$ in this analysis), it reports 5 95% CS. But only the first 3 CS contain causal signals. 
+Using an average $r^2$ filter of 0.2 ($r=0.44$, compared to SuSiE's $r=0.1$ in earlier analysis), it reports five 95% CS; the first 3 CS contain causal signals. 
