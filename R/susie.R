@@ -15,6 +15,7 @@
 #' If you do not standardize you may need
 #' to think carefully about specifying
 #' `prior_variance`. Whatever the value of standardize, the coefficients (returned from `coef`) are for X on the original input scale.
+#' Any column of X that has zero variance is not standardized, but left as is.
 #' @param intercept Should intercept be fitted (default=TRUE) or set to zero (FALSE)
 #' @param max_iter maximum number of iterations to perform
 #' @param tol convergence tolerance
@@ -55,16 +56,17 @@ susie = function(X,Y,L=10,prior_variance=0.2,residual_variance=NULL,standardize=
 
   if(intercept){ # center Y and X
     Y = Y-mean_y
-    X = scale(X,center=TRUE, scale = FALSE)
+    X = safe_colScale(X,center=TRUE, scale = FALSE)
   } else {
     attr(X,"scaled:center")=rep(0,p)
   }
 
   if(standardize){
-    X = scale(X,center=FALSE, scale=TRUE)
+    X = safe_colScale(X,center=FALSE, scale=TRUE)
   } else {
     attr(X,"scaled:scale")=rep(1,p)
   }
+
 
   # initialize susie fit
   if(!is.null(s_init)){

@@ -17,7 +17,7 @@ X <- matrix(rnorm(1010 * 1000), 1010, 1000)
 beta <- rep(0, 1000)
 beta[1 : 200] <- 100
 y <- X %*% beta + rnorm(1010)
-s = susie(X,y,L=1,estimate_sa2 = TRUE)
+s = susie(X,y,L=1,estimate_residual_variance = TRUE)
 Y = y-s$Xr
 s2 = s$sigma2
 x = seq(1,100000,length=100)

@@ -23,9 +23,6 @@ a list with elements: \cr
 \item{mu2}{vector of posterior second moments (conditional on inclusion)}
 \item{bf}{vector of Bayes factors for each variable}
 }
-\description{
-Bayesian single-effect linear regression of Y on X
-}
 \details{
 Performs single-effect linear regression of Y on X. That is, this function
 fits the regression model Y= Xb + e, where elements of e are iid N(0,s2) and the
