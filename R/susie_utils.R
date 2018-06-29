@@ -93,7 +93,12 @@ susie_get_CS = function(fitted,
     purity = data.frame(do.call(rbind, lapply(1:length(cs), function(i) get_purity(cs[[i]], Xcorr))))
     colnames(purity) = c('min.abs.corr', 'mean.abs.corr', 'median.abs.corr')
     is_pure = which(purity$min.abs.corr > min_abs_corr)
-    return(list(cs = cs[is_pure], purity = purity[is_pure,], cs_index = is_pure))
+    cs = cs[is_pure]
+    purity = purity[is_pure,]
+    row_names = paste0("L", is_pure)
+    names(cs) = row_names
+    rownames(purity) = row_names
+    return(list(cs = cs, purity = purity, cs_index = is_pure))
   }
 }
 
