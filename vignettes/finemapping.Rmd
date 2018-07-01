@@ -8,7 +8,6 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-# Fine-mapping with `susieR` and others
 
 This vignettes demonstrates `susieR` in the context of genetic fine-mapping. 
 We use simulated data of expression level of a gene ($y$) in $N \approx 600$ individuals. 
@@ -63,13 +62,13 @@ points(signal_index, z_scores[signal_index], col = "red", pch = 16)
 
 For starters, we assume there are at most 5 causal variables, i.e., set `L=5`, although SuSiE is robust to the choice of `L`. 
 
-We update residual variance as well as prior variance in the variational algorithm that fits SuSiE model. The `susieR` function call is:
+We set SuSiE prior variance to 0.1, and update residual variance in the variational algorithm that fits SuSiE model. The `susieR` function call is:
 
 ```{r}
 fitted = susieR::susie(dat$data$X, dat$data$Y[,1],
                        L=5,
                        estimate_residual_variance = TRUE, 
-                       estimate_prior_variance = TRUE, 
+                       prior_variance = 0.1, 
                        intercept=FALSE,
                        tol=1e-3)
 ```
@@ -126,121 +125,24 @@ colnames(z3) = c('position', 'z-score', 'PIP')
 z3[order(z3[,2], decreasing = TRUE),]
 ```
 
-## Fine-mapping with other methods
+### Choice of priors
 
-In [this folder](https://github.com/stephenslab/susieR/tree/master/inst/code) we provide scripts to run `CAVIAR`, `FINEMAP` (version 1.1) and `DAP-G` on the same data-set for a comparison. The scripts along with software dependencies are also available from the docker image for `susieR` demonstrations. To run from the docker image `gaow/susie`, first [install docker](https://www.docker.com/community-edition), then set command-line alias `docker-susie`:
-
-```bash
-alias docker-susie="docker run --rm --security-opt label:disable -t -h susie -P -w $PWD -v $PWD:$PWD -u $UID:${GROUPS[0]} -e HOME=/home/$USER -e USER=$USER gaow/susie"
-```
-
-Now you are set to run the aforementioned fine-mapping programs.
-
-### Run `FINEMAP`
-
-We use default `FINEMAP` priors, and set maximum number of causal variables to 3.
-
-```
-docker-susie finemap.R input=\"N3finemapping.rds\" output=\"N3finemapping.FINEMAP\" args=\"--n-causal-max\ 3\"
-```
-
-### Run `CAVIAR`
-
-We set `CAVIAR` prior probability of a variable being causal to 1 / P, and set maximum number of causal variables to 3.
-
-```
-docker-susie caviar.R input=\"N3finemapping.rds\" output=\"N3finemapping.CAVIAR\" args=\"-g\ 0.001\ -c\ 3\"
-```
-
-### Run `DAP-G`
-
-We use full data vesion of DAP-G, that is, the input is the data matrices not summary statistics.
-
-```
-docker-susie dap-g.py N3finemapping.rds N3finemapping.DAP -ld_control 0.20 --all
-```
-
-### Load results
-
-For convenience we include these results as part of the `susieR` package data files:
+We found that SuSiE is generally robust to choice of priors. Here we set prior variance to 0.2, and compare with previous results:
 
 ```{r}
-caviar = readRDS(system.file("data", "N3finemapping.CAVIAR.rds", package = "susieR"))
-finemap = readRDS(system.file("data", "N3finemapping.FINEMAP.rds", package = "susieR"))
-dap = readRDS(system.file("data", "N3finemapping.DAP.rds", package = "susieR"))
-```
-
-### `CAVIAR` results
-
-#### PIP
-
-```{r}
-snp = caviar[[1]]$snp
-pip = snp[order(as.numeric(snp$snp)),]$snp_prob
+fitted = susieR::susie(dat$data$X, dat$data$Y[,1],
+                       L=5,
+                       estimate_residual_variance = TRUE, 
+                       prior_variance = 0.2, 
+                       intercept=FALSE,
+                       tol=1e-3)
+sets = susieR::susie_get_CS(fitted,
+                            X= dat$data$X, 
+                            min_abs_corr = 0.1)
+pip = susieR::susie_get_PIP(fitted, sets$cs_index)
 plot(pip, pch=16, ylab='PIP')
 points(signal_index, pip[signal_index], col = "red", pch = 16)
 ```
 
-```{r}
-z3 = cbind(sets$cs[[3]], z_scores[sets$cs[[3]]], pip[sets$cs[[3]]])
-colnames(z3) = c('position', 'z-score', 'PIP')
-z3[order(z3[,2], decreasing = TRUE),]
-```
-
-#### 95% CS
-
-CAVIAR provides single 95% confidence sets as follows:
-
-```{r}
-print(caviar[[1]]$set)
-```
-
-which captures positions 653, 773 and 403.
-
-### `FINEMAP` results
-
-#### PIP
-
-```{r}
-snp = finemap[[1]]$snp
-pip = snp[order(as.numeric(snp$snp)),]$snp_prob
-plot(pip, pch=16, ylab='PIP')
-points(signal_index, pip[signal_index], col = "red", pch = 16)
-```
-
-#### 95% CS
-
-For each configuration, FINEMAP provides the corresponding configuration probability:
-
-```{r}
-head(finemap[[1]]$set, 10)
-```
-
-The top ranking configurations correctly captures position 653 and 773, but not 403. It requires post-processing to come up with a single 95% set similar to that of CAVIAR with all 3 causal variables captured. The result from running `finemap.R` provided has been truncated to the minimum set of configurations having cumulative probability of 95%.
-
-### `DAP-G` results
-
-#### PIP
-
-```{r}
-snp = dap[[1]]$snp
-pip = snp[order(as.numeric(snp$snp)),]$snp_prob
-plot(pip, pch=16, ylab='PIP')
-points(signal_index, pip[signal_index], col = "red", pch = 16)
-```
-
-```{r}
-z3 = cbind(sets$cs[[3]], z_scores[sets$cs[[3]]], pip[sets$cs[[3]]])
-colnames(z3) = c('position', 'z-score', 'PIP')
-z3[order(z3[,2], decreasing = TRUE),]
-```
-
-#### 95% CS
-
-Similar to SuSiE, DAP-G provides per-signal 95% CS:
-
-```{r}
-dap[[1]]$set
-```
-
-Using an average $r^2$ filter of 0.2 ($r=0.44$, compared to SuSiE's $r=0.1$ in earlier analysis), it reports five 95% CS; the first 3 CS contain causal signals. 
+which largely remains unchanged. It is also possible to use `estimate_prior_variance = TRUE` to estimate prior variance estimates in variational updates.
+(FIXME: need to comment on whether this is recommanded.)
