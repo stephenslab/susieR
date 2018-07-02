@@ -9,8 +9,6 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# A minimal example
-
 This fits a sparse linear regression model with up to $L$ non-zero effects.
 Generally there is no harm in over-stating $L$ (that is, the method
 is pretty robust to overfitting) except that computation will grow as $L$ grows.

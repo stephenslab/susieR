@@ -93,7 +93,12 @@ susie_get_CS = function(fitted,
     purity = data.frame(do.call(rbind, lapply(1:length(cs), function(i) get_purity(cs[[i]], Xcorr))))
     colnames(purity) = c('min.abs.corr', 'mean.abs.corr', 'median.abs.corr')
     is_pure = which(purity$min.abs.corr > min_abs_corr)
-    return(list(cs = cs[is_pure], purity = purity[is_pure,], cs_index = is_pure))
+    cs = cs[is_pure]
+    purity = purity[is_pure,]
+    row_names = paste0("L", is_pure)
+    names(cs) = row_names
+    rownames(purity) = row_names
+    return(list(cs = cs, purity = purity, cs_index = is_pure))
   }
 }
 
@@ -145,27 +150,47 @@ calc_z = function(X,y){
   return(out$betahat/out$sebetahat)
 }
 
-# plot p values of data and color in the CSs
-# for simulated data, specify b = true effects (highlights in red)
-pplot = function(X,y,res,pos=NULL,b=NULL,CSmax = 400,...){
-  z = calc_z(X,y)
-  zneg = -abs(z)
-  logp = log10(pnorm(zneg))
-  if(is.null(b)){b = rep(0,ncol(X))}
-  if(is.null(pos)){pos = 1:ncol(X)}
-  plot(pos,-logp,col="grey",xlab="",ylab="-log10(p)",...)
-  points(pos[b!=0],-logp[b!=0],col=2,pch=16)
-  for(i in 1:nrow(res$alpha)){
-    if(n_in_CS(res)[i]<CSmax)
-      points(pos[which(in_CS(res)[i,]>0)],-logp[which(in_CS(res)[i,]>0)],col=i+2)
+#' @title Plot per variable summary in SuSiE CSs
+#' @param data can be raw data \code{X} and \code{y} as \code{list(X=X,y=y)}, or be a vector of z-scores, or p-values.
+#' @param fitted a susie fit, the output of `susieR::susie()`, or simply the posterior
+#' inclusion probability matrix alpha.
+#' @param dtype a string indicating the input data type (choices are raw_data (for raw data input), p (for p-value input), z (for z-scores input) and PIP (for PIP input))
+#' @param coverage coverage of confident sets. Default to 0.9 for 90\% confidence interval.
+#' @param b for simulated data, specify b = true effects (highlights in red).
+#' @param CSmax maximum size of CS to display.
+#' @export
+susie_pplot = function(data,fitted=NULL,dtype='raw_data',coverage=0.9,pos=NULL,b=NULL,CSmax=400,...){
+  if (dtype=='raw_data') {
+    z = calc_z(data$X,data$y)
+    zneg = -abs(z)
+    p = -log10(pnorm(zneg))
+  } else if (dtype=='z') {
+    zneg = -abs(data)
+    p = -log10(pnorm(zneg))
+  } else if (dtype=='p') {
+    p = -log10(data)
+  } else if (dtype=='PIP') {
+    p = data
+  } else {
+    stop(paste0("Unknown dtype specification: ", dtype))
   }
-
+  if(is.null(b)){b = rep(0,length(p))}
+  if(is.null(pos)){pos = 1:length(p)}
+  plot(pos,p,col="grey",xlab="",ylab=ifelse(dtype=="PIP", "PIP", "-log10(p)"), pch=16, ...)
+  points(pos[b!=0],p[b!=0],col=2,pch=16)
+  if (is.null(fitted))
+    return
+  if (class(fitted) == "susie")
+    fitted = fitted$alpha
+  for(i in 1:nrow(fitted)){
+    if(n_in_CS(fitted, coverage)[i]<CSmax)
+      points(pos[which(in_CS(fitted, coverage)[i,]>0)],p[which(in_CS(fitted, coverage)[i,]>0)],col=i+2,cex=1.5,lwd=2.5)
+  }
 }
-
 
 # return residuals from Y after removing susie fit
 get_R = function(X,Y,s){
-  Y- X %*%  coef(s)
+  Y- X %*% coef(s)
 }
 
 # get number of iterations
