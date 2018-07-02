@@ -176,7 +176,7 @@ susie_pplot = function(data,fitted=NULL,dtype='raw_data',coverage=0.9,pos=NULL,b
   }
   if(is.null(b)){b = rep(0,length(p))}
   if(is.null(pos)){pos = 1:length(p)}
-  plot(pos,p,col="grey",xlab="",ylab=ifelse(dtype=="PIP", "PIP", "-log10(p)"), pch=16, ...)
+  plot(pos,p,col="black",xlab="",ylab=ifelse(dtype=="PIP", "PIP", "-log10(p)"), pch=16, ...)
   if (!is.null(fitted)) {
     if (class(fitted) == "susie")
       fitted = fitted$alpha
