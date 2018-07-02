@@ -177,15 +177,15 @@ susie_pplot = function(data,fitted=NULL,dtype='raw_data',coverage=0.9,pos=NULL,b
   if(is.null(b)){b = rep(0,length(p))}
   if(is.null(pos)){pos = 1:length(p)}
   plot(pos,p,col="grey",xlab="",ylab=ifelse(dtype=="PIP", "PIP", "-log10(p)"), pch=16, ...)
-  points(pos[b!=0],p[b!=0],col=2,pch=16)
-  if (is.null(fitted))
-    return
-  if (class(fitted) == "susie")
-    fitted = fitted$alpha
-  for(i in 1:nrow(fitted)){
-    if(n_in_CS(fitted, coverage)[i]<CSmax)
-      points(pos[which(in_CS(fitted, coverage)[i,]>0)],p[which(in_CS(fitted, coverage)[i,]>0)],col=i+2,cex=1.5,lwd=2.5)
+  if (!is.null(fitted)) {
+    if (class(fitted) == "susie")
+      fitted = fitted$alpha
+    for(i in 1:nrow(fitted)){
+      if(n_in_CS(fitted, coverage)[i]<CSmax)
+        points(pos[which(in_CS(fitted, coverage)[i,]>0)],p[which(in_CS(fitted, coverage)[i,]>0)],col=i+2,cex=1.5,lwd=2.5)
+    }
   }
+  points(pos[b!=0],p[b!=0],col=2,pch=16)
 }
 
 # return residuals from Y after removing susie fit
