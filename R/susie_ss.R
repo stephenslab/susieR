@@ -1,7 +1,8 @@
 #' @title Bayesian sum of single-effect (susie) linear regression using summary stat
 #' @details Performs sum of single-effect (susie) linear regression of Y on X when
 #' only summary statistics are available. The summary data required are
-#' the p by p matrix X'X, the p vector X'Y, and the sample variance of Y, or (1/n)Y'Y. Both the columns of X and the vector Y
+#' the p by p matrix X'X, the p vector X'Y, and the sample variance of Y, or (1/n)Y'Y. The summary stats should come from the same individuals.
+#' Both the columns of X and the vector Y
 #' should be centered to have mean 0 before
 #' computing these summary statistics; you may also want to scale each column of X and Y to have variance 1 (see examples).
 #' This function fits the regression model Y = sum_l Xb_l + e, where elements of e are iid N(0,var=residual_variance) and the
