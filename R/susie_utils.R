@@ -93,9 +93,13 @@ susie_get_CS = function(fitted,
     purity = data.frame(do.call(rbind, lapply(1:length(cs), function(i) get_purity(cs[[i]], Xcorr))))
     colnames(purity) = c('min.abs.corr', 'mean.abs.corr', 'median.abs.corr')
     is_pure = which(purity$min.abs.corr > min_abs_corr)
-    cs = cs[is_pure]
-    purity = purity[is_pure,]
-    row_names = paste0("L", is_pure)
+    if (length(is_pure) > 0) {
+      cs = cs[is_pure]
+      purity = purity[is_pure,]
+      row_names = paste0("L", is_pure)
+    } else {
+      row_names = paste0("L", 1:length(cs))
+    }
     names(cs) = row_names
     rownames(purity) = row_names
     return(list(cs = cs, purity = purity, cs_index = is_pure))
@@ -188,9 +192,9 @@ susie_pplot = function(data,fitted=NULL,dtype='raw_data',coverage=0.9,add_bar=FA
         if (add_bar) {
           y0 = rep(0, length(x0))
           x1 = x0
-          segments(x0,y0,x1,y1,lwd=1.5)
+          segments(x0,y0,x1,y1,lwd=1.5,col='gray')
         }
-        points(x0, y1,col=i+2,cex=1.5,lwd=2.5,col='gray')
+        points(x0, y1,col=i+2,cex=1.5,lwd=2.5)
         }
     }
   }
