@@ -39,7 +39,7 @@
 #' beta[3] = 1
 #' beta[4] = 1
 #' X = matrix(rnorm(n*p),nrow=n,ncol=p)
-#' y = X %*% beta + rnorm(n)
+#' y = c(X %*% beta + rnorm(n))
 #' X = scale(X,center=TRUE, scale=TRUE)
 #' y = (y - mean(y))/sd(y)
 #' res =susie_ss(XtX=t(X) %*% X,XtY= c(y %*% X), 1)
