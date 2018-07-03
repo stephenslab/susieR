@@ -120,7 +120,7 @@ pip = susie_get_PIP(fitted, sets$cs_index)
 susie_pplot(pip, fitted=fitted, dtype='PIP', b=b)
 ```
 
-The true causal variables are colored red. Of interest is the cluster around position 400. The true signal is 403 but apparently it does not have the highest PIP. To compare ranking of PIP and original z-score in that CS:
+The true causal variables are colored red. The CS identified are circled in different colors. Of interest is the cluster around position 400. The true signal is 403 but apparently it does not have the highest PIP. To compare ranking of PIP and original z-score in that CS:
 
 ```{r}
 z3 = cbind(sets$cs[[3]], z_scores[sets$cs[[3]]], pip[sets$cs[[3]]])
