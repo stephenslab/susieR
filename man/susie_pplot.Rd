@@ -5,7 +5,7 @@
 \title{Plot per variable summary in SuSiE CSs}
 \usage{
 susie_pplot(data, fitted = NULL, dtype = "raw_data", coverage = 0.9,
-  pos = NULL, b = NULL, CSmax = 400, ...)
+  add_bar = FALSE, pos = NULL, b = NULL, CSmax = 400, ...)
 }
 \arguments{
 \item{data}{can be raw data \code{X} and \code{y} as \code{list(X=X,y=y)}, or be a vector of z-scores, or p-values.}
@@ -16,6 +16,8 @@ inclusion probability matrix alpha.}
 \item{dtype}{a string indicating the input data type (choices are raw_data (for raw data input), p (for p-value input), z (for z-scores input) and PIP (for PIP input))}
 
 \item{coverage}{coverage of confident sets. Default to 0.9 for 90\% confidence interval.}
+
+\item{add_bar}{add horizontal bar to signals in confidence interval.}
 
 \item{b}{for simulated data, specify b = true effects (highlights in red).}
 
