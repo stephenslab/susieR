@@ -24,7 +24,7 @@ update_each_effect_ss <- function (XtX, XtY, s_init, estimate_prior_variance=FAL
       s$alpha[l,] <- res$alpha
       s$mu2[l,] <- res$mu2
       s$sa2[l] <- res$sa2
-      # s$KL[l] <- -res$loglik + SER_posterior_e_loglik(X,R,s$sigma2,res$alpha*res$mu,res$alpha*res$mu2)
+      s$KL[l] <- -res$logBF + SER_posterior_e_loglik_ss(XtX,XtR,s$sigma2,res$alpha*res$mu,res$alpha*res$mu2)
 
       s$XtXr <- s$XtXr + XtX %*% (s$alpha[l,]*s$mu[l,])
     }
