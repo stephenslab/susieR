@@ -40,8 +40,13 @@ n_in_CS = function(res, coverage = 0.9){
   apply(res,1,function(x) n_in_CS_x(x, coverage))
 }
 
-get_purity = function(pos, corr) {
-  value = abs(corr[pos, pos])
+get_purity = function(pos, X, Xcorr, n = 100) {
+  if (length(pos) > n) pos = sample(pos, n)
+  if (is.null(Xcorr)) {
+    value = abs(cor(X[,pos]))
+  } else {
+    value = abs(Xcorr[pos, pos])
+  }
   c(min(value), mean(value), median(value))
 }
 
@@ -80,17 +85,16 @@ susie_get_CS = function(fitted,
   if (!is.null(Xcorr) && !isSymmetric(Xcorr)) {
     stop("Xcorr matrix must be symmetric")
   }
-  if (!is.null(X)) Xcorr = cor(X)
   # L by P binary matrix
   status = in_CS(fitted, coverage)
   # an L list of CS positions
   cs = lapply(1:nrow(status), function(i) which(status[i,]!=0))
   cs = cs[lapply(cs, length) > 0]
   # compute and filter by "purity"
-  if (is.null(Xcorr)) {
+  if (is.null(Xcorr) && is.null(X)) {
     return(list(cs=cs))
   } else {
-    purity = data.frame(do.call(rbind, lapply(1:length(cs), function(i) get_purity(cs[[i]], Xcorr))))
+    purity = data.frame(do.call(rbind, lapply(1:length(cs), function(i) get_purity(cs[[i]], X, Xcorr))))
     colnames(purity) = c('min.abs.corr', 'mean.abs.corr', 'median.abs.corr')
     is_pure = which(purity$min.abs.corr > min_abs_corr)
     if (length(is_pure) > 0) {
