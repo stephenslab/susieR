@@ -41,13 +41,17 @@ n_in_CS = function(res, coverage = 0.9){
 }
 
 get_purity = function(pos, X, Xcorr, n = 100) {
-  if (length(pos) > n) pos = sample(pos, n)
-  if (is.null(Xcorr)) {
-    value = abs(cor(X[,pos]))
+  if (length(pos) == 1) {
+    c(1,1,1)
   } else {
-    value = abs(Xcorr[pos, pos])
+    if (length(pos) > n) pos = sample(pos, n)
+    if (is.null(Xcorr)) {
+      value = abs(cor(X[,pos]))
+    } else {
+      value = abs(Xcorr[pos, pos])
+    }
+    c(min(value), mean(value), median(value))
   }
-  c(min(value), mean(value), median(value))
 }
 
 #' @title Extract confidence sets from fitted SuSiE model
