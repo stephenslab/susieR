@@ -141,12 +141,23 @@ univariate_regression = function(X, y, Z=NULL, return_residue=FALSE) {
   if (!is.null(Z)) {
     y = .lm.fit(Z, y)$residuals
   }
-  output = do.call(rbind,
-                   lapply(1:ncol(X), function(i) {
-                     g = .lm.fit(cbind(1, X[,i]), y)
-                     return(c(coef(g)[2], calc_stderr(cbind(1, X[,i]), g$residuals)[2]))
-                   })
-                   )
+  output = try(do.call(rbind,
+                       lapply(1:ncol(X), function(i) {
+                         g = .lm.fit(cbind(1, X[,i]), y)
+                         return(c(coef(g)[2], calc_stderr(cbind(1, X[,i]), g$residuals)[2]))
+                       })),
+               silent = TRUE)
+  if (class(output) == 'try-error') {
+    output = matrix(0,ncol(X),2)
+    for (i in 1:ncol(X)) {
+      fit = summary(lm(y ~ X[,i]))$coef
+      if (nrow(fit) == 2) {
+        output[i,] = as.vector(summary(lm(y ~ X[,i]))$coef[2,1:2])
+      } else {
+        output[i,] = c(0,0)
+      }
+    }
+  }
   if (return_residue) {
     return(list(betahat = output[,1], sebetahat = output[,2],
                 residuals = y))
