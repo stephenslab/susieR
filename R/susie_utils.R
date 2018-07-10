@@ -145,8 +145,13 @@ calc_stderr = function(X, residuals) {
 
 # univariate regression between each column of X and y
 # Remove covariates if Z is not NULL
-univariate_regression = function(X, y, Z=NULL, return_residue=FALSE) {
+univariate_regression = function(X, y, Z=NULL, centered=FALSE, return_residue=FALSE) {
+  if (!centered) {
+    y = y - mean(y)
+    X = safe_colScale(X, center=TRUE, scale = FALSE)
+  }
   if (!is.null(Z)) {
+    if (!centered) Z = safe_colScale(Z, center=TRUE, scale=FALSE)
     y = .lm.fit(Z, y)$residuals
   }
   output = try(do.call(rbind,
