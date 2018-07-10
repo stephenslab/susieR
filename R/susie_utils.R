@@ -212,7 +212,7 @@ susie_pplot = function(data,fitted=NULL,dtype='raw_data',coverage=0.9,add_bar=FA
   if (!is.null(fitted)) {
     if (class(fitted) == "susie")
       fitted = fitted$alpha
-    for(i in 1:nrow(fitted)){
+    for(i in rev(1:nrow(fitted))){
       if(n_in_CS(fitted, coverage)[i]<CSmax) {
         x0 = pos[which(in_CS(fitted, coverage)[i,]>0)]
         y1 = p[which(in_CS(fitted, coverage)[i,]>0)]
