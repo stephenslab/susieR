@@ -59,7 +59,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.1.13</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.1.14</span>
       </span>
     </div>
 
@@ -108,7 +108,7 @@
     </div>
 
     <pre class="usage"><span class='fu'>susie_pplot</span>(<span class='no'>data</span>, <span class='kw'>fitted</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>dtype</span> <span class='kw'>=</span> <span class='st'>"raw_data"</span>, <span class='kw'>coverage</span> <span class='kw'>=</span> <span class='fl'>0.9</span>,
-  <span class='kw'>pos</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>b</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>CSmax</span> <span class='kw'>=</span> <span class='fl'>400</span>, <span class='no'>...</span>)</pre>
+  <span class='kw'>add_bar</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>pos</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>b</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>CSmax</span> <span class='kw'>=</span> <span class='fl'>400</span>, <span class='no'>...</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -129,6 +129,10 @@ inclusion probability matrix alpha.</p></td>
     <tr>
       <th>coverage</th>
       <td><p>coverage of confident sets. Default to 0.9 for 90% confidence interval.</p></td>
+    </tr>
+    <tr>
+      <th>add_bar</th>
+      <td><p>add horizontal bar to signals in confidence interval.</p></td>
     </tr>
     <tr>
       <th>b</th>

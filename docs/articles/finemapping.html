@@ -29,7 +29,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.1.13</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.1.14</span>
       </span>
     </div>
 
@@ -124,8 +124,7 @@
 <a class="sourceLine" id="cb12-2" data-line-number="2">               <span class="dt">L=</span><span class="dv">5</span>,</a>
 <a class="sourceLine" id="cb12-3" data-line-number="3">               <span class="dt">estimate_residual_variance =</span> <span class="ot">TRUE</span>, </a>
 <a class="sourceLine" id="cb12-4" data-line-number="4">               <span class="dt">prior_variance =</span> <span class="fl">0.1</span>, </a>
-<a class="sourceLine" id="cb12-5" data-line-number="5">               <span class="dt">intercept=</span><span class="ot">FALSE</span>,</a>
-<a class="sourceLine" id="cb12-6" data-line-number="6">               <span class="dt">tol=</span><span class="fl">1e-3</span>)</a></code></pre></div>
+<a class="sourceLine" id="cb12-5" data-line-number="5">               <span class="dt">tol=</span><span class="fl">1e-3</span>)</a></code></pre></div>
 <div id="confidence-sets" class="section level3">
 <h3 class="hasAnchor">
 <a href="#confidence-sets" class="anchor"></a>Confidence sets</h3>
@@ -205,13 +204,12 @@
 <a class="sourceLine" id="cb23-2" data-line-number="2">               <span class="dt">L=</span><span class="dv">5</span>,</a>
 <a class="sourceLine" id="cb23-3" data-line-number="3">               <span class="dt">estimate_residual_variance =</span> <span class="ot">TRUE</span>, </a>
 <a class="sourceLine" id="cb23-4" data-line-number="4">               <span class="dt">prior_variance =</span> <span class="fl">0.2</span>, </a>
-<a class="sourceLine" id="cb23-5" data-line-number="5">               <span class="dt">intercept=</span><span class="ot">FALSE</span>,</a>
-<a class="sourceLine" id="cb23-6" data-line-number="6">               <span class="dt">tol=</span><span class="fl">1e-3</span>)</a>
-<a class="sourceLine" id="cb23-7" data-line-number="7">sets =<span class="st"> </span><span class="kw"><a href="../reference/susie_get_CS.html">susie_get_CS</a></span>(fitted,</a>
-<a class="sourceLine" id="cb23-8" data-line-number="8">                    <span class="dt">X=</span> dat<span class="op">$</span>data<span class="op">$</span>X, </a>
-<a class="sourceLine" id="cb23-9" data-line-number="9">                    <span class="dt">min_abs_corr =</span> <span class="fl">0.1</span>)</a>
-<a class="sourceLine" id="cb23-10" data-line-number="10">pip =<span class="st"> </span><span class="kw"><a href="../reference/susie_get_PIP.html">susie_get_PIP</a></span>(fitted, sets<span class="op">$</span>cs_index)</a>
-<a class="sourceLine" id="cb23-11" data-line-number="11"><span class="kw"><a href="../reference/susie_pplot.html">susie_pplot</a></span>(pip, <span class="dt">fitted=</span>fitted, <span class="dt">dtype=</span><span class="st">'PIP'</span>, <span class="dt">b=</span>b)</a></code></pre></div>
+<a class="sourceLine" id="cb23-5" data-line-number="5">               <span class="dt">tol=</span><span class="fl">1e-3</span>)</a>
+<a class="sourceLine" id="cb23-6" data-line-number="6">sets =<span class="st"> </span><span class="kw"><a href="../reference/susie_get_CS.html">susie_get_CS</a></span>(fitted,</a>
+<a class="sourceLine" id="cb23-7" data-line-number="7">                    <span class="dt">X=</span> dat<span class="op">$</span>data<span class="op">$</span>X, </a>
+<a class="sourceLine" id="cb23-8" data-line-number="8">                    <span class="dt">min_abs_corr =</span> <span class="fl">0.1</span>)</a>
+<a class="sourceLine" id="cb23-9" data-line-number="9">pip =<span class="st"> </span><span class="kw"><a href="../reference/susie_get_PIP.html">susie_get_PIP</a></span>(fitted, sets<span class="op">$</span>cs_index)</a>
+<a class="sourceLine" id="cb23-10" data-line-number="10"><span class="kw"><a href="../reference/susie_pplot.html">susie_pplot</a></span>(pip, <span class="dt">fitted=</span>fitted, <span class="dt">dtype=</span><span class="st">'PIP'</span>, <span class="dt">b=</span>b)</a></code></pre></div>
 <p><img src="finemapping_files/figure-html/unnamed-chunk-16-1.png" width="700"></p>
 <p>which largely remains unchanged. It is also possible to use <code>estimate_prior_variance = TRUE</code> to estimate prior variance estimates in variational updates. (FIXME: need to comment on whether this is recommanded.)</p>
 </div>

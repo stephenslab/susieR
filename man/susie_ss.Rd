@@ -4,7 +4,7 @@
 \alias{susie_ss}
 \title{Bayesian sum of single-effect (susie) linear regression using summary stat}
 \usage{
-susie_ss(XtX, XtY, var_y = 1, L = 10, prior_variance = 0.2,
+susie_ss(XtX, XtY, var_y = 1, n, L = 10, prior_variance = 0.2,
   residual_variance = NULL, estimate_prior_variance = FALSE,
   max_iter = 100, s_init = NULL, verbose = FALSE, intercept = 0,
   tol = 1e-04)
@@ -15,6 +15,8 @@ susie_ss(XtX, XtY, var_y = 1, L = 10, prior_variance = 0.2,
 \item{XtY}{a p vector, X'Y, where columns of X are centered and Y is centered to have mean 0}
 
 \item{var_y}{the (sample) variance of the vector Y}
+
+\item{n}{sample size}
 
 \item{L}{maximum number of non-zero effects}
 
@@ -46,7 +48,8 @@ a susie fit, which is a list with some or all of the following elements\cr
 \details{
 Performs sum of single-effect (susie) linear regression of Y on X when
 only summary statistics are available. The summary data required are
-the p by p matrix X'X, the p vector X'Y, and the sample variance of Y, or (1/n)Y'Y. Both the columns of X and the vector Y
+the p by p matrix X'X, the p vector X'Y, and the sample variance of Y, or (1/n)Y'Y. The summary stats should come from the same individuals.
+Both the columns of X and the vector Y
 should be centered to have mean 0 before
 computing these summary statistics; you may also want to scale each column of X and Y to have variance 1 (see examples).
 This function fits the regression model Y = sum_l Xb_l + e, where elements of e are iid N(0,var=residual_variance) and the
@@ -64,7 +67,7 @@ beta[2] = 1
 beta[3] = 1
 beta[4] = 1
 X = matrix(rnorm(n*p),nrow=n,ncol=p)
-y = X \%*\% beta + rnorm(n)
+y = c(X \%*\% beta + rnorm(n))
 X = scale(X,center=TRUE, scale=TRUE)
 y = (y - mean(y))/sd(y)
 res =susie_ss(XtX=t(X) \%*\% X,XtY= c(y \%*\% X), 1)

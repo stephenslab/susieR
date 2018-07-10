@@ -73,7 +73,6 @@ fitted = susie(dat$data$X, dat$data$Y[,1],
                L=5,
                estimate_residual_variance = TRUE, 
                prior_variance = 0.1, 
-               intercept=FALSE,
                tol=1e-3)
 ```
 
@@ -137,7 +136,6 @@ fitted = susie(dat$data$X, dat$data$Y[,1],
                L=5,
                estimate_residual_variance = TRUE, 
                prior_variance = 0.2, 
-               intercept=FALSE,
                tol=1e-3)
 sets = susie_get_CS(fitted,
                     X= dat$data$X, 
