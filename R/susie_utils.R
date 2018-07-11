@@ -251,12 +251,13 @@ susie_pplot = function(data,fitted=NULL,dtype='raw_data',CS=NULL,coverage=0.9,ad
 #' Multiple plots will be made for all iterations if `track_fit` was set to `TRUE` when running SuSiE.
 #' @param L an integer, number of CS to plot
 #' @param file_prefix prefix to path of output plot file
+#' @param pos position of variables to display, default to all variables
 #' @import ggplot2
 #' @importFrom reshape melt
 #' @export
-susie_iterplot = function(fitted, L, file_prefix) {
-  get_layer = function(obj, k, idx) {
-    alpha = melt(obj$alpha[1:k,,drop=F])
+susie_iterplot = function(fitted, L, file_prefix, pos=NULL) {
+  get_layer = function(obj, k, idx, vars) {
+    alpha = melt(obj$alpha[1:k,vars,drop=F])
     colnames(alpha) = c('L', 'variables', 'alpha')
     alpha$L = as.factor(alpha$L)
     ggplot(alpha, aes(variables, alpha, group=L)) +
@@ -265,12 +266,14 @@ susie_iterplot = function(fitted, L, file_prefix) {
       theme_classic()
   }
   k = min(nrow(fitted$alpha), L)
+  if (is.null(pos)) vars = 1:ncol(fitted$alpha)
+  else vars = pos
   pdf(paste0(file_prefix, '.pdf'), 8, 3)
   if (is.null(fitted$trace)) {
-    print(get_layer(fitted), k, fitted$niter)
+    print(get_layer(fitted), k, fitted$niter, vars)
   } else {
     for (i in 2:length(fitted$trace)) {
-      print(get_layer(fitted$trace[[i]], k, i-1))
+      print(get_layer(fitted$trace[[i]], k, i-1, vars))
     }
   }
   dev.off()
