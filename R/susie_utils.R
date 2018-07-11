@@ -191,12 +191,13 @@ calc_z = function(X,y){
 #' @param fitted a susie fit, the output of `susieR::susie()`, or simply the posterior
 #' inclusion probability matrix alpha.
 #' @param dtype a string indicating the input data type (choices are raw_data (for raw data input), p (for p-value input), z (for z-scores input) and PIP (for PIP input))
+#' @param CS the output of `susieR::susie_get_CS()`
 #' @param coverage coverage of confident sets. Default to 0.9 for 90\% confidence interval.
 #' @param add_bar add horizontal bar to signals in confidence interval.
 #' @param b for simulated data, specify b = true effects (highlights in red).
-#' @param CSmax maximum size of CS to display.
+#' @param max_cs the biggest CS to display, based on purity (set max_cs in between 0 and 1) or size (>1).
 #' @export
-susie_pplot = function(data,fitted=NULL,dtype='raw_data',coverage=0.9,add_bar=FALSE,pos=NULL,b=NULL,CSmax=400,...){
+susie_pplot = function(data,fitted=NULL,dtype='raw_data',CS=NULL,coverage=0.9,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,...){
   if (dtype=='raw_data') {
     z = calc_z(data$X,data$y)
     zneg = -abs(z)
@@ -218,16 +219,28 @@ susie_pplot = function(data,fitted=NULL,dtype='raw_data',coverage=0.9,add_bar=FA
     if (class(fitted) == "susie")
       fitted = fitted$alpha
     for(i in rev(1:nrow(fitted))){
-      if(n_in_CS(fitted, coverage)[i]<CSmax) {
+      if (!is.null(CS$cs_index) && ! (i %in% CS$cs_index)) {
+        next
+      }
+      if (!is.null(CS$purity) && max_cs < 1 && CS$purity[which(CS$cs_index==i),1] >= max_cs) {
+        x0 = pos[CS$cs[[which(CS$cs_index==i)]]]
+        y1 = p[CS$cs[[which(CS$cs_index==i)]]]
+      } else if (n_in_CS(fitted, coverage)[i]<max_cs) {
         x0 = pos[which(in_CS(fitted, coverage)[i,]>0)]
         y1 = p[which(in_CS(fitted, coverage)[i,]>0)]
-        if (add_bar) {
-          y0 = rep(0, length(x0))
-          x1 = x0
-          segments(x0,y0,x1,y1,lwd=1.5,col='gray')
-        }
-        points(x0, y1,col=i+2,cex=1.5,lwd=2.5)
-        }
+      } else {
+        x0 = NULL
+        y1 = NULL
+      }
+      if (is.null(x0)) {
+        next
+      }
+      if (add_bar) {
+        y0 = rep(0, length(x0))
+        x1 = x0
+        segments(x0,y0,x1,y1,lwd=1.5,col='gray')
+      }
+      points(x0, y1,col=i+2,cex=1.5,lwd=2.5)
     }
   }
   points(pos[b!=0],p[b!=0],col=2,pch=16)

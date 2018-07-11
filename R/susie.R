@@ -23,7 +23,7 @@
 #' @param estimate_prior_variance indicates whether to estimate prior (currently not recommended as not working as well)
 #' @param s_init a previous susie fit with which to initialize
 #' @param verbose if true outputs some progress messages
-#' @param trace_iter add an attribute \code{trace} to output that saves current values of all iterations
+#' @param track_fit add an attribute \code{trace} to output that saves current values of all iterations
 #' @return a susie fit, which is a list with some or all of the following elements\cr
 #' \item{alpha}{an L by p matrix of posterior inclusion probabilites}
 #' \item{mu}{an L by p matrix of posterior means (conditional on inclusion)}
@@ -47,7 +47,7 @@
 #' coef(res)
 #' plot(y,predict(res))
 #' @export
-susie = function(X,Y,L=10,prior_variance=0.2,residual_variance=NULL,standardize=TRUE,intercept=TRUE,max_iter=100,tol=1e-2,estimate_residual_variance=TRUE,estimate_prior_variance = FALSE, s_init = NULL, verbose=FALSE, track_iter=FALSE){
+susie = function(X,Y,L=10,prior_variance=0.2,residual_variance=NULL,standardize=TRUE,intercept=TRUE,max_iter=100,tol=1e-2,estimate_residual_variance=TRUE,estimate_prior_variance = FALSE, s_init = NULL, verbose=FALSE, track_fit=FALSE){
   # Check input X.
   if (!is.double(X) || !is.matrix(X))
     stop("Input X must be a double-precision matrix")
@@ -106,7 +106,7 @@ susie = function(X,Y,L=10,prior_variance=0.2,residual_variance=NULL,standardize=
 
   for(i in 1:max_iter){
     #s = add_null_effect(s,0)
-    if (track_iter)
+    if (track_fit)
       tracking[[i]] = s
     s = update_each_effect(X, Y, s, estimate_prior_variance)
     if(verbose){
@@ -138,7 +138,7 @@ susie = function(X,Y,L=10,prior_variance=0.2,residual_variance=NULL,standardize=
   }
 
   s$X_column_scale_factors = attr(X,"scaled:scale")
-  if (track_iter)
+  if (track_fit)
     s$trace = tracking
 
   return(s)

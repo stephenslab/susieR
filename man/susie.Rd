@@ -7,7 +7,7 @@
 susie(X, Y, L = 10, prior_variance = 0.2, residual_variance = NULL,
   standardize = TRUE, intercept = TRUE, max_iter = 100, tol = 0.01,
   estimate_residual_variance = TRUE, estimate_prior_variance = FALSE,
-  s_init = NULL, verbose = FALSE, track_iter = FALSE)
+  s_init = NULL, verbose = FALSE, track_fit = FALSE)
 }
 \arguments{
 \item{X}{an n by p matrix of covariates}
@@ -41,7 +41,7 @@ Any column of X that has zero variance is not standardized, but left as is.}
 
 \item{verbose}{if true outputs some progress messages}
 
-\item{trace_iter}{add an attribute \code{trace} to output that saves current values of all iterations}
+\item{track_fit}{add an attribute \code{trace} to output that saves current values of all iterations}
 }
 \value{
 a susie fit, which is a list with some or all of the following elements\cr
