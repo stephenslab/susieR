@@ -246,6 +246,50 @@ susie_pplot = function(data,fitted=NULL,dtype='raw_data',CS=NULL,coverage=0.9,ad
   points(pos[b!=0],p[b!=0],col=2,pch=16)
 }
 
+#' @title Diagnostic plot for SuSiE iterations
+#' @param fitted a susie fit, the output of `susieR::susie()`.
+#' Multiple plots will be made for all iterations if `track_fit` was set to `TRUE` when running SuSiE.
+#' @param L an integer, number of CS to plot
+#' @param file_prefix prefix to path of output plot file
+#' @import ggplot2
+#' @importFrom reshape melt
+#' @export
+susie_iterplot = function(fitted, L, file_prefix) {
+  get_layer = function(obj, k, idx) {
+    alpha = melt(obj$alpha[1:k,,drop=F])
+    colnames(alpha) = c('L', 'variables', 'alpha')
+    alpha$L = as.factor(alpha$L)
+    ggplot(alpha, aes(variables, alpha, group=L)) +
+      geom_col(aes(fill=L)) +
+      ggtitle(paste('Iteration', idx)) +
+      theme_classic()
+  }
+  k = min(nrow(fitted$alpha), L)
+  pdf(paste0(file_prefix, '.pdf'), 8, 3)
+  if (is.null(fitted$trace)) {
+    print(get_layer(fitted), k, fitted$niter)
+  } else {
+    for (i in 2:length(fitted$trace)) {
+      print(get_layer(fitted$trace[[i]], k, i-1))
+    }
+  }
+  dev.off()
+  format = '.pdf'
+  if (!is.null(fitted$trace)) {
+    cmd = paste("convert -delay 30 -loop 0 -density 300 -dispose previous",
+           paste0(file_prefix, '.pdf'), "\\( -clone 0 -set delay 300 \\) -swap 0 +delete \\( +clone -set delay 300 \\) +swap +delete -coalesce -layers optimize",
+           paste0(file_prefix, '.gif'))
+    cat("Creating GIF animation ...\n")
+    output = try(system(cmd))
+    if (class(output) == 'try-error') {
+      cat("Cannot create GIF animation because `convert` command failed.\n")
+    } else {
+      format = '.gif'
+    }
+  }
+  cat(paste0('Iterplot saved to ', file_prefix, format, '\n'))
+}
+
 # return residuals from Y after removing susie fit
 get_R = function(X,Y,s){
   Y- X %*% coef(s)
