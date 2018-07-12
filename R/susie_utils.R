@@ -270,7 +270,7 @@ susie_iterplot = function(fitted, L, file_prefix, pos=NULL) {
   else vars = pos
   pdf(paste0(file_prefix, '.pdf'), 8, 3)
   if (is.null(fitted$trace)) {
-    print(get_layer(fitted), k, fitted$niter, vars)
+    print(get_layer(fitted, k, fitted$niter, vars))
   } else {
     for (i in 2:length(fitted$trace)) {
       print(get_layer(fitted$trace[[i]], k, i-1, vars))
@@ -280,9 +280,12 @@ susie_iterplot = function(fitted, L, file_prefix, pos=NULL) {
   format = '.pdf'
   if (!is.null(fitted$trace)) {
     cmd = paste("convert -delay 30 -loop 0 -density 300 -dispose previous",
-           paste0(file_prefix, '.pdf'), "\\( -clone 0 -set delay 300 \\) -swap 0 +delete \\( +clone -set delay 300 \\) +swap +delete -coalesce -layers optimize",
-           paste0(file_prefix, '.gif'))
+                paste0(file_prefix, '.pdf'),
+                "\\( -clone 0 -set delay 300 \\) -swap 0 +delete \\( +clone -set delay 300 \\) +swap +delete -coalesce -layers optimize",
+                paste0(file_prefix, '.gif'))
     cat("Creating GIF animation ...\n")
+    if (file.exists(paste0(file_prefix, '.gif')))
+      file.remove(paste0(file_prefix, '.gif'))
     output = try(system(cmd))
     if (class(output) == 'try-error') {
       cat("Cannot create GIF animation because `convert` command failed.\n")
