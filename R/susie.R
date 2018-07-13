@@ -114,7 +114,7 @@ susie = function(X,Y,L=10,prior_variance=0.2,residual_variance=NULL,standardize=
     }
     if(estimate_residual_variance){
       new_sigma2 = estimate_residual_variance(X,Y,s)
-      s$sa2 = (s$sa2*s$sigma2)/new_sigma2 # this is so prior variance does not change with update
+      #s$sa2 = (s$sa2*s$sigma2)/new_sigma2 # this is so prior variance does not change with update
       s$sigma2 = new_sigma2
       if(verbose){
         print(paste0("objective:",susie_get_objective(X,Y,s)))
