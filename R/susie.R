@@ -80,7 +80,7 @@ susie = function(X,Y,L=10,prior_variance=0.2,residual_variance=NULL,standardize=
       stop("dimension of mu and mu2 in s_init do not match")
     if (!all(dim(s_init$mu) == dim(s_init$alpha)))
       stop("dimension of mu and alpha in s_init do not match")
-    if (dim(s_init$alpha)[1] != length(sa2))
+    if (dim(s_init$alpha)[1] != length(s_init$sa2))
       stop("sa2 must have length of nrow of alpha in s_init")
     s = s_init
     s$KL = rep(NA, nrow(s$alpha))
