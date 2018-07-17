@@ -2,13 +2,13 @@
 % Please edit documentation in R/susie_utils.R
 \name{susie_get_CS}
 \alias{susie_get_CS}
-\title{Extract confidence sets from fitted SuSiE model}
+\title{Extract confidence sets from SuSiE model}
 \usage{
-susie_get_CS(fitted, X = NULL, Xcorr = NULL, coverage = 0.9,
-  min_abs_corr = 0.5)
+susie_get_CS(res, X = NULL, Xcorr = NULL, coverage = 0.9,
+  min_abs_corr = 0.5, dedup = TRUE)
 }
 \arguments{
-\item{fitted}{a susie fit, the output of `susieR::susie()`, or simply the posterior
+\item{res}{a susie fit, the output of `susieR::susie()`, or simply the posterior
 inclusion probability matrix alpha.}
 
 \item{X}{N by P matrix of variables.

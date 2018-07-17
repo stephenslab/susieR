@@ -4,14 +4,14 @@
 \alias{susie_pplot}
 \title{Plot per variable summary in SuSiE CSs}
 \usage{
-susie_pplot(data, fitted = NULL, dtype = "raw_data", CS = NULL,
+susie_pplot(data, res = NULL, dtype = "raw_data", CS = NULL,
   coverage = 0.9, add_bar = FALSE, pos = NULL, b = NULL, max_cs = 400,
   ...)
 }
 \arguments{
 \item{data}{can be raw data \code{X} and \code{y} as \code{list(X=X,y=y)}, or be a vector of z-scores, or p-values.}
 
-\item{fitted}{a susie fit, the output of `susieR::susie()`, or simply the posterior
+\item{res}{a susie fit, the output of `susieR::susie()`, or simply the posterior
 inclusion probability matrix alpha.}
 
 \item{dtype}{a string indicating the input data type (choices are raw_data (for raw data input), p (for p-value input), z (for z-scores input) and PIP (for PIP input))}

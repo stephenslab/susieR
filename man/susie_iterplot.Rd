@@ -4,10 +4,10 @@
 \alias{susie_iterplot}
 \title{Diagnostic plot for SuSiE iterations}
 \usage{
-susie_iterplot(fitted, L, file_prefix, pos = NULL)
+susie_iterplot(res, L, file_prefix, pos = NULL)
 }
 \arguments{
-\item{fitted}{a susie fit, the output of `susieR::susie()`.
+\item{res}{a susie fit, the output of `susieR::susie()`.
 Multiple plots will be made for all iterations if `track_fit` was set to `TRUE` when running SuSiE.}
 
 \item{L}{an integer, number of CS to plot}

@@ -1,7 +1,7 @@
 #' @title Local false sign rate (lfsr) for susie confidence sets
 #' @details This computes the average lfsr across SNPs for each l, weighted by the
 #' posterior inclusion probability alpha
-#' @param fitted a susie fit, the output of `susieR::susie()`
+#' @param res a susie fit, the output of `susieR::susie()`
 #' @return an l vector of lfsr for confidence sets
 #' @export
 susie_get_lfsr = function(res){
@@ -62,10 +62,10 @@ get_purity = function(pos, X, Xcorr, n = 100) {
   }
 }
 
-#' @title Extract confidence sets from fitted SuSiE model
+#' @title Extract confidence sets from SuSiE model
 #' @details It reports indices of variables in each confidence set identified,
 #' as well as summaries of correlation between variables within each set.
-#' @param fitted a susie fit, the output of `susieR::susie()`, or simply the posterior
+#' @param res a susie fit, the output of `susieR::susie()`, or simply the posterior
 #' inclusion probability matrix alpha.
 #' @param X N by P matrix of variables.
 #' When provided, correlation between variables will be computed and used to remove
@@ -79,27 +79,27 @@ get_purity = function(pos, X, Xcorr, n = 100) {
 #' a commonly used threshold for genotype data in genetics studies.
 #' @return a list of `cs`, and additionally `purity` and selected `cs_index` if `X` or `Xcorr` was provided.
 #' @export
-susie_get_CS = function(fitted,
+susie_get_CS = function(res,
                         X = NULL, Xcorr = NULL,
                         coverage = 0.9,
                         min_abs_corr = 0.5,
                         dedup = TRUE) {
-  if (class(fitted) == "susie")
-    fitted = fitted$alpha
+  if (class(res) == "susie")
+    res = res$alpha
   if (!is.null(X) && !is.null(Xcorr)) {
     stop("Only one of X or Xcorr should be specified")
   }
-  if (!is.null(X) && ncol(X) != length(fitted[1,])) {
-    stop("Column of X matrix does not match length of fitted posterior")
+  if (!is.null(X) && ncol(X) != length(res[1,])) {
+    stop("Column of X matrix does not match length of res posterior")
   }
-  if (!is.null(Xcorr) && ncol(Xcorr) != length(fitted[1,])) {
-    stop("Dimension of Xcorr matrix does not match length of fitted posterior")
+  if (!is.null(Xcorr) && ncol(Xcorr) != length(res[1,])) {
+    stop("Dimension of Xcorr matrix does not match length of res posterior")
   }
   if (!is.null(Xcorr) && !isSymmetric(Xcorr)) {
     stop("Xcorr matrix must be symmetric")
   }
   # L by P binary matrix
-  status = in_CS(fitted, coverage)
+  status = in_CS(res, coverage)
   # an L list of CS positions
   cs = lapply(1:nrow(status), function(i) which(status[i,]!=0))
   cs = cs[lapply(cs, length) > 0]
@@ -127,18 +127,18 @@ susie_get_CS = function(fitted,
 }
 
 #' @title Compute posterior inclusion probability (PIP) for all variables
-#' @param fitted a susie fit, the output of `susieR::susie()`, or simply the posterior
+#' @param res a susie fit, the output of `susieR::susie()`, or simply the posterior
 #' inclusion probability matrix alpha.
 #' @param include_index index of single effect models to consider when calculating PIP. Default to NULL.
 #' @return a vector of posterior inclusion probability.
 #' @export
-susie_get_PIP = function(fitted, include_index = NULL) {
-  if (class(fitted) == "susie")
-    fitted = fitted$alpha
+susie_get_PIP = function(res, include_index = NULL) {
+  if (class(res) == "susie")
+    res = res$alpha
   if (!is.null(include_index)) {
-    fitted = fitted[include_index,,drop=FALSE]
+    res = res[include_index,,drop=FALSE]
   }
-  return(as.vector(1 - apply(1 - fitted, 2, prod)))
+  return(as.vector(1 - apply(1 - res, 2, prod)))
 }
 
 # compute standard error for regression coef
@@ -192,7 +192,7 @@ calc_z = function(X,y){
 
 #' @title Plot per variable summary in SuSiE CSs
 #' @param data can be raw data \code{X} and \code{y} as \code{list(X=X,y=y)}, or be a vector of z-scores, or p-values.
-#' @param fitted a susie fit, the output of `susieR::susie()`, or simply the posterior
+#' @param res a susie fit, the output of `susieR::susie()`, or simply the posterior
 #' inclusion probability matrix alpha.
 #' @param dtype a string indicating the input data type (choices are raw_data (for raw data input), p (for p-value input), z (for z-scores input) and PIP (for PIP input))
 #' @param CS the output of `susieR::susie_get_CS()`
@@ -201,7 +201,7 @@ calc_z = function(X,y){
 #' @param b for simulated data, specify b = true effects (highlights in red).
 #' @param max_cs the biggest CS to display, based on purity (set max_cs in between 0 and 1) or size (>1).
 #' @export
-susie_pplot = function(data,fitted=NULL,dtype='raw_data',CS=NULL,coverage=0.9,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,...){
+susie_pplot = function(data,res=NULL,dtype='raw_data',CS=NULL,coverage=0.9,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,...){
   if (dtype=='raw_data') {
     z = calc_z(data$X,data$y)
     zneg = -abs(z)
@@ -219,19 +219,19 @@ susie_pplot = function(data,fitted=NULL,dtype='raw_data',CS=NULL,coverage=0.9,ad
   if(is.null(b)){b = rep(0,length(p))}
   if(is.null(pos)){pos = 1:length(p)}
   plot(pos,p,col="black",xlab="",ylab=ifelse(dtype=="PIP", "PIP", "-log10(p)"), pch=16, ...)
-  if (!is.null(fitted)) {
-    if (class(fitted) == "susie")
-      fitted = fitted$alpha
-    for(i in rev(1:nrow(fitted))){
+  if (!is.null(res)) {
+    if (class(res) == "susie")
+      res = res$alpha
+    for(i in rev(1:nrow(res))){
       if (!is.null(CS$cs_index) && ! (i %in% CS$cs_index)) {
         next
       }
       if (!is.null(CS$purity) && max_cs < 1 && CS$purity[which(CS$cs_index==i),1] >= max_cs) {
         x0 = pos[CS$cs[[which(CS$cs_index==i)]]]
         y1 = p[CS$cs[[which(CS$cs_index==i)]]]
-      } else if (n_in_CS(fitted, coverage)[i]<max_cs) {
-        x0 = pos[which(in_CS(fitted, coverage)[i,]>0)]
-        y1 = p[which(in_CS(fitted, coverage)[i,]>0)]
+      } else if (n_in_CS(res, coverage)[i]<max_cs) {
+        x0 = pos[which(in_CS(res, coverage)[i,]>0)]
+        y1 = p[which(in_CS(res, coverage)[i,]>0)]
       } else {
         x0 = NULL
         y1 = NULL
@@ -251,7 +251,7 @@ susie_pplot = function(data,fitted=NULL,dtype='raw_data',CS=NULL,coverage=0.9,ad
 }
 
 #' @title Diagnostic plot for SuSiE iterations
-#' @param fitted a susie fit, the output of `susieR::susie()`.
+#' @param res a susie fit, the output of `susieR::susie()`.
 #' Multiple plots will be made for all iterations if `track_fit` was set to `TRUE` when running SuSiE.
 #' @param L an integer, number of CS to plot
 #' @param file_prefix prefix to path of output plot file
@@ -259,7 +259,7 @@ susie_pplot = function(data,fitted=NULL,dtype='raw_data',CS=NULL,coverage=0.9,ad
 #' @import ggplot2
 #' @importFrom reshape melt
 #' @export
-susie_iterplot = function(fitted, L, file_prefix, pos=NULL) {
+susie_iterplot = function(res, L, file_prefix, pos=NULL) {
   get_layer = function(obj, k, idx, vars) {
     alpha = melt(obj$alpha[1:k,vars,drop=F])
     colnames(alpha) = c('L', 'variables', 'alpha')
@@ -269,20 +269,20 @@ susie_iterplot = function(fitted, L, file_prefix, pos=NULL) {
       ggtitle(paste('Iteration', idx)) +
       theme_classic()
   }
-  k = min(nrow(fitted$alpha), L)
-  if (is.null(pos)) vars = 1:ncol(fitted$alpha)
+  k = min(nrow(res$alpha), L)
+  if (is.null(pos)) vars = 1:ncol(res$alpha)
   else vars = pos
   pdf(paste0(file_prefix, '.pdf'), 8, 3)
-  if (is.null(fitted$trace)) {
-    print(get_layer(fitted, k, fitted$niter, vars))
+  if (is.null(res$trace)) {
+    print(get_layer(res, k, res$niter, vars))
   } else {
-    for (i in 2:length(fitted$trace)) {
-      print(get_layer(fitted$trace[[i]], k, i-1, vars))
+    for (i in 2:length(res$trace)) {
+      print(get_layer(res$trace[[i]], k, i-1, vars))
     }
   }
   dev.off()
   format = '.pdf'
-  if (!is.null(fitted$trace)) {
+  if (!is.null(res$trace)) {
     cmd = paste("convert -delay 30 -loop 0 -density 300 -dispose previous",
                 paste0(file_prefix, '.pdf'),
                 "\\( -clone 0 -set delay 300 \\) -swap 0 +delete \\( +clone -set delay 300 \\) +swap +delete -coalesce -layers optimize",
@@ -305,7 +305,16 @@ get_R = function(X,Y,s){
   Y- X %*% coef(s)
 }
 
-# get number of iterations
-susie_get_niter <- function(res) {
-  return(res$niter)
+#' @title Get updated prior variance
+#' @param res a susie fit, the output of `susieR::susie()`.
+#' @export
+susie_get_prior_variance <- function(res) {
+  return(res$sa2)
+}
+
+#' @title Get updated residual variance
+#' @param res a susie fit, the output of `susieR::susie()`.
+#' @export
+susie_get_residual_variance <- function(res) {
+  return(res$sigma2)
 }
