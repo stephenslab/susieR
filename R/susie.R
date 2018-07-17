@@ -73,7 +73,7 @@ susie = function(X,Y,L=10,prior_variance=0.2,residual_variance=NULL,standardize=
   if(!is.null(s_init)){
     if(!missing(L) || !missing(prior_variance) || !missing(residual_variance))
       stop("if provide s_init then L, sa2 and sigma2 must not be provided")
-    keys = c('alpha', 'mu', 'mu2', 'sigma2', 'sa2', 'Xr')
+    keys = c('alpha', 'mu', 'mu2', 'sigma2', 'sa2')
     if(!all(keys %in% names(s_init)))
       stop(paste("s_init requires all of the following attributes:", paste(keys, collapse = ', ')))
     if (!all(dim(s_init$mu) == dim(s_init$mu2)))
@@ -82,8 +82,10 @@ susie = function(X,Y,L=10,prior_variance=0.2,residual_variance=NULL,standardize=
       stop("dimension of mu and alpha in s_init do not match")
     if (dim(s_init$alpha)[1] != length(s_init$sa2))
       stop("sa2 must have length of nrow of alpha in s_init")
+    if (is.null(s_init$Xr)) s_init$Xr = X%*%colSums(s_init$mu*s_init$alpha)
+    # reset KL
+    s_init$KL = rep(NA, nrow(s_init$alpha))
     s = s_init
-    s$KL = rep(NA, nrow(s$alpha))
   } else {
 
     if(is.null(residual_variance)){
@@ -103,11 +105,14 @@ susie = function(X,Y,L=10,prior_variance=0.2,residual_variance=NULL,standardize=
     if (length(prior_variance) != L)
       stop("Inputs prior_variance must be of length 1 or L")
 
-  #initialize susie fit
-   s = list(alpha=matrix(1/p,nrow=L,ncol=p), mu=matrix(0,nrow=L,ncol=p),
-           mu2 = matrix(0,nrow=L,ncol=p), Xr=rep(0,n), sigma2= residual_variance, sa2= prior_variance, KL = rep(NA,L))
-    class(s) <- "susie"
+    # initialize susie fit
+    s = list(alpha=matrix(1/p,nrow=L,ncol=p),
+             mu=matrix(0,nrow=L,ncol=p),
+             mu2=matrix(0,nrow=L,ncol=p),
+             Xr=rep(0,n), KL=rep(NA,L),
+             sigma2=residual_variance, sa2=prior_variance)
   }
+  class(s) = "susie"
 
   #intialize elbo to NA
   elbo = rep(NA,max_iter+1)

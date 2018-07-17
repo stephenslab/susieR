@@ -256,12 +256,15 @@ susie_pplot = function(data,res=NULL,dtype='raw_data',CS=NULL,coverage=0.9,add_b
 #' @param L an integer, number of CS to plot
 #' @param file_prefix prefix to path of output plot file
 #' @param pos position of variables to display, default to all variables
-#' @import ggplot2
-#' @importFrom reshape melt
 #' @export
 susie_iterplot = function(res, L, file_prefix, pos=NULL) {
+  if(!requireNamespace("ggplot2",quietly = TRUE))
+    stop("Required package ggplot2 not found")
+  if(!requireNamespace("reshape",quietly = TRUE))
+    stop("Required package reshape not found")
   get_layer = function(obj, k, idx, vars) {
-    alpha = melt(obj$alpha[1:k,vars,drop=F])
+    require(ggplot2,quietly = TRUE)
+    alpha = reshape::melt(obj$alpha[1:k,vars,drop=F])
     colnames(alpha) = c('L', 'variables', 'alpha')
     alpha$L = as.factor(alpha$L)
     ggplot(alpha, aes(variables, alpha, group=L)) +
