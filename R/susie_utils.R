@@ -82,7 +82,8 @@ get_purity = function(pos, X, Xcorr, n = 100) {
 susie_get_CS = function(fitted,
                         X = NULL, Xcorr = NULL,
                         coverage = 0.9,
-                        min_abs_corr = 0.5) {
+                        min_abs_corr = 0.5,
+                        dedup = TRUE) {
   if (class(fitted) == "susie")
     fitted = fitted$alpha
   if (!is.null(X) && !is.null(Xcorr)) {
@@ -102,6 +103,9 @@ susie_get_CS = function(fitted,
   # an L list of CS positions
   cs = lapply(1:nrow(status), function(i) which(status[i,]!=0))
   cs = cs[lapply(cs, length) > 0]
+  # FIXME: see issue 21
+  # https://github.com/stephenslab/susieR/issues/21
+  if (dedup) cs = cs[!duplicated(cs)]
   # compute and filter by "purity"
   if (is.null(Xcorr) && is.null(X)) {
     return(list(cs=cs))
