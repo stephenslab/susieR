@@ -73,7 +73,7 @@ susie = function(X,Y,L=10,prior_variance=0.2,residual_variance=NULL,standardize=
   if(!is.null(s_init)){
     if(!missing(L) || !missing(prior_variance) || !missing(residual_variance))
       stop("if provide s_init then L, sa2 and sigma2 must not be provided")
-    keys = c('alpha', 'mu', 'mu2', 'sigma2', 'sa2', 'Xr', 'KL')
+    keys = c('alpha', 'mu', 'mu2', 'sigma2', 'sa2', 'Xr')
     if(!all(keys %in% names(s_init)))
       stop(paste("s_init requires all of the following attributes:", paste(keys, collapse = ', ')))
     if (!all(dim(s_init$mu) == dim(s_init$mu2)))
@@ -83,6 +83,7 @@ susie = function(X,Y,L=10,prior_variance=0.2,residual_variance=NULL,standardize=
     if (dim(s_init$alpha)[1] != length(sa2))
       stop("sa2 must have length of nrow of alpha in s_init")
     s = s_init
+    s$KL = rep(NA, nrow(s$alpha))
   } else {
 
     if(is.null(residual_variance)){
