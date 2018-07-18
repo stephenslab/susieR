@@ -37,7 +37,7 @@ y = X %*% beta + rnorm(n)
 
 ## Fit L0Learn 
 
-We start with fitting a L0-regularized model to the simulated data. The L0Learn model finds 115 effects, which will be used to initialize susie.
+We start with fitting a L0-regularized model to the simulated data. 
 
 ```{r}
 set.seed(1)
@@ -53,6 +53,8 @@ length(effect.beta)
 effect.beta[1:10]
 effect.index[1:10]
 ```
+
+The L0Learn model finds `r length(effect.beta)` effects, which will be used to initialize susie.
 
 ## Build an initialization object
 
