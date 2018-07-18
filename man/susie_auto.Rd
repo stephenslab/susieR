@@ -4,7 +4,8 @@
 \alias{susie_auto}
 \title{An attempt to automate reliable running of susie even on hard problems}
 \usage{
-susie_auto(X, Y, L_init = 1, L_max = 512, verbose = FALSE, init_tol = 1)
+susie_auto(X, Y, L_init = 1, L_max = 512, verbose = FALSE, init_tol = 1,
+  standardize = TRUE, intercept = TRUE, max_iter = 100, tol = 0.01)
 }
 \arguments{
 \item{X}{an n by p matrix of covariates}
@@ -13,7 +14,22 @@ susie_auto(X, Y, L_init = 1, L_max = 512, verbose = FALSE, init_tol = 1)
 
 \item{L_init}{the initial value of L to consider}
 
+\item{verbose}{if true outputs some progress messages}
+
 \item{init_tol}{the tolerance to pass to susie during early runs (set big to run faster)}
+
+\item{standardize}{logical flag for whether to standardize columns of X to unit variance prior to fitting.
+Note that `prior_variance` specifies the prior on the coefficients of X after standardization (if performed).
+If you do not standardize you may need
+to think carefully about specifying
+`prior_variance`. Whatever the value of standardize, the coefficients (returned from `coef`) are for X on the original input scale.
+Any column of X that has zero variance is not standardized, but left as is.}
+
+\item{intercept}{Should intercept be fitted (default=TRUE) or set to zero (FALSE)}
+
+\item{max_iter}{maximum number of iterations to perform}
+
+\item{tol}{convergence tolerance}
 
 \item{Lmax}{the maximum value of L to consider}
 }
