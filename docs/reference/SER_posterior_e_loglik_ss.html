@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>predict future observations or extract coefficients from susie fit — predict.susie • susieR</title>
+<title>posterior expected loglikelihood for a single effect regression — SER_posterior_e_loglik_ss • susieR</title>
 
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
@@ -30,7 +30,7 @@
 
 
 
-<meta property="og:title" content="predict future observations or extract coefficients from susie fit — predict.susie" />
+<meta property="og:title" content="posterior expected loglikelihood for a single effect regression — SER_posterior_e_loglik_ss" />
 <meta name="twitter:card" content="summary" />
 
 
@@ -98,33 +98,39 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>predict future observations or extract coefficients from susie fit</h1>
+    <h1>posterior expected loglikelihood for a single effect regression</h1>
     
-    <div class="hidden name"><code>predict.susie.Rd</code></div>
+    <div class="hidden name"><code>SER_posterior_e_loglik_ss.Rd</code></div>
     </div>
 
     <div class="ref-description">
 
     </div>
 
-    <pre class="usage"><span class='co'># S3 method for susie</span>
-<span class='fu'>predict</span>(<span class='no'>s</span>, <span class='kw'>newx</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>type</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"response"</span>,
-  <span class='st'>"coefficients"</span>))</pre>
+    <pre class="usage"><span class='fu'>SER_posterior_e_loglik_ss</span>(<span class='no'>XtX</span>, <span class='no'>XtY</span>, <span class='no'>s2</span>, <span class='no'>Eb</span>, <span class='no'>Eb2</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>s</th>
-      <td><p>a susie fit</p></td>
+      <th>s2</th>
+      <td><p>the residual variance</p></td>
     </tr>
     <tr>
-      <th>newx</th>
-      <td><p>a new value for X at which to do predictions</p></td>
+      <th>Eb</th>
+      <td><p>the posterior mean of b (p vector) (alpha * mu)</p></td>
     </tr>
     <tr>
-      <th>type</th>
-      <td><p>if this is coefficients, then calls coef.susie</p></td>
+      <th>Eb2</th>
+      <td><p>the posterior second moment of b (p vector) (alpha * mu2)</p></td>
+    </tr>
+    <tr>
+      <th>X</th>
+      <td><p>an n by p matrix of covariates</p></td>
+    </tr>
+    <tr>
+      <th>Y</th>
+      <td><p>an n vector of regression outcome</p></td>
     </tr>
     </table>
     

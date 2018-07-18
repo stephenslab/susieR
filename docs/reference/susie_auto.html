@@ -59,7 +59,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.1.13</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.2.0</span>
       </span>
     </div>
 
@@ -107,7 +107,8 @@
 
     </div>
 
-    <pre class="usage"><span class='fu'>susie_auto</span>(<span class='no'>X</span>, <span class='no'>Y</span>, <span class='kw'>L_init</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>L_max</span> <span class='kw'>=</span> <span class='fl'>512</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>init_tol</span> <span class='kw'>=</span> <span class='fl'>1</span>)</pre>
+    <pre class="usage"><span class='fu'>susie_auto</span>(<span class='no'>X</span>, <span class='no'>Y</span>, <span class='kw'>L_init</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>L_max</span> <span class='kw'>=</span> <span class='fl'>512</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>init_tol</span> <span class='kw'>=</span> <span class='fl'>1</span>,
+  <span class='kw'>standardize</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>intercept</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>max_iter</span> <span class='kw'>=</span> <span class='fl'>100</span>, <span class='kw'>tol</span> <span class='kw'>=</span> <span class='fl'>0.01</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -125,8 +126,33 @@
       <td><p>the initial value of L to consider</p></td>
     </tr>
     <tr>
+      <th>verbose</th>
+      <td><p>if true outputs some progress messages</p></td>
+    </tr>
+    <tr>
       <th>init_tol</th>
       <td><p>the tolerance to pass to susie during early runs (set big to run faster)</p></td>
+    </tr>
+    <tr>
+      <th>standardize</th>
+      <td><p>logical flag for whether to standardize columns of X to unit variance prior to fitting.
+Note that `prior_variance` specifies the prior on the coefficients of X after standardization (if performed).
+If you do not standardize you may need
+to think carefully about specifying
+`prior_variance`. Whatever the value of standardize, the coefficients (returned from `coef`) are for X on the original input scale.
+Any column of X that has zero variance is not standardized, but left as is.</p></td>
+    </tr>
+    <tr>
+      <th>intercept</th>
+      <td><p>Should intercept be fitted (default=TRUE) or set to zero (FALSE)</p></td>
+    </tr>
+    <tr>
+      <th>max_iter</th>
+      <td><p>maximum number of iterations to perform</p></td>
+    </tr>
+    <tr>
+      <th>tol</th>
+      <td><p>convergence tolerance</p></td>
     </tr>
     <tr>
       <th>Lmax</th>

@@ -59,7 +59,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.1.14</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.2.0</span>
       </span>
     </div>
 
@@ -107,7 +107,7 @@
 
     </div>
 
-    <pre class="usage"><span class='fu'>susie_ss</span>(<span class='no'>XtX</span>, <span class='no'>XtY</span>, <span class='kw'>var_y</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>L</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>prior_variance</span> <span class='kw'>=</span> <span class='fl'>0.2</span>,
+    <pre class="usage"><span class='fu'>susie_ss</span>(<span class='no'>XtX</span>, <span class='no'>XtY</span>, <span class='kw'>var_y</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='no'>n</span>, <span class='kw'>L</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>prior_variance</span> <span class='kw'>=</span> <span class='fl'>0.2</span>,
   <span class='kw'>residual_variance</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>estimate_prior_variance</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
   <span class='kw'>max_iter</span> <span class='kw'>=</span> <span class='fl'>100</span>, <span class='kw'>s_init</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>intercept</span> <span class='kw'>=</span> <span class='fl'>0</span>,
   <span class='kw'>tol</span> <span class='kw'>=</span> <span class='fl'>1e-04</span>)</pre>
@@ -126,6 +126,10 @@
     <tr>
       <th>var_y</th>
       <td><p>the (sample) variance of the vector Y</p></td>
+    </tr>
+    <tr>
+      <th>n</th>
+      <td><p>sample size</p></td>
     </tr>
     <tr>
       <th>L</th>
@@ -178,7 +182,8 @@ Set to NULL if you want coef.susie() not to include an intercept term (and so on
 
     <p>Performs sum of single-effect (susie) linear regression of Y on X when
 only summary statistics are available. The summary data required are
-the p by p matrix X'X, the p vector X'Y, and the sample variance of Y, or (1/n)Y'Y. Both the columns of X and the vector Y
+the p by p matrix X'X, the p vector X'Y, and the sample variance of Y, or (1/n)Y'Y. The summary stats should come from the same individuals.
+Both the columns of X and the vector Y
 should be centered to have mean 0 before
 computing these summary statistics; you may also want to scale each column of X and Y to have variance 1 (see examples).
 This function fits the regression model Y = sum_l Xb_l + e, where elements of e are iid N(0,var=residual_variance) and the
@@ -198,7 +203,7 @@ equally likely to be non-zero. The prior on the non-zero element is N(0,var=prio
 <span class='no'>beta</span>[<span class='fl'>3</span>] <span class='kw'>=</span> <span class='fl'>1</span>
 <span class='no'>beta</span>[<span class='fl'>4</span>] <span class='kw'>=</span> <span class='fl'>1</span>
 <span class='no'>X</span> <span class='kw'>=</span> <span class='fu'>matrix</span>(<span class='fu'>rnorm</span>(<span class='no'>n</span>*<span class='no'>p</span>),<span class='kw'>nrow</span><span class='kw'>=</span><span class='no'>n</span>,<span class='kw'>ncol</span><span class='kw'>=</span><span class='no'>p</span>)
-<span class='no'>y</span> <span class='kw'>=</span> <span class='no'>X</span> <span class='kw'>%*%</span> <span class='no'>beta</span> + <span class='fu'>rnorm</span>(<span class='no'>n</span>)
+<span class='no'>y</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='no'>X</span> <span class='kw'>%*%</span> <span class='no'>beta</span> + <span class='fu'>rnorm</span>(<span class='no'>n</span>))
 <span class='no'>X</span> <span class='kw'>=</span> <span class='fu'>scale</span>(<span class='no'>X</span>,<span class='kw'>center</span><span class='kw'>=</span><span class='fl'>TRUE</span>, <span class='kw'>scale</span><span class='kw'>=</span><span class='fl'>TRUE</span>)
 <span class='no'>y</span> <span class='kw'>=</span> (<span class='no'>y</span> - <span class='fu'>mean</span>(<span class='no'>y</span>))/<span class='fu'>sd</span>(<span class='no'>y</span>)
 <span class='no'>res</span> <span class='kw'>=</span><span class='fu'>susie_ss</span>(<span class='kw'>XtX</span><span class='kw'>=</span><span class='fu'>t</span>(<span class='no'>X</span>) <span class='kw'>%*%</span> <span class='no'>X</span>,<span class='kw'>XtY</span><span class='kw'>=</span> <span class='fu'>c</span>(<span class='no'>y</span> <span class='kw'>%*%</span> <span class='no'>X</span>), <span class='fl'>1</span>)

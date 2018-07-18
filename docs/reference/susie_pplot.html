@@ -59,7 +59,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.1.14</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.2.0</span>
       </span>
     </div>
 
@@ -107,8 +107,9 @@
 
     </div>
 
-    <pre class="usage"><span class='fu'>susie_pplot</span>(<span class='no'>data</span>, <span class='kw'>fitted</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>dtype</span> <span class='kw'>=</span> <span class='st'>"raw_data"</span>, <span class='kw'>coverage</span> <span class='kw'>=</span> <span class='fl'>0.9</span>,
-  <span class='kw'>add_bar</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>pos</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>b</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>CSmax</span> <span class='kw'>=</span> <span class='fl'>400</span>, <span class='no'>...</span>)</pre>
+    <pre class="usage"><span class='fu'>susie_pplot</span>(<span class='no'>data</span>, <span class='kw'>res</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>dtype</span> <span class='kw'>=</span> <span class='st'>"raw_data"</span>, <span class='kw'>CS</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>coverage</span> <span class='kw'>=</span> <span class='fl'>0.9</span>, <span class='kw'>add_bar</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>pos</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>b</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>max_cs</span> <span class='kw'>=</span> <span class='fl'>400</span>,
+  <span class='no'>...</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -118,13 +119,17 @@
       <td><p>can be raw data <code>X</code> and <code>y</code> as <code>list(X=X,y=y)</code>, or be a vector of z-scores, or p-values.</p></td>
     </tr>
     <tr>
-      <th>fitted</th>
+      <th>res</th>
       <td><p>a susie fit, the output of `susieR::susie()`, or simply the posterior
 inclusion probability matrix alpha.</p></td>
     </tr>
     <tr>
       <th>dtype</th>
       <td><p>a string indicating the input data type (choices are raw_data (for raw data input), p (for p-value input), z (for z-scores input) and PIP (for PIP input))</p></td>
+    </tr>
+    <tr>
+      <th>CS</th>
+      <td><p>the output of `susieR::susie_get_CS()`</p></td>
     </tr>
     <tr>
       <th>coverage</th>
@@ -139,8 +144,8 @@ inclusion probability matrix alpha.</p></td>
       <td><p>for simulated data, specify b = true effects (highlights in red).</p></td>
     </tr>
     <tr>
-      <th>CSmax</th>
-      <td><p>maximum size of CS to display.</p></td>
+      <th>max_cs</th>
+      <td><p>the biggest CS to display, based on purity (set max_cs in between 0 and 1) or size (&gt;1).</p></td>
     </tr>
     </table>
     

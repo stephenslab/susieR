@@ -29,7 +29,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.1.14</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.2.0</span>
       </span>
     </div>
 
@@ -140,7 +140,7 @@
 ## [1] 773 777
 ## 
 ## $cs$L2
-##  [1] 362 372 373 374 379 381 383 384 386 387 388 389 391 392 396 397 398
+##  [1] 362 365 373 374 379 381 383 384 386 387 388 389 391 392 396 397 398
 ## [18] 399 400 401 403 404 405 407 408 415
 ## 
 ## $cs$L3
@@ -150,7 +150,7 @@
 ## $purity
 ##    min.abs.corr mean.abs.corr median.abs.corr
 ## L1    0.9815726     0.9907863       0.9907863
-## L2    0.8686309     0.9673674       0.9756251
+## L2    0.8686309     0.9653996       0.9737999
 ## L3    1.0000000     1.0000000       1.0000000
 ## 
 ## $cs_index
@@ -188,28 +188,46 @@
 <p>Previously we’ve determined that summing over 3 single effect regression models is approperate for our application. Here we summarize the variable selection results by computing posterior inclusion probability for SuSiE model:</p>
 <div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb19-1" data-line-number="1">pip =<span class="st"> </span><span class="kw"><a href="../reference/susie_get_PIP.html">susie_get_PIP</a></span>(fitted, sets<span class="op">$</span>cs_index)</a></code></pre></div>
 <div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="kw"><a href="../reference/susie_pplot.html">susie_pplot</a></span>(pip, <span class="dt">fitted=</span>fitted, <span class="dt">dtype=</span><span class="st">'PIP'</span>, <span class="dt">b=</span>b)</a></code></pre></div>
+<pre><code>## Warning in plot.window(...): "fitted" is not a graphical parameter</code></pre>
+<pre><code>## Warning in plot.xy(xy, type, ...): "fitted" is not a graphical parameter</code></pre>
+<pre><code>## Warning in axis(side = side, at = at, labels = labels, ...): "fitted" is
+## not a graphical parameter
+
+## Warning in axis(side = side, at = at, labels = labels, ...): "fitted" is
+## not a graphical parameter</code></pre>
+<pre><code>## Warning in box(...): "fitted" is not a graphical parameter</code></pre>
+<pre><code>## Warning in title(...): "fitted" is not a graphical parameter</code></pre>
 <p><img src="finemapping_files/figure-html/unnamed-chunk-14-1.png" width="700"></p>
 <p>The true causal variables are colored red. The CS identified are circled in different colors. Of interest is the cluster around position 400. The true signal is 403 but apparently it does not have the highest PIP. To compare ranking of PIP and original z-score in that CS:</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb21-1" data-line-number="1">z3 =<span class="st"> </span><span class="kw">cbind</span>(sets<span class="op">$</span>cs[[<span class="dv">3</span>]], z_scores[sets<span class="op">$</span>cs[[<span class="dv">3</span>]]], pip[sets<span class="op">$</span>cs[[<span class="dv">3</span>]]])</a>
-<a class="sourceLine" id="cb21-2" data-line-number="2"><span class="kw">colnames</span>(z3) =<span class="st"> </span><span class="kw">c</span>(<span class="st">'position'</span>, <span class="st">'z-score'</span>, <span class="st">'PIP'</span>)</a>
-<a class="sourceLine" id="cb21-3" data-line-number="3">z3[<span class="kw">order</span>(z3[,<span class="dv">2</span>], <span class="dt">decreasing =</span> <span class="ot">TRUE</span>),]</a></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb26-1" data-line-number="1">z3 =<span class="st"> </span><span class="kw">cbind</span>(sets<span class="op">$</span>cs[[<span class="dv">3</span>]], z_scores[sets<span class="op">$</span>cs[[<span class="dv">3</span>]]], pip[sets<span class="op">$</span>cs[[<span class="dv">3</span>]]])</a>
+<a class="sourceLine" id="cb26-2" data-line-number="2"><span class="kw">colnames</span>(z3) =<span class="st"> </span><span class="kw">c</span>(<span class="st">'position'</span>, <span class="st">'z-score'</span>, <span class="st">'PIP'</span>)</a>
+<a class="sourceLine" id="cb26-3" data-line-number="3">z3[<span class="kw">order</span>(z3[,<span class="dv">2</span>], <span class="dt">decreasing =</span> <span class="ot">TRUE</span>),]</a></code></pre></div>
 <pre><code>##    position     z-score         PIP 
-## 653.0000000  -6.9366153   0.9998735</code></pre>
+## 653.0000000  -6.9366153   0.9998697</code></pre>
 </div>
 <div id="choice-of-priors" class="section level3">
 <h3 class="hasAnchor">
 <a href="#choice-of-priors" class="anchor"></a>Choice of priors</h3>
 <p>We found that SuSiE is generally robust to choice of priors. Here we set prior variance to 0.2, and compare with previous results:</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb23-1" data-line-number="1">fitted =<span class="st"> </span><span class="kw"><a href="../reference/susie.html">susie</a></span>(dat<span class="op">$</span>data<span class="op">$</span>X, dat<span class="op">$</span>data<span class="op">$</span>Y[,<span class="dv">1</span>],</a>
-<a class="sourceLine" id="cb23-2" data-line-number="2">               <span class="dt">L=</span><span class="dv">5</span>,</a>
-<a class="sourceLine" id="cb23-3" data-line-number="3">               <span class="dt">estimate_residual_variance =</span> <span class="ot">TRUE</span>, </a>
-<a class="sourceLine" id="cb23-4" data-line-number="4">               <span class="dt">prior_variance =</span> <span class="fl">0.2</span>, </a>
-<a class="sourceLine" id="cb23-5" data-line-number="5">               <span class="dt">tol=</span><span class="fl">1e-3</span>)</a>
-<a class="sourceLine" id="cb23-6" data-line-number="6">sets =<span class="st"> </span><span class="kw"><a href="../reference/susie_get_CS.html">susie_get_CS</a></span>(fitted,</a>
-<a class="sourceLine" id="cb23-7" data-line-number="7">                    <span class="dt">X=</span> dat<span class="op">$</span>data<span class="op">$</span>X, </a>
-<a class="sourceLine" id="cb23-8" data-line-number="8">                    <span class="dt">min_abs_corr =</span> <span class="fl">0.1</span>)</a>
-<a class="sourceLine" id="cb23-9" data-line-number="9">pip =<span class="st"> </span><span class="kw"><a href="../reference/susie_get_PIP.html">susie_get_PIP</a></span>(fitted, sets<span class="op">$</span>cs_index)</a>
-<a class="sourceLine" id="cb23-10" data-line-number="10"><span class="kw"><a href="../reference/susie_pplot.html">susie_pplot</a></span>(pip, <span class="dt">fitted=</span>fitted, <span class="dt">dtype=</span><span class="st">'PIP'</span>, <span class="dt">b=</span>b)</a></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb28-1" data-line-number="1">fitted =<span class="st"> </span><span class="kw"><a href="../reference/susie.html">susie</a></span>(dat<span class="op">$</span>data<span class="op">$</span>X, dat<span class="op">$</span>data<span class="op">$</span>Y[,<span class="dv">1</span>],</a>
+<a class="sourceLine" id="cb28-2" data-line-number="2">               <span class="dt">L=</span><span class="dv">5</span>,</a>
+<a class="sourceLine" id="cb28-3" data-line-number="3">               <span class="dt">estimate_residual_variance =</span> <span class="ot">TRUE</span>, </a>
+<a class="sourceLine" id="cb28-4" data-line-number="4">               <span class="dt">prior_variance =</span> <span class="fl">0.2</span>, </a>
+<a class="sourceLine" id="cb28-5" data-line-number="5">               <span class="dt">tol=</span><span class="fl">1e-3</span>)</a>
+<a class="sourceLine" id="cb28-6" data-line-number="6">sets =<span class="st"> </span><span class="kw"><a href="../reference/susie_get_CS.html">susie_get_CS</a></span>(fitted,</a>
+<a class="sourceLine" id="cb28-7" data-line-number="7">                    <span class="dt">X=</span> dat<span class="op">$</span>data<span class="op">$</span>X, </a>
+<a class="sourceLine" id="cb28-8" data-line-number="8">                    <span class="dt">min_abs_corr =</span> <span class="fl">0.1</span>)</a>
+<a class="sourceLine" id="cb28-9" data-line-number="9">pip =<span class="st"> </span><span class="kw"><a href="../reference/susie_get_PIP.html">susie_get_PIP</a></span>(fitted, sets<span class="op">$</span>cs_index)</a>
+<a class="sourceLine" id="cb28-10" data-line-number="10"><span class="kw"><a href="../reference/susie_pplot.html">susie_pplot</a></span>(pip, <span class="dt">fitted=</span>fitted, <span class="dt">dtype=</span><span class="st">'PIP'</span>, <span class="dt">b=</span>b)</a></code></pre></div>
+<pre><code>## Warning in plot.window(...): "fitted" is not a graphical parameter</code></pre>
+<pre><code>## Warning in plot.xy(xy, type, ...): "fitted" is not a graphical parameter</code></pre>
+<pre><code>## Warning in axis(side = side, at = at, labels = labels, ...): "fitted" is
+## not a graphical parameter
+
+## Warning in axis(side = side, at = at, labels = labels, ...): "fitted" is
+## not a graphical parameter</code></pre>
+<pre><code>## Warning in box(...): "fitted" is not a graphical parameter</code></pre>
+<pre><code>## Warning in title(...): "fitted" is not a graphical parameter</code></pre>
 <p><img src="finemapping_files/figure-html/unnamed-chunk-16-1.png" width="700"></p>
 <p>which largely remains unchanged. It is also possible to use <code>estimate_prior_variance = TRUE</code> to estimate prior variance estimates in variational updates. (FIXME: need to comment on whether this is recommanded.)</p>
 </div>

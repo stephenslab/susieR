@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>predict future observations or extract coefficients from susie fit — predict.susie • susieR</title>
+<title>expected loglikelihood for a susie fit — Eloglik_ss • susieR</title>
 
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
@@ -30,7 +30,7 @@
 
 
 
-<meta property="og:title" content="predict future observations or extract coefficients from susie fit — predict.susie" />
+<meta property="og:title" content="expected loglikelihood for a susie fit — Eloglik_ss" />
 <meta name="twitter:card" content="summary" />
 
 
@@ -98,42 +98,22 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>predict future observations or extract coefficients from susie fit</h1>
+    <h1>expected loglikelihood for a susie fit</h1>
     
-    <div class="hidden name"><code>predict.susie.Rd</code></div>
+    <div class="hidden name"><code>Eloglik_ss.Rd</code></div>
     </div>
 
     <div class="ref-description">
 
     </div>
 
-    <pre class="usage"><span class='co'># S3 method for susie</span>
-<span class='fu'>predict</span>(<span class='no'>s</span>, <span class='kw'>newx</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>type</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"response"</span>,
-  <span class='st'>"coefficients"</span>))</pre>
-    
-    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
-    <table class="ref-arguments">
-    <colgroup><col class="name" /><col class="desc" /></colgroup>
-    <tr>
-      <th>s</th>
-      <td><p>a susie fit</p></td>
-    </tr>
-    <tr>
-      <th>newx</th>
-      <td><p>a new value for X at which to do predictions</p></td>
-    </tr>
-    <tr>
-      <th>type</th>
-      <td><p>if this is coefficients, then calls coef.susie</p></td>
-    </tr>
-    </table>
-    
+    <pre class="usage"><span class='fu'>Eloglik_ss</span>(<span class='no'>XtX</span>, <span class='no'>XtY</span>, <span class='no'>s</span>, <span class='no'>var_y</span>, <span class='no'>n</span>)</pre>
+        
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
                 </ul>
 
   </div>
