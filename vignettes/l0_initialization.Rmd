@@ -1,0 +1,78 @@
+---
+title: "SuSiE with `L0Learn` initialization example"
+author: "Kaiqian Zhang"
+date: "July 18, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#devtools::install_github("stephenslab/susieR", force = TRUE)
+#devtools::install_github("hazimehh/L0Learn", force = TRUE)
+```
+
+`susieR` allows for a customized initialization. In this vignette we deomonstrate how to use [`L0Learn`](https://github.com/hazimehh/L0Learn) fit to initialize susieR.
+
+```{r, warning=FALSE}
+library(susieR)
+library(L0Learn)
+```
+
+## Simulate data
+
+First, we simulate data from the minimal example.
+
+```{r}
+set.seed(1)
+n = 1000
+p = 1000
+beta = rep(0,p)
+beta[1] = 1
+beta[2] = 1
+beta[3] = 300
+beta[4] = 400
+X = matrix(rnorm(n*p),nrow=n,ncol=p)
+y = X %*% beta + rnorm(n)
+```
+
+## Fit L0Learn 
+
+We start with fitting a L0-regularized model to the simulated data. The L0Learn model finds 115 effects, which will be used to initialize susie.
+
+```{r}
+set.seed(1)
+L0fit = L0Learn.cvfit(X, y, penalty = "L0")
+```
+
+```{r}
+lambdaIndex = which.min(L0fit$cvMeans[[1]]) # find the optimal lambda, which has minimum cv error
+L0coef = as.numeric(coef(L0fit$fit, lambda = L0fit$fit$lambda[[1]][lambdaIndex]))
+effect.beta = L0coef[which(L0coef!=0)][-1]
+effect.index = (which(L0coef!=0)-1)[-1] 
+length(effect.beta)
+effect.beta[1:10]
+effect.index[1:10]
+```
+
+## Build an initialization object
+
+We create an initialization using `susie_set_init` function
+
+```{r}
+set.seed(1)
+s.init = susie_set_init(effect.index, effect.beta, num_variables=p, prior_variance=0.2, residual_variance=as.numeric(var(y)))
+```
+
+## Run susieR with initialization
+
+Now, we use `effect.index` and `effect.beta` obtained from L0Learn fit to create an `s.init` object. We then run susie with this initialization.  
+
+```{r}
+susieL0.fit = susie(X,y,s_init=s.init)
+susie.CS.set = susie_get_CS(susieL0.fit, X=X)
+susie.CS.set$cs
+```
+
+## References
+
+Hussein Hazimeh and Rahul Mazumder. (2018). Fast Best Subset Selection: Coordinate Descent and Local Combinatorial Optimization Algorithms
