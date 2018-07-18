@@ -92,8 +92,8 @@
 <a class="sourceLine" id="cb2-4" data-line-number="4">beta =<span class="st"> </span><span class="kw">rep</span>(<span class="dv">0</span>,p)</a>
 <a class="sourceLine" id="cb2-5" data-line-number="5">beta[<span class="dv">1</span>] =<span class="st"> </span><span class="dv">1</span></a>
 <a class="sourceLine" id="cb2-6" data-line-number="6">beta[<span class="dv">2</span>] =<span class="st"> </span><span class="dv">1</span></a>
-<a class="sourceLine" id="cb2-7" data-line-number="7">beta[<span class="dv">3</span>] =<span class="st"> </span><span class="dv">300</span></a>
-<a class="sourceLine" id="cb2-8" data-line-number="8">beta[<span class="dv">4</span>] =<span class="st"> </span><span class="dv">400</span></a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">beta[<span class="dv">300</span>] =<span class="st"> </span><span class="dv">1</span></a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">beta[<span class="dv">400</span>] =<span class="st"> </span><span class="dv">1</span></a>
 <a class="sourceLine" id="cb2-9" data-line-number="9">X =<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">rnorm</span>(n<span class="op">*</span>p),<span class="dt">nrow=</span>n,<span class="dt">ncol=</span>p)</a>
 <a class="sourceLine" id="cb2-10" data-line-number="10">y =<span class="st"> </span>X <span class="op">%*%</span><span class="st"> </span>beta <span class="op">+</span><span class="st"> </span><span class="kw">rnorm</span>(n)</a></code></pre></div>
 </div>
@@ -108,12 +108,12 @@
 <a class="sourceLine" id="cb4-3" data-line-number="3">effect.beta =<span class="st"> </span>L0coef[<span class="kw">which</span>(L0coef<span class="op">!=</span><span class="dv">0</span>)][<span class="op">-</span><span class="dv">1</span>]</a>
 <a class="sourceLine" id="cb4-4" data-line-number="4">effect.index =<span class="st"> </span>(<span class="kw">which</span>(L0coef<span class="op">!=</span><span class="dv">0</span>)<span class="op">-</span><span class="dv">1</span>)[<span class="op">-</span><span class="dv">1</span>] </a>
 <a class="sourceLine" id="cb4-5" data-line-number="5"><span class="kw">length</span>(effect.beta)</a></code></pre></div>
-<pre><code>## [1] 92</code></pre>
+<pre><code>## [1] 96</code></pre>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" data-line-number="1">effect.beta[<span class="dv">1</span><span class="op">:</span><span class="dv">10</span>]</a></code></pre></div>
-<pre><code>##  [1]   1.04679172   1.05215695 300.03061941 399.99643996   0.06633877
-##  [6]   0.07089981   0.09035421   0.07076591   0.11395952  -0.09520733</code></pre>
+<pre><code>##  [1]  1.06408378  1.03371471  0.06249488  0.05487895  0.08173007
+##  [6]  0.05574550  0.06732007  0.10195586 -0.09560190  0.07374249</code></pre>
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" data-line-number="1">effect.index[<span class="dv">1</span><span class="op">:</span><span class="dv">10</span>]</a></code></pre></div>
-<pre><code>##  [1]  1  2  3  4 14 33 48 57 60 69</code></pre>
+<pre><code>##  [1]  1  2 14 33 48 52 55 60 69 78</code></pre>
 </div>
 <div id="build-an-initialization-object" class="section level2">
 <h2 class="hasAnchor">
@@ -129,11 +129,17 @@
 <div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb11-1" data-line-number="1">susieL0.fit =<span class="st"> </span><span class="kw"><a href="../reference/susie.html">susie</a></span>(X,y,<span class="dt">s_init=</span>s.init)</a>
 <a class="sourceLine" id="cb11-2" data-line-number="2">susie.CS.set =<span class="st"> </span><span class="kw"><a href="../reference/susie_get_CS.html">susie_get_CS</a></span>(susieL0.fit, <span class="dt">X=</span>X)</a>
 <a class="sourceLine" id="cb11-3" data-line-number="3">susie.CS.set<span class="op">$</span>cs</a></code></pre></div>
-<pre><code>## $L3
-## [1] 3
+<pre><code>## $L1
+## [1] 1
 ## 
-## $L4
-## [1] 4</code></pre>
+## $L2
+## [1] 2
+## 
+## $L6
+## [1] 300
+## 
+## $L7
+## [1] 400</code></pre>
 </div>
 <div id="references" class="section level2">
 <h2 class="hasAnchor">

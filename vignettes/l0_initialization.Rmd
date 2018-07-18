@@ -29,8 +29,8 @@ p = 1000
 beta = rep(0,p)
 beta[1] = 1
 beta[2] = 1
-beta[3] = 300
-beta[4] = 400
+beta[300] = 1
+beta[400] = 1
 X = matrix(rnorm(n*p),nrow=n,ncol=p)
 y = X %*% beta + rnorm(n)
 ```
