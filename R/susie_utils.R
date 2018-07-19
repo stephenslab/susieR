@@ -149,7 +149,7 @@ calc_stderr = function(X, residuals) {
 
 # univariate regression between each column of X and y
 # Remove covariates if Z is not NULL
-univariate_regression = function(X, y, Z=NULL, centered=FALSE, return_residue=FALSE) {
+univariate_regression = function(X, y, Z=NULL, centered=FALSE, return_residuals=FALSE) {
   if (!centered) {
     y = y - mean(y)
     X = safe_colScale(X, center=TRUE, scale = FALSE)
