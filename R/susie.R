@@ -159,3 +159,36 @@ susie = function(X,Y,L=10,prior_variance=0.2,residual_variance=NULL,standardize=
 
   return(s)
 }
+
+#' @title initialize a susie object using given nonzero effect indices and beta values
+#' @param coef_index a L-vector for indices of nonzero effects
+#' @param coef_value a L-vector for initial estimated beta values
+#' @param num_varialbes a scalar the number of variables in the data
+#' @param prior_variance a scalar or an L-vector
+#' @param residual_variance a scalar
+#' @return a list of initialized alpha, mu, mu2, sa2 and optionally sigma2
+#' @export
+susie_set_init = function(coef_index, coef_value, num_variables,
+                          prior_variance, residual_variance=NULL){
+  L = length(coef_index)
+  if (!all(coef_value != 0))
+    stop("Input coef_value must be non-zero for all its elements")
+  if (L != length(coef_value))
+    stop("Inputs coef_index and coef_value must of the same length")
+  if (!missing(residual_variance) && length(residual_variance) != 1)
+    stop("Inputs residual_variance must be scalar")
+  if(length(prior_variance) == 1)
+    prior_variance = rep(prior_variance,L)
+  if (length(prior_variance) != L)
+    stop("Inputs prior_variance must be of length 1 or L")
+
+  alpha = matrix(0,nrow=L,ncol=num_variables)
+  mu = matrix(0,nrow=L,ncol=num_variables)
+  for(i in 1:L){
+    alpha[i, coef_index[i]] = 1
+    mu[i, coef_index[i]] = coef_value[i]
+  }
+  mu2 = mu*mu
+  sa2 = prior_variance
+  return(list(alpha=alpha, mu=mu, mu2=mu2, sa2=sa2, sigma2=residual_variance))
+}
