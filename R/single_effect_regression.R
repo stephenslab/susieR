@@ -61,6 +61,8 @@ loglik.grad = function(V,Y,X,s2){
   lbf = dnorm(betahat,0,sqrt(V+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
   #log(bf) on each SNP
 
+  lbf[shat2==Inf] = 0 # deal with special case of infinite shat2 (eg happens if X does not vary)
+
   maxlbf = max(lbf)
   w = exp(lbf-maxlbf) # w =BF/BFmax
   alpha = w/sum(w)
@@ -95,11 +97,15 @@ negloglik.grad.logscale = function(lV,Y,X,s2){-exp(lV)*loglik.grad(exp(lV),Y,X,s
 
 # vector of gradients of logBF_j for each j, with respect to prior variance V
 lbf.grad = function(V,shat2,T2){
-  0.5* (1/(V+shat2)) * ((shat2/(V+shat2))*T2-1)
+  l = 0.5* (1/(V+shat2)) * ((shat2/(V+shat2))*T2-1)
+  l[is.nan(l)] = 0
+  return(l)
 }
 
 lbf = function(V,shat2,T2){
-  0.5*log(shat2/(V+shat2)) + 0.5*T2*(V/(V+shat2))
+  l = 0.5*log(shat2/(V+shat2)) + 0.5*T2*(V/(V+shat2))
+  l[is.nan(l)] = 0
+  return(l)
 }
 
 
