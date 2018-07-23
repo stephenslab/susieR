@@ -175,7 +175,7 @@ univariate_regression = function(X, y, Z=NULL, centered=FALSE, return_residuals=
       }
     }
   }
-  if (return_residue) {
+  if (return_residuals) {
     return(list(betahat = output[,1], sebetahat = output[,2],
                 residuals = y))
   } else {
