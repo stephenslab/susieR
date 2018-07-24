@@ -2,13 +2,13 @@
 % Please edit documentation in R/susie_utils.R
 \name{susie_get_CS}
 \alias{susie_get_CS}
-\title{Extract confidence sets from fitted SuSiE model}
+\title{Extract confidence sets from SuSiE model}
 \usage{
-susie_get_CS(fitted, X = NULL, Xcorr = NULL, coverage = 0.95,
-  min_abs_corr = 0.5)
+susie_get_CS(res, X = NULL, Xcorr = NULL, coverage = 0.9,
+  min_abs_corr = 0.5, dedup = TRUE)
 }
 \arguments{
-\item{fitted}{a susie fit, the output of `susieR::susie()`, or simply the posterior
+\item{res}{a susie fit, the output of `susieR::susie()`, or simply the posterior
 inclusion probability matrix alpha.}
 
 \item{X}{N by P matrix of variables.
@@ -19,14 +19,14 @@ confidence sets whose minimum correlation between variables is smaller than `min
 when provided, it will be used to remove confidence sets
 whose minimum correlation between variables is smaller than `min_abs_corr` (see below).}
 
-\item{coverage}{coverage of confident sets.}
+\item{coverage}{coverage of confident sets. Default to 0.9 for 90\% confidence interval.}
 
 \item{min_abs_corr}{minimum of absolute value of correlation allowed in a confidence set.
 Default set to 0.5 to correspond to squared correlation of 0.25,
 a commonly used threshold for genotype data in genetics studies.}
 }
 \value{
-a list of `cs` and `purity`
+a list of `cs`, and additionally `purity` and selected `cs_index` if `X` or `Xcorr` was provided.
 }
 \details{
 It reports indices of variables in each confidence set identified,

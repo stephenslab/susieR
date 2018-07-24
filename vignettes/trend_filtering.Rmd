@@ -1,5 +1,5 @@
 ---
-title: "Intro"
+title: "Trend filtering"
 author: "Matthew Stephens"
 date: "April 11, 2018"
 output: html_document
@@ -9,38 +9,12 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Introduction
-
-This is just a quick document to show some examples of `susie` in action.
-
-
-# Simple simulation
-
-Here we simulate data with four non-zero effects.
-```{r}
-library(susieR)
-set.seed(1)
-n = 1000
-p = 1000
-beta = rep(0,p)
-beta[1] = 1
-beta[2] = 1
-beta[3] = 1
-beta[4] = 1
-X = matrix(rnorm(n*p),nrow=n,ncol=p)
-y = X %*% beta + rnorm(n)
-
-res =susie(X,y,L=10)
-plot(coef(res))
-plot(y,predict(res))
-```
-
-
 # Trend filtering
 
 This is an example of using susie to do trend filtering.
 
 ```{r}
+library(susieR)
 set.seed(1)
 n=1000
 delta = matrix(1,nrow=n,ncol=n)
@@ -104,5 +78,3 @@ y.tf = trendfilter(y,ord=0)
 y.tf.cv = cv.trendfilter(y.tf)
 lines(y.tf$fit[,which(y.tf$lambda==y.tf.cv$lambda.min)],col=4,lwd=3)
 ```
-
-

@@ -44,9 +44,9 @@ single_effect_regression_ss = function(XtY,dXtX,sa2=1,s2=1,optimize_sa2=FALSE){
   post_var = (1/V + d/s2)^(-1) # posterior variance
   post_mean = (d/s2) * post_var * betahat
   post_mean2 = post_var + post_mean^2 # second moment
-  # loglik = maxlbf + log(mean(w)) + sum(dnorm(Y,0,sqrt(s2),log=TRUE))
+  logBF = maxlbf + log(mean(w))
 
-  return(list(alpha=alpha,mu=post_mean,mu2 = post_mean2,lbf=lbf,sa2=V/s2))
+  return(list(alpha=alpha,mu=post_mean,mu2 = post_mean2,lbf=lbf,sa2=V/s2, logBF = logBF))
 }
 
 

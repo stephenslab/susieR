@@ -7,7 +7,7 @@
 susie(X, Y, L = 10, prior_variance = 0.2, residual_variance = NULL,
   standardize = TRUE, intercept = TRUE, max_iter = 100, tol = 0.01,
   estimate_residual_variance = TRUE, estimate_prior_variance = FALSE,
-  s_init = NULL, verbose = FALSE)
+  s_init = NULL, verbose = FALSE, track_fit = FALSE)
 }
 \arguments{
 \item{X}{an n by p matrix of covariates}
@@ -24,7 +24,8 @@ susie(X, Y, L = 10, prior_variance = 0.2, residual_variance = NULL,
 Note that `prior_variance` specifies the prior on the coefficients of X after standardization (if performed).
 If you do not standardize you may need
 to think carefully about specifying
-`prior_variance`. Whatever the value of standardize, the coefficients (returned from `coef`) are for X on the original input scale.}
+`prior_variance`. Whatever the value of standardize, the coefficients (returned from `coef`) are for X on the original input scale.
+Any column of X that has zero variance is not standardized, but left as is.}
 
 \item{intercept}{Should intercept be fitted (default=TRUE) or set to zero (FALSE)}
 
@@ -39,6 +40,8 @@ to think carefully about specifying
 \item{s_init}{a previous susie fit with which to initialize}
 
 \item{verbose}{if true outputs some progress messages}
+
+\item{track_fit}{add an attribute \code{trace} to output that saves current values of all iterations}
 }
 \value{
 a susie fit, which is a list with some or all of the following elements\cr

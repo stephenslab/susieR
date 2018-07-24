@@ -1,7 +1,8 @@
 #' @title Bayesian sum of single-effect (susie) linear regression using summary stat
 #' @details Performs sum of single-effect (susie) linear regression of Y on X when
 #' only summary statistics are available. The summary data required are
-#' the p by p matrix X'X, the p vector X'Y, and the sample variance of Y, or (1/n)Y'Y. Both the columns of X and the vector Y
+#' the p by p matrix X'X, the p vector X'Y, and the sample variance of Y, or (1/n)Y'Y. The summary stats should come from the same individuals.
+#' Both the columns of X and the vector Y
 #' should be centered to have mean 0 before
 #' computing these summary statistics; you may also want to scale each column of X and Y to have variance 1 (see examples).
 #' This function fits the regression model Y = sum_l Xb_l + e, where elements of e are iid N(0,var=residual_variance) and the
@@ -11,6 +12,7 @@
 #' @param XtX a p by p matrix, X'X, where columns of X are centered to have mean 0
 #' @param XtY a p vector, X'Y, where columns of X are centered and Y is centered to have mean 0
 #' @param var_y the (sample) variance of the vector Y
+#' @param n sample size
 #' @param L maximum number of non-zero effects
 #' @param prior_variance the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )
 #' @param residual_variance the residual variance (defaults to variance of Y)
@@ -38,13 +40,13 @@
 #' beta[3] = 1
 #' beta[4] = 1
 #' X = matrix(rnorm(n*p),nrow=n,ncol=p)
-#' y = X %*% beta + rnorm(n)
+#' y = c(X %*% beta + rnorm(n))
 #' X = scale(X,center=TRUE, scale=TRUE)
 #' y = (y - mean(y))/sd(y)
 #' res =susie_ss(XtX=t(X) %*% X,XtY= c(y %*% X), 1)
 #' coef(res)
 #' @export
-susie_ss = function(XtX,XtY,var_y = 1, L=10,prior_variance=0.2,residual_variance=NULL,estimate_prior_variance = FALSE, max_iter=100,s_init = NULL, verbose=FALSE, intercept=0, tol=1e-4){
+susie_ss = function(XtX,XtY,var_y = 1, n, L=10,prior_variance=0.2,residual_variance=NULL,estimate_prior_variance = FALSE, max_iter=100,s_init = NULL, verbose=FALSE, intercept=0, tol=1e-4){
   # Check input XtX.
   if (!is.double(XtX) || !is.matrix(XtX))
     stop("Input XtX must be a double-precision matrix")
@@ -81,8 +83,8 @@ susie_ss = function(XtX,XtY,var_y = 1, L=10,prior_variance=0.2,residual_variance
   }
 
   #intialize elbo to NA
-  # elbo = rep(NA,max_iter+1)
-  # elbo[1] = -Inf;
+  elbo = rep(NA,max_iter+1)
+  elbo[1] = -Inf;
 
   alpha_new = s$alpha
   for(i in 1:max_iter){
@@ -90,28 +92,19 @@ susie_ss = function(XtX,XtY,var_y = 1, L=10,prior_variance=0.2,residual_variance
     s = update_each_effect_ss(XtX, XtY, s, estimate_prior_variance)
     alpha_new = s$alpha
 
-    if(max(abs(alpha_new - alpha_old)) < tol) break;
+    elbo[i+1] = susie_get_objective_ss(XtX, XtY, s, var_y, n)
 
     if(verbose){
-      print(paste0("objective:",'not available'))
-      # commented out because objective function computation not implemented for summary data
-      # susie_get_objective(X,Y,s)
+      print(paste0("objective:",elbo[i+1]))
     }
-    # if(estimate_residual_variance){
-    #   new_sigma2 = estimate_residual_variance(X,Y,s)
-    #   s$sa2 = (s$sa2*s$sigma2)/new_sigma2 # this is so prior variance does not change with update
-    #   s$sigma2 = new_sigma2
-    #   if(verbose){
-    #     print(paste0("objective:",susie_get_objective(X,Y,s)))
-    #   }
-    # }
-    #s = remove_null_effects(s)
+    if(max(abs(alpha_new - alpha_old)) < tol) break;
 
-    # elbo[i+1] = susie_get_objective(X,Y,s)
     # if((elbo[i+1]-elbo[i])<tol) break;
   }
-  # elbo = elbo[1:(i+1)] #remove trailing NAs
-  # s$elbo <- elbo
+  elbo = elbo[1:(i+1)] #remove trailing NAs
+  s$elbo <- elbo
+  s$niter <- i
+
   s$intercept = intercept
   s$Xtfitted = s$XtXr
 

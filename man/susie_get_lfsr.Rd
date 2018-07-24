@@ -7,7 +7,7 @@
 susie_get_lfsr(res)
 }
 \arguments{
-\item{fitted}{a susie fit, the output of `susieR::susie()`}
+\item{res}{a susie fit, the output of `susieR::susie()`}
 }
 \value{
 an l vector of lfsr for confidence sets
