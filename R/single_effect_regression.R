@@ -7,7 +7,8 @@
 #' @param Y an n vector
 #' @param X an n by p matrix of covariates, scaled
 #' @param X.sparse an n by p sparse matrix, unscaled
-#' @param sparseData a list contains cm(column means) and csd(column standard deviations) if given sparse matrix X
+#' @param cm a p vector of column means
+#' @param csd a p vector of column standard deviations
 #' @param sa2 the scaled prior variance (so prior variance is sa2*s2)
 #' @param s2 the residual variance
 #' @return a list with elements: \cr

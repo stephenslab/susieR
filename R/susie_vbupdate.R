@@ -2,7 +2,8 @@
 #' @param X an n by p matrix of covariantes, scaled
 #' @param X.sparse an n by p sparse matrix of covariates, unscaled
 #' @param Y an n vector of data
-#' @param sparseData a list contains cm(column means) and csd(column standard deviations) if given sparse matrix X
+#' @param cm a p vector of column means
+#' @param csd a p vector of column standard deviations
 #' @param s_init a list with elements sigma2, sa2, alpha, mu, Xr
 #' @param estimate_prior_variance says whether to estimate prior variance (sa2)
 update_each_effect <- function (X, X.sparse, Y, cm, csd, s_init, estimate_prior_variance=FALSE) {

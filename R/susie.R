@@ -5,7 +5,7 @@
 #' sum_l b_l is a p vector of effects to be estimated.
 #' The assumption is that each b_l has exactly one non-zero element, with all elements
 #' equally likely to be non-zero. The prior on the non-zero element is N(0,var=sa2*s2).
-#' @param X an n by p matrix of covariates
+#' @param X an n by p matrix of covariates (can be dense or sparse)
 #' @param Y an n vector
 #' @param L maximum number of non-zero effects
 #' @param prior_variance the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )

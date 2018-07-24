@@ -18,7 +18,7 @@ Eloglik = function(X, X.sparse, Y, cm, csd, s){
   return(result)
 }
 
-# expected squared residuals
+#' @title expected squared residuals
 get_ER2 = function(X, X.sparse, Y, cm, csd, s){
   M = s$alpha*s$mu
   Xr = compute_sparse_MtX(M, X.sparse, cm, csd)
@@ -34,7 +34,8 @@ get_ER2 = function(X, X.sparse, Y, cm, csd, s){
 #' @param X an n by p matrix of covariates, scaled 
 #' @param X.sparse an n by p matrix of covariates, unscaled
 #' @param Y an n vector of regression outcome
-#' @param sparseData a list contains cm(column means) and csd(column standard deviations) if given sparse matrix X
+#' @param cm a p vector of column means
+#' @param csd a p vector of column standard deviations
 #' @param s2 the residual variance
 #' @param Eb the posterior mean of b (p vector) (alpha * mu)
 #' @param Eb2 the posterior second moment of b (p vector) (alpha * mu2)
