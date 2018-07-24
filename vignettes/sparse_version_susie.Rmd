@@ -1,0 +1,436 @@
+---
+title: "Sparse Version Susie"
+author: "Kaiqian Zhang"
+date: "7/24/2018"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Note: sparse version R code is under `sparse-matrix` branch of susieR repo. Please feel free to review it and make comments. Thanks!!!
+
+```{r, include=FALSE}
+susie = function(X,Y,L=10,prior_variance=0.2,residual_variance=NULL,standardize=TRUE,intercept=TRUE,max_iter=100,tol=1e-2,estimate_residual_variance=TRUE,estimate_prior_variance = FALSE, s_init = NULL, verbose=FALSE, track_fit=FALSE){
+  p = ncol(X)
+  n = nrow(X)
+  if (is.matrix(X) & is.double(X)){
+    cm = NULL
+    csd = NULL
+    mean_y = mean(Y)
+    if(intercept){ # center Y and X
+      Y = Y-mean_y
+      X = safe_colScale(X,center=TRUE, scale = FALSE)$x
+    } else {
+      attr(X,"scaled:center")=rep(0,p)
+    }
+    
+    if(standardize){
+      X = safe_colScale(X,center=FALSE, scale=TRUE)$x
+    } else {
+      attr(X,"scaled:scale")=rep(1,p)
+    }
+    X.sparse = X
+  }else if (class(X)=='dgCMatrix'){
+    #Consider X is a sparse matrix case
+    X.sparse = X
+    X.dense = as.matrix(X.sparse)
+    mean_y = mean(Y)
+    if(intercept){ # center Y and X
+      Y = Y-mean_y
+      scale.res = safe_colScale(X.dense,center=TRUE, scale = FALSE)
+    } else {
+      attr(X,"scaled:center")=rep(0,p)
+    }
+    if(standardize){
+      scale.res = safe_colScale(X.dense,center=FALSE, scale=TRUE)
+    } else {
+      attr(X,"scaled:scale")=rep(1,p)
+    }
+    X = scale.res$x
+    cm = scale.res$cm
+    csd = scale.res$csd
+  }else{
+    stop('Input X must be a double precision matrix or a sparse matrix.')
+  }
+  
+  # initialize susie fit
+  if(!is.null(s_init)){
+    if(!missing(L) || !missing(prior_variance) || !missing(residual_variance))
+      stop("if provide s_init then L, sa2 and sigma2 must not be provided")
+    keys = c('alpha', 'mu', 'mu2', 'sa2')
+    if(!all(keys %in% names(s_init)))
+      stop(paste("s_init requires all of the following attributes:", paste(keys, collapse = ', ')))
+    if (!all(dim(s_init$mu) == dim(s_init$mu2)))
+      stop("dimension of mu and mu2 in s_init do not match")
+    if (!all(dim(s_init$mu) == dim(s_init$alpha)))
+      stop("dimension of mu and alpha in s_init do not match")
+    if (dim(s_init$alpha)[1] != length(s_init$sa2))
+      stop("sa2 must have length of nrow of alpha in s_init")
+    if (is.null(s_init$Xr)) s_init$Xr = compute_sparse_Xy(X.sparse, colSums(s_init$mu*s_init$alpha), cm, csd)     
+    if (is.null(s_init$sigma2)) s_init$sigma2 = var(Y)
+    # reset KL
+    s_init$KL = rep(NA, nrow(s_init$alpha))
+    s = s_init
+  } else {
+    
+    if(is.null(residual_variance)){
+      residual_variance=var(Y)
+    }
+    residual_variance= as.numeric(residual_variance) #avoid problems with dimension if entered as matrix
+    
+    
+    if(length(prior_variance)==1){
+      prior_variance = rep(prior_variance,L)
+    }
+    
+    # Check inputs sigma and sa.
+    if (length(residual_variance) != 1)
+      stop("Inputs residual_variance must be scalar")
+    # Check inputs sigma and sa.
+    if (length(prior_variance) != L)
+      stop("Inputs prior_variance must be of length 1 or L")
+    
+    # initialize susie fit
+    s = list(alpha=matrix(1/p,nrow=L,ncol=p),
+             mu=matrix(0,nrow=L,ncol=p),
+             mu2=matrix(0,nrow=L,ncol=p),
+             Xr=rep(0,n), KL=rep(NA,L),
+             sigma2=residual_variance, sa2=prior_variance)
+  }
+  class(s) = "susie"
+  
+  #intialize elbo to NA
+  elbo = rep(NA,max_iter+1)
+  elbo[1] = -Inf;
+  tracking = list()
+  
+  for(i in 1:max_iter){
+    #s = add_null_effect(s,0)
+    if (track_fit)
+      tracking[[i]] = s
+    s = update_each_effect(X, X.sparse, Y, cm, csd, s, estimate_prior_variance)
+    if(verbose){
+      print(paste0("objective:",susie_get_objective(X,X.sparse,Y,cm,csd,s)))
+    }
+    if(estimate_residual_variance){
+      new_sigma2 = estimate_residual_variance(X,X.sparse,Y,cm,csd,s)
+      #s$sa2 = (s$sa2*s$sigma2)/new_sigma2 # this is so prior variance does not change with update
+      s$sigma2 = new_sigma2
+      if(verbose){
+        print(paste0("objective:",susie_get_objective(X,X.sparse,Y,cm,csd,s)))
+      }
+    }
+    #s = remove_null_effects(s)
+    
+    elbo[i+1] = susie_get_objective(X,X.sparse,Y,cm,csd,s)
+    if((elbo[i+1]-elbo[i])<tol) break;
+  }
+  elbo = elbo[1:(i+1)] #remove trailing NAs
+  s$elbo <- elbo
+  s$niter <- i
+  
+  if(intercept){
+    s$intercept = mean_y - sum(attr(X,"scaled:center")* (colSums(s$alpha*s$mu)/attr(X,"scaled:scale")))# estimate intercept (unshrunk)
+    s$fitted = s$Xr + mean_y
+  } else {
+    s$intercept = 0
+    s$fitted = s$Xr
+  }
+  
+  s$X_column_scale_factors = attr(X,"scaled:scale")
+  if (track_fit)
+    s$trace = tracking
+  
+  return(s)
+}
+
+single_effect_regression = function(Y,X,X.sparse,cm,csd,sa2=1,s2=1,optimize_sa2=FALSE){
+  d = colSums(X^2)
+  V = s2*sa2 # scale by residual variance
+  XtY = compute_sparse_Xty(X.sparse, Y, cm, csd)
+  
+  betahat = (1/d) * XtY
+  shat2 = s2/d
+  
+  if(optimize_sa2){
+    if(loglik.grad(0,Y,X,s2, XtY)<0){
+      V=0
+    } else {
+      V.u=uniroot(negloglik.grad.logscale,c(-10,10),extendInt = "upX",Y=Y,X=X,s2=s2)
+      V = exp(V.u$root)
+    }
+  }
+  
+  lbf = dnorm(betahat,0,sqrt(V+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
+  #log(bf) on each SNP
+  
+  lbf[shat2==Inf] = 0 # deal with special case of infinite shat2 (eg happens if X does not vary)
+  
+  maxlbf = max(lbf)
+  w = exp(lbf-maxlbf) # w is proportional to BF, but subtract max for numerical stability
+  alpha = w/sum(w) # posterior prob on each SNP
+  
+  post_var = (1/V + d/s2)^(-1) # posterior variance
+  post_mean = (1/s2) * post_var * XtY
+  post_mean2 = post_var + post_mean^2 # second moment
+  loglik = maxlbf + log(mean(w)) + sum(dnorm(Y,0,sqrt(s2),log=TRUE))
+  
+  return(list(alpha=alpha,mu=post_mean,mu2 = post_mean2,lbf=lbf,sa2=V/s2, loglik = loglik))
+}
+
+
+loglik.grad = function(V,Y,X,s2,XtY){
+  d = colSums(X^2)
+  betahat = (1/d) * XtY
+  shat2 = s2/d
+  
+  lbf = dnorm(betahat,0,sqrt(V+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
+  #log(bf) on each SNP
+  
+  lbf[shat2==Inf] = 0 # deal with special case of infinite shat2 (eg happens if X does not vary)
+  
+  maxlbf = max(lbf)
+  w = exp(lbf-maxlbf) # w =BF/BFmax
+  alpha = w/sum(w)
+  sum(alpha*lbf.grad(V,shat2,betahat^2/shat2))
+}
+
+# define loglikelihood and gradient as function of lV:=log(V)
+# to improve numerical optimization
+negloglik.logscale = function(lV, Y,X,s2){-loglik(exp(lV),Y,X,s2)}
+negloglik.grad.logscale = function(lV,Y,X,s2){-exp(lV)*loglik.grad(exp(lV),Y,X,s2,XtY)}
+
+# vector of gradients of logBF_j for each j, with respect to prior variance V
+lbf.grad = function(V,shat2,T2){
+  l = 0.5* (1/(V+shat2)) * ((shat2/(V+shat2))*T2-1)
+  l[is.nan(l)] = 0
+  return(l)
+}
+
+lbf = function(V,shat2,T2){
+  l = 0.5*log(shat2/(V+shat2)) + 0.5*T2*(V/(V+shat2))
+  l[is.nan(l)] = 0
+  return(l)
+}
+
+update_each_effect <- function (X, X.sparse, Y, cm, csd, s_init, estimate_prior_variance=FALSE) {
+  
+  # Repeat for each effect to update
+  s = s_init
+  L = nrow(s$alpha)
+  
+  if(L>0){
+    for (l in 1:L){
+      # remove lth effect from fitted values
+      s$Xr = s$Xr - compute_sparse_Xy(X.sparse, (s$alpha[l,] * s$mu[l,]), cm, csd)
+      
+      #compute residuals
+      R = Y - s$Xr
+      
+      res = single_effect_regression(R,X,X.sparse,cm,csd,s$sa2[l],s$sigma2,estimate_prior_variance)
+      
+      # Update the variational estimate of the posterior mean.
+      s$mu[l,] <- res$mu
+      s$alpha[l,] <- res$alpha
+      s$mu2[l,] <- res$mu2
+      s$sa2[l] <- res$sa2
+      s$KL[l] <- -res$loglik + SER_posterior_e_loglik(X, X.sparse,R,cm,csd, s$sigma2,res$alpha*res$mu,res$alpha*res$mu2)
+      
+      s$Xr <- s$Xr + compute_sparse_Xy(X.sparse, (s$alpha[l,] * s$mu[l,]), cm, csd)
+    }
+  }
+  
+  return(s)
+}
+
+susie_get_objective = function(X, X.sparse, Y, cm, csd, s){
+  return(Eloglik(X, X.sparse, Y, cm, csd, s)-sum(s$KL))
+}
+
+#' @title expected loglikelihood for a susie fit
+Eloglik = function(X, X.sparse, Y, cm, csd, s){
+  n = nrow(X)
+  p = ncol(X)
+  result =  -(n/2) * log(2*pi* s$sigma2) - (1/(2*s$sigma2)) * get_ER2(X, X.sparse, Y, cm, csd, s)
+  return(result)
+}
+
+# expected squared residuals
+get_ER2 = function(X, X.sparse, Y, cm, csd, s){
+  M = s$alpha*s$mu
+  Xr = compute_sparse_MtX(M, X.sparse, cm, csd)
+  Xrsum = colSums(Xr)
+  
+  d = colSums(X*X)
+  postb2 = s$alpha * s$mu2 #posterior second moment
+  
+  return(sum((Y-Xrsum)^2) - sum(Xr^2) + sum(d*t(postb2)))
+}
+
+SER_posterior_e_loglik = function(X, X.sparse,Y,cm,csd, s2,Eb,Eb2){
+  n = nrow(X)
+  XEb = compute_sparse_Xy(X.sparse, Eb, cm, csd)
+  -0.5*n*log(2*pi*s2)  - (0.5/s2) * (sum(Y*Y) - 2*sum(Y*XEb) + sum(t(X^2)*as.vector(Eb2)))
+}
+
+estimate_residual_variance = function(X, X.sparse, Y, cm, csd, s){
+  n = nrow(X)
+  return( (1/n)* get_ER2(X, X.sparse, Y, cm, csd, s) )
+}
+
+compute_sparse_Xy = function(X.sparse, y, cm, csd){
+  if(is.matrix(X.sparse)){
+    return(X.sparse%*%y)
+  }else{
+    #scale Xy
+    scaled.X = t(t(X.sparse)/csd)
+    scaled.Xy = tcrossprod(scaled.X, t(y))
+    #center Xy
+    Xy = scaled.Xy - sum(cm*y/csd) 
+    return(as.numeric(Xy))
+  }
+}
+
+compute_sparse_Xty = function(X.sparse, y, cm, csd){
+  if(is.matrix(X.sparse)){
+    return(t(X.sparse)%*%y)
+  }else{
+    Xty = crossprod(X.sparse, y)
+    scaled.Xty = t(t(Xty)/csd)
+    centered.scaled.Xty =scaled.Xty - cm/csd * sum(y)#sparse matrix multiplication       
+    return(as.numeric(centered.scaled.Xty))
+  }
+}
+
+compute_sparse_MtX = function(M, X.sparse, cm, csd){
+  if(is.matrix(X.sparse)){
+    return(M%*%t(X.sparse))
+  }else{
+    return(t(apply(M, 1, function(y) compute_sparse_Xy(X.sparse, y, cm, csd))))
+  }
+}
+
+safe_colScale = function(x,
+                         center = TRUE,
+                         scale = TRUE,
+                         add_attr = TRUE,
+                         rows = NULL,
+                         cols = NULL) {
+  
+  if (!is.null(rows) && !is.null(cols)) {
+    x <- x[rows, cols, drop = FALSE]
+  } else if (!is.null(rows)) {
+    x <- x[rows, , drop = FALSE]
+  } else if (!is.null(cols)) {
+    x <- x[, cols, drop = FALSE]
+  }
+  
+  ################
+  # Get the column means
+  ################
+  cm = colMeans(x, na.rm = TRUE)
+  ################
+  # Get the column sd
+  ################
+  if (scale) {
+    csd = matrixStats::colSds(x, center = cm)
+    csd[csd==0] = 1
+  } else {
+    # just divide by 1 if not
+    csd = rep(1, length = length(cm))
+  }
+  if (!center) {
+    # just subtract 0
+    cm = rep(0, length = length(cm))
+  }
+  x = t( (t(x) - cm) / csd )
+  if (add_attr) {
+    if (center) {
+      attr(x, "scaled:center") <- cm
+    }
+    if (scale) {
+      attr(x, "scaled:scale") <- csd
+    }
+  }
+  return(list(x=x, cm=cm, csd=csd))
+}
+```
+
+```{r}
+library(Matrix)
+library(ggplot2)
+library(microbenchmark)
+library(profvis)
+```
+
+## Simulate a matrix with sparsity 0.99
+```{r}
+#' @title simulate a binary n by p matrix X with certain sparsity
+#' @param sparsity a double between 0 and 1
+#' @param n an int nrow of matrix X
+#' @param p an int ncol of matrix X
+create_sparsity_mat = function(sparsity, n, p){
+  set.seed(1)
+  nonzero = round(n*p*(1-sparsity))
+  nonzero.idx = sample(n*p, nonzero)
+  mat = numeric(n*p)
+  mat[nonzero.idx] = 1
+  mat = matrix(mat, nrow=n, ncol=p)
+  return(mat)     
+}
+```
+
+```{r}
+set.seed(1)
+n = 1000
+p = 10000
+beta = rep(0,p)
+beta[1] = 10 
+beta[300] = 10
+beta[400] = 10
+beta[1000] = 10
+#Two versions of X input: dense & sparse
+#Matrix X is of 0.99 sparsity
+X.dense = create_sparsity_mat(0.99, n, p)
+X.sparse = as(X.dense, 'dgCMatrix')
+y = X.dense %*% beta + rnorm(n)
+```
+
+## Use `profvis` to evaluate computational time line by line
+`profvis` shows that for a 1000 by 10000 matrix, dense version susie needs 13400ms and sparse version susie needs 8530ms. We can also take a close look at those profiles for each function and discuss which step could be improved. 
+```{r}
+profvis({
+  susie.dense.fit = susie(X.dense,y)
+})
+```
+
+```{r}
+profvis({
+  susie.sparse.fit = susie(X.sparse,y)
+})
+```
+
+## Microbenchmark visualization
+```{r, warning=FALSE}
+sparse.dense.test = microbenchmark(
+  susie.sparse = susie(X.sparse,y),
+  susie.dense = susie(X.dense,y),
+  times=5
+)
+autoplot(sparse.dense.test)
+```
+
+## Verify sparse version susie results by plotting effects
+```{r}
+susie.dense.fit = susie(X.dense,y)
+susie.sparse.fit = susie(X.sparse,y)
+library(susieR)
+```
+
+```{r}
+plot(coef(susie.dense.fit))
+```
+
+```{r}
+plot(coef(susie.sparse.fit))
+```
