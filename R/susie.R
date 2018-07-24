@@ -48,27 +48,48 @@
 #' plot(y,predict(res))
 #' @export
 susie = function(X,Y,L=10,prior_variance=0.2,residual_variance=NULL,standardize=TRUE,intercept=TRUE,max_iter=100,tol=1e-2,estimate_residual_variance=TRUE,estimate_prior_variance = FALSE, s_init = NULL, verbose=FALSE, track_fit=FALSE){
-  # Check input X.
-  if (!is.double(X) || !is.matrix(X))
-    stop("Input X must be a double-precision matrix")
   p = ncol(X)
   n = nrow(X)
-  mean_y = mean(Y)
-
-  if(intercept){ # center Y and X
-    Y = Y-mean_y
-    X = safe_colScale(X,center=TRUE, scale = FALSE)
-  } else {
-    attr(X,"scaled:center")=rep(0,p)
+  if (is.matrix(X) & is.double(X)){
+    cm = NULL
+    csd = NULL
+    mean_y = mean(Y)
+    if(intercept){ # center Y and X
+      Y = Y-mean_y
+      X = safe_colScale(X,center=TRUE, scale = FALSE)$x
+    } else {
+      attr(X,"scaled:center")=rep(0,p)
+    }
+    
+    if(standardize){
+      X = safe_colScale(X,center=FALSE, scale=TRUE)$x
+    } else {
+      attr(X,"scaled:scale")=rep(1,p)
+    }
+    X.sparse = X
+  }else if (class(X)=='dgCMatrix'){
+    #Consider X is a sparse matrix case
+    X.sparse = X
+    X.dense = as.matrix(X.sparse)
+    mean_y = mean(Y)
+    if(intercept){ # center Y and X
+      Y = Y-mean_y
+      scale.res = safe_colScale(X.dense,center=TRUE, scale = FALSE)
+    } else {
+      attr(X,"scaled:center")=rep(0,p)
+    }
+    if(standardize){
+      scale.res = safe_colScale(X.dense,center=FALSE, scale=TRUE)
+    } else {
+      attr(X,"scaled:scale")=rep(1,p)
+    }
+    X = scale.res$x
+    cm = scale.res$cm
+    csd = scale.res$csd
+  }else{
+    stop('Input X must be a double precision matrix or a sparse matrix.')
   }
-
-  if(standardize){
-    X = safe_colScale(X,center=FALSE, scale=TRUE)
-  } else {
-    attr(X,"scaled:scale")=rep(1,p)
-  }
-
-
+  
   # initialize susie fit
   if(!is.null(s_init)){
     if(!missing(L) || !missing(prior_variance) || !missing(residual_variance))
@@ -82,30 +103,30 @@ susie = function(X,Y,L=10,prior_variance=0.2,residual_variance=NULL,standardize=
       stop("dimension of mu and alpha in s_init do not match")
     if (dim(s_init$alpha)[1] != length(s_init$sa2))
       stop("sa2 must have length of nrow of alpha in s_init")
-    if (is.null(s_init$Xr)) s_init$Xr = X%*%colSums(s_init$mu*s_init$alpha)
+    if (is.null(s_init$Xr)) s_init$Xr = compute_sparse_Xy(X.sparse, colSums(s_init$mu*s_init$alpha), cm, csd)     
     if (is.null(s_init$sigma2)) s_init$sigma2 = var(Y)
     # reset KL
     s_init$KL = rep(NA, nrow(s_init$alpha))
     s = s_init
   } else {
-
+    
     if(is.null(residual_variance)){
       residual_variance=var(Y)
     }
     residual_variance= as.numeric(residual_variance) #avoid problems with dimension if entered as matrix
-
-
+    
+    
     if(length(prior_variance)==1){
       prior_variance = rep(prior_variance,L)
     }
-
+    
     # Check inputs sigma and sa.
     if (length(residual_variance) != 1)
       stop("Inputs residual_variance must be scalar")
     # Check inputs sigma and sa.
     if (length(prior_variance) != L)
       stop("Inputs prior_variance must be of length 1 or L")
-
+    
     # initialize susie fit
     s = list(alpha=matrix(1/p,nrow=L,ncol=p),
              mu=matrix(0,nrow=L,ncol=p),
@@ -114,37 +135,37 @@ susie = function(X,Y,L=10,prior_variance=0.2,residual_variance=NULL,standardize=
              sigma2=residual_variance, sa2=prior_variance)
   }
   class(s) = "susie"
-
+  
   #intialize elbo to NA
   elbo = rep(NA,max_iter+1)
   elbo[1] = -Inf;
   tracking = list()
-
+  
   for(i in 1:max_iter){
     #s = add_null_effect(s,0)
     if (track_fit)
       tracking[[i]] = s
-    s = update_each_effect(X, Y, s, estimate_prior_variance)
+    s = update_each_effect(X, X.sparse, Y, cm, csd, s, estimate_prior_variance)
     if(verbose){
-        print(paste0("objective:",susie_get_objective(X,Y,s)))
+      print(paste0("objective:",susie_get_objective(X,X.sparse,Y,cm,csd,s)))
     }
     if(estimate_residual_variance){
-      new_sigma2 = estimate_residual_variance(X,Y,s)
+      new_sigma2 = estimate_residual_variance(X,X.sparse,Y,cm,csd,s)
       #s$sa2 = (s$sa2*s$sigma2)/new_sigma2 # this is so prior variance does not change with update
       s$sigma2 = new_sigma2
       if(verbose){
-        print(paste0("objective:",susie_get_objective(X,Y,s)))
+        print(paste0("objective:",susie_get_objective(X,X.sparse,Y,cm,csd,s)))
       }
     }
     #s = remove_null_effects(s)
-
-    elbo[i+1] = susie_get_objective(X,Y,s)
+    
+    elbo[i+1] = susie_get_objective(X,X.sparse,Y,cm,csd,s)
     if((elbo[i+1]-elbo[i])<tol) break;
   }
   elbo = elbo[1:(i+1)] #remove trailing NAs
   s$elbo <- elbo
   s$niter <- i
-
+  
   if(intercept){
     s$intercept = mean_y - sum(attr(X,"scaled:center")* (colSums(s$alpha*s$mu)/attr(X,"scaled:scale")))# estimate intercept (unshrunk)
     s$fitted = s$Xr + mean_y
@@ -152,11 +173,11 @@ susie = function(X,Y,L=10,prior_variance=0.2,residual_variance=NULL,standardize=
     s$intercept = 0
     s$fitted = s$Xr
   }
-
+  
   s$X_column_scale_factors = attr(X,"scaled:scale")
   if (track_fit)
     s$trace = tracking
-
+  
   return(s)
 }
 

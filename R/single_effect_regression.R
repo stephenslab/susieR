@@ -5,7 +5,9 @@
 #' The assumption is that b has exactly one non-zero element, with all elements
 #' equally likely to be non-zero. The prior on the non-zero element is N(0,var=sa2*s2).
 #' @param Y an n vector
-#' @param X an n by p matrix of covariates
+#' @param X an n by p matrix of covariates, scaled
+#' @param X.sparse an n by p sparse matrix, unscaled
+#' @param sparseData a list contains cm(column means) and csd(column standard deviations) if given sparse matrix X
 #' @param sa2 the scaled prior variance (so prior variance is sa2*s2)
 #' @param s2 the residual variance
 #' @return a list with elements: \cr
@@ -14,16 +16,16 @@
 #' \item{mu}{vector of posterior means (conditional on inclusion)}
 #' \item{mu2}{vector of posterior second moments (conditional on inclusion)}
 #' \item{bf}{vector of Bayes factors for each variable}
-single_effect_regression = function(Y,X,sa2=1,s2=1,optimize_sa2=FALSE){
+single_effect_regression = function(Y,X,X.sparse,cm,csd,sa2=1,s2=1,optimize_sa2=FALSE){
   d = colSums(X^2)
   V = s2*sa2 # scale by residual variance
-  XtY = t(X) %*% Y
+  XtY = compute_sparse_Xty(X.sparse, Y, cm, csd)
 
   betahat = (1/d) * XtY
   shat2 = s2/d
 
   if(optimize_sa2){
-    if(loglik.grad(0,Y,X,s2)<0){
+    if(loglik.grad(0,Y,X,s2, XtY)<0){
       V=0
     } else {
       #V.o = optim(par=log(V),fn=negloglik.logscale,gr = negloglik.grad.logscale, X=X,Y=Y,s2=s2,method="BFGS")
@@ -53,9 +55,9 @@ single_effect_regression = function(Y,X,sa2=1,s2=1,optimize_sa2=FALSE){
 }
 
 
-loglik.grad = function(V,Y,X,s2){
+loglik.grad = function(V,Y,X,s2,XtY){
   d = colSums(X^2)
-  betahat = (1/d) * t(X) %*% Y
+  betahat = (1/d) * XtY
   shat2 = s2/d
 
   lbf = dnorm(betahat,0,sqrt(V+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
@@ -72,7 +74,7 @@ loglik.grad = function(V,Y,X,s2){
 # define loglikelihood and gradient as function of lV:=log(V)
 # to improve numerical optimization
 negloglik.logscale = function(lV, Y,X,s2){-loglik(exp(lV),Y,X,s2)}
-negloglik.grad.logscale = function(lV,Y,X,s2){-exp(lV)*loglik.grad(exp(lV),Y,X,s2)}
+negloglik.grad.logscale = function(lV,Y,X,s2){-exp(lV)*loglik.grad(exp(lV),Y,X,s2,XtY)}
 
 #
 # numDeriv::grad(negloglik.logscale,0, X =X, Y=Y,s2=s2)

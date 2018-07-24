@@ -44,5 +44,5 @@ safe_colScale = function(x,
       attr(x, "scaled:scale") <- csd
     }
   }
-  return(x)
+  return(list(x=x, cm=cm, csd=csd))
 }
