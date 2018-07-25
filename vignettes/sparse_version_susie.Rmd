@@ -383,7 +383,7 @@ create_sparsity_mat = function(sparsity, n, p){
 ```{r}
 set.seed(1)
 n = 1000
-p = 10000
+p = 1000
 beta = rep(0,p)
 beta[1] = 10 
 beta[300] = 10
@@ -397,7 +397,7 @@ y = X.dense %*% beta + rnorm(n)
 ```
 
 ## Use `profvis` to evaluate computational time line by line
-`profvis` shows that for a 1000 by 10000 matrix, dense version susie needs 13400ms and sparse version susie needs 8530ms. We can also take a close look at those profiles for each function and discuss which step could be improved. 
+`profvis` shows that for a 1000 by 1000 matrix, dense version susie needs 1410ms and sparse version susie needs 1020ms. We can also take a close look at those profiles for each function and discuss which step could be improved. 
 ```{r}
 profvis({
   susie.dense.fit = susie(X.dense,y)
@@ -415,7 +415,7 @@ profvis({
 sparse.dense.test = microbenchmark(
   susie.sparse = susie(X.sparse,y),
   susie.dense = susie(X.dense,y),
-  times=5
+  times=30
 )
 autoplot(sparse.dense.test)
 ```
