@@ -84,6 +84,8 @@ susie = function(X,Y,L=10,prior_variance=0.2,residual_variance=NULL,standardize=
       stop("sa2 must have length of nrow of alpha in s_init")
     if (is.null(s_init$Xr)) s_init$Xr = X%*%colSums(s_init$mu*s_init$alpha)
     if (is.null(s_init$sigma2)) s_init$sigma2 = var(Y)
+    if (s_init$sigma2 <= 0)
+      stop("sigma2 must be a positive value (is your var(Y) zero?)")
     # reset KL
     s_init$KL = rep(NA, nrow(s_init$alpha))
     s = s_init
