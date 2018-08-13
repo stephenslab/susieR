@@ -84,8 +84,6 @@ susie = function(X,Y,L=10,prior_variance=0.2,residual_variance=NULL,standardize=
       stop("sa2 must have length of nrow of alpha in s_init")
     if (is.null(s_init$Xr)) s_init$Xr = X%*%colSums(s_init$mu*s_init$alpha)
     if (is.null(s_init$sigma2)) s_init$sigma2 = var(Y)
-    if (s_init$sigma2 <= 0)
-      stop("sigma2 must be a positive value (is your var(Y) zero?)")
     # reset KL
     s_init$KL = rep(NA, nrow(s_init$alpha))
     s = s_init
@@ -115,6 +113,10 @@ susie = function(X,Y,L=10,prior_variance=0.2,residual_variance=NULL,standardize=
              Xr=rep(0,n), KL=rep(NA,L),
              sigma2=residual_variance, sa2=prior_variance)
   }
+  if (s$sigma2 <= 0)
+      stop("residual variance must be positive (is your var(Y) zero?)")
+  if (!all(s$sa2 >= 0))
+      stop("prior variance must be non-negative")
   class(s) = "susie"
 
   #intialize elbo to NA
