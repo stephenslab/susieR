@@ -122,7 +122,9 @@ susie_get_CS = function(res,
     }
     names(cs) = row_names
     rownames(purity) = row_names
-    return(list(cs = cs, purity = purity, cs_index = is_pure))
+    ## re-order CS list and purity rows based on purity
+    ordering = order(purity$min.abs.corr)
+    return(list(cs = cs[ordering], purity = purity[ordering,], cs_index = is_pure[ordering]))
   }
 }
 
