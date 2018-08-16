@@ -1,0 +1,204 @@
+---
+title: "susie_glmnet_L0Learn"
+author: "Kaiqian Zhang"
+date: "6/21/2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r warning=FALSE}
+devtools::install_github("stephenslab/susieR")
+devtools::install_github("hazimehh/L0Learn")
+library(Matrix)
+library(glmnet)
+library(susieR)
+library(matrixStats)
+library(L0Learn)
+```
+
+## Data
+```{r warning=FALSE}
+b.data = readMM('~/Desktop/M/single_cell_project/data/b_filtered/hg19/matrix.mtx')
+cd34.data = readMM('~/Desktop/M/single_cell_project/data/cd34_filtered/hg19/matrix.mtx')
+jurkat.data = readMM('~/Desktop/M/single_cell_project/data/jurkat_filtered/hg19/matrix.mtx')
+monocytes.data = readMM('~/Desktop/M/single_cell_project/data/monocytes_filtered/hg19/matrix.mtx')
+regulatory.t.data = readMM('~/Desktop/M/single_cell_project/data/regulatory_t_filtered/hg19/matrix.mtx')
+```
+
+## Sample X and set a binary y
+```{r}
+set.seed(1)
+# First X1: consider B cells and monocytes cells classification problem
+b.cells = b.data[,sample(ncol(b.data),1000)]
+monocytes.cells = monocytes.data[,sample(ncol(monocytes.data),1000)]
+# Second X2: consider B cells and T cells classification problem
+regulatory.t.cells = regulatory.t.data[,sample(ncol(regulatory.t.data),1000)]
+
+# X1.raw is a n=2000 by p=32738 matrix
+# X1 is a n=2000 by p=14125 matrix after removing columns with all zeros
+X1.raw = t(cbind(b.cells,monocytes.cells))
+keepX1 = which(colSums(X1.raw)!=0)
+X1 = X1.raw[,keepX1]
+# X2.raw is a n=2000 by p=32738 matrix
+# X2 is also a n=2000 by p=14125 matrix after removing columns with all zeros
+X2.raw = t(cbind(b.cells,regulatory.t.cells))
+keepX2 = which(colSums(X2.raw)!=0)
+X2 = X2.raw[,keepX1]
+# y.binary is a 2000-vector
+y.binary = c(rep(1,1000), rep(0, 1000))
+```
+
+## Split into training data and test data 
+```{r}
+X1.train = rbind(X1[1:500,], X1[1001:1500,])
+X1.test = rbind(X1[501:1000,], X1[1501:2000,])
+X2.train = rbind(X2[1:500,], X2[1001:1500,])
+X2.test = rbind(X2[501:1000,], X2[1501:2000,])
+y.binary.train = c(rep(1,500), rep(0,500))
+y.binary.test = c(rep(1,500), rep(0,500))
+```
+
+## X1 analysis: separate B cells from monocytes cells
+## X1 run glmnet on training set and compute error rate of the test set
+```{r}
+X1.train.fit.glmnet = cv.glmnet(X1.train, y.binary.train, family = "binomial")
+```
+
+Running glmnet on X1 traning set, we need 46 features to differentiate B cells from monocytes cells.  
+```{r}
+plot(X1.train.fit.glmnet)
+```
+
+By using model with 46 features and apply the model to the test set, the error rate is 0.03 for glmnet. 
+```{r}
+X1.test.pred.glmnet = predict(X1.train.fit.glmnet, newx = X1.test , type = "class", s = "lambda.min")
+X1.error_rate.glmnet = abs(sum(y.binary.test - as.numeric(X1.test.pred.glmnet)))/1000
+X1.error_rate.glmnet
+```
+
+## X1 run susie using X1 training and compute error rate of the test set
+```{r}
+X1.train.fit.susie = susie(as.matrix(X1.train), y.binary.train, L=20)
+```
+
+susie shows that we need 15 features to build the model from X1.train. 
+```{r}
+X1.train.susie.CS = susie_get_CS(X1.train.fit.susie)
+X1.train.susie.CS.size = c()
+for (i in 1:20){
+  X1.train.susie.CS.size = c(X1.train.susie.CS.size,length(X1.train.susie.CS[[1]][[i]]))
+}
+X1.train.susie.CS.size
+```
+
+By using model with 15 features and apply the model to the test set, the error rate is 0.07 for susie. But notice that since susie does not have a logistic regression version, the prediction output is a number. I set the prediction>0.5 as a positive result 1. Not sure if this is valid.  
+```{r}
+X1.test.susie.pred = predict(X1.train.fit.susie, newx=as.matrix(X1.test))
+X1.test.susie.pred.binary = rep(0,1000)
+X1.test.susie.pred.binary[X1.test.susie.pred>0.5]=1
+X1.error_rate.susie = abs(sum(y.binary.test - as.numeric(X1.test.susie.pred.binary)))/1000
+X1.error_rate.susie
+```
+
+## X1 run L0Learn using X1 training and compute error rate of the test set
+```{r}
+X1.train.fit.L0Learn = L0Learn.cvfit(as.matrix(X1.train), y.binary.train)
+```
+
+Running L0Learn to build a model from X1.train, the error rate for test set is 0.002. Also note that L0Learn does not have logistic regression. So I set prediction value > 0.5 be a positive result 1. The model from L0Learn only includes three features and one intercept.
+
+```{r}
+gammas = lapply(X1.train.fit.L0Learn$cvmeans, min)
+gammaIndex = 3 # optimal gamma with smallest CV error 
+OptimalIndex = which.min(X1.train.fit.L0Learn$cvmeans[[gammaIndex]])
+OptimalLambda = X1.train.fit.L0Learn$lambda[[gammaIndex]][OptimalIndex] # get optimal lambda (follow L0Learn example here: https://github.com/hazimehh/L0Learn/wiki/Usage)
+X1.test.L0Learn.pred = predict(X1.train.fit.L0Learn, newx=as.matrix(X1.test), lambda = OptimalLambda)
+X1.test.L0Learn.pred.binary = rep(0,1000)
+X1.test.L0Learn.pred.binary[as.numeric(X1.test.L0Learn.pred)>0.5]=1
+X1.error_rate.L0Learn = abs(sum(y.binary.test - as.numeric(X1.test.L0Learn.pred.binary)))/1000
+X1.error_rate.L0Learn
+```
+
+```{r}
+coefs = coef(X1.train.fit.L0Learn, lambda=OptimalLambda, gamma=X1.train.fit.L0Learn$gamma[3])
+coefIndex = which(coefs!=0.0)
+model.features = coefIndex-1
+model.features
+coefs[coefIndex]
+```
+
+## Analysis on X2: separate B cells from T cells
+## X2 run glmnet on training set and compute error rate of the test set
+```{r}
+X2.train.fit.glmnet = cv.glmnet(X2.train, y.binary.train, family = "binomial")
+```
+
+Running glmnet on X2 traning set, we need 31 features to differentiate B cells from T cells.  
+```{r}
+plot(X2.train.fit.glmnet)
+```
+
+By using model with 31 features and apply the model to the test set, the error rate is 0.01 for glmnet. 
+```{r}
+X2.test.pred.glmnet = predict(X2.train.fit.glmnet, newx = X2.test , type = "class", s = "lambda.min")
+X2.error_rate.glmnet = abs(sum(y.binary.test - as.numeric(X2.test.pred.glmnet)))/1000
+X2.error_rate.glmnet
+```
+
+## X2 run susie using X2 training and compute error rate of the test set
+```{r}
+X2.train.fit.susie = susie(as.matrix(X2.train), y.binary.train, L=20)
+```
+
+susie shows that we need 5 features to build the model from X1.train. 
+```{r}
+X2.train.susie.CS = susie_get_CS(X2.train.fit.susie)
+X2.train.susie.CS.size = c()
+for (i in 1:20){
+  X2.train.susie.CS.size = c(X2.train.susie.CS.size,length(X2.train.susie.CS[[1]][[i]]))
+}
+X2.train.susie.CS.size
+```
+
+By using model with 5 features and apply the model to the test set, the error rate is 0 for susie. But notice that since susie does not have a logistic regression version, the prediction output is a number. I set the prediction>0.5 as a positive result 1. Not sure if this is valid.  
+```{r}
+X2.test.susie.pred = predict(X2.train.fit.susie, newx=as.matrix(X2.test))
+X2.test.susie.pred.binary = rep(0,1000)
+X2.test.susie.pred.binary[X2.test.susie.pred>0.5]=1
+X2.error_rate.susie = abs(sum(y.binary.test - as.numeric(X2.test.susie.pred.binary)))/1000
+X2.error_rate.susie
+```
+
+## X2 run L0Learn using X2 training and compute error rate of the test set
+```{r}
+X2.train.fit.L0Learn = L0Learn.cvfit(as.matrix(X2.train), y.binary.train)
+```
+
+Running L0Learn to build a model from X2.train, the error rate for test set is 0.006. Also note that L0Learn does not have logistic regression. So I set prediction value > 0.5 be a positive result 1. The model from L0Learn includes 102 features and one intercept.
+
+```{r}
+X2.gammas = lapply(X2.train.fit.L0Learn$cvmeans, min)
+X2.gammaIndex = 45 # optimal gamma with smallest CV error 
+X2.OptimalIndex = which.min(X2.train.fit.L0Learn$cvmeans[[X2.gammaIndex]])
+X2.OptimalLambda = X2.train.fit.L0Learn$lambda[[X2.gammaIndex]][X2.OptimalIndex] # get optimal lambda (follow L0Learn example here: https://github.com/hazimehh/L0Learn/wiki/Usage)
+X2.test.L0Learn.pred = predict(X2.train.fit.L0Learn, newx=as.matrix(X2.test), lambda = X2.OptimalLambda)
+X2.test.L0Learn.pred.binary = rep(0,1000)
+X2.test.L0Learn.pred.binary[as.numeric(X2.test.L0Learn.pred)>0.5]=1
+X2.error_rate.L0Learn = abs(sum(y.binary.test - as.numeric(X2.test.L0Learn.pred.binary)))/1000
+X2.error_rate.L0Learn
+```
+
+```{r}
+X2.coefs = coef(X2.train.fit.L0Learn, lambda=X2.OptimalLambda, gamma=X2.train.fit.L0Learn$gamma[45])
+X2.coefIndex = which(X2.coefs!=0.0)
+X2.model.features = X2.coefIndex-1
+length(X2.model.features)
+X2.model.features
+X2.coefs[X2.coefIndex]
+```
+
+
+
