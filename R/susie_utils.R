@@ -117,14 +117,14 @@ susie_get_CS = function(res,
       cs = cs[is_pure]
       purity = purity[is_pure,]
       row_names = paste0("L", is_pure)
+      names(cs) = row_names
+      rownames(purity) = row_names
+      ## re-order CS list and purity rows based on purity
+      ordering = order(purity$min.abs.corr, decreasing=T)
+      return(list(cs = cs[ordering], purity = purity[ordering,], cs_index = is_pure[ordering]))
     } else {
-      row_names = paste0("L", 1:length(cs))
+      return(list(cs = NULL))
     }
-    names(cs) = row_names
-    rownames(purity) = row_names
-    ## re-order CS list and purity rows based on purity
-    ordering = order(purity$min.abs.corr, decreasing=T)
-    return(list(cs = cs[ordering], purity = purity[ordering,], cs_index = is_pure[ordering]))
   }
 }
 
