@@ -4,7 +4,7 @@
 \alias{susie_set_init}
 \title{initialize a susie object using given nonzero effect indices and beta values}
 \usage{
-susie_set_init(coef_index, coef_value, num_variables, prior_variance,
+susie_set_init(coef_index, coef_value, num_variables, V,
   residual_variance = NULL)
 }
 \arguments{
@@ -14,7 +14,7 @@ susie_set_init(coef_index, coef_value, num_variables, prior_variance,
 
 \item{num_variables}{a scalar the number of variables in the data}
 
-\item{prior_variance}{a scalar or an L-vector of prior variances}
+\item{V}{a scalar or an L-vector of prior variances}
 
 \item{residual_variance}{a scalar containing residual variance}
 }

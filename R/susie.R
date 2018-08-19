@@ -106,14 +106,12 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,stand
     if (length(scaled_prior_variance) != L)
       stop("Input scaled_prior_variance must be of length 1 or L")
 
-    prior_variance = scaled_prior_variance * as.numeric(var(Y))
-
     # initialize susie fit
     s = list(alpha=matrix(1/p,nrow=L,ncol=p),
              mu=matrix(0,nrow=L,ncol=p),
              mu2=matrix(0,nrow=L,ncol=p),
              Xr=rep(0,n), KL=rep(NA,L),
-             sigma2=residual_variance, V=prior_variance)
+             sigma2=residual_variance, V=scaled_prior_variance * as.numeric(var(Y)))
   }
   if (s$sigma2 <= 0)
       stop("residual variance must be positive (is your var(Y) zero?)")
@@ -168,12 +166,12 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,stand
 #' @param coef_index a L-vector for indices of nonzero effects
 #' @param coef_value a L-vector for initial estimated beta values
 #' @param num_variables a scalar the number of variables in the data
-#' @param prior_variance a scalar or an L-vector of prior variances
+#' @param V a scalar or an L-vector of prior variances
 #' @param residual_variance a scalar containing residual variance
 #' @return a list of initialized alpha, mu, mu2, V and optionally sigma2
 #' @export
 susie_set_init = function(coef_index, coef_value, num_variables,
-                          prior_variance, residual_variance=NULL){
+                          V, residual_variance=NULL){
   L = length(coef_index)
   if (L <= 0)
     stop("Need at least one non-zero effect")
@@ -183,9 +181,9 @@ susie_set_init = function(coef_index, coef_value, num_variables,
     stop("Inputs coef_index and coef_value must of the same length")
   if (!missing(residual_variance) && length(residual_variance) != 1)
     stop("Inputs residual_variance must be scalar")
-  if(length(prior_variance) == 1)
-    prior_variance = rep(prior_variance,L)
-  if (length(prior_variance) != L)
+  if(length(V) == 1)
+    V = rep(V,L)
+  if (length(V) != L)
     stop("Inputs prior_variance must be of length 1 or L")
 
   alpha = matrix(0,nrow=L,ncol=num_variables)
@@ -195,5 +193,5 @@ susie_set_init = function(coef_index, coef_value, num_variables,
     mu[i, coef_index[i]] = coef_value[i]
   }
   mu2 = mu*mu
-  return(list(alpha=alpha, mu=mu, mu2=mu2, V=prior_variance, sigma2=residual_variance))
+  return(list(alpha=alpha, mu=mu, mu2=mu2, V=V, sigma2=residual_variance))
 }
