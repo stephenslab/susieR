@@ -15,6 +15,8 @@ single_effect_regression(Y, X, V, residual_variance = 1,
 \item{V}{the prior variance}
 
 \item{residual_variance}{the residual variance}
+
+\item{optimize_V}{boolean indicating whether to optimize V (by maximum likelihood)}
 }
 \value{
 a list with elements: \cr
@@ -34,5 +36,5 @@ Performs single-effect linear regression of Y on X. That is, this function
 fits the regression model Y= Xb + e, where elements of e are iid N(0,s2) and the
 b is a p vector of effects to be estimated.
 The assumption is that b has exactly one non-zero element, with all elements
-equally likely to be non-zero. The prior on the non-zero element is N(0,var=sa2*s2).
+equally likely to be non-zero. The prior on the non-zero element is N(0,var=V).
 }

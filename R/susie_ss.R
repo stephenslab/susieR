@@ -8,13 +8,13 @@
 #' This function fits the regression model Y = sum_l Xb_l + e, where elements of e are iid N(0,var=residual_variance) and the
 #' sum_l b_l is a p vector of effects to be estimated.
 #' The assumption is that each b_l has exactly one non-zero element, with all elements
-#' equally likely to be non-zero. The prior on the non-zero element is N(0,var=prior_variance*residual_variance).
+#' equally likely to be non-zero. The prior on the non-zero element is N(0,var=scaled_prior_variance*var(Y)).
 #' @param XtX a p by p matrix, X'X, where columns of X are centered to have mean 0
 #' @param XtY a p vector, X'Y, where columns of X are centered and Y is centered to have mean 0
 #' @param var_y the (sample) variance of the vector Y
 #' @param n sample size
 #' @param L maximum number of non-zero effects
-#' @param prior_variance the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )
+#' @param scaled_prior_variance the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )
 #' @param residual_variance the residual variance (defaults to variance of Y)
 #' @param estimate_prior_variance indicates whether to estimate prior (currently not recommended as not working as well)
 #' @param max_iter maximum number of iterations to perform
@@ -29,7 +29,7 @@
 #' \item{mu2}{an L by p matrix of posterior second moments (conditional on inclusion)}
 #' \item{XtXr}{an p vector of t(X) times fitted values, the fitted values equal to X times colSums(alpha*mu))}
 #' \item{sigma2}{residual variance}
-#' \item{sa2}{scaled prior variance; ie prior variance is sigma2*sa2}
+#' \item{V}{prior variance}
 #' @examples
 #' set.seed(1)
 #' n = 1000
@@ -46,7 +46,7 @@
 #' res =susie_ss(XtX=t(X) %*% X,XtY= c(y %*% X), 1)
 #' coef(res)
 #' @export
-susie_ss = function(XtX,XtY,var_y = 1, n, L=10,prior_variance=0.2,residual_variance=NULL,estimate_prior_variance = FALSE, max_iter=100,s_init = NULL, verbose=FALSE, intercept=0, tol=1e-4){
+susie_ss = function(XtX,XtY,var_y = 1, n, L=10,scaled_prior_variance=0.2,residual_variance=NULL,estimate_prior_variance = FALSE, max_iter=100,s_init = NULL, verbose=FALSE, intercept=0, tol=1e-4){
   # Check input XtX.
   if (!is.double(XtX) || !is.matrix(XtX))
     stop("Input XtX must be a double-precision matrix")
@@ -54,8 +54,8 @@ susie_ss = function(XtX,XtY,var_y = 1, n, L=10,prior_variance=0.2,residual_varia
 
   # initialize susie fit
   if(!is.null(s_init)){
-    if(!missing(L) || !missing(prior_variance) || !missing(residual_variance))
-      stop("if provide s_init then L, sa2 and sigma2 must not be provided")
+    if(!missing(L) || !missing(scaled_prior_variance) || !missing(residual_variance))
+      stop("if provide s_init then L, scaled_prior_variance and residual_variance must not be provided")
     s = s_init
   } else {
 
@@ -65,20 +65,20 @@ susie_ss = function(XtX,XtY,var_y = 1, n, L=10,prior_variance=0.2,residual_varia
     residual_variance= as.numeric(residual_variance) #avoid problems with dimension if entered as matrix
 
 
-    if(length(prior_variance)==1){
-      prior_variance = rep(prior_variance,L)
+    if(length(scaled_prior_variance)==1){
+      scaled_prior_variance = rep(scaled_prior_variance,L)
     }
 
     # Check inputs sigma and sa.
     if (length(residual_variance) != 1)
       stop("Inputs residual_variance must be scalar")
     # Check inputs sigma and sa.
-    if (length(prior_variance) != L)
-      stop("Inputs prior_variance must be of length 1 or L")
+    if (length(scaled_prior_variance) != L)
+      stop("Inputs scaled_prior_variance must be of length 1 or L")
 
     #initialize susie fit
     s = list(alpha=matrix(1/p,nrow=L,ncol=p), mu=matrix(0,nrow=L,ncol=p),
-             mu2 = matrix(0,nrow=L,ncol=p), XtXr=rep(0,p), sigma2= residual_variance, sa2= prior_variance, KL = rep(NA,L))
+             mu2 = matrix(0,nrow=L,ncol=p), XtXr=rep(0,p), sigma2= residual_variance, V= scaled_prior_variance*var_y, KL = rep(NA,L))
     class(s) <- "susie"
   }
 

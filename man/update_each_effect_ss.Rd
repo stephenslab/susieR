@@ -11,9 +11,9 @@ update_each_effect_ss(XtX, XtY, s_init, estimate_prior_variance = FALSE)
 
 \item{XtY}{a p vector}
 
-\item{s_init}{a list with elements sigma2, sa2, alpha, mu, XtXr}
+\item{s_init}{a list with elements sigma2, V, alpha, mu, Xr}
 
-\item{estimate_prior_variance}{says whether to estimate prior variance (sa2)}
+\item{estimate_prior_variance}{boolean indicating whether to estimate prior variance}
 }
 \description{
 update each effect once
