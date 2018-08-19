@@ -3,17 +3,20 @@
 #' fits the regression model Y= Xb + e, where elements of e are iid N(0,s2) and the
 #' b is a p vector of effects to be estimated.
 #' The assumption is that b has exactly one non-zero element, with all elements
-#' equally likely to be non-zero. The prior on the non-zero element is N(0,var=sa2*s2).
+#' equally likely to be non-zero. The prior on the non-zero element is N(0,var=V).
 #' @param Y an n vector
 #' @param X an n by p matrix of covariates
 #' @param V the prior variance
 #' @param residual_variance the residual variance
+#' @param optimize_V boolean indicating whether to optimize V (by maximum likelihood)
 #' @return a list with elements: \cr
 #' \item{alpha}{vector of posterior inclusion probabilities. ie alpha[i] is posterior probability that
 #'  that b[i] is non-zero}
 #' \item{mu}{vector of posterior means (conditional on inclusion)}
 #' \item{mu2}{vector of posterior second moments (conditional on inclusion)}
-#' \item{bf}{vector of Bayes factors for each variable}
+#' \item{lbf}{vector of log Bayes factors for each variable}
+#' \item{V}{the prior variance (after optimization, if optimize_V is TRUE)}
+#' \item{loglik}{The log-likelihood p(Y|X,V)}
 single_effect_regression = function(Y,X,V,residual_variance=1,optimize_V=FALSE){
   d = colSums(X^2)
   XtY = t(X) %*% Y

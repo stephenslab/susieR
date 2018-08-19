@@ -11,7 +11,10 @@ update_each_effect(X, Y, s_init, estimate_prior_variance = FALSE)
 
 \item{Y}{an n vector of data}
 
-\item{s_init}{a list with elements sigma2, sa2, alpha, mu, Xr}
+\item{s_init}{a list with elements sigma2, V, alpha, mu, Xr}
 
 \item{estimate_prior_variance}{says whether to estimate prior variance (sa2)}
+}
+\description{
+update each effect once
 }

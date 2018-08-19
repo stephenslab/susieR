@@ -12,6 +12,9 @@ susie_get_lfsr(res)
 \value{
 an l vector of lfsr for confidence sets
 }
+\description{
+Local false sign rate (lfsr) for susie confidence sets
+}
 \details{
 This computes the average lfsr across SNPs for each l, weighted by the
 posterior inclusion probability alpha

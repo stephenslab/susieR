@@ -17,3 +17,6 @@ SER_posterior_e_loglik_ss(XtX, XtY, s2, Eb, Eb2)
 
 \item{Y}{an n vector of regression outcome}
 }
+\description{
+posterior expected loglikelihood for a single effect regression
+}

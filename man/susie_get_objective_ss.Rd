@@ -17,3 +17,6 @@ susie_get_objective_ss(XtX, XtY, s, var_y, n)
 
 \item{n}{sample size}
 }
+\description{
+Get objective function from data and susie fit object.
+}
