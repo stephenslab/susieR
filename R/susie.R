@@ -181,6 +181,7 @@ susie = function(X,Y,L=10,prior_variance=0.2,residual_variance=NULL,standardize=
   return(s)
 }
 
+
 #' @title initialize a susie object using given nonzero effect indices and beta values
 #' @param coef_index a L-vector for indices of nonzero effects
 #' @param coef_value a L-vector for initial estimated beta values
@@ -192,6 +193,8 @@ susie = function(X,Y,L=10,prior_variance=0.2,residual_variance=NULL,standardize=
 susie_set_init = function(coef_index, coef_value, num_variables,
                           prior_variance, residual_variance=NULL){
   L = length(coef_index)
+  if (L <= 0)
+    stop("Need at least one non-zero effect")
   if (!all(coef_value != 0))
     stop("Input coef_value must be non-zero for all its elements")
   if (L != length(coef_value))
