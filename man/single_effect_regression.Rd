@@ -4,12 +4,19 @@
 \alias{single_effect_regression}
 \title{Bayesian single-effect linear regression of Y on X}
 \usage{
-single_effect_regression(Y, X, sa2 = 1, s2 = 1, optimize_sa2 = FALSE)
+single_effect_regression(Y, X, X.sparse, cm, csd, sa2 = 1, s2 = 1,
+  optimize_sa2 = FALSE)
 }
 \arguments{
 \item{Y}{an n vector}
 
-\item{X}{an n by p matrix of covariates}
+\item{X}{an n by p matrix of covariates, scaled}
+
+\item{X.sparse}{an n by p sparse matrix, unscaled}
+
+\item{cm}{a p vector of column means}
+
+\item{csd}{a p vector of column standard deviations}
 
 \item{sa2}{the scaled prior variance (so prior variance is sa2*s2)}
 
@@ -22,6 +29,9 @@ a list with elements: \cr
 \item{mu}{vector of posterior means (conditional on inclusion)}
 \item{mu2}{vector of posterior second moments (conditional on inclusion)}
 \item{bf}{vector of Bayes factors for each variable}
+}
+\description{
+Bayesian single-effect linear regression of Y on X
 }
 \details{
 Performs single-effect linear regression of Y on X. That is, this function

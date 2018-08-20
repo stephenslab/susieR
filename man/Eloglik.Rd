@@ -4,5 +4,8 @@
 \alias{Eloglik}
 \title{expected loglikelihood for a susie fit}
 \usage{
-Eloglik(X, Y, s)
+Eloglik(X, X.sparse, Y, cm, csd, s)
+}
+\description{
+expected loglikelihood for a susie fit
 }

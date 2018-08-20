@@ -33,6 +33,9 @@ Any column of X that has zero variance is not standardized, but left as is.}
 
 \item{Lmax}{the maximum value of L to consider}
 }
+\description{
+An attempt to automate reliable running of susie even on hard problems
+}
 \details{
 Currently runs a 3-stage strategy for each L: first fit susie with very small residual error,
 then estimate residual error, then estimate prior variance. If the last step estimates

@@ -21,3 +21,6 @@ susie_set_init(coef_index, coef_value, num_variables, prior_variance,
 \value{
 a list of initialized alpha, mu, mu2, sa2 and optionally sigma2
 }
+\description{
+initialize a susie object using given nonzero effect indices and beta values
+}

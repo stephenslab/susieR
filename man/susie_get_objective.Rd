@@ -4,10 +4,13 @@
 \alias{susie_get_objective}
 \title{Get objective function from data and susie fit object.}
 \usage{
-susie_get_objective(X, Y, s)
+susie_get_objective(X, X.sparse, Y, cm, csd, s)
 }
 \arguments{
 \item{data}{A flash data object.}
 
 \item{f}{A flash fit object.}
+}
+\description{
+Get objective function from data and susie fit object.
 }

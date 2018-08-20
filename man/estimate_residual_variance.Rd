@@ -4,12 +4,21 @@
 \alias{estimate_residual_variance}
 \title{Estimate residual variance}
 \usage{
-estimate_residual_variance(X, Y, s)
+estimate_residual_variance(X, X.sparse, Y, cm, csd, s)
 }
 \arguments{
-\item{X}{an n by p matrix of covariantes}
+\item{X}{an n by p matrix of covariates, scaled}
 
-\item{Y}{an n vector of data}
+\item{X.sparse}{an n by p matrix of covariates, unscaled}
+
+\item{Y}{an n vector of regression outcome}
+
+\item{cm}{a p vector of column means}
+
+\item{csd}{a p vector of column standard deviations}
 
 \item{s}{a susie fit}
+}
+\description{
+Estimate residual variance
 }

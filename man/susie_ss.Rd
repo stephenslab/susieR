@@ -7,7 +7,7 @@
 susie_ss(XtX, XtY, var_y = 1, n, L = 10, prior_variance = 0.2,
   residual_variance = NULL, estimate_prior_variance = FALSE,
   max_iter = 100, s_init = NULL, verbose = FALSE, intercept = 0,
-  tol = 1e-04)
+  tol = 0.0001)
 }
 \arguments{
 \item{XtX}{a p by p matrix, X'X, where columns of X are centered to have mean 0}
@@ -44,6 +44,9 @@ a susie fit, which is a list with some or all of the following elements\cr
 \item{XtXr}{an p vector of t(X) times fitted values, the fitted values equal to X times colSums(alpha*mu))}
 \item{sigma2}{residual variance}
 \item{sa2}{scaled prior variance; ie prior variance is sigma2*sa2}
+}
+\description{
+Bayesian sum of single-effect (susie) linear regression using summary stat
 }
 \details{
 Performs sum of single-effect (susie) linear regression of Y on X when

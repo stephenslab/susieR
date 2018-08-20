@@ -10,7 +10,7 @@ susie(X, Y, L = 10, prior_variance = 0.2, residual_variance = NULL,
   s_init = NULL, verbose = FALSE, track_fit = FALSE)
 }
 \arguments{
-\item{X}{an n by p matrix of covariates}
+\item{X}{an n by p matrix of covariates (can be dense or sparse)}
 
 \item{Y}{an n vector}
 
@@ -52,6 +52,9 @@ a susie fit, which is a list with some or all of the following elements\cr
 \item{sigma2}{residual variance}
 \item{sa2}{scaled prior variance; ie prior variance is sigma2*sa2}
 \item{elbo}{vector of values of elbo achieved (objective function)}
+}
+\description{
+Bayesian sum of single-effect (susie) linear regression of Y on X
 }
 \details{
 Performs sum of single-effect (susie) linear regression of Y on X.
