@@ -72,16 +72,18 @@ susie = function(X,Y,L=10,prior_variance=0.2,residual_variance=NULL,standardize=
     X.sparse = X
     X.dense = as.matrix(X.sparse)
     mean_y = mean(Y)
-    if(intercept){ # center Y and X
+    if(intercept & !standardize){ # center Y and X
       Y = Y-mean_y
       scale.res = safe_colScale(X.dense,center=TRUE, scale = FALSE)
-    } else {
-      attr(X,"scaled:center")=rep(0,p)
-    }
-    if(standardize){
+      #attr(X,"scaled:scale")=rep(1,p) do not know how to revise this part
+    } 
+    if(standardize & !intercept){
       scale.res = safe_colScale(X.dense,center=FALSE, scale=TRUE)
-    } else {
-      attr(X,"scaled:scale")=rep(1,p)
+      #attr(X,"scaled:center")=rep(0,p)
+    } 
+    if(intercept & intercept){
+      Y = Y-mean_y
+      scale.res = safe_colScale(X.dense)
     }
     X = scale.res$x
     cm = scale.res$cm
