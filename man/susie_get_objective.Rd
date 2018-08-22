@@ -11,3 +11,6 @@ susie_get_objective(X, Y, s)
 
 \item{f}{A flash fit object.}
 }
+\description{
+Get objective function from data and susie fit object.
+}

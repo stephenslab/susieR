@@ -4,7 +4,7 @@
 \alias{susie_ss}
 \title{Bayesian sum of single-effect (susie) linear regression using summary stat}
 \usage{
-susie_ss(XtX, XtY, var_y = 1, n, L = 10, prior_variance = 0.2,
+susie_ss(XtX, XtY, var_y = 1, n, L = 10, scaled_prior_variance = 0.2,
   residual_variance = NULL, estimate_prior_variance = FALSE,
   max_iter = 100, s_init = NULL, verbose = FALSE, intercept = 0,
   tol = 1e-04)
@@ -20,7 +20,7 @@ susie_ss(XtX, XtY, var_y = 1, n, L = 10, prior_variance = 0.2,
 
 \item{L}{maximum number of non-zero effects}
 
-\item{prior_variance}{the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )}
+\item{scaled_prior_variance}{the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )}
 
 \item{residual_variance}{the residual variance (defaults to variance of Y)}
 
@@ -43,7 +43,10 @@ a susie fit, which is a list with some or all of the following elements\cr
 \item{mu2}{an L by p matrix of posterior second moments (conditional on inclusion)}
 \item{XtXr}{an p vector of t(X) times fitted values, the fitted values equal to X times colSums(alpha*mu))}
 \item{sigma2}{residual variance}
-\item{sa2}{scaled prior variance; ie prior variance is sigma2*sa2}
+\item{V}{prior variance}
+}
+\description{
+Bayesian sum of single-effect (susie) linear regression using summary stat
 }
 \details{
 Performs sum of single-effect (susie) linear regression of Y on X when
@@ -55,7 +58,7 @@ computing these summary statistics; you may also want to scale each column of X 
 This function fits the regression model Y = sum_l Xb_l + e, where elements of e are iid N(0,var=residual_variance) and the
 sum_l b_l is a p vector of effects to be estimated.
 The assumption is that each b_l has exactly one non-zero element, with all elements
-equally likely to be non-zero. The prior on the non-zero element is N(0,var=prior_variance*residual_variance).
+equally likely to be non-zero. The prior on the non-zero element is N(0,var=scaled_prior_variance*var(Y)).
 }
 \examples{
 set.seed(1)

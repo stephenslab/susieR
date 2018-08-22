@@ -4,10 +4,11 @@
 \alias{susie}
 \title{Bayesian sum of single-effect (susie) linear regression of Y on X}
 \usage{
-susie(X, Y, L = 10, prior_variance = 0.2, residual_variance = NULL,
-  standardize = TRUE, intercept = TRUE, max_iter = 100, tol = 0.01,
-  estimate_residual_variance = TRUE, estimate_prior_variance = FALSE,
-  s_init = NULL, verbose = FALSE, track_fit = FALSE)
+susie(X, Y, L = 10, scaled_prior_variance = 0.2,
+  residual_variance = NULL, standardize = TRUE, intercept = TRUE,
+  max_iter = 100, tol = 0.01, estimate_residual_variance = TRUE,
+  estimate_prior_variance = FALSE, s_init = NULL, verbose = FALSE,
+  track_fit = FALSE)
 }
 \arguments{
 \item{X}{an n by p matrix of covariates}
@@ -16,18 +17,18 @@ susie(X, Y, L = 10, prior_variance = 0.2, residual_variance = NULL,
 
 \item{L}{maximum number of non-zero effects}
 
-\item{prior_variance}{the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )}
+\item{scaled_prior_variance}{the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times). The prior variance on each non-zero element of b is set to be var(Y)*scaled_prior_variance.}
 
 \item{residual_variance}{the residual variance (defaults to variance of Y)}
 
 \item{standardize}{logical flag for whether to standardize columns of X to unit variance prior to fitting.
-Note that `prior_variance` specifies the prior on the coefficients of X after standardization (if performed).
+Note that `scaled_prior_variance` specifies the prior on the coefficients of X *after* standardization (if performed).
 If you do not standardize you may need
-to think carefully about specifying
-`prior_variance`. Whatever the value of standardize, the coefficients (returned from `coef`) are for X on the original input scale.
+to think more carefully about specifying
+`scaled_prior_variance`. Whatever the value of standardize, the coefficients (returned from `coef`) are for X on the original input scale.
 Any column of X that has zero variance is not standardized, but left as is.}
 
-\item{intercept}{Should intercept be fitted (default=TRUE) or set to zero (FALSE)}
+\item{intercept}{Should intercept be fitted (default=TRUE) or set to zero (FALSE). The latter is generally not recommended.}
 
 \item{max_iter}{maximum number of iterations to perform}
 
@@ -35,7 +36,7 @@ Any column of X that has zero variance is not standardized, but left as is.}
 
 \item{estimate_residual_variance}{indicates whether to estimate residual variance}
 
-\item{estimate_prior_variance}{indicates whether to estimate prior (currently not recommended as not working as well)}
+\item{estimate_prior_variance}{indicates whether to estimate prior (currently not recommended as not fully tested and assessed)}
 
 \item{s_init}{a previous susie fit with which to initialize}
 
@@ -50,16 +51,19 @@ a susie fit, which is a list with some or all of the following elements\cr
 \item{mu2}{an L by p matrix of posterior second moments (conditional on inclusion)}
 \item{Xr}{an n vector of fitted values, equal to X times colSums(alpha*mu))}
 \item{sigma2}{residual variance}
-\item{sa2}{scaled prior variance; ie prior variance is sigma2*sa2}
+\item{V}{prior variance}
 \item{elbo}{vector of values of elbo achieved (objective function)}
+}
+\description{
+Bayesian sum of single-effect (susie) linear regression of Y on X
 }
 \details{
 Performs sum of single-effect (susie) linear regression of Y on X.
 That is, this function
-fits the regression model Y= sum_l Xb_l + e, where elements of e are iid N(0,s2) and the
+fits the regression model Y= sum_l Xb_l + e, where elements of e are iid N(0,residual_variance) and the
 sum_l b_l is a p vector of effects to be estimated.
 The assumption is that each b_l has exactly one non-zero element, with all elements
-equally likely to be non-zero. The prior on the non-zero element is N(0,var=sa2*s2).
+equally likely to be non-zero. The prior on the non-zero element is N(0,var=var(Y)*scaled_prior_variance).
 }
 \examples{
 set.seed(1)

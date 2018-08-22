@@ -3,34 +3,36 @@
 #' fits the regression model Y= Xb + e, where elements of e are iid N(0,s2) and the
 #' b is a p vector of effects to be estimated.
 #' The assumption is that b has exactly one non-zero element, with all elements
-#' equally likely to be non-zero. The prior on the non-zero element is N(0,var=sa2*s2).
+#' equally likely to be non-zero. The prior on the non-zero element is N(0,var=V).
 #' @param Y an n vector
 #' @param X an n by p matrix of covariates
-#' @param sa2 the scaled prior variance (so prior variance is sa2*s2)
-#' @param s2 the residual variance
+#' @param V the prior variance
+#' @param residual_variance the residual variance
+#' @param optimize_V boolean indicating whether to optimize V (by maximum likelihood)
 #' @return a list with elements: \cr
 #' \item{alpha}{vector of posterior inclusion probabilities. ie alpha[i] is posterior probability that
 #'  that b[i] is non-zero}
 #' \item{mu}{vector of posterior means (conditional on inclusion)}
 #' \item{mu2}{vector of posterior second moments (conditional on inclusion)}
-#' \item{bf}{vector of Bayes factors for each variable}
-single_effect_regression = function(Y,X,sa2=1,s2=1,optimize_sa2=FALSE){
+#' \item{lbf}{vector of log Bayes factors for each variable}
+#' \item{V}{the prior variance (after optimization, if optimize_V is TRUE)}
+#' \item{loglik}{The log-likelihood p(Y|X,V)}
+single_effect_regression = function(Y,X,V,residual_variance=1,optimize_V=FALSE){
   d = colSums(X^2)
-  V = s2*sa2 # scale by residual variance
   XtY = t(X) %*% Y
 
   betahat = (1/d) * XtY
-  shat2 = s2/d
+  shat2 = residual_variance/d
 
-  if(optimize_sa2){
-    if(loglik.grad(0,Y,X,s2)<0){
+  if(optimize_V){
+    if(loglik.grad(0,Y,X,residual_variance)<0){
       V=0
     } else {
       #V.o = optim(par=log(V),fn=negloglik.logscale,gr = negloglik.grad.logscale, X=X,Y=Y,s2=s2,method="BFGS")
       #if(V.o$convergence!=0){
       #  warning("optimization over prior variance failed to converge")
       #}
-      V.u=uniroot(negloglik.grad.logscale,c(-10,10),extendInt = "upX",Y=Y,X=X,s2=s2)
+      V.u=uniroot(negloglik.grad.logscale,c(-10,10),extendInt = "upX",Y=Y,X=X,s2=residual_variance)
       V = exp(V.u$root)
     }
   }
@@ -44,14 +46,15 @@ single_effect_regression = function(Y,X,sa2=1,s2=1,optimize_sa2=FALSE){
   w = exp(lbf-maxlbf) # w is proportional to BF, but subtract max for numerical stability
   alpha = w/sum(w) # posterior prob on each SNP
 
-  post_var = (1/V + d/s2)^(-1) # posterior variance
-  post_mean = (1/s2) * post_var * XtY
+  post_var = (1/V + d/residual_variance)^(-1) # posterior variance
+  post_mean = (1/residual_variance) * post_var * XtY
   post_mean2 = post_var + post_mean^2 # second moment
-  loglik = maxlbf + log(mean(w)) + sum(dnorm(Y,0,sqrt(s2),log=TRUE))
+  loglik = maxlbf + log(mean(w)) + sum(dnorm(Y,0,sqrt(residual_variance),log=TRUE))
 
-  return(list(alpha=alpha,mu=post_mean,mu2 = post_mean2,lbf=lbf,sa2=V/s2, loglik = loglik))
+  return(list(alpha=alpha,mu=post_mean,mu2 = post_mean2,lbf=lbf,V=V, loglik = loglik))
 }
 
+# In these functions s2 represents residual_variance and shat2 is an estimate of it
 
 loglik.grad = function(V,Y,X,s2){
   d = colSums(X^2)

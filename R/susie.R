@@ -1,26 +1,26 @@
 #' @title Bayesian sum of single-effect (susie) linear regression of Y on X
 #' @details Performs sum of single-effect (susie) linear regression of Y on X.
 #' That is, this function
-#' fits the regression model Y= sum_l Xb_l + e, where elements of e are iid N(0,s2) and the
+#' fits the regression model Y= sum_l Xb_l + e, where elements of e are iid N(0,residual_variance) and the
 #' sum_l b_l is a p vector of effects to be estimated.
 #' The assumption is that each b_l has exactly one non-zero element, with all elements
-#' equally likely to be non-zero. The prior on the non-zero element is N(0,var=sa2*s2).
+#' equally likely to be non-zero. The prior on the non-zero element is N(0,var=var(Y)*scaled_prior_variance).
 #' @param X an n by p matrix of covariates
 #' @param Y an n vector
 #' @param L maximum number of non-zero effects
-#' @param prior_variance the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )
+#' @param scaled_prior_variance the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times). The prior variance on each non-zero element of b is set to be var(Y)*scaled_prior_variance.
 #' @param residual_variance the residual variance (defaults to variance of Y)
 #' @param standardize logical flag for whether to standardize columns of X to unit variance prior to fitting.
-#' Note that `prior_variance` specifies the prior on the coefficients of X after standardization (if performed).
+#' Note that `scaled_prior_variance` specifies the prior on the coefficients of X *after* standardization (if performed).
 #' If you do not standardize you may need
-#' to think carefully about specifying
-#' `prior_variance`. Whatever the value of standardize, the coefficients (returned from `coef`) are for X on the original input scale.
+#' to think more carefully about specifying
+#' `scaled_prior_variance`. Whatever the value of standardize, the coefficients (returned from `coef`) are for X on the original input scale.
 #' Any column of X that has zero variance is not standardized, but left as is.
-#' @param intercept Should intercept be fitted (default=TRUE) or set to zero (FALSE)
+#' @param intercept Should intercept be fitted (default=TRUE) or set to zero (FALSE). The latter is generally not recommended.
 #' @param max_iter maximum number of iterations to perform
 #' @param tol convergence tolerance
 #' @param estimate_residual_variance indicates whether to estimate residual variance
-#' @param estimate_prior_variance indicates whether to estimate prior (currently not recommended as not working as well)
+#' @param estimate_prior_variance indicates whether to estimate prior (currently not recommended as not fully tested and assessed)
 #' @param s_init a previous susie fit with which to initialize
 #' @param verbose if true outputs some progress messages
 #' @param track_fit add an attribute \code{trace} to output that saves current values of all iterations
@@ -30,7 +30,7 @@
 #' \item{mu2}{an L by p matrix of posterior second moments (conditional on inclusion)}
 #' \item{Xr}{an n vector of fitted values, equal to X times colSums(alpha*mu))}
 #' \item{sigma2}{residual variance}
-#' \item{sa2}{scaled prior variance; ie prior variance is sigma2*sa2}
+#' \item{V}{prior variance}
 #' \item{elbo}{vector of values of elbo achieved (objective function)}
 #' @examples
 #' set.seed(1)
@@ -47,7 +47,7 @@
 #' coef(res)
 #' plot(y,predict(res))
 #' @export
-susie = function(X,Y,L=10,prior_variance=0.2,residual_variance=NULL,standardize=TRUE,intercept=TRUE,max_iter=100,tol=1e-2,estimate_residual_variance=TRUE,estimate_prior_variance = FALSE, s_init = NULL, verbose=FALSE, track_fit=FALSE){
+susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,standardize=TRUE,intercept=TRUE,max_iter=100,tol=1e-2,estimate_residual_variance=TRUE,estimate_prior_variance = FALSE, s_init = NULL, verbose=FALSE, track_fit=FALSE){
   # Check input X.
   if (!is.double(X) || !is.matrix(X))
     stop("Input X must be a double-precision matrix")
@@ -71,17 +71,17 @@ susie = function(X,Y,L=10,prior_variance=0.2,residual_variance=NULL,standardize=
 
   # initialize susie fit
   if(!is.null(s_init)){
-    if(!missing(L) || !missing(prior_variance) || !missing(residual_variance))
-      stop("if provide s_init then L, sa2 and sigma2 must not be provided")
-    keys = c('alpha', 'mu', 'mu2', 'sa2')
+    if(!missing(L) || !missing(scaled_prior_variance) || !missing(residual_variance))
+      stop("if provide s_init then L, scaled_prior_variance and residual_variance must not be provided")
+    keys = c('alpha', 'mu', 'mu2', 'V')
     if(!all(keys %in% names(s_init)))
       stop(paste("s_init requires all of the following attributes:", paste(keys, collapse = ', ')))
     if (!all(dim(s_init$mu) == dim(s_init$mu2)))
       stop("dimension of mu and mu2 in s_init do not match")
     if (!all(dim(s_init$mu) == dim(s_init$alpha)))
       stop("dimension of mu and alpha in s_init do not match")
-    if (dim(s_init$alpha)[1] != length(s_init$sa2))
-      stop("sa2 must have length of nrow of alpha in s_init")
+    if (dim(s_init$alpha)[1] != length(s_init$V))
+      stop("V must have length of nrow of alpha in s_init")
     if (is.null(s_init$Xr)) s_init$Xr = X%*%colSums(s_init$mu*s_init$alpha)
     if (is.null(s_init$sigma2)) s_init$sigma2 = var(Y)
     # reset KL
@@ -95,31 +95,31 @@ susie = function(X,Y,L=10,prior_variance=0.2,residual_variance=NULL,standardize=
     residual_variance= as.numeric(residual_variance) #avoid problems with dimension if entered as matrix
 
 
-    if(length(prior_variance)==1){
-      prior_variance = rep(prior_variance,L)
+    if(length(scaled_prior_variance)==1){
+      scaled_prior_variance = rep(scaled_prior_variance,L)
     }
 
     # Check inputs sigma and sa.
     if (length(residual_variance) != 1)
-      stop("Inputs residual_variance must be scalar")
+      stop("Input residual_variance must be scalar")
     # Check inputs sigma and sa.
-    if (length(prior_variance) != L)
-      stop("Inputs prior_variance must be of length 1 or L")
+    if (length(scaled_prior_variance) != L)
+      stop("Input scaled_prior_variance must be of length 1 or L")
 
     # initialize susie fit
     s = list(alpha=matrix(1/p,nrow=L,ncol=p),
              mu=matrix(0,nrow=L,ncol=p),
              mu2=matrix(0,nrow=L,ncol=p),
              Xr=rep(0,n), KL=rep(NA,L),
-             sigma2=residual_variance, sa2=prior_variance)
+             sigma2=residual_variance, V=scaled_prior_variance * as.numeric(var(Y)))
   }
   if (s$sigma2 <= 0)
       stop("residual variance must be positive (is your var(Y) zero?)")
-  if (!all(s$sa2 >= 0))
+  if (!all(s$V >= 0))
       stop("prior variance must be non-negative")
   class(s) = "susie"
 
-  #intialize elbo to NA
+  #initialize elbo to NA
   elbo = rep(NA,max_iter+1)
   elbo[1] = -Inf;
   tracking = list()
@@ -133,9 +133,7 @@ susie = function(X,Y,L=10,prior_variance=0.2,residual_variance=NULL,standardize=
         print(paste0("objective:",susie_get_objective(X,Y,s)))
     }
     if(estimate_residual_variance){
-      new_sigma2 = estimate_residual_variance(X,Y,s)
-      s$sa2 = (s$sa2*s$sigma2)/new_sigma2 # this is so prior variance does not change with update
-      s$sigma2 = new_sigma2
+      s$sigma2 = estimate_residual_variance(X,Y,s)
       if(verbose){
         print(paste0("objective:",susie_get_objective(X,Y,s)))
       }
@@ -167,13 +165,13 @@ susie = function(X,Y,L=10,prior_variance=0.2,residual_variance=NULL,standardize=
 #' @title initialize a susie object using given nonzero effect indices and beta values
 #' @param coef_index a L-vector for indices of nonzero effects
 #' @param coef_value a L-vector for initial estimated beta values
-#' @param num_varialbes a scalar the number of variables in the data
-#' @param prior_variance a scalar or an L-vector
-#' @param residual_variance a scalar
-#' @return a list of initialized alpha, mu, mu2, sa2 and optionally sigma2
+#' @param num_variables a scalar the number of variables in the data
+#' @param V a scalar or an L-vector of prior variances
+#' @param residual_variance a scalar containing residual variance
+#' @return a list of initialized alpha, mu, mu2, V and optionally sigma2
 #' @export
 susie_set_init = function(coef_index, coef_value, num_variables,
-                          prior_variance, residual_variance=NULL){
+                          V, residual_variance=NULL){
   L = length(coef_index)
   if (L <= 0)
     stop("Need at least one non-zero effect")
@@ -183,9 +181,9 @@ susie_set_init = function(coef_index, coef_value, num_variables,
     stop("Inputs coef_index and coef_value must of the same length")
   if (!missing(residual_variance) && length(residual_variance) != 1)
     stop("Inputs residual_variance must be scalar")
-  if(length(prior_variance) == 1)
-    prior_variance = rep(prior_variance,L)
-  if (length(prior_variance) != L)
+  if(length(V) == 1)
+    V = rep(V,L)
+  if (length(V) != L)
     stop("Inputs prior_variance must be of length 1 or L")
 
   alpha = matrix(0,nrow=L,ncol=num_variables)
@@ -195,6 +193,5 @@ susie_set_init = function(coef_index, coef_value, num_variables,
     mu[i, coef_index[i]] = coef_value[i]
   }
   mu2 = mu*mu
-  sa2 = prior_variance
-  return(list(alpha=alpha, mu=mu, mu2=mu2, sa2=sa2, sigma2=residual_variance))
+  return(list(alpha=alpha, mu=mu, mu2=mu2, V=V, sigma2=residual_variance))
 }

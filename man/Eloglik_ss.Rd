@@ -6,3 +6,6 @@
 \usage{
 Eloglik_ss(XtX, XtY, s, var_y, n)
 }
+\description{
+expected loglikelihood for a susie fit
+}

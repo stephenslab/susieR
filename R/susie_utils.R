@@ -314,7 +314,7 @@ get_R = function(X,Y,s){
 #' @param res a susie fit, the output of `susieR::susie()`.
 #' @export
 susie_get_prior_variance <- function(res) {
-  return(res$sa2)
+  return(res$V)
 }
 
 #' @title Get updated residual variance

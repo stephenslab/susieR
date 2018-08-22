@@ -25,14 +25,14 @@ susie_auto = function(X,Y,L_init=1,L_max=512,verbose=FALSE,init_tol=1,
   if(verbose){
     message(paste0("Trying L=",L))
   }
-  s.0 = susie(X,Y,L=L, residual_variance = 0.01*sd(Y)^2, tol= init_tol, prior_variance=1,
+  s.0 = susie(X,Y,L=L, residual_variance = 0.01*sd(Y)^2, tol= init_tol, scaled_prior_variance=1,
               estimate_residual_variance = FALSE, estimate_prior_variance = FALSE,
               standardize=standardize,intercept=intercept,max_iter=max_iter)
   s.1 = susie(X,Y,s_init=s.0,tol=init_tol,estimate_residual_variance=TRUE, estimate_prior_variance = FALSE,
               standardize=standardize,intercept=intercept,max_iter=max_iter)
   s.2 = susie(X,Y,s_init=s.1,tol=init_tol,estimate_residual_variance=TRUE, estimate_prior_variance = TRUE,
               standardize=standardize,intercept=intercept,max_iter=max_iter)
-  converged = !all(s.2$sa2>0) # we call it converged, ie L is big enough, if there are any prior variances set to 0
+  converged = !all(s.2$V>0) # we call it converged, ie L is big enough, if there are any prior variances set to 0
 
   while(!converged & (L<=L_max)){
     for(i in 1:L){
@@ -49,7 +49,7 @@ susie_auto = function(X,Y,L_init=1,L_max=512,verbose=FALSE,init_tol=1,
                 standardize=standardize,intercept=intercept,max_iter=max_iter)
     s.2 = susie(X,Y,s_init=s.1,tol= init_tol,estimate_residual_variance = TRUE, estimate_prior_variance = TRUE,
                 standardize=standardize,intercept=intercept,max_iter=max_iter)
-    converged = !all(s.2$sa2>0) # we call it converged, ie L is big enough, if there are any prior variances set to 0
+    converged = !all(s.2$V>0) # we call it converged, ie L is big enough, if there are any prior variances set to 0
   }
   #final run at default tolerance to improve fit
   s.2 = susie(X,Y,s_init=s.2,estimate_residual_variance = TRUE, estimate_prior_variance = TRUE, tol = tol,

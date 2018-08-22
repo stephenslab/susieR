@@ -15,6 +15,6 @@ test_that("Results from summary stat vs original data",{
                   estimate_prior_variance = TRUE)
   expect_equal(coef(res2), coef(res))
 
-  expect_equal(res2$sa2, res$sa2)
+  expect_equal(res2$V, res$V)
   expect_equal(res2$elbo, res$elbo)
 })
