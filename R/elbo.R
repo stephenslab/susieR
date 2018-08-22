@@ -20,10 +20,12 @@ Eloglik = function(X,Y,s){
 
 # expected squared residuals
 get_ER2 = function(X,Y,s){
-  Xr = (s$alpha*s$mu) %*% t(X)
+  scaled.X = attr(X, 'scaled.X')
+  M = s$alpha*s$mu
+  Xr = compute_sparse_MtX(M, X)
   Xrsum = colSums(Xr)
 
-  d = colSums(X*X)
+  d = colSums(scaled.X*scaled.X)
   postb2 = s$alpha * s$mu2 #posterior second moment
 
   return(sum((Y-Xrsum)^2) - sum(Xr^2) + sum(d*t(postb2)))
@@ -37,6 +39,8 @@ get_ER2 = function(X,Y,s){
 #' @param Eb the posterior mean of b (p vector) (alpha * mu)
 #' @param Eb2 the posterior second moment of b (p vector) (alpha * mu2)
 SER_posterior_e_loglik = function(X,Y,s2,Eb,Eb2){
+  scaled.X = attr(X, 'scaled.X')
   n = nrow(X)
-  -0.5*n*log(2*pi*s2)  - (0.5/s2) * (sum(Y*Y) - 2*sum(Y*(X %*% Eb)) + sum(t(X^2)*as.vector(Eb2)))
+  XEb = compute_sparse_Xy(X, Eb)
+  -0.5*n*log(2*pi*s2)  - (0.5/s2) * (sum(Y*Y) - 2*sum(Y*XEb) + sum(t(scaled.X^2)*as.vector(Eb2)))
 }

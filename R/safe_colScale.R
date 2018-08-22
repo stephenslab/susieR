@@ -2,13 +2,16 @@
 # https://www.r-bloggers.com/a-faster-scale-function/
 # The only change from that code is its treatment of columns with 0 variance.
 # This "safe" version scales those columns by 1 instead of 0.
-safe_colScale = function(x,
+# @param X can be sparse or dense
+# if X is dense return a scaled dense x with associated attributes: scale:center, scale:scale, and scaled.X
+# if X is sparse return sparse itself with associated attributes: scale:scale, scale:center, and scaled.X
+safe_colScale = function(X,
                     center = TRUE,
                     scale = TRUE,
                     add_attr = TRUE,
                     rows = NULL,
                     cols = NULL) {
-
+  x = as.matrix(X)
   if (!is.null(rows) && !is.null(cols)) {
     x <- x[rows, cols, drop = FALSE]
   } else if (!is.null(rows)) {
@@ -36,13 +39,17 @@ safe_colScale = function(x,
     cm = rep(0, length = length(cm))
   }
   x = t( (t(x) - cm) / csd )
+  if (is.matrix(X)){
+    X = x
+  }
   if (add_attr) {
     if (center) {
-      attr(x, "scaled:center") <- cm
+      attr(X, "scaled:center") <- cm
     }
     if (scale) {
-      attr(x, "scaled:scale") <- csd
+      attr(X, "scaled:scale") <- csd
     }
+    attr(X, "scaled.X") <- x
   }
-  return(x)
+  return(X)
 }

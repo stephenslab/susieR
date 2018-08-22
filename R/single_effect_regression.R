@@ -18,21 +18,22 @@
 #' \item{V}{the prior variance (after optimization, if optimize_V is TRUE)}
 #' \item{loglik}{The log-likelihood p(Y|X,V)}
 single_effect_regression = function(Y,X,V,residual_variance=1,optimize_V=FALSE){
-  d = colSums(X^2)
-  XtY = t(X) %*% Y
+  scaled.X = attr(X, 'scaled.X')
+  d = colSums(scaled.X^2)
+  XtY = compute_sparse_Xty(X, Y)
 
   betahat = (1/d) * XtY
   shat2 = residual_variance/d
 
   if(optimize_V){
-    if(loglik.grad(0,Y,X,residual_variance)<0){
+    if(loglik.grad(0,Y,X,residual_variance,Xty)<0){
       V=0
     } else {
       #V.o = optim(par=log(V),fn=negloglik.logscale,gr = negloglik.grad.logscale, X=X,Y=Y,s2=s2,method="BFGS")
       #if(V.o$convergence!=0){
       #  warning("optimization over prior variance failed to converge")
       #}
-      V.u=uniroot(negloglik.grad.logscale,c(-10,10),extendInt = "upX",Y=Y,X=X,s2=residual_variance)
+      V.u=uniroot(negloglik.grad.logscale,c(-10,10),extendInt = "upX",Y=Y,X=X,s2=residual_variance, Xty=Xty)
       V = exp(V.u$root)
     }
   }
@@ -56,9 +57,10 @@ single_effect_regression = function(Y,X,V,residual_variance=1,optimize_V=FALSE){
 
 # In these functions s2 represents residual_variance and shat2 is an estimate of it
 
-loglik.grad = function(V,Y,X,s2){
-  d = colSums(X^2)
-  betahat = (1/d) * t(X) %*% Y
+loglik.grad = function(V,Y,X,s2,Xty){
+  scaled.X = attr(X, 'scaled.X')
+  d = colSums(scaled.X^2)
+  betahat = (1/d) * Xty
   shat2 = s2/d
 
   lbf = dnorm(betahat,0,sqrt(V+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
@@ -74,8 +76,8 @@ loglik.grad = function(V,Y,X,s2){
 
 # define loglikelihood and gradient as function of lV:=log(V)
 # to improve numerical optimization
-negloglik.logscale = function(lV, Y,X,s2){-loglik(exp(lV),Y,X,s2)}
-negloglik.grad.logscale = function(lV,Y,X,s2){-exp(lV)*loglik.grad(exp(lV),Y,X,s2)}
+#negloglik.logscale = function(lV, Y,X,s2){-loglik(exp(lV),Y,X,s2)}
+negloglik.grad.logscale = function(lV,Y,X,s2,Xty){-exp(lV)*loglik.grad(exp(lV),Y,X,s2,Xty)}
 
 #
 # numDeriv::grad(negloglik.logscale,0, X =X, Y=Y,s2=s2)
