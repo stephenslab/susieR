@@ -33,6 +33,7 @@ X = susieR:::safe_colScale(X.dense)
 Eb = rep(1, p)
 Eb2 = rep(1, p)
 s2 = residual_variance
+V = scaled_prior_variance
 
 
 objective.original.res = susieR:::susie_get_objective(X, y, s)
@@ -47,7 +48,14 @@ saveRDS(ER2.original.res, 'ER2_original_res.rds')
 SER.original.res = susieR:::SER_posterior_e_loglik(X,y,s2,Eb,Eb2)
 saveRDS(SER.original.res, 'SER_original_res.rds')
 
+singleReg.original.res = susieR:::single_effect_regression(y,X,V)
+saveRDS(singleReg.original.res, 'singleReg_original_res.rds')
 
+vbupdate.original.res = susieR:::update_each_effect(X, y, s)
+saveRDS(vbupdate.original.res, 'vbupdate_original_res.rds')
+
+susiefit.original.res = susieR:::susie(X,y)
+saveRDS(susiefit.original.res, 'susiefit_original_res.rds')
 
 
 

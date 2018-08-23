@@ -7,8 +7,8 @@ create_sparsity_mat = function(sparsity, n, p){
   return(mat)     
 }
 
-test_that("sparse version Eloglik",{
-  original.res = readRDS('../original_susie_results/Eloglik_original_res.rds')
+test_that("sparse version update_each_effect",{
+  original.res = readRDS('../original_susie_results/vbupdate_original_res.rds')
   set.seed(1)
   n = 1000
   p = 10000
@@ -18,7 +18,6 @@ test_that("sparse version Eloglik",{
   beta[400]  = 10
   beta[1000] = 10
   X.dense = create_sparsity_mat(0.99,n,p)
-  X.sparse = as(X.dense,'dgCMatrix')
   y = c(X.dense %*% beta + rnorm(n))
   L = 10
   residual_variance = 0.8
@@ -28,14 +27,27 @@ test_that("sparse version Eloglik",{
            mu2=matrix(3,nrow=L,ncol=p),
            Xr=rep(5,n), KL=rep(1.2,L),
            sigma2=residual_variance, V=scaled_prior_variance * as.numeric(var(y)))
+  X.sparse = as(X.dense,'dgCMatrix')
+
   
   scaledX.dense = susieR:::safe_colScale(X.dense)
   scaledX.sparse = susieR:::safe_colScale(X.sparse)
   
-  dense.res = susieR:::Eloglik(scaledX.dense, y, s)
-  sparse.res = susieR:::Eloglik(scaledX.sparse, y, s)
+  dense.res = susieR:::update_each_effect(scaledX.dense,y,s)
+  sparse.res = susieR:::update_each_effect(scaledX.sparse,y,s)
+  
+  sparse.res$alpha = as.matrix(sparse.res$alpha, p, 1)
+  sparse.res$mu = as.matrix(sparse.res$mu, p, 1)
+  sparse.res$mu2 = as.matrix(sparse.res$mu2, p, 1)
+  sparse.res$Xr = as.matrix(sparse.res$Xr, n, 1)
   
   expect_equal(dense.res, original.res)
-  expect_equal(sparse.res, original.res)
+  expect_equal(sparse.res$alpha, original.res$alpha)
+  expect_equal(sparse.res$mu, original.res$mu)
+  expect_equal(sparse.res$mu2, original.res$mu2)
+  expect_equal(sparse.res$Xr, original.res$Xr)
+  expect_equal(sparse.res$KL, original.res$KL)
+  expect_equal(sparse.res$sigma2, original.res$sigma2)
+  expect_equal(sparse.res$V, original.res$V)
   
 })

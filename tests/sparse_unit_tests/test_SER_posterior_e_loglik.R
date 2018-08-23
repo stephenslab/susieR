@@ -1,3 +1,12 @@
+create_sparsity_mat = function(sparsity, n, p){
+  nonzero = round(n*p*(1-sparsity))
+  nonzero.idx = sample(n*p, nonzero)
+  mat = numeric(n*p)
+  mat[nonzero.idx] = 1
+  mat = matrix(mat, nrow=n, ncol=p)
+  return(mat)     
+}
+
 test_that("sparse version SER_posterior_e_loglik",{
   original.res = readRDS('../original_susie_results/SER_original_res.rds')
   set.seed(1)
