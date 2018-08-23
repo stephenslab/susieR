@@ -22,7 +22,7 @@ Eloglik = function(X,Y,s){
 get_ER2 = function(X,Y,s){
   scaled.X = attr(X, 'scaled.X')
   M = s$alpha*s$mu
-  Xr = compute_sparse_MtX(M, X)
+  Xr = compute_MtX(M, X)
   Xrsum = colSums(Xr)
 
   d = colSums(scaled.X*scaled.X)
@@ -41,6 +41,6 @@ get_ER2 = function(X,Y,s){
 SER_posterior_e_loglik = function(X,Y,s2,Eb,Eb2){
   scaled.X = attr(X, 'scaled.X')
   n = nrow(X)
-  XEb = compute_sparse_Xy(X, Eb)
+  XEb = compute_Xy(X, Eb)
   -0.5*n*log(2*pi*s2)  - (0.5/s2) * (sum(Y*Y) - 2*sum(Y*XEb) + sum(t(scaled.X^2)*as.vector(Eb2)))
 }

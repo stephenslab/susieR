@@ -33,9 +33,8 @@ test_that("sparse version safe_colScale",{
   sparse.scaledX = attr(sparse.res, 'scaled.X')
   attributes(sparse.scaledX) = NULL
   
-  expect_equal(dense.faceX, dense.scaledX)
   expect_equal(sparse.faceX, X.sparse)
-  expect_equal(sparse.scaledX, dense.scaledX)
+  expect_equal(sparse.scaledX, dense.faceX)
   expect_equal(attr(dense.res, 'scaled:center'), attr(sparse.res, 'scaled:center'))
   expect_equal(attr(dense.res, 'scaled:scale'), attr(sparse.res, 'scaled:scale'))
 })

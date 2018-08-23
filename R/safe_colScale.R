@@ -49,7 +49,9 @@ safe_colScale = function(X,
     if (scale) {
       attr(X, "scaled:scale") <- csd
     }
-    attr(X, "scaled.X") <- x
+    if (class(X)=='dgCMatrix') {
+      attr(X, "scaled.X") <- x
+    }
   }
   return(X)
 }

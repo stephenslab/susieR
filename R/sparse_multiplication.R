@@ -6,7 +6,7 @@
 #
 #' @importFrom Matrix t
 #' @importFrom Matrix tcrossprod
-compute_sparse_Xy = function(X, y){
+compute_Xy = function(X, y){
   cm = attr(X, 'scaled:center')
   csd = attr(X, 'scaled:scale')
   if(is.matrix(X)){
@@ -29,7 +29,7 @@ compute_sparse_Xy = function(X, y){
 #
 #' @importFrom Matrix t
 #' @importFrom Matrix crossprod
-compute_sparse_Xty = function(X, y){
+compute_Xty = function(X, y){
   cm = attr(X, 'scaled:center')
   csd = attr(X, 'scaled:scale')
   if(is.matrix(X)){
@@ -47,12 +47,28 @@ compute_sparse_Xty = function(X, y){
 # @param X is a scaled dense matrix or an unscaled sparse matrix 
 # @param cm a p vector of column means 
 # @param csd a p vector of column standard deviations 
-compute_sparse_MtX = function(M, X){
+compute_MtX = function(M, X){
   cm = attr(X, 'scaled:center')
   csd = attr(X, 'scaled:scale')
   if(is.matrix(X)){
     return(M %*% t(X))
   }else{
-    return(t(apply(M, 1, function(y) compute_sparse_Xy(X, y))))
+    return(t(apply(M, 1, function(y) compute_Xy(X, y))))
   }
 }
+
+# @title Compute square of a scaled X
+# @param X is a scaled dense X, or an unscaled sparse X with scaled.X as one attribute
+compute_X2 = function(X){
+  if (is.matrix(X)){
+    return(X*X)
+  } else {
+    scaled.X = attr(X, 'scaled.X')
+    return(scaled.X*scaled.X)
+  }
+}
+  
+  
+  
+  
+  
