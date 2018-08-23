@@ -49,8 +49,8 @@
 #' @export
 susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,standardize=TRUE,intercept=TRUE,max_iter=100,tol=1e-2,estimate_residual_variance=TRUE,estimate_prior_variance = FALSE, s_init = NULL, verbose=FALSE, track_fit=FALSE){
   # Check input X.
-  #if (!is.double(X) || !is.matrix(X))
-   # stop("Input X must be a double-precision matrix")
+  if (!(is.double(X) & is.matrix(X)) & !(class(X)=='dgCMatrix'))
+    stop("Input X must be a double-precision matrix, or a sparse matrix.")
   p = ncol(X)
   n = nrow(X)
   mean_y = mean(Y)
@@ -84,7 +84,7 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,stand
       stop("dimension of mu and alpha in s_init do not match")
     if (dim(s_init$alpha)[1] != length(s_init$V))
       stop("V must have length of nrow of alpha in s_init")
-    if (is.null(s_init$Xr)) s_init$Xr = compute_sparse_Xy(X, colSums(s_init$mu*s_init$alpha))
+    if (is.null(s_init$Xr)) s_init$Xr = compute_Xy(X, colSums(s_init$mu*s_init$alpha))
     if (is.null(s_init$sigma2)) s_init$sigma2 = var(Y)
     # reset KL
     s_init$KL = rep(NA, nrow(s_init$alpha))
