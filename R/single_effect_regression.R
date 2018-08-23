@@ -19,7 +19,7 @@
 #' \item{loglik}{The log-likelihood p(Y|X,V)}
 single_effect_regression = function(Y,X,V,residual_variance=1,optimize_V=FALSE){
   d = colSums(compute_X2(X))
-  XtY = compute_sparse_Xty(X, Y)
+  XtY = compute_Xty(X, Y)
 
   betahat = (1/d) * XtY
   shat2 = residual_variance/d
