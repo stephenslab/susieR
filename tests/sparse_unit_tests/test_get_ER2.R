@@ -1,5 +1,5 @@
-test_that("sparse version Eloglik",{
-  original.res = readRDS('../original_susie_results/Eloglik_original_res.rds')
+test_that("sparse version get_ER2",{
+  original.res = readRDS('../original_susie_results/ER2_original_res.rds')
   set.seed(1)
   n = 1000
   p = 10000
@@ -23,8 +23,8 @@ test_that("sparse version Eloglik",{
   scaledX.dense = susieR:::safe_colScale(X.dense)
   scaledX.sparse = susieR:::safe_colScale(X.sparse)
   
-  dense.res = susieR:::Eloglik(scaledX.dense, y, s)
-  sparse.res = susieR:::Eloglik(scaledX.sparse, y, s)
+  dense.res = susieR:::get_ER2(scaledX.dense, y, s)
+  sparse.res = susieR:::get_ER2(scaledX.sparse, y, s)
   
   expect_equal(dense.res, original.res)
   expect_equal(sparse.res, original.res)

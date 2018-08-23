@@ -1,5 +1,5 @@
-test_that("sparse version Eloglik",{
-  original.res = readRDS('../original_susie_results/Eloglik_original_res.rds')
+test_that("sparse version SER_posterior_e_loglik",{
+  original.res = readRDS('../original_susie_results/SER_original_res.rds')
   set.seed(1)
   n = 1000
   p = 10000
@@ -19,12 +19,15 @@ test_that("sparse version Eloglik",{
            mu2=matrix(3,nrow=L,ncol=p),
            Xr=rep(5,n), KL=rep(1.2,L),
            sigma2=residual_variance, V=scaled_prior_variance * as.numeric(var(y)))
+  Eb = rep(1, p)
+  Eb2 = rep(1, p)
+  s2 = residual_variance
   
   scaledX.dense = susieR:::safe_colScale(X.dense)
   scaledX.sparse = susieR:::safe_colScale(X.sparse)
   
-  dense.res = susieR:::Eloglik(scaledX.dense, y, s)
-  sparse.res = susieR:::Eloglik(scaledX.sparse, y, s)
+  dense.res = susieR:::SER_posterior_e_loglik(scaledX.dense,y,s2,Eb,Eb2)
+  sparse.res = susieR:::SER_posterior_e_loglik(scaledX.sparse,y,s2,Eb,Eb2)
   
   expect_equal(dense.res, original.res)
   expect_equal(sparse.res, original.res)
