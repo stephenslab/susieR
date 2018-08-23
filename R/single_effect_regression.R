@@ -18,8 +18,7 @@
 #' \item{V}{the prior variance (after optimization, if optimize_V is TRUE)}
 #' \item{loglik}{The log-likelihood p(Y|X,V)}
 single_effect_regression = function(Y,X,V,residual_variance=1,optimize_V=FALSE){
-  scaled.X = attr(X, 'scaled.X')
-  d = colSums(scaled.X^2)
+  d = colSums(compute_X2(X))
   XtY = compute_sparse_Xty(X, Y)
 
   betahat = (1/d) * XtY
@@ -58,8 +57,7 @@ single_effect_regression = function(Y,X,V,residual_variance=1,optimize_V=FALSE){
 # In these functions s2 represents residual_variance and shat2 is an estimate of it
 
 loglik.grad = function(V,Y,X,s2,Xty){
-  scaled.X = attr(X, 'scaled.X')
-  d = colSums(scaled.X^2)
+  d = colSums(compute_X2(X))
   betahat = (1/d) * Xty
   shat2 = s2/d
 
