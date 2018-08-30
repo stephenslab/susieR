@@ -5,8 +5,8 @@
 \title{Plot per variable summary in SuSiE CSs}
 \usage{
 susie_pplot(data, res = NULL, dtype = "raw_data", CS = NULL,
-  coverage = 0.9, add_bar = FALSE, pos = NULL, b = NULL,
-  max_cs = 400, ...)
+  coverage = 0.9, add_bar = FALSE, pos = NULL, b = NULL, max_cs = 400,
+  ...)
 }
 \arguments{
 \item{data}{can be raw data \code{X} and \code{y} as \code{list(X=X,y=y)}, or be a vector of z-scores, or p-values.}

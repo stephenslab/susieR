@@ -4,11 +4,10 @@
 \alias{susie}
 \title{Bayesian sum of single-effect (susie) linear regression of Y on X}
 \usage{
-susie(X, Y, L = 10, scaled_prior_variance = 0.2,
-  residual_variance = NULL, standardize = TRUE, intercept = TRUE,
-  max_iter = 100, tol = 0.01, estimate_residual_variance = TRUE,
-  estimate_prior_variance = FALSE, s_init = NULL, verbose = FALSE,
-  track_fit = FALSE)
+susie(X, Y, L = 10, scaled_prior_variance = 0.2, residual_variance = NULL,
+  standardize = TRUE, intercept = TRUE, max_iter = 100, tol = 0.01,
+  estimate_residual_variance = TRUE, estimate_prior_variance = FALSE,
+  s_init = NULL, verbose = FALSE, track_fit = FALSE)
 }
 \arguments{
 \item{X}{an n by p matrix of covariates}

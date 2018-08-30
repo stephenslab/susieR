@@ -4,9 +4,8 @@
 \alias{susie_auto}
 \title{An attempt to automate reliable running of susie even on hard problems}
 \usage{
-susie_auto(X, Y, L_init = 1, L_max = 512, verbose = FALSE,
-  init_tol = 1, standardize = TRUE, intercept = TRUE,
-  max_iter = 100, tol = 0.01)
+susie_auto(X, Y, L_init = 1, L_max = 512, verbose = FALSE, init_tol = 1,
+  standardize = TRUE, intercept = TRUE, max_iter = 100, tol = 0.01)
 }
 \arguments{
 \item{X}{an n by p matrix of covariates}

@@ -17,8 +17,11 @@
 #' \item{lbf}{vector of log Bayes factors for each variable}
 #' \item{V}{the prior variance (after optimization, if optimize_V is TRUE)}
 #' \item{loglik}{The log-likelihood p(Y|X,V)}
+#'
+#' @importFrom Matrix colSums
+#' 
 single_effect_regression = function(Y,X,V,residual_variance=1,optimize_V=FALSE){
-  d = colSums(compute_X2(X))
+  d = Matrix::colSums(compute_X2(X))
   XtY = compute_Xty(X, Y)
 
   betahat = (1/d) * XtY
@@ -56,8 +59,9 @@ single_effect_regression = function(Y,X,V,residual_variance=1,optimize_V=FALSE){
 
 # In these functions s2 represents residual_variance and shat2 is an estimate of it
 
+#' @importFrom Matrix colSums
 loglik.grad = function(V,Y,X,s2,Xty){
-  d = colSums(compute_X2(X))
+  d = Matrix::colSums(compute_X2(X))
   betahat = (1/d) * Xty
   shat2 = s2/d
 

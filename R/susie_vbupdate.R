@@ -17,7 +17,8 @@ update_each_effect <- function (X, Y, s_init, estimate_prior_variance=FALSE) {
     #compute residuals
       R = Y - s$Xr
 
-      res = single_effect_regression(R,X,s$V[l],s$sigma2,estimate_prior_variance)
+      res <- single_effect_regression(R,X,s$V[l],s$sigma2,
+                                      estimate_prior_variance)
 
     # Update the variational estimate of the posterior mean.
       s$mu[l,] <- res$mu
