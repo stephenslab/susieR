@@ -11,24 +11,24 @@ safe_colScale = function(X,
                     add_attr = TRUE,
                     rows = NULL,
                     cols = NULL) {
-  x = as.matrix(X)
+  X.dense = as.matrix(X)
   if (!is.null(rows) && !is.null(cols)) {
-    x <- x[rows, cols, drop = FALSE]
+    X.dense <- X.dense[rows, cols, drop = FALSE]
   } else if (!is.null(rows)) {
-    x <- x[rows, , drop = FALSE]
+    X.dense <- X.dense[rows, , drop = FALSE]
   } else if (!is.null(cols)) {
-    x <- x[, cols, drop = FALSE]
+    X.dense <- X.dense[, cols, drop = FALSE]
   }
 
   ################
   # Get the column means
   ################
-  cm = colMeans(x, na.rm = TRUE)
+  cm = colMeans(X.dense, na.rm = TRUE)
   ################
   # Get the column sd
   ################
   if (scale) {
-    csd = matrixStats::colSds(x, center = cm)
+    csd = matrixStats::colSds(X.dense, center = cm)
     csd[csd==0] = 1
   } else {
     # just divide by 1 if not
@@ -38,9 +38,9 @@ safe_colScale = function(X,
     # just subtract 0
     cm = rep(0, length = length(cm))
   }
-  x = t( (t(x) - cm) / csd )
+  X.dense = t( (t(X.dense) - cm) / csd )
   if (is.matrix(X)){
-    X = x
+    X = X.dense
   }
   if (add_attr) {
     if (center) {
@@ -50,7 +50,7 @@ safe_colScale = function(X,
       attr(X, "scaled:scale") <- csd
     }
     if (class(X)=='dgCMatrix') {
-      attr(X, "scaled.X") <- x
+      attr(X, "scaled.X") <- X.dense
     }
   }
   return(X)
