@@ -170,7 +170,7 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,stand
 #' @param residual_variance a scalar containing residual variance
 #' @return a list of initialized alpha, mu, mu2, V and optionally sigma2
 #' @export
-susie_set_init = function(coef_index, coef_value, num_variables,
+susie_init = function(coef_index, coef_value, num_variables,
                           V, residual_variance=NULL){
   L = length(coef_index)
   if (L <= 0)
