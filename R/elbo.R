@@ -6,24 +6,24 @@
 #'
 #' @export
 #'
-susie_get_objective = function(X, Y, s) {
-  return(Eloglik(X,Y,s)-sum(s$KL))
+susie_get_objective = function(X, Y, s, d) {
+  return(Eloglik(X,Y,s,d)-sum(s$KL))
 }
 
 #' @title expected loglikelihood for a susie fit
-Eloglik = function(X,Y,s){
+Eloglik = function(X,Y,s,d){
   n = nrow(X)
   p = ncol(X)
-  result =  -(n/2) * log(2*pi* s$sigma2) - (1/(2*s$sigma2)) * get_ER2(X,Y,s)
+  result =  -(n/2) * log(2*pi* s$sigma2) - (1/(2*s$sigma2)) * get_ER2(X,Y,s,d)
   return(result)
 }
 
 # expected squared residuals
-get_ER2 = function(X,Y,s){
+get_ER2 = function(X,Y,s,d){
   Xr = compute_MtX(s$alpha*s$mu, X)
   Xrsum = colSums(Xr)
 
-  d = colSums(compute_X2(X))
+  #d = colSums(compute_X2(X))
   postb2 = s$alpha * s$mu2 #posterior second moment
 
   return(sum((Y-Xrsum)^2) - sum(Xr^2) + sum(d*t(postb2)))

@@ -20,15 +20,14 @@
 #'
 #' @importFrom Matrix colSums
 #' 
-single_effect_regression = function(Y,X,V,residual_variance=1,optimize_V=FALSE){
-  d = Matrix::colSums(compute_X2(X))
+single_effect_regression = function(Y,X,V,residual_variance=1,optimize_V=FALSE, d){
   XtY = compute_Xty(X, Y)
 
   betahat = (1/d) * XtY
   shat2 = residual_variance/d
 
   if(optimize_V){
-    if(loglik.grad(0,Y,X,residual_variance,Xty)<0){
+    if(loglik.grad(0,Y,X,residual_variance,Xty,d)<0){
       V=0
     } else {
       #V.o = optim(par=log(V),fn=negloglik.logscale,gr = negloglik.grad.logscale, X=X,Y=Y,s2=s2,method="BFGS")
@@ -60,8 +59,7 @@ single_effect_regression = function(Y,X,V,residual_variance=1,optimize_V=FALSE){
 # In these functions s2 represents residual_variance and shat2 is an estimate of it
 
 #' @importFrom Matrix colSums
-loglik.grad = function(V,Y,X,s2,Xty){
-  d = Matrix::colSums(compute_X2(X))
+loglik.grad = function(V,Y,X,s2,Xty,d){
   betahat = (1/d) * Xty
   shat2 = s2/d
 
