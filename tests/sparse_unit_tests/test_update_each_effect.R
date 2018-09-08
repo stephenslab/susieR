@@ -28,13 +28,15 @@ test_that("sparse version update_each_effect",{
            Xr=rep(5,n), KL=rep(1.2,L),
            sigma2=residual_variance, V=scaled_prior_variance * as.numeric(var(y)))
   X.sparse = as(X.dense,'dgCMatrix')
+  
 
   
   scaledX.dense = susieR:::safe_colScale(X.dense)
   scaledX.sparse = susieR:::safe_colScale(X.sparse)
+  d = Matrix::colSums(susieR:::compute_X2(scaledX.sparse))
   
-  dense.res = susieR:::update_each_effect(scaledX.dense,y,s)
-  sparse.res = susieR:::update_each_effect(scaledX.sparse,y,s)
+  dense.res = susieR:::update_each_effect(scaledX.dense,y,s,d=d)
+  sparse.res = susieR:::update_each_effect(scaledX.sparse,y,s,d=d)
   
   sparse.res$alpha = as.matrix(sparse.res$alpha, p, 1)
   sparse.res$mu = as.matrix(sparse.res$mu, p, 1)
