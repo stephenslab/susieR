@@ -49,7 +49,7 @@
 #' @export
 susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,standardize=TRUE,intercept=TRUE,max_iter=100,tol=1e-2,estimate_residual_variance=TRUE,estimate_prior_variance = FALSE, s_init = NULL, verbose=FALSE, track_fit=FALSE){
   # Check input X.
-  if (!(is.double(X) & is.matrix(X)) & !(class(X)=='dgCMatrix'))
+  if (!(is.double(X) & is.matrix(X)) & !is(X, 'CsparseMatrix'))
     stop("Input X must be a double-precision matrix, or a sparse matrix.")
   p = ncol(X)
   n = nrow(X)
