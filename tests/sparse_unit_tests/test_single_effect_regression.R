@@ -36,7 +36,18 @@ test_that("sparse version single_effect_regression",{
   sparse.res$mu2 = as.matrix(sparse.res$mu2, p, 1)
   sparse.res$lbf = as.matrix(sparse.res$lbf, p, 1)
   
-  expect_equal(dense.res, original.res)
+  dense.res$alpha = as.matrix(dense.res$alpha, p, 1)
+  dense.res$mu = as.matrix(dense.res$mu, p, 1)
+  dense.res$mu2 = as.matrix(dense.res$mu2, p, 1)
+  dense.res$lbf = as.matrix(dense.res$lbf, p, 1)
+  
+  expect_equal(dense.res$alpha, original.res$alpha)
+  expect_equal(dense.res$mu, original.res$mu)
+  expect_equal(dense.res$mu2, original.res$mu2)
+  expect_equal(dense.res$lbf, original.res$lbf)
+  expect_equal(dense.res$V, original.res$V)
+  expect_equal(dense.res$loglik, original.res$loglik)
+  
   expect_equal(sparse.res$alpha, original.res$alpha)
   expect_equal(sparse.res$mu, original.res$mu)
   expect_equal(sparse.res$mu2, original.res$mu2)
