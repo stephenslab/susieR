@@ -9,16 +9,12 @@
 compute_Xy = function(X, y){
   cm = attr(X, 'scaled:center')
   csd = attr(X, 'scaled:scale')
-  if(is.matrix(X)){
-    return(X%*%y)
-  }else{
-    #scale Xy
-    scaled.X  <- t(t(X)/csd)
-    scaled.Xy <- tcrossprod(scaled.X,t(y))
-    #center Xy
-    Xy <- scaled.Xy - sum(cm*y/csd) 
-    return(as.numeric(Xy))
-  }
+  #scale Xy
+  scaled.X  <- t(t(X)/csd)
+  scaled.Xy <- tcrossprod(scaled.X,t(y))
+  #center Xy
+  Xy <- scaled.Xy - sum(cm*y/csd) 
+  return(as.numeric(Xy))
 }
 
 # @title Compute t(scaled.X)%*%y using sparse multiplication
@@ -32,14 +28,10 @@ compute_Xy = function(X, y){
 compute_Xty = function(X, y){
   cm = attr(X, 'scaled:center')
   csd = attr(X, 'scaled:scale')
-  if(is.matrix(X)){
-    return(t(X)%*%y)
-  }else{
-    Xty        <- crossprod(X, y)
-    scaled.Xty <- t(t(Xty)/csd)
-    centered.scaled.Xty <- scaled.Xty - cm/csd * sum(y)     
-    return(as.numeric(centered.scaled.Xty))
-  }
+  Xty        <- crossprod(X, y)
+  scaled.Xty <- t(t(Xty)/csd)
+  centered.scaled.Xty <- scaled.Xty - cm/csd * sum(y)     
+  return(as.numeric(centered.scaled.Xty))
 }
 
 # @title Compute M%*%t(scaled.X) using sparse multiplication
@@ -50,22 +42,14 @@ compute_Xty = function(X, y){
 compute_MtX = function(M, X){
   cm = attr(X, 'scaled:center')
   csd = attr(X, 'scaled:scale')
-  if(is.matrix(X)){
-    return(M %*% t(X))
-  }else{
-    return(t(apply(M, 1, function(y) compute_Xy(X, y))))
-  }
+  return(t(apply(M, 1, function(y) compute_Xy(X, y))))
 }
 
 # @title Compute square of a scaled X
 # @param X is a scaled dense X, or an unscaled sparse X with scaled.X as one attribute
 compute_X2 = function(X){
-  if (is.matrix(X)){
-    return(X*X)
-  } else {
-    scaled.X = attr(X, 'scaled.X')
-    return(scaled.X*scaled.X)
-  }
+  scaled.X = attr(X, 'scaled.X')
+  return(scaled.X*scaled.X)
 }
   
   
