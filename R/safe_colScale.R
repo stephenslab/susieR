@@ -39,18 +39,14 @@ safe_colScale = function(X,
     cm = rep(0, length = length(cm))
   }
   X.dense = t( (t(X.dense) - cm) / csd )
-  if (is.matrix(X)){
-    X = X.dense
-  }
+  
   if (add_attr) {
+    attr(X, "scaled.X") <- X.dense
     if (center) {
       attr(X, "scaled:center") <- cm
     }
     if (scale) {
       attr(X, "scaled:scale") <- csd
-    }
-    if (class(X)=='dgCMatrix') {
-      attr(X, "scaled.X") <- X.dense
     }
   }
   return(X)
