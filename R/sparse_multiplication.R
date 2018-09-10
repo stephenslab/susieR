@@ -7,14 +7,19 @@
 #' @importFrom Matrix t
 #' @importFrom Matrix tcrossprod
 compute_Xy = function(X, y){
-  cm = attr(X, 'scaled:center')
-  csd = attr(X, 'scaled:scale')
-  #scale Xy
-  scaled.X  <- t(t(X)/csd)
-  scaled.Xy <- tcrossprod(scaled.X,t(y))
-  #center Xy
-  Xy <- scaled.Xy - sum(cm*y/csd) 
-  return(as.numeric(Xy))
+  #if (is.matrix(X)) {
+  #  return(attr(X, 'scaled.X')%*%y)
+  #} else {
+  #  cm = attr(X, 'scaled:center')
+  #  csd = attr(X, 'scaled:scale')
+  #  #scale Xy
+  #  scaled.X  <- t(t(X)/csd)
+  #  scaled.Xy <- tcrossprod(scaled.X,t(y))
+  #  #center Xy
+  #  Xy <- scaled.Xy - sum(cm*y/csd) 
+  #  return(as.numeric(Xy))
+  #}
+  return(attr(X, 'scaled.X')%*%y)
 }
 
 # @title Compute t(scaled.X)%*%y using sparse multiplication
