@@ -1,0 +1,82 @@
+---
+title: "A minimal example on revised SuSiE"
+author: "Kaiqian Zhang"
+date: "9/10/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, warning=FALSE}
+library(Matrix)
+library(ggplot2)
+library(microbenchmark)
+library(profvis)
+```
+
+## Goal
+In this vignette, we want to compare a revised version SuSiE, which allows for sparse matrix multiplication, with the original one. We claim that the revised version reduces computation time by a large extent and saves more memory. Since we have verified correctness by unit tests, we will only consider speed comparisons here. 
+
+## Results
+
+In this minimal example, we have shown that the revised version of SuSiE can reduce computation time by around $40\%$, even if the input matrix is a dense matrix, and further reduce computation time $5\%$ more given the input matrix is a sparse matrix. It is also obvious that the revised version takes less memory. We provide line profiling below so that people who are interested could improve the work as well.  
+
+## Data
+We randomly simulate a dense matrix and a sparse matrix at sparsity $99\%$, i.e. $99\%$ entries are zeros.
+```{r}
+create_sparsity_mat = function(sparsity, n, p){
+  nonzero = round(n*p*(1-sparsity))
+  nonzero.idx = sample(n*p, nonzero)
+  mat = numeric(n*p)
+  mat[nonzero.idx] = 1
+  mat = matrix(mat, nrow=n, ncol=p)
+  return(mat)     
+}
+```
+
+```{r}
+n = 1000
+p = 1000
+beta = rep(0,p)
+beta[1]    = 10 
+beta[300]  = 10
+beta[400]  = 10
+beta[1000] = 10
+set.seed(1)
+X.dense = create_sparsity_mat(0.99,n,p)
+X.sparse = as(X.dense,'dgCMatrix')
+y = c(X.dense %*% beta + rnorm(n))
+```
+
+## Original version SuSiE
+```{r}
+devtools::install_github("stephenslab/susieR")
+library(susieR)
+```
+
+```{r}
+profvis({
+  susie.original = susie(X.dense, y)
+})
+```
+
+## Revised version SuSiE
+```{r}
+devtools::install_local("~/Desktop/M/M-github-repos/susieR-sparse-v3")
+library(susieR)
+```
+
+```{r}
+profvis({
+  susie.revised.dense = susie(X.dense, y)
+})
+```
+
+```{r}
+profvis({
+  susie.revised.sparse = susie(X.sparse, y)
+})
+```
+
