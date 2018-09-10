@@ -11,15 +11,20 @@ safe_colScale = function(X,
                     add_attr = TRUE,
                     rows = NULL,
                     cols = NULL) {
-  X.dense = as.matrix(X)
+  
   if (!is.null(rows) && !is.null(cols)) {
-    X.dense <- X.dense[rows, cols, drop = FALSE]
+    X <- X[rows, cols, drop = FALSE]
   } else if (!is.null(rows)) {
-    X.dense <- X.dense[rows, , drop = FALSE]
+    X <- X[rows, , drop = FALSE]
   } else if (!is.null(cols)) {
-    X.dense <- X.dense[, cols, drop = FALSE]
+    X <- X[, cols, drop = FALSE]
   }
-
+  
+  if (!is.null(attr(X, 'scaled:center'))){
+    X.dense = attr(X, 'scaled.X')
+  } else {
+    X.dense = as.matrix(X)
+  }
   ################
   # Get the column means
   ################
@@ -42,12 +47,8 @@ safe_colScale = function(X,
   
   if (add_attr) {
     attr(X, "scaled.X") <- X.dense
-    if (center) {
-      attr(X, "scaled:center") <- cm
-    }
-    if (scale) {
-      attr(X, "scaled:scale") <- csd
-    }
+    if (center) attr(X, "scaled:center") <- cm
+    if (scale) attr(X, "scaled:scale") <- csd
   }
   return(X)
 }

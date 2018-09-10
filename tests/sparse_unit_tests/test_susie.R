@@ -21,11 +21,8 @@ test_that("sparse version susie",{
   y = c(X.dense %*% beta + rnorm(n))
   X.sparse = as(X.dense,'dgCMatrix')
   
-  scaledX.dense = susieR:::safe_colScale(X.dense)
-  scaledX.sparse = susieR:::safe_colScale(X.sparse)
-  
-  dense.res = susie(scaledX.dense, y)
-  sparse.res = susie(scaledX.sparse, y)
+  dense.res = susie(X.dense, y)
+  sparse.res = susie(X.sparse, y)
   
   sparse.res$alpha = as.matrix(sparse.res$alpha, p, 1)
   sparse.res$mu = as.matrix(sparse.res$mu, p, 1)

@@ -54,20 +54,17 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,stand
   p = ncol(X)
   n = nrow(X)
   mean_y = mean(Y)
-
-  if (intercept & standardize){
-    Y = Y-mean_y
-    X = safe_colScale(X,center=TRUE, scale = TRUE)
-  } else if (intercept & !standardize){
+  
+  if(intercept){ # center Y and X
     Y = Y-mean_y
     X = safe_colScale(X,center=TRUE, scale = FALSE)
-    attr(X,"scaled:scale")=rep(1,p)
-  } else if (!intercept & standardize){
-    X = safe_colScale(X,center=FALSE, scale=TRUE)
-    attr(X,"scaled:center")=rep(0,p)
   } else {
-    X = safe_colScale(X,center=FALSE, scale = FALSE)
     attr(X,"scaled:center")=rep(0,p)
+  }
+  
+  if(standardize){
+    X = safe_colScale(X,center=FALSE, scale=TRUE)
+  } else {
     attr(X,"scaled:scale")=rep(1,p)
   }
   
