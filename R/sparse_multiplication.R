@@ -31,12 +31,16 @@ compute_Xy = function(X, y){
 #' @importFrom Matrix t
 #' @importFrom Matrix crossprod
 compute_Xty = function(X, y){
+  if (is.matrix(X)) {
+    return(crossprod(attr(X, 'scaled.X'),y))
+  } else {
   cm = attr(X, 'scaled:center')
   csd = attr(X, 'scaled:scale')
   Xty        <- crossprod(X, y)
   scaled.Xty <- t(t(Xty)/csd)
   centered.scaled.Xty <- scaled.Xty - cm/csd * sum(y)     
   return(as.numeric(centered.scaled.Xty))
+  }
 }
 
 # @title Compute M%*%t(scaled.X) using sparse multiplication
