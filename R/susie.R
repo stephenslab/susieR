@@ -122,25 +122,25 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,stand
   elbo = rep(NA,max_iter+1)
   elbo[1] = -Inf;
   tracking = list()
-  d = Matrix::colSums(compute_X2(X))
+  #d = Matrix::colSums(compute_X2(X))
 
   for(i in 1:max_iter){
     #s = add_null_effect(s,0)
     if (track_fit)
       tracking[[i]] = s
-    s = update_each_effect(X, Y, s, estimate_prior_variance, d)
+    s = update_each_effect(X, Y, s, estimate_prior_variance)
     if(verbose){
-        print(paste0("objective:",susie_get_objective(X,Y,s,d)))
+        print(paste0("objective:",susie_get_objective(X,Y,s)))
     }
     if(estimate_residual_variance){
-      s$sigma2 = estimate_residual_variance(X,Y,s,d)
+      s$sigma2 = estimate_residual_variance(X,Y,s)
       if(verbose){
-        print(paste0("objective:",susie_get_objective(X,Y,s,d)))
+        print(paste0("objective:",susie_get_objective(X,Y,s)))
       }
     }
     #s = remove_null_effects(s)
 
-    elbo[i+1] = susie_get_objective(X,Y,s,d)
+    elbo[i+1] = susie_get_objective(X,Y,s)
     if((elbo[i+1]-elbo[i])<tol) break;
   }
   elbo = elbo[1:(i+1)] #remove trailing NAs

@@ -33,10 +33,9 @@ test_that("sparse version update_each_effect",{
   
   scaledX.dense = susieR:::safe_colScale(X.dense)
   scaledX.sparse = susieR:::safe_colScale(X.sparse)
-  d = Matrix::colSums(susieR:::compute_X2(scaledX.sparse))
   
-  dense.res = susieR:::update_each_effect(scaledX.dense,y,s,d=d)
-  sparse.res = susieR:::update_each_effect(scaledX.sparse,y,s,d=d)
+  dense.res = susieR:::update_each_effect(scaledX.dense,y,s)
+  sparse.res = susieR:::update_each_effect(scaledX.sparse,y,s)
   
   sparse.res$alpha = as.matrix(sparse.res$alpha, p, 1)
   sparse.res$mu = as.matrix(sparse.res$mu, p, 1)

@@ -31,10 +31,9 @@ test_that("sparse version susie_get_objective",{
   
   scaledX.dense = susieR:::safe_colScale(X.dense)
   scaledX.sparse = susieR:::safe_colScale(X.sparse)
-  d = Matrix::colSums(susieR:::compute_X2(scaledX.sparse))
   
-  dense.res = susieR:::susie_get_objective(scaledX.dense, y, s, d)
-  sparse.res = susieR:::susie_get_objective(scaledX.sparse, y, s, d)
+  dense.res = susieR:::susie_get_objective(scaledX.dense, y, s)
+  sparse.res = susieR:::susie_get_objective(scaledX.sparse, y, s)
   
   expect_equal(dense.res, original.res)
   expect_equal(sparse.res, original.res)

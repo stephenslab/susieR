@@ -27,10 +27,9 @@ test_that("sparse version single_effect_regression",{
   
   scaledX.dense = susieR:::safe_colScale(X.dense)
   scaledX.sparse = susieR:::safe_colScale(X.sparse)
-  d = Matrix::colSums(susieR:::compute_X2(scaledX.sparse))
   
-  dense.res = susieR:::single_effect_regression(y,scaledX.dense,V, d=d)
-  sparse.res = susieR:::single_effect_regression(y,scaledX.sparse,V, d=d)
+  dense.res = susieR:::single_effect_regression(y,scaledX.dense,V)
+  sparse.res = susieR:::single_effect_regression(y,scaledX.sparse,V)
   
   sparse.res$alpha = as.matrix(sparse.res$alpha, p, 1)
   sparse.res$mu = as.matrix(sparse.res$mu, p, 1)

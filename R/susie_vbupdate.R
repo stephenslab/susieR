@@ -4,7 +4,7 @@
 #' @param s_init a list with elements sigma2, V, alpha, mu, Xr
 #' @param estimate_prior_variance boolean indicating whether to estimate prior variance
 #' @param colSum of X^2
-update_each_effect <- function (X, Y, s_init, estimate_prior_variance=FALSE, d) {
+update_each_effect <- function (X, Y, s_init, estimate_prior_variance=FALSE) {
 
   # Repeat for each effect to update
   s = s_init
@@ -19,7 +19,7 @@ update_each_effect <- function (X, Y, s_init, estimate_prior_variance=FALSE, d) 
       R = Y - s$Xr
 
       res <- single_effect_regression(R,X,s$V[l],s$sigma2,
-                                      estimate_prior_variance, d)
+                                      estimate_prior_variance)
 
     # Update the variational estimate of the posterior mean.
       s$mu[l,] <- res$mu
