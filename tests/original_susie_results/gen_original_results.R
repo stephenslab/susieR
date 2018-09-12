@@ -54,7 +54,7 @@ saveRDS(singleReg.original.res, 'singleReg_original_res.rds')
 vbupdate.original.res = susieR:::update_each_effect(X, y, s)
 saveRDS(vbupdate.original.res, 'vbupdate_original_res.rds')
 
-susiefit.original.res = susieR:::susie(X,y)
+susiefit.original.res = susie(X.dense,y)
 saveRDS(susiefit.original.res, 'susiefit_original_res.rds')
 
 

@@ -20,7 +20,7 @@ safe_colScale = function(X,
     X <- X[, cols, drop = FALSE]
   }
   
-  if (!is.null(attr(X, 'scaled:center'))){
+  if (!is.null(attr(X, 'scaled.X'))){
     X.dense = attr(X, 'scaled.X')
   } else {
     X.dense = as.matrix(X)
@@ -44,9 +44,9 @@ safe_colScale = function(X,
     cm = rep(0, length = length(cm))
   }
   X.dense = t( (t(X.dense) - cm) / csd )
-  
+  if (is.matrix(X)){X = X.dense}
   if (add_attr) {
-    attr(X, "scaled.X") <- X.dense
+    if (!is.matrix(X)) attr(X, "scaled.X") <- X.dense
     attr(X, "d") <- Matrix::colSums(compute_X2(X))
     if (center) attr(X, "scaled:center") <- cm
     if (scale) attr(X, "scaled:scale") <- csd

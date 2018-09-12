@@ -21,7 +21,7 @@ In this vignette, we want to compare a revised version SuSiE, which allows for s
 
 ## Results
 
-In this minimal example, we have shown that the revised version of SuSiE can reduce computation time by around $40\%$, even if the input matrix is a dense matrix, and further reduce computation time $5\%$ more given the input matrix is a sparse matrix. It is also obvious that the revised version takes less memory. We provide line profiling below so that people who are interested could improve the work as well.  
+In this minimal example, we have shown that the revised version of SuSiE can reduce computation time by around $35\%$, even if the input matrix is a dense matrix, and further reduce computation time $5\%$ more given the input matrix is a sparse matrix. It is also obvious that the revised version takes less memory. We provide line profiling below so that people who are interested could improve the work as well.  
 
 ## Data
 We randomly simulate a dense matrix and a sparse matrix at sparsity $99\%$, i.e. $99\%$ entries are zeros.
@@ -51,7 +51,7 @@ y = c(X.dense %*% beta + rnorm(n))
 ```
 
 ## Original version SuSiE
-```{r}
+```{r, warning=FALSE}
 devtools::install_github("stephenslab/susieR")
 library(susieR)
 ```
@@ -63,7 +63,7 @@ profvis({
 ```
 
 ## Revised version SuSiE
-```{r}
+```{r, warning=FALSE}
 devtools::install_local("~/Desktop/M/M-github-repos/susieR-sparse-v3")
 library(susieR)
 ```
