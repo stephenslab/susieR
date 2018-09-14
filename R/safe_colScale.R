@@ -48,7 +48,7 @@ safe_colScale = function(X,
   if (add_attr) {
     if (!is.matrix(X)) attr(X, "scaled.X") <- X.dense
     attr(X, "d") <- Matrix::colSums(compute_X2(X))
-    attr(X, "t_X2") <- t(compute_X2(X))
+    attr(X, "X2") <- compute_X2(X)
     if (center) attr(X, "scaled:center") <- cm
     if (scale) attr(X, "scaled:scale") <- csd
   }
@@ -61,6 +61,6 @@ add_X_attr = function(X){
     attr(X, 'scaled.X') = as.matrix(X)
   }
   attr(X, "d") <- Matrix::colSums(compute_X2(X))
-  attr(X, "t_X2") <- t(compute_X2(X))
+  attr(X, "X2") <- compute_X2(X)
   return(X)
 }

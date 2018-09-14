@@ -37,5 +37,5 @@ get_ER2 = function(X,Y,s){
 #' @param Eb2 the posterior second moment of b (p vector) (alpha * mu2)
 SER_posterior_e_loglik = function(X,Y,s2,Eb,Eb2){
   n = nrow(X)
-  -0.5*n*log(2*pi*s2)  - (0.5/s2) * (sum(Y*Y) - 2*sum(Y*compute_Xy(X, Eb)) + sum(attr(X, "t_X2")*as.vector(Eb2)))
+  -0.5*n*log(2*pi*s2)  - (0.5/s2) * (sum(Y*Y) - 2*sum(Y*compute_Xy(X, Eb)) + sum(tcrossprod(attr(X, "X2"),t(as.vector(Eb2)))))
 }
