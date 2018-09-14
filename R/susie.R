@@ -57,16 +57,8 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,stand
   
   if(intercept){ # center Y and X
     Y = Y-mean_y
-    X = safe_colScale(X,center=TRUE, scale = FALSE)
-  } else {
-    attr(X,"scaled:center")=rep(0,p)
-  }
-  
-  if(standardize){
-    X = safe_colScale(X,center=FALSE, scale=TRUE)
-  } else {
-    attr(X,"scaled:scale")=rep(1,p)
-  }
+  } 
+  X = safe_colScale(X,center=intercept, scale = standardize)
   
   X = add_X_attr(X) # if standardize and intercept are both FALSE
   
