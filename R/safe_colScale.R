@@ -48,8 +48,19 @@ safe_colScale = function(X,
   if (add_attr) {
     if (!is.matrix(X)) attr(X, "scaled.X") <- X.dense
     attr(X, "d") <- Matrix::colSums(compute_X2(X))
+    attr(X, "t_X2") <- t(compute_X2(X))
     if (center) attr(X, "scaled:center") <- cm
     if (scale) attr(X, "scaled:scale") <- csd
   }
+  return(X)
+}
+
+# when standardize and intercept are both FALSE
+add_X_attr = function(X){
+  if (!is.matrix(X) & is.null(attr(X, 'scaled.X'))){
+    attr(X, 'scaled.X') = as.matrix(X)
+  }
+  attr(X, "d") <- Matrix::colSums(compute_X2(X))
+  attr(X, "t_X2") <- t(compute_X2(X))
   return(X)
 }

@@ -57,8 +57,12 @@ saveRDS(vbupdate.original.res, 'vbupdate_original_res.rds')
 susiefit.original.res = susie(X.dense,y)
 saveRDS(susiefit.original.res, 'susiefit_original_res.rds')
 
-
-
+susiefit.original.res2 = susie(X.dense, y, standardize = TRUE, intercept = FALSE)
+susiefit.original.res3 = susie(X.dense, y, standardize = FALSE, intercept = TRUE)
+susiefit.original.res4 = susie(X.dense, y, standardize = FALSE, intercept = FALSE)
+saveRDS(susiefit.original.res2, 'susiefit_original_res2.rds')
+saveRDS(susiefit.original.res3, 'susiefit_original_res3.rds')
+saveRDS(susiefit.original.res4, 'susiefit_original_res4.rds')
 
 
 

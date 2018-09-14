@@ -68,6 +68,8 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,stand
     attr(X,"scaled:scale")=rep(1,p)
   }
   
+  X = add_X_attr(X) # if standardize and intercept are both FALSE
+  
   # initialize susie fit
   if(!is.null(s_init)){
     if(!missing(L) || !missing(scaled_prior_variance) || !missing(residual_variance))

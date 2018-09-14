@@ -22,9 +22,8 @@
 #' 
 single_effect_regression = function(Y,X,V,residual_variance=1,optimize_V=FALSE){
   XtY = compute_Xty(X, Y)
-  d = attr(X, "d")
-  betahat = (1/d) * XtY
-  shat2 = residual_variance/d
+  betahat = (1/attr(X, "d")) * XtY
+  shat2 = residual_variance/attr(X, "d")
 
   if(optimize_V){
     if(loglik.grad(0,Y,X,residual_variance,Xty)<0){
@@ -48,7 +47,7 @@ single_effect_regression = function(Y,X,V,residual_variance=1,optimize_V=FALSE){
   w = exp(lbf-maxlbf) # w is proportional to BF, but subtract max for numerical stability
   alpha = w/sum(w) # posterior prob on each SNP
 
-  post_var = (1/V + d/residual_variance)^(-1) # posterior variance
+  post_var = (1/V + attr(X, "d")/residual_variance)^(-1) # posterior variance
   post_mean = (1/residual_variance) * post_var * XtY
   post_mean2 = post_var + post_mean^2 # second moment
   loglik = maxlbf + log(mean(w)) + sum(dnorm(Y,0,sqrt(residual_variance),log=TRUE))
@@ -60,9 +59,8 @@ single_effect_regression = function(Y,X,V,residual_variance=1,optimize_V=FALSE){
 
 #' @importFrom Matrix colSums
 loglik.grad = function(V,Y,X,s2,Xty){
-  d = attr(X, "d")
-  betahat = (1/d) * Xty
-  shat2 = s2/d
+  betahat = (1/attr(X, "d")) * Xty
+  shat2 = s2/attr(X, "d")
 
   lbf = dnorm(betahat,0,sqrt(V+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
   #log(bf) on each SNP

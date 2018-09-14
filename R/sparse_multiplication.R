@@ -1,33 +1,29 @@
 # @title Compute scaled.X %*% y using sparse multiplication
 # @param X is a scaled dense matrix or an unscaled sparse matrix 
 # @param y a p vector
-# @param cm a p vector of column means 
-# @param csd a p vector of column standard deviations
 #
 #' @importFrom Matrix t
 #' @importFrom Matrix tcrossprod
+#' FIXME: sparse matrix multiplication advantage will be diluted given larger p since using many transpose here.
 compute_Xy = function(X, y){
   if (is.matrix(X)) {
     return(tcrossprod(X,t(y)))
   } else {
-    #cm = attr(X, 'scaled:center')
-    #csd = attr(X, 'scaled:scale')
-    ##scale Xy
-    #scaled.X  <- t(t(X)/csd)
-    #scaled.Xy <- tcrossprod(scaled.X,t(y))
-    ##center Xy
-    #Xy <- scaled.Xy - sum(cm*y/csd) 
-    #return(as.numeric(Xy))
-    return(tcrossprod(attr(X, 'scaled.X'),t(y)))
+    cm = attr(X, 'scaled:center')
+    csd = attr(X, 'scaled:scale')
+    #scale Xy
+    scaled.X  <- t(t(X)/csd)
+    scaled.Xy <- tcrossprod(scaled.X,t(y))
+    #center Xy
+    Xy <- scaled.Xy - sum(cm*y/csd) 
+    return(as.numeric(Xy))
+    #return(tcrossprod(attr(X, 'scaled.X'),t(y)))
  }
-  #return(attr(X, 'scaled.X')%*%y)
 }
 
 # @title Compute t(scaled.X)%*%y using sparse multiplication
 # @param X is a scaled dense matrix or an unscaled sparse matrix 
 # @param y an n vector
-# @param cm a p vector of column means 
-# @param csd a p vector of column standard deviations
 #
 #' @importFrom Matrix t
 #' @importFrom Matrix crossprod
@@ -46,9 +42,7 @@ compute_Xty = function(X, y){
 
 # @title Compute M%*%t(scaled.X) using sparse multiplication
 # @param M a L by p matrix
-# @param X is a scaled dense matrix or an unscaled sparse matrix 
-# @param cm a p vector of column means 
-# @param csd a p vector of column standard deviations 
+# @param X is a scaled dense matrix or an unscaled sparse matrix
 compute_MtX = function(M, X){
   return(t(apply(M, 1, function(y) compute_Xy(X, y))))
 }
@@ -59,8 +53,7 @@ compute_X2 = function(X){
   if(is.matrix(X)){
     return(X*X)
   }else{
-    scaled.X = attr(X, 'scaled.X')
-    return(scaled.X*scaled.X) 
+    return(attr(X, 'scaled.X')*attr(X, 'scaled.X')) 
   }
 }
   
