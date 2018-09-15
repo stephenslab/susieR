@@ -7,6 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = '~/Desktop/M/M-github-repos/susieR')
 ```
 
 ```{r, warning=FALSE}
@@ -64,7 +65,7 @@ profvis({
 
 ## Revised version SuSiE
 ```{r, warning=FALSE}
-devtools::install_local("~/Desktop/M/M-github-repos/susieR-sparse-v3")
+devtools::install_local("../susieR-sparse-v3")
 library(susieR)
 ```
 

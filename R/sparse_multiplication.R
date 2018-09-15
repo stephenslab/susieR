@@ -1,63 +1,52 @@
-# @title Compute scaled.X %*% y using sparse multiplication
-# @param X is a scaled dense matrix or an unscaled sparse matrix 
-# @param y a p vector
-#
+#' @title Compute scaled.X %*% b using sparse multiplication
+#' @param X is a scaled dense matrix or an unscaled sparse matrix 
+#' @param b a p vector
+#' @return an n vector 
 #' @importFrom Matrix t
 #' @importFrom Matrix tcrossprod
 #' FIXME: sparse matrix multiplication advantage will be diluted given larger p since using many transpose here.
-compute_Xy = function(X, y){
-  if (is.matrix(X)) {
-    return(tcrossprod(X,t(y)))
-  } else {
+compute_Xb = function(X, b){
+  if (is.matrix(X)) { #when X is a dense matrix
+    return(tcrossprod(X,t(b))) #tcrossprod(A,B) performs A%*%t(B) but faster
+  } else { #when X is a sparse matrix
     cm = attr(X, 'scaled:center')
     csd = attr(X, 'scaled:scale')
-    #scale Xy
-    scaled.X  <- t(t(X)/csd)
-    scaled.Xy <- tcrossprod(scaled.X,t(y))
-    #center Xy
-    Xy <- scaled.Xy - sum(cm*y/csd) 
-    return(as.numeric(Xy))
-    #return(tcrossprod(attr(X, 'scaled.X'),t(y)))
+    #scale Xb
+    transposed.scaled.X  <- t(X)/csd
+    scaled.Xb <- crossprod(transposed.scaled.X,b)
+    #center Xb
+    Xb <- scaled.Xb - sum(cm*b/csd) 
+    return(as.numeric(Xb))
+    #return(tcrossprod(attr(X, 'scaled.X'),t(b)))
  }
 }
 
-# @title Compute t(scaled.X)%*%y using sparse multiplication
-# @param X is a scaled dense matrix or an unscaled sparse matrix 
-# @param y an n vector
-#
+#' @title Compute t(scaled.X)%*%y using sparse multiplication
+#' @param X is a scaled dense matrix or an unscaled sparse matrix 
+#' @param y an n vector
+#' @return a p vector
 #' @importFrom Matrix t
 #' @importFrom Matrix crossprod
 compute_Xty = function(X, y){
-  if (is.matrix(X)) {
-    return(crossprod(X,y))
-  } else {
+  if (is.matrix(X)) { #when X is a dense matrix
+    return(crossprod(X,y)) #corssprod(A,B) performs t(A)%*%B but faster
+  } else { #when X is sparse matrix
   cm = attr(X, 'scaled:center')
   csd = attr(X, 'scaled:scale')
-  Xty        <- crossprod(X, y)
-  scaled.Xty <- t(t(Xty)/csd)
+  ytX        <- crossprod(y, X)
+  scaled.Xty <- t(ytX/csd)
   centered.scaled.Xty <- scaled.Xty - cm/csd * sum(y)     
   return(as.numeric(centered.scaled.Xty))
   }
 }
 
-# @title Compute M%*%t(scaled.X) using sparse multiplication
-# @param M a L by p matrix
-# @param X is a scaled dense matrix or an unscaled sparse matrix
-compute_MtX = function(M, X){
-  return(t(apply(M, 1, function(y) compute_Xy(X, y))))
+#' @title Compute M%*%t(scaled.X) using sparse multiplication
+#' @param M a L by p matrix
+#' @param X is a scaled dense matrix or an unscaled sparse matrix
+#' @return a L by n matrix
+compute_MXt = function(M, X){
+  return(t(apply(M, 1, function(b) compute_Xb(X, b))))
 }
 
-# @title Compute square of a scaled X
-# @param X is a scaled dense X, or an unscaled sparse X with scaled.X as one attribute
-compute_X2 = function(X){
-  if(is.matrix(X)){
-    return(X*X)
-  }else{
-    return(attr(X, 'scaled.X')*attr(X, 'scaled.X')) 
-  }
-}
-  
-  
-  
-  
+
   

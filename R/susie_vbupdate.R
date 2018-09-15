@@ -13,7 +13,7 @@ update_each_effect <- function (X, Y, s_init, estimate_prior_variance=FALSE) {
   if(L>0){
     for (l in 1:L){
     # remove lth effect from fitted values
-      s$Xr = s$Xr - compute_Xy(X, (s$alpha[l,] * s$mu[l,]))
+      s$Xr = s$Xr - compute_Xb(X, (s$alpha[l,] * s$mu[l,]))
       
     #compute residuals
       R = Y - s$Xr
@@ -28,7 +28,7 @@ update_each_effect <- function (X, Y, s_init, estimate_prior_variance=FALSE) {
       s$V[l] <- res$V
       s$KL[l] <- -res$loglik + SER_posterior_e_loglik(X,R,s$sigma2,res$alpha*res$mu,res$alpha*res$mu2)
 
-      s$Xr <- s$Xr + compute_Xy(X, (s$alpha[l,] * s$mu[l,]))
+      s$Xr <- s$Xr + compute_Xb(X, (s$alpha[l,] * s$mu[l,]))
     }
   }
 

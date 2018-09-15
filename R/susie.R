@@ -60,7 +60,6 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,stand
   } 
   X = safe_colScale(X,center=intercept, scale = standardize)
   
-  X = add_X_attr(X) # if standardize and intercept are both FALSE
   
   # initialize susie fit
   if(!is.null(s_init)){
@@ -75,7 +74,7 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,stand
       stop("dimension of mu and alpha in s_init do not match")
     if (dim(s_init$alpha)[1] != length(s_init$V))
       stop("V must have length of nrow of alpha in s_init")
-    if (is.null(s_init$Xr)) s_init$Xr = compute_Xy(X, colSums(s_init$mu*s_init$alpha))
+    if (is.null(s_init$Xr)) s_init$Xr = compute_Xb(X, colSums(s_init$mu*s_init$alpha))
     if (is.null(s_init$sigma2)) s_init$sigma2 = var(Y)
     # reset KL
     s_init$KL = rep(NA, nrow(s_init$alpha))
@@ -116,7 +115,7 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,stand
   elbo = rep(NA,max_iter+1)
   elbo[1] = -Inf;
   tracking = list()
-  #d = Matrix::colSums(compute_X2(X))
+ 
 
   for(i in 1:max_iter){
     #s = add_null_effect(s,0)

@@ -1,5 +1,5 @@
-devtools::install_local("~/Desktop/M/M-github-repos/susieR-sparse-v3")
+devtools::install_local("../susieR-sparse-v3") #relative path to susieR repo
 library(testthat)
 library(susieR)
 
-test_results <- test_dir("~/Desktop/M/M-github-repos/susieR-sparse-v3/tests/sparse_unit_tests", reporter="summary")
+test_results <- test_dir("../susieR-sparse-v3/tests/sparse_unit_tests", reporter="summary")
