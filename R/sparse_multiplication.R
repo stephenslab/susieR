@@ -1,4 +1,4 @@
-#' @title Compute scaled.X %*% b using sparse multiplication
+#' @title Compute scaled.X \%*\% b using sparse multiplication
 #' @param X is a scaled dense matrix or an unscaled sparse matrix
 #' @param b a p vector
 #' @return an n vector
@@ -22,7 +22,7 @@ compute_Xb = function(X, b){
  }
 }
 
-#' @title Compute t(scaled.X)%*%y using sparse multiplication
+#' @title Compute t(scaled.X)\%*\%y using sparse multiplication
 #' @param X is a scaled dense matrix or an unscaled sparse matrix
 #' @param y an n vector
 #' @return a p vector
@@ -41,7 +41,7 @@ compute_Xty = function(X, y){
   }
 }
 
-#' @title Compute M%*%t(scaled.X) using sparse multiplication
+#' @title Compute M\%*\%t(scaled.X) using sparse multiplication
 #' @param M a L by p matrix
 #' @param X is a scaled dense matrix or an unscaled sparse matrix
 #' @return a L by n matrix
