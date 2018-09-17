@@ -1,23 +1,5 @@
-create_sparsity_mat = function(sparsity, n, p){
-  nonzero = round(n*p*(1-sparsity))
-  nonzero.idx = sample(n*p, nonzero)
-  mat = numeric(n*p)
-  mat[nonzero.idx] = 1
-  mat = matrix(mat, nrow=n, ncol=p)
-  return(mat)     
-}
-
 test_that("sparse version safe_colScale",{
-  set.seed(1)
-  n = 1000
-  p = 10000
-  beta = rep(0,p)
-  beta[1]    = 10 
-  beta[300]  = 10
-  beta[400]  = 10
-  beta[1000] = 10
-  X = create_sparsity_mat(0.99,n,p)
-  X.sparse = as(X,'dgCMatrix')
+  simulate(sparse=T)
   
   dense.res = susieR:::safe_colScale(X)
   sparse.res = susieR:::safe_colScale(X.sparse)
