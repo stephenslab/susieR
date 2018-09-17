@@ -9,19 +9,9 @@ create_sparsity_mat = function(sparsity, n, p){
 
 test_that("sparse version susie",{
   original.res = readRDS('../original_susie_results/susiefit_original_res.rds')
-  set.seed(1)
-  n = 1000
-  p = 10000
-  beta = rep(0,p)
-  beta[1]    = 10 
-  beta[300]  = 10
-  beta[400]  = 10
-  beta[1000] = 10
-  X.dense = create_sparsity_mat(0.99,n,p)
-  y = c(X.dense %*% beta + rnorm(n))
-  X.sparse = as(X.dense,'dgCMatrix')
+  simulate(sparse=T)
   
-  dense.res = susie(X.dense, y)
+  dense.res = susie(X, y)
   sparse.res = susie(X.sparse, y)
   
   sparse.res$alpha = as.matrix(sparse.res$alpha, p, 1)

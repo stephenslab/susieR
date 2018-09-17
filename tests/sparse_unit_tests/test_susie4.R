@@ -17,11 +17,11 @@ test_that("sparse version susie",{
   beta[300]  = 10
   beta[400]  = 10
   beta[1000] = 10
-  X.dense = create_sparsity_mat(0.99,n,p)
-  y = c(X.dense %*% beta + rnorm(n))
-  X.sparse = as(X.dense,'dgCMatrix')
+  X = create_sparsity_mat(0.99,n,p)
+  y = c(X %*% beta + rnorm(n))
+  X.sparse = as(X,'dgCMatrix')
   
-  dense.res = susie(X.dense, y, standardize=FALSE, intercept = FALSE)
+  dense.res = susie(X, y, standardize=FALSE, intercept = FALSE)
   sparse.res = susie(X.sparse, y, standardize=FALSE, intercept = FALSE)
   
   sparse.res$alpha = as.matrix(sparse.res$alpha, p, 1)

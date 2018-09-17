@@ -16,15 +16,15 @@ test_that("sparse version safe_colScale",{
   beta[300]  = 10
   beta[400]  = 10
   beta[1000] = 10
-  X.dense = create_sparsity_mat(0.99,n,p)
-  X.sparse = as(X.dense,'dgCMatrix')
+  X = create_sparsity_mat(0.99,n,p)
+  X.sparse = as(X,'dgCMatrix')
   
-  dense.res = susieR:::safe_colScale(X.dense)
+  dense.res = susieR:::safe_colScale(X)
   sparse.res = susieR:::safe_colScale(X.sparse)
   
   dense.faceX = dense.res
   attributes(dense.faceX) = NULL
-  attributes(X.dense) = NULL
+  attributes(X) = NULL
   
   sparse.faceX = sparse.res
   attributes(sparse.faceX) = NULL

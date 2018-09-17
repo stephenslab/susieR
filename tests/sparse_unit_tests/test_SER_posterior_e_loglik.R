@@ -17,9 +17,9 @@ test_that("sparse version SER_posterior_e_loglik",{
   beta[300]  = 10
   beta[400]  = 10
   beta[1000] = 10
-  X.dense = create_sparsity_mat(0.99,n,p)
-  X.sparse = as(X.dense,'dgCMatrix')
-  y = c(X.dense %*% beta + rnorm(n))
+  X = create_sparsity_mat(0.99,n,p)
+  X.sparse = as(X,'dgCMatrix')
+  y = c(X %*% beta + rnorm(n))
   L = 10
   residual_variance = 0.8
   scaled_prior_variance = 0.2
@@ -32,10 +32,10 @@ test_that("sparse version SER_posterior_e_loglik",{
   Eb2 = rep(1, p)
   s2 = residual_variance
   
-  scaledX.dense = susieR:::safe_colScale(X.dense)
+  scaledX = susieR:::safe_colScale(X)
   scaledX.sparse = susieR:::safe_colScale(X.sparse)
   
-  dense.res = susieR:::SER_posterior_e_loglik(scaledX.dense,y,s2,Eb,Eb2)
+  dense.res = susieR:::SER_posterior_e_loglik(scaledX,y,s2,Eb,Eb2)
   sparse.res = susieR:::SER_posterior_e_loglik(scaledX.sparse,y,s2,Eb,Eb2)
   
   expect_equal(dense.res, original.res)
