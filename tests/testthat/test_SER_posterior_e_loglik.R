@@ -3,13 +3,13 @@ test_that("sparse version SER_posterior_e_loglik",{
   simulate(sparse=T)
   Eb = rep(1, p)
   Eb2 = rep(1, p)
-  s2 = residual_variance
+  s2 = s$sigma2
   
-  scaledX = susieR:::safe_colScale(X)
-  scaledX.sparse = susieR:::safe_colScale(X.sparse)
+  scaledX = safe_colScale(X)
+  scaledX.sparse = safe_colScale(X.sparse)
   
-  dense.res = susieR:::SER_posterior_e_loglik(scaledX,y,s2,Eb,Eb2)
-  sparse.res = susieR:::SER_posterior_e_loglik(scaledX.sparse,y,s2,Eb,Eb2)
+  dense.res = SER_posterior_e_loglik(scaledX,y,s2,Eb,Eb2)
+  sparse.res = SER_posterior_e_loglik(scaledX.sparse,y,s2,Eb,Eb2)
   
   expect_equal(dense.res, original.res)
   expect_equal(sparse.res, original.res)

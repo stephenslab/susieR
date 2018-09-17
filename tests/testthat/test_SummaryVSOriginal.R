@@ -1,12 +1,12 @@
 test_that("Results from summary stat vs original data",{
   simulate(200,1000)
   mean_y = mean(y); y = y-mean_y
-  X = susieR:::safe_colScale(X,center=TRUE, scale = TRUE)
+  X = safe_colScale(X,center=TRUE, scale = TRUE)
 
   res = susie(X, y, intercept = FALSE, standardize = FALSE,
               estimate_residual_variance=FALSE, estimate_prior_variance = TRUE)
 
-  res2 = susieR:::susie_ss(t(X)%*%X, c(y %*% X), var_y = sum(y^2)/n, residual_variance = var(y), n = n, max_iter = 3,
+  res2 = susie_ss(t(X)%*%X, c(y %*% X), var_y = sum(y^2)/n, residual_variance = var(y), n = n, max_iter = 3,
                   estimate_prior_variance = TRUE)
   expect_equal(coef(res2), coef(res))
 

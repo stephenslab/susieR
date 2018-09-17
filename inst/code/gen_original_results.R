@@ -63,12 +63,3 @@ susiefit.original.res4 = susie(X.dense, y, standardize = FALSE, intercept = FALS
 saveRDS(susiefit.original.res2, 'susiefit_original_res2.rds')
 saveRDS(susiefit.original.res3, 'susiefit_original_res3.rds')
 saveRDS(susiefit.original.res4, 'susiefit_original_res4.rds')
-
-
-
-
-
-
-
-
-

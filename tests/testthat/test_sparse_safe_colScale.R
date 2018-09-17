@@ -1,8 +1,8 @@
 test_that("sparse version safe_colScale",{
   simulate(sparse=T)
   
-  dense.res = susieR:::safe_colScale(X)
-  sparse.res = susieR:::safe_colScale(X.sparse)
+  dense.res = safe_colScale(X)
+  sparse.res = safe_colScale(X.sparse)
   
   dense.faceX = dense.res
   attributes(dense.faceX) = NULL
