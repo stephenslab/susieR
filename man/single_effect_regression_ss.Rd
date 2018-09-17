@@ -4,11 +4,11 @@
 \alias{single_effect_regression_ss}
 \title{Bayesian single-effect linear regression of Y on X}
 \usage{
-single_effect_regression_ss(XtY, dXtX, V = 1, residual_variance = 1,
+single_effect_regression_ss(Xty, dXtX, V = 1, residual_variance = 1,
   optimize_V = FALSE)
 }
 \arguments{
-\item{XtY}{an p vector}
+\item{Xty}{an p vector}
 
 \item{dXtX}{an p vector, diagonal elements of t(X)X}
 

@@ -4,7 +4,7 @@
 \alias{SER_posterior_e_loglik_ss}
 \title{posterior expected loglikelihood for a single effect regression}
 \usage{
-SER_posterior_e_loglik_ss(XtX, XtY, s2, Eb, Eb2)
+SER_posterior_e_loglik_ss(XtX, Xty, s2, Eb, Eb2)
 }
 \arguments{
 \item{s2}{the residual variance}
