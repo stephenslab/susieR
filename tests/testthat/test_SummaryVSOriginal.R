@@ -1,10 +1,5 @@
 test_that("Results from summary stat vs original data",{
-  set.seed(1)
-  n = 100
-  p = 100
-  beta = rep(0,p)
-  beta[1:4] = 1
-  X = matrix(rnorm(n*p),nrow=n,ncol=p); y = c(X %*% beta + rnorm(n))
+  simulate(200,1000)
   mean_y = mean(y); y = y-mean_y
   X = susieR:::safe_colScale(X,center=TRUE, scale = TRUE)
 

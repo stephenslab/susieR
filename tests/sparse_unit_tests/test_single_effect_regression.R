@@ -17,18 +17,18 @@ test_that("sparse version single_effect_regression",{
   beta[300]  = 10
   beta[400]  = 10
   beta[1000] = 10
-  X.dense = create_sparsity_mat(0.99,n,p)
-  y = c(X.dense %*% beta + rnorm(n))
+  X = create_sparsity_mat(0.99,n,p)
+  y = c(X %*% beta + rnorm(n))
   L = 10
   residual_variance = 0.8
   scaled_prior_variance = 0.2
-  X.sparse = as(X.dense,'dgCMatrix')
+  X.sparse = as(X,'dgCMatrix')
   V = scaled_prior_variance
   
-  scaledX.dense = susieR:::safe_colScale(X.dense)
+  scaledX = susieR:::safe_colScale(X)
   scaledX.sparse = susieR:::safe_colScale(X.sparse)
   
-  dense.res = susieR:::single_effect_regression(y,scaledX.dense,V)
+  dense.res = susieR:::single_effect_regression(y,scaledX,V)
   sparse.res = susieR:::single_effect_regression(y,scaledX.sparse,V)
   
   sparse.res$alpha = as.matrix(sparse.res$alpha, p, 1)

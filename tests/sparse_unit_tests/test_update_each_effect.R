@@ -17,8 +17,8 @@ test_that("sparse version update_each_effect",{
   beta[300]  = 10
   beta[400]  = 10
   beta[1000] = 10
-  X.dense = create_sparsity_mat(0.99,n,p)
-  y = c(X.dense %*% beta + rnorm(n))
+  X = create_sparsity_mat(0.99,n,p)
+  y = c(X %*% beta + rnorm(n))
   L = 10
   residual_variance = 0.8
   scaled_prior_variance = 0.2
@@ -27,14 +27,14 @@ test_that("sparse version update_each_effect",{
            mu2=matrix(3,nrow=L,ncol=p),
            Xr=rep(5,n), KL=rep(1.2,L),
            sigma2=residual_variance, V=scaled_prior_variance * as.numeric(var(y)))
-  X.sparse = as(X.dense,'dgCMatrix')
+  X.sparse = as(X,'dgCMatrix')
   
 
   
-  scaledX.dense = susieR:::safe_colScale(X.dense)
+  scaledX = susieR:::safe_colScale(X)
   scaledX.sparse = susieR:::safe_colScale(X.sparse)
   
-  dense.res = susieR:::update_each_effect(scaledX.dense,y,s)
+  dense.res = susieR:::update_each_effect(scaledX,y,s)
   sparse.res = susieR:::update_each_effect(scaledX.sparse,y,s)
   
   sparse.res$alpha = as.matrix(sparse.res$alpha, p, 1)

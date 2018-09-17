@@ -4,21 +4,26 @@ create_sparsity_mat = function(sparsity, n, p){
   mat = numeric(n*p)
   mat[nonzero.idx] = 1
   mat = matrix(mat, nrow=n, ncol=p)
-  return(mat)     
+  return(mat)
 }
 
-test_that("sparse version get_ER2",{
-  original.res = readRDS('../original_susie_results/ER2_original_res.rds')
+simulate = function(n=1000, p=10000, sparse=F) {
   set.seed(1)
-  n = 1000
-  p = 10000
+  n = n
+  p = p
+  if (p<1000) p = 1000
   beta = rep(0,p)
-  beta[1]    = 10 
+  beta[1]    = 10
   beta[300]  = 10
   beta[400]  = 10
   beta[1000] = 10
-  X = create_sparsity_mat(0.99,n,p)
-  X.sparse = as(X,'dgCMatrix')
+  if (sparse) {
+    X = create_sparsity_mat(0.99,n,p)
+    X.sparse = as(X,'dgCMatrix')
+  } else {
+    X = matrix(rnorm(n*p,3,4),n,p)
+    X.sparse = NA
+  }
   y = c(X %*% beta + rnorm(n))
   L = 10
   residual_variance = 0.8
@@ -28,14 +33,5 @@ test_that("sparse version get_ER2",{
            mu2=matrix(3,nrow=L,ncol=p),
            Xr=rep(5,n), KL=rep(1.2,L),
            sigma2=residual_variance, V=scaled_prior_variance * as.numeric(var(y)))
-  
-  scaledX = susieR:::safe_colScale(X)
-  scaledX.sparse = susieR:::safe_colScale(X.sparse)
-  
-  dense.res = susieR:::get_ER2(scaledX, y, s)
-  sparse.res = susieR:::get_ER2(scaledX.sparse, y, s)
-  
-  expect_equal(dense.res, original.res)
-  expect_equal(sparse.res, original.res)
-  
-})
+  attach(list(X=X, X.sparse=X.sparse, s=s, y=y, n=n, p=p, b=beta), warn.conflict=F)
+}
