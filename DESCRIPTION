@@ -9,7 +9,6 @@ Authors@R: c(person("Matthew","Stephens",role=c("aut","cre"),
              person("Kaiqian","Zhang",role="aut"),
              person("Peter","Carbonetto",role="aut"),
              person("Gao","Wang",role="aut"))
-	     
 Description: Fits a sparse regression model with up to L effects,
     where L is user-specified. The fitting procedure uses a fast new
     variational Bayes approach (unpublished data).
