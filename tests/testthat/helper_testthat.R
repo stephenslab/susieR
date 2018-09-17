@@ -7,16 +7,15 @@ create_sparsity_mat = function(sparsity, n, p){
   return(mat)
 }
 
-simulate = function(n=1000, p=10000, sparse=F) {
+simulate = function(n=100, p=200, sparse=F) {
   set.seed(1)
   n = n
   p = p
-  if (p<1000) p = 1000
   beta = rep(0,p)
   beta[1]    = 10
-  beta[300]  = 10
-  beta[400]  = 10
-  beta[1000] = 10
+  beta[2]  = 10
+  beta[3]  = 10
+  beta[4] = 10
   if (sparse) {
     X = create_sparsity_mat(0.99,n,p)
     X.sparse = as(X,'dgCMatrix')

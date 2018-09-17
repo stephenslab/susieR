@@ -12,13 +12,13 @@ create_sparsity_mat = function(sparsity, n, p){
 }
 
 set.seed(1)
-n = 1000
-p = 10000
+n = 100
+p = 200
 beta = rep(0,p)
 beta[1]    = 10 
-beta[300]  = 10
-beta[400]  = 10
-beta[1000] = 10
+beta[2]  = 10
+beta[3]  = 10
+beta[4] = 10
 X.dense = create_sparsity_mat(0.99,n,p)
 y = c(X.dense %*% beta + rnorm(n))
 L = 10
