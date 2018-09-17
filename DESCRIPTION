@@ -1,6 +1,6 @@
 Package: susieR
 Type: Package
-Title: Fit Sum of Single Effects linear regression model
+Title: Fit Sum of Single Effects Linear Regression Model
 Date: 2018-09-17
 Version: 0.4.1
 Authors@R: c(person("Matthew","Stephens",role=c("aut","cre"),
