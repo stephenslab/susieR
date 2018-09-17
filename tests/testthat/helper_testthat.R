@@ -34,3 +34,7 @@ simulate = function(n=100, p=200, sparse=F) {
            sigma2=residual_variance, V=scaled_prior_variance * as.numeric(var(y)))
   attach(list(X=X, X.sparse=X.sparse, s=s, y=y, n=n, p=p, b=beta), warn.conflict=F)
 }
+
+load_data = function(filename) {
+  readRDS(system.file("inst","datafiles",filename,package = "susieR"))
+}
