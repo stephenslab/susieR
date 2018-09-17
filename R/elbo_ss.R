@@ -22,13 +22,13 @@ Eloglik_ss = function(XtX,Xty,s, var_y, n){
 # expected squared residuals
 get_ER2_ss = function(XtX,Xty,s,var_y,n){
   B = s$alpha*s$mu
-  XB2 = sum(t(B) * XtX%*%t(B))
+  XB2 = sum(t(B) * compute_MXt(XtX,B))
 
   betabar = colSums(B)
   d = diag(XtX)
   postb2 = s$alpha * s$mu2 #posterior second moment
 
-  return(var_y*n - 2*sum(betabar * Xty) + sum(betabar * (XtX %*% betabar)) -
+  return(var_y*n - 2*sum(betabar * Xty) + sum(betabar * compute_Xb(XtX, betabar)) -
            XB2 + sum(d*t(postb2)))
 }
 

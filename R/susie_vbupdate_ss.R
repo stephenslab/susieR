@@ -12,7 +12,7 @@ update_each_effect_ss <- function (XtX, Xty, s_init, estimate_prior_variance=FAL
   if(L>0){
     for (l in 1:L){
       # remove lth effect from fitted values
-      s$XtXr = s$XtXr - XtX %*% (s$alpha[l,] * s$mu[l,])
+      s$XtXr = s$XtXr - compute_Xb(XtX, (s$alpha[l,] * s$mu[l,]))
 
       #compute residuals
       XtR = Xty - s$XtXr
@@ -26,7 +26,7 @@ update_each_effect_ss <- function (XtX, Xty, s_init, estimate_prior_variance=FAL
       s$V[l] <- res$V
       s$KL[l] <- -res$logBF + SER_posterior_e_loglik_ss(XtX,XtR,s$sigma2,res$alpha*res$mu,res$alpha*res$mu2)
 
-      s$XtXr <- s$XtXr + XtX %*% (s$alpha[l,]*s$mu[l,])
+      s$XtXr <- s$XtXr + compute_Xb(XtX, (s$alpha[l,]*s$mu[l,]))
     }
   }
 
