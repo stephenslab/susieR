@@ -21,8 +21,8 @@
 #' @importFrom Matrix colSums
 #' 
 single_effect_regression = function(Y,X,V,residual_variance=1,optimize_V=FALSE){
-  XtY = compute_Xty(X, Y)
-  betahat = (1/attr(X, "d")) * XtY
+  Xty = compute_Xty(X, Y)
+  betahat = (1/attr(X, "d")) * Xty
   shat2 = residual_variance/attr(X, "d")
 
   if(optimize_V){
@@ -48,7 +48,7 @@ single_effect_regression = function(Y,X,V,residual_variance=1,optimize_V=FALSE){
   alpha = w/sum(w) # posterior prob on each SNP
 
   post_var = (1/V + attr(X, "d")/residual_variance)^(-1) # posterior variance
-  post_mean = (1/residual_variance) * post_var * XtY
+  post_mean = (1/residual_variance) * post_var * Xty
   post_mean2 = post_var + post_mean^2 # second moment
   loglik = maxlbf + log(mean(w)) + sum(dnorm(Y,0,sqrt(residual_variance),log=TRUE))
 
