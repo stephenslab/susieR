@@ -58,7 +58,7 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,stand
   if(intercept){ # center Y and X
     Y = Y-mean_y
   } 
-  X = safe_colScale(X,center=intercept, scale = standardize)
+  X = safe_colScale(X,center=intercept, scale=standardize)
   
   
   # initialize susie fit

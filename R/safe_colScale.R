@@ -47,7 +47,7 @@ safe_colScale = function(X,
   if (is.matrix(X)){X = X.dense}
   if (add_attr) {
     attr(X, "d") <- Matrix::colSums(X.dense*X.dense)
-    attr(X, "X2") <- X.dense*X.dense
+    attr(X, "X2t") <- t(X.dense*X.dense)
     attr(X, "scaled:center") <- cm
     attr(X, "scaled:scale") <- csd
   }
