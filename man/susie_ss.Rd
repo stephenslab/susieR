@@ -73,6 +73,6 @@ X = matrix(rnorm(n*p),nrow=n,ncol=p)
 y = c(X \%*\% beta + rnorm(n))
 X = scale(X,center=TRUE, scale=TRUE)
 y = (y - mean(y))/sd(y)
-res =susie_ss(XtX=t(X) \%*\% X,Xty= c(y \%*\% X), 1)
+res =susie_ss(XtX=t(X) \%*\% X,Xty= c(y \%*\% X), var_y=1, n=1000)
 coef(res)
 }
