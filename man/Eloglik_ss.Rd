@@ -4,7 +4,7 @@
 \alias{Eloglik_ss}
 \title{expected loglikelihood for a susie fit}
 \usage{
-Eloglik_ss(XtX, XtY, s, var_y, n)
+Eloglik_ss(XtX, Xty, s, var_y, n)
 }
 \description{
 expected loglikelihood for a susie fit

@@ -17,22 +17,23 @@
 #' \item{lbf}{vector of log Bayes factors for each variable}
 #' \item{V}{the prior variance (after optimization, if optimize_V is TRUE)}
 #' \item{loglik}{The log-likelihood p(Y|X,V)}
+#'
+#' @importFrom Matrix colSums
+#' 
 single_effect_regression = function(Y,X,V,residual_variance=1,optimize_V=FALSE){
-  d = colSums(X^2)
-  XtY = t(X) %*% Y
-
-  betahat = (1/d) * XtY
-  shat2 = residual_variance/d
+  Xty = compute_Xty(X, Y)
+  betahat = (1/attr(X, "d")) * Xty
+  shat2 = residual_variance/attr(X, "d")
 
   if(optimize_V){
-    if(loglik.grad(0,Y,X,residual_variance)<0){
+    if(loglik.grad(0,Y,X,residual_variance,Xty)<0){
       V=0
     } else {
       #V.o = optim(par=log(V),fn=negloglik.logscale,gr = negloglik.grad.logscale, X=X,Y=Y,s2=s2,method="BFGS")
       #if(V.o$convergence!=0){
       #  warning("optimization over prior variance failed to converge")
       #}
-      V.u=uniroot(negloglik.grad.logscale,c(-10,10),extendInt = "upX",Y=Y,X=X,s2=residual_variance)
+      V.u=uniroot(negloglik.grad.logscale,c(-10,10),extendInt = "upX",Y=Y,X=X,s2=residual_variance, Xty=Xty)
       V = exp(V.u$root)
     }
   }
@@ -46,8 +47,8 @@ single_effect_regression = function(Y,X,V,residual_variance=1,optimize_V=FALSE){
   w = exp(lbf-maxlbf) # w is proportional to BF, but subtract max for numerical stability
   alpha = w/sum(w) # posterior prob on each SNP
 
-  post_var = (1/V + d/residual_variance)^(-1) # posterior variance
-  post_mean = (1/residual_variance) * post_var * XtY
+  post_var = (1/V + attr(X, "d")/residual_variance)^(-1) # posterior variance
+  post_mean = (1/residual_variance) * post_var * Xty
   post_mean2 = post_var + post_mean^2 # second moment
   loglik = maxlbf + log(mean(w)) + sum(dnorm(Y,0,sqrt(residual_variance),log=TRUE))
 
@@ -56,10 +57,10 @@ single_effect_regression = function(Y,X,V,residual_variance=1,optimize_V=FALSE){
 
 # In these functions s2 represents residual_variance and shat2 is an estimate of it
 
-loglik.grad = function(V,Y,X,s2){
-  d = colSums(X^2)
-  betahat = (1/d) * t(X) %*% Y
-  shat2 = s2/d
+#' @importFrom Matrix colSums
+loglik.grad = function(V,Y,X,s2,Xty){
+  betahat = (1/attr(X, "d")) * Xty
+  shat2 = s2/attr(X, "d")
 
   lbf = dnorm(betahat,0,sqrt(V+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
   #log(bf) on each SNP
@@ -74,8 +75,8 @@ loglik.grad = function(V,Y,X,s2){
 
 # define loglikelihood and gradient as function of lV:=log(V)
 # to improve numerical optimization
-negloglik.logscale = function(lV, Y,X,s2){-loglik(exp(lV),Y,X,s2)}
-negloglik.grad.logscale = function(lV,Y,X,s2){-exp(lV)*loglik.grad(exp(lV),Y,X,s2)}
+#negloglik.logscale = function(lV, Y,X,s2){-loglik(exp(lV),Y,X,s2)}
+negloglik.grad.logscale = function(lV,Y,X,s2,Xty){-exp(lV)*loglik.grad(exp(lV),Y,X,s2,Xty)}
 
 #
 # numDeriv::grad(negloglik.logscale,0, X =X, Y=Y,s2=s2)

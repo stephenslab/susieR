@@ -4,7 +4,7 @@
 \alias{susie_ss}
 \title{Bayesian sum of single-effect (susie) linear regression using summary stat}
 \usage{
-susie_ss(XtX, XtY, var_y = 1, n, L = 10, scaled_prior_variance = 0.2,
+susie_ss(XtX, Xty, var_y = 1, n, L = 10, scaled_prior_variance = 0.2,
   residual_variance = NULL, estimate_prior_variance = FALSE,
   max_iter = 100, s_init = NULL, verbose = FALSE, intercept = 0,
   tol = 1e-04)
@@ -12,7 +12,7 @@ susie_ss(XtX, XtY, var_y = 1, n, L = 10, scaled_prior_variance = 0.2,
 \arguments{
 \item{XtX}{a p by p matrix, X'X, where columns of X are centered to have mean 0}
 
-\item{XtY}{a p vector, X'Y, where columns of X are centered and Y is centered to have mean 0}
+\item{Xty}{a p vector, X'Y, where columns of X are centered and Y is centered to have mean 0}
 
 \item{var_y}{the (sample) variance of the vector Y}
 
@@ -73,6 +73,6 @@ X = matrix(rnorm(n*p),nrow=n,ncol=p)
 y = c(X \%*\% beta + rnorm(n))
 X = scale(X,center=TRUE, scale=TRUE)
 y = (y - mean(y))/sd(y)
-res =susie_ss(XtX=t(X) \%*\% X,XtY= c(y \%*\% X), 1)
+res =susie_ss(XtX=t(X) \%*\% X,Xty= c(y \%*\% X), var_y=1, n=1000)
 coef(res)
 }

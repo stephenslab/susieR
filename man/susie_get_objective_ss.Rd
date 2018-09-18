@@ -4,12 +4,12 @@
 \alias{susie_get_objective_ss}
 \title{Get objective function from data and susie fit object.}
 \usage{
-susie_get_objective_ss(XtX, XtY, s, var_y, n)
+susie_get_objective_ss(XtX, Xty, s, var_y, n)
 }
 \arguments{
 \item{XtX}{a p by p matrix, X'X}
 
-\item{XtY}{a p vector, X'Y,}
+\item{Xty}{a p vector, X'Y,}
 
 \item{s}{a susie fit object}
 

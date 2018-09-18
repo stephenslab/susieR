@@ -3,6 +3,7 @@
 #' @param Y an n vector of data
 #' @param s_init a list with elements sigma2, V, alpha, mu, Xr
 #' @param estimate_prior_variance boolean indicating whether to estimate prior variance
+#' @param colSum of X^2
 update_each_effect <- function (X, Y, s_init, estimate_prior_variance=FALSE) {
 
   # Repeat for each effect to update
@@ -12,12 +13,13 @@ update_each_effect <- function (X, Y, s_init, estimate_prior_variance=FALSE) {
   if(L>0){
     for (l in 1:L){
     # remove lth effect from fitted values
-      s$Xr = s$Xr - X %*% (s$alpha[l,] * s$mu[l,])
-
+      s$Xr = s$Xr - compute_Xb(X, (s$alpha[l,] * s$mu[l,]))
+      
     #compute residuals
       R = Y - s$Xr
 
-      res = single_effect_regression(R,X,s$V[l],s$sigma2,estimate_prior_variance)
+      res <- single_effect_regression(R,X,s$V[l],s$sigma2,
+                                      estimate_prior_variance)
 
     # Update the variational estimate of the posterior mean.
       s$mu[l,] <- res$mu
@@ -26,7 +28,7 @@ update_each_effect <- function (X, Y, s_init, estimate_prior_variance=FALSE) {
       s$V[l] <- res$V
       s$KL[l] <- -res$loglik + SER_posterior_e_loglik(X,R,s$sigma2,res$alpha*res$mu,res$alpha*res$mu2)
 
-      s$Xr <- s$Xr + X %*% (s$alpha[l,]*s$mu[l,])
+      s$Xr <- s$Xr + compute_Xb(X, (s$alpha[l,] * s$mu[l,]))
     }
   }
 
