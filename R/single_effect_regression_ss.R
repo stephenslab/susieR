@@ -38,12 +38,14 @@ single_effect_regression_ss = function(Xty,dXtX,V=1,residual_variance=1,optimize
   lbf = dnorm(betahat,0,sqrt(V+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
   #log(bf) on each SNP
 
+  lbf[shat2==Inf] = 0 # deal with special case of infinite shat2 (eg happens if X does not vary)
+
   maxlbf = max(lbf)
   w = exp(lbf-maxlbf) # w is proportional to BF, but subtract max for numerical stability
   alpha = w/sum(w) # posterior prob on each SNP
 
   post_var = (1/V + dXtX/residual_variance)^(-1) # posterior variance
-  post_mean = (dXtX/residual_variance) * post_var * betahat
+  post_mean = (1/residual_variance) * post_var * Xty
   post_mean2 = post_var + post_mean^2 # second moment
   logBF = maxlbf + log(mean(w)) #analogue of loglik in the non-summary case
 
