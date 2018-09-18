@@ -47,14 +47,14 @@
 #' coef(res)
 #' plot(y,predict(res))
 #' @export
-susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,standardize=TRUE,intercept=TRUE,max_iter=100,tol=1e-2,estimate_residual_variance=TRUE,estimate_prior_variance = FALSE, s_init = NULL, verbose=FALSE, track_fit=FALSE){
+susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
+                 standardize=TRUE,intercept=TRUE,
+                 estimate_residual_variance=TRUE,estimate_prior_variance = FALSE,
+                 s_init = NULL,max_iter=100,tol=1e-2,
+                 verbose=FALSE,track_fit=FALSE) {
   # Check input X.
   if (!(is.double(X) & is.matrix(X)) & !is(X, 'CsparseMatrix'))
     stop("Input X must be a double-precision matrix, or a sparse matrix.")
-  varY = as.numeric(var(y))
-  if (missing(residual_variance)) {
-    residual_variance=varY
-  }
   p = ncol(X)
   n = nrow(X)
   mean_y = mean(Y)
@@ -64,7 +64,7 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,stand
   }
   X = safe_colScale(X,center=intercept, scale=standardize)
   # initialize susie fit
-  s = init_setup(n,p,L,scaled_prior_variance,residual_variance,varY)
+  s = init_setup(n,p,L,scaled_prior_variance,residual_variance,as.numeric(var(Y)))
   if (!missing(s_init)) {
     s = modifyList(s, s_init)
   }

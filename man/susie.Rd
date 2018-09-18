@@ -6,8 +6,8 @@
 \usage{
 susie(X, Y, L = 10, scaled_prior_variance = 0.2,
   residual_variance = NULL, standardize = TRUE, intercept = TRUE,
-  max_iter = 100, tol = 0.01, estimate_residual_variance = TRUE,
-  estimate_prior_variance = FALSE, s_init = NULL, verbose = FALSE,
+  estimate_residual_variance = TRUE, estimate_prior_variance = FALSE,
+  s_init = NULL, max_iter = 100, tol = 0.01, verbose = FALSE,
   track_fit = FALSE)
 }
 \arguments{
@@ -30,15 +30,15 @@ Any column of X that has zero variance is not standardized, but left as is.}
 
 \item{intercept}{Should intercept be fitted (default=TRUE) or set to zero (FALSE). The latter is generally not recommended.}
 
-\item{max_iter}{maximum number of iterations to perform}
-
-\item{tol}{convergence tolerance}
-
 \item{estimate_residual_variance}{indicates whether to estimate residual variance}
 
 \item{estimate_prior_variance}{indicates whether to estimate prior (currently not recommended as not fully tested and assessed)}
 
 \item{s_init}{a previous susie fit with which to initialize}
+
+\item{max_iter}{maximum number of iterations to perform}
+
+\item{tol}{convergence tolerance}
 
 \item{verbose}{if true outputs some progress messages}
 
