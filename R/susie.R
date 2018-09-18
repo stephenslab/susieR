@@ -51,71 +51,29 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,stand
   # Check input X.
   if (!(is.double(X) & is.matrix(X)) & !is(X, 'CsparseMatrix'))
     stop("Input X must be a double-precision matrix, or a sparse matrix.")
+  varY = as.numeric(var(y))
+  if (missing(residual_variance)) {
+    residual_variance=varY
+  }
   p = ncol(X)
   n = nrow(X)
   mean_y = mean(Y)
-  
-  if(intercept){ # center Y and X
+  # center and scale input.
+  if(intercept){
     Y = Y-mean_y
-  } 
-  X = safe_colScale(X,center=intercept, scale=standardize)
-  
-  
-  # initialize susie fit
-  if(!is.null(s_init)){
-    if(!missing(L) || !missing(scaled_prior_variance) || !missing(residual_variance))
-      stop("if provide s_init then L, scaled_prior_variance and residual_variance must not be provided")
-    keys = c('alpha', 'mu', 'mu2', 'V')
-    if(!all(keys %in% names(s_init)))
-      stop(paste("s_init requires all of the following attributes:", paste(keys, collapse = ', ')))
-    if (!all(dim(s_init$mu) == dim(s_init$mu2)))
-      stop("dimension of mu and mu2 in s_init do not match")
-    if (!all(dim(s_init$mu) == dim(s_init$alpha)))
-      stop("dimension of mu and alpha in s_init do not match")
-    if (dim(s_init$alpha)[1] != length(s_init$V))
-      stop("V must have length of nrow of alpha in s_init")
-    if (is.null(s_init$Xr)) s_init$Xr = compute_Xb(X, colSums(s_init$mu*s_init$alpha))
-    if (is.null(s_init$sigma2)) s_init$sigma2 = var(Y)
-    # reset KL
-    s_init$KL = rep(NA, nrow(s_init$alpha))
-    s = s_init
-  } else {
-
-    if(is.null(residual_variance)){
-      residual_variance=var(Y)
-    }
-    residual_variance= as.numeric(residual_variance) #avoid problems with dimension if entered as matrix
-
-
-    if(length(scaled_prior_variance)==1){
-      scaled_prior_variance = rep(scaled_prior_variance,L)
-    }
-
-    # Check inputs sigma and sa.
-    if (length(residual_variance) != 1)
-      stop("Input residual_variance must be scalar")
-    # Check inputs sigma and sa.
-    if (length(scaled_prior_variance) != L)
-      stop("Input scaled_prior_variance must be of length 1 or L")
-
-    # initialize susie fit
-    s = list(alpha=matrix(1/p,nrow=L,ncol=p),
-             mu=matrix(0,nrow=L,ncol=p),
-             mu2=matrix(0,nrow=L,ncol=p),
-             Xr=rep(0,n), KL=rep(NA,L),
-             sigma2=residual_variance, V=scaled_prior_variance * as.numeric(var(Y)))
   }
-  if (s$sigma2 <= 0)
-      stop("residual variance must be positive (is your var(Y) zero?)")
-  if (!all(s$V >= 0))
-      stop("prior variance must be non-negative")
-  class(s) = "susie"
+  X = safe_colScale(X,center=intercept, scale=standardize)
+  # initialize susie fit
+  s = init_setup(n,p,L,scaled_prior_variance,residual_variance,varY)
+  if (!missing(s_init)) {
+    s = modifyList(s, s_init)
+  }
+  s = init_finalize(s, X=X)
 
   #initialize elbo to NA
   elbo = rep(NA,max_iter+1)
   elbo[1] = -Inf;
   tracking = list()
- 
 
   for(i in 1:max_iter){
     #s = add_null_effect(s,0)
@@ -153,38 +111,4 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,stand
     s$trace = tracking
 
   return(s)
-}
-
-#' @title initialize a susie object using given nonzero effect indices and beta values
-#' @param coef_index a L-vector for indices of nonzero effects
-#' @param coef_value a L-vector for initial estimated beta values
-#' @param num_variables a scalar the number of variables in the data
-#' @param V a scalar or an L-vector of prior variances
-#' @param residual_variance a scalar containing residual variance
-#' @return a list of initialized alpha, mu, mu2, V and optionally sigma2
-#' @export
-susie_init = function(coef_index, coef_value, num_variables,
-                          V, residual_variance=NULL){
-  L = length(coef_index)
-  if (L <= 0)
-    stop("Need at least one non-zero effect")
-  if (!all(coef_value != 0))
-    stop("Input coef_value must be non-zero for all its elements")
-  if (L != length(coef_value))
-    stop("Inputs coef_index and coef_value must of the same length")
-  if (!missing(residual_variance) && length(residual_variance) != 1)
-    stop("Inputs residual_variance must be scalar")
-  if(length(V) == 1)
-    V = rep(V,L)
-  if (length(V) != L)
-    stop("Inputs prior_variance must be of length 1 or L")
-
-  alpha = matrix(0,nrow=L,ncol=num_variables)
-  mu = matrix(0,nrow=L,ncol=num_variables)
-  for(i in 1:L){
-    alpha[i, coef_index[i]] = 1
-    mu[i, coef_index[i]] = coef_value[i]
-  }
-  mu2 = mu*mu
-  return(list(alpha=alpha, mu=mu, mu2=mu2, V=V, sigma2=residual_variance))
 }
