@@ -1,4 +1,4 @@
-test_that("SER_posterior_e_loglik version 0.3",{
+test_that("SER_posterior_e_loglik agrees with version 0.3",{
   original.res = load_data('SER_original_res.rds')
   simulate(sparse=T)
   Eb = rep(1, p)

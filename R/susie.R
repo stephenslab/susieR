@@ -67,8 +67,10 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
   s = init_setup(n,p,L,scaled_prior_variance,residual_variance,as.numeric(var(Y)))
   if (!missing(s_init)) {
     s = modifyList(s, s_init)
+    s = init_finalize(s, X=X)
+  } else {
+    s = init_finalize(s)
   }
-  s = init_finalize(s, X=X)
 
   #initialize elbo to NA
   elbo = rep(NA,max_iter+1)
