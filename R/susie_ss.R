@@ -48,8 +48,8 @@
 #' @export
 susie_ss = function(XtX,Xty,var_y = 1, n, L=10,scaled_prior_variance=0.2,residual_variance=NULL,estimate_prior_variance = FALSE, max_iter=100,s_init = NULL, verbose=FALSE, intercept=0, tol=1e-4){
   # Check input XtX.
-  if (!is.double(XtX) || !is.matrix(XtX))
-    stop("Input XtX must be a double-precision matrix")
+  if (!(is.double(XtX) & is.matrix(XtX)) & !is(XtX, 'CsparseMatrix'))
+    stop("Input X must be a double-precision matrix, or a sparse matrix.")
   p = ncol(XtX)
 
   # initialize susie fit

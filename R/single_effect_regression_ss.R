@@ -5,8 +5,8 @@
 #' The assumption is that b has exactly one non-zero element, with all elements
 #' equally likely to be non-zero. The prior on the non-zero element is N(0,var=V).
 #' Only the summary statistcs t(X)Y and diagonal elements of t(X)X are avialable.
-#' @param Xty an p vector
-#' @param dXtX an p vector, diagonal elements of t(X)X
+#' @param Xty a p vector
+#' @param dXtX a p vector, diagonal elements of t(X)X
 #' @param V the prior variance
 #' @param residual_variance the residual variance
 #' @param optimize_V boolean indicating whether to optimize V (by maximum likelihood)
@@ -19,9 +19,8 @@
 #' \item{V}{the prior variance (after optimization, if optimize_V is TRUE)}
 #' \item{logBF}{(scalar) the loglikelihood for the total model minus the log-likelihood for the null model}
 single_effect_regression_ss = function(Xty,dXtX,V=1,residual_variance=1,optimize_V=FALSE){
-  d = dXtX
-  betahat = (1/d) * Xty
-  shat2 = residual_variance/d
+  betahat = (1/dXtX) * Xty
+  shat2 = residual_variance/dXtX
 
   if(optimize_V){
     if(loglik.grad_ss(0,Xty,dXtX,residual_variance)<0){
@@ -31,7 +30,7 @@ single_effect_regression_ss = function(Xty,dXtX,V=1,residual_variance=1,optimize
       #if(V.o$convergence!=0){
       #  warning("optimization over prior variance failed to converge")
       #}
-      V.u=uniroot(negloglik.grad.logscale_ss,c(-10,10),extendInt = "upX",Xty=Xty,dXtX=d,s2=residual_variance)
+      V.u=uniroot(negloglik.grad.logscale_ss,c(-10,10),extendInt = "upX",Xty=Xty,dXtX=dXtX,s2=residual_variance)
       V = exp(V.u$root)
     }
   }
@@ -43,8 +42,8 @@ single_effect_regression_ss = function(Xty,dXtX,V=1,residual_variance=1,optimize
   w = exp(lbf-maxlbf) # w is proportional to BF, but subtract max for numerical stability
   alpha = w/sum(w) # posterior prob on each SNP
 
-  post_var = (1/V + d/residual_variance)^(-1) # posterior variance
-  post_mean = (d/residual_variance) * post_var * betahat
+  post_var = (1/V + dXtX/residual_variance)^(-1) # posterior variance
+  post_mean = (dXtX/residual_variance) * post_var * betahat
   post_mean2 = post_var + post_mean^2 # second moment
   logBF = maxlbf + log(mean(w)) #analogue of loglik in the non-summary case
 
@@ -53,9 +52,8 @@ single_effect_regression_ss = function(Xty,dXtX,V=1,residual_variance=1,optimize
 
 
 loglik.grad_ss = function(V,Xty,dXtX,s2){
-  d = dXtX
-  betahat = (1/d) * Xty
-  shat2 = s2/d
+  betahat = (1/dXtX) * Xty
+  shat2 = s2/dXtX
 
   lbf = dnorm(betahat,0,sqrt(V+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
   #log(bf) on each SNP

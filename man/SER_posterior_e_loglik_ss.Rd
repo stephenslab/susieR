@@ -4,18 +4,18 @@
 \alias{SER_posterior_e_loglik_ss}
 \title{posterior expected loglikelihood for a single effect regression}
 \usage{
-SER_posterior_e_loglik_ss(XtX, Xty, s2, Eb, Eb2)
+SER_posterior_e_loglik_ss(dXtX, Xty, s2, Eb, Eb2)
 }
 \arguments{
+\item{dXtX}{a p vector of diagonal elements of XtX}
+
+\item{Xty}{a p vector}
+
 \item{s2}{the residual variance}
 
 \item{Eb}{the posterior mean of b (p vector) (alpha * mu)}
 
 \item{Eb2}{the posterior second moment of b (p vector) (alpha * mu2)}
-
-\item{X}{an n by p matrix of covariates}
-
-\item{Y}{an n vector of regression outcome}
 }
 \description{
 posterior expected loglikelihood for a single effect regression

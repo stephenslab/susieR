@@ -8,9 +8,9 @@ single_effect_regression_ss(Xty, dXtX, V = 1, residual_variance = 1,
   optimize_V = FALSE)
 }
 \arguments{
-\item{Xty}{an p vector}
+\item{Xty}{a p vector}
 
-\item{dXtX}{an p vector, diagonal elements of t(X)X}
+\item{dXtX}{a p vector, diagonal elements of t(X)X}
 
 \item{V}{the prior variance}
 
