@@ -1,4 +1,4 @@
-test_that("sparse version get_ER2",{
+test_that("get_ER2 version 0.3",{
   original.res = load_data('ER2_original_res.rds')
   simulate(sparse=T)
   

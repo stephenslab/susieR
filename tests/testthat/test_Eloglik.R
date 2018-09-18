@@ -1,4 +1,4 @@
-test_that("sparse version Eloglik",{
+test_that("Eloglik version 0.3",{
   original.res = load_data('Eloglik_original_res.rds')
   simulate(sparse=T)
   

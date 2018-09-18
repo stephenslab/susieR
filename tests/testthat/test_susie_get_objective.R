@@ -1,4 +1,4 @@
-test_that("sparse version susie_get_objective",{
+test_that("susie_get_objective version 0.3",{
   original.res = load_data('objective_original_res.rds')
   simulate(sparse=T)
   

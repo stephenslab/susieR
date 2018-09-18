@@ -1,4 +1,4 @@
-test_that("sparse version single_effect_regression",{
+test_that("single_effect_regression version 0.3",{
   original.res = load_data('singleReg_original_res.rds')
   simulate(sparse=T)
   V = 0.2

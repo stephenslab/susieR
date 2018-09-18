@@ -1,4 +1,4 @@
-test_that("sparse version susie",{
+test_that("susie version 0.3",{
   original.res = load_data('susiefit_original_res.rds')
   original.res2 = load_data('susiefit_original_res2.rds')
   original.res3 = load_data('susiefit_original_res3.rds')
