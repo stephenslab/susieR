@@ -5,8 +5,8 @@
 #' The assumption is that b has exactly one non-zero element, with all elements
 #' equally likely to be non-zero. The prior on the non-zero element is N(0,var=V).
 #' Only the summary statistcs t(X)Y and diagonal elements of t(X)X are avialable.
-#' @param Xty an p vector
-#' @param dXtX an p vector, diagonal elements of t(X)X
+#' @param Xty a p vector
+#' @param dXtX a p vector, diagonal elements of t(X)X
 #' @param V the prior variance
 #' @param residual_variance the residual variance
 #' @param optimize_V boolean indicating whether to optimize V (by maximum likelihood)
@@ -52,9 +52,8 @@ single_effect_regression_ss = function(Xty,dXtX,V=1,residual_variance=1,optimize
 
 
 loglik.grad_ss = function(V,Xty,dXtX,s2){
-  d = dXtX
-  betahat = (1/d) * Xty
-  shat2 = s2/d
+  betahat = (1/dXtX) * Xty
+  shat2 = s2/dXtX
 
   lbf = dnorm(betahat,0,sqrt(V+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
   #log(bf) on each SNP
