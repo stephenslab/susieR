@@ -4,7 +4,8 @@
 \alias{init_setup}
 \title{Set default susie initialization}
 \usage{
-init_setup(n, p, L, scaled_prior_variance, residual_variance, varY)
+init_setup(n, p, L, scaled_prior_variance, residual_variance,
+  prior_weights, varY)
 }
 \description{
 Set default susie initialization

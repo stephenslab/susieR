@@ -5,7 +5,7 @@
 \title{Bayesian single-effect linear regression of Y on X}
 \usage{
 single_effect_regression(Y, X, V, residual_variance = 1,
-  optimize_V = FALSE)
+  prior_weights = NULL, optimize_V = FALSE)
 }
 \arguments{
 \item{Y}{an n vector}
@@ -15,6 +15,8 @@ single_effect_regression(Y, X, V, residual_variance = 1,
 \item{V}{the prior variance}
 
 \item{residual_variance}{the residual variance}
+
+\item{prior_weights}{a p vector of prior weights}
 
 \item{optimize_V}{boolean indicating whether to optimize V (by maximum likelihood)}
 }

@@ -4,14 +4,14 @@
 \alias{update_each_effect}
 \title{update each effect once}
 \usage{
-update_each_effect(X, Y, s_init, estimate_prior_variance = FALSE)
+update_each_effect(X, Y, s, estimate_prior_variance = FALSE)
 }
 \arguments{
 \item{X}{an n by p matrix of covariantes}
 
 \item{Y}{an n vector of data}
 
-\item{s_init}{a list with elements sigma2, V, alpha, mu, Xr}
+\item{s}{a list with elements sigma2, V, alpha, mu, Xr}
 
 \item{estimate_prior_variance}{boolean indicating whether to estimate prior variance}
 
