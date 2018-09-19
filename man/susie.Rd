@@ -5,7 +5,8 @@
 \title{Bayesian sum of single-effect (susie) linear regression of Y on X}
 \usage{
 susie(X, Y, L = 10, scaled_prior_variance = 0.2,
-  residual_variance = NULL, standardize = TRUE, intercept = TRUE,
+  residual_variance = NULL, prior_weights = NULL, null_weight = NULL,
+  standardize = TRUE, intercept = TRUE,
   estimate_residual_variance = TRUE, estimate_prior_variance = FALSE,
   s_init = NULL, coverage = 0.95, min_abs_corr = 0.5,
   max_iter = 100, tol = 0.001, verbose = FALSE, track_fit = FALSE)
@@ -21,7 +22,11 @@ susie(X, Y, L = 10, scaled_prior_variance = 0.2,
 
 \item{residual_variance}{the residual variance (defaults to variance of Y)}
 
-\item{standardize}{logical flag for whether to standardize columns of X to unit variance prior to fitting.
+\item{prior_weights}{a p vector of prior probability that each element is non-zero}
+
+\item{null_weight}{probability of no effect, for each single effect model}
+
+\item{standardize}{logical flag (default=TRUE) for whether to standardize columns of X to unit variance prior to fitting.
 Note that `scaled_prior_variance` specifies the prior on the coefficients of X *after* standardization (if performed).
 If you do not standardize you may need
 to think more carefully about specifying

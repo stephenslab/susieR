@@ -1,27 +1,25 @@
 #' @title update each effect once
 #' @param X an n by p matrix of covariantes
 #' @param Y an n vector of data
-#' @param s_init a list with elements sigma2, V, alpha, mu, Xr
+#' @param s a list with elements sigma2, V, alpha, mu, Xr
 #' @param estimate_prior_variance boolean indicating whether to estimate prior variance
 #' @param colSum of X^2
-update_each_effect <- function (X, Y, s_init, estimate_prior_variance=FALSE) {
+update_each_effect <- function (X, Y, s, estimate_prior_variance=FALSE) {
 
   # Repeat for each effect to update
-  s = s_init
   L = nrow(s$alpha)
 
   if(L>0){
     for (l in 1:L){
-    # remove lth effect from fitted values
+      # remove lth effect from fitted values
       s$Xr = s$Xr - compute_Xb(X, (s$alpha[l,] * s$mu[l,]))
-      
-    #compute residuals
+      #compute residuals
       R = Y - s$Xr
 
-      res <- single_effect_regression(R,X,s$V[l],s$sigma2,
+      res <- single_effect_regression(R,X,s$V[l],s$sigma2,s$pi,
                                       estimate_prior_variance)
 
-    # Update the variational estimate of the posterior mean.
+      # Update the variational estimate of the posterior mean.
       s$mu[l,] <- res$mu
       s$alpha[l,] <- res$alpha
       s$mu2[l,] <- res$mu2

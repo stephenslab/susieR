@@ -8,6 +8,7 @@
 #' @param X an n by p matrix of covariates
 #' @param V the prior variance
 #' @param residual_variance the residual variance
+#' @param prior_weights a p vector of prior weights
 #' @param optimize_V boolean indicating whether to optimize V (by maximum likelihood)
 #' @return a list with elements: \cr
 #' \item{alpha}{vector of posterior inclusion probabilities. ie alpha[i] is posterior probability that
@@ -19,8 +20,8 @@
 #' \item{loglik}{The log-likelihood p(Y|X,V)}
 #'
 #' @importFrom Matrix colSums
-#' 
-single_effect_regression = function(Y,X,V,residual_variance=1,optimize_V=FALSE){
+#'
+single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL,optimize_V=FALSE){
   Xty = compute_Xty(X, Y)
   betahat = (1/attr(X, "d")) * Xty
   shat2 = residual_variance/attr(X, "d")
@@ -45,7 +46,12 @@ single_effect_regression = function(Y,X,V,residual_variance=1,optimize_V=FALSE){
 
   maxlbf = max(lbf)
   w = exp(lbf-maxlbf) # w is proportional to BF, but subtract max for numerical stability
-  alpha = w/sum(w) # posterior prob on each SNP
+  # posterior prob on each SNP
+  if (is.null(prior_weights)) alpha = w/sum(w)
+  else {
+    w_weighted = w * prior_weights
+    alpha = w_weighted / sum(w_weighted)
+  }
 
   post_var = (1/V + attr(X, "d")/residual_variance)^(-1) # posterior variance
   post_mean = (1/residual_variance) * post_var * Xty
@@ -58,7 +64,8 @@ single_effect_regression = function(Y,X,V,residual_variance=1,optimize_V=FALSE){
 # In these functions s2 represents residual_variance and shat2 is an estimate of it
 
 #' @importFrom Matrix colSums
-loglik.grad = function(V,Y,X,s2,Xty){
+#' @importFrom stats dnorm
+loglik.grad = function(V,Y,X,s2,Xty) {
   betahat = (1/attr(X, "d")) * Xty
   shat2 = s2/attr(X, "d")
 

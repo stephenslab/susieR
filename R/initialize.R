@@ -24,17 +24,20 @@ susie_init_coef = function(coef_index, coef_value, p) {
 }
 
 #' @title Set default susie initialization
-init_setup = function(n, p, L, scaled_prior_variance, residual_variance, varY) {
+init_setup = function(n, p, L, scaled_prior_variance, residual_variance, prior_weights, varY) {
   if(length(scaled_prior_variance) == 1)
     scaled_prior_variance = rep(scaled_prior_variance, L)
   if(is.null(residual_variance))
     residual_variance = varY
+  if(!is.null(prior_weights) && length(prior_weights) != p)
+    stop("Prior weights must have length p.")
   s = list(alpha=matrix(1/p,nrow=L,ncol=p),
            mu=matrix(0,nrow=L,ncol=p),
            mu2=matrix(0,nrow=L,ncol=p),
            Xr=rep(0,n), KL=rep(NA,L),
            sigma2=residual_variance,
-           V=scaled_prior_variance * varY)
+           V=scaled_prior_variance * varY,
+           pi=prior_weights)
   class(s) = 'susie'
   return(s)
 }

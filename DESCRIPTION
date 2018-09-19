@@ -1,23 +1,27 @@
-Package: susieR
 Type: Package
+Package: susieR
+Encoding: UTF-8
 Title: Fit Sum of Single Effects Linear Regression Model
-Date: 2018-09-17
-Version: 0.4.1
+Description: Fits a sparse regression model with up to L effects,
+    where L is user-specified. The fitting procedure uses a fast new
+    variational Bayes approach (unpublished data).
+Date: 2018-09-19
+Version: 0.4.3
 Authors@R: c(person("Matthew","Stephens",role=c("aut","cre"),
                     email="mstephens@uchicago.edu"),
              person("Yuxin","Zou",role="aut"),
              person("Kaiqian","Zhang",role="aut"),
              person("Peter","Carbonetto",role="aut"),
              person("Gao","Wang",role="aut"))
-Description: Fits a sparse regression model with up to L effects,
-    where L is user-specified. The fitting procedure uses a fast new
-    variational Bayes approach (unpublished data).
-BugReports: http://github.com/stephenslab/susieR/issues
-License: MIT
-Encoding: UTF-8
+URL: https://github.com/stephenslab/susieR
+BugReports: https://github.com/stephenslab/susieR/issues
+License: MIT + file LICENSE
 LazyData: true
+NeedsCompilation: no
 RoxygenNote: 6.1.0.9000
+Depends: R (>= 3.0.0)
 Suggests: testthat
 Imports:
+    stats,
     Matrix,
     matrixStats

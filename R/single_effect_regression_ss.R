@@ -52,7 +52,7 @@ single_effect_regression_ss = function(Xty,dXtX,V=1,residual_variance=1,optimize
   return(list(alpha=alpha,mu=post_mean,mu2 = post_mean2,lbf=lbf, V=V, logBF = logBF))
 }
 
-
+#' @importFrom stats dnorm
 loglik.grad_ss = function(V,Xty,dXtX,s2){
   betahat = (1/dXtX) * Xty
   shat2 = s2/dXtX
