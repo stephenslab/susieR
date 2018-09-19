@@ -170,6 +170,7 @@ univariate_regression = function(X, y, Z=NULL, centered=FALSE, return_residuals=
                        })),
                silent = TRUE)
   if (class(output) == 'try-error') {
+    # Exception occurs, fall back to a safer but slower calculation
     output = matrix(0,ncol(X),2)
     for (i in 1:ncol(X)) {
       fit = summary(lm(y ~ X[,i]))$coef
@@ -211,7 +212,11 @@ susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,...){
   is_susie = (class(model) == "susie")
   ylab = y
   if (y=='z') {
-    if (is_susie) zneg = -abs(model$z)
+    if (is_susie) {
+      if (is.null(model$z))
+        stop('z-score not available from SuSiE fit. Please set `compute_univariate_zscore=TRUE` in `susie()` function call.')
+      zneg = -abs(model$z)
+    }
     else zneg = -abs(model)
     p = -log10(pnorm(zneg))
     ylab = "-log10(p)"
@@ -219,7 +224,7 @@ susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,...){
     if (is_susie) p = model$pip
     else p = model
   } else {
-    if (is_susie) stop('Need to specify z or PIP for SuSiE fits')
+    if (is_susie) stop('Need to specify z or PIP for SuSiE fits.')
     p = model
   }
   if(is.null(b)){b = rep(0,length(p))}
