@@ -1,20 +1,14 @@
 ---
-title: "Sparse Matrix Multiplication Strategy"
+title: "Sparse matrix multiplication strategy"
 author: "Kaiqian Zhang"
 header-includes:
    - \usepackage{amsmath}
 date: "9/17/2018"
-output: pdf_document
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-```
-
-```{r, warning=FALSE}
-library(Matrix)
-library(microbenchmark)
-library(ggplot2)
 ```
 
 ## Goal
@@ -32,7 +26,7 @@ There are two types of matrix multiplications we want to investigate:
 
 ## Results
 
-This strategy has a decent performance when computing both $\boldsymbol{\widetilde{X}b}$ and $\boldsymbol{\widetilde{X}^Ty}$. By applying sparse matrix multiplication strategy in SuSiE, we are able to reduce computation time by around `70%` and save significant memory (please see vignette `sparse_susie_eval` for details). 
+This strategy has a decent performance when computing both $\boldsymbol{\widetilde{X}b}$ and $\boldsymbol{\widetilde{X}^Ty}$, compared to simple matrix multiplication `%*%`. Please see vignette `A minimal benchmark on sparse strategy` for details. 
 
 ## Strategy formulae details
 
@@ -66,80 +60,5 @@ Suppose we want to compute $\boldsymbol{\widetilde{X}^Ty}$, where $\boldsymbol{\
 
 where $\boldsymbol{\mu}$ is a p vector of column means and $\boldsymbol{\sigma}$ is a p vector of column standard deviations.
 
-## Simulations
-
-We simulate an `n=1000` by `p=10000` matrix `X` at sparsity $99\%$, i.e. $99\%$ entries are zeros. We compare results between normal matrix computation and our sparse strategy as well as comparing speed using microbenchmark.  
-
-```{r, include=FALSE}
-devtools::install()
-library(susieR)
-```
-
-```{r}
-create_sparsity_mat = function(sparsity, n, p){
-  nonzero = round(n*p*(1-sparsity))
-  nonzero.idx = sample(n*p, nonzero)
-  mat = numeric(n*p)
-  mat[nonzero.idx] = 1
-  mat = matrix(mat, nrow=n, ncol=p)
-  return(mat)
-}
-n = 1000
-p = 10000
-```
-
-```{r}
-X.dense = create_sparsity_mat(0.99,n,p)
-X.sparse = as(X.dense,'dgCMatrix')
-X.tilde = susieR:::safe_colScale(X.dense) #returns a scaled X if input is a dense matrix
-X = susieR:::safe_colScale(X.sparse) #return an unsacled sparse X if input is a sparse matrix 
-                                     #but computes column means and standard deviations
-```
 
 
-```{r}
-set.seed(1)
-b = rnorm(p)
-set.seed(1)
-y = rnorm(n)
-```
-
-The final results of two methods when computing $\boldsymbol{\widetilde{X}b}$ are very close. 
-```{r}
-res1 = X.tilde%*%b
-res2 = susieR:::compute_Xb(X, b)
-sum(res1-res2)
-```
-
-```{r}
-compute_Xb_benchmark = microbenchmark(
-  use.normal.Xb = X.tilde%*%b,
-  use.sparse.Xb = susieR:::compute_Xb(X, b),
-  times = 20
-)
-```
-
-Our sparse strategy demonstrates an obvious advantage over the normal matrix multiplication in computing $\boldsymbol{\widetilde{X}b}$. 
-```{r}
-autoplot(compute_Xb_benchmark)
-```
-
-The final results of two methods when computing $\boldsymbol{\widetilde{X}^Ty}$ are almost the same. 
-```{r}
-res3 = t(X.tilde)%*%y
-res4 = susieR:::compute_Xty(X, y)
-sum(res3-res4)
-```
-
-```{r}
-compute_Xty_benchmark = microbenchmark(
-  use.normal.Xty = t(X.tilde)%*%y,
-  use.sparse.Xty = susieR:::compute_Xty(X, y),
-  times = 20
-)
-```
-
-Our sparse strategy has an evidently better performance than the normal method in computing $\boldsymbol{\widetilde{X}^Ty}$. 
-```{r}
-autoplot(compute_Xty_benchmark)
-```

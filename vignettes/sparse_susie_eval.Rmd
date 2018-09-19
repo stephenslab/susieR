@@ -1,33 +1,36 @@
 ---
-title: "A minimal example on revised SuSiE"
+title: "Line profiles for sparse version SuSiE"
 author: "Kaiqian Zhang"
-date: "9/10/2018"
+date: "9/19/2018"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_knit$set(root.dir = '~/Desktop/M/M-github-repos/susieR')
+```
+
+```{r, include=FALSE}
+devtools::install_github("stephenslab/susieR")
 ```
 
 ```{r, warning=FALSE}
 library(Matrix)
-library(ggplot2)
-library(microbenchmark)
+library(susieR)
 library(profvis)
 ```
 
 ## Goal
-In this vignette, we want to compare a revised version SuSiE, which allows for sparse matrix multiplication, with the original one. We claim that the revised version reduces computation time by a large extent and saves more memory. Since we have verified correctness by unit tests, we will only consider speed comparisons here. 
+In this vignette, we provide line profiles for revised version SuSiE, which allows for a sparse matrix structure. We compare speed performance when the form of the matrix `X` is dense and sparse. 
 
 ## Results
 
-In this minimal example, we have shown that the revised version of SuSiE can reduce computation time by around $63\%$, even if the input matrix is a dense matrix, and further reduce computation time $17\%$ more given the input matrix is a sparse matrix. It is also obvious that the revised version takes less memory. We provide line profiles below so that people who are interested could improve the work as well.  
+In this minimal example, we observe that given a large sparse matrix, if it is in the dense form, the speed is around `40%` slower than that in a sparse form.  
 
 ## Data
-We randomly simulate a dense matrix and a sparse matrix at sparsity $99\%$, i.e. $99\%$ entries are zeros.
+We randomly simulate a `n=1000` by `p=1000` dense matrix and a sparse matrix at sparsity $99\%$, i.e. $99\%$ entries are zeros.
 ```{r}
 create_sparsity_mat = function(sparsity, n, p){
+  set.seed(1)
   nonzero = round(n*p*(1-sparsity))
   nonzero.idx = sample(n*p, nonzero)
   mat = numeric(n*p)
@@ -45,43 +48,24 @@ beta[1]    = 10
 beta[300]  = 10
 beta[400]  = 10
 beta[1000] = 10
-set.seed(1)
 X.dense = create_sparsity_mat(0.99,n,p)
 X.sparse = as(X.dense,'dgCMatrix')
 y = c(X.dense %*% beta + rnorm(n))
 ```
 
-## Original version SuSiE
-```{r, warning=FALSE}
-devtools::install_github("stephenslab/susieR")
-library(susieR)
-```
-
+## `X` in a dense form
 ```{r}
 profvis({
-  susie.original = susie(X.dense, y)
+  susie.dense = susie(X.dense, y)
 })
 ```
 
-## Revised version SuSiE
-```{r, warning=FALSE}
-devtools::install_local("../susieR-sparse-v3")
-library(susieR)
-```
-
-### Given a dense matrix,
+## `X` in a sparse form
 ```{r}
 profvis({
-  susie.revised.dense = susie(X.dense, y)
-})
-```
-
-### Given a sparse matrix,
-```{r}
-profvis({
-  susie.revised.sparse = susie(X.sparse, y)
+  susie.sparse = susie(X.sparse, y)
 })
 ```
 
 ## Further step
-As `p` becomes larger, the advantage of using sparse matrix transformation trick will be diluted. We observe from the third line profile above that `compute_Xy` function still costs time since it uses many transposes. We have to notice that when transposing a really large matrix, even for a very sparse matrix, this step takes computation time. We encourage people who are interested to take a closer look line profiles provided and further improve SuSiE. 
+We encourage people who are insterested in improving SuSiE can get insights from those line profiles provided. 

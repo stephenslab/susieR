@@ -1,0 +1,98 @@
+---
+title: "A minimal benchmark on sparse strategy"
+author: "Kaiqian Zhang"
+date: "9/19/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include=FALSE}
+devtools::install_github("stephenslab/susieR")
+```
+
+```{r, warning=FALSE}
+library(susieR)
+library(Matrix)
+library(microbenchmark)
+library(ggplot2)
+```
+
+In this vignette, we use microbenmark to compare sparse matrix multiplication strategy with the simple method `%*%`. 
+
+## Simulations
+
+We simulate an `n=1000` by `p=10000` matrix `X` at sparsity $99\%$, i.e. $99\%$ entries are zeros. We compare results between normal matrix computation and our sparse strategy as well as comparing speed using microbenchmark.  
+
+```{r}
+create_sparsity_mat = function(sparsity, n, p){
+  set.seed(1)
+  nonzero = round(n*p*(1-sparsity))
+  nonzero.idx = sample(n*p, nonzero)
+  mat = numeric(n*p)
+  mat[nonzero.idx] = 1
+  mat = matrix(mat, nrow=n, ncol=p)
+  return(mat)
+}
+n = 1000
+p = 10000
+```
+
+```{r}
+X.dense = create_sparsity_mat(0.99,n,p)
+X.sparse = as(X.dense,'dgCMatrix')
+X.tilde = susieR:::safe_colScale(X.dense) #returns a scaled X if input is a dense matrix
+X = susieR:::safe_colScale(X.sparse) #return an unsacled sparse X if input is a sparse matrix 
+                                     #but computes column means and standard deviations
+```
+
+```{r}
+set.seed(1)
+b = rnorm(p)
+set.seed(1)
+y = rnorm(n)
+```
+
+## Benchmark for computing $\boldsymbol{\widetilde{X}b}$
+The final results of two methods when computing $\boldsymbol{\widetilde{X}b}$ are very close. 
+```{r}
+res1 = X.tilde%*%b
+res2 = susieR:::compute_Xb(X, b)
+sum(res1-res2)
+```
+
+```{r}
+compute_Xb_benchmark = microbenchmark(
+  use.normal.Xb = X.tilde%*%b,
+  use.sparse.Xb = susieR:::compute_Xb(X, b),
+  times = 20
+)
+```
+
+Our sparse strategy demonstrates an obvious advantage over the normal matrix multiplication in computing $\boldsymbol{\widetilde{X}b}$. 
+```{r}
+autoplot(compute_Xb_benchmark)
+```
+
+## Benchmark for computing $\boldsymbol{\widetilde{X}^Ty}$
+The final results of two methods when computing $\boldsymbol{\widetilde{X}^Ty}$ are almost the same. 
+```{r}
+res3 = t(X.tilde)%*%y
+res4 = susieR:::compute_Xty(X, y)
+sum(res3-res4)
+```
+
+```{r}
+compute_Xty_benchmark = microbenchmark(
+  use.normal.Xty = t(X.tilde)%*%y,
+  use.sparse.Xty = susieR:::compute_Xty(X, y),
+  times = 20
+)
+```
+
+Our sparse strategy evidently has a better performance than the normal method in computing $\boldsymbol{\widetilde{X}^Ty}$. 
+```{r}
+autoplot(compute_Xty_benchmark)
+```
