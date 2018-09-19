@@ -13,8 +13,7 @@ compute_Xb = function(X, b){
     cm = attr(X, 'scaled:center')
     csd = attr(X, 'scaled:scale')
     #scale Xb
-    transposed.scaled.X  <- t(X)/csd
-    scaled.Xb <- crossprod(transposed.scaled.X,b)
+    scaled.Xb <- tcrossprod(X, t(b/csd))
     #center Xb
     Xb <- scaled.Xb - sum(cm*b/csd)
     return(as.numeric(Xb))
