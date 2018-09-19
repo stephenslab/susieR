@@ -28,13 +28,12 @@ get_ER2 = function(X,Y,s){
   return(sum((Y-Xrsum)^2) - sum(Xr^2) + sum(attr(X, "d")*t(postb2)))
 }
 
-
-#' @title posterior expected loglikelihood for a single effect regression
-#' @param X an n by p matrix of covariates
-#' @param Y an n vector of regression outcome
-#' @param s2 the residual variance
-#' @param Eb the posterior mean of b (p vector) (alpha * mu)
-#' @param Eb2 the posterior second moment of b (p vector) (alpha * mu2)
+# @title posterior expected loglikelihood for a single effect regression
+# @param X an n by p matrix of covariates
+# @param Y an n vector of regression outcome
+# @param s2 the residual variance
+# @param Eb the posterior mean of b (p vector) (alpha * mu)
+# @param Eb2 the posterior second moment of b (p vector) (alpha * mu2)
 SER_posterior_e_loglik = function(X,Y,s2,Eb,Eb2){
   n = nrow(X)  
   -0.5*n*log(2*pi*s2)  - (0.5/s2) * (sum(Y*Y) - 2*sum(Y*compute_Xb(X, Eb)) + sum(attr(X, "X2t")*as.vector(Eb2)))
