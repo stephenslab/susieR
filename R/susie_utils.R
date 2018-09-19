@@ -54,13 +54,21 @@ get_purity = function(pos, X, Xcorr, n = 100) {
           X_sub = X_sub[,-pos_rm]
         }
       }
-      value = abs(cor(as.matrix(X_sub)))
+      value = abs(muffled_corr(as.matrix(X_sub)))
     } else {
       value = abs(Xcorr[pos, pos])
     }
-    c(min(value), mean(value), median(value))
+    c(min(value,na.rm=T), mean(value,na.rm=T), median(value,na.rm=T))
   }
 }
+
+#' @title `cor` function with specified warning muffled
+muffled_corr = function(x)
+  withCallingHandlers(cor(x),
+                    warning=function(w) {
+                      if (grepl("the standard deviation is zero", w$message))
+                        invokeRestart("muffleWarning")
+                    } )
 
 #' @title Extract confidence sets from SuSiE model
 #' @details It reports indices of variables in each confidence set identified,
@@ -89,12 +97,6 @@ susie_get_CS = function(res,
   if (!is.null(X) && !is.null(Xcorr)) {
     stop("Only one of X or Xcorr should be specified")
   }
-  if (!is.null(X) && ncol(X) != length(res[1,])) {
-    stop("Column of X matrix does not match length of res posterior")
-  }
-  if (!is.null(Xcorr) && ncol(Xcorr) != length(res[1,])) {
-    stop("Dimension of Xcorr matrix does not match length of res posterior")
-  }
   if (!is.null(Xcorr) && !isSymmetric(Xcorr)) {
     stop("Xcorr matrix must be symmetric")
   }
@@ -112,7 +114,7 @@ susie_get_CS = function(res,
   } else {
     purity = data.frame(do.call(rbind, lapply(1:length(cs), function(i) get_purity(cs[[i]], X, Xcorr))))
     colnames(purity) = c('min.abs.corr', 'mean.abs.corr', 'median.abs.corr')
-    is_pure = which(purity$min.abs.corr > min_abs_corr)
+    is_pure = which(purity$min.abs.corr >= min_abs_corr)
     if (length(is_pure) > 0) {
       cs = cs[is_pure]
       purity = purity[is_pure,]

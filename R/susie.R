@@ -11,6 +11,7 @@
 #' @param scaled_prior_variance the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times). The prior variance on each non-zero element of b is set to be var(Y)*scaled_prior_variance.
 #' @param residual_variance the residual variance (defaults to variance of Y)
 #' @param prior_weights a p vector of prior probability that each element is non-zero
+#' @param null_weight probability of no effect, for each single effect model
 #' @param standardize logical flag (default=TRUE) for whether to standardize columns of X to unit variance prior to fitting.
 #' Note that `scaled_prior_variance` specifies the prior on the coefficients of X *after* standardization (if performed).
 #' If you do not standardize you may need
@@ -55,7 +56,8 @@
 #' coef(res)
 #' plot(y,predict(res))
 #' @export
-susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL, prior_weights=NULL,
+susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
+                 prior_weights=NULL, null_weight=NULL,
                  standardize=TRUE,intercept=TRUE,
                  estimate_residual_variance=TRUE,estimate_prior_variance = FALSE,
                  s_init = NULL,coverage=0.95,min_abs_corr=0.5,
@@ -64,6 +66,15 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL, prio
   # Check input X.
   if (!(is.double(X) & is.matrix(X)) & !is(X, 'CsparseMatrix'))
     stop("Input X must be a double-precision matrix, or a sparse matrix.")
+  if (!missing(null_weight)) {
+    if (null_weight<=0 || null_weight>=1)
+      stop('Null weight must be between 0 and 1')
+    if (missing(prior_weights))
+      prior_weights = c(rep(1/ncol(X)*(1-null_weight), ncol(X)), null_weight)
+    else
+      prior_weights = c(prior_weights * (1-null_weight), null_weight)
+    X = cbind(X,0)
+  }
   p = ncol(X)
   n = nrow(X)
   mean_y = mean(Y)
