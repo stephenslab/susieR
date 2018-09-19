@@ -47,16 +47,15 @@ single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL
   maxlbf = max(lbf)
   w = exp(lbf-maxlbf) # w is proportional to BF, but subtract max for numerical stability
   # posterior prob on each SNP
-  if (is.null(prior_weights)) alpha = w/sum(w)
-  else {
-    w_weighted = w * prior_weights
-    alpha = w_weighted / sum(w_weighted)
-  }
-
+  if (is.null(prior_weights))
+    prior_weights = rep(1/ncol(X), ncol(X))
+  w_weighted = w * prior_weights
+  weighted_sum_w = sum(w_weighted)
+  alpha = w_weighted / weighted_sum_w
   post_var = (1/V + attr(X, "d")/residual_variance)^(-1) # posterior variance
   post_mean = (1/residual_variance) * post_var * Xty
   post_mean2 = post_var + post_mean^2 # second moment
-  loglik = maxlbf + log(mean(w)) + sum(dnorm(Y,0,sqrt(residual_variance),log=TRUE))
+  loglik = maxlbf + log(weighted_sum_w) + sum(dnorm(Y,0,sqrt(residual_variance),log=TRUE))
 
   return(list(alpha=alpha,mu=post_mean,mu2 = post_mean2,lbf=lbf,V=V, loglik = loglik))
 }

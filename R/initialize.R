@@ -29,7 +29,9 @@ init_setup = function(n, p, L, scaled_prior_variance, residual_variance, prior_w
     scaled_prior_variance = rep(scaled_prior_variance, L)
   if(is.null(residual_variance))
     residual_variance = varY
-  if(!is.null(prior_weights) && length(prior_weights) != p)
+  if(is.null(prior_weights))
+    prior_weights = rep(1/p, p)
+  if(length(prior_weights) != p)
     stop("Prior weights must have length p.")
   s = list(alpha=matrix(1/p,nrow=L,ncol=p),
            mu=matrix(0,nrow=L,ncol=p),
