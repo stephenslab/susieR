@@ -13,5 +13,5 @@ test_that("SER_posterior_e_loglik agrees with version 0.3",{
   
   expect_equal(dense.res, original.res)
   expect_equal(sparse.res, original.res)
-  
+ 
 })
