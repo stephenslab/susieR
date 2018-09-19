@@ -10,7 +10,8 @@
 #' @param L maximum number of non-zero effects
 #' @param scaled_prior_variance the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times). The prior variance on each non-zero element of b is set to be var(Y)*scaled_prior_variance.
 #' @param residual_variance the residual variance (defaults to variance of Y)
-#' @param standardize logical flag for whether to standardize columns of X to unit variance prior to fitting.
+#' @param prior_weights a p vector of prior probability that each element is non-zero
+#' @param standardize logical flag (default=TRUE) for whether to standardize columns of X to unit variance prior to fitting.
 #' Note that `scaled_prior_variance` specifies the prior on the coefficients of X *after* standardization (if performed).
 #' If you do not standardize you may need
 #' to think more carefully about specifying
@@ -54,7 +55,7 @@
 #' coef(res)
 #' plot(y,predict(res))
 #' @export
-susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
+susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL, prior_weights=NULL,
                  standardize=TRUE,intercept=TRUE,
                  estimate_residual_variance=TRUE,estimate_prior_variance = FALSE,
                  s_init = NULL,coverage=0.95,min_abs_corr=0.5,
@@ -72,7 +73,7 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
   }
   X = safe_colScale(X,center=intercept, scale=standardize)
   # initialize susie fit
-  s = init_setup(n,p,L,scaled_prior_variance,residual_variance,as.numeric(var(Y)))
+  s = init_setup(n,p,L,scaled_prior_variance,residual_variance,prior_weights,as.numeric(var(Y)))
   if (!missing(s_init)) {
     s = modifyList(s, s_init)
     s = init_finalize(s, X=X)
