@@ -64,7 +64,8 @@ single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL
 # In these functions s2 represents residual_variance and shat2 is an estimate of it
 
 #' @importFrom Matrix colSums
-loglik.grad = function(V,Y,X,s2,Xty){
+#' @importFrom stats dnorm
+loglik.grad = function(V,Y,X,s2,Xty) {
   betahat = (1/attr(X, "d")) * Xty
   shat2 = s2/attr(X, "d")
 

@@ -2,21 +2,28 @@
 
 An R package for "sum of single effects" (SuSiE) regression.
 
-SuSiE's single effect model is based on simple univariate Bayesian regression 
-applied in the context of multiple regression with the assumption that there is exactly
-one variable has a non-zero effect. It extends the single effect assumption to multiple regression
-with more than one non-zero effect using a simple and intuitive model fitting procedure based on
-variational inference. It provides approximate posterior distributions from which quantities such as
-posterior inclusion probability, posterior mean effect size and 95% confidence sets of select variables
-can be derived. Particularly, the SuSiE model structure and algorithm results in readily interpretable output 
-in the context of genetic fine-mapping studies where variables are highly correlated due to Linkage Disequilibrium.
+SuSiE's single effect model is based on simple univariate Bayesian
+regression applied in the context of multiple regression with the
+assumption that there is exactly one variable has a non-zero
+effect. It extends the single effect assumption to multiple regression
+with more than one non-zero effect using a simple and intuitive model
+fitting procedure based on variational inference. It provides
+approximate posterior distributions from which quantities such as
+posterior inclusion probability, posterior mean effect size and 95%
+confidence sets of select variables can be derived. Particularly, the
+SuSiE model structure and algorithm results in readily interpretable
+output in the context of genetic fine-mapping studies where variables
+are highly correlated due to Linkage Disequilibrium.
 
-SuSiE model is developed by [Matthew Stephens and his lab members](http://stephenslab.uchicago.edu/) at the University of Chicago.
+SuSiE model is developed by
+[Matthew Stephens and his lab members](http://stephenslab.uchicago.edu/)
+at the University of Chicago.
 
-This is very much work in progress. Please [post issues](https://github.com/stephenslab/susieR/issues)
-to ask questions, get our support or provide us feedback; 
-please [send pull requests](https://github.com/stephenslab/susieR/pulls) 
-if you have helped fixing bugs or making improvements to the source code.
+This is very much work in progress. Please
+[post issues](https://github.com/stephenslab/susieR/issues) to ask
+questions, get our support or provide us feedback; please
+[send pull requests](https://github.com/stephenslab/susieR/pulls) if
+you have helped fixing bugs or making improvements to the source code.
 
 ## Setup
 

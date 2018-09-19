@@ -40,6 +40,7 @@ n_in_CS = function(res, coverage = 0.9){
   apply(res,1,function(x) n_in_CS_x(x, coverage))
 }
 
+#' @importFrom stats median
 get_purity = function(pos, X, Xcorr, n = 100) {
   if (length(pos) == 1) {
     c(1,1,1)
