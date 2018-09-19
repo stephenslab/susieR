@@ -4,7 +4,7 @@
 \alias{susie_get_CS}
 \title{Extract confidence sets from SuSiE model}
 \usage{
-susie_get_CS(res, X = NULL, Xcorr = NULL, coverage = 0.9,
+susie_get_CS(res, X = NULL, Xcorr = NULL, coverage = 0.95,
   min_abs_corr = 0.5, dedup = TRUE)
 }
 \arguments{
@@ -19,7 +19,7 @@ confidence sets whose minimum correlation between variables is smaller than `min
 when provided, it will be used to remove confidence sets
 whose minimum correlation between variables is smaller than `min_abs_corr` (see below).}
 
-\item{coverage}{coverage of confident sets. Default to 0.9 for 90\% confidence interval.}
+\item{coverage}{coverage of confident sets. Default to 0.95 for 95\% confidence interval.}
 
 \item{min_abs_corr}{minimum of absolute value of correlation allowed in a confidence set.
 Default set to 0.5 to correspond to squared correlation of 0.25,

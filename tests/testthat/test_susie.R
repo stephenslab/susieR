@@ -5,17 +5,17 @@ test_that("susie agrees with version 0.3",{
   original.res4 = load_data('susiefit_original_res4.rds')
   simulate(sparse=T)
   
-  dense.res = susie(X, y)
-  sparse.res = susie(X.sparse, y)
+  dense.res = susie(X, y, tol=1E-2)
+  sparse.res = susie(X.sparse, y, tol=1E-2)
   
-  dense.res2 = susie(X, y, standardize=TRUE, intercept = FALSE)
-  sparse.res2 = susie(X.sparse, y, standardize=TRUE, intercept = FALSE)
+  dense.res2 = susie(X, y, standardize=TRUE, intercept = FALSE, tol=1E-2)
+  sparse.res2 = susie(X.sparse, y, standardize=TRUE, intercept = FALSE, tol=1E-2)
   
-  dense.res3 = susie(X, y, standardize=FALSE, intercept = TRUE)
-  sparse.res3 = susie(X.sparse, y, standardize=FALSE, intercept = TRUE)
+  dense.res3 = susie(X, y, standardize=FALSE, intercept = TRUE, tol=1E-2)
+  sparse.res3 = susie(X.sparse, y, standardize=FALSE, intercept = TRUE, tol=1E-2)
   
-  dense.res4 = susie(X, y, standardize=FALSE, intercept = FALSE)
-  sparse.res4 = susie(X.sparse, y, standardize=FALSE, intercept = FALSE)
+  dense.res4 = susie(X, y, standardize=FALSE, intercept = FALSE, tol=1E-2)
+  sparse.res4 = susie(X.sparse, y, standardize=FALSE, intercept = FALSE, tol=1E-2)
   
   is_equal_susie(sparse.res, original.res)
   is_equal_susie(dense.res, original.res)

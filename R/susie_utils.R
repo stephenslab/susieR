@@ -54,7 +54,7 @@ get_purity = function(pos, X, Xcorr, n = 100) {
           X_sub = X_sub[,-pos_rm]
         }
       }
-      value = abs(cor(X_sub))
+      value = abs(cor(as.matrix(X_sub)))
     } else {
       value = abs(Xcorr[pos, pos])
     }
@@ -73,7 +73,7 @@ get_purity = function(pos, X, Xcorr, n = 100) {
 #' @param Xcorr P by P matrix of correlations between variables.
 #' when provided, it will be used to remove confidence sets
 #' whose minimum correlation between variables is smaller than `min_abs_corr` (see below).
-#' @param coverage coverage of confident sets. Default to 0.9 for 90\% confidence interval.
+#' @param coverage coverage of confident sets. Default to 0.95 for 95\% confidence interval.
 #' @param min_abs_corr minimum of absolute value of correlation allowed in a confidence set.
 #' Default set to 0.5 to correspond to squared correlation of 0.25,
 #' a commonly used threshold for genotype data in genetics studies.
@@ -81,7 +81,7 @@ get_purity = function(pos, X, Xcorr, n = 100) {
 #' @export
 susie_get_CS = function(res,
                         X = NULL, Xcorr = NULL,
-                        coverage = 0.9,
+                        coverage = 0.95,
                         min_abs_corr = 0.5,
                         dedup = TRUE) {
   if (class(res) == "susie")
@@ -108,7 +108,7 @@ susie_get_CS = function(res,
   if (dedup) cs = cs[!duplicated(cs)]
   # compute and filter by "purity"
   if (is.null(Xcorr) && is.null(X)) {
-    return(list(cs=cs))
+    return(list(cs=cs,coverage=coverage))
   } else {
     purity = data.frame(do.call(rbind, lapply(1:length(cs), function(i) get_purity(cs[[i]], X, Xcorr))))
     colnames(purity) = c('min.abs.corr', 'mean.abs.corr', 'median.abs.corr')
@@ -121,9 +121,9 @@ susie_get_CS = function(res,
       rownames(purity) = row_names
       ## re-order CS list and purity rows based on purity
       ordering = order(purity$min.abs.corr, decreasing=T)
-      return(list(cs = cs[ordering], purity = purity[ordering,], cs_index = is_pure[ordering]))
+      return(list(cs = cs[ordering], purity = purity[ordering,], cs_index = is_pure[ordering],coverage=coverage))
     } else {
-      return(list(cs = NULL))
+      return(list(cs = NULL,coverage=coverage))
     }
   }
 }
@@ -193,47 +193,46 @@ calc_z = function(X,y){
 }
 
 #' @title Plot per variable summary in SuSiE CSs
-#' @param data can be raw data \code{X} and \code{y} as \code{list(X=X,y=y)}, or be a vector of z-scores, or p-values.
-#' @param res a susie fit, the output of `susieR::susie()`, or simply the posterior
-#' inclusion probability matrix alpha.
-#' @param dtype a string indicating the input data type (choices are raw_data (for raw data input), p (for p-value input), z (for z-scores input) and PIP (for PIP input))
-#' @param CS the output of `susieR::susie_get_CS()`
-#' @param coverage coverage of confident sets. Default to 0.9 for 90\% confidence interval.
+#' @param model a susie fit, the output of `susieR::susie()`.
+#' It has to contain `z`, `PIP` and optionally `sets`.
+#' It is also possible to take in a vector of z-score or PIP,
+#' in order to plot data from other software program.
+#' @param y a string indicating what to plot: z (for z-score), PIP,
+#' or a random label to plot input data as is.
 #' @param add_bar add horizontal bar to signals in confidence interval.
+#' @param pos coordinates of variables to plot, default to all variables
 #' @param b for simulated data, specify b = true effects (highlights in red).
 #' @param max_cs the biggest CS to display, based on purity (set max_cs in between 0 and 1) or size (>1).
 #' @export
-susie_pplot = function(data,res=NULL,dtype='raw_data',CS=NULL,coverage=0.9,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,...){
-  if (dtype=='raw_data') {
-    z = calc_z(data$X,data$y)
-    zneg = -abs(z)
+susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,...){
+  is_susie = (class(model) == "susie")
+  ylab = y
+  if (y=='z') {
+    if (is_susie) zneg = -abs(model$z)
+    else zneg = -abs(model)
     p = -log10(pnorm(zneg))
-  } else if (dtype=='z') {
-    zneg = -abs(data)
-    p = -log10(pnorm(zneg))
-  } else if (dtype=='p') {
-    p = -log10(data)
-  } else if (dtype=='PIP') {
-    p = data
+    ylab = "-log10(p)"
+  } else if (y=='PIP') {
+    if (is_susie) p = model$pip
+    else p = model
   } else {
-    stop(paste0("Unknown dtype specification: ", dtype))
+    if (is_susie) stop('Need to specify z or PIP for SuSiE fits')
+    p = model
   }
   if(is.null(b)){b = rep(0,length(p))}
   if(is.null(pos)){pos = 1:length(p)}
-  plot(pos,p,col="black",xlab="",ylab=ifelse(dtype=="PIP", "PIP", "-log10(p)"), pch=16, ...)
-  if (!is.null(res)) {
-    if (class(res) == "susie")
-      res = res$alpha
-    for(i in rev(1:nrow(res))){
-      if (!is.null(CS$cs_index) && ! (i %in% CS$cs_index)) {
+  plot(pos,p,col="black",xlab="",ylab=ylab, pch=16, ...)
+  if (is_susie) {
+    for(i in rev(1:nrow(model$alpha))){
+      if (!is.null(model$sets$cs_index) && ! (i %in% model$sets$cs_index)) {
         next
       }
-      if (!is.null(CS$purity) && max_cs < 1 && CS$purity[which(CS$cs_index==i),1] >= max_cs) {
-        x0 = pos[CS$cs[[which(CS$cs_index==i)]]]
-        y1 = p[CS$cs[[which(CS$cs_index==i)]]]
-      } else if (n_in_CS(res, coverage)[i]<max_cs) {
-        x0 = pos[which(in_CS(res, coverage)[i,]>0)]
-        y1 = p[which(in_CS(res, coverage)[i,]>0)]
+      if (!is.null(model$sets$purity) && max_cs < 1 && model$sets$purity[which(model$sets$cs_index==i),1] >= max_cs) {
+        x0 = pos[model$sets$cs[[which(model$sets$cs_index==i)]]]
+        y1 = p[model$sets$cs[[which(model$sets$cs_index==i)]]]
+      } else if (n_in_CS(model, model$sets$coverage)[i]<max_cs) {
+        x0 = pos[which(in_CS(model, model$sets$coverage)[i,]>0)]
+        y1 = p[which(in_CS(model, model$sets$coverage)[i,]>0)]
       } else {
         x0 = NULL
         y1 = NULL
@@ -253,13 +252,13 @@ susie_pplot = function(data,res=NULL,dtype='raw_data',CS=NULL,coverage=0.9,add_b
 }
 
 #' @title Diagnostic plot for SuSiE iterations
-#' @param res a susie fit, the output of `susieR::susie()`.
+#' @param model a susie fit, the output of `susieR::susie()`.
 #' Multiple plots will be made for all iterations if `track_fit` was set to `TRUE` when running SuSiE.
 #' @param L an integer, number of CS to plot
 #' @param file_prefix prefix to path of output plot file
 #' @param pos position of variables to display, default to all variables
 #' @export
-susie_iterplot = function(res, L, file_prefix, pos=NULL) {
+susie_plot_iteration = function(model, L, file_prefix, pos=NULL) {
   if(!requireNamespace("ggplot2",quietly = TRUE))
     stop("Required package ggplot2 not found")
   if(!requireNamespace("reshape",quietly = TRUE))
@@ -274,20 +273,20 @@ susie_iterplot = function(res, L, file_prefix, pos=NULL) {
       ggtitle(paste('Iteration', idx)) +
       theme_classic()
   }
-  k = min(nrow(res$alpha), L)
-  if (is.null(pos)) vars = 1:ncol(res$alpha)
+  k = min(nrow(model$alpha), L)
+  if (is.null(pos)) vars = 1:ncol(model$alpha)
   else vars = pos
   pdf(paste0(file_prefix, '.pdf'), 8, 3)
-  if (is.null(res$trace)) {
-    print(get_layer(res, k, res$niter, vars))
+  if (is.null(model$trace)) {
+    print(get_layer(model, k, model$niter, vars))
   } else {
-    for (i in 2:length(res$trace)) {
-      print(get_layer(res$trace[[i]], k, i-1, vars))
+    for (i in 2:length(model$trace)) {
+      print(get_layer(model$trace[[i]], k, i-1, vars))
     }
   }
   dev.off()
   format = '.pdf'
-  if (!is.null(res$trace)) {
+  if (!is.null(model$trace)) {
     cmd = paste("convert -delay 30 -loop 0 -density 300 -dispose previous",
                 paste0(file_prefix, '.pdf'),
                 "\\( -clone 0 -set delay 300 \\) -swap 0 +delete \\( +clone -set delay 300 \\) +swap +delete -coalesce -layers optimize",

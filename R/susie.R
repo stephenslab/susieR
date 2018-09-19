@@ -22,6 +22,10 @@
 #' @param estimate_residual_variance indicates whether to estimate residual variance
 #' @param estimate_prior_variance indicates whether to estimate prior (currently not recommended as not fully tested and assessed)
 #' @param s_init a previous susie fit with which to initialize
+#' @param coverage coverage of confident sets. Default to 0.95 for 95\% confidence interval.
+#' @param min_abs_corr minimum of absolute value of correlation allowed in a confidence set.
+#' Default set to 0.5 to correspond to squared correlation of 0.25,
+#' a commonly used threshold for genotype data in genetics studies.
 #' @param verbose if true outputs some progress messages
 #' @param track_fit add an attribute \code{trace} to output that saves current values of all iterations
 #' @return a susie fit, which is a list with some or all of the following elements\cr
@@ -31,7 +35,10 @@
 #' \item{Xr}{an n vector of fitted values, equal to X times colSums(alpha*mu))}
 #' \item{sigma2}{residual variance}
 #' \item{V}{prior variance}
-#' \item{elbo}{vector of values of elbo achieved (objective function)}
+#' \item{elbo}{a vector of values of elbo achieved (objective function)}
+#' \item{sets}{a list of `cs`, `purity` and selected `cs_index`}
+#' \item{pip}{a vector of posterior inclusion probability}
+#' \item{z}{a vector of univariate z-scores}
 #' @examples
 #' set.seed(1)
 #' n = 1000
@@ -50,7 +57,8 @@
 susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
                  standardize=TRUE,intercept=TRUE,
                  estimate_residual_variance=TRUE,estimate_prior_variance = FALSE,
-                 s_init = NULL,max_iter=100,tol=1e-2,
+                 s_init = NULL,coverage=0.95,min_abs_corr=0.5,
+                 max_iter=100,tol=1e-3,
                  verbose=FALSE,track_fit=FALSE) {
   # Check input X.
   if (!(is.double(X) & is.matrix(X)) & !is(X, 'CsparseMatrix'))
@@ -76,6 +84,7 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
   elbo = rep(NA,max_iter+1)
   elbo[1] = -Inf;
   tracking = list()
+
 
   for(i in 1:max_iter){
     #s = add_null_effect(s,0)
@@ -108,9 +117,17 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
     s$fitted = s$Xr
   }
 
-  s$X_column_scale_factors = attr(X,"scaled:scale")
   if (track_fit)
     s$trace = tracking
 
+  ## report z-scores from univariate regression
+  s$z = calc_z(X,Y)
+  ## SuSiE CS and PIP
+  if (!is.null(coverage) && !is.null(min_abs_corr)) {
+    s$sets = susie_get_CS(s, coverage=coverage, X=X, min_abs_corr=min_abs_corr)
+    s$pip = susie_get_PIP(s,s$sets$cs_index)
+  }
+  ## for prediction
+  s$X_column_scale_factors = attr(X,"scaled:scale")
   return(s)
 }

@@ -7,8 +7,8 @@
 susie(X, Y, L = 10, scaled_prior_variance = 0.2,
   residual_variance = NULL, standardize = TRUE, intercept = TRUE,
   estimate_residual_variance = TRUE, estimate_prior_variance = FALSE,
-  s_init = NULL, max_iter = 100, tol = 0.01, verbose = FALSE,
-  track_fit = FALSE)
+  s_init = NULL, coverage = 0.95, min_abs_corr = 0.5,
+  max_iter = 100, tol = 0.001, verbose = FALSE, track_fit = FALSE)
 }
 \arguments{
 \item{X}{an n by p matrix of covariates}
@@ -36,6 +36,12 @@ Any column of X that has zero variance is not standardized, but left as is.}
 
 \item{s_init}{a previous susie fit with which to initialize}
 
+\item{coverage}{coverage of confident sets. Default to 0.95 for 95\% confidence interval.}
+
+\item{min_abs_corr}{minimum of absolute value of correlation allowed in a confidence set.
+Default set to 0.5 to correspond to squared correlation of 0.25,
+a commonly used threshold for genotype data in genetics studies.}
+
 \item{max_iter}{maximum number of iterations to perform}
 
 \item{tol}{convergence tolerance}
@@ -52,7 +58,10 @@ a susie fit, which is a list with some or all of the following elements\cr
 \item{Xr}{an n vector of fitted values, equal to X times colSums(alpha*mu))}
 \item{sigma2}{residual variance}
 \item{V}{prior variance}
-\item{elbo}{vector of values of elbo achieved (objective function)}
+\item{elbo}{a vector of values of elbo achieved (objective function)}
+\item{sets}{a list of `cs`, `purity` and selected `cs_index`}
+\item{pip}{a vector of posterior inclusion probability}
+\item{z}{a vector of univariate z-scores}
 }
 \description{
 Bayesian sum of single-effect (susie) linear regression of Y on X
