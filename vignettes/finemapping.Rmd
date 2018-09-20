@@ -171,4 +171,4 @@ versions of R, and the R packages, used to generate these results.
 sessionInfo()
 ```
 
-[N3finemapping]: https://github.com/stephenslab/susieR/blob/master/inst/data/N3finemapping.rds
+[N3finemapping]: https://github.com/stephenslab/susieR/blob/master/inst/datafiles/N3finemapping.rds
