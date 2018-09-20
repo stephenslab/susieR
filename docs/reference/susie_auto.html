@@ -31,6 +31,8 @@
 
 
 <meta property="og:title" content="An attempt to automate reliable running of susie even on hard problems — susie_auto" />
+
+<meta property="og:description" content="An attempt to automate reliable running of susie even on hard problems" />
 <meta name="twitter:card" content="summary" />
 
 
@@ -59,7 +61,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.2.0</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.4.5</span>
       </span>
     </div>
 
@@ -99,16 +101,19 @@
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>An attempt to automate reliable running of susie even on hard problems</h1>
-    
+    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/susie_auto.R'><code>R/susie_auto.R</code></a></small>
     <div class="hidden name"><code>susie_auto.Rd</code></div>
     </div>
 
     <div class="ref-description">
-
+    
+    <p>An attempt to automate reliable running of susie even on hard problems</p>
+    
     </div>
 
-    <pre class="usage"><span class='fu'>susie_auto</span>(<span class='no'>X</span>, <span class='no'>Y</span>, <span class='kw'>L_init</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>L_max</span> <span class='kw'>=</span> <span class='fl'>512</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>init_tol</span> <span class='kw'>=</span> <span class='fl'>1</span>,
-  <span class='kw'>standardize</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>intercept</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>max_iter</span> <span class='kw'>=</span> <span class='fl'>100</span>, <span class='kw'>tol</span> <span class='kw'>=</span> <span class='fl'>0.01</span>)</pre>
+    <pre class="usage"><span class='fu'>susie_auto</span>(<span class='no'>X</span>, <span class='no'>Y</span>, <span class='kw'>L_init</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>L_max</span> <span class='kw'>=</span> <span class='fl'>512</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>init_tol</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>standardize</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>intercept</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>max_iter</span> <span class='kw'>=</span> <span class='fl'>100</span>, <span class='kw'>tol</span> <span class='kw'>=</span> <span class='fl'>0.01</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -182,7 +187,7 @@ Initial runs are done with lax tolerance (init_tol); final run done with default
 
       <footer>
       <div class="copyright">
-  <p>Developed by Matthew Stephens, Yuxin Zou, Peter Carbonetto, Gao Wang.</p>
+  <p>Developed by Matthew Stephens, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto, Gao Wang.</p>
 </div>
 
 <div class="pkgdown">

@@ -5,5 +5,7 @@ articles:
   finemapping: finemapping.html
   l0_initialization: l0_initialization.html
   mwe: mwe.html
+  sparse_matrix_strategy: sparse_matrix_strategy.html
+  sparse_susie_eval: sparse_susie_eval.html
   trend_filtering: trend_filtering.html
 

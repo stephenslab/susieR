@@ -23,7 +23,7 @@ set.seed(1)
 ## The data-set
 
 ```{r}
-dat = readRDS(system.file("data", "N3finemapping.rds", package = "susieR"))
+dat = readRDS(system.file("datafiles", "N3finemapping.rds", package = "susieR"))
 names(dat)
 ```
 
@@ -59,7 +59,7 @@ The data-set additionally provides summary statistics for fitting univariate sim
 ```{r}
 z_scores = dat$sumstats[1,,] / dat$sumstats[2,,]
 z_scores = z_scores[,1]
-susie_pplot(z_scores, dtype='z', b=b)
+susie_plot(z_scores, y='z', b=b)
 ```
 
 ## Fine-mapping with `susieR`
@@ -72,25 +72,15 @@ We set SuSiE prior variance to 0.1, and update residual variance in the variatio
 fitted = susie(dat$data$X, dat$data$Y[,1],
                L=5,
                estimate_residual_variance = TRUE, 
-               prior_variance = 0.1, 
-               tol=1e-3)
+               scaled_prior_variance = 0.1)
 ```
 
 ### Confidence sets
 
-We obtain 95% confidence set by:
+By default we output 95% confidence set:
 
 ```{r}
-sets = susie_get_CS(fitted,
-                    coverage = 0.95,
-                    X= dat$data$X, 
-                    min_abs_corr = 0.1)
-```
-
-Notice that by passing to `susie_get_CS` function the data matrix `X`, we further filter the sets identified by removing those having absolute correlation between any pairs of variables in the set smaller than specified value, which is 0.1 in the function call above. We call this a "purity" filter.
-
-```{r}
-print(sets)
+print(fitted$sets)
 ```
 
 The 3 causal signals have been captured by the 3 CS reported here. The 3rd CS contains many variables, including the true causal variable `403`. The minimum absolute correlation is 0.86. 
@@ -99,7 +89,8 @@ If we use the default 90% coverage for confidence sets, we still capture the 3 s
 
 ```{r}
 sets = susie_get_CS(fitted,
-                    X= dat$data$X, 
+                    X= dat$data$X,
+		    coverage = 0.9,
                     min_abs_corr = 0.1)
 ```
 
@@ -109,40 +100,30 @@ print(sets)
 
 ### Posterior inclusion probability
 
-Previously we've determined that summing over 3 single effect regression models is approperate for our application. Here we summarize the variable selection results by computing posterior inclusion probability for SuSiE model:
+Previously we've determined that summing over 3 single effect regression models is approperate for our application. Here we summarize the variable selection results by posterior inclusion probability (PIP):
 
 ```{r}
-pip = susie_get_PIP(fitted, sets$cs_index)
+susie_plot(fitted, y='PIP', b=b)
 ```
 
-```{r}
-susie_pplot(pip, fitted=fitted, dtype='PIP', b=b)
-```
-
-The true causal variables are colored red. The CS identified are circled in different colors. Of interest is the cluster around position 400. The true signal is 403 but apparently it does not have the highest PIP. To compare ranking of PIP and original z-score in that CS:
+The true causal variables are colored red. The 95% CS identified are circled in different colors. Of interest is the cluster around position 400. The true signal is 403 but apparently it does not have the highest PIP. To compare ranking of PIP and original z-score in that CS:
 
 ```{r}
-z3 = cbind(sets$cs[[3]], z_scores[sets$cs[[3]]], pip[sets$cs[[3]]])
+z3 = cbind(fitted$sets$cs[[3]], z_scores[fitted$sets$cs[[3]]], fitted$pip[sets$cs[[3]]])
 colnames(z3) = c('position', 'z-score', 'PIP')
 z3[order(z3[,2], decreasing = TRUE),]
 ```
 
 ### Choice of priors
 
-We found that SuSiE is generally robust to choice of priors. Here we set prior variance to 0.2, and compare with previous results:
+We found that SuSiE is generally robust to choice of priors. Here we set scaled prior variance (percentage of variance explained) to 0.2, and compare with previous results:
 
 ```{r}
 fitted = susie(dat$data$X, dat$data$Y[,1],
                L=5,
                estimate_residual_variance = TRUE, 
-               prior_variance = 0.2, 
-               tol=1e-3)
-sets = susie_get_CS(fitted,
-                    X= dat$data$X, 
-                    min_abs_corr = 0.1)
-pip = susie_get_PIP(fitted, sets$cs_index)
-susie_pplot(pip, fitted=fitted, dtype='PIP', b=b)
+               scaled_prior_variance = 0.2)
+susie_plot(fitted, y='PIP', b=b)
 ```
 
-which largely remains unchanged. It is also possible to use `estimate_prior_variance = TRUE` to estimate prior variance estimates in variational updates.
-(FIXME: need to comment on whether this is recommanded.)
+which largely remains unchanged.
