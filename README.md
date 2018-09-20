@@ -1,4 +1,4 @@
-# `susieR`
+# susieR
 
 An R package for "sum of single effects" (SuSiE) regression.
 
