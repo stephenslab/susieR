@@ -23,7 +23,7 @@ Eloglik_ss = function(XtX,Xty,s, var_y, n){
 # @importFrom Matrix diag
 get_ER2_ss = function(XtX,Xty,s,var_y,n){
   B = s$alpha*s$mu
-  XB2 = sum(t(B) * XtX%*%t(B))
+  XB2 = sum(B%*%XtX * B)
 
   betabar = colSums(B)
   d = diag(XtX)
