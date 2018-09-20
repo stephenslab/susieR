@@ -291,7 +291,6 @@ susie_plot_iteration = function(model, L, file_prefix, pos=NULL) {
   if(!requireNamespace("reshape",quietly = TRUE))
     stop("Required package reshape not found")
   get_layer = function(obj, k, idx, vars) {
-    require(ggplot2,quietly = TRUE)
     alpha = reshape::melt(obj$alpha[1:k,vars,drop=F])
     colnames(alpha) = c("L","variables","alpha")
     alpha$L = as.factor(alpha$L)
