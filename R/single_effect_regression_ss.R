@@ -18,6 +18,9 @@
 #' \item{lbf}{vector of log Bayes factors for each variable}
 #' \item{V}{the prior variance (after optimization, if optimize_V is TRUE)}
 #' \item{logBF}{(scalar) the loglikelihood for the total model minus the log-likelihood for the null model}
+#'
+#' @importFrom stats uniroot
+#' 
 single_effect_regression_ss = function(Xty,dXtX,V=1,residual_variance=1,optimize_V=FALSE){
   betahat = (1/dXtX) * Xty
   shat2 = residual_variance/dXtX

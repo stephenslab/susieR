@@ -93,4 +93,5 @@ y = X \%*\% beta + rnorm(n)
 res =susie(X,y,L=10)
 coef(res)
 plot(y,predict(res))
+
 }

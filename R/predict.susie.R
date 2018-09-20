@@ -12,6 +12,7 @@ coef.susie = function(s){
 #' @param newx a new value for X at which to do predictions
 #' @param type if this is coefficients, then calls coef.susie
 #' @method predict susie
+#' @importFrom stats coef
 #' @export
 predict.susie = function(s,newx = NULL,type=c("response","coefficients")){
   type <- match.arg(type)

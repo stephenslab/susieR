@@ -19,6 +19,7 @@
 #' \item{V}{the prior variance (after optimization, if optimize_V is TRUE)}
 #' \item{loglik}{The log-likelihood p(Y|X,V)}
 #'
+#' @importFrom stats uniroot
 #' @importFrom Matrix colSums
 #'
 single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL,optimize_V=FALSE){

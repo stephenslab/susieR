@@ -18,6 +18,9 @@
 #' then estimate residual error, then estimate prior variance. If the last step estimates
 #' some prior variances to be 0 then stop. Otherwise double L and repeat.
 #' Initial runs are done with lax tolerance (init_tol); final run done with default tolerance.
+#'
+#' @importFrom stats sd
+#' 
 #' @export
 susie_auto = function(X,Y,L_init=1,L_max=512,verbose=FALSE,init_tol=1,
                       standardize=TRUE,intercept=TRUE,max_iter=100,tol=1e-2){

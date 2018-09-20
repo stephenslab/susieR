@@ -3,6 +3,7 @@
 #' posterior inclusion probability alpha
 #' @param res a susie fit, the output of `susieR::susie()`
 #' @return an l vector of lfsr for confidence sets
+#' @importFrom stats pnorm
 #' @export
 susie_get_lfsr = function(res){
   pos_prob = pnorm(0,mean=t(res$mu),sd=sqrt(res$mu2-res$mu^2))
@@ -41,6 +42,8 @@ n_in_CS = function(res, coverage = 0.9){
 }
 
 # subsample and compute min, mean, median and max abs corr
+#
+#' @importFrom stats median
 get_purity = function(pos, X, Xcorr, n = 100) {
   if (length(pos) == 1) {
     c(1,1,1)
@@ -64,9 +67,12 @@ get_purity = function(pos, X, Xcorr, n = 100) {
 }
 
 # @title `cor` function with specified warning muffled
+#
+#' @importFrom stats coef
+#' @importFrom stats cor
 muffled_corr = function(x)
   withCallingHandlers(cor(x),
-                    warning=function(w) {
+                    warning = function(w) {
                       if (grepl("the standard deviation is zero", w$message))
                         invokeRestart("muffleWarning")
                     } )
@@ -154,7 +160,13 @@ calc_stderr = function(X, residuals) {
 
 # univariate regression between each column of X and y
 # Remove covariates if Z is not NULL
-univariate_regression = function(X, y, Z=NULL, centered=FALSE, return_residuals=FALSE) {
+#
+#' @importFrom stats lm
+#' @importFrom stats .lm.fit
+#' @importFrom stats coef
+#' @importFrom stats summary.lm
+univariate_regression = function(X, y, Z=NULL, centered=FALSE,
+                                 return_residuals=FALSE) {
   if (!centered) {
     y = y - mean(y)
     X = safe_colScale(X, center=TRUE, scale = FALSE)
@@ -207,6 +219,11 @@ calc_z = function(X,y,centered=FALSE){
 #' @param pos coordinates of variables to plot, default to all variables
 #' @param b for simulated data, specify b = true effects (highlights in red).
 #' @param max_cs the biggest CS to display, based on purity (set max_cs in between 0 and 1) or size (>1).
+#' @importFrom stats pnorm
+#' @importFrom graphics plot
+#' @importFrom graphics segments
+#' @importFrom graphics points
+#' 
 #' @export
 susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,...){
   is_susie = (class(model) == "susie")
@@ -265,6 +282,8 @@ susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,...){
 #' @param L an integer, number of CS to plot
 #' @param file_prefix prefix to path of output plot file
 #' @param pos position of variables to display, default to all variables
+#' @importFrom grDevices pdf
+#' @importFrom grDevices dev.off
 #' @export
 susie_plot_iteration = function(model, L, file_prefix, pos=NULL) {
   if(!requireNamespace("ggplot2",quietly = TRUE))
@@ -276,14 +295,16 @@ susie_plot_iteration = function(model, L, file_prefix, pos=NULL) {
     alpha = reshape::melt(obj$alpha[1:k,vars,drop=F])
     colnames(alpha) = c('L', 'variables', 'alpha')
     alpha$L = as.factor(alpha$L)
-    ggplot(alpha, aes(variables, alpha, group=L)) +
-      geom_col(aes(fill=L)) +
-      ggtitle(paste('Iteration', idx)) +
-      theme_classic()
+    ggplot2::ggplot(alpha,ggplot2::aes_string("variables","alpha",group="L")) +
+      ggplot2::geom_col(aes(fill = L)) +
+      ggplot2::ggtitle(paste('Iteration', idx)) +
+      ggplot2::theme_classic()
   }
   k = min(nrow(model$alpha), L)
-  if (is.null(pos)) vars = 1:ncol(model$alpha)
-  else vars = pos
+  if (is.null(pos))
+    vars = 1:ncol(model$alpha)
+  else
+    vars = pos
   pdf(paste0(file_prefix, '.pdf'), 8, 3)
   if (is.null(model$trace)) {
     print(get_layer(model, k, model$niter, vars))
@@ -313,6 +334,8 @@ susie_plot_iteration = function(model, L, file_prefix, pos=NULL) {
 }
 
 # return residuals from Y after removing susie fit
+#
+#' @importFrom stats coef
 get_R = function(X,Y,s){
   Y- X %*% coef(s)
 }
