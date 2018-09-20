@@ -1,3 +1,5 @@
+context("test_susie_ss.R")
+
 test_that("Results from summary stat vs original data",{
   simulate(200,1000)
   X = safe_colScale(X,center=TRUE, scale = TRUE)

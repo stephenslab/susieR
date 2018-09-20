@@ -40,7 +40,7 @@ n_in_CS = function(res, coverage = 0.9){
   apply(res,1,function(x) n_in_CS_x(x, coverage))
 }
 
-#' @importFrom stats median
+# subsample and compute min, mean, median and max abs corr
 get_purity = function(pos, X, Xcorr, n = 100) {
   if (length(pos) == 1) {
     c(1,1,1)
@@ -63,7 +63,7 @@ get_purity = function(pos, X, Xcorr, n = 100) {
   }
 }
 
-#' @title `cor` function with specified warning muffled
+# @title `cor` function with specified warning muffled
 muffled_corr = function(x)
   withCallingHandlers(cor(x),
                     warning=function(w) {
@@ -170,6 +170,7 @@ univariate_regression = function(X, y, Z=NULL, centered=FALSE, return_residuals=
                        })),
                silent = TRUE)
   if (class(output) == 'try-error') {
+    # Exception occurs, fall back to a safer but slower calculation
     output = matrix(0,ncol(X),2)
     for (i in 1:ncol(X)) {
       fit = summary(lm(y ~ X[,i]))$coef
@@ -190,8 +191,8 @@ univariate_regression = function(X, y, Z=NULL, centered=FALSE, return_residuals=
 
 # computes z score (t-statistic) for association between each
 # column of X and y
-calc_z = function(X,y){
-  out = univariate_regression(X,y)
+calc_z = function(X,y,centered=FALSE){
+  out = univariate_regression(X,y,centered=centered)
   return(out$betahat/out$sebetahat)
 }
 
@@ -211,7 +212,11 @@ susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,...){
   is_susie = (class(model) == "susie")
   ylab = y
   if (y=='z') {
-    if (is_susie) zneg = -abs(model$z)
+    if (is_susie) {
+      if (is.null(model$z))
+        stop('z-score not available from SuSiE fit. Please set `compute_univariate_zscore=TRUE` in `susie()` function call.')
+      zneg = -abs(model$z)
+    }
     else zneg = -abs(model)
     p = -log10(pnorm(zneg))
     ylab = "-log10(p)"
@@ -219,7 +224,7 @@ susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,...){
     if (is_susie) p = model$pip
     else p = model
   } else {
-    if (is_susie) stop('Need to specify z or PIP for SuSiE fits')
+    if (is_susie) stop('Need to specify z or PIP for SuSiE fits.')
     p = model
   }
   if(is.null(b)){b = rep(0,length(p))}

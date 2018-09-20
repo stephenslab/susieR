@@ -1,3 +1,5 @@
+context("test_sparse_safe_colScale.R")
+
 test_that("sparse version safe_colScale",{
   simulate(sparse=T)
   

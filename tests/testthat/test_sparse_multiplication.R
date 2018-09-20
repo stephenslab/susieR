@@ -1,3 +1,5 @@
+context("test_sparse_multiplication.R")
+
 test_that("sparse version sparse_multiplication",{
   simulate(sparse=T)
   L = 10

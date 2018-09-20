@@ -1,0 +1,148 @@
+---
+title: "Sparse matrix multiplication strategy"
+author: "Kaiqian Zhang"
+header-includes:
+   - \usepackage{amsmath}
+date: "9/17/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include=FALSE}
+devtools::install_github("stephenslab/susieR")
+```
+
+```{r, warning=FALSE}
+library(susieR)
+library(Matrix)
+library(microbenchmark)
+library(ggplot2)
+```
+
+## Goal
+Our intention is to utilize sparse matrix multiplication to help reduce computation time. 
+
+## General strategy
+Given a large sparse matrix `X`, we want to compute some matrix multiplications associated with a scaled $\widetilde{X}$. We notice that after scaling, `X` becomes a dense matrix and is not possible for a sparse matrix multiplication. So we construct formulae to apply sparse matrix multiplication first on a standardized `X` since standardization does not affect its sparsity. Then we perform centering to get the same result.  
+
+## Types of matrix multiplications
+There are two types of matrix multiplications we want to investigate:
+
+* Compute $\boldsymbol{\widetilde{X}b}$, where $\boldsymbol{\widetilde{X}}$ is an n by p scaled matrix and $\boldsymbol{b}$ is a p vector.
+
+* Compute $\boldsymbol{\widetilde{X}^Ty}$, where $\boldsymbol{\widetilde{X}}$ is an n by p scaled matrix and $\boldsymbol{y}$ is an n vector.
+
+## Results
+
+This strategy has a decent performance when computing both $\boldsymbol{\widetilde{X}b}$ and $\boldsymbol{\widetilde{X}^Ty}$, compared to simple matrix multiplication `%*%`.
+
+## Strategy formulae details
+
+### $\boldsymbol{\widetilde{X}b}$
+Suppose we want to compute $\boldsymbol{\widetilde{X}b}$, where $\boldsymbol{\widetilde{X}}$ is a scaled n by p matrix and $\boldsymbol{b}$ is a p vector. Our goal is to express $\boldsymbol{\widetilde{X}b}$ into a term involving unscaled $\boldsymbol{X}$ matrix multiplication to achieve sparse matrix operation.
+
+\begin{equation}
+\begin{aligned}
+\boldsymbol{\widetilde{X}b}
+&= \sum_{j=1}^{p} \widetilde{X_{.j}}b_j \\
+&= \sum_{j=1}^{p} \frac{X_{.j}-\mu_j}{\sigma_j}b_j \\
+&= \sum_{j=1}^{p}\frac{X_{.j}}{\sigma_j}b_j - \sum_{j=1}^{p} \frac{\mu_j}{\sigma_j}b_j \\
+&= \boldsymbol{X} \cdot \frac{\boldsymbol{b}}{\boldsymbol{\sigma}} -  \frac{\boldsymbol{\mu}}{\boldsymbol{\sigma}}\cdot \boldsymbol{b},
+\end{aligned}
+\end{equation}
+
+where $\boldsymbol{\mu}$ is a p vector of column means and $\boldsymbol{\sigma}$ is a p vector of column standard deviations. 
+
+### $\boldsymbol{\widetilde{X}^Ty}$
+Suppose we want to compute $\boldsymbol{\widetilde{X}^Ty}$, where $\boldsymbol{\widetilde{X}}$ is a scaled n by p matrix and $\boldsymbol{y}$ is an n vector. Similarly, we express $\boldsymbol{\widetilde{X}^Ty}$ using unscaled $\boldsymbol{X}$ so that we can perform sparse matrix multiplication. We have the following:
+
+\begin{equation}
+\begin{aligned}
+\boldsymbol{\widetilde{X}^Ty}
+&= \sum_{i=1}^{n} \widetilde{X_{i.}}y_i \\
+&= \sum_{i=1}^{n} \frac{X_{i.} - \boldsymbol{\mu}}{\boldsymbol{\sigma}}y_i \\
+&= \frac{1}{\boldsymbol{\sigma}}\sum_{i=1}^{n}X_{i.}y_i - \frac{\boldsymbol{\mu}}{\boldsymbol{\sigma}}\sum_{i=1}^{n} y_i \\
+&= \frac{1}{\boldsymbol{\sigma}}(\boldsymbol{X^Ty}) - \boldsymbol{\frac{\mu}{\sigma}y^T 1},
+\end{aligned}
+\end{equation}
+
+where $\boldsymbol{\mu}$ is a p vector of column means and $\boldsymbol{\sigma}$ is a p vector of column standard deviations.
+
+## Simulations
+
+We simulate an `n=1000` by `p=10000` matrix `X` at sparsity $99\%$, i.e. $99\%$ entries are zeros. We compare results between normal matrix computation and our sparse strategy as well as comparing speed using microbenchmark.  
+
+```{r}
+create_sparsity_mat = function(sparsity, n, p){
+  set.seed(1)
+  nonzero = round(n*p*(1-sparsity))
+  nonzero.idx = sample(n*p, nonzero)
+  mat = numeric(n*p)
+  mat[nonzero.idx] = 1
+  mat = matrix(mat, nrow=n, ncol=p)
+  return(mat)
+}
+n = 1000
+p = 10000
+```
+
+```{r}
+X.dense = create_sparsity_mat(0.99,n,p)
+X.sparse = as(X.dense,'dgCMatrix')
+X.tilde = susieR:::safe_colScale(X.dense) #returns a scaled X if input is a dense matrix
+X = susieR:::safe_colScale(X.sparse) #return an unsacled sparse X if input is a sparse matrix 
+                                     #but computes column means and standard deviations
+```
+
+```{r}
+set.seed(1)
+b = rnorm(p)
+set.seed(1)
+y = rnorm(n)
+```
+
+### Benchmark for computing $\boldsymbol{\widetilde{X}b}$
+The final results of two methods when computing $\boldsymbol{\widetilde{X}b}$ are very close. 
+```{r}
+res1 = X.tilde%*%b
+res2 = susieR:::compute_Xb(X, b)
+sum(res1-res2)
+```
+
+```{r}
+compute_Xb_benchmark = microbenchmark(
+  use.normal.Xb = X.tilde%*%b,
+  use.sparse.Xb = susieR:::compute_Xb(X, b),
+  times = 20
+)
+```
+
+Our sparse strategy demonstrates an obvious advantage over the normal matrix multiplication in computing $\boldsymbol{\widetilde{X}b}$. 
+```{r}
+autoplot(compute_Xb_benchmark)
+```
+
+### Benchmark for computing $\boldsymbol{\widetilde{X}^Ty}$
+The final results of two methods when computing $\boldsymbol{\widetilde{X}^Ty}$ are almost the same. 
+```{r}
+res3 = t(X.tilde)%*%y
+res4 = susieR:::compute_Xty(X, y)
+sum(res3-res4)
+```
+
+```{r}
+compute_Xty_benchmark = microbenchmark(
+  use.normal.Xty = t(X.tilde)%*%y,
+  use.sparse.Xty = susieR:::compute_Xty(X, y),
+  times = 20
+)
+```
+
+Our sparse strategy evidently has a better performance than the normal method in computing $\boldsymbol{\widetilde{X}^Ty}$. 
+```{r}
+autoplot(compute_Xty_benchmark)
+```
+

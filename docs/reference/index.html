@@ -58,7 +58,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.2.0</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.4.6</span>
       </span>
     </div>
 
@@ -118,33 +118,27 @@
       <tr>
         
         <td>
-          <p><code><a href="Eloglik.html">Eloglik()</a></code> </p>
-        </td>
-        <td><p>expected loglikelihood for a susie fit</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="Eloglik_ss.html">Eloglik_ss()</a></code> </p>
-        </td>
-        <td><p>expected loglikelihood for a susie fit</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="SER_posterior_e_loglik.html">SER_posterior_e_loglik()</a></code> </p>
-        </td>
-        <td><p>posterior expected loglikelihood for a single effect regression</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="SER_posterior_e_loglik_ss.html">SER_posterior_e_loglik_ss()</a></code> </p>
-        </td>
-        <td><p>posterior expected loglikelihood for a single effect regression</p></td>
-      </tr><tr>
-        
-        <td>
           <p><code><a href="coef.susie.html">coef(<i>&lt;susie&gt;</i>)</a></code> </p>
         </td>
         <td><p>extract regression coefficients from susie fit</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="compute_MXt.html">compute_MXt()</a></code> </p>
+        </td>
+        <td><p>Compute M%*%t(scaled.X) using sparse multiplication</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="compute_Xb.html">compute_Xb()</a></code> </p>
+        </td>
+        <td><p>Compute scaled.X %*% b using sparse multiplication</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="compute_Xty.html">compute_Xty()</a></code> </p>
+        </td>
+        <td><p>Compute t(scaled.X)%*%y using sparse multiplication</p></td>
       </tr><tr>
         
         <td>
@@ -226,21 +220,21 @@
       </tr><tr>
         
         <td>
-          <p><code><a href="susie_iterplot.html">susie_iterplot()</a></code> </p>
+          <p><code><a href="susie_init_coef.html">susie_init_coef()</a></code> </p>
         </td>
-        <td><p>Diagnostic plot for SuSiE iterations</p></td>
+        <td><p>initialize a susie object using regression coefficients</p></td>
       </tr><tr>
         
         <td>
-          <p><code><a href="susie_pplot.html">susie_pplot()</a></code> </p>
+          <p><code><a href="susie_plot.html">susie_plot()</a></code> </p>
         </td>
         <td><p>Plot per variable summary in SuSiE CSs</p></td>
       </tr><tr>
         
         <td>
-          <p><code><a href="susie_set_init.html">susie_set_init()</a></code> </p>
+          <p><code><a href="susie_plot_iteration.html">susie_plot_iteration()</a></code> </p>
         </td>
-        <td><p>initialize a susie object using given nonzero effect indices and beta values</p></td>
+        <td><p>Diagnostic plot for SuSiE iterations</p></td>
       </tr><tr>
         
         <td>
@@ -274,7 +268,7 @@
 
       <footer>
       <div class="copyright">
-  <p>Developed by Matthew Stephens, Yuxin Zou, Peter Carbonetto, Gao Wang.</p>
+  <p>Developed by Matthew Stephens, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto, Gao Wang.</p>
 </div>
 
 <div class="pkgdown">

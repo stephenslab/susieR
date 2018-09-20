@@ -31,6 +31,8 @@
 
 
 <meta property="og:title" content="Bayesian sum of single-effect (susie) linear regression using summary stat — susie_ss" />
+
+<meta property="og:description" content="Bayesian sum of single-effect (susie) linear regression using summary stat" />
 <meta name="twitter:card" content="summary" />
 
 
@@ -59,7 +61,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.2.0</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.4.6</span>
       </span>
     </div>
 
@@ -99,15 +101,17 @@
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Bayesian sum of single-effect (susie) linear regression using summary stat</h1>
-    
+    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/susie_ss.R'><code>R/susie_ss.R</code></a></small>
     <div class="hidden name"><code>susie_ss.Rd</code></div>
     </div>
 
     <div class="ref-description">
-
+    
+    <p>Bayesian sum of single-effect (susie) linear regression using summary stat</p>
+    
     </div>
 
-    <pre class="usage"><span class='fu'>susie_ss</span>(<span class='no'>XtX</span>, <span class='no'>XtY</span>, <span class='kw'>var_y</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='no'>n</span>, <span class='kw'>L</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>prior_variance</span> <span class='kw'>=</span> <span class='fl'>0.2</span>,
+    <pre class="usage"><span class='fu'>susie_ss</span>(<span class='no'>XtX</span>, <span class='no'>Xty</span>, <span class='kw'>var_y</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='no'>n</span>, <span class='kw'>L</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>scaled_prior_variance</span> <span class='kw'>=</span> <span class='fl'>0.2</span>,
   <span class='kw'>residual_variance</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>estimate_prior_variance</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
   <span class='kw'>max_iter</span> <span class='kw'>=</span> <span class='fl'>100</span>, <span class='kw'>s_init</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>intercept</span> <span class='kw'>=</span> <span class='fl'>0</span>,
   <span class='kw'>tol</span> <span class='kw'>=</span> <span class='fl'>1e-04</span>)</pre>
@@ -120,7 +124,7 @@
       <td><p>a p by p matrix, X'X, where columns of X are centered to have mean 0</p></td>
     </tr>
     <tr>
-      <th>XtY</th>
+      <th>Xty</th>
       <td><p>a p vector, X'Y, where columns of X are centered and Y is centered to have mean 0</p></td>
     </tr>
     <tr>
@@ -136,7 +140,7 @@
       <td><p>maximum number of non-zero effects</p></td>
     </tr>
     <tr>
-      <th>prior_variance</th>
+      <th>scaled_prior_variance</th>
       <td><p>the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )</p></td>
     </tr>
     <tr>
@@ -175,7 +179,7 @@ Set to NULL if you want coef.susie() not to include an intercept term (and so on
 <dt>mu2</dt><dd><p>an L by p matrix of posterior second moments (conditional on inclusion)</p></dd>
 <dt>XtXr</dt><dd><p>an p vector of t(X) times fitted values, the fitted values equal to X times colSums(alpha*mu))</p></dd>
 <dt>sigma2</dt><dd><p>residual variance</p></dd>
-<dt>sa2</dt><dd><p>scaled prior variance; ie prior variance is sigma2*sa2</p></dd>
+<dt>V</dt><dd><p>prior variance</p></dd>
 
     
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
@@ -189,7 +193,7 @@ computing these summary statistics; you may also want to scale each column of X 
 This function fits the regression model Y = sum_l Xb_l + e, where elements of e are iid N(0,var=residual_variance) and the
 sum_l b_l is a p vector of effects to be estimated.
 The assumption is that each b_l has exactly one non-zero element, with all elements
-equally likely to be non-zero. The prior on the non-zero element is N(0,var=prior_variance*residual_variance).</p>
+equally likely to be non-zero. The prior on the non-zero element is N(0,var=scaled_prior_variance*var(Y)).</p>
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
@@ -206,7 +210,7 @@ equally likely to be non-zero. The prior on the non-zero element is N(0,var=prio
 <span class='no'>y</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='no'>X</span> <span class='kw'>%*%</span> <span class='no'>beta</span> + <span class='fu'>rnorm</span>(<span class='no'>n</span>))
 <span class='no'>X</span> <span class='kw'>=</span> <span class='fu'>scale</span>(<span class='no'>X</span>,<span class='kw'>center</span><span class='kw'>=</span><span class='fl'>TRUE</span>, <span class='kw'>scale</span><span class='kw'>=</span><span class='fl'>TRUE</span>)
 <span class='no'>y</span> <span class='kw'>=</span> (<span class='no'>y</span> - <span class='fu'>mean</span>(<span class='no'>y</span>))/<span class='fu'>sd</span>(<span class='no'>y</span>)
-<span class='no'>res</span> <span class='kw'>=</span><span class='fu'>susie_ss</span>(<span class='kw'>XtX</span><span class='kw'>=</span><span class='fu'>t</span>(<span class='no'>X</span>) <span class='kw'>%*%</span> <span class='no'>X</span>,<span class='kw'>XtY</span><span class='kw'>=</span> <span class='fu'>c</span>(<span class='no'>y</span> <span class='kw'>%*%</span> <span class='no'>X</span>), <span class='fl'>1</span>)
+<span class='no'>res</span> <span class='kw'>=</span><span class='fu'>susie_ss</span>(<span class='kw'>XtX</span><span class='kw'>=</span><span class='fu'>t</span>(<span class='no'>X</span>) <span class='kw'>%*%</span> <span class='no'>X</span>,<span class='kw'>Xty</span><span class='kw'>=</span> <span class='fu'>c</span>(<span class='no'>y</span> <span class='kw'>%*%</span> <span class='no'>X</span>), <span class='kw'>var_y</span><span class='kw'>=</span><span class='fl'>1</span>, <span class='kw'>n</span><span class='kw'>=</span><span class='fl'>1000</span>)
 <span class='fu'>coef</span>(<span class='no'>res</span>)
 <span class='co'># }</span></pre>
   </div>
@@ -227,7 +231,7 @@ equally likely to be non-zero. The prior on the non-zero element is N(0,var=prio
 
       <footer>
       <div class="copyright">
-  <p>Developed by Matthew Stephens, Yuxin Zou, Peter Carbonetto, Gao Wang.</p>
+  <p>Developed by Matthew Stephens, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto, Gao Wang.</p>
 </div>
 
 <div class="pkgdown">

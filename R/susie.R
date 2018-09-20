@@ -28,6 +28,7 @@
 #' @param min_abs_corr minimum of absolute value of correlation allowed in a confidence set.
 #' Default set to 0.5 to correspond to squared correlation of 0.25,
 #' a commonly used threshold for genotype data in genetics studies.
+#' @param compute_univariate_zscore if true, outputs z-score from per variable univariate regression
 #' @param verbose if true outputs some progress messages
 #' @param track_fit add an attribute \code{trace} to output that saves current values of all iterations
 #' @return a susie fit, which is a list with some or all of the following elements\cr
@@ -56,8 +57,10 @@
 susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
                  prior_weights=NULL, null_weight=NULL,
                  standardize=TRUE,intercept=TRUE,
-                 estimate_residual_variance=TRUE,estimate_prior_variance = FALSE,
+                 estimate_residual_variance=TRUE,
+                 estimate_prior_variance = FALSE,
                  s_init = NULL,coverage=0.95,min_abs_corr=0.5,
+                 compute_univariate_zscore = FALSE,
                  max_iter=100,tol=1e-3,
                  verbose=FALSE,track_fit=FALSE) {
   # Check input X.
@@ -129,12 +132,17 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
   if (track_fit)
     s$trace = tracking
 
-  ## report z-scores from univariate regression
-  s$z = calc_z(X,Y)
   ## SuSiE CS and PIP
   if (!is.null(coverage) && !is.null(min_abs_corr)) {
     s$sets = susie_get_CS(s, coverage=coverage, X=X, min_abs_corr=min_abs_corr)
     s$pip = susie_get_PIP(s,s$sets$cs_index)
+  }
+  ## report z-scores from univariate regression
+  if (compute_univariate_zscore) {
+    if (!missing(null_weight)) {
+      X = X[,1:(ncol(X)-1)]
+    }
+    s$z = calc_z(X,Y,centered=intercept)
   }
   ## for prediction
   s$X_column_scale_factors = attr(X,"scaled:scale")

@@ -1,3 +1,5 @@
+context("test_prior_weights.R")
+
 test_that("prior weights specification agrees with default",{
   simulate(200,1000)
   res1 = susie(X, y, estimate_prior_variance = TRUE)

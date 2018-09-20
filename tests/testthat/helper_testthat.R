@@ -1,3 +1,5 @@
+context("helper_testthat.R")
+
 create_sparsity_mat = function(sparsity, n, p){
   nonzero = round(n*p*(1-sparsity))
   nonzero.idx = sample(n*p, nonzero)

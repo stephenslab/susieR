@@ -16,7 +16,7 @@ output in the context of genetic fine-mapping studies where variables
 are highly correlated due to Linkage Disequilibrium.
 
 SuSiE model is developed by
-[Matthew Stephens and his lab members](http://stephenslab.uchicago.edu/)
+[Matthew Stephens and his team](http://stephenslab.uchicago.edu/)
 at the University of Chicago.
 
 This is very much work in progress. Please

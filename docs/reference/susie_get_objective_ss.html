@@ -31,6 +31,8 @@
 
 
 <meta property="og:title" content="Get objective function from data and susie fit object. — susie_get_objective_ss" />
+
+<meta property="og:description" content="Get objective function from data and susie fit object." />
 <meta name="twitter:card" content="summary" />
 
 
@@ -59,7 +61,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.2.0</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.4.6</span>
       </span>
     </div>
 
@@ -99,15 +101,17 @@
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Get objective function from data and susie fit object.</h1>
-    
+    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/elbo_ss.R'><code>R/elbo_ss.R</code></a></small>
     <div class="hidden name"><code>susie_get_objective_ss.Rd</code></div>
     </div>
 
     <div class="ref-description">
-
+    
+    <p>Get objective function from data and susie fit object.</p>
+    
     </div>
 
-    <pre class="usage"><span class='fu'>susie_get_objective_ss</span>(<span class='no'>XtX</span>, <span class='no'>XtY</span>, <span class='no'>s</span>, <span class='no'>var_y</span>, <span class='no'>n</span>)</pre>
+    <pre class="usage"><span class='fu'>susie_get_objective_ss</span>(<span class='no'>XtX</span>, <span class='no'>Xty</span>, <span class='no'>s</span>, <span class='no'>var_y</span>, <span class='no'>n</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -117,7 +121,7 @@
       <td><p>a p by p matrix, X'X</p></td>
     </tr>
     <tr>
-      <th>XtY</th>
+      <th>Xty</th>
       <td><p>a p vector, X'Y,</p></td>
     </tr>
     <tr>
@@ -147,7 +151,7 @@
 
       <footer>
       <div class="copyright">
-  <p>Developed by Matthew Stephens, Yuxin Zou, Peter Carbonetto, Gao Wang.</p>
+  <p>Developed by Matthew Stephens, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto, Gao Wang.</p>
 </div>
 
 <div class="pkgdown">

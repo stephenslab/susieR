@@ -23,13 +23,13 @@ susie_init_coef = function(coef_index, coef_value, p) {
   return(list(alpha=alpha, mu=mu, mu2=mu*mu))
 }
 
-#' @title Set default susie initialization
+# @title Set default susie initialization
 init_setup = function(n, p, L, scaled_prior_variance, residual_variance, prior_weights, varY) {
-  if(length(scaled_prior_variance) == 1)
-    scaled_prior_variance = rep(scaled_prior_variance, L)
   if(is.null(residual_variance))
     residual_variance = varY
-  if(!is.null(prior_weights) && length(prior_weights) != p)
+  if(is.null(prior_weights))
+    prior_weights = rep(1/p, p)
+  if(length(prior_weights) != p)
     stop("Prior weights must have length p.")
   s = list(alpha=matrix(1/p,nrow=L,ncol=p),
            mu=matrix(0,nrow=L,ncol=p),
@@ -42,8 +42,10 @@ init_setup = function(n, p, L, scaled_prior_variance, residual_variance, prior_w
   return(s)
 }
 
-#' @title Update a susie fit object in order to initialize susie model.
+# @title Update a susie fit object in order to initialize susie model.
 init_finalize = function(s, X=NULL, Xr=NULL) {
+  if(length(s$V) == 1)
+    s$V = rep(s$V, nrow(s$alpha))
   ## check sigma2
   if (!is.numeric(s$sigma2))
     stop("Input residual variance `sigma2` must be numeric")

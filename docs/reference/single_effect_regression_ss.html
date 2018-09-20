@@ -31,6 +31,8 @@
 
 
 <meta property="og:title" content="Bayesian single-effect linear regression of Y on X — single_effect_regression_ss" />
+
+<meta property="og:description" content="Bayesian single-effect linear regression of Y on X" />
 <meta name="twitter:card" content="summary" />
 
 
@@ -59,7 +61,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.2.0</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.4.6</span>
       </span>
     </div>
 
@@ -99,35 +101,41 @@
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Bayesian single-effect linear regression of Y on X</h1>
-    
+    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/single_effect_regression_ss.R'><code>R/single_effect_regression_ss.R</code></a></small>
     <div class="hidden name"><code>single_effect_regression_ss.Rd</code></div>
     </div>
 
     <div class="ref-description">
-
+    
+    <p>Bayesian single-effect linear regression of Y on X</p>
+    
     </div>
 
-    <pre class="usage"><span class='fu'>single_effect_regression_ss</span>(<span class='no'>XtY</span>, <span class='no'>dXtX</span>, <span class='kw'>sa2</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>s2</span> <span class='kw'>=</span> <span class='fl'>1</span>,
-  <span class='kw'>optimize_sa2</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</pre>
+    <pre class="usage"><span class='fu'>single_effect_regression_ss</span>(<span class='no'>Xty</span>, <span class='no'>dXtX</span>, <span class='kw'>V</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>residual_variance</span> <span class='kw'>=</span> <span class='fl'>1</span>,
+  <span class='kw'>optimize_V</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>XtY</th>
-      <td><p>an p vector</p></td>
+      <th>Xty</th>
+      <td><p>a p vector</p></td>
     </tr>
     <tr>
       <th>dXtX</th>
-      <td><p>an p vector, diagonal elements of t(X)X</p></td>
+      <td><p>a p vector, diagonal elements of t(X)X</p></td>
     </tr>
     <tr>
-      <th>sa2</th>
-      <td><p>the scaled prior variance (so prior variance is sa2*s2)</p></td>
+      <th>V</th>
+      <td><p>the prior variance</p></td>
     </tr>
     <tr>
-      <th>s2</th>
+      <th>residual_variance</th>
       <td><p>the residual variance</p></td>
+    </tr>
+    <tr>
+      <th>optimize_V</th>
+      <td><p>boolean indicating whether to optimize V (by maximum likelihood)</p></td>
     </tr>
     </table>
     
@@ -138,16 +146,18 @@
  that b[i] is non-zero</p></dd>
 <dt>mu</dt><dd><p>vector of posterior means (conditional on inclusion)</p></dd>
 <dt>mu2</dt><dd><p>vector of posterior second moments (conditional on inclusion)</p></dd>
-<dt>bf</dt><dd><p>vector of Bayes factors for each variable</p></dd>
+<dt>lbf</dt><dd><p>vector of log Bayes factors for each variable</p></dd>
+<dt>V</dt><dd><p>the prior variance (after optimization, if optimize_V is TRUE)</p></dd>
+<dt>logBF</dt><dd><p>(scalar) the loglikelihood for the total model minus the log-likelihood for the null model</p></dd>
 
     
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
     <p>Performs single-effect linear regression of Y on X. That is, this function
-fits the regression model Y= Xb + e, where elements of e are iid N(0,s2) and the
+fits the regression model Y= Xb + e, where elements of e are iid N(0,residual_variance) and the
 b is a p vector of effects to be estimated.
 The assumption is that b has exactly one non-zero element, with all elements
-equally likely to be non-zero. The prior on the non-zero element is N(0,var=sa2*s2).
+equally likely to be non-zero. The prior on the non-zero element is N(0,var=V).
 Only the summary statistcs t(X)Y and diagonal elements of t(X)X are avialable.</p>
     
 
@@ -167,7 +177,7 @@ Only the summary statistcs t(X)Y and diagonal elements of t(X)X are avialable.</
 
       <footer>
       <div class="copyright">
-  <p>Developed by Matthew Stephens, Yuxin Zou, Peter Carbonetto, Gao Wang.</p>
+  <p>Developed by Matthew Stephens, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto, Gao Wang.</p>
 </div>
 
 <div class="pkgdown">
