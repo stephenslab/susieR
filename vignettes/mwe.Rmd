@@ -40,3 +40,12 @@ Plot the ground-truth outcomes vs. the predicted outcomes:
 ```{r fig.height=3.5, fig.width=3.5}
 plot(y,predict(res),pch = 20)
 ```
+
+## Session information
+
+Here are some details about the computing environment, including the
+versions of R, and the R packages, used to generate these results.
+
+```{r}
+sessionInfo()
+```

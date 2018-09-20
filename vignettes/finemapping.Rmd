@@ -1,0 +1,174 @@
+---
+title: "Fine-mapping examples"
+author: "Gao Wang"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Fine-mapping example}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE,comment = "#",fig.width = 5,
+                      fig.height = 3,fig.align = "center",
+                      fig.cap = "&nbsp;",dpi = 120)
+```
+
+This vignette demonstrates `susieR` in the context of genetic
+fine-mapping.  We use simulated data of expression level of a gene
+($y$) in $N \approx 600$ individuals.  We want to identify with the
+genotype matrix $X_{N\times P}$ ($P=1000$) the genetic variables that
+causes changes in expression level.
+
+The simulated data-set is [available
+here][N3finemapping],
+as part of the `susieR` package. It is simulated to have exactly 3
+non-zero effects.
+
+```{r}
+library(susieR)
+set.seed(1)
+```
+
+## The data-set
+
+```{r}
+dat = readRDS(system.file("datafiles","N3finemapping.rds",package = "susieR"))
+names(dat)
+```
+
+`data` contains regression data-set $X$ and $y$, along with some other
+relevant properties in the context of genetic studies. It also
+contains the "true" regression coefficent the data is simulated from.
+
+```{r}
+names(dat$data)
+```
+
+Notice that we've simulated 2 sets of $Y$ as 2 simulation
+replicates. Here we'll focus on the first data-set.
+
+```{r}
+dim(dat$data$Y)
+```
+
+Here are the 3 "true" signals in the first data-set:
+
+```{r}
+b = dat$data$true_coef[,1]
+plot(b, pch=16, ylab='effect size')
+```
+
+```{r}
+which(b != 0)
+```
+
+So the underlying causal variables are 403, 653 and 773.
+
+## Simple regression summary statistics
+
+The data-set additionally provides summary statistics for fitting
+univariate simple regression variable by variable. The results are
+$\hat{\beta}$ and $SE(\hat{\beta})$ from which z-scores can be
+derived. Again we focus only on results from the first data-set:
+
+```{r}
+z_scores = dat$sumstats[1,,] / dat$sumstats[2,,]
+z_scores = z_scores[,1]
+susie_plot(z_scores, y='z', b=b)
+```
+
+## Fine-mapping with `susieR`
+
+For starters, we assume there are at most 5 causal variables, i.e.,
+set `L=5`, although SuSiE is robust to the choice of `L`.
+
+We set SuSiE prior variance to 0.1, and update residual variance in
+the variational algorithm that fits SuSiE model. The `susieR` function
+call is:
+
+```{r}
+fitted = susie(dat$data$X, dat$data$Y[,1],
+               L=5,
+               estimate_residual_variance = TRUE, 
+               scaled_prior_variance = 0.1)
+```
+
+### Confidence sets
+
+By default we output 95% confidence set:
+
+```{r}
+print(fitted$sets)
+```
+
+The 3 causal signals have been captured by the 3 CS reported here. The
+3rd CS contains many variables, including the true causal variable
+`403`. The minimum absolute correlation is 0.86.
+
+If we use the default 90% coverage for confidence sets, we still
+capture the 3 signals, but "purity" of the 3rd CS is now 0.91 and size
+of the CS is also a bit smaller.
+
+```{r}
+sets = susie_get_CS(fitted,
+                    X = dat$data$X,
+		            coverage = 0.9,
+                    min_abs_corr = 0.1)
+```
+
+```{r}
+print(sets)
+```
+
+### Posterior inclusion probability
+
+Previously we've determined that summing over 3 single effect
+regression models is approperate for our application. Here we
+summarize the variable selection results by posterior inclusion
+probability (PIP):
+
+```{r}
+susie_plot(fitted, y='PIP', b=b)
+```
+
+The true causal variables are colored red. The 95% CS identified are
+circled in different colors. Of interest is the cluster around
+position 400. The true signal is 403 but apparently it does not have
+the highest PIP. To compare ranking of PIP and original z-score in
+that CS:
+
+```{r}
+z3 = cbind(fitted$sets$cs[[3]], z_scores[fitted$sets$cs[[3]]],
+           fitted$pip[sets$cs[[3]]])
+colnames(z3) = c('position', 'z-score', 'PIP')
+z3[order(z3[,2], decreasing = TRUE),]
+```
+
+### Choice of priors
+
+We found that SuSiE is generally robust to choice of priors. Here we
+set scaled prior variance (percentage of variance explained) to 0.2,
+and compare with previous results:
+
+```{r}
+fitted = susie(dat$data$X, dat$data$Y[,1],
+               L=5,
+               estimate_residual_variance = TRUE, 
+               scaled_prior_variance = 0.2)
+susie_plot(fitted, y='PIP', b=b)
+```
+
+which largely remains unchanged.
+
+## Session information
+
+Here are some details about the computing environment, including the
+versions of R, and the R packages, used to generate these results.
+
+```{r}
+sessionInfo()
+```
+
+[N3finemapping]: https://github.com/stephenslab/susieR/blob/master/inst/data/N3finemapping.rds
