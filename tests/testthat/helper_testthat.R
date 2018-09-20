@@ -34,7 +34,7 @@ load_data = function(filename) {
   readRDS(system.file("datafiles",filename,package = "susieR"))
 }
 
-is_equal_susie_update = function(new.res, original.res){
+expect_equal_susie_update = function(new.res, original.res){
   new.res$alpha = as.matrix(new.res$alpha, p, 1)
   new.res$mu = as.matrix(new.res$mu, p, 1)
   new.res$mu2 = as.matrix(new.res$mu2, p, 1)
@@ -49,7 +49,7 @@ is_equal_susie_update = function(new.res, original.res){
   expect_equal(new.res$V, original.res$V)
 }
 
-is_equal_SER = function(new.res, original.res){
+expect_equal_SER = function(new.res, original.res){
   new.res$alpha = as.matrix(new.res$alpha, p, 1)
   new.res$mu = as.matrix(new.res$mu, p, 1)
   new.res$mu2 = as.matrix(new.res$mu2, p, 1)
@@ -63,8 +63,8 @@ is_equal_SER = function(new.res, original.res){
   expect_equal(new.res$loglik, original.res$loglik)
 }
 
-is_equal_susie = function(new.res, original.res){
-  is_equal_susie_update(new.res, original.res)
+expect_equal_susie = function(new.res, original.res){
+  expect_equal_susie_update(new.res, original.res)
   new.res$fitted = as.matrix(new.res$fitted, n, 1)
   expect_equal(new.res$elbo, original.res$elbo)
   expect_equal(new.res$niter, original.res$niter)

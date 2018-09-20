@@ -10,6 +10,6 @@ test_that("update_each_effect agrees with version 0.3",{
   dense.res = update_each_effect(scaledX,y,s)
   sparse.res = update_each_effect(scaledX.sparse,y,s)
   
-  is_equal_susie_update(sparse.res, original.res)
-  is_equal_susie_update(dense.res, original.res)
+  expect_equal_susie_update(sparse.res, original.res)
+  expect_equal_susie_update(dense.res, original.res)
 })
