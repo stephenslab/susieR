@@ -25,16 +25,18 @@ single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL
   Xty = compute_Xty(X, Y)
   betahat = (1/attr(X, "d")) * Xty
   shat2 = residual_variance/attr(X, "d")
+  if (is.null(prior_weights))
+    prior_weights = rep(1/ncol(X), ncol(X))
 
   if(optimize_V){
-    if(loglik.grad(0,Y,X,residual_variance,Xty)<0){
+    if(loglik.grad(0,betahat,shat2,prior_weights)<0){
       V=0
     } else {
-      #V.o = optim(par=log(V),fn=negloglik.logscale,gr = negloglik.grad.logscale, X=X,Y=Y,s2=s2,method="BFGS")
-      #if(V.o$convergence!=0){
-      #  warning("optimization over prior variance failed to converge")
-      #}
-      V.u=uniroot(negloglik.grad.logscale,c(-10,10),extendInt = "upX",Y=Y,X=X,s2=residual_variance, Xty=Xty)
+      ##V.o = optim(par=log(V),fn=negloglik.logscale,gr = negloglik.grad.logscale,betahat=betahat,shat2=shat2,prior_weights=prior_weights,method="BFGS")
+      ##if(V.o$convergence!=0){
+      ##  warning("optimization over prior variance failed to converge")
+      ##}
+      V.u=uniroot(negloglik.grad.logscale,c(-10,10),extendInt = "upX",betahat=betahat,shat2=shat2,prior_weights=prior_weights)
       V = exp(V.u$root)
     }
   }
@@ -47,8 +49,6 @@ single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL
   maxlbf = max(lbf)
   w = exp(lbf-maxlbf) # w is proportional to BF, but subtract max for numerical stability
   # posterior prob on each SNP
-  if (is.null(prior_weights))
-    prior_weights = rep(1/ncol(X), ncol(X))
   w_weighted = w * prior_weights
   weighted_sum_w = sum(w_weighted)
   alpha = w_weighted / weighted_sum_w
@@ -64,9 +64,7 @@ single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL
 
 #' @importFrom Matrix colSums
 #' @importFrom stats dnorm
-loglik.grad = function(V,Y,X,s2,Xty) {
-  betahat = (1/attr(X, "d")) * Xty
-  shat2 = s2/attr(X, "d")
+loglik.grad = function(V,betahat,shat2,prior_weights) {
 
   lbf = dnorm(betahat,0,sqrt(V+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
   #log(bf) on each SNP
@@ -75,14 +73,16 @@ loglik.grad = function(V,Y,X,s2,Xty) {
 
   maxlbf = max(lbf)
   w = exp(lbf-maxlbf) # w =BF/BFmax
-  alpha = w/sum(w)
+  w_weighted = w * prior_weights
+  weighted_sum_w = sum(w_weighted)
+  alpha = w_weighted / weighted_sum_w
   sum(alpha*lbf.grad(V,shat2,betahat^2/shat2))
 }
 
 # define loglikelihood and gradient as function of lV:=log(V)
 # to improve numerical optimization
 #negloglik.logscale = function(lV, Y,X,s2){-loglik(exp(lV),Y,X,s2)}
-negloglik.grad.logscale = function(lV,Y,X,s2,Xty){-exp(lV)*loglik.grad(exp(lV),Y,X,s2,Xty)}
+negloglik.grad.logscale = function(lV,betahat,shat2,prior_weights){-exp(lV)*loglik.grad(exp(lV),betahat,shat2,prior_weights)}
 
 #
 # numDeriv::grad(negloglik.logscale,0, X =X, Y=Y,s2=s2)
