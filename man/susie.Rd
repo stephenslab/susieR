@@ -9,7 +9,7 @@ susie(X, Y, L = 10, scaled_prior_variance = 0.2,
   standardize = TRUE, intercept = TRUE,
   estimate_residual_variance = TRUE, estimate_prior_variance = FALSE,
   s_init = NULL, coverage = 0.95, min_abs_corr = 0.5,
-  compute_univariate_zscore = TRUE, max_iter = 100, tol = 0.001,
+  compute_univariate_zscore = FALSE, max_iter = 100, tol = 0.001,
   verbose = FALSE, track_fit = FALSE)
 }
 \arguments{
