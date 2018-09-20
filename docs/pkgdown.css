@@ -1,32 +1,13 @@
-/* Sticky footer */
-
-/**
- * Basic idea: https://philipwalton.github.io/solved-by-flexbox/demos/sticky-footer/
- * Details: https://github.com/philipwalton/solved-by-flexbox/blob/master/assets/css/components/site.css
- *
- * .Site -> body > .container
- * .Site-content -> body > .container .row
- * .footer -> footer
- *
- * Key idea seems to be to ensure that .container and __all its parents__
- * have height set to 100%
- *
- */
-
-html, body {
-  height: 100%;
-}
-
+/* Sticker footer */
 body > .container {
   display: flex;
-  height: 100%;
-  flex-direction: column;
-
   padding-top: 60px;
+  min-height: calc(100vh);
+  flex-direction: column;
 }
 
 body > .container .row {
-  flex: 1 0 auto;
+  flex: 1;
 }
 
 footer {
@@ -35,7 +16,6 @@ footer {
   border-top: 1px solid #e5e5e5;
   color: #666;
   display: flex;
-  flex-shrink: 0;
 }
 footer p {
   margin-bottom: 0;
@@ -56,12 +36,6 @@ img.icon {
 
 img {
   max-width: 100%;
-}
-
-/* Typographic tweaking ---------------------------------*/
-
-.contents h1.page-header {
-  margin-top: calc(-60px + 1em);
 }
 
 /* Section anchors ---------------------------------*/
@@ -94,7 +68,7 @@ a.anchor {
 
 .contents h1, .contents h2, .contents h3, .contents h4 {
   padding-top: 60px;
-  margin-top: -40px;
+  margin-top: -60px;
 }
 
 /* Static header placement on mobile devices */
@@ -134,6 +108,7 @@ a.anchor {
 /* Reference index & topics ----------------------------------------------- */
 
 .ref-index th {font-weight: normal;}
+.ref-index h2 {font-size: 20px;}
 
 .ref-index td {vertical-align: top;}
 .ref-index .alias {width: 40%;}
@@ -216,17 +191,4 @@ a.sourceLine:hover {
 
 .hasCopyButton:hover button.btn-copy-ex {
   visibility: visible;
-}
-
-/* mark.js ----------------------------*/
-
-mark {
-  background-color: rgba(255, 255, 51, 0.5);
-  border-bottom: 2px solid rgba(255, 153, 51, 0.3);
-  padding: 1px;
-}
-
-/* vertical spacing after htmlwidgets */
-.html-widget {
-  margin-bottom: 10px;
 }

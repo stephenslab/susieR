@@ -11,8 +11,8 @@
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
-<link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/flatly/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
 
+<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 
 <!-- Font Awesome icons -->
@@ -21,19 +21,13 @@
 <!-- clipboard.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js" integrity="sha384-cV+rhyOuRHc9Ub/91rihWcGmMmCXDeksTtCihMupQHSsi8GIIRDG0ThDc3HGQFJ3" crossorigin="anonymous"></script>
 
-<!-- sticky kit -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sticky-kit/1.1.3/sticky-kit.min.js" integrity="sha256-c4Rlo1ZozqTPE2RLuvbusY3+SU1pQaJC0TjuhygMipw=" crossorigin="anonymous"></script>
-
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
+<script src="../jquery.sticky-kit.min.js"></script>
 <script src="../pkgdown.js"></script>
-
-
-
+  
+  
 <meta property="og:title" content="Function reference" />
-
-
-
 <!-- mathjax -->
 <script src='https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
 
@@ -56,12 +50,8 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <span class="navbar-brand">
-        <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.4.6</span>
-      </span>
+      <a class="navbar-brand" href="../index.html">susieR</a>
     </div>
-
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
@@ -86,7 +76,6 @@
   </a>
 </li>
       </ul>
-      
     </div><!--/.nav-collapse -->
   </div><!--/.container -->
 </div><!--/.navbar -->
@@ -94,168 +83,166 @@
       
       </header>
 
-<div class="row">
-  <div class="contents col-md-9">
+      <div class="row">
+  <div class="col-md-9">
     <div class="page-header">
-      <h1>Reference</h1>
+      <h1>
+        Reference
+        <small>version&nbsp;0.4.13</small>
+      </h1>
     </div>
 
-    <table class="ref-index">
+    <div class="contents">
+      <table class="ref-index">
 
-    <colgroup>
-      
-      <col class="alias" />
-      <col class="title" />
-    </colgroup>
+      <colgroup>
+        <col class="alias" />
+        <col class="title" />
+      </colgroup>
 
-    <tbody>
-      <tr>
-        <th colspan="2">
-          <h2 id="section-all-functions" class="hasAnchor"><a href="#section-all-functions" class="anchor"></a>All functions</h2>
-          <p class="section-desc"></p>
-        </th>
-      </tr>
-      <tr>
-        
-        <td>
-          <p><code><a href="coef.susie.html">coef(<i>&lt;susie&gt;</i>)</a></code> </p>
-        </td>
-        <td><p>extract regression coefficients from susie fit</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="compute_MXt.html">compute_MXt()</a></code> </p>
-        </td>
-        <td><p>Compute M%*%t(scaled.X) using sparse multiplication</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="compute_Xb.html">compute_Xb()</a></code> </p>
-        </td>
-        <td><p>Compute scaled.X %*% b using sparse multiplication</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="compute_Xty.html">compute_Xty()</a></code> </p>
-        </td>
-        <td><p>Compute t(scaled.X)%*%y using sparse multiplication</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="estimate_residual_variance.html">estimate_residual_variance()</a></code> </p>
-        </td>
-        <td><p>Estimate residual variance</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="predict.susie.html">predict(<i>&lt;susie&gt;</i>)</a></code> </p>
-        </td>
-        <td><p>predict future observations or extract coefficients from susie fit</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="single_effect_regression.html">single_effect_regression()</a></code> </p>
-        </td>
-        <td><p>Bayesian single-effect linear regression of Y on X</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="single_effect_regression_ss.html">single_effect_regression_ss()</a></code> </p>
-        </td>
-        <td><p>Bayesian single-effect linear regression of Y on X</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="susie.html">susie()</a></code> </p>
-        </td>
-        <td><p>Bayesian sum of single-effect (susie) linear regression of Y on X</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="susie_auto.html">susie_auto()</a></code> </p>
-        </td>
-        <td><p>An attempt to automate reliable running of susie even on hard problems</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="susie_get_CS.html">susie_get_CS()</a></code> </p>
-        </td>
-        <td><p>Extract confidence sets from SuSiE model</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="susie_get_PIP.html">susie_get_PIP()</a></code> </p>
-        </td>
-        <td><p>Compute posterior inclusion probability (PIP) for all variables</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="susie_get_lfsr.html">susie_get_lfsr()</a></code> </p>
-        </td>
-        <td><p>Local false sign rate (lfsr) for susie confidence sets</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="susie_get_objective.html">susie_get_objective()</a></code> </p>
-        </td>
-        <td><p>Get objective function from data and susie fit object.</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="susie_get_objective_ss.html">susie_get_objective_ss()</a></code> </p>
-        </td>
-        <td><p>Get objective function from data and susie fit object.</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="susie_get_prior_variance.html">susie_get_prior_variance()</a></code> </p>
-        </td>
-        <td><p>Get updated prior variance</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="susie_get_residual_variance.html">susie_get_residual_variance()</a></code> </p>
-        </td>
-        <td><p>Get updated residual variance</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="susie_init_coef.html">susie_init_coef()</a></code> </p>
-        </td>
-        <td><p>initialize a susie object using regression coefficients</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="susie_plot.html">susie_plot()</a></code> </p>
-        </td>
-        <td><p>Plot per variable summary in SuSiE CSs</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="susie_plot_iteration.html">susie_plot_iteration()</a></code> </p>
-        </td>
-        <td><p>Diagnostic plot for SuSiE iterations</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="susie_ss.html">susie_ss()</a></code> </p>
-        </td>
-        <td><p>Bayesian sum of single-effect (susie) linear regression using summary stat</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="update_each_effect.html">update_each_effect()</a></code> </p>
-        </td>
-        <td><p>update each effect once</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="update_each_effect_ss.html">update_each_effect_ss()</a></code> </p>
-        </td>
-        <td><p>update each effect once</p></td>
-      </tr>
-    </tbody>
-    </table>
+      <tbody>
+        <tr>
+          <th colspan="2">
+            <h2 id="section-all-functions" class="hasAnchor"><a href="#section-all-functions" class="anchor"></a>All functions</h2>
+            <p class="section-desc"></p>
+          </th>
+        </tr>
+        <tr>
+          <!--  -->
+          <td>
+            <p><code><a href="coef.susie.html">coef</a></code> </p>
+          </td>
+          <td><p>extract regression coefficients from susie fit</p></td>
+        </tr><tr>
+          <!--  -->
+          <td>
+            <p><code><a href="compute_MXt.html">compute_MXt</a></code> </p>
+          </td>
+          <td><p>Compute M%*%t(scaled.X) using sparse multiplication</p></td>
+        </tr><tr>
+          <!--  -->
+          <td>
+            <p><code><a href="compute_Xty.html">compute_Xty</a></code> </p>
+          </td>
+          <td><p>Compute t(scaled.X)%*%y using sparse multiplication</p></td>
+        </tr><tr>
+          <!--  -->
+          <td>
+            <p><code><a href="estimate_residual_variance.html">estimate_residual_variance</a></code> </p>
+          </td>
+          <td><p>Estimate residual variance</p></td>
+        </tr><tr>
+          <!--  -->
+          <td>
+            <p><code><a href="predict.susie.html">predict</a></code> </p>
+          </td>
+          <td><p>predict future observations or extract coefficients from susie fit</p></td>
+        </tr><tr>
+          <!--  -->
+          <td>
+            <p><code><a href="single_effect_regression_ss.html">single_effect_regression_ss</a></code> </p>
+          </td>
+          <td><p>Bayesian single-effect linear regression of Y on X.</p></td>
+        </tr><tr>
+          <!--  -->
+          <td>
+            <p><code><a href="single_effect_regression.html">single_effect_regression</a></code> </p>
+          </td>
+          <td><p>Bayesian single-effect linear regression of Y on X</p></td>
+        </tr><tr>
+          <!--  -->
+          <td>
+            <p><code><a href="susie_auto.html">susie_auto</a></code> </p>
+          </td>
+          <td><p>An attempt to automate reliable running of susie even on hard problems</p></td>
+        </tr><tr>
+          <!--  -->
+          <td>
+            <p><code><a href="susie_get_CS.html">susie_get_CS</a></code> </p>
+          </td>
+          <td><p>Extract confidence sets from SuSiE model</p></td>
+        </tr><tr>
+          <!--  -->
+          <td>
+            <p><code><a href="susie_get_lfsr.html">susie_get_lfsr</a></code> </p>
+          </td>
+          <td><p>Local false sign rate (lfsr) for susie confidence sets</p></td>
+        </tr><tr>
+          <!--  -->
+          <td>
+            <p><code><a href="susie_get_objective_ss.html">susie_get_objective_ss</a></code> </p>
+          </td>
+          <td><p>Get objective function from data and susie fit object.</p></td>
+        </tr><tr>
+          <!--  -->
+          <td>
+            <p><code><a href="susie_get_objective.html">susie_get_objective</a></code> </p>
+          </td>
+          <td><p>Get objective function from data and susie fit object.</p></td>
+        </tr><tr>
+          <!--  -->
+          <td>
+            <p><code><a href="susie_get_PIP.html">susie_get_PIP</a></code> </p>
+          </td>
+          <td><p>Compute posterior inclusion probability (PIP) for all variables</p></td>
+        </tr><tr>
+          <!--  -->
+          <td>
+            <p><code><a href="susie_get_prior_variance.html">susie_get_prior_variance</a></code> </p>
+          </td>
+          <td><p>Get updated prior variance</p></td>
+        </tr><tr>
+          <!--  -->
+          <td>
+            <p><code><a href="susie_get_residual_variance.html">susie_get_residual_variance</a></code> </p>
+          </td>
+          <td><p>Get updated residual variance</p></td>
+        </tr><tr>
+          <!--  -->
+          <td>
+            <p><code><a href="susie_init_coef.html">susie_init_coef</a></code> </p>
+          </td>
+          <td><p>initialize a susie object using regression coefficients</p></td>
+        </tr><tr>
+          <!--  -->
+          <td>
+            <p><code><a href="susie_plot_iteration.html">susie_plot_iteration</a></code> </p>
+          </td>
+          <td><p>Diagnostic plot for SuSiE iterations</p></td>
+        </tr><tr>
+          <!--  -->
+          <td>
+            <p><code><a href="susie_plot.html">susie_plot</a></code> </p>
+          </td>
+          <td><p>Plot per variable summary in SuSiE CSs</p></td>
+        </tr><tr>
+          <!--  -->
+          <td>
+            <p><code><a href="susie_ss.html">susie_ss</a></code> </p>
+          </td>
+          <td><p>Bayesian sum of single-effect (susie) linear regression using summary stat</p></td>
+        </tr><tr>
+          <!--  -->
+          <td>
+            <p><code><a href="susie.html">susie</a></code> </p>
+          </td>
+          <td><p>Bayesian sum of single-effect (susie) linear regression of Y on X</p></td>
+        </tr><tr>
+          <!--  -->
+          <td>
+            <p><code><a href="update_each_effect_ss.html">update_each_effect_ss</a></code> </p>
+          </td>
+          <td><p>update each effect once</p></td>
+        </tr><tr>
+          <!--  -->
+          <td>
+            <p><code><a href="update_each_effect.html">update_each_effect</a></code> </p>
+          </td>
+          <td><p>update each effect once</p></td>
+        </tr>
+      </tbody>
+      </table>
+    </div>
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
@@ -278,8 +265,5 @@
       </footer>
    </div>
 
-  
-
   </body>
 </html>
-

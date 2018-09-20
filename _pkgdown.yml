@@ -1,17 +1,13 @@
-template:
-  params:
-    bootswatch: flatly
-
 navbar:
   left:
-    - icon: fa-home
+    - text: "Home"
       href: index.html
     - text: "Vignettes"
       href: articles/index.html
     - text: "Functions"
       href: reference/index.html
   right:
-    - icon: fa-github
+    - text: "Source"
       href: https://github.com/stephenslab/susieR
 
 articles:
@@ -23,7 +19,5 @@ articles:
     contents:
     - mwe
     - finemapping
-    - trend_filtering
     - l0_initialization
-    - sparse_matrix_strategy
-    - sparse_susie_eval
+
