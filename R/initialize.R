@@ -23,7 +23,7 @@ susie_init_coef = function(coef_index, coef_value, p) {
   return(list(alpha=alpha, mu=mu, mu2=mu*mu))
 }
 
-#' @title Set default susie initialization
+# @title Set default susie initialization
 init_setup = function(n, p, L, scaled_prior_variance, residual_variance, prior_weights, varY) {
   if(is.null(residual_variance))
     residual_variance = varY
@@ -42,7 +42,7 @@ init_setup = function(n, p, L, scaled_prior_variance, residual_variance, prior_w
   return(s)
 }
 
-#' @title Update a susie fit object in order to initialize susie model.
+# @title Update a susie fit object in order to initialize susie model.
 init_finalize = function(s, X=NULL, Xr=NULL) {
   if(length(s$V) == 1)
     s$V = rep(s$V, nrow(s$alpha))

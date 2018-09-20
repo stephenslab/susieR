@@ -40,7 +40,7 @@ n_in_CS = function(res, coverage = 0.9){
   apply(res,1,function(x) n_in_CS_x(x, coverage))
 }
 
-#' @importFrom stats median
+# subsample and compute min, mean, median and max abs corr
 get_purity = function(pos, X, Xcorr, n = 100) {
   if (length(pos) == 1) {
     c(1,1,1)
@@ -63,7 +63,7 @@ get_purity = function(pos, X, Xcorr, n = 100) {
   }
 }
 
-#' @title `cor` function with specified warning muffled
+# @title `cor` function with specified warning muffled
 muffled_corr = function(x)
   withCallingHandlers(cor(x),
                     warning=function(w) {

@@ -29,7 +29,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.2.0</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.4.6</span>
       </span>
     </div>
 
@@ -72,7 +72,7 @@
             
             <h4 class="date">July 18, 2018</h4>
       
-      
+      <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/master/vignettes/l0_initialization.Rmd"><code>vignettes/l0_initialization.Rmd</code></a></small>
       <div class="hidden name"><code>l0_initialization.Rmd</code></div>
 
     </div>
@@ -119,33 +119,34 @@
 <div id="build-an-initialization-object" class="section level2">
 <h2 class="hasAnchor">
 <a href="#build-an-initialization-object" class="anchor"></a>Build an initialization object</h2>
-<p>We create an initialization using <code>susie_set_init</code> function</p>
+<p>We create an initialization from <code>l0learn</code> coefficients using <code>susie_init_coef</code> function,</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="kw">set.seed</span>(<span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb10-2" data-line-number="2">s.init =<span class="st"> </span><span class="kw"><a href="../reference/susie_set_init.html">susie_set_init</a></span>(effect.index, effect.beta, <span class="dt">num_variables=</span>p, <span class="dt">prior_variance=</span><span class="fl">0.2</span>, <span class="dt">residual_variance=</span><span class="kw">as.numeric</span>(<span class="kw">var</span>(y)))</a></code></pre></div>
+<a class="sourceLine" id="cb10-2" data-line-number="2">s.init =<span class="st"> </span><span class="kw"><a href="../reference/susie_init_coef.html">susie_init_coef</a></span>(effect.index, effect.beta, p)</a></code></pre></div>
 </div>
 <div id="run-susier-with-initialization" class="section level2">
 <h2 class="hasAnchor">
 <a href="#run-susier-with-initialization" class="anchor"></a>Run susieR with initialization</h2>
 <p>Now, we use <code>effect.index</code> and <code>effect.beta</code> obtained from L0Learn fit to create an <code>s.init</code> object. We then run susie with this initialization.</p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb11-1" data-line-number="1">susieL0.fit =<span class="st"> </span><span class="kw"><a href="../reference/susie.html">susie</a></span>(X,y,<span class="dt">s_init=</span>s.init)</a>
-<a class="sourceLine" id="cb11-2" data-line-number="2">susie.CS.set =<span class="st"> </span><span class="kw"><a href="../reference/susie_get_CS.html">susie_get_CS</a></span>(susieL0.fit, <span class="dt">X=</span>X)</a>
-<a class="sourceLine" id="cb11-3" data-line-number="3">susie.CS.set<span class="op">$</span>cs</a></code></pre></div>
+<a class="sourceLine" id="cb11-2" data-line-number="2">susieL0.fit<span class="op">$</span>sets<span class="op">$</span>cs</a></code></pre></div>
 <pre><code>## $L1
 ## [1] 1
 ## 
 ## $L2
 ## [1] 2
 ## 
-## $L6
+## $L4
 ## [1] 300
 ## 
-## $L7
+## $L5
 ## [1] 400</code></pre>
 </div>
 <div id="references" class="section level2">
 <h2 class="hasAnchor">
 <a href="#references" class="anchor"></a>References</h2>
-<p>Hussein Hazimeh and Rahul Mazumder. (2018). Fast Best Subset Selection: Coordinate Descent and Local Combinatorial Optimization Algorithms</p>
+<ol style="list-style-type: decimal">
+<li>Hussein Hazimeh and Rahul Mazumder. (2018). Fast Best Subset Selection: Coordinate Descent and Local Combinatorial Optimization Algorithms</li>
+</ol>
 </div>
   </div>
 
@@ -167,7 +168,7 @@
 
 
       <footer><div class="copyright">
-  <p>Developed by Matthew Stephens, Yuxin Zou, Peter Carbonetto, Gao Wang.</p>
+  <p>Developed by Matthew Stephens, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto, Gao Wang.</p>
 </div>
 
 <div class="pkgdown">

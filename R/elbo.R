@@ -10,7 +10,7 @@ susie_get_objective = function(X, Y, s) {
   return(Eloglik(X,Y,s)-sum(s$KL))
 }
 
-#' @title expected loglikelihood for a susie fit
+# @title expected loglikelihood for a susie fit
 Eloglik = function(X,Y,s){
   n = nrow(X)
   p = ncol(X)

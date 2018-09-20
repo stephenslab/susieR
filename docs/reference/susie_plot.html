@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>initialize a susie object using given nonzero effect indices and beta values — susie_set_init • susieR</title>
+<title>Plot per variable summary in SuSiE CSs — susie_plot • susieR</title>
 
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
@@ -30,7 +30,9 @@
 
 
 
-<meta property="og:title" content="initialize a susie object using given nonzero effect indices and beta values — susie_set_init" />
+<meta property="og:title" content="Plot per variable summary in SuSiE CSs — susie_plot" />
+
+<meta property="og:description" content="Plot per variable summary in SuSiE CSs" />
 <meta name="twitter:card" content="summary" />
 
 
@@ -59,7 +61,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.2.0</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.4.6</span>
       </span>
     </div>
 
@@ -98,46 +100,52 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>initialize a susie object using given nonzero effect indices and beta values</h1>
-    
-    <div class="hidden name"><code>susie_set_init.Rd</code></div>
+    <h1>Plot per variable summary in SuSiE CSs</h1>
+    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/susie_utils.R'><code>R/susie_utils.R</code></a></small>
+    <div class="hidden name"><code>susie_plot.Rd</code></div>
     </div>
 
     <div class="ref-description">
-
+    
+    <p>Plot per variable summary in SuSiE CSs</p>
+    
     </div>
 
-    <pre class="usage"><span class='fu'>susie_set_init</span>(<span class='no'>coef_index</span>, <span class='no'>coef_value</span>, <span class='no'>num_variables</span>, <span class='no'>prior_variance</span>,
-  <span class='kw'>residual_variance</span> <span class='kw'>=</span> <span class='kw'>NULL</span>)</pre>
+    <pre class="usage"><span class='fu'>susie_plot</span>(<span class='no'>model</span>, <span class='no'>y</span>, <span class='kw'>add_bar</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>pos</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>b</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>max_cs</span> <span class='kw'>=</span> <span class='fl'>400</span>, <span class='no'>...</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>coef_index</th>
-      <td><p>a L-vector for indices of nonzero effects</p></td>
+      <th>model</th>
+      <td><p>a susie fit, the output of `susieR::susie()`.
+It has to contain `z`, `PIP` and optionally `sets`.
+It is also possible to take in a vector of z-score or PIP,
+in order to plot data from other software program.</p></td>
     </tr>
     <tr>
-      <th>coef_value</th>
-      <td><p>a L-vector for initial estimated beta values</p></td>
+      <th>y</th>
+      <td><p>a string indicating what to plot: z (for z-score), PIP,
+or a random label to plot input data as is.</p></td>
     </tr>
     <tr>
-      <th>prior_variance</th>
-      <td><p>a scalar or an L-vector</p></td>
+      <th>add_bar</th>
+      <td><p>add horizontal bar to signals in confidence interval.</p></td>
     </tr>
     <tr>
-      <th>residual_variance</th>
-      <td><p>a scalar</p></td>
+      <th>pos</th>
+      <td><p>coordinates of variables to plot, default to all variables</p></td>
     </tr>
     <tr>
-      <th>num_varialbes</th>
-      <td><p>a scalar the number of variables in the data</p></td>
+      <th>b</th>
+      <td><p>for simulated data, specify b = true effects (highlights in red).</p></td>
+    </tr>
+    <tr>
+      <th>max_cs</th>
+      <td><p>the biggest CS to display, based on purity (set max_cs in between 0 and 1) or size (&gt;1).</p></td>
     </tr>
     </table>
-    
-    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
-
-    <p>a list of initialized alpha, mu, mu2, sa2 and optionally sigma2</p>
     
 
   </div>
@@ -145,16 +153,14 @@
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
       <li><a href="#arguments">Arguments</a></li>
-      
-      <li><a href="#value">Value</a></li>
-          </ul>
+                </ul>
 
   </div>
 </div>
 
       <footer>
       <div class="copyright">
-  <p>Developed by Matthew Stephens, Yuxin Zou, Peter Carbonetto, Gao Wang.</p>
+  <p>Developed by Matthew Stephens, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto, Gao Wang.</p>
 </div>
 
 <div class="pkgdown">

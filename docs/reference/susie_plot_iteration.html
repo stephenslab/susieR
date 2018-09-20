@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>posterior expected loglikelihood for a single effect regression — SER_posterior_e_loglik • susieR</title>
+<title>Diagnostic plot for SuSiE iterations — susie_plot_iteration • susieR</title>
 
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
@@ -30,7 +30,9 @@
 
 
 
-<meta property="og:title" content="posterior expected loglikelihood for a single effect regression — SER_posterior_e_loglik" />
+<meta property="og:title" content="Diagnostic plot for SuSiE iterations — susie_plot_iteration" />
+
+<meta property="og:description" content="Diagnostic plot for SuSiE iterations" />
 <meta name="twitter:card" content="summary" />
 
 
@@ -59,7 +61,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.2.0</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.4.6</span>
       </span>
     </div>
 
@@ -98,39 +100,38 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>posterior expected loglikelihood for a single effect regression</h1>
-    
-    <div class="hidden name"><code>SER_posterior_e_loglik.Rd</code></div>
+    <h1>Diagnostic plot for SuSiE iterations</h1>
+    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/susie_utils.R'><code>R/susie_utils.R</code></a></small>
+    <div class="hidden name"><code>susie_plot_iteration.Rd</code></div>
     </div>
 
     <div class="ref-description">
-
+    
+    <p>Diagnostic plot for SuSiE iterations</p>
+    
     </div>
 
-    <pre class="usage"><span class='fu'>SER_posterior_e_loglik</span>(<span class='no'>X</span>, <span class='no'>Y</span>, <span class='no'>s2</span>, <span class='no'>Eb</span>, <span class='no'>Eb2</span>)</pre>
+    <pre class="usage"><span class='fu'>susie_plot_iteration</span>(<span class='no'>model</span>, <span class='no'>L</span>, <span class='no'>file_prefix</span>, <span class='kw'>pos</span> <span class='kw'>=</span> <span class='kw'>NULL</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>X</th>
-      <td><p>an n by p matrix of covariates</p></td>
+      <th>model</th>
+      <td><p>a susie fit, the output of `susieR::susie()`.
+Multiple plots will be made for all iterations if `track_fit` was set to `TRUE` when running SuSiE.</p></td>
     </tr>
     <tr>
-      <th>Y</th>
-      <td><p>an n vector of regression outcome</p></td>
+      <th>L</th>
+      <td><p>an integer, number of CS to plot</p></td>
     </tr>
     <tr>
-      <th>s2</th>
-      <td><p>the residual variance</p></td>
+      <th>file_prefix</th>
+      <td><p>prefix to path of output plot file</p></td>
     </tr>
     <tr>
-      <th>Eb</th>
-      <td><p>the posterior mean of b (p vector) (alpha * mu)</p></td>
-    </tr>
-    <tr>
-      <th>Eb2</th>
-      <td><p>the posterior second moment of b (p vector) (alpha * mu2)</p></td>
+      <th>pos</th>
+      <td><p>position of variables to display, default to all variables</p></td>
     </tr>
     </table>
     
@@ -147,7 +148,7 @@
 
       <footer>
       <div class="copyright">
-  <p>Developed by Matthew Stephens, Yuxin Zou, Peter Carbonetto, Gao Wang.</p>
+  <p>Developed by Matthew Stephens, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto, Gao Wang.</p>
 </div>
 
 <div class="pkgdown">

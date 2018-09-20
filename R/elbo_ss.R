@@ -12,15 +12,15 @@ susie_get_objective_ss = function(XtX, Xty, s, var_y, n) {
   return(Eloglik_ss(XtX,Xty,s,var_y, n)-sum(s$KL))
 }
 
-#' @title expected loglikelihood for a susie fit
+# @title expected loglikelihood for a susie fit
 Eloglik_ss = function(XtX,Xty,s, var_y, n){
   p = ncol(XtX)
   result =  -(n/2) * log(2*pi* s$sigma2) - (1/(2*s$sigma2)) * get_ER2_ss(XtX,Xty,s,var_y,n)
   return(result)
 }
 
-#' @title expected squared residuals
-#' @importFrom Matrix diag
+# @title expected squared residuals
+# @importFrom Matrix diag
 get_ER2_ss = function(XtX,Xty,s,var_y,n){
   B = s$alpha*s$mu
   XB2 = sum(t(B) * XtX%*%t(B))
@@ -34,12 +34,12 @@ get_ER2_ss = function(XtX,Xty,s,var_y,n){
 }
 
 
-#' @title posterior expected loglikelihood for a single effect regression
-#' @param dXtX a p vector of diagonal elements of XtX
-#' @param Xty a p vector
-#' @param s2 the residual variance
-#' @param Eb the posterior mean of b (p vector) (alpha * mu)
-#' @param Eb2 the posterior second moment of b (p vector) (alpha * mu2)
+# @title posterior expected loglikelihood for a single effect regression
+# @param dXtX a p vector of diagonal elements of XtX
+# @param Xty a p vector
+# @param s2 the residual variance
+# @param Eb the posterior mean of b (p vector) (alpha * mu)
+# @param Eb2 the posterior second moment of b (p vector) (alpha * mu2)
 SER_posterior_e_loglik_ss = function(dXtX,Xty,s2,Eb,Eb2){
   - (0.5/s2) * (- 2*sum(Eb*Xty) + sum(dXtX*as.vector(Eb2)))
 }
