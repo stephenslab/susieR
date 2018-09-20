@@ -7,7 +7,7 @@
 susie_ss(XtX, Xty, var_y = 1, n, L = 10, scaled_prior_variance = 0.2,
   residual_variance = NULL, estimate_prior_variance = FALSE,
   max_iter = 100, s_init = NULL, verbose = FALSE, intercept = 0,
-  tol = 1e-04)
+  tol = 0.0001)
 }
 \arguments{
 \item{XtX}{a p by p matrix, X'X, where columns of X are centered to have mean 0}
@@ -65,14 +65,11 @@ set.seed(1)
 n = 1000
 p = 1000
 beta = rep(0,p)
-beta[1] = 1
-beta[2] = 1
-beta[3] = 1
-beta[4] = 1
+beta[1:4] = 1
 X = matrix(rnorm(n*p),nrow=n,ncol=p)
 y = c(X \%*\% beta + rnorm(n))
 X = scale(X,center=TRUE, scale=TRUE)
 y = (y - mean(y))/sd(y)
-res =susie_ss(XtX=t(X) \%*\% X,Xty= c(y \%*\% X), var_y=1, n=1000)
+res =susie_ss(XtX = t(X) \%*\% X,Xty= c(y \%*\% X), var_y=1, n=1000)
 coef(res)
 }

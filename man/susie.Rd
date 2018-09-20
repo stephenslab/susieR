@@ -9,7 +9,7 @@ susie(X, Y, L = 10, scaled_prior_variance = 0.2,
   standardize = TRUE, intercept = TRUE,
   estimate_residual_variance = TRUE, estimate_prior_variance = FALSE,
   s_init = NULL, coverage = 0.95, min_abs_corr = 0.5,
-  compute_univariate_zscore = TRUE, max_iter = 100, tol = 0.001,
+  compute_univariate_zscore = FALSE, max_iter = 100, tol = 0.001,
   verbose = FALSE, track_fit = FALSE)
 }
 \arguments{
@@ -87,10 +87,7 @@ set.seed(1)
 n = 1000
 p = 1000
 beta = rep(0,p)
-beta[1] = 1
-beta[2] = 1
-beta[3] = 1
-beta[4] = 1
+beta[1:4] = 1
 X = matrix(rnorm(n*p),nrow=n,ncol=p)
 y = X \%*\% beta + rnorm(n)
 res =susie(X,y,L=10)
