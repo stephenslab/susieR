@@ -1,3 +1,5 @@
+context("test_single_effect_regression.R")
+
 test_that("single_effect_regression agrees with version 0.3",{
   original.res = load_data('singleReg_original_res.rds')
   simulate(sparse=T)

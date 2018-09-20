@@ -1,3 +1,5 @@
+context("test_update_each_effect.R")
+
 test_that("update_each_effect agrees with version 0.3",{
   original.res = load_data('vbupdate_original_res.rds')
   simulate(sparse=T)

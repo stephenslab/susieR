@@ -1,3 +1,5 @@
+context("test_susie.R")
+
 test_that("susie agrees with version 0.3",{
   original.res = load_data('susiefit_original_res.rds')
   original.res2 = load_data('susiefit_original_res2.rds')

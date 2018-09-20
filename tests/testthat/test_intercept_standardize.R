@@ -1,3 +1,5 @@
+context("test_intercept_standardize.R")
+
 test_that("scaling and intercept works as expected",{
   simulate(200,1000)
   s1 = susie(X,y,intercept= TRUE, standardize=TRUE)
