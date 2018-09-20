@@ -17,3 +17,4 @@ an n vector
 \description{
 Compute scaled.X \%*\% b using sparse multiplication
 }
+\keyword{internal}

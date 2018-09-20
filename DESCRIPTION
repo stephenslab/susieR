@@ -30,5 +30,6 @@ Suggests:
     reshape,
     ggplot2,
     testthat,
-    knitr
+    knitr,
+    L0Learn
 VignetteBuilder: knitr

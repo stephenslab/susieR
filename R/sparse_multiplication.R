@@ -4,6 +4,7 @@
 #' @return an n vector
 #' @importFrom Matrix t
 #' @importFrom Matrix tcrossprod
+#' @keywords internal
 compute_Xb = function(X, b){
   if (is.matrix(X)) { #when X is a dense matrix
     return(tcrossprod(X,t(b))) #tcrossprod(A,B) performs A%*%t(B) but faster
