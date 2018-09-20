@@ -63,7 +63,7 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
                  estimate_residual_variance=TRUE,
                  estimate_prior_variance = FALSE,
                  s_init = NULL,coverage=0.95,min_abs_corr=0.5,
-                 compute_univariate_zscore = TRUE,
+                 compute_univariate_zscore = FALSE,
                  max_iter=100,tol=1e-3,
                  verbose=FALSE,track_fit=FALSE) {
   # Check input X.
