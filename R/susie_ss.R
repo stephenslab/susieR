@@ -40,7 +40,7 @@
 #' y = c(X %*% beta + rnorm(n))
 #' X = scale(X,center=TRUE, scale=TRUE)
 #' y = (y - mean(y))/sd(y)
-#' res =susie_ss(XtX = t(X) %*% X,Xty= c(y %*% X), var_y=1, n=1000)
+#' res =susie_ss(XtX = crossprod(X),Xty= c(y %*% X), var_y=1, n=1000)
 #' coef(res)
 #' @export
 susie_ss = function(XtX,Xty,var_y = 1, n, L=10,scaled_prior_variance=0.2,residual_variance=NULL,estimate_prior_variance = FALSE, max_iter=100,s_init = NULL, verbose=FALSE, intercept=0, tol=1e-4){
