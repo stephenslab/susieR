@@ -191,8 +191,8 @@ univariate_regression = function(X, y, Z=NULL, centered=FALSE, return_residuals=
 
 # computes z score (t-statistic) for association between each
 # column of X and y
-calc_z = function(X,y){
-  out = univariate_regression(X,y)
+calc_z = function(X,y,centered=FALSE){
+  out = univariate_regression(X,y,centered=centered)
   return(out$betahat/out$sebetahat)
 }
 
