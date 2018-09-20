@@ -11,6 +11,6 @@ test_that("single_effect_regression agrees with version 0.3",{
   dense.res = single_effect_regression(y,scaledX,V)
   sparse.res = single_effect_regression(y,scaledX.sparse,V)
   
-  is_equal_SER(sparse.res, original.res)
-  is_equal_SER(dense.res, original.res)
+  expect_equal_SER(sparse.res, original.res)
+  expect_equal_SER(dense.res, original.res)
 })
