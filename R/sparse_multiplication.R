@@ -8,6 +8,7 @@ compute_Xb = function(X, b){
   if (is.matrix(X)) { #when X is a dense matrix
     return(tcrossprod(X,t(b))) #tcrossprod(A,B) performs A%*%t(B) but faster
   } else {
+    ## given larger p since using many transpose here.
     cm = attr(X, 'scaled:center')
     csd = attr(X, 'scaled:scale')
     #scale Xb

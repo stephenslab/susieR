@@ -293,11 +293,11 @@ susie_plot_iteration = function(model, L, file_prefix, pos=NULL) {
   get_layer = function(obj, k, idx, vars) {
     require(ggplot2,quietly = TRUE)
     alpha = reshape::melt(obj$alpha[1:k,vars,drop=F])
-    colnames(alpha) = c('L', 'variables', 'alpha')
+    colnames(alpha) = c("L","variables","alpha")
     alpha$L = as.factor(alpha$L)
     ggplot2::ggplot(alpha,ggplot2::aes_string("variables","alpha",group="L")) +
-      ggplot2::geom_col(aes(fill = L)) +
-      ggplot2::ggtitle(paste('Iteration', idx)) +
+      ggplot2::geom_col(ggplot2::aes_string(fill = "L")) +
+      ggplot2::ggtitle(paste("Iteration", idx)) +
       ggplot2::theme_classic()
   }
   k = min(nrow(model$alpha), L)
@@ -305,7 +305,7 @@ susie_plot_iteration = function(model, L, file_prefix, pos=NULL) {
     vars = 1:ncol(model$alpha)
   else
     vars = pos
-  pdf(paste0(file_prefix, '.pdf'), 8, 3)
+  pdf(paste0(file_prefix,".pdf"), 8, 3)
   if (is.null(model$trace)) {
     print(get_layer(model, k, model$niter, vars))
   } else {

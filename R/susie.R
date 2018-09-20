@@ -55,7 +55,7 @@
 #' plot(y,predict(res))
 #'
 #' @importFrom stats var
-#' @ImportFrom utils modifyList 
+#' @importFrom utils modifyList 
 #' 
 #' @export
 #' 
