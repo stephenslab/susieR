@@ -43,6 +43,22 @@ compute_Xty = function(X, y){
 #' @param M a L by p matrix
 #' @param X is a scaled dense matrix or an unscaled sparse matrix
 #' @return a L by n matrix
+#' @importFrom Matrix t
 compute_MXt = function(M, X){
-  return(t(apply(M, 1, function(b) compute_Xb(X, b))))
+  if(is.matrix(X)){
+    return(tcrossprod(M,X))
+  }else{
+    cm = attr(X, 'scaled:center')
+    csd = attr(X, 'scaled:scale')
+    L = dim(M)[1]
+    n = dim(X)[1]
+    return(as.matrix(M%*%(t(X)/csd) - as.numeric(tcrossprod(M, t(cm/csd))), L, n))
+  }
 }
+
+#compute_MXt = function(M, X){
+#  return(t(apply(M, 1, function(b) compute_Xb(X, b))))
+#}
+
+
+
