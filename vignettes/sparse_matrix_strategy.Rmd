@@ -17,11 +17,12 @@ knitr::opts_chunk$set(collapse = TRUE,comment = "#",fig.width = 4.5,
 
 ## Set up environment
 
-```{r, warning=FALSE}
+```{r, warning=FALSE, message=FALSE}
 library(susieR)
 library(Matrix)
 library(microbenchmark)
 library(ggplot2)
+library(cowplot)
 set.seed(1)
 ```
 
@@ -140,13 +141,13 @@ close.
 ```{r}
 res1 <- X.tilde %*% b
 res2 <- susieR:::compute_Xb(X,b)
-sum(res1-res2)
+max(abs(res1-res2))
 ```
 
 ```{r}
 compute_Xb_benchmark = microbenchmark(
-  use.normal.Xb <- X.tilde%*%b,
-  use.sparse.Xb <- susieR:::compute_Xb(X,b),
+  dense  = (use.normal.Xb <- X.tilde%*%b),
+  sparse = (use.sparse.Xb <- susieR:::compute_Xb(X,b)),
   times = 20
 )
 ```
@@ -171,8 +172,8 @@ sum(res3 - res4)
 
 ```{r}
 compute_Xty_benchmark = microbenchmark(
-  use.normal.Xty <- t(X.tilde)%*%y,
-  use.sparse.Xty <- susieR:::compute_Xty(X, y),
+  dense  = (use.normal.Xty <- t(X.tilde)%*%y),
+  sparse = (use.sparse.Xty <- susieR:::compute_Xty(X, y)),
   times = 20)
 ```
 
