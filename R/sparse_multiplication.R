@@ -50,9 +50,7 @@ compute_MXt = function(M, X){
   }else{
     cm = attr(X, 'scaled:center')
     csd = attr(X, 'scaled:scale')
-    L = dim(M)[1]
-    n = dim(X)[1]
-    return(as.matrix(M%*%(t(X)/csd) - as.numeric(tcrossprod(M, t(cm/csd))), L, n))
+    return(as.matrix(M%*%(t(X)/csd) - as.numeric(tcrossprod(M, t(cm/csd))), dim(M)[1], dim(X)[1]))
   }
 }
 
