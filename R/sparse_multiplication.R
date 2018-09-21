@@ -50,8 +50,6 @@ compute_MXt = function(M, X){
   }else{
     cm = attr(X, 'scaled:center')
     csd = attr(X, 'scaled:scale')
-    L = dim(M)[1]
-    n = dim(X)[1]
 
     # This should be the same as
     #
