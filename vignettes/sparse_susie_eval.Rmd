@@ -1,0 +1,77 @@
+---
+title: "Evaluation of sparse version of SuSiE"
+author: "Kaiqian Zhang"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{SuSiE with sparse matrix operations}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE,comment = "#",fig.width = 4.5,
+                      fig.height = 3,fig.align = "center",
+                      fig.cap = "&nbsp;",dpi = 120)
+```
+
+## Set up environment
+
+```{r, warning=FALSE}
+library(Matrix)
+library(susieR)
+set.seed(1)
+```
+
+## Overview
+
+In this vignette, we provide line profiles for revised version SuSiE,
+which allows for a sparse matrix structure. We compare speed
+performance when the form of the matrix `X` is dense and sparse.
+
+In this minimal example, we observe that given a large sparse matrix,
+if it is in the dense form, the speed is around `40%` slower than that
+in a sparse form.
+
+## Simulate data
+
+We randomly simulate a `n=1000` by `p=1000` dense matrix and a sparse
+matrix at sparsity $99\%$, i.e. $99\%$ entries are zeros.
+
+```{r}
+create_sparsity_mat = function(sparsity, n, p) {
+  nonzero          <- round(n*p*(1-sparsity))
+  nonzero.idx      <- sample(n*p, nonzero)
+  mat              <- numeric(n*p)
+  mat[nonzero.idx] <- 1
+  mat              <- matrix(mat, nrow=n, ncol=p)
+  return(mat)
+}
+```
+
+```{r}
+n <- 1000
+p <- 1000
+beta <- rep(0,p)
+beta[c(1,300,400,1000)] <- 10 
+X.dense  <- create_sparsity_mat(0.99,n,p)
+X.sparse <- as(X.dense,"dgCMatrix")
+y <- c(X.dense %*% beta + rnorm(n))
+```
+
+## `X` in a dense form
+
+```{r}
+susie.dense <- susie(X.dense,y)
+```
+
+## `X` in a sparse form
+
+```{r}
+susie.sparse <- susie(X.sparse,y)
+```
+
+## Further step
+
+We encourage people who are insterested in improving SuSiE can get
+insights from those line profiles provided.

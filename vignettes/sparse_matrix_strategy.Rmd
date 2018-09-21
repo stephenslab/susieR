@@ -4,7 +4,7 @@ author: "Kaiqian Zhang"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{minimal example}
+  %\VignetteIndexEntry{Sparse vs. dense matrix operations}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -141,11 +141,11 @@ close.
 ```{r}
 res1 <- X.tilde %*% b
 res2 <- susieR:::compute_Xb(X,b)
-max(abs(res1-res2))
+max(abs(res1 - res2))
 ```
 
 ```{r}
-compute_Xb_benchmark = microbenchmark(
+compute_Xb_benchmark <- microbenchmark(
   dense  = (use.normal.Xb <- X.tilde%*%b),
   sparse = (use.sparse.Xb <- susieR:::compute_Xb(X,b)),
   times = 20,unit = "s")
@@ -166,7 +166,7 @@ almost the same.
 ```{r}
 res3 <- t(X.tilde) %*% y
 res4 <- susieR:::compute_Xty(X,y)
-sum(res3 - res4)
+max(abs(res3 - res4))
 ```
 
 ```{r}
