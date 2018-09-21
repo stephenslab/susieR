@@ -52,13 +52,19 @@ compute_MXt = function(M, X){
     csd = attr(X, 'scaled:scale')
     L = dim(M)[1]
     n = dim(X)[1]
-    return(as.matrix(M%*%(t(X)/csd) - as.numeric(tcrossprod(M, t(cm/csd))), L, n))
+
+    # This should be the same as
+    #
+    #   t(apply(M, 1, function(b) compute_Xb(X, b))))
+    #
+    # as well as
+    #
+    #   M %*% (t(X)/csd) - drop(tcrossprod(M,t(cm/csd)))
+    #
+    # but should be more memory-efficient.
+    return(tcrossprod(M,sweep(X,2,csd,"/")) - tcrossprod(M, t(cm/csd)))
   }
 }
-
-#compute_MXt = function(M, X){
-#  return(t(apply(M, 1, function(b) compute_Xb(X, b))))
-#}
 
 
 
