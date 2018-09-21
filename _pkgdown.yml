@@ -20,4 +20,6 @@ articles:
     - mwe
     - finemapping
     - l0_initialization
-
+    - trend_filtering
+    - sparse_matrix_strategy
+    - sparse_susie_eval
