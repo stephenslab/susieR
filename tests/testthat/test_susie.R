@@ -11,13 +11,16 @@ test_that("susie agrees with version 0.3",{
   sparse.res = susie(X.sparse, y, tol=1E-2)
   
   dense.res2 = susie(X, y, standardize=TRUE, intercept = FALSE, tol=1E-2)
-  sparse.res2 = susie(X.sparse, y, standardize=TRUE, intercept = FALSE, tol=1E-2)
+  sparse.res2 = susie(X.sparse, y, standardize=TRUE, intercept = FALSE,
+      tol=1E-2)
   
   dense.res3 = susie(X, y, standardize=FALSE, intercept = TRUE, tol=1E-2)
-  sparse.res3 = susie(X.sparse, y, standardize=FALSE, intercept = TRUE, tol=1E-2)
+  sparse.res3 = susie(X.sparse, y, standardize=FALSE, intercept = TRUE,
+      tol=1E-2)
   
   dense.res4 = susie(X, y, standardize=FALSE, intercept = FALSE, tol=1E-2)
-  sparse.res4 = susie(X.sparse, y, standardize=FALSE, intercept = FALSE, tol=1E-2)
+  sparse.res4 = susie(X.sparse, y, standardize=FALSE, intercept = FALSE,
+      tol=1E-2)
   
   expect_equal_susie(sparse.res, original.res)
   expect_equal_susie(dense.res, original.res)

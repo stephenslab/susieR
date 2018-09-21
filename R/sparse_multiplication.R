@@ -60,7 +60,8 @@ compute_MXt = function(M, X){
     #   M %*% (t(X)/csd) - drop(tcrossprod(M,t(cm/csd)))
     #
     # but should be more memory-efficient.
-    return(tcrossprod(M,sweep(X,2,csd,"/")) - tcrossprod(M, t(cm/csd)))
+    return(as.matrix(tcrossprod(M,sweep(X,2,csd,"/")) -
+                     drop(tcrossprod(M, t(cm/csd)))))
   }
 }
 
