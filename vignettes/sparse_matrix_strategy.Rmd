@@ -148,8 +148,7 @@ max(abs(res1-res2))
 compute_Xb_benchmark = microbenchmark(
   dense  = (use.normal.Xb <- X.tilde%*%b),
   sparse = (use.sparse.Xb <- susieR:::compute_Xb(X,b)),
-  times = 20
-)
+  times = 20,unit = "s")
 ```
 
 Our sparse strategy demonstrates an obvious advantage over the normal
@@ -174,7 +173,7 @@ sum(res3 - res4)
 compute_Xty_benchmark = microbenchmark(
   dense  = (use.normal.Xty <- t(X.tilde)%*%y),
   sparse = (use.sparse.Xty <- susieR:::compute_Xty(X, y)),
-  times = 20)
+  times = 20,unit = "s")
 ```
 
 Our sparse strategy evidently has a better performance than the normal
