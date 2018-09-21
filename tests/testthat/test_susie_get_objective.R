@@ -1,7 +1,7 @@
 context("test_susie_get_objective.R")
 
 test_that("susie_get_objective agrees with version 0.3",{
-  original.res = load_data('objective_original_res.rds')
+  original.res = readRDS('objective_original_res.rds')
   simulate(sparse = TRUE)
   
   scaledX = safe_colScale(X)

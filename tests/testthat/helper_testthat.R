@@ -32,10 +32,6 @@ simulate = function(n=100, p=200, sparse=F) {
          warn.conflict=F)
 }
 
-load_data = function(filename) {
-  readRDS(system.file("datafiles",filename,package = "susieR"))
-}
-
 expect_equal_susie_update = function(new.res, original.res){
   new.res$alpha = as.matrix(new.res$alpha, p, 1)
   new.res$mu = as.matrix(new.res$mu, p, 1)

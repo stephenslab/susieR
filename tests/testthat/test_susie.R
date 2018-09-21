@@ -1,10 +1,10 @@
 context("test_susie.R")
 
 test_that("susie agrees with version 0.3",{
-  original.res = load_data('susiefit_original_res.rds')
-  original.res2 = load_data('susiefit_original_res2.rds')
-  original.res3 = load_data('susiefit_original_res3.rds')
-  original.res4 = load_data('susiefit_original_res4.rds')
+  original.res  = readRDS('susiefit_original_res.rds')
+  original.res2 = readRDS('susiefit_original_res2.rds')
+  original.res3 = readRDS('susiefit_original_res3.rds')
+  original.res4 = readRDS('susiefit_original_res4.rds')
   simulate(sparse=T)
   
   dense.res = susie(X, y, tol=1E-2)

@@ -1,7 +1,7 @@
 context("test_Eloglik.R")
 
 test_that("Eloglik agrees with version 0.3",{
-  original.res = load_data('Eloglik_original_res.rds')
+  original.res = readRDS('Eloglik_original_res.rds')
   simulate(sparse = TRUE)
   
   scaledX = safe_colScale(X)
