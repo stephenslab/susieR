@@ -4,16 +4,16 @@ author: "Matthew Stephens"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{varbvs leukemia demo}
+  %\VignetteIndexEntry{Trend filtering demo}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, eval=FALSE)
+knitr::opts_chunk$set(collapse = TRUE,comment = "#",fig.width = 4.5,
+                      fig.height = 3,fig.align = "center",
+                      fig.cap = "&nbsp;",dpi = 120)
 ```
-
-# Trend filtering
 
 This is an example of using susie to do trend filtering.
 
@@ -28,56 +28,54 @@ for(i in 1:(n-1)){
   }
 }
 delta = delta[,-1] # remove intercept as included by default
-#delta = t(genlasso::getDtf(n,0))
-#delta=cbind(rep(1,n),delta)
 beta = c(rep(0,100),rep(1,100),rep(3,100),rep(-2,100),rep(0,600))
 y = beta + rnorm(n)
 s = susie(delta,y,L=10)
 ```
 
 Plot results: the truth is green, and susie estimate is red.
+
 ```{r}
-plot(y)
+plot(y,pch = 20)
 lines(predict(s),col=2,lwd=3)
 lines(beta,col=3,lwd=3)
 s$sigma2
 ```
 
-
 Try something harder where the beta increases linearly:
+
 ```{r}
 set.seed(1)
 beta = seq(0,2,length=1000)
 y = beta + rnorm(n)
 s = susie(delta,y,L=10)
-plot(y)
+plot(y,pch = 20)
 lines(predict(s),col=2,lwd=3)
 lines(beta,col=3,lwd=3)
 ```
 
-Compare with the lasso based solution
-```{r}
-library("genlasso")
+Compare with the lasso based solution. (This will require installation
+of the genlasso package.)
+
+```{r, eval=FALSE}
+library(genlasso)
 y.tf = trendfilter(y,ord=0)
 y.tf.cv = cv.trendfilter(y.tf)
 plot(y)
 lines(predict(s),col=2,lwd=3)
 lines(beta,col=3,lwd=3)
 lines(y.tf$fit[,which(y.tf$lambda==y.tf.cv$lambda.min)],col=4,lwd=3)
-#plot(y.tf,lambda=y.tf.cv$lambda.min,col=2)
 ```
 
 What happens if we have trend plus sudden change.
 
-```{r}
+```{r, eval=FALSE}
 beta = beta + c(rep(0,500),rep(2,500))
 y = beta + rnorm(n)
 s = susie(delta,y,L=10)
 plot(y)
 lines(predict(s),col=2,lwd=3)
 lines(beta,col=3,lwd=3)
-
-# trend
 y.tf = trendfilter(y,ord=0)
 y.tf.cv = cv.trendfilter(y.tf)
 lines(y.tf$fit[,which(y.tf$lambda==y.tf.cv$lambda.min)],col=4,lwd=3)
