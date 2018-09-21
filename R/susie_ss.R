@@ -19,7 +19,7 @@
 #' @param estimate_prior_variance indicates whether to estimate prior (currently not recommended as not working as well)
 #' @param max_iter maximum number of iterations to perform
 #' @param s_init a previous susie fit with which to initialize
-#' @param intercept a value to assign to the intercept (since the intercept cannot be estimated from centered summary data). This
+#' @param intercept_value a value to assign to the intercept (since the intercept cannot be estimated from centered summary data). This
 #' value will be used by coef.susie() to assign an intercept value, for consistency with the non-summary-statistic version of this function \code{susie}.
 #' Set to NULL if you want coef.susie() not to include an intercept term (and so only return a p vector).
 #' @param tol convergence tolerance based on alpha
@@ -43,7 +43,7 @@
 #' res =susie_ss(XtX = crossprod(X),Xty= c(y %*% X), var_y=1, n=1000)
 #' coef(res)
 #' @export
-susie_ss = function(XtX,Xty,var_y = 1, n, L=10,scaled_prior_variance=0.2,residual_variance=NULL,estimate_prior_variance = FALSE, max_iter=100,s_init = NULL, verbose=FALSE, intercept=0, tol=1e-4){
+susie_ss = function(XtX,Xty,var_y = 1, n, L=10,scaled_prior_variance=0.2,residual_variance=NULL,estimate_prior_variance = FALSE, max_iter=100,s_init = NULL, verbose=FALSE, intercept_value=0, tol=1e-4){
   # Check input XtX.
   if (!(is.double(XtX) & is.matrix(XtX)) & !inherits(XtX,"CsparseMatrix"))
     stop("Input X must be a double-precision matrix, or a sparse matrix.")
@@ -102,7 +102,7 @@ susie_ss = function(XtX,Xty,var_y = 1, n, L=10,scaled_prior_variance=0.2,residua
   s$elbo <- elbo
   s$niter <- i
 
-  s$intercept = intercept
+  s$intercept = intercept_value
   s$Xtfitted = s$XtXr
 
   s$X_column_scale_factors = 1
