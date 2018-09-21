@@ -73,19 +73,20 @@
 <div id="the-data-set" class="section level2">
 <h2 class="hasAnchor">
 <a href="#the-data-set" class="anchor"></a>The data-set</h2>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dat =<span class="st"> </span><span class="kw">readRDS</span>(<span class="kw">system.file</span>(<span class="st">"datafiles"</span>,<span class="st">"N3finemapping.rds"</span>,<span class="dt">package =</span> <span class="st">"susieR"</span>))
-<span class="kw">names</span>(dat)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">finemap &lt;-
+<span class="st">  </span><span class="kw">readRDS</span>(<span class="kw">system.file</span>(<span class="st">"datafiles"</span>,<span class="st">"N3finemapping.rds"</span>,<span class="dt">package =</span> <span class="st">"susieR"</span>))
+<span class="kw">names</span>(finemap)
 <span class="co"># [1] "data"     "sumstats"</span></code></pre></div>
 <p><code>data</code> contains regression data-set <span class="math inline">\(X\)</span> and <span class="math inline">\(y\)</span>, along with some other relevant properties in the context of genetic studies. It also contains the “true” regression coefficent the data is simulated from.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">names</span>(dat<span class="op">$</span>data)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">names</span>(finemap<span class="op">$</span>data)
 <span class="co"># [1] "X"                 "chrom"             "pos"              </span>
 <span class="co"># [4] "true_coef"         "residual_variance" "Y"                </span>
 <span class="co"># [7] "allele_freq"       "V"</span></code></pre></div>
 <p>Notice that we’ve simulated 2 sets of <span class="math inline">\(Y\)</span> as 2 simulation replicates. Here we’ll focus on the first data-set.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">dim</span>(dat<span class="op">$</span>data<span class="op">$</span>Y)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">dim</span>(finemap<span class="op">$</span>data<span class="op">$</span>Y)
 <span class="co"># [1] 574   2</span></code></pre></div>
 <p>Here are the 3 “true” signals in the first data-set:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">b =<span class="st"> </span>dat<span class="op">$</span>data<span class="op">$</span>true_coef[,<span class="dv">1</span>]
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">b &lt;-<span class="st"> </span>finemap<span class="op">$</span>data<span class="op">$</span>true_coef[,<span class="dv">1</span>]
 <span class="kw">plot</span>(b, <span class="dt">pch=</span><span class="dv">16</span>, <span class="dt">ylab=</span><span class="st">'effect size'</span>)</code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="finemapping_files/figure-html/unnamed-chunk-5-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
@@ -100,9 +101,9 @@
 <h2 class="hasAnchor">
 <a href="#simple-regression-summary-statistics" class="anchor"></a>Simple regression summary statistics</h2>
 <p>The data-set additionally provides summary statistics for fitting univariate simple regression variable by variable. The results are <span class="math inline">\(\hat{\beta}\)</span> and <span class="math inline">\(SE(\hat{\beta})\)</span> from which z-scores can be derived. Again we focus only on results from the first data-set:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">z_scores =<span class="st"> </span>dat<span class="op">$</span>sumstats[<span class="dv">1</span>,,] <span class="op">/</span><span class="st"> </span>dat<span class="op">$</span>sumstats[<span class="dv">2</span>,,]
-z_scores =<span class="st"> </span>z_scores[,<span class="dv">1</span>]
-<span class="kw"><a href="../reference/susie_plot.html">susie_plot</a></span>(z_scores, <span class="dt">y=</span><span class="st">'z'</span>, <span class="dt">b=</span>b)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">z_scores &lt;-<span class="st"> </span><span class="kw">with</span>(finemap,sumstats[<span class="dv">1</span>,,] <span class="op">/</span><span class="st"> </span>sumstats[<span class="dv">2</span>,,])
+z_scores &lt;-<span class="st"> </span>z_scores[,<span class="dv">1</span>]
+<span class="kw"><a href="../reference/susie_plot.html">susie_plot</a></span>(z_scores, <span class="dt">y =</span> <span class="st">"z"</span>, <span class="dt">b=</span>b)</code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="finemapping_files/figure-html/unnamed-chunk-7-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
  
@@ -115,14 +116,31 @@ z_scores =<span class="st"> </span>z_scores[,<span class="dv">1</span>]
 </h2>
 <p>For starters, we assume there are at most 5 causal variables, i.e., set <code>L=5</code>, although SuSiE is robust to the choice of <code>L</code>.</p>
 <p>We set SuSiE prior variance to 0.1, and update residual variance in the variational algorithm that fits SuSiE model. The <code>susieR</code> function call is:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fitted =<span class="st"> </span><span class="kw"><a href="../reference/susie.html">susie</a></span>(dat<span class="op">$</span>data<span class="op">$</span>X, dat<span class="op">$</span>data<span class="op">$</span>Y[,<span class="dv">1</span>],
-               <span class="dt">L=</span><span class="dv">5</span>,
-               <span class="dt">estimate_residual_variance =</span> <span class="ot">TRUE</span>, 
-               <span class="dt">scaled_prior_variance =</span> <span class="fl">0.1</span>)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fitted &lt;-<span class="st"> </span><span class="kw"><a href="../reference/susie.html">susie</a></span>(finemap<span class="op">$</span>data<span class="op">$</span>X, finemap<span class="op">$</span>data<span class="op">$</span>Y[,<span class="dv">1</span>],
+                <span class="dt">L=</span><span class="dv">5</span>,
+                <span class="dt">estimate_residual_variance =</span> <span class="ot">TRUE</span>, 
+                <span class="dt">scaled_prior_variance =</span> <span class="fl">0.1</span>,
+                <span class="dt">verbose =</span> <span class="ot">TRUE</span>)
+<span class="co"># [1] "objective:-1384.57253292456"</span>
+<span class="co"># [1] "objective:-1381.26163424408"</span>
+<span class="co"># [1] "objective:-1380.75139979919"</span>
+<span class="co"># [1] "objective:-1380.74854534135"</span>
+<span class="co"># [1] "objective:-1380.6759533616"</span>
+<span class="co"># [1] "objective:-1380.67587727196"</span>
+<span class="co"># [1] "objective:-1377.04794661565"</span>
+<span class="co"># [1] "objective:-1376.93001122693"</span>
+<span class="co"># [1] "objective:-1373.29122910603"</span>
+<span class="co"># [1] "objective:-1373.25708807704"</span>
+<span class="co"># [1] "objective:-1373.20171636119"</span>
+<span class="co"># [1] "objective:-1373.20167955938"</span>
+<span class="co"># [1] "objective:-1373.20062377817"</span>
+<span class="co"># [1] "objective:-1373.20062375158"</span>
+<span class="co"># [1] "objective:-1373.20061073365"</span>
+<span class="co"># [1] "objective:-1373.20061072967"</span></code></pre></div>
 <div id="confidence-sets" class="section level3">
 <h3 class="hasAnchor">
 <a href="#confidence-sets" class="anchor"></a>Confidence sets</h3>
-<p>By default we output 95% confidence set:</p>
+<p>By default, we output 95% confidence set:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(fitted<span class="op">$</span>sets)
 <span class="co"># $cs</span>
 <span class="co"># $cs$L3</span>
@@ -149,10 +167,10 @@ z_scores =<span class="st"> </span>z_scores[,<span class="dv">1</span>]
 <span class="co"># [1] 0.95</span></code></pre></div>
 <p>The 3 causal signals have been captured by the 3 CS reported here. The 3rd CS contains many variables, including the true causal variable <code>403</code>. The minimum absolute correlation is 0.86.</p>
 <p>If we use the default 90% coverage for confidence sets, we still capture the 3 signals, but “purity” of the 3rd CS is now 0.91 and size of the CS is also a bit smaller.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">sets =<span class="st"> </span><span class="kw"><a href="../reference/susie_get_CS.html">susie_get_CS</a></span>(fitted,
-                    <span class="dt">X =</span> dat<span class="op">$</span>data<span class="op">$</span>X,
-                    <span class="dt">coverage =</span> <span class="fl">0.9</span>,
-                    <span class="dt">min_abs_corr =</span> <span class="fl">0.1</span>)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">sets &lt;-<span class="st"> </span><span class="kw"><a href="../reference/susie_get_CS.html">susie_get_CS</a></span>(fitted,
+                     <span class="dt">X =</span> finemap<span class="op">$</span>data<span class="op">$</span>X,
+                     <span class="dt">coverage =</span> <span class="fl">0.9</span>,
+                     <span class="dt">min_abs_corr =</span> <span class="fl">0.1</span>)</code></pre></div>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(sets)
 <span class="co"># $cs</span>
 <span class="co"># $cs$L3</span>
@@ -178,57 +196,54 @@ z_scores =<span class="st"> </span>z_scores[,<span class="dv">1</span>]
 <span class="co"># $coverage</span>
 <span class="co"># [1] 0.9</span></code></pre></div>
 </div>
-<div id="posterior-inclusion-probability" class="section level3">
+<div id="posterior-inclusion-probabilities" class="section level3">
 <h3 class="hasAnchor">
-<a href="#posterior-inclusion-probability" class="anchor"></a>Posterior inclusion probability</h3>
+<a href="#posterior-inclusion-probabilities" class="anchor"></a>Posterior inclusion probabilities</h3>
 <p>Previously we’ve determined that summing over 3 single effect regression models is approperate for our application. Here we summarize the variable selection results by posterior inclusion probability (PIP):</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/susie_plot.html">susie_plot</a></span>(fitted, <span class="dt">y=</span><span class="st">'PIP'</span>, <span class="dt">b=</span>b)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/susie_plot.html">susie_plot</a></span>(fitted, <span class="dt">y=</span><span class="st">"PIP"</span>, <span class="dt">b=</span>b)</code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="finemapping_files/figure-html/unnamed-chunk-12-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
  
 </p>
 </div>
 <p>The true causal variables are colored red. The 95% CS identified are circled in different colors. Of interest is the cluster around position 400. The true signal is 403 but apparently it does not have the highest PIP. To compare ranking of PIP and original z-score in that CS:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">z3 =<span class="st"> </span><span class="kw">cbind</span>(fitted<span class="op">$</span>sets<span class="op">$</span>cs[[<span class="dv">3</span>]], z_scores[fitted<span class="op">$</span>sets<span class="op">$</span>cs[[<span class="dv">3</span>]]],
-           fitted<span class="op">$</span>pip[sets<span class="op">$</span>cs[[<span class="dv">3</span>]]])
-<span class="co"># Warning in cbind(fitted$sets$cs[[3]], z_scores[fitted$sets$cs[[3]]], fitted</span>
-<span class="co"># $pip[sets$cs[[3]]]): number of rows of result is not a multiple of vector</span>
-<span class="co"># length (arg 3)</span>
-<span class="kw">colnames</span>(z3) =<span class="st"> </span><span class="kw">c</span>(<span class="st">'position'</span>, <span class="st">'z-score'</span>, <span class="st">'PIP'</span>)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">i  &lt;-<span class="st"> </span>fitted<span class="op">$</span>sets<span class="op">$</span>cs[[<span class="dv">3</span>]]
+z3 &lt;-<span class="st"> </span><span class="kw">cbind</span>(i,z_scores[i],fitted<span class="op">$</span>pip[i])
+<span class="kw">colnames</span>(z3) &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">'position'</span>, <span class="st">'z-score'</span>, <span class="st">'PIP'</span>)
 z3[<span class="kw">order</span>(z3[,<span class="dv">2</span>], <span class="dt">decreasing =</span> <span class="ot">TRUE</span>),]
-<span class="co">#       position  z-score        PIP</span>
-<span class="co">#  [1,]      396 5.189811 0.02155638</span>
-<span class="co">#  [2,]      381 5.164794 0.05451671</span>
-<span class="co">#  [3,]      386 5.164794 0.04081718</span>
-<span class="co">#  [4,]      379 5.077563 0.05451671</span>
-<span class="co">#  [5,]      391 5.068388 0.05669253</span>
-<span class="co">#  [6,]      383 5.057053 0.09412153</span>
-<span class="co">#  [7,]      384 5.057053 0.04221480</span>
-<span class="co">#  [8,]      389 5.052519 0.01980630</span>
-<span class="co">#  [9,]      405 5.039617 0.03075121</span>
-<span class="co"># [10,]      403 5.035949 0.04528843</span>
-<span class="co"># [11,]      387 5.013526 0.04320035</span>
-<span class="co"># [12,]      388 4.997955 0.05738339</span>
-<span class="co"># [13,]      408 4.994865 0.09412153</span>
-<span class="co"># [14,]      404 4.954407 0.02349161</span>
-<span class="co"># [15,]      374 4.948060 0.09412153</span>
-<span class="co"># [16,]      373 4.934410 0.05403496</span>
-<span class="co"># [17,]      362 4.894243 0.02349161</span>
-<span class="co"># [18,]      399 4.860780 0.03376318</span>
-<span class="co"># [19,]      392 4.856384 0.02636546</span>
-<span class="co"># [20,]      407 4.849285 0.05403496</span>
-<span class="co"># [21,]      400 4.827361 0.04883430</span>
-<span class="co"># [22,]      398 4.751205 0.03302799</span>
-<span class="co"># [23,]      401 4.723184 0.01535169</span>
-<span class="co"># [24,]      397 4.716886 0.01493341</span>
-<span class="co"># [25,]      415 4.663208 0.05451671</span>
-<span class="co"># [26,]      372 4.581560 0.03075121</span></code></pre></div>
+<span class="co">#       position  z-score         PIP</span>
+<span class="co">#  [1,]      396 5.189811 0.056692525</span>
+<span class="co">#  [2,]      381 5.164794 0.094121534</span>
+<span class="co">#  [3,]      386 5.164794 0.094121534</span>
+<span class="co">#  [4,]      379 5.077563 0.054034963</span>
+<span class="co">#  [5,]      391 5.068388 0.057383386</span>
+<span class="co">#  [6,]      383 5.057053 0.054516706</span>
+<span class="co">#  [7,]      384 5.057053 0.054516706</span>
+<span class="co">#  [8,]      389 5.052519 0.043200346</span>
+<span class="co">#  [9,]      405 5.039617 0.048834296</span>
+<span class="co"># [10,]      403 5.035949 0.033027989</span>
+<span class="co"># [11,]      387 5.013526 0.042214804</span>
+<span class="co"># [12,]      388 4.997955 0.040817179</span>
+<span class="co"># [13,]      408 4.994865 0.045288432</span>
+<span class="co"># [14,]      404 4.954407 0.033763182</span>
+<span class="co"># [15,]      374 4.948060 0.030751207</span>
+<span class="co"># [16,]      373 4.934410 0.023491609</span>
+<span class="co"># [17,]      362 4.894243 0.010210017</span>
+<span class="co"># [18,]      399 4.860780 0.026365457</span>
+<span class="co"># [19,]      392 4.856384 0.019806295</span>
+<span class="co"># [20,]      407 4.849285 0.015351685</span>
+<span class="co"># [21,]      400 4.827361 0.021556385</span>
+<span class="co"># [22,]      398 4.751205 0.012876258</span>
+<span class="co"># [23,]      401 4.723184 0.014933407</span>
+<span class="co"># [24,]      397 4.716886 0.008305739</span>
+<span class="co"># [25,]      415 4.663208 0.009243615</span>
+<span class="co"># [26,]      372 4.581560 0.005691893</span></code></pre></div>
 </div>
 <div id="choice-of-priors" class="section level3">
 <h3 class="hasAnchor">
 <a href="#choice-of-priors" class="anchor"></a>Choice of priors</h3>
 <p>We found that SuSiE is generally robust to choice of priors. Here we set scaled prior variance (percentage of variance explained) to 0.2, and compare with previous results:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fitted =<span class="st"> </span><span class="kw"><a href="../reference/susie.html">susie</a></span>(dat<span class="op">$</span>data<span class="op">$</span>X, dat<span class="op">$</span>data<span class="op">$</span>Y[,<span class="dv">1</span>],
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fitted =<span class="st"> </span><span class="kw"><a href="../reference/susie.html">susie</a></span>(finemap<span class="op">$</span>data<span class="op">$</span>X, finemap<span class="op">$</span>data<span class="op">$</span>Y[,<span class="dv">1</span>],
                <span class="dt">L=</span><span class="dv">5</span>,
                <span class="dt">estimate_residual_variance =</span> <span class="ot">TRUE</span>, 
                <span class="dt">scaled_prior_variance =</span> <span class="fl">0.2</span>)
@@ -261,7 +276,7 @@ z3[<span class="kw">order</span>(z3[,<span class="dv">2</span>], <span class="dt
 <span class="co"># [1] stats     graphics  grDevices utils     datasets  methods   base     </span>
 <span class="co"># </span>
 <span class="co"># other attached packages:</span>
-<span class="co"># [1] susieR_0.4.19</span>
+<span class="co"># [1] susieR_0.4.20</span>
 <span class="co"># </span>
 <span class="co"># loaded via a namespace (and not attached):</span>
 <span class="co">#  [1] Rcpp_0.12.18       matrixStats_0.54.0 lattice_0.20-35   </span>
