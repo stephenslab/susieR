@@ -7,7 +7,7 @@
 susie_ss(XtX, Xty, var_y = 1, n, L = 10, scaled_prior_variance = 0.2,
   residual_variance = NULL, estimate_prior_variance = FALSE,
   max_iter = 100, s_init = NULL, verbose = FALSE,
-  intercept_value = 0, tol = 0.0001)
+  intercept_value = 0, tol = 1e-04)
 }
 \arguments{
 \item{XtX}{a p by p matrix, X'X, where columns of X are centered to have mean 0}
@@ -68,8 +68,7 @@ beta = rep(0,p)
 beta[1:4] = 1
 X = matrix(rnorm(n*p),nrow=n,ncol=p)
 y = c(X \%*\% beta + rnorm(n))
-X = scale(X,center=TRUE, scale=TRUE)
-y = (y - mean(y))/sd(y)
-res =susie_ss(XtX = crossprod(X),Xty= c(y \%*\% X), var_y=1, n=1000)
+input_ss = compute_ss(X, y, standardize = TRUE)
+res =susie_ss(XtX = input_ss$XtX,Xty= input_ss$Xty, var_y=input_ss$vary, n=input_ss$n)
 coef(res)
 }
