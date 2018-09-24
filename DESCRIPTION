@@ -21,6 +21,7 @@ NeedsCompilation: no
 RoxygenNote: 6.1.0.9000
 Depends: R (>= 3.0.0)
 Imports:
+    methods,
     graphics,
     grDevices,
     stats,

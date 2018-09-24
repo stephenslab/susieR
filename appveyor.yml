@@ -15,7 +15,7 @@ environment:
   global:
     _R_CHECK_FORCE_SUGGESTS_: true
     USE_RTOOLS: yes
-    WARNINGS_ARE_ERRORS: false
+    WARNINGS_ARE_ERRORS: 
     R_VERSION: release
     R_ARCH: x64
   
