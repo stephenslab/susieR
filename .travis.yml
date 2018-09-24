@@ -3,13 +3,14 @@ cache: packages
 latex: false
 sudo: false
 warnings_are_errors: false
+r_build_args: --no-build-vignettes
 
 r_packages:
   - covr
   
 env:
   global:
-    - _R_CHECK_FORCE_SUGGESTS_: true
+    - _R_CHECK_FORCE_SUGGESTS_: false
 
 after_success:
   - Rscript -e 'covr::codecov()'
