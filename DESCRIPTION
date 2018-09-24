@@ -34,5 +34,6 @@ Suggests:
     testthat,
     microbenchmark,
     knitr,
+    rmarkdown,
     L0Learn
 VignetteBuilder: knitr
