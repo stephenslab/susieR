@@ -1,0 +1,43 @@
+language: r
+cache: packages
+latex: false
+sudo: false
+warnings_are_errors: true
+
+r_packages:
+  - covr
+  
+env:
+  global:
+    - _R_CHECK_FORCE_SUGGESTS_: true
+
+after_success:
+  - Rscript -e 'covr::codecov()'
+
+before_install:
+  - mkdir -p ~/.R
+  - echo "CC=gcc-4.9 -std=c11" >> ~/.R/Makevars
+  - echo "CXX=g++-4.9" >> ~/.R/Makevars
+  - echo "CXX11=g++-4.9" >> ~/.R/Makevars
+  - echo "F77=gfortran-4.9" >> ~/.R/Makevars
+  - echo "FC=gfortran-4.9" >> ~/.R/Makevars
+  - cat ~/.R/Makevars
+
+branches:
+  only:
+    - master
+
+  include:
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: ['gcc-4.9', 'g++-4.9', 'gfortran-4.9']
+      env:
+        - COMPILER="g++-4.9 -std=c11"
+        - CC="gcc-4.9 -std=c11"
+        - CXX="g++-4.9"
+        - F77="gfortran-4.9"
+        - FC="gfortran-4.9"
+    
