@@ -2,7 +2,7 @@ language: r
 cache: packages
 latex: false
 sudo: false
-warnings_are_errors: true
+warnings_are_errors: false
 
 r_packages:
   - covr
