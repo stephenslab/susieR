@@ -4,7 +4,8 @@ Package: susieR
 Title: Fit Sum of Single Effects Linear Regression Model
 Description: Fits a sparse regression model with up to L effects,
     where L is user-specified. The fitting procedure uses a fast new
-    variational Bayes approach (unpublished data). broken
+    variational Bayes approach (unpublished data).
+    broken
 Date: 2018-09-22
 Version: 0.4.25
 Authors@R: c(person("Matthew","Stephens",role=c("aut","cre"),
