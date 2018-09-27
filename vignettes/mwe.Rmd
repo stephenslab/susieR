@@ -16,7 +16,7 @@ knitr::opts_chunk$set(collapse = TRUE,comment = "#",fig.width = 4.5,
 ```
 
 In this short vignette, we fit a sparse linear regression model with
-up to $L$ non-zero effects. Generally, there is no haarm in
+up to $L$ non-zero effects. Generally, there is no harm in
 over-stating $L$ (that is, the method is pretty robust to overfitting)
 except that computation will grow as $L$ grows.
 
