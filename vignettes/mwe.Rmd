@@ -15,10 +15,10 @@ knitr::opts_chunk$set(collapse = TRUE,comment = "#",fig.width = 4.5,
                       fig.cap = "&nbsp;",dpi = 120)
 ```
 
-This fits a sparse linear regression model with up to $L$ non-zero
-effects. Generally there is no haarm in over-stating $L$ (that is, the
-method is pretty robust to overfitting) except that computation will
-grow as $L$ grows.
+In this short vignette, we fit a sparse linear regression model with
+up to $L > 0$ non-zero effects. Generally, there is no harm in
+over-stating $L$ (that is, the method is pretty robust to overfitting),
+except that computation will grow as $L$ grows.
 
 Here is a minimal example:
 

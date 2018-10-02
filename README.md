@@ -1,5 +1,11 @@
 # susieR
 
+
+[![Travis Build Status](https://travis-ci.org/stephenslab/susieR.svg?branch=master)](https://travis-ci.org/stephenslab/susieR)
+[![Appveyor Build status](https://ci.appveyor.com/api/projects/status/tcgeqxd8q8krija6?svg=true)](https://ci.appveyor.com/project/pcarbo/susier)
+[![codecov](https://codecov.io/gh/stephenslab/susieR/branch/master/graph/badge.svg)](https://codecov.io/gh/stephenslab/susieR)
+
+
 An R package for "sum of single effects" (SuSiE) regression.
 
 SuSiE's single effect model is based on simple univariate Bayesian

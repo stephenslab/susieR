@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# This script will be executed every time you run "git commit". It
+# will report an error if the package version has not changed.
+#
+# To use this script, copy it to the .git/hooks directory of your
+# local repository.
+#
+if git diff --staged DESCRIPTION | grep -q "Version:"; then
+  exit 0
+else
+  echo "Error: can't commit unless package version has changed."
+  echo "Before commiting, modify \"Version:\" line in DESCRIPTION."
+  exit 1
+fi

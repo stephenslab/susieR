@@ -1,4 +1,6 @@
 ^docs$
+^appveyor\.yml$
 ^_pkgdown\.yml$
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^\.travis\.yml$

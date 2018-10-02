@@ -71,8 +71,8 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
   # Check input X.
   if (!(is.double(X) & is.matrix(X)) & !inherits(X,"CsparseMatrix"))
     stop("Input X must be a double-precision matrix, or a sparse matrix.")
-  if (!missing(null_weight)) {
-    if (null_weight<=0 || null_weight>=1)
+  if (!is.null(null_weight) && null_weight != 0) {
+    if (null_weight<0 || null_weight>=1)
       stop('Null weight must be between 0 and 1')
     if (missing(prior_weights))
       prior_weights = c(rep(1/ncol(X)*(1-null_weight), ncol(X)), null_weight)
@@ -144,7 +144,7 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
   }
   ## report z-scores from univariate regression
   if (compute_univariate_zscore) {
-    if (!missing(null_weight)) {
+    if (!is.null(null_weight) && null_weight != 0) {
       X = X[,1:(ncol(X)-1)]
     }
     s$z = calc_z(X,Y,centered=intercept)

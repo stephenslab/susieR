@@ -6,8 +6,8 @@
 \usage{
 susie_ss(XtX, Xty, var_y = 1, n, L = 10, scaled_prior_variance = 0.2,
   residual_variance = NULL, estimate_prior_variance = FALSE,
-  max_iter = 100, s_init = NULL, verbose = FALSE, intercept = 0,
-  tol = 0.0001)
+  max_iter = 100, s_init = NULL, verbose = FALSE,
+  intercept_value = 0, tol = 0.0001)
 }
 \arguments{
 \item{XtX}{a p by p matrix, X'X, where columns of X are centered to have mean 0}
@@ -30,7 +30,7 @@ susie_ss(XtX, Xty, var_y = 1, n, L = 10, scaled_prior_variance = 0.2,
 
 \item{s_init}{a previous susie fit with which to initialize}
 
-\item{intercept}{a value to assign to the intercept (since the intercept cannot be estimated from centered summary data). This
+\item{intercept_value}{a value to assign to the intercept (since the intercept cannot be estimated from centered summary data). This
 value will be used by coef.susie() to assign an intercept value, for consistency with the non-summary-statistic version of this function \code{susie}.
 Set to NULL if you want coef.susie() not to include an intercept term (and so only return a p vector).}
 
@@ -62,14 +62,14 @@ equally likely to be non-zero. The prior on the non-zero element is N(0,var=scal
 }
 \examples{
 set.seed(1)
-n = 1000
-p = 1000
-beta = rep(0,p)
-beta[1:4] = 1
-X = matrix(rnorm(n*p),nrow=n,ncol=p)
-y = c(X \%*\% beta + rnorm(n))
-X = scale(X,center=TRUE, scale=TRUE)
-y = (y - mean(y))/sd(y)
-res =susie_ss(XtX = crossprod(X),Xty= c(y \%*\% X), var_y=1, n=1000)
+n    <- 1000
+p    <- 1000
+beta <- rep(0,p)
+beta[1:4] <- 1
+X        <- matrix(rnorm(n*p),nrow=n,ncol=p)
+y        <- c(X \%*\% beta + rnorm(n))
+input_ss <- compute_ss(X,y,standardize = TRUE)
+res      <- with(input_ss,susie_ss(XtX,Xty,vary,n))
 coef(res)
+
 }
