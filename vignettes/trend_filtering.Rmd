@@ -15,68 +15,114 @@ knitr::opts_chunk$set(collapse = TRUE,comment = "#",fig.width = 4.5,
                       fig.cap = "&nbsp;",dpi = 120)
 ```
 
-This is an example of using susie to do trend filtering.
+# Introduction
 
+Although we developed SuSiE primarily with the goal
+of performing variable selection
+in highly sparse settings -- and, in particular, for genetic fine-mapping --
+the approach also has considerable potential
+for application to other large-scale regression problems. Here
+we briefly illustrate this potential by applying it to a non-parametric
+regression problem that at first sight seems to be ill-suited to our approach. In particular, it does not involve
+strict sparsity, and the underlying correlation 
+structure of the explanatory variables
+is very different from the ``blocky" covariance structure of genetic data
+that SuSiE was designed for. Nonetheless, we will see that SuSiE performs
+well here despite this (partly due to its ability to capture non-sparse signals via Bayesian Model Averaging).
+
+Specifically, consider the non-parametric regression:
+$$y_t = \mu_t + e_t \quad t=1,\dots,T$$
+where the goal is to estimate the underlying mean, $\mu_t$, under the assumption that it varies smoothly (or, more precisely, in a spatially-structured way) with $t$.
+One very simple way to capture spatial structure in $\mu$ is to model it
+as a (sparse) linear combination of step functions:
+$$\mu = Xb$$ 
+where the $j$th column of $X$ is the step function with a step at $j$ ($j = 1,\dots,(T-1)$); that is $x_{tj}=0$ for $t<=j$ and 1 for $t>j$.
+The $j$th element of $b$ therefore determines the change in the mean $|\mu_j-\mu_{j+1}|$, and an assumption that $b$ is sparse encapsulates an
+assumption that $\mu$ is spatially structured (indeed, piecewise constant).
+
+This very simple approach is
+essentially 0th-order trend filtering (https://projecteuclid.org/euclid.aos/1395234979).
+Note that higher-order
+trend filtering can be similarly implemented using different basis functions; here we use 0th order only for simplicity.
+
+
+# Examples
+
+Here we apply SuSiE to perform 0th order trend filtering in some simple simulated examples. 
+
+First we set up $X$ as the matrix with step functions in the columns:
+```{r}
+n=1000
+X = matrix(0,nrow=n,ncol=n-1)
+for(j in 1:(n-1)){
+  for(i in (j+1):n){
+    X[i,j] = 1
+  }
+}
+```
+
+Now simulate some data where $\mu$ is a step function with four steps. Here the regression is truly sparse and susie should do well.
 ```{r}
 library(susieR)
 set.seed(1)
-n=1000
-delta = matrix(1,nrow=n,ncol=n)
-for(i in 1:(n-1)){
-  for(j in (i+1):n){
-    delta[i,j] = -1
-  }
-}
-delta = delta[,-1] # remove intercept as included by default
-beta = c(rep(0,100),rep(1,100),rep(3,100),rep(-2,100),rep(0,600))
-y = beta + rnorm(n)
-s = susie(delta,y,L=10)
+mu = c(rep(0,100),rep(1,100),rep(3,100),rep(-2,100),rep(0,600))
+y = mu + rnorm(n)
+s = susie(X,y,L=10)
 ```
 
-Plot results: the truth is green, and susie estimate is red.
-
+Plot results: the truth is black, and susie estimate is red.
 ```{r}
-plot(y,pch = 20)
-lines(predict(s),col=2,lwd=3)
-lines(beta,col=3,lwd=3)
+plot(y,pch=".")
+lines(mu,col=1,lwd=3)
+lines(predict(s),col=2,lwd=2)
 s$sigma2
 ```
 
-Try something harder where the beta increases linearly:
+In the next example mu increases linearly. Thus we are approximating a linear function by step functions. Here the truth is not trully ``sparse", so we might expect performance to be poor, but it is not too bad.
 
 ```{r}
 set.seed(1)
-beta = seq(0,2,length=1000)
-y = beta + rnorm(n)
-s = susie(delta,y,L=10)
-plot(y,pch = 20)
-lines(predict(s),col=2,lwd=3)
-lines(beta,col=3,lwd=3)
+mu = seq(0,4,length=1000)
+y = mu + rnorm(n)
+s = susie(X,y,L=10)
+plot(y,pch=".")
+lines(mu,col=1,lwd=3)
+lines(predict(s),col=2,lwd=2)
 ```
 
-Compare with the lasso based solution. (This will require installation
+Compare with the genlasso (lasso-based) solution (blue). (This will require installation
 of the genlasso package.)
 
-```{r, eval=FALSE}
+```{r}
 library(genlasso)
 y.tf = trendfilter(y,ord=0)
 y.tf.cv = cv.trendfilter(y.tf)
-plot(y)
-lines(predict(s),col=2,lwd=3)
-lines(beta,col=3,lwd=3)
-lines(y.tf$fit[,which(y.tf$lambda==y.tf.cv$lambda.min)],col=4,lwd=3)
+
+plot(y,pch=".")
+lines(mu,col=1,lwd=3)
+lines(predict(s),col=2,lwd=2)
+lines(y.tf$fit[,which(y.tf$lambda==y.tf.cv$lambda.min)],col=4,lwd=2)
 ```
 
-What happens if we have trend plus sudden change.
+What happens if we have linear trend plus a sudden change.
 
-```{r, eval=FALSE}
-beta = beta + c(rep(0,500),rep(2,500))
-y = beta + rnorm(n)
-s = susie(delta,y,L=10)
-plot(y)
-lines(predict(s),col=2,lwd=3)
-lines(beta,col=3,lwd=3)
+```{r}
+mu = seq(0,4,length=1000)
+mu = mu + c(rep(0,500),rep(4,500))
+y = mu + rnorm(n)
+s = susie(X,y,L=10)
 y.tf = trendfilter(y,ord=0)
 y.tf.cv = cv.trendfilter(y.tf)
-lines(y.tf$fit[,which(y.tf$lambda==y.tf.cv$lambda.min)],col=4,lwd=3)
+
+plot(y,pch=".")
+lines(mu,col=1,lwd=3)
+lines(predict(s),col=2,lwd=2)
+lines(y.tf$fit[,which(y.tf$lambda==y.tf.cv$lambda.min)],col=4,lwd=2)
 ```
+
+The two fits seem similar in accuracy. We can check this mumerically:
+```{r}
+sqrt(mean((mu-y.tf$fit[,which(y.tf$lambda==y.tf.cv$lambda.min)])^2))
+sqrt(mean((mu-predict(s))^2))
+```
+
