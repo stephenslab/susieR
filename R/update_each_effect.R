@@ -1,7 +1,7 @@
 #' @title update each effect once
 #' @param X an n by p matrix of covariantes
 #' @param Y an n vector of data
-#' @param s a list with elements sigma2, V, alpha, mu, Xr
+#' @param s a SuSiE fit
 #' @param estimate_prior_variance boolean indicating whether to estimate prior variance
 #' @param colSum of X^2
 update_each_effect <- function (X, Y, s, estimate_prior_variance=FALSE) {
@@ -24,6 +24,7 @@ update_each_effect <- function (X, Y, s, estimate_prior_variance=FALSE) {
       s$alpha[l,] <- res$alpha
       s$mu2[l,] <- res$mu2
       s$V[l] <- res$V
+      s$lbf[l] <- res$lbf_model
       s$KL[l] <- -res$loglik + SER_posterior_e_loglik(X,R,s$sigma2,res$alpha*res$mu,res$alpha*res$mu2)
 
       s$Xr <- s$Xr + compute_Xb(X, (s$alpha[l,] * s$mu[l,]))

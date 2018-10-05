@@ -11,7 +11,7 @@ update_each_effect(X, Y, s, estimate_prior_variance = FALSE)
 
 \item{Y}{an n vector of data}
 
-\item{s}{a list with elements sigma2, V, alpha, mu, Xr}
+\item{s}{a SuSiE fit}
 
 \item{estimate_prior_variance}{boolean indicating whether to estimate prior variance}
 
