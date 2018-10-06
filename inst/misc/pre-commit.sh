@@ -19,6 +19,7 @@ elif [[ -z `grep -P "$GREP_REGEX" $ROOT_DIR/DESCRIPTION` ]]; then
 else
     REV_ID=`git log --oneline | wc -l`
     DATE=`date +%Y-%m-%d`
+    let "REV_ID++"
     echo "Version string bumped to revision $REV_ID on $DATE"
     sed -i "s/$SED_REGEX/Version: \1.$REV_ID/" $ROOT_DIR/DESCRIPTION
     sed -i "s/^Date: .*/Date: $DATE/" $ROOT_DIR/DESCRIPTION
