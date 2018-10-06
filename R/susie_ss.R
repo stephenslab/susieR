@@ -17,6 +17,7 @@
 #' @param scaled_prior_variance the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )
 #' @param residual_variance the residual variance (defaults to variance of Y)
 #' @param estimate_prior_variance indicates whether to estimate prior (currently not recommended as not working as well)
+#' @param prior_weights a p vector of prior probability that each element is non-zero
 #' @param max_iter maximum number of iterations to perform
 #' @param s_init a previous susie fit with which to initialize
 #' @param intercept_value a value to assign to the intercept (since the intercept cannot be estimated from centered summary data). This
@@ -30,7 +31,7 @@
 #' \item{XtXr}{an p vector of t(X) times fitted values, the fitted values equal to X times colSums(alpha*mu))}
 #' \item{sigma2}{residual variance}
 #' \item{V}{prior variance}
-#' 
+#'
 #' @examples
 #' set.seed(1)
 #' n    <- 1000
@@ -42,9 +43,9 @@
 #' input_ss <- compute_ss(X,y,standardize = TRUE)
 #' res      <- with(input_ss,susie_ss(XtX,Xty,vary,n))
 #' coef(res)
-#' 
+#'
 #' @export
-susie_ss = function(XtX,Xty,var_y = 1, n, L=10,scaled_prior_variance=0.2,residual_variance=NULL,estimate_prior_variance = FALSE, max_iter=100,s_init = NULL, verbose=FALSE, intercept_value=0, tol=1e-4){
+susie_ss = function(XtX,Xty,var_y = 1, n, L=10,scaled_prior_variance=0.2,residual_variance=NULL,estimate_prior_variance = FALSE, prior_weights = NULL, max_iter=100,s_init = NULL, verbose=FALSE, intercept_value=0, tol=1e-4){
   # Check input XtX.
   if (!(is.double(XtX) & is.matrix(XtX)) & !inherits(XtX,"CsparseMatrix"))
     stop("Input X must be a double-precision matrix, or a sparse matrix.")
@@ -67,6 +68,10 @@ susie_ss = function(XtX,Xty,var_y = 1, n, L=10,scaled_prior_variance=0.2,residua
       scaled_prior_variance = rep(scaled_prior_variance,L)
     }
 
+    if(is.null(prior_weights)){
+      prior_weights = rep(1/p, p)
+    }
+
     # Check inputs sigma and sa.
     if (length(residual_variance) != 1)
       stop("Inputs residual_variance must be scalar")
@@ -76,7 +81,9 @@ susie_ss = function(XtX,Xty,var_y = 1, n, L=10,scaled_prior_variance=0.2,residua
 
     #initialize susie fit
     s = list(alpha=matrix(1/p,nrow=L,ncol=p), mu=matrix(0,nrow=L,ncol=p),
-             mu2 = matrix(0,nrow=L,ncol=p), XtXr=rep(0,p), sigma2= residual_variance, V= scaled_prior_variance*var_y, KL = rep(NA,L))
+             mu2 = matrix(0,nrow=L,ncol=p), XtXr=rep(0,p), sigma2= residual_variance,
+             V= scaled_prior_variance*var_y, KL = rep(NA,L),
+             pi = prior_weights)
     class(s) <- "susie"
   }
 
