@@ -4,13 +4,12 @@
 \alias{susie}
 \title{Bayesian sum of single-effect (susie) linear regression of Y on X}
 \usage{
-susie(X, Y, L = 10, scaled_prior_variance = 0.2,
-  residual_variance = NULL, prior_weights = NULL, null_weight = NULL,
-  standardize = TRUE, intercept = TRUE,
-  estimate_residual_variance = TRUE, estimate_prior_variance = FALSE,
-  s_init = NULL, coverage = 0.95, min_abs_corr = 0.5,
-  compute_univariate_zscore = FALSE, max_iter = 100, tol = 0.001,
-  verbose = FALSE, track_fit = FALSE)
+susie(X, Y, L = 10, scaled_prior_variance = 0.2, residual_variance = NULL,
+  prior_weights = NULL, null_weight = NULL, standardize = TRUE,
+  intercept = TRUE, estimate_residual_variance = TRUE,
+  estimate_prior_variance = FALSE, s_init = NULL, coverage = 0.95,
+  min_abs_corr = 0.5, compute_univariate_zscore = FALSE, max_iter = 100,
+  tol = 0.001, verbose = FALSE, track_fit = FALSE)
 }
 \arguments{
 \item{X}{an n by p matrix of covariates}
@@ -70,9 +69,6 @@ a susie fit, which is a list with some or all of the following elements\cr
 \item{sets}{a list of `cs`, `purity` and selected `cs_index`}
 \item{pip}{a vector of posterior inclusion probability}
 \item{z}{a vector of univariate z-scores}
-}
-\description{
-Bayesian sum of single-effect (susie) linear regression of Y on X
 }
 \details{
 Performs sum of single-effect (susie) linear regression of Y on X.

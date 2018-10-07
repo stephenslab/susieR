@@ -16,6 +16,3 @@ compute_ss(X, y, standardize = TRUE)
 \value{
 a list with the input for `susie_ss`
 }
-\description{
-Compute the needed summary statistics for `susie_ss` from the 'raw' data
-}

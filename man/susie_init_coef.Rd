@@ -16,6 +16,3 @@ susie_init_coef(coef_index, coef_value, p)
 \value{
 a list of (alpha, mu, mu2), to be used by `susie(s_init = ...)`
 }
-\description{
-initialize a susie object using regression coefficients
-}

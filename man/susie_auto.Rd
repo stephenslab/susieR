@@ -4,9 +4,8 @@
 \alias{susie_auto}
 \title{An attempt to automate reliable running of susie even on hard problems}
 \usage{
-susie_auto(X, Y, L_init = 1, L_max = 512, verbose = FALSE,
-  init_tol = 1, standardize = TRUE, intercept = TRUE,
-  max_iter = 100, tol = 0.01)
+susie_auto(X, Y, L_init = 1, L_max = 512, verbose = FALSE, init_tol = 1,
+  standardize = TRUE, intercept = TRUE, max_iter = 100, tol = 0.01)
 }
 \arguments{
 \item{X}{an n by p matrix of covariates}
@@ -33,9 +32,6 @@ Any column of X that has zero variance is not standardized, but left as is.}
 \item{max_iter}{maximum number of iterations to perform}
 
 \item{tol}{convergence tolerance}
-}
-\description{
-An attempt to automate reliable running of susie even on hard problems
 }
 \details{
 Currently runs a 3-stage strategy for each L: first fit susie with very small residual error,

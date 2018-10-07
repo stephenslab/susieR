@@ -15,6 +15,3 @@ inclusion probability matrix alpha.}
 \value{
 a vector of posterior inclusion probability.
 }
-\description{
-Compute posterior inclusion probability (PIP) for all variables
-}

@@ -4,9 +4,8 @@
 \alias{susie_ss_set_data}
 \title{Create data for susie_ss}
 \usage{
-susie_ss_set_data(bhat = NULL, shat = NULL, zhat = NULL,
-  XtX = NULL, R = NULL, var_y = 1, n, standardize = TRUE,
-  bhat.standardized = TRUE)
+susie_ss_set_data(bhat = NULL, shat = NULL, zhat = NULL, XtX = NULL,
+  R = NULL, var_y = 1, n, standardize = TRUE, bhat.standardized = TRUE)
 }
 \arguments{
 \item{bhat}{a p vector, the estimated effects from p simple linear regression: y = Xb + e}
@@ -26,7 +25,4 @@ susie_ss_set_data(bhat = NULL, shat = NULL, zhat = NULL,
 \item{standardize}{logical flag (default=TRUE) for whether to fit susie_ss with standardize columns of X}
 
 \item{bhat.standardized}{whether the bhat comes from the standardized X}
-}
-\description{
-Create data for susie_ss
 }

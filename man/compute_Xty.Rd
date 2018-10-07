@@ -14,6 +14,3 @@ compute_Xty(X, y)
 \value{
 a p vector
 }
-\description{
-Compute t(scaled.X)\%*\%y using sparse multiplication
-}

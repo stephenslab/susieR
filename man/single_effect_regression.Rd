@@ -31,9 +31,6 @@ a list with elements: \cr
 \item{V}{the prior variance (after optimization, if optimize_V is TRUE)}
 \item{loglik}{The log-likelihood p(Y|X,V)}
 }
-\description{
-Bayesian single-effect linear regression of Y on X
-}
 \details{
 Performs single-effect linear regression of Y on X. That is, this function
 fits the regression model Y= Xb + e, where elements of e are iid N(0,s2) and the

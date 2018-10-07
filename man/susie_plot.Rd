@@ -24,6 +24,3 @@ or a random label to plot input data as is.}
 
 \item{max_cs}{the biggest CS to display, based on purity (set max_cs in between 0 and 1) or size (>1).}
 }
-\description{
-Plot per variable summary in SuSiE CSs
-}

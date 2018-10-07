@@ -19,5 +19,6 @@ summary.susie = function(s) {
     cs$variable[i] = paste(s$sets$cs[[i]], collapse=',')
   }
   variables = variables[order(variables$variable_prob, decreasing = T),]
+  rownames(variables) = NULL
   return(list(vars=variables, cs=cs))
 }
