@@ -23,4 +23,7 @@ else
     echo "Version string bumped to revision $REV_ID on $DATE"
     sed -i "s/$SED_REGEX/Version: \1.$REV_ID/" $ROOT_DIR/DESCRIPTION
     sed -i "s/^Date: .*/Date: $DATE/" $ROOT_DIR/DESCRIPTION
+    echo "Updating documentation ..."
+    cd $ROOT_DIR && Rscript -e 'devtools::document()' 1&2 > /dev/null && git add man/*.Rd
+    echo "Documentation updated!"
 fi

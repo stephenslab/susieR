@@ -23,7 +23,11 @@
 #' @param intercept_value a value to assign to the intercept (since the intercept cannot be estimated from centered summary data). This
 #' value will be used by coef.susie() to assign an intercept value, for consistency with the non-summary-statistic version of this function \code{susie}.
 #' Set to NULL if you want coef.susie() not to include an intercept term (and so only return a p vector).
+#' @param coverage coverage of confident sets. Default to 0.95 for 95\% confidence interval.
+#' @param min_abs_corr minimum of absolute value of correlation allowed in a confidence set.
 #' @param tol convergence tolerance based on alpha
+#' @param verbose if true outputs some progress messages
+#' @param track_fit add an attribute \code{trace} to output that saves current values of all iterations
 #' @return a susie fit, which is a list with some or all of the following elements\cr
 #' \item{alpha}{an L by p matrix of posterior inclusion probabilites}
 #' \item{mu}{an L by p matrix of posterior means (conditional on inclusion)}
@@ -45,7 +49,10 @@
 #' coef(res)
 #'
 #' @export
-susie_ss = function(XtX,Xty,var_y = 1, n, L=10,scaled_prior_variance=0.2,residual_variance=NULL,estimate_prior_variance = FALSE, prior_weights = NULL, max_iter=100,s_init = NULL, verbose=FALSE, intercept_value=0, tol=1e-4){
+susie_ss = function(XtX,Xty,var_y = 1, n, L=10,scaled_prior_variance=0.2,residual_variance=NULL,estimate_prior_variance = FALSE,
+                    prior_weights = NULL, max_iter=100,s_init = NULL, intercept_value=0,
+                    coverage=0.95, min_abs_corr=0.5,
+                    tol=1e-4, verbose=FALSE, track_fit = FALSE){
   # Check input XtX.
   if (!(is.double(XtX) & is.matrix(XtX)) & !inherits(XtX,"CsparseMatrix"))
     stop("Input X must be a double-precision matrix, or a sparse matrix.")
@@ -90,9 +97,12 @@ susie_ss = function(XtX,Xty,var_y = 1, n, L=10,scaled_prior_variance=0.2,residua
   #intialize elbo to NA
   elbo = rep(NA,max_iter+1)
   elbo[1] = -Inf;
+  tracking = list()
 
   alpha_new = s$alpha
   for(i in 1:max_iter){
+    if (track_fit)
+      tracking[[i]] = s
     alpha_old = alpha_new
     s = update_each_effect_ss(XtX, Xty, s, estimate_prior_variance)
     alpha_new = s$alpha
@@ -114,6 +124,15 @@ susie_ss = function(XtX,Xty,var_y = 1, n, L=10,scaled_prior_variance=0.2,residua
   s$Xtfitted = s$XtXr
 
   s$X_column_scale_factors = 1
+
+  if (track_fit)
+    s$trace = tracking
+
+  ## SuSiE CS and PIP
+  if (!is.null(coverage) && !is.null(min_abs_corr)) {
+    s$sets = susie_get_CS(s, coverage=coverage, Xcorr=cov2cor(XtX), min_abs_corr=min_abs_corr)
+    s$pip = susie_get_PIP(s,s$sets$cs_index)
+  }
 
   return(s)
 }
