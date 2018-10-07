@@ -13,7 +13,7 @@ SED_REGEX='^Version: \([0-9]*\.[0-9]*\.[0-9]*\)\.[0-9]*'
 # `git diff HEAD` shows both staged and unstaged changes
 if [[ -z `git diff HEAD` ]] || [[ ! -f $ROOT_DIR/DESCRIPTION ]]; then
     exit 0
-elif [[ -z `grep -P "$GREP_REGEX" $ROOT_DIR/DESCRIPTION` ]]; then
+elif [[ -z `grep "$GREP_REGEX" $ROOT_DIR/DESCRIPTION` ]]; then
     echo -e "\e[1;31m$MSG\e[0m"
     exit 0
 else
@@ -26,4 +26,5 @@ else
     echo "Updating documentation ..."
     cd $ROOT_DIR && Rscript -e 'devtools::document()' 1&2 > /dev/null && git add man/*.Rd
     echo "Documentation updated!"
+    exit 0
 fi
