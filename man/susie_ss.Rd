@@ -6,8 +6,8 @@
 \usage{
 susie_ss(XtX, Xty, var_y = 1, n, L = 10, scaled_prior_variance = 0.2,
   residual_variance = NULL, estimate_prior_variance = FALSE,
-  max_iter = 100, s_init = NULL, verbose = FALSE,
-  intercept_value = 0, tol = 1e-04)
+  prior_weights = NULL, max_iter = 100, s_init = NULL,
+  verbose = FALSE, intercept_value = 0, tol = 1e-04)
 }
 \arguments{
 \item{XtX}{a p by p matrix, X'X, where columns of X are centered to have mean 0}
@@ -25,6 +25,8 @@ susie_ss(XtX, Xty, var_y = 1, n, L = 10, scaled_prior_variance = 0.2,
 \item{residual_variance}{the residual variance (defaults to variance of Y)}
 
 \item{estimate_prior_variance}{indicates whether to estimate prior (currently not recommended as not working as well)}
+
+\item{prior_weights}{a p vector of prior probability that each element is non-zero}
 
 \item{max_iter}{maximum number of iterations to perform}
 
