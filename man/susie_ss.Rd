@@ -7,7 +7,8 @@
 susie_ss(XtX, Xty, var_y = 1, n, L = 10, scaled_prior_variance = 0.2,
   residual_variance = NULL, estimate_prior_variance = FALSE,
   prior_weights = NULL, max_iter = 100, s_init = NULL,
-  verbose = FALSE, intercept_value = 0, tol = 1e-04)
+  intercept_value = 0, coverage = 0.95, min_abs_corr = 0.5,
+  tol = 1e-04, verbose = FALSE, track_fit = FALSE)
 }
 \arguments{
 \item{XtX}{a p by p matrix, X'X, where columns of X are centered to have mean 0}
@@ -36,7 +37,15 @@ susie_ss(XtX, Xty, var_y = 1, n, L = 10, scaled_prior_variance = 0.2,
 value will be used by coef.susie() to assign an intercept value, for consistency with the non-summary-statistic version of this function \code{susie}.
 Set to NULL if you want coef.susie() not to include an intercept term (and so only return a p vector).}
 
+\item{coverage}{coverage of confident sets. Default to 0.95 for 95\% confidence interval.}
+
+\item{min_abs_corr}{minimum of absolute value of correlation allowed in a confidence set.}
+
 \item{tol}{convergence tolerance based on alpha}
+
+\item{verbose}{if true outputs some progress messages}
+
+\item{track_fit}{add an attribute \code{trace} to output that saves current values of all iterations}
 }
 \value{
 a susie fit, which is a list with some or all of the following elements\cr
