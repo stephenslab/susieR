@@ -12,3 +12,6 @@
 \value{
 a data.frame of variables and a data.frame of credible sets
 }
+\description{
+summarize susie fit
+}

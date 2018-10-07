@@ -15,3 +15,6 @@ update_each_effect_ss(XtX, Xty, s_init, estimate_prior_variance = FALSE)
 
 \item{estimate_prior_variance}{boolean indicating whether to estimate prior variance}
 }
+\description{
+update each effect once
+}

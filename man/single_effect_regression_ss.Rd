@@ -30,6 +30,9 @@ a list with elements: \cr
 \item{V}{the prior variance (after optimization, if optimize_V is TRUE)}
 \item{logBF}{(scalar) the loglikelihood for the total model minus the log-likelihood for the null model}
 }
+\description{
+Bayesian single-effect linear regression of Y on X.
+}
 \details{
 Performs single-effect linear regression of Y on X. That is, this function
 fits the regression model Y= Xb + e, where elements of e are iid N(0,residual_variance) and the

@@ -13,3 +13,6 @@ estimate_residual_variance(X, Y, s)
 
 \item{s}{a susie fit}
 }
+\description{
+Estimate residual variance
+}

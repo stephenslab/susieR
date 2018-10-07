@@ -14,3 +14,6 @@ compute_MXt(M, X)
 \value{
 a L by n matrix
 }
+\description{
+Compute M\%*\%t(scaled.X) using sparse multiplication
+}

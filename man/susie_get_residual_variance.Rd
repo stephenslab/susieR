@@ -9,3 +9,6 @@ susie_get_residual_variance(res)
 \arguments{
 \item{res}{a susie fit, the output of `susieR::susie()`.}
 }
+\description{
+Get updated residual variance
+}
