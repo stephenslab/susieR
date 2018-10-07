@@ -12,11 +12,11 @@ summary.susie = function(s) {
   colnames(variables) = c('variable', 'variable_prob', 'cs')
   for (i in 1:length(s$sets$cs)) {
     variables$cs[variables$variable %in% s$sets$cs[[i]]] = s$sets$cs_index[[i]]
-    cs$cs = s$sets$cs_index[[i]]
-    cs$cs_log10bf = s$lbf[cs$cs]
-    cs$cs_avg_r2 = s$sets$purity$mean.abs.corr^2
-    cs$cs_min_r2 = s$sets$purity$min.abs.corr^2
-    cs$variable = paste(s$sets$cs[[i]],collapse=',')
+    cs$cs[i] = s$sets$cs_index[[i]]
+    cs$cs_log10bf[i] = s$lbf[cs$cs[i]]
+    cs$cs_avg_r2[i] = s$sets$purity$mean.abs.corr[cs$cs[i]]^2
+    cs$cs_min_r2[i] = s$sets$purity$min.abs.corr[cs$cs[i]]^2
+    cs$variable[i] = paste(s$sets$cs[[i]], collapse=',')
   }
   variables = variables[order(variables$variable_prob, decreasing = T),]
   return(list(vars=variables, cs=cs))
