@@ -10,6 +10,7 @@ summary.susie = function(s) {
   colnames(cs) = c('cs', 'cs_log10bf', 'cs_avg_r2', 'cs_min_r2', 'variable')
   variables = data.frame(cbind(1:length(s$pip), s$pip, -1))
   colnames(variables) = c('variable', 'variable_prob', 'cs')
+  if (s$null_index > 0) variables = variables[-s$null_index,]
   for (i in 1:length(s$sets$cs)) {
     variables$cs[variables$variable %in% s$sets$cs[[i]]] = s$sets$cs_index[[i]]
     cs$cs[i] = s$sets$cs_index[[i]]

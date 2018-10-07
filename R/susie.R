@@ -89,7 +89,7 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
   }
   X = safe_colScale(X,center=intercept, scale=standardize)
   # initialize susie fit
-  s = init_setup(n,p,L,scaled_prior_variance,residual_variance,prior_weights,as.numeric(var(Y)))
+  s = init_setup(n,p,L,scaled_prior_variance,residual_variance,prior_weights,null_weight,as.numeric(var(Y)))
   if (!missing(s_init)) {
     s = modifyList(s, s_init)
     s = init_finalize(s, X=X)
@@ -140,7 +140,7 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
   ## SuSiE CS and PIP
   if (!is.null(coverage) && !is.null(min_abs_corr)) {
     s$sets = susie_get_CS(s, coverage=coverage, X=X, min_abs_corr=min_abs_corr)
-    s$pip = susie_get_PIP(s,s$sets$cs_index)
+    s$pip = susie_get_PIP(s, s$sets$cs_index)
   }
   ## report z-scores from univariate regression
   if (compute_univariate_zscore) {
