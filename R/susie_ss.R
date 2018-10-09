@@ -18,6 +18,7 @@
 #' @param residual_variance the residual variance (defaults to variance of Y)
 #' @param estimate_prior_variance indicates whether to estimate prior (currently not recommended as not working as well)
 #' @param prior_weights a p vector of prior probability that each element is non-zero
+#' @param null_weight probability of no effect, for each single effect model
 #' @param max_iter maximum number of iterations to perform
 #' @param s_init a previous susie fit with which to initialize
 #' @param intercept_value a value to assign to the intercept (since the intercept cannot be estimated from centered summary data). This
@@ -50,7 +51,8 @@
 #'
 #' @export
 susie_ss = function(XtX,Xty,var_y = 1, n, L=10,scaled_prior_variance=0.2,residual_variance=NULL,estimate_prior_variance = FALSE,
-                    prior_weights = NULL, max_iter=100,s_init = NULL, intercept_value=0,
+                    prior_weights = NULL, null_weight = NULL,
+                    max_iter=100,s_init = NULL, intercept_value=0,
                     coverage=0.95, min_abs_corr=0.5,
                     tol=1e-4, verbose=FALSE, track_fit = FALSE){
   # Check input XtX.
@@ -59,39 +61,16 @@ susie_ss = function(XtX,Xty,var_y = 1, n, L=10,scaled_prior_variance=0.2,residua
   p = ncol(XtX)
 
   # initialize susie fit
-  if(!is.null(s_init)){
-    if(!missing(L) || !missing(scaled_prior_variance) || !missing(residual_variance))
-      stop("if provide s_init then L, scaled_prior_variance and residual_variance must not be provided")
-    s = s_init
+  s = init_setup(n,p,L,scaled_prior_variance,residual_variance,
+                 prior_weights,null_weight,as.numeric(var_y))
+  s$Xr = NULL; s$XtXr = rep(0,p)
+  if (!missing(s_init)) {
+    s = modifyList(s, s_init)
+    s = init_finalize(s, X=XtX)
+    s$XtXr = s$Xr
+    s$Xr = NULL
   } else {
-
-    if(is.null(residual_variance)){
-      residual_variance = var_y
-    }
-    residual_variance= as.numeric(residual_variance) #avoid problems with dimension if entered as matrix
-
-
-    if(length(scaled_prior_variance)==1){
-      scaled_prior_variance = rep(scaled_prior_variance,L)
-    }
-
-    if(is.null(prior_weights)){
-      prior_weights = rep(1/p, p)
-    }
-
-    # Check inputs sigma and sa.
-    if (length(residual_variance) != 1)
-      stop("Inputs residual_variance must be scalar")
-    # Check inputs sigma and sa.
-    if (length(scaled_prior_variance) != L)
-      stop("Inputs scaled_prior_variance must be of length 1 or L")
-
-    #initialize susie fit
-    s = list(alpha=matrix(1/p,nrow=L,ncol=p), mu=matrix(0,nrow=L,ncol=p),
-             mu2 = matrix(0,nrow=L,ncol=p), XtXr=rep(0,p), sigma2= residual_variance,
-             V= scaled_prior_variance*var_y, KL = rep(NA,L),
-             pi = prior_weights)
-    class(s) <- "susie"
+    s = init_finalize(s)
   }
 
   #intialize elbo to NA
