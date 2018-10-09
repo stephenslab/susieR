@@ -161,6 +161,16 @@ susie_z = function(z, R, n, var_y = 1, R_type = c('Cor', 'Cov', 'XtX'),
   if(nrow(R) != length(z)){
     stop('The dimension of R does not agree with length of z.')
   }
+
+  if(!isSymmetric(R)){
+    stop('R is not a symmetric matrix.')
+  }
+  eigenvalues <- eigen(R, only.values = TRUE)$values
+  eigenvalues[abs(eigenvalues) < 1e-08] <- 0
+  if(any(eigenvalues < 0)){
+    stop('R is not a positive semidefinite matrix.')
+  }
+
   R_type = match.arg(R_type)
   if(R_type != 'XtX'){
     XtX = (n-1)*R
@@ -213,6 +223,15 @@ susie_bhat = function(bhat, shat, R, n, var_y = 1, R_type = c('Cor', 'Cov', 'XtX
   R_type = match.arg(R_type)
   if(R_type != 'Cor'){
     R = cov2cor(R)
+  }
+
+  if(!isSymmetric(R)){
+    stop('R is not a symmetric matrix.')
+  }
+  eigenvalues <- eigen(R, only.values = TRUE)$values
+  eigenvalues[abs(eigenvalues) < 1e-08] <- 0
+  if(any(eigenvalues < 0)){
+    stop('R is not a positive semidefinite matrix.')
   }
 
   that = bhat/shat
