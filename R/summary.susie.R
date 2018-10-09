@@ -17,8 +17,8 @@ summary.susie = function(s) {
         variables$cs[variables$variable %in% s$sets$cs[[i]]] = s$sets$cs_index[[i]]
         cs$cs[i] = s$sets$cs_index[[i]]
         cs$cs_log10bf[i] = s$lbf[cs$cs[i]]
-        cs$cs_avg_r2[i] = s$sets$purity$mean.abs.corr[cs$cs[i]]^2
-        cs$cs_min_r2[i] = s$sets$purity$min.abs.corr[cs$cs[i]]^2
+        cs$cs_avg_r2[i] = s$sets$purity$mean.abs.corr[i]^2
+        cs$cs_min_r2[i] = s$sets$purity$min.abs.corr[i]^2
         cs$variable[i] = paste(s$sets$cs[[i]], collapse=',')
       }
       variables = variables[order(variables$variable_prob, decreasing = T),]
