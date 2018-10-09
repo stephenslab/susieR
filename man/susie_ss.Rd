@@ -4,7 +4,7 @@
 \alias{susie_ss}
 \title{Bayesian sum of single-effect (susie) linear regression using summary stat}
 \usage{
-susie_ss(XtX, Xty, var_y = 1, n, L = 10, scaled_prior_variance = 0.2,
+susie_ss(XtX, Xty, n, var_y = 1, L = 10, scaled_prior_variance = 0.2,
   residual_variance = NULL, estimate_prior_variance = FALSE,
   prior_weights = NULL, null_weight = NULL, max_iter = 100,
   s_init = NULL, intercept_value = 0, coverage = 0.95,
@@ -16,9 +16,9 @@ susie_ss(XtX, Xty, var_y = 1, n, L = 10, scaled_prior_variance = 0.2,
 
 \item{Xty}{a p vector, X'Y, where columns of X are centered and Y is centered to have mean 0}
 
-\item{var_y}{the (sample) variance of the vector Y}
-
 \item{n}{sample size}
+
+\item{var_y}{the (sample) variance of the vector Y}
 
 \item{L}{maximum number of non-zero effects}
 
@@ -83,7 +83,7 @@ beta[1:4] <- 1
 X        <- matrix(rnorm(n*p),nrow=n,ncol=p)
 y        <- c(X \%*\% beta + rnorm(n))
 input_ss <- compute_ss(X,y,standardize = TRUE)
-res      <- with(input_ss,susie_ss(XtX,Xty,vary,n))
+res      <- with(input_ss,susie_ss(XtX,Xty,n,vary))
 coef(res)
 
 }
