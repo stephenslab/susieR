@@ -55,10 +55,10 @@
 #' plot(y,predict(res))
 #'
 #' @importFrom stats var
-#' @importFrom utils modifyList 
-#' 
+#' @importFrom utils modifyList
+#'
 #' @export
-#' 
+#'
 susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
                  prior_weights=NULL, null_weight=NULL,
                  standardize=TRUE,intercept=TRUE,
@@ -71,7 +71,7 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
   # Check input X.
   if (!(is.double(X) & is.matrix(X)) & !inherits(X,"CsparseMatrix"))
     stop("Input X must be a double-precision matrix, or a sparse matrix.")
-  if (null_weight == 0) null_weight = NULL
+  if (is.numeric(null_weight) && null_weight == 0) null_weight = NULL
   if (!is.null(null_weight)) {
     if (!is.numeric(null_weight))
       stop("Null weight must be numeric")

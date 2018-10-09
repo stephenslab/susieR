@@ -26,7 +26,6 @@ else
         cd $ROOT_DIR
         echo "Updating documentation ..."
         Rscript -e 'devtools::document()' &> /dev/null && git add man/*.Rd
-        echo "Documentation updated!"
         echo "Running unit tests ..."
         Rscript -e 'devtools::test()'
     fi
