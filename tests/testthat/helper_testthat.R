@@ -106,5 +106,5 @@ expect_equal_susie_ss = function(new.res, original.res){
   expect_equal(new.res$elbo, original.res$elbo)
   expect_equal(new.res$niter, original.res$niter)
   expect_equal(new.res$intercept, original.res$intercept)
-  expect_equal(new.res$fitted, original.res$fitted)
+  expect_equal(new.res$Xtfitted, original.res$Xtfitted)
 }

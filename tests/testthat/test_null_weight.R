@@ -6,3 +6,16 @@ test_that("null weight specification agrees with default",{
   res2 = susie(X, y, estimate_prior_variance = TRUE, null_weight = 1/(ncol(X)+1))
   expect_equal_susie(res2,res1)
 })
+
+test_that("SS: null weight specification agrees with default",{
+  simulate(200,1000)
+  ss = compute_ss(X,y)
+
+  res1 = susie_ss(cbind(rbind(ss$XtX,0),0), c(ss$Xty, 0), n = ss$n,
+                  estimate_prior_variance = TRUE)
+
+  res2 = susie_ss(ss$XtX, ss$Xty, n = ss$n,
+                  estimate_prior_variance = TRUE,
+                  null_weight = 1/(ncol(ss$XtX)+1))
+  expect_equal_susie_ss(res2,res1)
+})

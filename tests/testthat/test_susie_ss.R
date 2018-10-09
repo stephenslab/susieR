@@ -5,11 +5,11 @@ test_that("Results from summary stat vs original data",{
   ss = compute_ss(X, y)
 
   res = susie(X, y, intercept = TRUE, standardize = TRUE, max_iter = 2,
-              estimate_residual_variance=FALSE, estimate_prior_variance = TRUE)
+              estimate_residual_variance=FALSE, estimate_prior_variance = FALSE)
 
   res2 = susie_ss(ss$XtX, ss$Xty, var_y = ss$vary,
-                  residual_variance = var(y), n = ss$n, max_iter = 2,
-                  estimate_prior_variance = TRUE)
+                  n = ss$n, max_iter = 2,
+                  estimate_prior_variance = FALSE)
   expect_equal(res$alpha, res2$alpha)
   expect_equal(res$mu, res2$mu)
   expect_equal(res$mu2, res2$mu2)
