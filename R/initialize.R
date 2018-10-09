@@ -31,6 +31,8 @@ init_setup = function(n, p, L, scaled_prior_variance, residual_variance, prior_w
     prior_weights = rep(1/p, p)
   if(length(prior_weights) != p)
     stop("Prior weights must have length p.")
+  if (!is.numeric(null_weight))
+    stop("null_weight must be numeric")
   s = list(alpha=matrix(1/p,nrow=L,ncol=p),
            mu=matrix(0,nrow=L,ncol=p),
            mu2=matrix(0,nrow=L,ncol=p),
@@ -39,7 +41,7 @@ init_setup = function(n, p, L, scaled_prior_variance, residual_variance, prior_w
            sigma2=residual_variance,
            V=scaled_prior_variance * varY,
            pi=prior_weights)
-  if (is.null(null_weight)) s$null_index = 0
+  if (is.null(null_weight) || null_weight <= 0) s$null_index = 0
   else s$null_index = p
   class(s) = 'susie'
   return(s)
