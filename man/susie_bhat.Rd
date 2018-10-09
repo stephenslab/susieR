@@ -15,7 +15,7 @@ susie_bhat(bhat, shat, R, n, var_y = 1, R_type = c("Cor", "Cov",
 
 \item{shat}{a p vector of corresponding standard errors.}
 
-\item{R}{a p by p correlation matrix of X}
+\item{R}{a p by p symmetric and positive semidefinite matrix}
 
 \item{n}{sample size}
 

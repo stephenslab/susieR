@@ -61,12 +61,25 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10,
   # Check input XtX.
   if (!(is.double(XtX) & is.matrix(XtX)) & !inherits(XtX,"CsparseMatrix"))
     stop("Input X must be a double-precision matrix, or a sparse matrix.")
+
+  if (!is.null(null_weight) && null_weight != 0) {
+    if (null_weight<0 || null_weight>=1)
+      stop('Null weight must be between 0 and 1')
+    if (missing(prior_weights))
+      prior_weights = c(rep(1/ncol(XtX)*(1-null_weight), ncol(XtX)), null_weight)
+    else
+      prior_weights = c(prior_weights * (1-null_weight), null_weight)
+    XtX = cbind(rbind(XtX, 0),0)
+    Xty = c(Xty, 0)
+  }
+
   p = ncol(XtX)
 
   # initialize susie fit
   s = init_setup(n,p,L,scaled_prior_variance,residual_variance,
                  prior_weights,null_weight,as.numeric(var_y))
   s$Xr = NULL; s$XtXr = rep(0,p)
+
   if (!missing(s_init)) {
     s = modifyList(s, s_init)
     s = init_finalize(s, X=XtX)
@@ -76,7 +89,7 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10,
     s = init_finalize(s)
   }
 
-  #intialize elbo to NA
+  # intialize elbo to NA
   elbo = rep(NA,max_iter+1)
   elbo[1] = -Inf;
   tracking = list()
@@ -112,7 +125,8 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10,
 
   ## SuSiE CS and PIP
   if (!is.null(coverage) && !is.null(min_abs_corr)) {
-    s$sets = susie_get_CS(s, coverage=coverage, Xcorr=cov2cor(XtX), min_abs_corr=min_abs_corr)
+    R = muffled_cov2cor(XtX)
+    s$sets = susie_get_CS(s, coverage=coverage, Xcorr=R, min_abs_corr=min_abs_corr)
     s$pip = susie_get_PIP(s,s$sets$cs_index)
   }
 
@@ -165,7 +179,7 @@ susie_z = function(z, R, n, var_y = 1, R_type = c('Cor', 'Cov', 'XtX'),
 #' @title Apply susie with bhat, shat and correlation matrix R
 #' @param bhat a p vector of estimated effects.
 #' @param shat a p vector of corresponding standard errors.
-#' @param R a p by p correlation matrix of X
+#' @param R a p by p symmetric and positive semidefinite matrix
 #' @param n sample size
 #' @param var_y the (sample) variance of the y
 #' @param R_type the type of the matrix R, one of 'Cor', 'XtX' or 'Cov'

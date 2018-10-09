@@ -66,9 +66,8 @@ get_purity = function(pos, X, Xcorr, n = 100) {
   }
 }
 
-# @title `cor` function with specified warning muffled
-#
-#' @importFrom stats coef
+#' @title `cor` function with specified warning muffled
+#'
 #' @importFrom stats cor
 muffled_corr = function(x)
   withCallingHandlers(cor(x),
@@ -76,6 +75,17 @@ muffled_corr = function(x)
                       if (grepl("the standard deviation is zero", w$message))
                         invokeRestart("muffleWarning")
                     } )
+
+#' @title `cov2cor` function with specified warning muffled
+#'
+#' @importFrom stats cov2cor
+muffled_cov2cor = function(x)
+  withCallingHandlers(cov2cor(x),
+                      warning = function(w) {
+                        if (grepl("had 0 or NA entries; non-finite result is doubtful", w$message))
+                          invokeRestart("muffleWarning")
+                      } )
+
 
 #' @title Extract confidence sets from SuSiE model
 #' @details It reports indices of variables in each confidence set identified,
@@ -232,7 +242,7 @@ calc_z = function(X,y,centered=FALSE){
 #' @importFrom graphics plot
 #' @importFrom graphics segments
 #' @importFrom graphics points
-#' 
+#'
 #' @export
 susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,...){
   is_susie = (class(model) == "susie")
