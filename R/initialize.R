@@ -31,8 +31,8 @@ init_setup = function(n, p, L, scaled_prior_variance, residual_variance, prior_w
     prior_weights = rep(1/p, p)
   if(length(prior_weights) != p)
     stop("Prior weights must have length p.")
-  if (!is.numeric(null_weight))
-    stop("null_weight must be numeric")
+  if (!is.null(null_weight) && !is.numeric(null_weight))
+    stop("Null weight must be numeric")
   s = list(alpha=matrix(1/p,nrow=L,ncol=p),
            mu=matrix(0,nrow=L,ncol=p),
            mu2=matrix(0,nrow=L,ncol=p),
