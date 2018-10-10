@@ -164,6 +164,11 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10,
 #' @param estimate_prior_variance indicates whether to estimate prior (currently not recommended as not working as well)
 #' @param prior_weights a p vector of prior probability that each element is non-zero
 #' @param null_weight probability of no effect, for each single effect model
+#' @param standardize logical flag (default=TRUE) for whether to standardize columns of X to unit variance prior to fitting.
+#' Note that `scaled_prior_variance` specifies the prior on the coefficients of X *after* standardization (if performed).
+#' If you do not standardize you may need
+#' to think more carefully about specifying `scaled_prior_variance`.
+#' Whatever the value of standardize, the coefficients (returned from `coef`) are on the input R scale.
 #' @param coverage coverage of confident sets. Default to 0.95 for 95\% confidence interval.
 #' @param min_abs_corr minimum of absolute value of correlation allowed in a confidence set.
 #' @param verbose if true outputs some progress messages
@@ -176,6 +181,7 @@ susie_z = function(z, R, n, var_y = 1, R_type = c('Cor', 'Cov', 'XtX'),
                    L=10, scaled_prior_variance=0.2,
                    estimate_prior_variance = TRUE,
                    prior_weights = NULL, null_weight = NULL,
+                   standardize = TRUE,
                    coverage=0.95, min_abs_corr=0.5,
                    verbose=FALSE, track_fit = FALSE, ...){
   if(nrow(R) != length(z)){
@@ -197,11 +203,13 @@ susie_z = function(z, R, n, var_y = 1, R_type = c('Cor', 'Cov', 'XtX'),
   }else{
     XtX = R
   }
+
   susie_ss(XtX = XtX, Xty = z*sqrt(diag(XtX)*var_y),
            n = n, var_y = var_y, L = L,
            scaled_prior_variance = scaled_prior_variance,
            estimate_prior_variance = estimate_prior_variance,
            prior_weights = prior_weights, null_weight = null_weight,
+           standardize = standardize,
            coverage=coverage, min_abs_corr=min_abs_corr,
            verbose=verbose, track_fit = track_fit, ...)
 }
@@ -209,15 +217,19 @@ susie_z = function(z, R, n, var_y = 1, R_type = c('Cor', 'Cov', 'XtX'),
 #' @title Apply susie with bhat, shat and correlation matrix R
 #' @param bhat a p vector of estimated effects.
 #' @param shat a p vector of corresponding standard errors.
-#' @param R a p by p symmetric and positive semidefinite matrix
+#' @param R a p by p symmetric and positive semidefinite matrix. It can be X'X, covariance matrix or correlation matrix.
 #' @param n sample size
-#' @param var_y the (sample) variance of the y
-#' @param R_type the type of the matrix R, one of 'Cor', 'XtX' or 'Cov'
+#' @param var_y the (sample) variance of the y. If it is unknown, the coefficients (returned from `coef`) are for X and y on the standardized scale.
 #' @param L maximum number of non-zero effects
 #' @param scaled_prior_variance the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )
 #' @param estimate_prior_variance indicates whether to estimate prior (currently not recommended as not working as well)
 #' @param prior_weights a p vector of prior probability that each element is non-zero
 #' @param null_weight probability of no effect, for each single effect model
+#' @param standardize logical flag (default=TRUE) for whether to standardize columns of X to unit variance prior to fitting. It is useful when `var_y` is given.
+#' Note that `scaled_prior_variance` specifies the prior on the coefficients of X *after* standardization (if performed).
+#' If you do not standardize you may need
+#' to think more carefully about specifying `scaled_prior_variance`.
+#' Whatever the value of standardize, the coefficients (returned from `coef`) are on the bhat, shat scale.
 #' @param coverage coverage of confident sets. Default to 0.95 for 95\% confidence interval.
 #' @param min_abs_corr minimum of absolute value of correlation allowed in a confidence set.
 #' @param verbose if true outputs some progress messages
@@ -226,11 +238,12 @@ susie_z = function(z, R, n, var_y = 1, R_type = c('Cor', 'Cov', 'XtX'),
 #' @return a susie fit
 #'
 #' @export
-susie_bhat = function(bhat, shat, R, n, var_y = 1, R_type = c('Cor', 'Cov', 'XtX'),
-                      L=10, standardize = TRUE,
+susie_bhat = function(bhat, shat, R, n, var_y = 1,
+                      L=10,
                       scaled_prior_variance=0.2,
                       estimate_prior_variance = FALSE,
                       prior_weights = NULL, null_weight = NULL,
+                      standardize = TRUE,
                       coverage=0.95, min_abs_corr=0.5,
                       verbose=FALSE, track_fit = FALSE, ...){
   if(length(bhat) != length(shat)){
@@ -239,12 +252,6 @@ susie_bhat = function(bhat, shat, R, n, var_y = 1, R_type = c('Cor', 'Cov', 'XtX
   if(nrow(R) != length(bhat)){
     stop('The dimension of R does not agree with length of bhat.')
   }
-
-  R_type = match.arg(R_type)
-  if(R_type != 'Cor'){
-    R = cov2cor(R)
-  }
-
   if(!isSymmetric(R)){
     stop('R is not a symmetric matrix.')
   }
@@ -254,12 +261,15 @@ susie_bhat = function(bhat, shat, R, n, var_y = 1, R_type = c('Cor', 'Cov', 'XtX
     stop('R is not a positive semidefinite matrix.')
   }
 
+  # convert to correlation matrix
+  R = cov2cor(R)
+
   that = bhat/shat
 
   R2 = that^2/(that^2 + n-2)
   sigma2 = var_y*(n-1)*(1-R2)/(n-2)
 
-  if(standardize){
+  if(missing(var_y)){
     XtX = (n-1)*R
     Xty = sqrt(sigma2) * sqrt(n-1) * that
   }else{
@@ -272,6 +282,7 @@ susie_bhat = function(bhat, shat, R, n, var_y = 1, R_type = c('Cor', 'Cov', 'XtX
            scaled_prior_variance = scaled_prior_variance,
            estimate_prior_variance = estimate_prior_variance,
            prior_weights = prior_weights, null_weight = null_weight,
+           standardize = standardize,
            coverage=coverage, min_abs_corr=min_abs_corr,
            verbose=verbose, track_fit = track_fit, ...)
 }
