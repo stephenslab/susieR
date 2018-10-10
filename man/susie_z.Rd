@@ -6,8 +6,9 @@
 \usage{
 susie_z(z, R, n, var_y = 1, R_type = c("Cor", "Cov", "XtX"), L = 10,
   scaled_prior_variance = 0.2, estimate_prior_variance = TRUE,
-  prior_weights = NULL, null_weight = NULL, coverage = 0.95,
-  min_abs_corr = 0.5, verbose = FALSE, track_fit = FALSE, ...)
+  prior_weights = NULL, null_weight = NULL, standardize = TRUE,
+  coverage = 0.95, min_abs_corr = 0.5, verbose = FALSE,
+  track_fit = FALSE, ...)
 }
 \arguments{
 \item{z}{a p vector of z scores.}
@@ -29,6 +30,12 @@ susie_z(z, R, n, var_y = 1, R_type = c("Cor", "Cov", "XtX"), L = 10,
 \item{prior_weights}{a p vector of prior probability that each element is non-zero}
 
 \item{null_weight}{probability of no effect, for each single effect model}
+
+\item{standardize}{logical flag (default=TRUE) for whether to standardize columns of X to unit variance prior to fitting.
+Note that `scaled_prior_variance` specifies the prior on the coefficients of X *after* standardization (if performed).
+If you do not standardize you may need
+to think more carefully about specifying `scaled_prior_variance`.
+Whatever the value of standardize, the coefficients (returned from `coef`) are on the input R scale.}
 
 \item{coverage}{coverage of confident sets. Default to 0.95 for 95\% confidence interval.}
 

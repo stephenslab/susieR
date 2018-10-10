@@ -4,24 +4,22 @@
 \alias{susie_bhat}
 \title{Apply susie with bhat, shat and correlation matrix R}
 \usage{
-susie_bhat(bhat, shat, R, n, var_y = 1, R_type = c("Cor", "Cov",
-  "XtX"), L = 10, standardize = TRUE, scaled_prior_variance = 0.2,
-  estimate_prior_variance = FALSE, prior_weights = NULL,
-  null_weight = NULL, coverage = 0.95, min_abs_corr = 0.5,
-  verbose = FALSE, track_fit = FALSE, ...)
+susie_bhat(bhat, shat, R, n, var_y = 1, L = 10,
+  scaled_prior_variance = 0.2, estimate_prior_variance = FALSE,
+  prior_weights = NULL, null_weight = NULL, standardize = TRUE,
+  coverage = 0.95, min_abs_corr = 0.5, verbose = FALSE,
+  track_fit = FALSE, ...)
 }
 \arguments{
 \item{bhat}{a p vector of estimated effects.}
 
 \item{shat}{a p vector of corresponding standard errors.}
 
-\item{R}{a p by p symmetric and positive semidefinite matrix}
+\item{R}{a p by p symmetric and positive semidefinite matrix. It can be X'X, covariance matrix or correlation matrix.}
 
 \item{n}{sample size}
 
-\item{var_y}{the (sample) variance of the y}
-
-\item{R_type}{the type of the matrix R, one of 'Cor', 'XtX' or 'Cov'}
+\item{var_y}{the (sample) variance of the y. If it is unknown, the coefficients (returned from `coef`) are for X and y on the standardized scale.}
 
 \item{L}{maximum number of non-zero effects}
 
@@ -32,6 +30,12 @@ susie_bhat(bhat, shat, R, n, var_y = 1, R_type = c("Cor", "Cov",
 \item{prior_weights}{a p vector of prior probability that each element is non-zero}
 
 \item{null_weight}{probability of no effect, for each single effect model}
+
+\item{standardize}{logical flag (default=TRUE) for whether to standardize columns of X to unit variance prior to fitting. It is useful when `var_y` is given.
+Note that `scaled_prior_variance` specifies the prior on the coefficients of X *after* standardization (if performed).
+If you do not standardize you may need
+to think more carefully about specifying `scaled_prior_variance`.
+Whatever the value of standardize, the coefficients (returned from `coef`) are on the bhat, shat scale.}
 
 \item{coverage}{coverage of confident sets. Default to 0.95 for 95\% confidence interval.}
 
