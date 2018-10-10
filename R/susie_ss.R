@@ -19,6 +19,11 @@
 #' @param estimate_prior_variance indicates whether to estimate prior (currently not recommended as not working as well)
 #' @param prior_weights a p vector of prior probability that each element is non-zero
 #' @param null_weight probability of no effect, for each single effect model
+#' @param standardize logical flag (default=TRUE) for whether to standardize columns of X to unit variance prior to fitting.
+#' Note that `scaled_prior_variance` specifies the prior on the coefficients of X *after* standardization (if performed).
+#' If you do not standardize you may need
+#' to think more carefully about specifying
+#' `scaled_prior_variance`. Whatever the value of standardize, the coefficients (returned from `coef`) are for X on the original input scale.
 #' @param max_iter maximum number of iterations to perform
 #' @param s_init a previous susie fit with which to initialize
 #' @param intercept_value a value to assign to the intercept (since the intercept cannot be estimated from centered summary data). This
@@ -53,8 +58,9 @@
 susie_ss = function(XtX, Xty, n, var_y = 1, L=10,
                     scaled_prior_variance=0.2,
                     residual_variance=NULL,
-                    estimate_prior_variance = FALSE,
                     prior_weights = NULL, null_weight = NULL,
+                    standardize = TRUE,
+                    estimate_prior_variance = FALSE,
                     max_iter=100,s_init = NULL, intercept_value=0,
                     coverage=0.95, min_abs_corr=0.5,
                     tol=1e-4, verbose=FALSE, track_fit = FALSE){
@@ -74,6 +80,18 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10,
   }
 
   p = ncol(XtX)
+
+  if(standardize){
+    dXtX = diag(XtX)
+    dXtX[dXtX==0] = 1
+    csd = sqrt(dXtX/(n-1))
+    XtX = (1/csd) * t((1/csd) * XtX)
+    Xty = (1/csd) * Xty
+  }else{
+    csd = rep(1, length = p)
+  }
+  attr(XtX, "d") <- diag(XtX)
+  attr(XtX, "scaled:scale") <- csd
 
   # initialize susie fit
   s = init_setup(n,p,L,scaled_prior_variance,residual_variance,
@@ -118,7 +136,7 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10,
   s$intercept = intercept_value
   s$Xtfitted = s$XtXr
 
-  s$X_column_scale_factors = 1
+  s$X_column_scale_factors = attr(XtX,"scaled:scale")
 
   if (track_fit)
     s$trace = tracking
