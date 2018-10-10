@@ -67,8 +67,10 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10,
   # Check input XtX.
   if (!(is.double(XtX) & is.matrix(XtX)) & !inherits(XtX,"CsparseMatrix"))
     stop("Input X must be a double-precision matrix, or a sparse matrix.")
-
-  if (!is.null(null_weight) && null_weight != 0) {
+  if (is.numeric(null_weight) && null_weight == 0) null_weight = NULL
+  if (!is.null(null_weight)) {
+    if (!is.numeric(null_weight))
+      stop("Null weight must be numeric")
     if (null_weight<0 || null_weight>=1)
       stop('Null weight must be between 0 and 1')
     if (missing(prior_weights))
