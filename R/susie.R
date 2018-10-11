@@ -112,17 +112,17 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
       tracking[[i]] = s
     s = update_each_effect(X, Y, s, estimate_prior_variance)
     if(verbose){
-        print(paste0("objective:",susie_get_objective(X,Y,s)))
+        print(paste0("objective:",get_objective(X,Y,s)))
     }
     if(estimate_residual_variance){
       s$sigma2 = estimate_residual_variance(X,Y,s)
       if(verbose){
-        print(paste0("objective:",susie_get_objective(X,Y,s)))
+        print(paste0("objective:",get_objective(X,Y,s)))
       }
     }
     #s = remove_null_effects(s)
 
-    elbo[i+1] = susie_get_objective(X,Y,s)
+    elbo[i+1] = get_objective(X,Y,s)
     if((elbo[i+1]-elbo[i])<tol) break;
   }
   elbo = elbo[1:(i+1)] #remove trailing NAs

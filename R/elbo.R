@@ -4,9 +4,7 @@
 #'
 #' @param f A flash fit object.
 #'
-#' @export
-#'
-susie_get_objective = function(X, Y, s) {
+get_objective = function(X, Y, s) {
   return(Eloglik(X,Y,s)-sum(s$KL))
 }
 
@@ -35,6 +33,6 @@ get_ER2 = function(X,Y,s){
 # @param Eb the posterior mean of b (p vector) (alpha * mu)
 # @param Eb2 the posterior second moment of b (p vector) (alpha * mu2)
 SER_posterior_e_loglik = function(X,Y,s2,Eb,Eb2){
-  n = nrow(X)  
+  n = nrow(X)
   -0.5*n*log(2*pi*s2)  - (0.5/s2) * (sum(Y*Y) - 2*sum(Y*compute_Xb(X, Eb)) + sum(attr(X, "X2t")*as.vector(Eb2)))
 }

@@ -6,9 +6,7 @@
 #' @param var_y the (sample) variance of the vector Y
 #' @param n sample size
 #'
-#' @export
-#'
-susie_get_objective_ss = function(XtX, Xty, s, var_y, n) {
+get_objective_ss = function(XtX, Xty, s, var_y, n) {
   return(Eloglik_ss(XtX,Xty,s,var_y, n)-sum(s$KL))
 }
 

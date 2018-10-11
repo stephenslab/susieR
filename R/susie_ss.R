@@ -122,7 +122,7 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10,
     s = update_each_effect_ss(XtX, Xty, s, estimate_prior_variance)
     alpha_new = s$alpha
 
-    elbo[i+1] = susie_get_objective_ss(XtX, Xty, s, var_y, n)
+    elbo[i+1] = get_objective_ss(XtX, Xty, s, var_y, n)
 
     if(verbose){
       print(paste0("objective:",elbo[i+1]))
