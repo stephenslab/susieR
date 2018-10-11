@@ -27,6 +27,7 @@ a list with elements: \cr
 \item{mu}{vector of posterior means (conditional on inclusion)}
 \item{mu2}{vector of posterior second moments (conditional on inclusion)}
 \item{lbf}{vector of log Bayes factors for each variable}
+\item{lbf_model}{log Bayes factor for the single effect regression}
 \item{V}{the prior variance (after optimization, if optimize_V is TRUE)}
 \item{loglik}{The log-likelihood p(Y|X,V)}
 }

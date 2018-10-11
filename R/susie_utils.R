@@ -66,9 +66,8 @@ get_purity = function(pos, X, Xcorr, n = 100) {
   }
 }
 
-# @title `cor` function with specified warning muffled
-#
-#' @importFrom stats coef
+#' @title `cor` function with specified warning muffled
+#'
 #' @importFrom stats cor
 muffled_corr = function(x)
   withCallingHandlers(cor(x),
@@ -76,6 +75,17 @@ muffled_corr = function(x)
                       if (grepl("the standard deviation is zero", w$message))
                         invokeRestart("muffleWarning")
                     } )
+
+#' @title `cov2cor` function with specified warning muffled
+#'
+#' @importFrom stats cov2cor
+muffled_cov2cor = function(x)
+  withCallingHandlers(cov2cor(x),
+                      warning = function(w) {
+                        if (grepl("had 0 or NA entries; non-finite result is doubtful", w$message))
+                          invokeRestart("muffleWarning")
+                      } )
+
 
 #' @title Extract confidence sets from SuSiE model
 #' @details It reports indices of variables in each confidence set identified,
@@ -92,6 +102,7 @@ muffled_corr = function(x)
 #' @param min_abs_corr minimum of absolute value of correlation allowed in a confidence set.
 #' Default set to 0.5 to correspond to squared correlation of 0.25,
 #' a commonly used threshold for genotype data in genetics studies.
+#' @param dedup Remove duplicated CS, default to TRUE
 #' @return a list of `cs`, and additionally `purity` and selected `cs_index` if `X` or `Xcorr` was provided.
 #' @export
 susie_get_CS = function(res,
@@ -99,8 +110,12 @@ susie_get_CS = function(res,
                         coverage = 0.95,
                         min_abs_corr = 0.5,
                         dedup = TRUE) {
-  if (class(res) == "susie")
+  if (class(res) == "susie") {
+    null_index = res$null_index
     res = res$alpha
+  } else {
+    null_index = 0
+  }
   if (!is.null(X) && !is.null(Xcorr)) {
     stop("Only one of X or Xcorr should be specified")
   }
@@ -119,7 +134,11 @@ susie_get_CS = function(res,
   if (is.null(Xcorr) && is.null(X)) {
     return(list(cs=cs,coverage=coverage))
   } else {
-    purity = data.frame(do.call(rbind, lapply(1:length(cs), function(i) get_purity(cs[[i]], X, Xcorr))))
+    purity = data.frame(do.call(rbind, lapply(1:length(cs), function(i)
+            {
+                if (null_index > 0 && null_index %in% cs[[i]]) c(-9,-9,-9)
+                else get_purity(cs[[i]], X, Xcorr)
+            })))
     colnames(purity) = c('min.abs.corr', 'mean.abs.corr', 'median.abs.corr')
     is_pure = which(purity$min.abs.corr >= min_abs_corr)
     if (length(is_pure) > 0) {
@@ -223,7 +242,7 @@ calc_z = function(X,y,centered=FALSE){
 #' @importFrom graphics plot
 #' @importFrom graphics segments
 #' @importFrom graphics points
-#' 
+#'
 #' @export
 susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,...){
   is_susie = (class(model) == "susie")

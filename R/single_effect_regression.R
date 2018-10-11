@@ -16,6 +16,7 @@
 #' \item{mu}{vector of posterior means (conditional on inclusion)}
 #' \item{mu2}{vector of posterior second moments (conditional on inclusion)}
 #' \item{lbf}{vector of log Bayes factors for each variable}
+#' \item{lbf_model}{log Bayes factor for the single effect regression}
 #' \item{V}{the prior variance (after optimization, if optimize_V is TRUE)}
 #' \item{loglik}{The log-likelihood p(Y|X,V)}
 #'
@@ -57,8 +58,9 @@ single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL
   post_mean = (1/residual_variance) * post_var * Xty
   post_mean2 = post_var + post_mean^2 # second moment
   loglik = maxlbf + log(weighted_sum_w) + sum(dnorm(Y,0,sqrt(residual_variance),log=TRUE))
-
-  return(list(alpha=alpha,mu=post_mean,mu2 = post_mean2,lbf=lbf,V=V, loglik = loglik))
+  # BF for single effect model
+  lbf_model = maxlbf + weighted_sum_w
+  return(list(alpha=alpha,mu=post_mean,mu2 = post_mean2,lbf=lbf,lbf_model=lbf_model,V=V,loglik=loglik))
 }
 
 # In these functions s2 represents residual_variance and shat2 is an estimate of it

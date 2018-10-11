@@ -15,6 +15,8 @@ susie_auto(X, Y, L_init = 1, L_max = 512, verbose = FALSE,
 
 \item{L_init}{the initial value of L to consider}
 
+\item{L_max}{the maximum value of L to consider}
+
 \item{verbose}{if true outputs some progress messages}
 
 \item{init_tol}{the tolerance to pass to susie during early runs (set big to run faster)}
@@ -31,8 +33,6 @@ Any column of X that has zero variance is not standardized, but left as is.}
 \item{max_iter}{maximum number of iterations to perform}
 
 \item{tol}{convergence tolerance}
-
-\item{Lmax}{the maximum value of L to consider}
 }
 \description{
 An attempt to automate reliable running of susie even on hard problems

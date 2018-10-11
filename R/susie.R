@@ -55,10 +55,10 @@
 #' plot(y,predict(res))
 #'
 #' @importFrom stats var
-#' @importFrom utils modifyList 
-#' 
+#' @importFrom utils modifyList
+#'
 #' @export
-#' 
+#'
 susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
                  prior_weights=NULL, null_weight=NULL,
                  standardize=TRUE,intercept=TRUE,
@@ -71,7 +71,10 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
   # Check input X.
   if (!(is.double(X) & is.matrix(X)) & !inherits(X,"CsparseMatrix"))
     stop("Input X must be a double-precision matrix, or a sparse matrix.")
-  if (!is.null(null_weight) && null_weight != 0) {
+  if (is.numeric(null_weight) && null_weight == 0) null_weight = NULL
+  if (!is.null(null_weight)) {
+    if (!is.numeric(null_weight))
+      stop("Null weight must be numeric")
     if (null_weight<0 || null_weight>=1)
       stop('Null weight must be between 0 and 1')
     if (missing(prior_weights))
@@ -89,7 +92,7 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
   }
   X = safe_colScale(X,center=intercept, scale=standardize)
   # initialize susie fit
-  s = init_setup(n,p,L,scaled_prior_variance,residual_variance,prior_weights,as.numeric(var(Y)))
+  s = init_setup(n,p,L,scaled_prior_variance,residual_variance,prior_weights,null_weight,as.numeric(var(Y)))
   if (!missing(s_init)) {
     s = modifyList(s, s_init)
     s = init_finalize(s, X=X)
@@ -140,7 +143,7 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
   ## SuSiE CS and PIP
   if (!is.null(coverage) && !is.null(min_abs_corr)) {
     s$sets = susie_get_CS(s, coverage=coverage, X=X, min_abs_corr=min_abs_corr)
-    s$pip = susie_get_PIP(s,s$sets$cs_index)
+    s$pip = susie_get_PIP(s, s$sets$cs_index)
   }
   ## report z-scores from univariate regression
   if (compute_univariate_zscore) {

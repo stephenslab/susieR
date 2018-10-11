@@ -2,7 +2,7 @@
 #' @param X an n by p matrix of covariates
 #' @param Y an n vector
 #' @param L_init the initial value of L to consider
-#' @param Lmax the maximum value of L to consider
+#' @param L_max the maximum value of L to consider
 #' @param init_tol the tolerance to pass to susie during early runs (set big to run faster)
 #' @param standardize logical flag for whether to standardize columns of X to unit variance prior to fitting.
 #' Note that `prior_variance` specifies the prior on the coefficients of X after standardization (if performed).

@@ -24,6 +24,8 @@ whose minimum correlation between variables is smaller than `min_abs_corr` (see 
 \item{min_abs_corr}{minimum of absolute value of correlation allowed in a confidence set.
 Default set to 0.5 to correspond to squared correlation of 0.25,
 a commonly used threshold for genotype data in genetics studies.}
+
+\item{dedup}{Remove duplicated CS, default to TRUE}
 }
 \value{
 a list of `cs`, and additionally `purity` and selected `cs_index` if `X` or `Xcorr` was provided.

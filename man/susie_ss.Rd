@@ -4,25 +4,37 @@
 \alias{susie_ss}
 \title{Bayesian sum of single-effect (susie) linear regression using summary stat}
 \usage{
-susie_ss(XtX, Xty, var_y = 1, n, L = 10, scaled_prior_variance = 0.2,
-  residual_variance = NULL, estimate_prior_variance = FALSE,
-  max_iter = 100, s_init = NULL, verbose = FALSE,
-  intercept_value = 0, tol = 0.0001)
+susie_ss(XtX, Xty, n, var_y = 1, L = 10, scaled_prior_variance = 0.2,
+  residual_variance = NULL, prior_weights = NULL, null_weight = NULL,
+  standardize = TRUE, estimate_prior_variance = FALSE,
+  max_iter = 100, s_init = NULL, intercept_value = 0,
+  coverage = 0.95, min_abs_corr = 0.5, tol = 1e-04,
+  verbose = FALSE, track_fit = FALSE)
 }
 \arguments{
 \item{XtX}{a p by p matrix, X'X, where columns of X are centered to have mean 0}
 
 \item{Xty}{a p vector, X'Y, where columns of X are centered and Y is centered to have mean 0}
 
-\item{var_y}{the (sample) variance of the vector Y}
-
 \item{n}{sample size}
+
+\item{var_y}{the (sample) variance of the vector Y}
 
 \item{L}{maximum number of non-zero effects}
 
 \item{scaled_prior_variance}{the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )}
 
 \item{residual_variance}{the residual variance (defaults to variance of Y)}
+
+\item{prior_weights}{a p vector of prior probability that each element is non-zero}
+
+\item{null_weight}{probability of no effect, for each single effect model}
+
+\item{standardize}{logical flag (default=TRUE) for whether to standardize columns of X to unit variance prior to fitting.
+Note that `scaled_prior_variance` specifies the prior on the coefficients of X *after* standardization (if performed).
+If you do not standardize you may need
+to think more carefully about specifying
+`scaled_prior_variance`. Whatever the value of standardize, the coefficients (returned from `coef`) are for X on the original input scale.}
 
 \item{estimate_prior_variance}{indicates whether to estimate prior (currently not recommended as not working as well)}
 
@@ -34,7 +46,15 @@ susie_ss(XtX, Xty, var_y = 1, n, L = 10, scaled_prior_variance = 0.2,
 value will be used by coef.susie() to assign an intercept value, for consistency with the non-summary-statistic version of this function \code{susie}.
 Set to NULL if you want coef.susie() not to include an intercept term (and so only return a p vector).}
 
+\item{coverage}{coverage of confident sets. Default to 0.95 for 95\% confidence interval.}
+
+\item{min_abs_corr}{minimum of absolute value of correlation allowed in a confidence set.}
+
 \item{tol}{convergence tolerance based on alpha}
+
+\item{verbose}{if true outputs some progress messages}
+
+\item{track_fit}{add an attribute \code{trace} to output that saves current values of all iterations}
 }
 \value{
 a susie fit, which is a list with some or all of the following elements\cr
@@ -69,7 +89,7 @@ beta[1:4] <- 1
 X        <- matrix(rnorm(n*p),nrow=n,ncol=p)
 y        <- c(X \%*\% beta + rnorm(n))
 input_ss <- compute_ss(X,y,standardize = TRUE)
-res      <- with(input_ss,susie_ss(XtX,Xty,vary,n))
+res      <- with(input_ss,susie_ss(XtX,Xty,n,vary))
 coef(res)
 
 }
