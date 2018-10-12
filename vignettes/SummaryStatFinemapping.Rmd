@@ -52,12 +52,12 @@ So the underlying causal variables are 403, 653 and 773.
 
 ## Simple regression summary statistics
 
-The data-set additionally provides summary statistics for fitting univariate simple regression variable by variable. The results are $\hat{\beta}$ and $SE(\hat{\beta})$ from which $\hat{z}$-scores can be derived. Again we focus only on results from the first data-set:
+The data-set additionally provides summary statistics for fitting univariate simple regression variable by variable. The results are $\hat{\beta}$ and $SE(\hat{\beta})$ from which the p values abd $z$-scores can be derived. Again we focus only on results from the first data-set:
 
 ```{r}
-z_hat <- with(finemap,sumstats[1,,] / sumstats[2,,])
-z_hat <- z_hat[,1]
-susie_plot(z_hat, y = "z", b=b)
+p_values = 2*pt(-abs(finemap$sumstats[1,,1]/finemap$sumstats[2,,1]), df = nrow(finemap$data$X)-2)
+z_scores = abs(qnorm(p_values/2)) * sign(finemap$sumstats[1,,1])
+susie_plot(z_scores, y = "z", b=b)
 ```
 
 The correlation matrix is
@@ -65,56 +65,96 @@ The correlation matrix is
 R <- cor(finemap$data$X)
 ```
 
-## Fine-mapping with `susieR` using bhat, shat, R and n
+## Fine-mapping with `susieR` with the knowledge of sample size n
 
 For starters, we assume there are at most 5 causal variables, i.e. set `L=5`, although SuSiE is robust to the choice of `L`.
 
-We set SuSiE prior variance to 0.1. The `susieR` function call is:
+We set SuSiE prior variance to 0.1. 
+
+### Using bhat and shat
+
+With the knowledge of variance of y, the `susieR` function call gives coefficients in the original X, y scale is:
 
 ```{r}
 fitted_bhat <- susie_bhat(bhat = finemap$sumstats[1,,1], shat = finemap$sumstats[2,,1], 
-                          R = R, R_type = 'Cor', n = nrow(finemap$data$X), 
+                          R = R, n = nrow(finemap$data$X), 
+                          var_y = var(finemap$data$Y[,1]),
                           L = 5, 
                           scaled_prior_variance = 0.1, 
-                          estimate_prior_variance = TRUE, verbose = TRUE)
+                          estimate_prior_variance = FALSE, 
+                          standardize = TRUE)
 ```
 
-Using `summary` function, we can see the posterior inclusion probability (PIP) for each variable, and the confidence sets.
+Without the knowledge of variance of y, `susieR` gives the coefficients in standaridized X, y scale.
 
 ```{r}
-summary(fitted_bhat)
+fitted_bhat_standardize <- susie_bhat(bhat = finemap$sumstats[1,,1], shat = finemap$sumstats[2,,1], 
+                                      R = R, n = nrow(finemap$data$X), 
+                                      L = 5, 
+                                      scaled_prior_variance = 0.1, 
+                                      estimate_prior_variance = FALSE)
 ```
+
+Here is the summary of the input and the output coefficient scale:
+
+  known var(y)    |  coefficient scale
+------------------|-------------------
+  yes             |  same as bhat, shat
+------------------|-------------------
+  no              |  standardized X, y
+
+Using `summary` function, we can see the posterior inclusion probability (PIP) for each variable, and the 95% confidence sets. Here, we only show the 95% confidence sets.
+
+```{r}
+summary(fitted_bhat)$cs
+```
+
+The 3 causal signals have been captured by the 3 CS reported here. The 3rd CS contains many variables, including the true causal variable 403.
 
 We can also plot the PIP
 ```{r}
 susie_plot(fitted_bhat, y="PIP", b=b)
 ```
 
-## Fine-mapping with `susieR` using z scores, R and n
+The true causal variables are colored red. The 95% CS identified are circled in different colors.
 
-We generate the z scores from the p values
-```{r}
-p_values = 2*pt(-abs(finemap$sumstats[1,,1]/finemap$sumstats[2,,1]), df = nrow(finemap$data$X)-2)
-z_scores = abs(qnorm(p_values/2)) * sign(finemap$sumstats[1,,1])
-```
+### Using z scores
 
-We assume there are at most 5 causal variables, i.e. set `L=5`.
-
-We set SuSiE prior variance to 0.1. The `susieR` function call is:
+Using z scores, `susieR` gives the coefficients in standaridized X, y scale.
 
 ```{r}
-fitted_z <- susie_z(z = z_scores,R = R, R_type='Cor', n = nrow(finemap$data$X),
-                    L = 5, 
-                    scaled_prior_variance = 0.1, 
-                    estimate_prior_variance = TRUE, verbose = TRUE)
+fitted_z_n <- susie_bhat(bhat = z_scores, shat = 1, 
+                         R = R, n = nrow(finemap$data$X), 
+                         L = 5, 
+                         scaled_prior_variance = 0.1, 
+                         estimate_prior_variance = FALSE)
 ```
 
-Using `summary` function, we can see the posterior inclusion probability (PIP) for each variable, and the confidence sets.
+We can check the 95% confidence set
+```{r}
+summary(fitted_z_n)$cs
+```
+
+and the PIP plot
+```{r}
+susie_plot(fitted_bhat, y="PIP", b=b)
+```
+
+## Fine-mapping with `susieR` without the knowledge of sample size n
+
+Without the sample size n, the inference on effects are more conservative.
+
+Again, we assume there are at most 5 causal variables, i.e. set `L=5`. We set SuSiE prior variance to 0.1. The `susieR` function gives coefficients in standardized X, y scale:
 
 ```{r}
-summary(fitted_z)
+fitted_z <- susie_z(z = z_scores,R = R,L = 5)
 ```
 
+We can check the 95% confidence set:
+```{r}
+summary(fitted_z)$cs
+```
+and the PIP plot
 ```{r}
 susie_plot(fitted_z, y="PIP", b=b)
 ```
