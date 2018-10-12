@@ -1,5 +1,5 @@
-#' @title Bayesian sum of single-effect (susie) linear regression of Y on X
-#' @details Performs sum of single-effect (susie) linear regression of Y on X.
+#' @title SUm of Single Effect (SuSiE) Regression of Y on X
+#' @details Performs Bayesian multiple linear regression of Y on X.
 #' That is, this function
 #' fits the regression model Y= sum_l Xb_l + e, where elements of e are iid N(0,residual_variance) and the
 #' sum_l b_l is a p vector of effects to be estimated.
@@ -19,8 +19,6 @@
 #' `scaled_prior_variance`. Whatever the value of standardize, the coefficients (returned from `coef`) are for X on the original input scale.
 #' Any column of X that has zero variance is not standardized, but left as is.
 #' @param intercept Should intercept be fitted (default=TRUE) or set to zero (FALSE). The latter is generally not recommended.
-#' @param max_iter maximum number of iterations to perform
-#' @param tol convergence tolerance
 #' @param estimate_residual_variance indicates whether to estimate residual variance
 #' @param estimate_prior_variance indicates whether to estimate prior (currently not recommended as not fully tested and assessed)
 #' @param s_init a previous susie fit with which to initialize
@@ -29,6 +27,8 @@
 #' Default set to 0.5 to correspond to squared correlation of 0.25,
 #' a commonly used threshold for genotype data in genetics studies.
 #' @param compute_univariate_zscore if true, outputs z-score from per variable univariate regression
+#' @param max_iter maximum number of iterations to perform
+#' @param tol convergence tolerance
 #' @param verbose if true outputs some progress messages
 #' @param track_fit add an attribute \code{trace} to output that saves current values of all iterations
 #' @return a susie fit, which is a list with some or all of the following elements\cr

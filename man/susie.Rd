@@ -2,7 +2,7 @@
 % Please edit documentation in R/susie.R
 \name{susie}
 \alias{susie}
-\title{Bayesian sum of single-effect (susie) linear regression of Y on X}
+\title{SUm of Single Effect (SuSiE) Regression of Y on X}
 \usage{
 susie(X, Y, L = 10, scaled_prior_variance = 0.2,
   residual_variance = NULL, prior_weights = NULL, null_weight = NULL,
@@ -72,10 +72,10 @@ a susie fit, which is a list with some or all of the following elements\cr
 \item{z}{a vector of univariate z-scores}
 }
 \description{
-Bayesian sum of single-effect (susie) linear regression of Y on X
+SUm of Single Effect (SuSiE) Regression of Y on X
 }
 \details{
-Performs sum of single-effect (susie) linear regression of Y on X.
+Performs Bayesian multiple linear regression of Y on X.
 That is, this function
 fits the regression model Y= sum_l Xb_l + e, where elements of e are iid N(0,residual_variance) and the
 sum_l b_l is a p vector of effects to be estimated.
