@@ -2,7 +2,7 @@
 % Please edit documentation in R/susie_ss.R
 \name{susie_bhat}
 \alias{susie_bhat}
-\title{Apply susie with bhat, shat and correlation matrix R}
+\title{Apply susie with bhat, shat and cov/cor matrix R}
 \usage{
 susie_bhat(bhat, shat, R, n, var_y = 1, L = 10,
   scaled_prior_variance = 0.2, estimate_prior_variance = FALSE,
@@ -19,7 +19,7 @@ susie_bhat(bhat, shat, R, n, var_y = 1, L = 10,
 
 \item{n}{sample size}
 
-\item{var_y}{the (sample) variance of the y. If it is unknown, the coefficients (returned from `coef`) are for X and y on the standardized scale.}
+\item{var_y}{the (sample) variance of the y. If it is unknown, the coefficients (returned from `coef`) are on the standardized X, y scale.}
 
 \item{L}{maximum number of non-zero effects}
 
@@ -51,5 +51,5 @@ Whatever the value of standardize, the coefficients (returned from `coef`) are o
 a susie fit
 }
 \description{
-Apply susie with bhat, shat and correlation matrix R
+Apply susie with bhat, shat and cov/cor matrix R
 }

@@ -2,40 +2,22 @@
 % Please edit documentation in R/susie_ss.R
 \name{susie_z}
 \alias{susie_z}
-\title{Apply susie with z scores and correlation matrix R}
+\title{Apply susie with z scores and cov/cor matrix R}
 \usage{
-susie_z(z, R, n, var_y = 1, R_type = c("Cor", "Cov", "XtX"), L = 10,
-  scaled_prior_variance = 0.2, estimate_prior_variance = TRUE,
-  prior_weights = NULL, null_weight = NULL, standardize = TRUE,
+susie_z(z, R, L = 10, prior_weights = NULL, null_weight = NULL,
   coverage = 0.95, min_abs_corr = 0.5, verbose = FALSE,
   track_fit = FALSE, ...)
 }
 \arguments{
 \item{z}{a p vector of z scores.}
 
-\item{R}{a p by p symmetric and positive semidefinite matrix}
-
-\item{n}{sample size}
-
-\item{var_y}{the (sample) variance of the y}
-
-\item{R_type}{the type of the matrix R, one of 'Cor', 'XtX' or 'Cov'}
+\item{R}{a p by p symmetric and positive semidefinite matrix. It can be X'X, covariance matrix or correlation matrix.}
 
 \item{L}{maximum number of non-zero effects}
-
-\item{scaled_prior_variance}{the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )}
-
-\item{estimate_prior_variance}{indicates whether to estimate prior (currently not recommended as not working as well)}
 
 \item{prior_weights}{a p vector of prior probability that each element is non-zero}
 
 \item{null_weight}{probability of no effect, for each single effect model}
-
-\item{standardize}{logical flag (default=TRUE) for whether to standardize columns of X to unit variance prior to fitting.
-Note that `scaled_prior_variance` specifies the prior on the coefficients of X *after* standardization (if performed).
-If you do not standardize you may need
-to think more carefully about specifying `scaled_prior_variance`.
-Whatever the value of standardize, the coefficients (returned from `coef`) are on the input R scale.}
 
 \item{coverage}{coverage of confident sets. Default to 0.95 for 95\% confidence interval.}
 
@@ -51,5 +33,5 @@ Whatever the value of standardize, the coefficients (returned from `coef`) are o
 a susie fit
 }
 \description{
-Apply susie with z scores and correlation matrix R
+Apply susie with z scores and cov/cor matrix R
 }
