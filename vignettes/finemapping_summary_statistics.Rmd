@@ -1,0 +1,209 @@
+---
+title: "Fine-mapping with summary statistics"
+author: "Yuxin Zou and Gao Wang"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Fine-mapping with summary statistics}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE,comment = "#",fig.width = 5,
+                      fig.height = 3,fig.align = "center",
+                      fig.cap = "&nbsp;",dpi = 120)
+```
+
+This vignette demonstrates how to use `susieR` with "summary statistics" in the context of genetic fine-mapping. We use the same simulated data as in [fine mapping vignette](finemapping.html). The simulated data is expression level of a gene ($y$) in $N \approx 600$ individuals. We want to identify with the genotype matrix $X_{N\times P}$ ($P=1000$) the genetic variables that causes changes in expression level. The data-set is shipped with `susieR`. It is simulated to have exactly 3 non-zero effects.
+
+```{r}
+library(susieR)
+set.seed(1)
+```
+
+## The data-set
+
+```{r}
+finemap <-
+  readRDS(system.file("datafiles","N3finemapping.rds",package = "susieR"))
+```
+
+Notice that we've simulated 2 sets of $Y$ as 2 simulation replicates. Here we'll focus on the first data-set.
+
+```{r}
+dim(finemap$data$Y)
+```
+
+Here are the 3 "true" signals in the first data-set:
+
+```{r}
+b <- finemap$data$true_coef[,1]
+plot(b, pch=16, ylab='effect size')
+```
+
+```{r}
+which(b != 0)
+```
+
+So the underlying causal variables are 403, 653 and 773.
+
+## Summary statistics from simple regression
+
+Summary statistics of genetic association studies typically contain odds ratio (or beta coefficient), p-value and minor allele frequencies. These information can be used to perform fine-mapping with sufficient summary statistics, which additionally require sample size, variance of phenotype, and most importantly a matrix of correlation between variables.
+
+When the aforementioned sufficient summary statistica are provided, SuSiE can produce the exact same outcome as if individual level data were used. SuSiE can also produce approximate results when some of the information are not available. The minimal required of summary statistics for SuSiE to work are z-scores (can be derived from p-values, as will be demonstrated below) and correlation matrix between variables. The correlation matrix in genetics is typically referred to as LD matrix (LD for linkage disequilibrium). One can use external reference panels to estimate it when this matrix cannot be obtained from samples directly.
+
+Caution that the LD matrix has to be correlation matrix $r$, not $r^2$ or $abs(r)$.
+
+Our example data-set additionally provides summary statistics for fitting per-variable univariate simple regression. The results are $\hat{\beta}$ and $SE(\hat{\beta})$ from which the p-values (from *t*-distribution) and $z$-scores can be derived. 
+Again we focus only on results from the first data-set:
+
+```{r}
+p_values = 2 * pt(-abs(finemap$sumstats[1,,1] / finemap$sumstats[2,,1]), df = nrow(finemap$data$X) - 2)
+z_scores = abs(qnorm(p_values/2)) * sign(finemap$sumstats[1,,1])
+susie_plot(z_scores, y = "z", b=b)
+```
+
+For this example the correlation matrix can be computed directly from data provide,
+
+```{r}
+R <- cor(finemap$data$X)
+```
+
+## Fine-mapping with `susieR` with the knowledge of sample size n
+
+For starters, we assume there are at most 5 causal variables, i.e. set `L=5`, although SuSiE is robust to the choice of `L`.
+
+We also set SuSiE prior variance to 0.1. 
+
+### Using $\hat{beta}$ and $\text{SE}(\hat{\beta})$
+
+With the knowledge of variance of $y$, `susieR` can result in coefficent estimates in the original scale of data,
+
+```{r}
+fitted_bhat <- susie_bhat(bhat = finemap$sumstats[1,,1], 
+                          shat = finemap$sumstats[2,,1], 
+                          R = R, n = nrow(finemap$data$X), 
+                          var_y = var(finemap$data$Y[,1]),
+                          L = 5, 
+                          scaled_prior_variance = 0.1, 
+                          estimate_prior_variance = FALSE, 
+                          standardize = TRUE)
+```
+
+Without the knowledge of variance of $y$, `susieR` gives the coefficients in standardized $X$, $y$ scale,
+
+```{r}
+fitted_bhat_standardize <- susie_bhat(bhat = finemap$sumstats[1,,1], 
+                                      shat = finemap$sumstats[2,,1], 
+                                      R = R, n = nrow(finemap$data$X), 
+                                      L = 5, 
+                                      scaled_prior_variance = 0.1, 
+                                      estimate_prior_variance = FALSE)
+```
+
+Here is the summary of the input and the output coefficient scale:
+
+  known var(y)    |  coefficient scale
+------------------|-------------------
+  yes             |  same scale as $\hat{beta}$ and $\text{SE}(\hat{\beta})$
+------------------|-------------------
+  no              |  same scale as $\hat{beta}$ and $\text{SE}(\hat{\beta})$ from standardized X, y
+
+Using `summary` function, we can examine the posterior inclusion probability (PIP) for each variable, and the 95% credible sets. 
+
+Here, we are the 95% credible sets.
+
+```{r}
+summary(fitted_bhat)$cs
+```
+
+The 3 causal signals have been captured by the 3 CS reported here. The 3rd CS contains many variables, including the true causal variable 403.
+
+We can also plot the posterior inclusion probability (PIP),
+
+```{r}
+susie_plot(fitted_bhat, y="PIP", b=b)
+```
+
+The true causal variables are colored red. The 95% CS identified are circled in different colors.
+
+The result should be identical to using the individual level data,
+
+```{r}
+fitted = susie(finemap$data$X, finemap$data$Y[,1],
+                L=5,
+                estimate_residual_variance = TRUE, 
+                scaled_prior_variance = 0.1,
+                verbose = TRUE)
+plot(fitted$pip, fitted_bhat$pip)
+```
+
+```{r}
+plot(coef(fitted), coef(fitted_bhat_standardize))
+```
+
+### Using $z$ scores
+
+For $z$ score input, `susieR` can only output coefficients in standardized $X$, $y$ scale. It is practically setting $\hat{beta}$ to $z$ score and $\text{SE}(\hat{\beta})$ and variance of $y$ to one,
+
+```{r}
+fitted_z_n <- susie_bhat(bhat = z_scores, shat = 1, 
+                         R = R, n = nrow(finemap$data$X), 
+                         L = 5, 
+                         scaled_prior_variance = 0.1, 
+                         estimate_prior_variance = FALSE)
+```
+
+The result should agree with using $\hat{beta}$ and $\text{SE}(\hat{\beta})$ when variance of $y$ is set to one,
+
+```{r}
+plot(coef(fitted_z_n), coef(fitted_bhat_standarized))
+```
+
+```{r}
+summary(fitted_z_n)$cs
+```
+
+and the PIP plot
+```{r}
+susie_plot(fitted_bhat, y="PIP", b=b)
+```
+
+## Fine-mapping with `susieR` without the knowledge of sample size
+
+With only $z$ and $R$ as input, the inference on effects are more conservative. 
+For $z$ score input, `susieR` estimates prior variance in the iterative variable selection algorithm,
+and output coefficients in standardized $X$, $y$ scale, 
+
+
+```{r}
+fitted_z <- susie_z(z = z_scores,R = R,L = 5)
+```
+
+We can check the 95% confidence set:
+
+```{r}
+summary(fitted_z)$cs
+```
+and the PIP
+
+```{r}
+susie_plot(fitted_z, y="PIP", b=b)
+```
+
+We compare result with when $n$ is known,
+
+```{r}
+plot(coef(fitted_z), coef(fitted_z_n))
+```
+
+## Session information
+
+Here are some details about the computing environment, including the
+versions of R, and the R packages, used to generate these results.
+
+```{r}
+sessionInfo()
+```

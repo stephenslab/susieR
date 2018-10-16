@@ -156,12 +156,12 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10,
 #' @title Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix
 #' @param z a p vector of z scores.
 #' @param R a p by p symmetric and positive semidefinite matrix. It can be X'X, covariance matrix or correlation matrix.
-#' @param L maximum number of non-zero effects
+#' @param L maximum number of non-zero effects.
 #' @param prior_weights a p vector of prior probability that each element is non-zero
 #' @param null_weight probability of no effect, for each single effect model
 #' @param coverage coverage of confident sets. Default to 0.95 for 95\% confidence interval.
 #' @param min_abs_corr minimum of absolute value of correlation allowed in a confidence set.
-#' @param verbose if true outputs some progress messages
+#' @param verbose if TRUE outputs some progress messages
 #' @param track_fit add an attribute \code{trace} to output that saves current values of all iterations
 #' @param ... further arguments to be passed to \code{\link{susie_ss}}
 #' @return a susie fit
@@ -206,10 +206,10 @@ susie_z = function(z, R,
 #' @param bhat a p vector of estimated effects.
 #' @param shat a p vector of corresponding standard errors.
 #' @param R a p by p symmetric and positive semidefinite matrix. It can be X'X, covariance matrix or correlation matrix.
-#' @param n sample size
-#' @param var_y the (sample) variance of the y. If it is unknown, the coefficients (returned from `coef`) are on the standardized X, y scale.
-#' @param L maximum number of non-zero effects
-#' @param scaled_prior_variance the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )
+#' @param n sample size.
+#' @param var_y the (sample) variance of y. If it is unknown, the coefficients (returned from `coef`) are on the standardized X, y scale.
+#' @param L maximum number of non-zero effects.
+#' @param scaled_prior_variance the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times)
 #' @param estimate_prior_variance indicates whether to estimate prior (currently not recommended as not working as well)
 #' @param prior_weights a p vector of prior probability that each element is non-zero
 #' @param null_weight probability of no effect, for each single effect model

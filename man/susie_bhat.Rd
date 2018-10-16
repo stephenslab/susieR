@@ -17,13 +17,13 @@ susie_bhat(bhat, shat, R, n, var_y = 1, L = 10,
 
 \item{R}{a p by p symmetric and positive semidefinite matrix. It can be X'X, covariance matrix or correlation matrix.}
 
-\item{n}{sample size}
+\item{n}{sample size.}
 
-\item{var_y}{the (sample) variance of the y. If it is unknown, the coefficients (returned from `coef`) are on the standardized X, y scale.}
+\item{var_y}{the (sample) variance of y. If it is unknown, the coefficients (returned from `coef`) are on the standardized X, y scale.}
 
-\item{L}{maximum number of non-zero effects}
+\item{L}{maximum number of non-zero effects.}
 
-\item{scaled_prior_variance}{the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )}
+\item{scaled_prior_variance}{the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times)}
 
 \item{estimate_prior_variance}{indicates whether to estimate prior (currently not recommended as not working as well)}
 

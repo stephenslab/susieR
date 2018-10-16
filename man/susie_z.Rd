@@ -13,7 +13,7 @@ susie_z(z, R, L = 10, prior_weights = NULL, null_weight = NULL,
 
 \item{R}{a p by p symmetric and positive semidefinite matrix. It can be X'X, covariance matrix or correlation matrix.}
 
-\item{L}{maximum number of non-zero effects}
+\item{L}{maximum number of non-zero effects.}
 
 \item{prior_weights}{a p vector of prior probability that each element is non-zero}
 
@@ -23,7 +23,7 @@ susie_z(z, R, L = 10, prior_weights = NULL, null_weight = NULL,
 
 \item{min_abs_corr}{minimum of absolute value of correlation allowed in a confidence set.}
 
-\item{verbose}{if true outputs some progress messages}
+\item{verbose}{if TRUE outputs some progress messages}
 
 \item{track_fit}{add an attribute \code{trace} to output that saves current values of all iterations}
 
