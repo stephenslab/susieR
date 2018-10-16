@@ -86,6 +86,13 @@ muffled_cov2cor = function(x)
                           invokeRestart("muffleWarning")
                       } )
 
+#' @title check for symmetric matrix
+
+is_symmetric_matrix = function(x) {
+    res = isSymmetric(x)
+    if (res == FALSE) res = isSymmetric(unname(x))
+    return(res)
+}
 
 #' @title Extract confidence sets from SuSiE model
 #' @details It reports indices of variables in each confidence set identified,
@@ -119,7 +126,7 @@ susie_get_CS = function(res,
   if (!is.null(X) && !is.null(Xcorr)) {
     stop("Only one of X or Xcorr should be specified")
   }
-  if (!is.null(Xcorr) && !isSymmetric(Xcorr)) {
+  if (!is.null(Xcorr) && !is_symmetric_matrix(Xcorr)) {
     stop("Xcorr matrix must be symmetric")
   }
   # L by P binary matrix

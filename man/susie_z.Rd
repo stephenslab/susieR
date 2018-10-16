@@ -2,7 +2,7 @@
 % Please edit documentation in R/susie_ss.R
 \name{susie_z}
 \alias{susie_z}
-\title{Apply susie with z scores and cov/cor matrix R}
+\title{Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix}
 \usage{
 susie_z(z, R, L = 10, prior_weights = NULL, null_weight = NULL,
   coverage = 0.95, min_abs_corr = 0.5, verbose = FALSE,
@@ -33,5 +33,5 @@ susie_z(z, R, L = 10, prior_weights = NULL, null_weight = NULL,
 a susie fit
 }
 \description{
-Apply susie with z scores and cov/cor matrix R
+Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix
 }

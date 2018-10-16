@@ -153,7 +153,7 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10,
   return(s)
 }
 
-#' @title Apply susie with z scores and cov/cor matrix R
+#' @title Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix
 #' @param z a p vector of z scores.
 #' @param R a p by p symmetric and positive semidefinite matrix. It can be X'X, covariance matrix or correlation matrix.
 #' @param L maximum number of non-zero effects
@@ -176,7 +176,7 @@ susie_z = function(z, R,
     stop('The dimension of R does not agree with length of z.')
   }
 
-  if(!isSymmetric(R)){
+  if(!is_symmetric_matrix(R)){
     stop('R is not a symmetric matrix.')
   }
   eigenvalues <- eigen(R, only.values = TRUE)$values
@@ -202,7 +202,7 @@ susie_z = function(z, R,
            verbose=verbose, track_fit = track_fit, ...)
 }
 
-#' @title Apply susie with bhat, shat and cov/cor matrix R
+#' @title Summary statistics version of SuSiE on betahat, the corresponding standard error, and correlation (or covariance) matrix
 #' @param bhat a p vector of estimated effects.
 #' @param shat a p vector of corresponding standard errors.
 #' @param R a p by p symmetric and positive semidefinite matrix. It can be X'X, covariance matrix or correlation matrix.
@@ -240,7 +240,7 @@ susie_bhat = function(bhat, shat, R, n, var_y = 1,
   if(nrow(R) != length(bhat)){
     stop('The dimension of R does not agree with length of bhat.')
   }
-  if(!isSymmetric(R)){
+  if(!is_symmetric_matrix(R)){
     stop('R is not a symmetric matrix.')
   }
 

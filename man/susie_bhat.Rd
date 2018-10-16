@@ -2,7 +2,7 @@
 % Please edit documentation in R/susie_ss.R
 \name{susie_bhat}
 \alias{susie_bhat}
-\title{Apply susie with bhat, shat and cov/cor matrix R}
+\title{Summary statistics version of SuSiE on betahat, the corresponding standard error, and correlation (or covariance) matrix}
 \usage{
 susie_bhat(bhat, shat, R, n, var_y = 1, L = 10,
   scaled_prior_variance = 0.2, estimate_prior_variance = FALSE,
@@ -51,5 +51,5 @@ Whatever the value of standardize, the coefficients (returned from `coef`) are o
 a susie fit
 }
 \description{
-Apply susie with bhat, shat and cov/cor matrix R
+Summary statistics version of SuSiE on betahat, the corresponding standard error, and correlation (or covariance) matrix
 }
