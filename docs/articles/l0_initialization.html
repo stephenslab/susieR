@@ -8,8 +8,8 @@
 <title>SuSiE with L0Learn initialization example • susieR</title>
 <!-- jquery --><script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script><!-- Bootstrap --><link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script><!-- Font Awesome icons --><link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-T8Gy5hrqNKT+hzMclPo118YTQO6cYprQmhrYwIiQ/3axmI1hQomh7Ud2hPOy8SP1" crossorigin="anonymous">
-<!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js" integrity="sha384-cV+rhyOuRHc9Ub/91rihWcGmMmCXDeksTtCihMupQHSsi8GIIRDG0ThDc3HGQFJ3" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
-<script src="../jquery.sticky-kit.min.js"></script><script src="../pkgdown.js"></script><meta property="og:title" content="SuSiE with L0Learn initialization example">
+<!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js" integrity="sha384-cV+rhyOuRHc9Ub/91rihWcGmMmCXDeksTtCihMupQHSsi8GIIRDG0ThDc3HGQFJ3" crossorigin="anonymous"></script><!-- sticky kit --><script src="https://cdnjs.cloudflare.com/ajax/libs/sticky-kit/1.1.3/sticky-kit.min.js" integrity="sha256-c4Rlo1ZozqTPE2RLuvbusY3+SU1pQaJC0TjuhygMipw=" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
+<script src="../pkgdown.js"></script><meta property="og:title" content="SuSiE with L0Learn initialization example">
 <meta property="og:description" content="">
 <meta name="twitter:card" content="summary">
 <!-- mathjax --><script src="https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!--[if lt IE 9]>
@@ -18,7 +18,7 @@
 <![endif]-->
 </head>
 <body>
-    <div class="container template-vignette">
+    <div class="container template-article">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
     <div class="navbar-header">
@@ -27,8 +27,12 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="../index.html">susieR</a>
+      <span class="navbar-brand">
+        <a class="navbar-link" href="../index.html">susieR</a>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.5.0</span>
+      </span>
     </div>
+
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
 <li>
@@ -55,17 +59,20 @@
 
       
       </header><div class="row">
-  <div class="col-md-9">
+  <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1>SuSiE with L0Learn initialization example</h1>
                         <h4 class="author">Kaiqian Zhang</h4>
             
-            <h4 class="date">2018-09-21</h4>
-          </div>
+            <h4 class="date">2018-10-16</h4>
+      
+      <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/master/vignettes/l0_initialization.Rmd"><code>vignettes/l0_initialization.Rmd</code></a></small>
+      <div class="hidden name"><code>l0_initialization.Rmd</code></div>
+
+    </div>
 
     
     
-<div class="contents">
 <p><code>susieR</code> allows for a customized initialization. In this vignette we deomonstrate how to use <a href="https://github.com/hazimehh/L0Learn"><code>L0Learn</code></a> fit to initialize susieR.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(susieR)
 <span class="kw">library</span>(L0Learn)</code></pre></div>
@@ -78,8 +85,8 @@ n =<span class="st"> </span><span class="dv">1000</span>
 p =<span class="st"> </span><span class="dv">1000</span>
 beta =<span class="st"> </span><span class="kw">rep</span>(<span class="dv">0</span>,p)
 beta[<span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">300</span>,<span class="dv">400</span>)] =<span class="st"> </span><span class="dv">1</span>
-X =<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">rnorm</span>(n<span class="op">*</span>p),<span class="dt">nrow=</span>n,<span class="dt">ncol=</span>p)
-y =<span class="st"> </span>X <span class="op">%*%</span><span class="st"> </span>beta <span class="op">+</span><span class="st"> </span><span class="kw">rnorm</span>(n)</code></pre></div>
+X =<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">rnorm</span>(n*p),<span class="dt">nrow=</span>n,<span class="dt">ncol=</span>p)
+y =<span class="st"> </span>X %*%<span class="st"> </span>beta +<span class="st"> </span><span class="kw">rnorm</span>(n)</code></pre></div>
 </div>
 <div id="fit-l0learn" class="section level2">
 <h2 class="hasAnchor">
@@ -88,16 +95,16 @@ y =<span class="st"> </span>X <span class="op">%*%</span><span class="st"> </spa
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">set.seed</span>(<span class="dv">1</span>)
 L0fit =<span class="st"> </span><span class="kw"><a href="http://www.rdocumentation.org/packages/L0Learn/topics/L0Learn.cvfit">L0Learn.cvfit</a></span>(X, y, <span class="dt">penalty =</span> <span class="st">"L0"</span>)</code></pre></div>
 <p>Let’s choose the penalty strength parameter that minimizes the cross-validation error.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">lambdaIndex =<span class="st"> </span><span class="kw">which.min</span>(L0fit<span class="op">$</span>cvMeans[[<span class="dv">1</span>]]) 
-L0coef =<span class="st"> </span><span class="kw">as.numeric</span>(<span class="kw">coef</span>(L0fit<span class="op">$</span>fit, <span class="dt">lambda =</span> L0fit<span class="op">$</span>fit<span class="op">$</span>lambda[[<span class="dv">1</span>]][lambdaIndex]))
-effect.beta =<span class="st"> </span>L0coef[<span class="kw">which</span>(L0coef<span class="op">!=</span><span class="dv">0</span>)][<span class="op">-</span><span class="dv">1</span>]
-effect.index =<span class="st"> </span>(<span class="kw">which</span>(L0coef<span class="op">!=</span><span class="dv">0</span>)<span class="op">-</span><span class="dv">1</span>)[<span class="op">-</span><span class="dv">1</span>] 
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">lambdaIndex =<span class="st"> </span><span class="kw">which.min</span>(L0fit$cvMeans[[<span class="dv">1</span>]]) 
+L0coef =<span class="st"> </span><span class="kw">as.numeric</span>(<span class="kw">coef</span>(L0fit$fit, <span class="dt">lambda =</span> L0fit$fit$lambda[[<span class="dv">1</span>]][lambdaIndex]))
+effect.beta =<span class="st"> </span>L0coef[<span class="kw">which</span>(L0coef!=<span class="dv">0</span>)][-<span class="dv">1</span>]
+effect.index =<span class="st"> </span>(<span class="kw">which</span>(L0coef!=<span class="dv">0</span>)-<span class="dv">1</span>)[-<span class="dv">1</span>] 
 <span class="kw">length</span>(effect.beta)
 <span class="co"># [1] 96</span>
-effect.beta[<span class="dv">1</span><span class="op">:</span><span class="dv">10</span>]
+effect.beta[<span class="dv">1</span>:<span class="dv">10</span>]
 <span class="co">#  [1]  1.06408378  1.03371471  0.06249488  0.05487895  0.08173007</span>
 <span class="co">#  [6]  0.05574550  0.06732007  0.10195586 -0.09560190  0.07374249</span>
-effect.index[<span class="dv">1</span><span class="op">:</span><span class="dv">10</span>]
+effect.index[<span class="dv">1</span>:<span class="dv">10</span>]
 <span class="co">#  [1]  1  2 14 33 48 52 55 60 69 78</span></code></pre></div>
 <p>The L0Learn model finds 96 effects, which will be used to initialize susie.</p>
 </div>
@@ -113,7 +120,7 @@ s.init =<span class="st"> </span><span class="kw"><a href="../reference/susie_in
 <a href="#run-susier-with-initialization" class="anchor"></a>Run susieR with initialization</h2>
 <p>Now, we use <code>effect.index</code> and <code>effect.beta</code> obtained from L0Learn fit to create an <code>s.init</code> object. We then run susie with this initialization.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">susieL0.fit =<span class="st"> </span><span class="kw"><a href="../reference/susie.html">susie</a></span>(X,y,<span class="dt">s_init=</span>s.init)
-susieL0.fit<span class="op">$</span>sets<span class="op">$</span>cs
+susieL0.fit$sets$cs
 <span class="co"># $L1</span>
 <span class="co"># [1] 1</span>
 <span class="co"># </span>
@@ -132,7 +139,6 @@ susieL0.fit<span class="op">$</span>sets<span class="op">$</span>cs
 <ol style="list-style-type: decimal">
 <li>Hussein Hazimeh and Rahul Mazumder. (2018). Fast Best Subset Selection: Coordinate Descent and Local Combinatorial Optimization Algorithms.</li>
 </ol>
-</div>
 </div>
   </div>
 
@@ -163,6 +169,8 @@ susieL0.fit<span class="op">$</span>sets<span class="op">$</span>cs
 
       </footer>
 </div>
+
+  
 
   </body>
 </html>

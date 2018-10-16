@@ -2,7 +2,7 @@
 % Please edit documentation in R/susie_utils.R
 \name{susie_get_CS}
 \alias{susie_get_CS}
-\title{Extract confidence sets from SuSiE model}
+\title{Extract credible sets from SuSiE model}
 \usage{
 susie_get_CS(res, X = NULL, Xcorr = NULL, coverage = 0.95,
   min_abs_corr = 0.5, dedup = TRUE)
@@ -13,15 +13,15 @@ inclusion probability matrix alpha.}
 
 \item{X}{N by P matrix of variables.
 When provided, correlation between variables will be computed and used to remove
-confidence sets whose minimum correlation between variables is smaller than `min_abs_corr` (see below).}
+credible sets whose minimum correlation between variables is smaller than `min_abs_corr` (see below).}
 
 \item{Xcorr}{P by P matrix of correlations between variables.
-when provided, it will be used to remove confidence sets
+when provided, it will be used to remove credible sets
 whose minimum correlation between variables is smaller than `min_abs_corr` (see below).}
 
-\item{coverage}{coverage of confident sets. Default to 0.95 for 95\% confidence interval.}
+\item{coverage}{coverage of confident sets. Default to 0.95 for 95\% credible interval.}
 
-\item{min_abs_corr}{minimum of absolute value of correlation allowed in a confidence set.
+\item{min_abs_corr}{minimum of absolute value of correlation allowed in a credible set.
 Default set to 0.5 to correspond to squared correlation of 0.25,
 a commonly used threshold for genotype data in genetics studies.}
 
@@ -31,9 +31,9 @@ a commonly used threshold for genotype data in genetics studies.}
 a list of `cs`, and additionally `purity` and selected `cs_index` if `X` or `Xcorr` was provided.
 }
 \description{
-Extract confidence sets from SuSiE model
+Extract credible sets from SuSiE model
 }
 \details{
-It reports indices of variables in each confidence set identified,
+It reports indices of variables in each credible set identified,
 as well as summaries of correlation between variables within each set.
 }

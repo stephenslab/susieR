@@ -1,4 +1,4 @@
-#' @title Get objective function from data and susie fit object.
+# @title Get objective function from data and susie fit object.
 #'
 #' @param data A flash data object.
 #'

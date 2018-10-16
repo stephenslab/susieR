@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Bayesian sum of single-effect (susie) linear regression of Y on X — susie • susieR</title>
+<title>SUm of Single Effect (SuSiE) Regression of Y on X — susie • susieR</title>
 
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
@@ -21,16 +21,22 @@
 <!-- clipboard.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js" integrity="sha384-cV+rhyOuRHc9Ub/91rihWcGmMmCXDeksTtCihMupQHSsi8GIIRDG0ThDc3HGQFJ3" crossorigin="anonymous"></script>
 
+<!-- sticky kit -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sticky-kit/1.1.3/sticky-kit.min.js" integrity="sha256-c4Rlo1ZozqTPE2RLuvbusY3+SU1pQaJC0TjuhygMipw=" crossorigin="anonymous"></script>
+
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
-<script src="../jquery.sticky-kit.min.js"></script>
 <script src="../pkgdown.js"></script>
-  
-  
-<meta property="og:title" content="Bayesian sum of single-effect (susie) linear regression of Y on X — susie" />
 
-<meta property="og:description" content="Bayesian sum of single-effect (susie) linear regression of Y on X" />
+
+
+<meta property="og:title" content="SUm of Single Effect (SuSiE) Regression of Y on X — susie" />
+
+<meta property="og:description" content="SUm of Single Effect (SuSiE) Regression of Y on X" />
 <meta name="twitter:card" content="summary" />
+
+
+
 <!-- mathjax -->
 <script src='https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
 
@@ -53,8 +59,12 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="../index.html">susieR</a>
+      <span class="navbar-brand">
+        <a class="navbar-link" href="../index.html">susieR</a>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.5.0</span>
+      </span>
     </div>
+
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
@@ -73,6 +83,7 @@
   <a href="https://github.com/stephenslab/susieR">Source</a>
 </li>
       </ul>
+      
     </div><!--/.nav-collapse -->
   </div><!--/.container -->
 </div><!--/.navbar -->
@@ -80,15 +91,19 @@
       
       </header>
 
-      <div class="row">
+<div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Bayesian sum of single-effect (susie) linear regression of Y on X</h1>
+    <h1>SUm of Single Effect (SuSiE) Regression of Y on X</h1>
+    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/susie.R'><code>R/susie.R</code></a></small>
+    <div class="hidden name"><code>susie.Rd</code></div>
     </div>
 
+    <div class="ref-description">
     
-    <p>Bayesian sum of single-effect (susie) linear regression of Y on X</p>
+    <p>SUm of Single Effect (SuSiE) Regression of Y on X</p>
     
+    </div>
 
     <pre class="usage"><span class='fu'>susie</span>(<span class='no'>X</span>, <span class='no'>Y</span>, <span class='kw'>L</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>scaled_prior_variance</span> <span class='kw'>=</span> <span class='fl'>0.2</span>,
   <span class='kw'>residual_variance</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>prior_weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>null_weight</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
@@ -98,7 +113,7 @@
   <span class='kw'>compute_univariate_zscore</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>max_iter</span> <span class='kw'>=</span> <span class='fl'>100</span>, <span class='kw'>tol</span> <span class='kw'>=</span> <span class='fl'>0.001</span>,
   <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>track_fit</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</pre>
     
-    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a> Arguments</h2>
+    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
@@ -156,11 +171,11 @@ Any column of X that has zero variance is not standardized, but left as is.</p><
     </tr>
     <tr>
       <th>coverage</th>
-      <td><p>coverage of confident sets. Default to 0.95 for 95% confidence interval.</p></td>
+      <td><p>coverage of confident sets. Default to 0.95 for 95% credible interval.</p></td>
     </tr>
     <tr>
       <th>min_abs_corr</th>
-      <td><p>minimum of absolute value of correlation allowed in a confidence set.
+      <td><p>minimum of absolute value of correlation allowed in a credible set.
 Default set to 0.5 to correspond to squared correlation of 0.25,
 a commonly used threshold for genotype data in genetics studies.</p></td>
     </tr>
@@ -188,7 +203,7 @@ a commonly used threshold for genotype data in genetics studies.</p></td>
     
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>a susie fit, which is a list with some or all of the following elements</p>
+    <p>a susie fit, which is a list with some or all of the following elements<br /></p>
 <dt>alpha</dt><dd><p>an L by p matrix of posterior inclusion probabilites</p></dd>
 <dt>mu</dt><dd><p>an L by p matrix of posterior means (conditional on inclusion)</p></dd>
 <dt>mu2</dt><dd><p>an L by p matrix of posterior second moments (conditional on inclusion)</p></dd>
@@ -203,7 +218,7 @@ a commonly used threshold for genotype data in genetics studies.</p></td>
     
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p>Performs sum of single-effect (susie) linear regression of Y on X.
+    <p>Performs Bayesian multiple linear regression of Y on X.
 That is, this function
 fits the regression model Y= sum_l Xb_l + e, where elements of e are iid N(0,residual_variance) and the
 sum_l b_l is a p vector of effects to be estimated.
@@ -212,7 +227,8 @@ equally likely to be non-zero. The prior on the non-zero element is N(0,var=var(
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='fu'>set.seed</span>(<span class='fl'>1</span>)
+    <pre class="examples"><span class='co'># NOT RUN {</span>
+<span class='fu'>set.seed</span>(<span class='fl'>1</span>)
 <span class='no'>n</span> <span class='kw'>=</span> <span class='fl'>1000</span>
 <span class='no'>p</span> <span class='kw'>=</span> <span class='fl'>1000</span>
 <span class='no'>beta</span> <span class='kw'>=</span> <span class='fu'>rep</span>(<span class='fl'>0</span>,<span class='no'>p</span>)
@@ -220,174 +236,10 @@ equally likely to be non-zero. The prior on the non-zero element is N(0,var=var(
 <span class='no'>X</span> <span class='kw'>=</span> <span class='fu'>matrix</span>(<span class='fu'>rnorm</span>(<span class='no'>n</span>*<span class='no'>p</span>),<span class='kw'>nrow</span><span class='kw'>=</span><span class='no'>n</span>,<span class='kw'>ncol</span><span class='kw'>=</span><span class='no'>p</span>)
 <span class='no'>y</span> <span class='kw'>=</span> <span class='no'>X</span> <span class='kw'>%*%</span> <span class='no'>beta</span> + <span class='fu'>rnorm</span>(<span class='no'>n</span>)
 <span class='no'>res</span> <span class='kw'>=</span><span class='fu'>susie</span>(<span class='no'>X</span>,<span class='no'>y</span>,<span class='kw'>L</span><span class='kw'>=</span><span class='fl'>10</span>)
-<span class='fu'>coef</span>(<span class='no'>res</span>)</div><div class='output co'>#&gt;    [1] -1.042e-02  1.061e+00  1.022e+00  1.003e+00  9.886e-01 -5.036e-05
-#&gt;    [7] -5.029e-05  1.020e-03  1.737e-05  7.286e-05  1.536e-05  1.336e-04
-#&gt;   [13]  2.727e-04  1.127e-04  5.108e-04  2.065e-05 -4.637e-05  1.192e-03
-#&gt;   [19]  1.133e-04  1.230e-04  4.428e-06 -3.902e-05 -1.262e-04  2.966e-04
-#&gt;   [25]  3.356e-05  4.444e-04  1.085e-05 -6.494e-05 -6.102e-05  8.585e-05
-#&gt;   [31] -2.530e-04 -2.223e-05  3.310e-04  3.571e-04  1.283e-05  2.248e-05
-#&gt;   [37]  2.731e-04 -3.476e-05 -8.877e-05  3.684e-05  2.575e-04  7.178e-05
-#&gt;   [43]  2.028e-05 -2.107e-05 -4.506e-05 -1.852e-04  3.477e-04 -2.053e-05
-#&gt;   [49]  8.386e-04  1.729e-05 -7.951e-05 -3.267e-05  1.801e-04 -3.780e-04
-#&gt;   [55]  2.005e-05  1.242e-04  4.825e-05  1.793e-04 -5.057e-05 -2.611e-05
-#&gt;   [61]  7.450e-03  4.024e-05  3.246e-05 -2.227e-05 -8.211e-05  5.352e-06
-#&gt;   [67] -1.235e-04  5.265e-05 -4.511e-05 -8.711e-03 -3.791e-06  3.340e-04
-#&gt;   [73]  1.600e-04  2.818e-05  9.676e-05 -8.998e-06 -5.884e-05  2.637e-05
-#&gt;   [79]  4.030e-04  1.979e-04 -5.927e-04  6.676e-05 -1.742e-06 -7.934e-06
-#&gt;   [85] -4.126e-05  1.451e-04  1.040e-04  2.491e-05 -1.565e-05 -1.770e-05
-#&gt;   [91]  1.508e-04 -3.371e-04  2.970e-05  2.747e-05  3.058e-05 -2.548e-04
-#&gt;   [97]  2.538e-04 -7.377e-05  1.940e-04 -5.149e-04 -1.510e-05  1.913e-04
-#&gt;  [103]  1.897e-04 -6.305e-05  8.556e-06  2.899e-04  7.085e-05 -2.596e-05
-#&gt;  [109]  8.838e-06  3.986e-05  1.239e-04  1.510e-04  7.314e-05 -1.148e-04
-#&gt;  [115]  2.421e-05  2.197e-05  2.352e-05 -1.566e-05 -1.079e-05  1.043e-05
-#&gt;  [121]  5.979e-04  1.057e-04  4.098e-05  3.363e-05 -6.019e-05  4.138e-05
-#&gt;  [127] -5.757e-05 -1.702e-04  1.663e-03  2.338e-05  9.830e-05  1.996e-04
-#&gt;  [133] -9.492e-06 -2.532e-05 -4.377e-05  1.528e-05  2.121e-05  1.268e-05
-#&gt;  [139] -4.527e-05 -5.416e-05 -4.868e-05  9.119e-05 -2.119e-05 -1.157e-04
-#&gt;  [145]  5.554e-07  2.507e-06 -9.179e-05  4.180e-04  1.280e-05  6.099e-04
-#&gt;  [151] -3.659e-05 -4.915e-05  5.525e-05  2.689e-04 -6.382e-05 -1.825e-05
-#&gt;  [157] -1.258e-03 -6.283e-05  6.063e-05  2.283e-05 -1.268e-04  7.904e-06
-#&gt;  [163] -1.861e-05 -2.223e-05  3.180e-04 -7.861e-05  1.472e-04  2.905e-04
-#&gt;  [169]  1.640e-04  9.008e-05  1.810e-03  2.025e-05  1.872e-04  1.763e-04
-#&gt;  [175] -2.375e-06 -1.054e-02  1.716e-05 -5.592e-06  1.653e-04 -2.198e-05
-#&gt;  [181]  2.261e-04 -3.512e-05 -3.815e-05  5.515e-06  1.220e-04  2.856e-04
-#&gt;  [187] -6.258e-05 -2.723e-05 -4.398e-05 -1.947e-04 -1.570e-04 -5.713e-05
-#&gt;  [193]  1.167e-05  2.742e-04  8.112e-05 -8.349e-06 -2.297e-05 -1.350e-04
-#&gt;  [199] -5.496e-05  2.628e-05 -1.596e-05  6.918e-06 -2.587e-04  2.078e-05
-#&gt;  [205] -9.643e-04  5.088e-05  4.037e-06  6.044e-05  7.418e-05  1.270e-05
-#&gt;  [211] -4.432e-05 -2.544e-07  8.747e-05 -2.841e-04 -1.033e-04 -5.632e-05
-#&gt;  [217]  5.505e-05 -4.655e-05 -1.848e-04  1.160e-03  6.074e-05 -3.590e-05
-#&gt;  [223]  5.746e-05 -7.686e-05  9.499e-05  5.241e-06 -3.110e-05  9.470e-05
-#&gt;  [229] -5.149e-05  7.515e-05 -3.337e-05  7.984e-05 -1.086e-03  5.937e-05
-#&gt;  [235]  2.011e-05  3.445e-05  2.240e-05 -7.614e-05  3.163e-05  1.417e-06
-#&gt;  [241]  5.411e-05  2.636e-05  1.241e-05  9.951e-05  8.032e-05  9.940e-06
-#&gt;  [247]  2.623e-04 -1.648e-05 -1.300e-04 -2.986e-05 -7.110e-05  1.015e-05
-#&gt;  [253]  8.626e-05  4.828e-05 -1.876e-05 -1.808e-04  8.274e-04  1.429e-06
-#&gt;  [259]  1.661e-04  1.532e-06  6.756e-05 -4.197e-05 -2.915e-06  4.896e-05
-#&gt;  [265] -7.293e-04  7.930e-05 -2.100e-05 -6.452e-05  1.004e-04  3.772e-04
-#&gt;  [271]  1.041e-03  2.390e-05 -1.754e-04 -3.684e-04 -1.384e-06  4.499e-03
-#&gt;  [277] -2.873e-05  2.812e-05 -1.089e-05 -1.862e-04  7.558e-05  1.971e-05
-#&gt;  [283] -2.609e-05 -2.209e-04 -3.619e-04  6.048e-06  5.878e-05 -1.195e-05
-#&gt;  [289]  3.492e-05  1.131e-06 -2.000e-05 -9.682e-05  4.804e-04  1.695e-05
-#&gt;  [295]  7.763e-06 -6.907e-05 -4.465e-04 -7.665e-05 -9.019e-05 -3.928e-06
-#&gt;  [301] -3.647e-05 -3.589e-05 -2.556e-05  3.138e-03 -3.869e-04  5.132e-05
-#&gt;  [307] -1.704e-05 -5.473e-06 -3.722e-04 -1.346e-04  1.099e-04  9.262e-05
-#&gt;  [313]  2.325e-06 -2.822e-06 -8.421e-06  2.528e-04  3.564e-04  1.393e-05
-#&gt;  [319] -1.677e-05  3.527e-03 -1.076e-04 -5.251e-05 -4.719e-05  5.395e-07
-#&gt;  [325]  2.604e-05  3.846e-06  2.876e-04 -6.437e-05  1.393e-05  5.488e-05
-#&gt;  [331] -5.261e-05  1.096e-06  1.144e-04  2.061e-04 -1.730e-05 -6.096e-05
-#&gt;  [337]  2.480e-04 -2.322e-04  9.422e-05  5.805e-05 -1.433e-05  6.731e-05
-#&gt;  [343]  9.454e-06 -1.289e-05 -8.258e-04  2.007e-05  4.321e-03 -4.262e-05
-#&gt;  [349] -2.314e-05 -2.232e-05  9.816e-05  1.077e-04 -3.146e-05  3.347e-05
-#&gt;  [355] -8.556e-05 -4.418e-05 -8.602e-05 -3.382e-05 -2.540e-05 -2.646e-04
-#&gt;  [361] -1.551e-05 -8.051e-05  9.576e-05 -6.938e-05 -3.267e-04 -2.958e-04
-#&gt;  [367] -5.116e-05 -9.314e-06  2.322e-04  3.178e-05  4.497e-05 -3.714e-05
-#&gt;  [373] -2.851e-04  4.745e-05 -1.057e-03  3.009e-05  4.557e-05 -4.419e-04
-#&gt;  [379]  4.100e-05 -1.425e-04  1.381e-04  9.935e-06  2.199e-05  4.513e-04
-#&gt;  [385]  5.978e-05 -1.314e-04 -3.567e-05 -6.558e-05 -6.466e-04  2.645e-05
-#&gt;  [391]  4.992e-05  2.664e-04  5.883e-05 -1.137e-05 -1.595e-05  1.304e-05
-#&gt;  [397] -3.420e-05 -5.590e-04  2.164e-05 -7.350e-05  3.121e-05 -1.432e-05
-#&gt;  [403] -3.688e-05 -2.484e-05 -8.485e-06  1.248e-04 -9.716e-05  8.012e-05
-#&gt;  [409]  6.746e-05 -4.608e-04 -2.135e-05 -6.886e-05  5.510e-05  6.082e-05
-#&gt;  [415]  8.064e-06 -1.262e-04 -6.559e-05 -1.004e-04  5.490e-05  2.611e-05
-#&gt;  [421] -7.490e-04  2.933e-04 -1.497e-05  3.020e-05  2.067e-06 -1.182e-04
-#&gt;  [427] -4.289e-04  6.915e-05 -9.023e-05  9.739e-05 -5.678e-05 -1.187e-05
-#&gt;  [433] -3.315e-05  2.062e-04 -7.653e-05  3.982e-04  2.601e-05  1.680e-04
-#&gt;  [439]  4.538e-06 -1.175e-05  8.102e-05  2.309e-05  7.118e-05  1.245e-05
-#&gt;  [445]  3.514e-05 -2.694e-04 -6.605e-05  7.486e-06 -8.375e-05  1.436e-08
-#&gt;  [451]  2.102e-05 -8.879e-04 -5.246e-05  1.137e-04 -4.614e-05  6.948e-05
-#&gt;  [457]  2.431e-05  3.996e-05 -8.097e-05  1.082e-04  3.128e-05  2.913e-04
-#&gt;  [463]  1.978e-04  2.974e-05  3.299e-05  9.765e-05  4.934e-05  3.035e-05
-#&gt;  [469]  1.202e-04  2.269e-03  3.211e-03 -9.849e-05 -6.094e-06 -1.801e-05
-#&gt;  [475] -3.912e-05 -1.404e-05 -7.994e-05 -6.653e-05  1.140e-04  2.159e-05
-#&gt;  [481]  2.974e-05  1.282e-05 -4.803e-04  3.875e-05 -3.906e-04  1.744e-05
-#&gt;  [487] -4.174e-03 -1.087e-04 -2.267e-04 -1.749e-04 -6.125e-04  2.683e-05
-#&gt;  [493] -1.120e-04 -6.193e-05 -2.083e-05  8.691e-08  6.030e-05 -5.422e-05
-#&gt;  [499]  1.911e-05 -9.102e-05  2.764e-05 -1.539e-05 -5.037e-05 -2.109e-05
-#&gt;  [505] -1.064e-04 -8.109e-06 -1.507e-05 -6.461e-05  2.199e-04 -3.017e-05
-#&gt;  [511]  1.134e-06 -1.741e-04 -8.577e-05  7.018e-05 -5.265e-04 -1.083e-04
-#&gt;  [517] -1.121e-04  7.644e-05  1.154e-05 -3.340e-05 -8.225e-06  2.861e-04
-#&gt;  [523] -9.309e-04  3.246e-05  7.737e-05 -9.398e-05  1.361e-04 -8.726e-06
-#&gt;  [529]  5.415e-06  1.746e-04 -2.562e-05  3.437e-04  2.379e-04 -1.914e-05
-#&gt;  [535] -8.192e-06  7.990e-06  1.806e-05 -5.818e-05  4.871e-05 -1.002e-03
-#&gt;  [541] -5.196e-05  5.961e-05  2.167e-05 -1.148e-04 -1.537e-04  1.087e-04
-#&gt;  [547] -6.197e-05 -1.253e-04  1.446e-05  1.686e-04  2.101e-05  1.610e-05
-#&gt;  [553] -9.932e-06 -1.263e-06 -3.167e-04 -1.943e-02  4.340e-04 -1.417e-04
-#&gt;  [559]  1.649e-04  6.494e-05  4.012e-04  1.648e-04 -9.026e-05  8.118e-06
-#&gt;  [565]  1.424e-04  7.332e-05 -9.332e-05 -6.321e-05 -1.413e-03  3.246e-05
-#&gt;  [571]  8.307e-05 -1.327e-04  8.662e-06 -7.495e-04  1.379e-05  1.840e-04
-#&gt;  [577] -6.148e-05  1.575e-05  1.146e-05  7.447e-05  8.711e-05  3.914e-05
-#&gt;  [583]  1.581e-04  4.736e-05  2.815e-05  1.375e-05 -2.170e-04  3.500e-05
-#&gt;  [589]  7.308e-05 -3.542e-05  1.469e-04  2.218e-04 -2.461e-04  3.776e-04
-#&gt;  [595]  2.789e-04 -7.111e-05 -3.615e-04 -5.492e-06 -5.771e-05 -1.263e-05
-#&gt;  [601]  2.807e-04  1.699e-04  2.929e-05  6.453e-05  5.852e-05  1.182e-04
-#&gt;  [607] -7.758e-06 -2.427e-06  1.362e-05 -1.206e-04  8.874e-05  3.476e-05
-#&gt;  [613]  6.949e-03 -3.712e-05 -3.114e-04  4.726e-05 -6.697e-05 -2.179e-05
-#&gt;  [619]  1.490e-04 -6.203e-06  3.894e-05  3.651e-04  8.275e-05 -1.080e-06
-#&gt;  [625] -1.965e-04 -2.330e-05 -7.482e-05  2.651e-04  3.381e-04 -1.720e-04
-#&gt;  [631] -9.594e-05  2.376e-05 -2.886e-05  9.507e-06 -8.820e-06  4.520e-05
-#&gt;  [637] -6.250e-03  8.018e-05 -1.278e-04  1.189e-04  2.089e-05  3.094e-03
-#&gt;  [643] -3.821e-05  1.976e-06 -1.579e-04  9.956e-06 -1.420e-04  2.195e-04
-#&gt;  [649] -5.281e-06  2.935e-06 -1.302e-04  3.269e-05 -3.630e-04 -7.906e-06
-#&gt;  [655] -1.227e-04  3.151e-05 -2.072e-04  1.390e-05  4.252e-05 -6.249e-05
-#&gt;  [661]  1.193e-05 -6.181e-05  4.918e-06 -3.758e-05  4.645e-05  4.147e-06
-#&gt;  [667] -4.016e-05  2.140e-06  3.851e-05 -7.898e-07  2.149e-05  1.801e-04
-#&gt;  [673] -5.685e-05  5.136e-05 -5.988e-05  5.495e-04 -7.217e-05  7.192e-06
-#&gt;  [679] -4.389e-05 -6.302e-06  9.213e-04  3.177e-05  7.025e-04 -2.763e-04
-#&gt;  [685] -1.617e-04 -1.645e-05 -3.567e-05 -3.032e-05 -1.079e-05  5.895e-04
-#&gt;  [691]  3.404e-05  3.285e-04  3.795e-05 -8.933e-05  2.890e-05  7.504e-06
-#&gt;  [697] -3.376e-05  1.879e-04 -7.117e-05  5.742e-06 -1.226e-05  6.307e-06
-#&gt;  [703] -1.262e-04 -1.491e-04  5.157e-05 -2.441e-06  2.637e-05  2.608e-04
-#&gt;  [709]  5.026e-05 -1.221e-04 -7.419e-05  3.608e-05  9.510e-03  4.091e-05
-#&gt;  [715] -2.289e-04  7.689e-06 -1.425e-04  2.115e-04  1.875e-05 -8.120e-06
-#&gt;  [721] -1.659e-04  3.248e-05  3.230e-04  7.338e-06  4.427e-05  2.744e-06
-#&gt;  [727]  1.748e-05 -5.675e-03 -2.736e-05 -2.610e-05  2.856e-05 -3.462e-05
-#&gt;  [733]  1.359e-03 -7.861e-06 -9.698e-05 -1.295e-04 -1.199e-05 -7.798e-05
-#&gt;  [739]  1.043e-04 -4.898e-04 -2.006e-05 -2.211e-05  2.248e-05  3.179e-05
-#&gt;  [745] -5.314e-05  3.958e-05 -3.592e-07 -7.057e-06  3.413e-05 -3.978e-05
-#&gt;  [751] -5.055e-05  8.815e-05 -4.023e-04  3.055e-05 -1.961e-05 -1.908e-06
-#&gt;  [757] -2.550e-05 -4.656e-04  5.853e-05  6.427e-07  7.737e-05  4.812e-05
-#&gt;  [763] -1.224e-05 -1.512e-03  2.515e-04 -5.219e-04 -4.182e-05  4.584e-05
-#&gt;  [769]  7.483e-05  2.518e-05  2.398e-03 -7.925e-07  9.411e-04 -8.675e-05
-#&gt;  [775]  1.974e-03 -1.457e-05 -1.580e-05  7.430e-05 -3.340e-04 -1.169e-04
-#&gt;  [781]  2.739e-06  2.942e-05  2.883e-05  2.309e-04  4.088e-05 -1.621e-04
-#&gt;  [787] -7.429e-05  2.306e-05 -2.428e-05 -5.154e-04  1.337e-04 -3.028e-05
-#&gt;  [793]  1.712e-04 -2.725e-05 -1.246e-05  2.340e-04 -4.563e-05 -8.355e-04
-#&gt;  [799] -9.194e-06  4.938e-05 -1.055e-04  3.780e-05  1.051e-04  7.370e-05
-#&gt;  [805]  3.236e-05 -2.794e-04 -3.083e-05  6.229e-05  4.726e-05 -2.795e-05
-#&gt;  [811] -3.075e-05  3.725e-05  1.383e-05  3.423e-05  1.253e-05 -5.726e-05
-#&gt;  [817]  4.377e-05 -3.644e-05  2.700e-04  1.650e-05 -2.128e-04 -6.917e-05
-#&gt;  [823]  1.333e-05 -8.158e-06 -8.584e-05 -5.226e-05 -3.716e-06 -2.647e-04
-#&gt;  [829]  6.946e-05  4.857e-05  3.691e-05 -7.228e-05 -9.260e-05  1.706e-04
-#&gt;  [835] -9.116e-05  7.910e-05  2.070e-05  1.622e-05 -4.550e-05  5.882e-05
-#&gt;  [841] -3.605e-05 -6.783e-05 -8.685e-05  2.963e-05  6.501e-05  1.200e-04
-#&gt;  [847]  5.696e-05  1.937e-05 -2.500e-05 -6.640e-05 -2.207e-06 -2.787e-05
-#&gt;  [853]  8.073e-05 -1.373e-04  1.472e-04 -2.705e-05 -1.529e-04  2.081e-05
-#&gt;  [859]  2.282e-05  3.556e-05 -7.336e-05 -1.772e-04  1.627e-05  3.565e-05
-#&gt;  [865] -1.568e-06 -2.605e-05  1.113e-05 -3.283e-05 -1.626e-05 -2.377e-05
-#&gt;  [871]  1.167e-04 -1.618e-05 -2.202e-05 -4.140e-05 -4.855e-05  1.214e-04
-#&gt;  [877]  4.656e-05  5.256e-05  5.801e-05  1.829e-05  9.968e-06  1.172e-03
-#&gt;  [883] -1.394e-04 -8.311e-07  1.084e-04 -1.475e-04 -2.436e-05 -7.268e-05
-#&gt;  [889] -4.794e-05  2.377e-05  1.290e-05 -2.030e-06  1.262e-04 -1.518e-06
-#&gt;  [895] -1.554e-05 -2.510e-04  1.121e-04  4.232e-04 -1.660e-03 -2.640e-05
-#&gt;  [901] -3.535e-05  5.626e-04  8.895e-05  8.582e-04 -1.352e-05 -8.613e-05
-#&gt;  [907] -2.895e-04 -1.823e-05  1.209e-03 -5.356e-05  3.693e-05  3.477e-06
-#&gt;  [913] -5.759e-04 -3.497e-04  3.258e-05  1.436e-04  1.415e-05 -2.411e-05
-#&gt;  [919] -3.038e-04 -2.347e-06  5.399e-05  2.115e-05  5.653e-05  9.161e-05
-#&gt;  [925]  4.684e-05 -3.097e-05 -1.560e-05 -2.429e-05  1.462e-05 -1.015e-05
-#&gt;  [931] -5.672e-04  2.151e-04 -2.786e-05  2.401e-04 -5.585e-03  5.007e-05
-#&gt;  [937] -5.199e-05  2.740e-05 -1.822e-04  5.422e-05 -5.583e-05  4.607e-05
-#&gt;  [943]  1.193e-04  2.473e-05  8.561e-05 -9.799e-05 -4.355e-05  7.169e-06
-#&gt;  [949]  3.327e-04  1.389e-05  4.665e-04 -6.419e-06 -1.362e-04  8.621e-08
-#&gt;  [955] -7.824e-05 -5.759e-05  1.568e-05 -1.426e-04 -9.298e-06 -2.461e-04
-#&gt;  [961] -4.001e-05  7.106e-05  4.917e-06  1.352e-04 -5.268e-05 -1.097e-03
-#&gt;  [967]  6.060e-05 -3.174e-04 -2.299e-05  1.679e-04  6.299e-06  4.542e-05
-#&gt;  [973]  4.548e-05 -9.781e-06 -8.314e-05 -2.295e-05  1.973e-06 -4.281e-04
-#&gt;  [979] -7.330e-05 -2.574e-05  2.732e-04 -6.820e-05 -1.822e-04 -6.895e-05
-#&gt;  [985] -3.786e-05 -7.651e-05  3.153e-05 -2.238e-04  3.622e-05 -7.408e-05
-#&gt;  [991]  7.048e-05  2.639e-05  4.314e-04 -6.623e-05 -6.444e-05 -2.074e-05
-#&gt;  [997]  7.512e-04 -3.076e-05  6.417e-04 -5.589e-05  3.848e-04</div><div class='input'><span class='fu'>plot</span>(<span class='no'>y</span>,<span class='fu'>predict</span>(<span class='no'>res</span>))</div><div class='img'><img src='susie-1.png' alt='' width='700' height='432.632880098887' /></div><div class='input'>
-</div></pre>
+<span class='fu'>coef</span>(<span class='no'>res</span>)
+<span class='fu'>plot</span>(<span class='no'>y</span>,<span class='fu'>predict</span>(<span class='no'>res</span>))
+
+<span class='co'># }</span></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>
@@ -416,5 +268,8 @@ equally likely to be non-zero. The prior on the non-zero element is N(0,var=var(
       </footer>
    </div>
 
+  
+
   </body>
 </html>
+

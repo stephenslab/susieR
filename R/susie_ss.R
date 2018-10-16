@@ -29,8 +29,8 @@
 #' @param intercept_value a value to assign to the intercept (since the intercept cannot be estimated from centered summary data). This
 #' value will be used by coef.susie() to assign an intercept value, for consistency with the non-summary-statistic version of this function \code{susie}.
 #' Set to NULL if you want coef.susie() not to include an intercept term (and so only return a p vector).
-#' @param coverage coverage of confident sets. Default to 0.95 for 95\% confidence interval.
-#' @param min_abs_corr minimum of absolute value of correlation allowed in a confidence set.
+#' @param coverage coverage of confident sets. Default to 0.95 for 95\% credible interval.
+#' @param min_abs_corr minimum of absolute value of correlation allowed in a credible set.
 #' @param tol convergence tolerance based on alpha
 #' @param verbose if true outputs some progress messages
 #' @param track_fit add an attribute \code{trace} to output that saves current values of all iterations
@@ -159,8 +159,8 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10,
 #' @param L maximum number of non-zero effects.
 #' @param prior_weights a p vector of prior probability that each element is non-zero
 #' @param null_weight probability of no effect, for each single effect model
-#' @param coverage coverage of confident sets. Default to 0.95 for 95\% confidence interval.
-#' @param min_abs_corr minimum of absolute value of correlation allowed in a confidence set.
+#' @param coverage coverage of confident sets. Default to 0.95 for 95\% credible interval.
+#' @param min_abs_corr minimum of absolute value of correlation allowed in a credible set.
 #' @param verbose if TRUE outputs some progress messages
 #' @param track_fit add an attribute \code{trace} to output that saves current values of all iterations
 #' @param ... further arguments to be passed to \code{\link{susie_ss}}
@@ -218,8 +218,8 @@ susie_z = function(z, R,
 #' If you do not standardize you may need
 #' to think more carefully about specifying `scaled_prior_variance`.
 #' Whatever the value of standardize, the coefficients (returned from `coef`) are on the bhat, shat scale.
-#' @param coverage coverage of confident sets. Default to 0.95 for 95\% confidence interval.
-#' @param min_abs_corr minimum of absolute value of correlation allowed in a confidence set.
+#' @param coverage coverage of confident sets. Default to 0.95 for 95\% credible interval.
+#' @param min_abs_corr minimum of absolute value of correlation allowed in a credible set.
 #' @param verbose if true outputs some progress messages
 #' @param track_fit add an attribute \code{trace} to output that saves current values of all iterations
 #' @param ... further arguments to be passed to \code{\link{susie_ss}}

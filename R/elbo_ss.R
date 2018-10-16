@@ -1,4 +1,4 @@
-#' @title Get objective function from data and susie fit object.
+# @title Get objective function from data and susie fit object.
 #'
 #' @param XtX a p by p matrix, X'X
 #' @param Xty a p vector, X'Y,

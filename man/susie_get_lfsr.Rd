@@ -2,7 +2,7 @@
 % Please edit documentation in R/susie_utils.R
 \name{susie_get_lfsr}
 \alias{susie_get_lfsr}
-\title{Local false sign rate (lfsr) for susie confidence sets}
+\title{Local false sign rate (lfsr) for susie credible sets}
 \usage{
 susie_get_lfsr(res)
 }
@@ -10,10 +10,10 @@ susie_get_lfsr(res)
 \item{res}{a susie fit, the output of `susieR::susie()`}
 }
 \value{
-an l vector of lfsr for confidence sets
+an l vector of lfsr for credible sets
 }
 \description{
-Local false sign rate (lfsr) for susie confidence sets
+Local false sign rate (lfsr) for susie credible sets
 }
 \details{
 This computes the average lfsr across SNPs for each l, weighted by the

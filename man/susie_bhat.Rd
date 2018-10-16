@@ -37,9 +37,9 @@ If you do not standardize you may need
 to think more carefully about specifying `scaled_prior_variance`.
 Whatever the value of standardize, the coefficients (returned from `coef`) are on the bhat, shat scale.}
 
-\item{coverage}{coverage of confident sets. Default to 0.95 for 95\% confidence interval.}
+\item{coverage}{coverage of confident sets. Default to 0.95 for 95\% credible interval.}
 
-\item{min_abs_corr}{minimum of absolute value of correlation allowed in a confidence set.}
+\item{min_abs_corr}{minimum of absolute value of correlation allowed in a credible set.}
 
 \item{verbose}{if true outputs some progress messages}
 

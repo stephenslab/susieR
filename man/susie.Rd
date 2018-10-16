@@ -42,9 +42,9 @@ Any column of X that has zero variance is not standardized, but left as is.}
 
 \item{s_init}{a previous susie fit with which to initialize}
 
-\item{coverage}{coverage of confident sets. Default to 0.95 for 95\% confidence interval.}
+\item{coverage}{coverage of confident sets. Default to 0.95 for 95\% credible interval.}
 
-\item{min_abs_corr}{minimum of absolute value of correlation allowed in a confidence set.
+\item{min_abs_corr}{minimum of absolute value of correlation allowed in a credible set.
 Default set to 0.5 to correspond to squared correlation of 0.25,
 a commonly used threshold for genotype data in genetics studies.}
 

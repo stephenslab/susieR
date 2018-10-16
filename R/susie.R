@@ -22,8 +22,8 @@
 #' @param estimate_residual_variance indicates whether to estimate residual variance
 #' @param estimate_prior_variance indicates whether to estimate prior (currently not recommended as not fully tested and assessed)
 #' @param s_init a previous susie fit with which to initialize
-#' @param coverage coverage of confident sets. Default to 0.95 for 95\% confidence interval.
-#' @param min_abs_corr minimum of absolute value of correlation allowed in a confidence set.
+#' @param coverage coverage of confident sets. Default to 0.95 for 95\% credible interval.
+#' @param min_abs_corr minimum of absolute value of correlation allowed in a credible set.
 #' Default set to 0.5 to correspond to squared correlation of 0.25,
 #' a commonly used threshold for genotype data in genetics studies.
 #' @param compute_univariate_zscore if true, outputs z-score from per variable univariate regression

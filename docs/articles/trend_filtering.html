@@ -8,8 +8,8 @@
 <title>Trend filtering • susieR</title>
 <!-- jquery --><script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script><!-- Bootstrap --><link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script><!-- Font Awesome icons --><link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-T8Gy5hrqNKT+hzMclPo118YTQO6cYprQmhrYwIiQ/3axmI1hQomh7Ud2hPOy8SP1" crossorigin="anonymous">
-<!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js" integrity="sha384-cV+rhyOuRHc9Ub/91rihWcGmMmCXDeksTtCihMupQHSsi8GIIRDG0ThDc3HGQFJ3" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
-<script src="../jquery.sticky-kit.min.js"></script><script src="../pkgdown.js"></script><meta property="og:title" content="Trend filtering">
+<!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js" integrity="sha384-cV+rhyOuRHc9Ub/91rihWcGmMmCXDeksTtCihMupQHSsi8GIIRDG0ThDc3HGQFJ3" crossorigin="anonymous"></script><!-- sticky kit --><script src="https://cdnjs.cloudflare.com/ajax/libs/sticky-kit/1.1.3/sticky-kit.min.js" integrity="sha256-c4Rlo1ZozqTPE2RLuvbusY3+SU1pQaJC0TjuhygMipw=" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
+<script src="../pkgdown.js"></script><meta property="og:title" content="Trend filtering">
 <meta property="og:description" content="">
 <meta name="twitter:card" content="summary">
 <!-- mathjax --><script src="https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!--[if lt IE 9]>
@@ -18,7 +18,7 @@
 <![endif]-->
 </head>
 <body>
-    <div class="container template-vignette">
+    <div class="container template-article">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
     <div class="navbar-header">
@@ -27,8 +27,12 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="../index.html">susieR</a>
+      <span class="navbar-brand">
+        <a class="navbar-link" href="../index.html">susieR</a>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.5.0</span>
+      </span>
     </div>
+
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
 <li>
@@ -55,77 +59,129 @@
 
       
       </header><div class="row">
-  <div class="col-md-9">
+  <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1>Trend filtering</h1>
                         <h4 class="author">Matthew Stephens</h4>
             
-            <h4 class="date">2018-09-21</h4>
-          </div>
+            <h4 class="date">2018-10-16</h4>
+      
+      <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/master/vignettes/trend_filtering.Rmd"><code>vignettes/trend_filtering.Rmd</code></a></small>
+      <div class="hidden name"><code>trend_filtering.Rmd</code></div>
+
+    </div>
 
     
     
-<div class="contents">
-<p>This is an example of using susie to do trend filtering.</p>
+<div id="introduction" class="section level1">
+<h1 class="hasAnchor">
+<a href="#introduction" class="anchor"></a>Introduction</h1>
+<p>Although we developed SuSiE primarily with the goal of performing variable selection in highly sparse settings – and, in particular, for genetic fine-mapping – the approach also has considerable potential for application to other large-scale regression problems. Here we briefly illustrate this potential by applying it to a non-parametric regression problem that at first sight seems to be ill-suited to our approach. In particular, it does not involve strict sparsity, and the underlying correlation structure of the explanatory variables is very different from the ``blocky" covariance structure of genetic data that SuSiE was designed for. Nonetheless, we will see that SuSiE performs well here despite this (partly due to its ability to capture non-sparse signals via Bayesian Model Averaging).</p>
+<p>Specifically, consider the non-parametric regression: <span class="math display">\[y_t = \mu_t + e_t \quad t=1,\dots,T\]</span> where the goal is to estimate the underlying mean, <span class="math inline">\(\mu_t\)</span>, under the assumption that it varies smoothly (or, more precisely, in a spatially-structured way) with <span class="math inline">\(t\)</span>. One very simple way to capture spatial structure in <span class="math inline">\(\mu\)</span> is to model it as a (sparse) linear combination of step functions: <span class="math display">\[\mu = Xb\]</span> where the <span class="math inline">\(j\)</span>th column of <span class="math inline">\(X\)</span> is the step function with a step at <span class="math inline">\(j\)</span> (<span class="math inline">\(j = 1,\dots,(T-1)\)</span>); that is <span class="math inline">\(x_{tj}=0\)</span> for <span class="math inline">\(t&lt;=j\)</span> and 1 for <span class="math inline">\(t&gt;j\)</span>. The <span class="math inline">\(j\)</span>th element of <span class="math inline">\(b\)</span> therefore determines the change in the mean <span class="math inline">\(|\mu_j-\mu_{j+1}|\)</span>, and an assumption that <span class="math inline">\(b\)</span> is sparse encapsulates an assumption that <span class="math inline">\(\mu\)</span> is spatially structured (indeed, piecewise constant).</p>
+<p>This very simple approach is essentially 0th-order trend filtering (<a href="https://projecteuclid.org/euclid.aos/1395234979" class="uri">https://projecteuclid.org/euclid.aos/1395234979</a>). Note that higher-order trend filtering can be similarly implemented using different basis functions; here we use 0th order only for simplicity.</p>
+</div>
+<div id="examples" class="section level1">
+<h1 class="hasAnchor">
+<a href="#examples" class="anchor"></a>Examples</h1>
+<p>Here we apply SuSiE to perform 0th order trend filtering in some simple simulated examples.</p>
+<p>First we set up <span class="math inline">\(X\)</span> as the matrix with step functions in the columns:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">n=<span class="dv">1000</span>
+X =<span class="st"> </span><span class="kw">matrix</span>(<span class="dv">0</span>,<span class="dt">nrow=</span>n,<span class="dt">ncol=</span>n<span class="dv">-1</span>)
+for(j in <span class="dv">1</span>:(n<span class="dv">-1</span>)){
+  for(i in (j<span class="dv">+1</span>):n){
+    X[i,j] =<span class="st"> </span><span class="dv">1</span>
+  }
+}</code></pre></div>
+<p>Now simulate some data where <span class="math inline">\(\mu\)</span> is a step function with four steps. Here the regression is truly sparse and susie should do well.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(susieR)
 <span class="kw">set.seed</span>(<span class="dv">1</span>)
-n=<span class="dv">1000</span>
-delta =<span class="st"> </span><span class="kw">matrix</span>(<span class="dv">1</span>,<span class="dt">nrow=</span>n,<span class="dt">ncol=</span>n)
-<span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span>(n<span class="op">-</span><span class="dv">1</span>)){
-  <span class="cf">for</span>(j <span class="cf">in</span> (i<span class="op">+</span><span class="dv">1</span>)<span class="op">:</span>n){
-    delta[i,j] =<span class="st"> </span><span class="op">-</span><span class="dv">1</span>
-  }
-}
-delta =<span class="st"> </span>delta[,<span class="op">-</span><span class="dv">1</span>] <span class="co"># remove intercept as included by default</span>
-beta =<span class="st"> </span><span class="kw">c</span>(<span class="kw">rep</span>(<span class="dv">0</span>,<span class="dv">100</span>),<span class="kw">rep</span>(<span class="dv">1</span>,<span class="dv">100</span>),<span class="kw">rep</span>(<span class="dv">3</span>,<span class="dv">100</span>),<span class="kw">rep</span>(<span class="op">-</span><span class="dv">2</span>,<span class="dv">100</span>),<span class="kw">rep</span>(<span class="dv">0</span>,<span class="dv">600</span>))
-y =<span class="st"> </span>beta <span class="op">+</span><span class="st"> </span><span class="kw">rnorm</span>(n)
-s =<span class="st"> </span><span class="kw"><a href="../reference/susie.html">susie</a></span>(delta,y,<span class="dt">L=</span><span class="dv">10</span>)</code></pre></div>
-<p>Plot results: the truth is green, and susie estimate is red.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">plot</span>(y,<span class="dt">pch =</span> <span class="dv">20</span>)
-<span class="kw">lines</span>(<span class="kw">predict</span>(s),<span class="dt">col=</span><span class="dv">2</span>,<span class="dt">lwd=</span><span class="dv">3</span>)
-<span class="kw">lines</span>(beta,<span class="dt">col=</span><span class="dv">3</span>,<span class="dt">lwd=</span><span class="dv">3</span>)</code></pre></div>
-<div class="figure" style="text-align: center">
-<img src="trend_filtering_files/figure-html/unnamed-chunk-2-1.png" alt="&amp;nbsp;" width="540"><p class="caption">
- 
-</p>
-</div>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">s<span class="op">$</span>sigma2
-<span class="co"># [1] 1.08047</span></code></pre></div>
-<p>Try something harder where the beta increases linearly:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">set.seed</span>(<span class="dv">1</span>)
-beta =<span class="st"> </span><span class="kw">seq</span>(<span class="dv">0</span>,<span class="dv">2</span>,<span class="dt">length=</span><span class="dv">1000</span>)
-y =<span class="st"> </span>beta <span class="op">+</span><span class="st"> </span><span class="kw">rnorm</span>(n)
-s =<span class="st"> </span><span class="kw"><a href="../reference/susie.html">susie</a></span>(delta,y,<span class="dt">L=</span><span class="dv">10</span>)
-<span class="kw">plot</span>(y,<span class="dt">pch =</span> <span class="dv">20</span>)
-<span class="kw">lines</span>(<span class="kw">predict</span>(s),<span class="dt">col=</span><span class="dv">2</span>,<span class="dt">lwd=</span><span class="dv">3</span>)
-<span class="kw">lines</span>(beta,<span class="dt">col=</span><span class="dv">3</span>,<span class="dt">lwd=</span><span class="dv">3</span>)</code></pre></div>
+mu =<span class="st"> </span><span class="kw">c</span>(<span class="kw">rep</span>(<span class="dv">0</span>,<span class="dv">100</span>),<span class="kw">rep</span>(<span class="dv">1</span>,<span class="dv">100</span>),<span class="kw">rep</span>(<span class="dv">3</span>,<span class="dv">100</span>),<span class="kw">rep</span>(-<span class="dv">2</span>,<span class="dv">100</span>),<span class="kw">rep</span>(<span class="dv">0</span>,<span class="dv">600</span>))
+y =<span class="st"> </span>mu +<span class="st"> </span><span class="kw">rnorm</span>(n)
+s =<span class="st"> </span><span class="kw"><a href="../reference/susie.html">susie</a></span>(X,y,<span class="dt">L=</span><span class="dv">10</span>)</code></pre></div>
+<p>Plot results: the truth is black, and susie estimate is red.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">plot</span>(y,<span class="dt">pch=</span><span class="st">"."</span>)
+<span class="kw">lines</span>(mu,<span class="dt">col=</span><span class="dv">1</span>,<span class="dt">lwd=</span><span class="dv">3</span>)
+<span class="kw">lines</span>(<span class="kw">predict</span>(s),<span class="dt">col=</span><span class="dv">2</span>,<span class="dt">lwd=</span><span class="dv">2</span>)</code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="trend_filtering_files/figure-html/unnamed-chunk-3-1.png" alt="&amp;nbsp;" width="540"><p class="caption">
  
 </p>
 </div>
-<p>Compare with the lasso based solution. (This will require installation of the genlasso package.)</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">s$sigma2
+<span class="co"># [1] 1.08047</span></code></pre></div>
+<p>In the next example mu increases linearly. Thus we are approximating a linear function by step functions. Here the truth is not trully ``sparse“, so we might expect performance to be poor, but it is not too bad.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">set.seed</span>(<span class="dv">1</span>)
+mu =<span class="st"> </span><span class="kw">seq</span>(<span class="dv">0</span>,<span class="dv">4</span>,<span class="dt">length=</span><span class="dv">1000</span>)
+y =<span class="st"> </span>mu +<span class="st"> </span><span class="kw">rnorm</span>(n)
+s =<span class="st"> </span><span class="kw"><a href="../reference/susie.html">susie</a></span>(X,y,<span class="dt">L=</span><span class="dv">10</span>)
+<span class="kw">plot</span>(y,<span class="dt">pch=</span><span class="st">"."</span>)
+<span class="kw">lines</span>(mu,<span class="dt">col=</span><span class="dv">1</span>,<span class="dt">lwd=</span><span class="dv">3</span>)
+<span class="kw">lines</span>(<span class="kw">predict</span>(s),<span class="dt">col=</span><span class="dv">2</span>,<span class="dt">lwd=</span><span class="dv">2</span>)</code></pre></div>
+<div class="figure" style="text-align: center">
+<img src="trend_filtering_files/figure-html/unnamed-chunk-4-1.png" alt="&amp;nbsp;" width="540"><p class="caption">
+ 
+</p>
+</div>
+<p>Compare with the genlasso (lasso-based) solution (blue). (This will require installation of the genlasso package.)</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(genlasso)
-y.tf =<span class="st"> </span><span class="kw">trendfilter</span>(y,<span class="dt">ord=</span><span class="dv">0</span>)
-y.tf.cv =<span class="st"> </span><span class="kw">cv.trendfilter</span>(y.tf)
-<span class="kw">plot</span>(y)
-<span class="kw">lines</span>(<span class="kw">predict</span>(s),<span class="dt">col=</span><span class="dv">2</span>,<span class="dt">lwd=</span><span class="dv">3</span>)
-<span class="kw">lines</span>(beta,<span class="dt">col=</span><span class="dv">3</span>,<span class="dt">lwd=</span><span class="dv">3</span>)
-<span class="kw">lines</span>(y.tf<span class="op">$</span>fit[,<span class="kw">which</span>(y.tf<span class="op">$</span>lambda<span class="op">==</span>y.tf.cv<span class="op">$</span>lambda.min)],<span class="dt">col=</span><span class="dv">4</span>,<span class="dt">lwd=</span><span class="dv">3</span>)</code></pre></div>
-<p>What happens if we have trend plus sudden change.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">beta =<span class="st"> </span>beta <span class="op">+</span><span class="st"> </span><span class="kw">c</span>(<span class="kw">rep</span>(<span class="dv">0</span>,<span class="dv">500</span>),<span class="kw">rep</span>(<span class="dv">2</span>,<span class="dv">500</span>))
-y =<span class="st"> </span>beta <span class="op">+</span><span class="st"> </span><span class="kw">rnorm</span>(n)
-s =<span class="st"> </span><span class="kw"><a href="../reference/susie.html">susie</a></span>(delta,y,<span class="dt">L=</span><span class="dv">10</span>)
-<span class="kw">plot</span>(y)
-<span class="kw">lines</span>(<span class="kw">predict</span>(s),<span class="dt">col=</span><span class="dv">2</span>,<span class="dt">lwd=</span><span class="dv">3</span>)
-<span class="kw">lines</span>(beta,<span class="dt">col=</span><span class="dv">3</span>,<span class="dt">lwd=</span><span class="dv">3</span>)
-y.tf =<span class="st"> </span><span class="kw">trendfilter</span>(y,<span class="dt">ord=</span><span class="dv">0</span>)
-y.tf.cv =<span class="st"> </span><span class="kw">cv.trendfilter</span>(y.tf)
-<span class="kw">lines</span>(y.tf<span class="op">$</span>fit[,<span class="kw">which</span>(y.tf<span class="op">$</span>lambda<span class="op">==</span>y.tf.cv<span class="op">$</span>lambda.min)],<span class="dt">col=</span><span class="dv">4</span>,<span class="dt">lwd=</span><span class="dv">3</span>)</code></pre></div>
+<span class="co"># Loading required package: Matrix</span>
+<span class="co"># Loading required package: igraph</span>
+<span class="co"># </span>
+<span class="co"># Attaching package: 'igraph'</span>
+<span class="co"># The following objects are masked from 'package:stats':</span>
+<span class="co"># </span>
+<span class="co">#     decompose, spectrum</span>
+<span class="co"># The following object is masked from 'package:base':</span>
+<span class="co"># </span>
+<span class="co">#     union</span>
+y.tf =<span class="st"> </span><span class="kw"><a href="http://www.rdocumentation.org/packages/genlasso/topics/trendfilter">trendfilter</a></span>(y,<span class="dt">ord=</span><span class="dv">0</span>)
+y.tf.cv =<span class="st"> </span><span class="kw"><a href="http://www.rdocumentation.org/packages/genlasso/topics/cv.trendfilter">cv.trendfilter</a></span>(y.tf)
+<span class="co"># Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ...</span>
+
+<span class="kw">plot</span>(y,<span class="dt">pch=</span><span class="st">"."</span>)
+<span class="kw">lines</span>(mu,<span class="dt">col=</span><span class="dv">1</span>,<span class="dt">lwd=</span><span class="dv">3</span>)
+<span class="kw">lines</span>(<span class="kw">predict</span>(s),<span class="dt">col=</span><span class="dv">2</span>,<span class="dt">lwd=</span><span class="dv">2</span>)
+<span class="kw">lines</span>(y.tf$fit[,<span class="kw">which</span>(y.tf$lambda==y.tf.cv$lambda.min)],<span class="dt">col=</span><span class="dv">4</span>,<span class="dt">lwd=</span><span class="dv">2</span>)</code></pre></div>
+<div class="figure" style="text-align: center">
+<img src="trend_filtering_files/figure-html/unnamed-chunk-5-1.png" alt="&amp;nbsp;" width="540"><p class="caption">
+ 
+</p>
+</div>
+<p>What happens if we have linear trend plus a sudden change.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">mu =<span class="st"> </span><span class="kw">seq</span>(<span class="dv">0</span>,<span class="dv">4</span>,<span class="dt">length=</span><span class="dv">1000</span>)
+mu =<span class="st"> </span>mu +<span class="st"> </span><span class="kw">c</span>(<span class="kw">rep</span>(<span class="dv">0</span>,<span class="dv">500</span>),<span class="kw">rep</span>(<span class="dv">4</span>,<span class="dv">500</span>))
+y =<span class="st"> </span>mu +<span class="st"> </span><span class="kw">rnorm</span>(n)
+s =<span class="st"> </span><span class="kw"><a href="../reference/susie.html">susie</a></span>(X,y,<span class="dt">L=</span><span class="dv">10</span>)
+y.tf =<span class="st"> </span><span class="kw"><a href="http://www.rdocumentation.org/packages/genlasso/topics/trendfilter">trendfilter</a></span>(y,<span class="dt">ord=</span><span class="dv">0</span>)
+y.tf.cv =<span class="st"> </span><span class="kw"><a href="http://www.rdocumentation.org/packages/genlasso/topics/cv.trendfilter">cv.trendfilter</a></span>(y.tf)
+<span class="co"># Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ...</span>
+
+<span class="kw">plot</span>(y,<span class="dt">pch=</span><span class="st">"."</span>)
+<span class="kw">lines</span>(mu,<span class="dt">col=</span><span class="dv">1</span>,<span class="dt">lwd=</span><span class="dv">3</span>)
+<span class="kw">lines</span>(<span class="kw">predict</span>(s),<span class="dt">col=</span><span class="dv">2</span>,<span class="dt">lwd=</span><span class="dv">2</span>)
+<span class="kw">lines</span>(y.tf$fit[,<span class="kw">which</span>(y.tf$lambda==y.tf.cv$lambda.min)],<span class="dt">col=</span><span class="dv">4</span>,<span class="dt">lwd=</span><span class="dv">2</span>)</code></pre></div>
+<div class="figure" style="text-align: center">
+<img src="trend_filtering_files/figure-html/unnamed-chunk-6-1.png" alt="&amp;nbsp;" width="540"><p class="caption">
+ 
+</p>
+</div>
+<p>The two fits seem similar in accuracy. We can check this mumerically:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">sqrt</span>(<span class="kw">mean</span>((mu-y.tf$fit[,<span class="kw">which</span>(y.tf$lambda==y.tf.cv$lambda.min)])^<span class="dv">2</span>))
+<span class="co"># [1] 0.201545</span>
+<span class="kw">sqrt</span>(<span class="kw">mean</span>((mu-<span class="kw">predict</span>(s))^<span class="dv">2</span>))
+<span class="co"># [1] 0.167487</span></code></pre></div>
 </div>
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
+        <div id="tocnav">
+      <h2 class="hasAnchor">
+<a href="#tocnav" class="anchor"></a>Contents</h2>
+      <ul class="nav nav-pills nav-stacked">
+<li><a href="#introduction">Introduction</a></li>
+      <li><a href="#examples">Examples</a></li>
+      </ul>
+</div>
       </div>
 
 </div>
@@ -141,6 +197,8 @@ y.tf.cv =<span class="st"> </span><span class="kw">cv.trendfilter</span>(y.tf)
 
       </footer>
 </div>
+
+  
 
   </body>
 </html>

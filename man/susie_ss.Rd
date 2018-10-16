@@ -46,9 +46,9 @@ to think more carefully about specifying
 value will be used by coef.susie() to assign an intercept value, for consistency with the non-summary-statistic version of this function \code{susie}.
 Set to NULL if you want coef.susie() not to include an intercept term (and so only return a p vector).}
 
-\item{coverage}{coverage of confident sets. Default to 0.95 for 95\% confidence interval.}
+\item{coverage}{coverage of confident sets. Default to 0.95 for 95\% credible interval.}
 
-\item{min_abs_corr}{minimum of absolute value of correlation allowed in a confidence set.}
+\item{min_abs_corr}{minimum of absolute value of correlation allowed in a credible set.}
 
 \item{tol}{convergence tolerance based on alpha}
 

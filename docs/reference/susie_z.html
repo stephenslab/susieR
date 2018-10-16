@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Get objective function from data and susie fit object. — susie_get_objective_ss • susieR</title>
+<title>Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix — susie_z • susieR</title>
 
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
@@ -21,16 +21,22 @@
 <!-- clipboard.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js" integrity="sha384-cV+rhyOuRHc9Ub/91rihWcGmMmCXDeksTtCihMupQHSsi8GIIRDG0ThDc3HGQFJ3" crossorigin="anonymous"></script>
 
+<!-- sticky kit -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sticky-kit/1.1.3/sticky-kit.min.js" integrity="sha256-c4Rlo1ZozqTPE2RLuvbusY3+SU1pQaJC0TjuhygMipw=" crossorigin="anonymous"></script>
+
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
-<script src="../jquery.sticky-kit.min.js"></script>
 <script src="../pkgdown.js"></script>
-  
-  
-<meta property="og:title" content="Get objective function from data and susie fit object. — susie_get_objective_ss" />
 
-<meta property="og:description" content="Get objective function from data and susie fit object." />
+
+
+<meta property="og:title" content="Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix — susie_z" />
+
+<meta property="og:description" content="Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix" />
 <meta name="twitter:card" content="summary" />
+
+
+
 <!-- mathjax -->
 <script src='https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
 
@@ -53,8 +59,12 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="../index.html">susieR</a>
+      <span class="navbar-brand">
+        <a class="navbar-link" href="../index.html">susieR</a>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.5.0</span>
+      </span>
     </div>
+
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
@@ -73,6 +83,7 @@
   <a href="https://github.com/stephenslab/susieR">Source</a>
 </li>
       </ul>
+      
     </div><!--/.nav-collapse -->
   </div><!--/.container -->
 </div><!--/.navbar -->
@@ -80,42 +91,72 @@
       
       </header>
 
-      <div class="row">
+<div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Get objective function from data and susie fit object.</h1>
+    <h1>Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix</h1>
+    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/susie_ss.R'><code>R/susie_ss.R</code></a></small>
+    <div class="hidden name"><code>susie_z.Rd</code></div>
     </div>
 
+    <div class="ref-description">
     
-    <p>Get objective function from data and susie fit object.</p>
+    <p>Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix</p>
     
+    </div>
 
-    <pre class="usage"><span class='fu'>susie_get_objective_ss</span>(<span class='no'>XtX</span>, <span class='no'>Xty</span>, <span class='no'>s</span>, <span class='no'>var_y</span>, <span class='no'>n</span>)</pre>
+    <pre class="usage"><span class='fu'>susie_z</span>(<span class='no'>z</span>, <span class='no'>R</span>, <span class='kw'>L</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>prior_weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>null_weight</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>coverage</span> <span class='kw'>=</span> <span class='fl'>0.95</span>, <span class='kw'>min_abs_corr</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>track_fit</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='no'>...</span>)</pre>
     
-    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a> Arguments</h2>
+    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>XtX</th>
-      <td><p>a p by p matrix, X'X</p></td>
+      <th>z</th>
+      <td><p>a p vector of z scores.</p></td>
     </tr>
     <tr>
-      <th>Xty</th>
-      <td><p>a p vector, X'Y,</p></td>
+      <th>R</th>
+      <td><p>a p by p symmetric and positive semidefinite matrix. It can be X'X, covariance matrix or correlation matrix.</p></td>
     </tr>
     <tr>
-      <th>s</th>
-      <td><p>a susie fit object</p></td>
+      <th>L</th>
+      <td><p>maximum number of non-zero effects.</p></td>
     </tr>
     <tr>
-      <th>var_y</th>
-      <td><p>the (sample) variance of the vector Y</p></td>
+      <th>prior_weights</th>
+      <td><p>a p vector of prior probability that each element is non-zero</p></td>
     </tr>
     <tr>
-      <th>n</th>
-      <td><p>sample size</p></td>
+      <th>null_weight</th>
+      <td><p>probability of no effect, for each single effect model</p></td>
+    </tr>
+    <tr>
+      <th>coverage</th>
+      <td><p>coverage of confident sets. Default to 0.95 for 95% credible interval.</p></td>
+    </tr>
+    <tr>
+      <th>min_abs_corr</th>
+      <td><p>minimum of absolute value of correlation allowed in a credible set.</p></td>
+    </tr>
+    <tr>
+      <th>verbose</th>
+      <td><p>if TRUE outputs some progress messages</p></td>
+    </tr>
+    <tr>
+      <th>track_fit</th>
+      <td><p>add an attribute <code>trace</code> to output that saves current values of all iterations</p></td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td><p>further arguments to be passed to <code><a href='susie_ss.html'>susie_ss</a></code></p></td>
     </tr>
     </table>
+    
+    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
+
+    <p>a susie fit</p>
     
 
   </div>
@@ -123,7 +164,9 @@
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
       <li><a href="#arguments">Arguments</a></li>
-                </ul>
+      
+      <li><a href="#value">Value</a></li>
+          </ul>
 
   </div>
 </div>
@@ -140,5 +183,8 @@
       </footer>
    </div>
 
+  
+
   </body>
 </html>
+

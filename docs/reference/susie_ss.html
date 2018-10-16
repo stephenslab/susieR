@@ -21,16 +21,22 @@
 <!-- clipboard.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js" integrity="sha384-cV+rhyOuRHc9Ub/91rihWcGmMmCXDeksTtCihMupQHSsi8GIIRDG0ThDc3HGQFJ3" crossorigin="anonymous"></script>
 
+<!-- sticky kit -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sticky-kit/1.1.3/sticky-kit.min.js" integrity="sha256-c4Rlo1ZozqTPE2RLuvbusY3+SU1pQaJC0TjuhygMipw=" crossorigin="anonymous"></script>
+
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
-<script src="../jquery.sticky-kit.min.js"></script>
 <script src="../pkgdown.js"></script>
-  
-  
+
+
+
 <meta property="og:title" content="Bayesian sum of single-effect (susie) linear regression using summary stat — susie_ss" />
 
 <meta property="og:description" content="Bayesian sum of single-effect (susie) linear regression using summary stat" />
 <meta name="twitter:card" content="summary" />
+
+
+
 <!-- mathjax -->
 <script src='https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
 
@@ -53,8 +59,12 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="../index.html">susieR</a>
+      <span class="navbar-brand">
+        <a class="navbar-link" href="../index.html">susieR</a>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.5.0</span>
+      </span>
     </div>
+
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
@@ -73,6 +83,7 @@
   <a href="https://github.com/stephenslab/susieR">Source</a>
 </li>
       </ul>
+      
     </div><!--/.nav-collapse -->
   </div><!--/.container -->
 </div><!--/.navbar -->
@@ -80,22 +91,28 @@
       
       </header>
 
-      <div class="row">
+<div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Bayesian sum of single-effect (susie) linear regression using summary stat</h1>
+    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/susie_ss.R'><code>R/susie_ss.R</code></a></small>
+    <div class="hidden name"><code>susie_ss.Rd</code></div>
     </div>
 
+    <div class="ref-description">
     
     <p>Bayesian sum of single-effect (susie) linear regression using summary stat</p>
     
+    </div>
 
-    <pre class="usage"><span class='fu'>susie_ss</span>(<span class='no'>XtX</span>, <span class='no'>Xty</span>, <span class='kw'>var_y</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='no'>n</span>, <span class='kw'>L</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>scaled_prior_variance</span> <span class='kw'>=</span> <span class='fl'>0.2</span>,
-  <span class='kw'>residual_variance</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>estimate_prior_variance</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>max_iter</span> <span class='kw'>=</span> <span class='fl'>100</span>, <span class='kw'>s_init</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>intercept</span> <span class='kw'>=</span> <span class='fl'>0</span>,
-  <span class='kw'>tol</span> <span class='kw'>=</span> <span class='fl'>0.0001</span>)</pre>
+    <pre class="usage"><span class='fu'>susie_ss</span>(<span class='no'>XtX</span>, <span class='no'>Xty</span>, <span class='no'>n</span>, <span class='kw'>var_y</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>L</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>scaled_prior_variance</span> <span class='kw'>=</span> <span class='fl'>0.2</span>,
+  <span class='kw'>residual_variance</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>prior_weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>null_weight</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>standardize</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>estimate_prior_variance</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>max_iter</span> <span class='kw'>=</span> <span class='fl'>100</span>, <span class='kw'>s_init</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>intercept_value</span> <span class='kw'>=</span> <span class='fl'>0</span>,
+  <span class='kw'>coverage</span> <span class='kw'>=</span> <span class='fl'>0.95</span>, <span class='kw'>min_abs_corr</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>tol</span> <span class='kw'>=</span> <span class='fl'>1e-04</span>,
+  <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>track_fit</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</pre>
     
-    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a> Arguments</h2>
+    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
@@ -107,12 +124,12 @@
       <td><p>a p vector, X'Y, where columns of X are centered and Y is centered to have mean 0</p></td>
     </tr>
     <tr>
-      <th>var_y</th>
-      <td><p>the (sample) variance of the vector Y</p></td>
-    </tr>
-    <tr>
       <th>n</th>
       <td><p>sample size</p></td>
+    </tr>
+    <tr>
+      <th>var_y</th>
+      <td><p>the (sample) variance of the vector Y</p></td>
     </tr>
     <tr>
       <th>L</th>
@@ -127,6 +144,22 @@
       <td><p>the residual variance (defaults to variance of Y)</p></td>
     </tr>
     <tr>
+      <th>prior_weights</th>
+      <td><p>a p vector of prior probability that each element is non-zero</p></td>
+    </tr>
+    <tr>
+      <th>null_weight</th>
+      <td><p>probability of no effect, for each single effect model</p></td>
+    </tr>
+    <tr>
+      <th>standardize</th>
+      <td><p>logical flag (default=TRUE) for whether to standardize columns of X to unit variance prior to fitting.
+Note that `scaled_prior_variance` specifies the prior on the coefficients of X *after* standardization (if performed).
+If you do not standardize you may need
+to think more carefully about specifying
+`scaled_prior_variance`. Whatever the value of standardize, the coefficients (returned from `coef`) are for X on the original input scale.</p></td>
+    </tr>
+    <tr>
       <th>estimate_prior_variance</th>
       <td><p>indicates whether to estimate prior (currently not recommended as not working as well)</p></td>
     </tr>
@@ -139,20 +172,36 @@
       <td><p>a previous susie fit with which to initialize</p></td>
     </tr>
     <tr>
-      <th>intercept</th>
+      <th>intercept_value</th>
       <td><p>a value to assign to the intercept (since the intercept cannot be estimated from centered summary data). This
 value will be used by coef.susie() to assign an intercept value, for consistency with the non-summary-statistic version of this function <code>susie</code>.
 Set to NULL if you want coef.susie() not to include an intercept term (and so only return a p vector).</p></td>
     </tr>
     <tr>
+      <th>coverage</th>
+      <td><p>coverage of confident sets. Default to 0.95 for 95% credible interval.</p></td>
+    </tr>
+    <tr>
+      <th>min_abs_corr</th>
+      <td><p>minimum of absolute value of correlation allowed in a credible set.</p></td>
+    </tr>
+    <tr>
       <th>tol</th>
       <td><p>convergence tolerance based on alpha</p></td>
+    </tr>
+    <tr>
+      <th>verbose</th>
+      <td><p>if true outputs some progress messages</p></td>
+    </tr>
+    <tr>
+      <th>track_fit</th>
+      <td><p>add an attribute <code>trace</code> to output that saves current values of all iterations</p></td>
     </tr>
     </table>
     
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>a susie fit, which is a list with some or all of the following elements</p>
+    <p>a susie fit, which is a list with some or all of the following elements<br /></p>
 <dt>alpha</dt><dd><p>an L by p matrix of posterior inclusion probabilites</p></dd>
 <dt>mu</dt><dd><p>an L by p matrix of posterior means (conditional on inclusion)</p></dd>
 <dt>mu2</dt><dd><p>an L by p matrix of posterior second moments (conditional on inclusion)</p></dd>
@@ -176,183 +225,19 @@ equally likely to be non-zero. The prior on the non-zero element is N(0,var=scal
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='fu'>set.seed</span>(<span class='fl'>1</span>)
-<span class='no'>n</span> <span class='kw'>=</span> <span class='fl'>1000</span>
-<span class='no'>p</span> <span class='kw'>=</span> <span class='fl'>1000</span>
-<span class='no'>beta</span> <span class='kw'>=</span> <span class='fu'>rep</span>(<span class='fl'>0</span>,<span class='no'>p</span>)
-<span class='no'>beta</span>[<span class='fl'>1</span>:<span class='fl'>4</span>] <span class='kw'>=</span> <span class='fl'>1</span>
-<span class='no'>X</span> <span class='kw'>=</span> <span class='fu'>matrix</span>(<span class='fu'>rnorm</span>(<span class='no'>n</span>*<span class='no'>p</span>),<span class='kw'>nrow</span><span class='kw'>=</span><span class='no'>n</span>,<span class='kw'>ncol</span><span class='kw'>=</span><span class='no'>p</span>)
-<span class='no'>y</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='no'>X</span> <span class='kw'>%*%</span> <span class='no'>beta</span> + <span class='fu'>rnorm</span>(<span class='no'>n</span>))
-<span class='no'>X</span> <span class='kw'>=</span> <span class='fu'>scale</span>(<span class='no'>X</span>,<span class='kw'>center</span><span class='kw'>=</span><span class='fl'>TRUE</span>, <span class='kw'>scale</span><span class='kw'>=</span><span class='fl'>TRUE</span>)
-<span class='no'>y</span> <span class='kw'>=</span> (<span class='no'>y</span> - <span class='fu'>mean</span>(<span class='no'>y</span>))/<span class='fu'>sd</span>(<span class='no'>y</span>)
-<span class='no'>res</span> <span class='kw'>=</span><span class='fu'>susie_ss</span>(<span class='kw'>XtX</span> <span class='kw'>=</span> <span class='fu'>crossprod</span>(<span class='no'>X</span>),<span class='kw'>Xty</span><span class='kw'>=</span> <span class='fu'>c</span>(<span class='no'>y</span> <span class='kw'>%*%</span> <span class='no'>X</span>), <span class='kw'>var_y</span><span class='kw'>=</span><span class='fl'>1</span>, <span class='kw'>n</span><span class='kw'>=</span><span class='fl'>1000</span>)
-<span class='fu'>coef</span>(<span class='no'>res</span>)</div><div class='output co'>#&gt;    [1]  0.000e+00  4.565e-01  4.420e-01  4.302e-01  4.268e-01 -4.728e-05
-#&gt;    [7] -4.576e-05  2.169e-04  1.812e-05  5.685e-05  1.197e-05  8.827e-05
-#&gt;   [13]  1.268e-04  7.703e-05  1.533e-04  1.857e-05 -4.374e-05  2.218e-04
-#&gt;   [19]  7.865e-05  8.422e-05  2.391e-06 -3.592e-05 -7.973e-05  1.294e-04
-#&gt;   [25]  3.127e-05  1.556e-04  1.087e-05 -5.719e-05 -5.560e-05  6.937e-05
-#&gt;   [31] -1.169e-04 -2.214e-05  1.351e-04  1.383e-04  1.402e-05  2.436e-05
-#&gt;   [37]  1.237e-04 -3.422e-05 -7.164e-05  3.921e-05  1.190e-04  5.916e-05
-#&gt;   [43]  2.110e-05 -2.287e-05 -4.567e-05 -1.094e-04  1.415e-04 -2.140e-05
-#&gt;   [49]  1.899e-04  1.966e-05 -6.350e-05 -3.110e-05  9.674e-05 -1.470e-04
-#&gt;   [55]  2.060e-05  8.475e-05  4.381e-05  9.864e-05 -4.403e-05 -2.486e-05
-#&gt;   [61]  4.187e-04  4.374e-05  3.174e-05 -2.269e-05 -6.370e-05  5.128e-06
-#&gt;   [67] -7.853e-05  4.467e-05 -4.462e-05 -4.566e-04 -4.398e-06  1.426e-04
-#&gt;   [73]  9.711e-05  2.593e-05  7.480e-05 -9.934e-06 -4.969e-05  2.657e-05
-#&gt;   [79]  1.491e-04  1.091e-04 -1.740e-04  5.533e-05 -1.718e-06 -7.801e-06
-#&gt;   [85] -3.980e-05  9.008e-05  7.653e-05  2.435e-05 -1.690e-05 -1.877e-05
-#&gt;   [91]  9.621e-05 -1.346e-04  2.506e-05  2.797e-05  3.070e-05 -1.210e-04
-#&gt;   [97]  1.159e-04 -6.108e-05  1.082e-04 -1.655e-04 -1.822e-05  1.053e-04
-#&gt;  [103]  1.087e-04 -5.526e-05  6.770e-06  1.278e-04  6.451e-05 -2.516e-05
-#&gt;  [109]  7.900e-06  3.779e-05  8.548e-05  9.603e-05  5.833e-05 -8.246e-05
-#&gt;  [115]  2.402e-05  2.348e-05  2.350e-05 -1.638e-05 -1.147e-05  1.346e-05
-#&gt;  [121]  1.697e-04  7.476e-05  4.068e-05  3.338e-05 -5.030e-05  4.182e-05
-#&gt;  [127] -4.743e-05 -1.010e-04  2.474e-04  2.354e-05  7.502e-05  1.062e-04
-#&gt;  [133] -6.781e-06 -2.811e-05 -4.225e-05  1.640e-05  2.376e-05  1.461e-05
-#&gt;  [139] -4.069e-05 -4.781e-05 -4.700e-05  7.196e-05 -2.083e-05 -8.127e-05
-#&gt;  [145]  8.482e-07  5.819e-06 -7.215e-05  1.526e-04  1.584e-05  1.687e-04
-#&gt;  [151] -3.338e-05 -4.347e-05  5.303e-05  1.281e-04 -5.654e-05 -2.062e-05
-#&gt;  [157] -2.302e-04 -5.227e-05  5.244e-05  2.355e-05 -8.352e-05  9.216e-06
-#&gt;  [163] -2.055e-05 -2.159e-05  1.341e-04 -6.146e-05  9.380e-05  1.208e-04
-#&gt;  [169]  9.845e-05  6.664e-05  2.587e-04  2.071e-05  1.014e-04  1.052e-04
-#&gt;  [175] -1.919e-06 -5.074e-04  1.667e-05 -2.266e-06  9.695e-05 -2.190e-05
-#&gt;  [181]  1.171e-04 -3.670e-05 -3.561e-05  5.829e-06  8.437e-05  1.265e-04
-#&gt;  [187] -5.596e-05 -3.012e-05 -4.100e-05 -1.064e-04 -9.735e-05 -4.915e-05
-#&gt;  [193]  1.185e-05  1.267e-04  6.524e-05 -6.379e-06 -2.395e-05 -8.750e-05
-#&gt;  [199] -4.861e-05  2.591e-05 -1.797e-05  8.194e-06 -1.235e-04  2.255e-05
-#&gt;  [205] -2.038e-04  4.376e-05  5.370e-06  5.200e-05  5.959e-05  1.426e-05
-#&gt;  [211] -4.353e-05  2.853e-06  6.818e-05 -1.304e-04 -7.671e-05 -4.982e-05
-#&gt;  [217]  5.052e-05 -4.215e-05 -1.068e-04  2.213e-04  5.277e-05 -3.431e-05
-#&gt;  [223]  4.869e-05 -6.412e-05  7.065e-05  5.617e-06 -3.069e-05  7.256e-05
-#&gt;  [229] -4.600e-05  5.791e-05 -3.492e-05  6.458e-05 -2.091e-04  4.993e-05
-#&gt;  [235]  2.245e-05  3.450e-05  2.312e-05 -6.595e-05  2.828e-05  1.595e-06
-#&gt;  [241]  4.715e-05  2.731e-05  1.516e-05  7.337e-05  6.608e-05  7.668e-06
-#&gt;  [247]  1.244e-04 -1.916e-05 -8.516e-05 -2.959e-05 -6.323e-05  9.768e-06
-#&gt;  [253]  6.331e-05  4.433e-05 -1.969e-05 -1.007e-04  1.874e-04  6.858e-07
-#&gt;  [259]  9.595e-05  4.082e-06  5.619e-05 -3.992e-05 -3.305e-06  4.416e-05
-#&gt;  [265] -1.847e-04  6.299e-05 -1.924e-05 -5.511e-05  7.233e-05  1.395e-04
-#&gt;  [271]  2.071e-04  2.340e-05 -1.007e-04 -1.483e-04 -3.439e-06  3.410e-04
-#&gt;  [277] -2.618e-05  2.711e-05 -1.154e-05 -1.034e-04  6.414e-05  2.018e-05
-#&gt;  [283] -2.426e-05 -1.108e-04 -1.420e-04  3.371e-06  5.191e-05 -1.400e-05
-#&gt;  [289]  3.515e-05  1.786e-07 -2.008e-05 -6.861e-05  1.535e-04  1.986e-05
-#&gt;  [295]  6.543e-06 -5.801e-05 -1.454e-04 -6.635e-05 -6.958e-05 -6.324e-06
-#&gt;  [301] -3.571e-05 -3.348e-05 -2.498e-05  3.121e-04 -1.441e-04  4.405e-05
-#&gt;  [307] -1.951e-05 -6.000e-06 -1.396e-04 -8.739e-05  8.071e-05  7.137e-05
-#&gt;  [313]  2.540e-06 -6.298e-06 -9.289e-06  1.224e-04  1.402e-04  1.814e-05
-#&gt;  [319] -1.640e-05  3.227e-04 -7.871e-05 -4.520e-05 -4.390e-05  1.223e-06
-#&gt;  [325]  3.211e-05  9.662e-07  1.300e-04 -5.450e-05  1.568e-05  4.720e-05
-#&gt;  [331] -4.377e-05 -1.424e-06  7.702e-05  1.094e-04 -1.869e-05 -5.213e-05
-#&gt;  [337]  1.183e-04 -1.192e-04  7.303e-05  5.200e-05 -1.580e-05  5.681e-05
-#&gt;  [343]  8.739e-06 -1.122e-05 -1.936e-04  1.927e-05  3.414e-04 -4.117e-05
-#&gt;  [349] -2.500e-05 -2.264e-05  7.572e-05  7.390e-05 -3.028e-05  3.243e-05
-#&gt;  [355] -6.735e-05 -4.182e-05 -6.877e-05 -3.790e-05 -2.595e-05 -1.251e-04
-#&gt;  [361] -1.622e-05 -6.485e-05  7.094e-05 -5.532e-05 -1.328e-04 -1.241e-04
-#&gt;  [367] -4.837e-05 -1.426e-05  1.152e-04  3.360e-05  4.048e-05 -3.826e-05
-#&gt;  [373] -1.208e-04  4.071e-05 -2.103e-04  3.107e-05  4.134e-05 -1.495e-04
-#&gt;  [379]  3.925e-05 -9.516e-05  9.061e-05  9.274e-06  2.178e-05  1.581e-04
-#&gt;  [385]  5.491e-05 -9.051e-05 -3.484e-05 -5.679e-05 -1.764e-04  2.647e-05
-#&gt;  [391]  4.709e-05  1.263e-04  4.974e-05 -1.331e-05 -1.502e-05  1.370e-05
-#&gt;  [397] -3.349e-05 -1.625e-04  2.494e-05 -6.330e-05  3.235e-05 -1.322e-05
-#&gt;  [403] -3.535e-05 -2.376e-05 -1.205e-05  8.234e-05 -6.496e-05  6.270e-05
-#&gt;  [409]  5.858e-05 -1.641e-04 -2.419e-05 -5.918e-05  4.643e-05  5.545e-05
-#&gt;  [415]  9.111e-06 -8.745e-05 -5.599e-05 -7.549e-05  4.981e-05  2.455e-05
-#&gt;  [421] -1.852e-04  1.267e-04 -1.533e-05  3.311e-05  7.217e-07 -8.276e-05
-#&gt;  [427] -1.515e-04  5.657e-05 -6.991e-05  7.738e-05 -5.194e-05 -1.267e-05
-#&gt;  [433] -3.564e-05  1.141e-04 -6.017e-05  1.486e-04  2.568e-05  9.977e-05
-#&gt;  [439]  3.302e-06 -1.746e-05  6.301e-05  2.536e-05  5.852e-05  1.396e-05
-#&gt;  [445]  3.256e-05 -1.304e-04 -5.546e-05  1.043e-05 -6.998e-05  2.907e-06
-#&gt;  [451]  2.234e-05 -1.969e-04 -4.714e-05  8.114e-05 -3.953e-05  5.690e-05
-#&gt;  [457]  2.845e-05  4.016e-05 -6.172e-05  8.363e-05  2.917e-05  1.289e-04
-#&gt;  [463]  1.073e-04  2.742e-05  3.168e-05  7.104e-05  4.399e-05  3.132e-05
-#&gt;  [469]  7.711e-05  2.765e-04  3.024e-04 -7.453e-05 -7.833e-06 -1.848e-05
-#&gt;  [475] -3.934e-05 -1.440e-05 -6.493e-05 -5.969e-05  7.741e-05  2.389e-05
-#&gt;  [481]  3.008e-05  1.418e-05 -1.589e-04  3.602e-05 -1.498e-04  1.566e-05
-#&gt;  [487] -3.406e-04 -7.610e-05 -1.124e-04 -1.000e-04 -1.701e-04  2.575e-05
-#&gt;  [493] -7.849e-05 -5.398e-05 -2.218e-05  1.895e-06  5.111e-05 -4.751e-05
-#&gt;  [499]  2.105e-05 -7.045e-05  3.124e-05 -1.514e-05 -4.881e-05 -2.003e-05
-#&gt;  [505] -7.497e-05 -4.749e-06 -1.999e-05 -5.767e-05  1.115e-04 -3.171e-05
-#&gt;  [511]  6.331e-08 -1.005e-04 -6.662e-05  5.886e-05 -1.704e-04 -7.705e-05
-#&gt;  [517] -7.570e-05  5.905e-05  1.163e-05 -3.450e-05 -1.092e-05  1.255e-04
-#&gt;  [523] -2.051e-04  3.247e-05  5.882e-05 -6.863e-05  8.805e-05 -7.343e-06
-#&gt;  [529]  3.398e-06  1.003e-04 -2.675e-05  1.422e-04  1.177e-04 -2.229e-05
-#&gt;  [535] -1.077e-05  6.110e-06  1.903e-05 -5.003e-05  4.450e-05 -2.031e-04
-#&gt;  [541] -4.517e-05  5.176e-05  2.374e-05 -7.840e-05 -9.895e-05  7.822e-05
-#&gt;  [547] -4.931e-05 -8.621e-05  1.471e-05  1.005e-04  2.152e-05  1.692e-05
-#&gt;  [553] -1.383e-05 -3.777e-06 -1.366e-04 -7.053e-04  1.516e-04 -8.976e-05
-#&gt;  [559]  1.033e-04  5.759e-05  1.479e-04  1.013e-04 -6.783e-05  9.190e-06
-#&gt;  [565]  9.259e-05  5.869e-05 -6.965e-05 -5.461e-05 -2.272e-04  3.296e-05
-#&gt;  [571]  6.530e-05 -8.796e-05  5.904e-06 -1.860e-04  1.397e-05  1.042e-04
-#&gt;  [577] -5.307e-05  1.735e-05  1.353e-05  6.446e-05  6.648e-05  4.161e-05
-#&gt;  [583]  9.618e-05  4.464e-05  2.935e-05  1.439e-05 -1.118e-04  3.736e-05
-#&gt;  [589]  6.199e-05 -3.436e-05  9.538e-05  1.124e-04 -1.176e-04  1.440e-04
-#&gt;  [595]  1.270e-04 -5.681e-05 -1.381e-04 -4.607e-06 -5.316e-05 -1.701e-05
-#&gt;  [601]  1.283e-04  9.393e-05  3.172e-05  5.509e-05  5.046e-05  8.358e-05
-#&gt;  [607] -8.020e-06 -3.076e-06  1.193e-05 -8.063e-05  6.326e-05  3.613e-05
-#&gt;  [613]  4.175e-04 -3.504e-05 -1.366e-04  4.496e-05 -5.947e-05 -2.256e-05
-#&gt;  [619]  9.445e-05 -6.718e-06  3.592e-05  1.361e-04  6.637e-05 -6.336e-07
-#&gt;  [625] -1.079e-04 -2.602e-05 -6.569e-05  1.183e-04  1.419e-04 -9.621e-05
-#&gt;  [631] -7.428e-05  2.269e-05 -3.003e-05  1.010e-05 -8.834e-06  4.135e-05
-#&gt;  [637] -4.074e-04  6.491e-05 -8.275e-05  7.960e-05  2.019e-05  2.989e-04
-#&gt;  [643] -3.941e-05 -1.557e-06 -9.565e-05  1.680e-05 -9.339e-05  1.084e-04
-#&gt;  [649] -7.760e-06  4.455e-06 -8.694e-05  3.294e-05 -1.464e-04 -7.731e-06
-#&gt;  [655] -8.365e-05  2.815e-05 -1.060e-04  1.518e-05  3.908e-05 -5.439e-05
-#&gt;  [661]  1.516e-05 -5.151e-05  5.628e-06 -4.115e-05  4.323e-05  5.461e-06
-#&gt;  [667] -3.864e-05  4.045e-06  3.897e-05 -1.117e-06  2.318e-05  1.016e-04
-#&gt;  [673] -5.406e-05  4.961e-05 -5.025e-05  1.644e-04 -6.006e-05  1.036e-05
-#&gt;  [679] -4.148e-05 -7.357e-06  2.027e-04  3.264e-05  1.777e-04 -1.235e-04
-#&gt;  [685] -9.997e-05 -1.898e-05 -3.512e-05 -3.289e-05 -1.699e-05  1.718e-04
-#&gt;  [691]  3.487e-05  1.365e-04  3.686e-05 -6.619e-05  2.897e-05  7.856e-06
-#&gt;  [697] -2.698e-05  1.032e-04 -5.693e-05  9.096e-06 -1.352e-05  3.302e-06
-#&gt;  [703] -8.683e-05 -9.019e-05  4.740e-05 -3.628e-06  2.649e-05  1.264e-04
-#&gt;  [709]  4.757e-05 -8.146e-05 -5.665e-05  3.440e-05  4.786e-04  4.365e-05
-#&gt;  [715] -1.151e-04  9.442e-06 -8.991e-05  1.093e-04  1.976e-05 -6.619e-06
-#&gt;  [721] -9.947e-05  3.295e-05  1.271e-04  1.078e-05  4.267e-05  3.925e-06
-#&gt;  [727]  1.546e-05 -3.918e-04 -2.819e-05 -2.411e-05  2.936e-05 -3.139e-05
-#&gt;  [733]  2.347e-04 -1.081e-05 -6.735e-05 -8.741e-05 -1.440e-05 -6.870e-05
-#&gt;  [739]  7.631e-05 -1.583e-04 -2.171e-05 -2.275e-05  2.506e-05  3.496e-05
-#&gt;  [745] -4.824e-05  4.424e-05  3.303e-07 -6.155e-06  3.206e-05 -3.783e-05
-#&gt;  [751] -4.448e-05  7.138e-05 -1.489e-04  2.869e-05 -2.220e-05 -3.783e-06
-#&gt;  [757] -2.708e-05 -1.497e-04  5.556e-05 -2.762e-06  6.393e-05  4.533e-05
-#&gt;  [763] -1.505e-05 -2.378e-04  1.198e-04 -1.637e-04 -3.661e-05  4.394e-05
-#&gt;  [769]  6.112e-05  2.603e-05  2.745e-04  3.299e-06  2.046e-04 -7.012e-05
-#&gt;  [775]  2.587e-04 -1.759e-05 -1.571e-05  6.178e-05 -1.375e-04 -7.745e-05
-#&gt;  [781]  4.315e-06  2.521e-05  2.934e-05  1.123e-04  3.715e-05 -8.991e-05
-#&gt;  [787] -6.121e-05  2.351e-05 -2.357e-05 -1.564e-04  8.815e-05 -3.307e-05
-#&gt;  [793]  9.736e-05 -2.804e-05 -1.277e-05  1.138e-04 -4.811e-05 -1.933e-04
-#&gt;  [799] -9.301e-06  4.616e-05 -7.344e-05  3.320e-05  7.451e-05  5.632e-05
-#&gt;  [805]  3.018e-05 -1.307e-04 -3.041e-05  5.760e-05  4.291e-05 -3.125e-05
-#&gt;  [811] -2.990e-05  3.757e-05  1.465e-05  3.547e-05  1.632e-05 -5.233e-05
-#&gt;  [817]  4.096e-05 -3.331e-05  1.275e-04  1.833e-05 -1.099e-04 -6.025e-05
-#&gt;  [823]  1.197e-05 -7.598e-06 -6.846e-05 -4.882e-05 -5.533e-06 -1.222e-04
-#&gt;  [829]  5.766e-05  4.627e-05  3.471e-05 -6.001e-05 -6.816e-05  9.864e-05
-#&gt;  [835] -7.158e-05  6.460e-05  1.855e-05  1.947e-05 -4.253e-05  5.316e-05
-#&gt;  [841] -3.413e-05 -5.887e-05 -6.493e-05  3.237e-05  5.956e-05  8.459e-05
-#&gt;  [847]  5.042e-05  1.821e-05 -2.682e-05 -5.387e-05 -1.549e-06 -2.663e-05
-#&gt;  [853]  6.406e-05 -8.968e-05  8.872e-05 -2.946e-05 -9.207e-05  2.119e-05
-#&gt;  [859]  2.113e-05  3.521e-05 -5.866e-05 -1.045e-04  1.828e-05  3.525e-05
-#&gt;  [865]  8.106e-07 -2.826e-05  1.196e-05 -3.487e-05 -1.919e-05 -2.396e-05
-#&gt;  [871]  8.042e-05 -1.815e-05 -2.468e-05 -3.492e-05 -4.503e-05  8.184e-05
-#&gt;  [877]  4.261e-05  4.766e-05  5.133e-05  1.940e-05  1.324e-05  2.225e-04
-#&gt;  [883] -9.023e-05 -2.077e-06  7.807e-05 -9.272e-05 -2.348e-05 -6.039e-05
-#&gt;  [889] -4.530e-05  2.477e-05  1.250e-05 -5.276e-06  8.825e-05 -1.392e-06
-#&gt;  [895] -1.812e-05 -1.205e-04  7.985e-05  1.471e-04 -2.485e-04 -2.747e-05
-#&gt;  [901] -3.195e-05  1.686e-04  7.020e-05  2.031e-04 -1.793e-05 -6.898e-05
-#&gt;  [907] -1.278e-04 -1.919e-05  2.160e-04 -5.053e-05  3.502e-05  4.571e-06
-#&gt;  [913] -1.671e-04 -1.387e-04  3.510e-05  9.077e-05  1.321e-05 -2.904e-05
-#&gt;  [919] -1.270e-04 -2.456e-06  4.690e-05  2.409e-05  5.560e-05  7.097e-05
-#&gt;  [925]  4.274e-05 -3.360e-05 -1.687e-05 -2.502e-05  1.474e-05 -9.253e-06
-#&gt;  [931] -1.644e-04  1.133e-04 -3.072e-05  1.142e-04 -3.959e-04  4.590e-05
-#&gt;  [937] -5.055e-05  2.902e-05 -1.041e-04  4.812e-05 -5.284e-05  4.453e-05
-#&gt;  [943]  8.300e-05  2.294e-05  7.079e-05 -7.786e-05 -4.148e-05  4.510e-06
-#&gt;  [949]  1.307e-04  1.648e-05  1.601e-04 -7.986e-06 -8.621e-05 -5.493e-08
-#&gt;  [955] -6.264e-05 -4.859e-05  1.884e-05 -8.938e-05 -1.145e-05 -1.218e-04
-#&gt;  [961] -4.137e-05  6.308e-05  6.244e-06  9.070e-05 -4.840e-05 -2.150e-04
-#&gt;  [967]  5.435e-05 -1.313e-04 -2.364e-05  9.970e-05  5.130e-06  4.184e-05
-#&gt;  [973]  4.190e-05 -9.047e-06 -6.562e-05 -2.346e-05  3.680e-06 -1.499e-04
-#&gt;  [979] -6.150e-05 -2.828e-05  1.222e-04 -5.705e-05 -9.880e-05 -5.935e-05
-#&gt;  [985] -3.608e-05 -6.036e-05  3.061e-05 -1.091e-04  3.459e-05 -5.843e-05
-#&gt;  [991]  5.878e-05  2.859e-05  1.485e-04 -5.806e-05 -5.134e-05 -2.185e-05
-#&gt;  [997]  1.903e-04 -2.894e-05  1.747e-04 -5.271e-05  1.475e-04</div></pre>
+    <pre class="examples"><span class='co'># NOT RUN {</span>
+<span class='fu'>set.seed</span>(<span class='fl'>1</span>)
+<span class='no'>n</span>    <span class='kw'>&lt;-</span> <span class='fl'>1000</span>
+<span class='no'>p</span>    <span class='kw'>&lt;-</span> <span class='fl'>1000</span>
+<span class='no'>beta</span> <span class='kw'>&lt;-</span> <span class='fu'>rep</span>(<span class='fl'>0</span>,<span class='no'>p</span>)
+<span class='no'>beta</span>[<span class='fl'>1</span>:<span class='fl'>4</span>] <span class='kw'>&lt;-</span> <span class='fl'>1</span>
+<span class='no'>X</span>        <span class='kw'>&lt;-</span> <span class='fu'>matrix</span>(<span class='fu'>rnorm</span>(<span class='no'>n</span>*<span class='no'>p</span>),<span class='kw'>nrow</span><span class='kw'>=</span><span class='no'>n</span>,<span class='kw'>ncol</span><span class='kw'>=</span><span class='no'>p</span>)
+<span class='no'>y</span>        <span class='kw'>&lt;-</span> <span class='fu'>c</span>(<span class='no'>X</span> <span class='kw'>%*%</span> <span class='no'>beta</span> + <span class='fu'>rnorm</span>(<span class='no'>n</span>))
+<span class='no'>input_ss</span> <span class='kw'>&lt;-</span> <span class='fu'>compute_ss</span>(<span class='no'>X</span>,<span class='no'>y</span>,<span class='kw'>standardize</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+<span class='no'>res</span>      <span class='kw'>&lt;-</span> <span class='fu'>with</span>(<span class='no'>input_ss</span>,<span class='fu'>susie_ss</span>(<span class='no'>XtX</span>,<span class='no'>Xty</span>,<span class='no'>n</span>,<span class='no'>vary</span>))
+<span class='fu'>coef</span>(<span class='no'>res</span>)
+
+<span class='co'># }</span></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>
@@ -381,5 +266,8 @@ equally likely to be non-zero. The prior on the non-zero element is N(0,var=scal
       </footer>
    </div>
 
+  
+
   </body>
 </html>
+

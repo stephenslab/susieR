@@ -1,8 +1,8 @@
-#' @title Local false sign rate (lfsr) for susie confidence sets
+#' @title Local false sign rate (lfsr) for susie credible sets
 #' @details This computes the average lfsr across SNPs for each l, weighted by the
 #' posterior inclusion probability alpha
 #' @param res a susie fit, the output of `susieR::susie()`
-#' @return an l vector of lfsr for confidence sets
+#' @return an l vector of lfsr for credible sets
 #' @importFrom stats pnorm
 #' @export
 susie_get_lfsr = function(res){
@@ -28,7 +28,7 @@ in_CS_x = function(x, coverage = 0.9){
 }
 
 # returns an l by p binary matrix
-# indicating which variables are in susie confidence sets
+# indicating which variables are in susie credible sets
 in_CS = function(res, coverage = 0.9){
   if (class(res) == "susie")
     res = res$alpha
@@ -66,7 +66,7 @@ get_purity = function(pos, X, Xcorr, n = 100) {
   }
 }
 
-#' @title `cor` function with specified warning muffled
+# @title `cor` function with specified warning muffled
 #'
 #' @importFrom stats cor
 muffled_corr = function(x)
@@ -76,7 +76,7 @@ muffled_corr = function(x)
                         invokeRestart("muffleWarning")
                     } )
 
-#' @title `cov2cor` function with specified warning muffled
+# @title `cov2cor` function with specified warning muffled
 #'
 #' @importFrom stats cov2cor
 muffled_cov2cor = function(x)
@@ -86,7 +86,7 @@ muffled_cov2cor = function(x)
                           invokeRestart("muffleWarning")
                       } )
 
-#' @title check for symmetric matrix
+# @title check for symmetric matrix
 
 is_symmetric_matrix = function(x) {
     res = isSymmetric(x)
@@ -94,19 +94,19 @@ is_symmetric_matrix = function(x) {
     return(res)
 }
 
-#' @title Extract confidence sets from SuSiE model
-#' @details It reports indices of variables in each confidence set identified,
+#' @title Extract credible sets from SuSiE model
+#' @details It reports indices of variables in each credible set identified,
 #' as well as summaries of correlation between variables within each set.
 #' @param res a susie fit, the output of `susieR::susie()`, or simply the posterior
 #' inclusion probability matrix alpha.
 #' @param X N by P matrix of variables.
 #' When provided, correlation between variables will be computed and used to remove
-#' confidence sets whose minimum correlation between variables is smaller than `min_abs_corr` (see below).
+#' credible sets whose minimum correlation between variables is smaller than `min_abs_corr` (see below).
 #' @param Xcorr P by P matrix of correlations between variables.
-#' when provided, it will be used to remove confidence sets
+#' when provided, it will be used to remove credible sets
 #' whose minimum correlation between variables is smaller than `min_abs_corr` (see below).
-#' @param coverage coverage of confident sets. Default to 0.95 for 95\% confidence interval.
-#' @param min_abs_corr minimum of absolute value of correlation allowed in a confidence set.
+#' @param coverage coverage of confident sets. Default to 0.95 for 95\% credible interval.
+#' @param min_abs_corr minimum of absolute value of correlation allowed in a credible set.
 #' Default set to 0.5 to correspond to squared correlation of 0.25,
 #' a commonly used threshold for genotype data in genetics studies.
 #' @param dedup Remove duplicated CS, default to TRUE
@@ -241,7 +241,7 @@ calc_z = function(X,y,centered=FALSE){
 #' in order to plot data from other software program.
 #' @param y a string indicating what to plot: z (for z-score), PIP,
 #' or a random label to plot input data as is.
-#' @param add_bar add horizontal bar to signals in confidence interval.
+#' @param add_bar add horizontal bar to signals in credible interval.
 #' @param pos coordinates of variables to plot, default to all variables
 #' @param b for simulated data, specify b = true effects (highlights in red).
 #' @param max_cs the biggest CS to display, based on purity (set max_cs in between 0 and 1) or size (>1).

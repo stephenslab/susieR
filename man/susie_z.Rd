@@ -19,9 +19,9 @@ susie_z(z, R, L = 10, prior_weights = NULL, null_weight = NULL,
 
 \item{null_weight}{probability of no effect, for each single effect model}
 
-\item{coverage}{coverage of confident sets. Default to 0.95 for 95\% confidence interval.}
+\item{coverage}{coverage of confident sets. Default to 0.95 for 95\% credible interval.}
 
-\item{min_abs_corr}{minimum of absolute value of correlation allowed in a confidence set.}
+\item{min_abs_corr}{minimum of absolute value of correlation allowed in a credible set.}
 
 \item{verbose}{if TRUE outputs some progress messages}
 

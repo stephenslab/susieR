@@ -1,0 +1,12 @@
+pandoc: 1.17.0.2
+pkgdown: 1.1.0.9000
+pkgdown_sha: 98bfe0fdfd59b33ef1a88ef6896cd60f805f0e81
+articles:
+  finemapping: finemapping.html
+  finemapping_summary_statistics: finemapping_summary_statistics.html
+  l0_initialization: l0_initialization.html
+  mwe: mwe.html
+  sparse_matrix_strategy: sparse_matrix_strategy.html
+  sparse_susie_eval: sparse_susie_eval.html
+  trend_filtering: trend_filtering.html
+

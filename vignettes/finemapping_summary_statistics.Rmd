@@ -159,7 +159,7 @@ fitted_z_n <- susie_bhat(bhat = z_scores, shat = 1,
 The result should agree with using $\hat{beta}$ and $\text{SE}(\hat{\beta})$ when variance of $y$ is set to one,
 
 ```{r}
-plot(coef(fitted_z_n), coef(fitted_bhat_standarized))
+plot(coef(fitted_z_n), coef(fitted_bhat_standardize))
 ```
 
 ```{r}
@@ -182,7 +182,7 @@ and output coefficients in standardized $X$, $y$ scale,
 fitted_z <- susie_z(z = z_scores,R = R,L = 5)
 ```
 
-We can check the 95% confidence set:
+We can check the 95% credible set:
 
 ```{r}
 summary(fitted_z)$cs

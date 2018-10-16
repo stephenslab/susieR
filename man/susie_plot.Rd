@@ -16,7 +16,7 @@ in order to plot data from other software program.}
 \item{y}{a string indicating what to plot: z (for z-score), PIP,
 or a random label to plot input data as is.}
 
-\item{add_bar}{add horizontal bar to signals in confidence interval.}
+\item{add_bar}{add horizontal bar to signals in credible interval.}
 
 \item{pos}{coordinates of variables to plot, default to all variables}
 

@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Extract credible sets from SuSiE model — susie_get_CS • susieR</title>
+<title>Summary statistics version of SuSiE on betahat, the corresponding standard error, and correlation (or covariance) matrix — susie_bhat • susieR</title>
 
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
@@ -30,9 +30,9 @@
 
 
 
-<meta property="og:title" content="Extract credible sets from SuSiE model — susie_get_CS" />
+<meta property="og:title" content="Summary statistics version of SuSiE on betahat, the corresponding standard error, and correlation (or covariance) matrix — susie_bhat" />
 
-<meta property="og:description" content="Extract credible sets from SuSiE model" />
+<meta property="og:description" content="Summary statistics version of SuSiE on betahat, the corresponding standard error, and correlation (or covariance) matrix" />
 <meta name="twitter:card" content="summary" />
 
 
@@ -94,39 +94,73 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Extract credible sets from SuSiE model</h1>
-    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/susie_utils.R'><code>R/susie_utils.R</code></a></small>
-    <div class="hidden name"><code>susie_get_CS.Rd</code></div>
+    <h1>Summary statistics version of SuSiE on betahat, the corresponding standard error, and correlation (or covariance) matrix</h1>
+    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/susie_ss.R'><code>R/susie_ss.R</code></a></small>
+    <div class="hidden name"><code>susie_bhat.Rd</code></div>
     </div>
 
     <div class="ref-description">
     
-    <p>Extract credible sets from SuSiE model</p>
+    <p>Summary statistics version of SuSiE on betahat, the corresponding standard error, and correlation (or covariance) matrix</p>
     
     </div>
 
-    <pre class="usage"><span class='fu'>susie_get_CS</span>(<span class='no'>res</span>, <span class='kw'>X</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>Xcorr</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>coverage</span> <span class='kw'>=</span> <span class='fl'>0.95</span>,
-  <span class='kw'>min_abs_corr</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>dedup</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)</pre>
+    <pre class="usage"><span class='fu'>susie_bhat</span>(<span class='no'>bhat</span>, <span class='no'>shat</span>, <span class='no'>R</span>, <span class='no'>n</span>, <span class='kw'>var_y</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>L</span> <span class='kw'>=</span> <span class='fl'>10</span>,
+  <span class='kw'>scaled_prior_variance</span> <span class='kw'>=</span> <span class='fl'>0.2</span>, <span class='kw'>estimate_prior_variance</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>prior_weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>null_weight</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>standardize</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>coverage</span> <span class='kw'>=</span> <span class='fl'>0.95</span>, <span class='kw'>min_abs_corr</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>track_fit</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='no'>...</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>res</th>
-      <td><p>a susie fit, the output of `susieR::susie()`, or simply the posterior
-inclusion probability matrix alpha.</p></td>
+      <th>bhat</th>
+      <td><p>a p vector of estimated effects.</p></td>
     </tr>
     <tr>
-      <th>X</th>
-      <td><p>N by P matrix of variables.
-When provided, correlation between variables will be computed and used to remove
-credible sets whose minimum correlation between variables is smaller than `min_abs_corr` (see below).</p></td>
+      <th>shat</th>
+      <td><p>a p vector of corresponding standard errors.</p></td>
     </tr>
     <tr>
-      <th>Xcorr</th>
-      <td><p>P by P matrix of correlations between variables.
-when provided, it will be used to remove credible sets
-whose minimum correlation between variables is smaller than `min_abs_corr` (see below).</p></td>
+      <th>R</th>
+      <td><p>a p by p symmetric and positive semidefinite matrix. It can be X'X, covariance matrix or correlation matrix.</p></td>
+    </tr>
+    <tr>
+      <th>n</th>
+      <td><p>sample size.</p></td>
+    </tr>
+    <tr>
+      <th>var_y</th>
+      <td><p>the (sample) variance of y. If it is unknown, the coefficients (returned from `coef`) are on the standardized X, y scale.</p></td>
+    </tr>
+    <tr>
+      <th>L</th>
+      <td><p>maximum number of non-zero effects.</p></td>
+    </tr>
+    <tr>
+      <th>scaled_prior_variance</th>
+      <td><p>the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times)</p></td>
+    </tr>
+    <tr>
+      <th>estimate_prior_variance</th>
+      <td><p>indicates whether to estimate prior (currently not recommended as not working as well)</p></td>
+    </tr>
+    <tr>
+      <th>prior_weights</th>
+      <td><p>a p vector of prior probability that each element is non-zero</p></td>
+    </tr>
+    <tr>
+      <th>null_weight</th>
+      <td><p>probability of no effect, for each single effect model</p></td>
+    </tr>
+    <tr>
+      <th>standardize</th>
+      <td><p>logical flag (default=TRUE) for whether to standardize columns of X to unit variance prior to fitting. It is useful when `var_y` is given.
+Note that `scaled_prior_variance` specifies the prior on the coefficients of X *after* standardization (if performed).
+If you do not standardize you may need
+to think more carefully about specifying `scaled_prior_variance`.
+Whatever the value of standardize, the coefficients (returned from `coef`) are on the bhat, shat scale.</p></td>
     </tr>
     <tr>
       <th>coverage</th>
@@ -134,24 +168,25 @@ whose minimum correlation between variables is smaller than `min_abs_corr` (see 
     </tr>
     <tr>
       <th>min_abs_corr</th>
-      <td><p>minimum of absolute value of correlation allowed in a credible set.
-Default set to 0.5 to correspond to squared correlation of 0.25,
-a commonly used threshold for genotype data in genetics studies.</p></td>
+      <td><p>minimum of absolute value of correlation allowed in a credible set.</p></td>
     </tr>
     <tr>
-      <th>dedup</th>
-      <td><p>Remove duplicated CS, default to TRUE</p></td>
+      <th>verbose</th>
+      <td><p>if true outputs some progress messages</p></td>
+    </tr>
+    <tr>
+      <th>track_fit</th>
+      <td><p>add an attribute <code>trace</code> to output that saves current values of all iterations</p></td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td><p>further arguments to be passed to <code><a href='susie_ss.html'>susie_ss</a></code></p></td>
     </tr>
     </table>
     
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>a list of `cs`, and additionally `purity` and selected `cs_index` if `X` or `Xcorr` was provided.</p>
-    
-    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
-
-    <p>It reports indices of variables in each credible set identified,
-as well as summaries of correlation between variables within each set.</p>
+    <p>a susie fit</p>
     
 
   </div>
@@ -161,8 +196,6 @@ as well as summaries of correlation between variables within each set.</p>
       <li><a href="#arguments">Arguments</a></li>
       
       <li><a href="#value">Value</a></li>
-
-      <li><a href="#details">Details</a></li>
           </ul>
 
   </div>
