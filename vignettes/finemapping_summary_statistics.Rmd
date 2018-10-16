@@ -50,7 +50,7 @@ So the underlying causal variables are 403, 653 and 773.
 
 ## Summary statistics from simple regression
 
-Summary statistics of genetic association studies typically contain odds ratio (or beta coefficient), p-value and minor allele frequencies. These information can be used to perform fine-mapping with sufficient summary statistics, which additionally require sample size, variance of phenotype, and most importantly a matrix of correlation between variables.
+Summary statistics of genetic association studies typically contain odds ratio (or $\hat{\beta}$ coefficient), p-value and minor allele frequencies. These information can be used to perform fine-mapping with sufficient summary statistics, which additionally require sample size, variance of phenotype, and most importantly a matrix of correlation between variables.
 
 When the aforementioned sufficient summary statistica are provided, SuSiE can produce the exact same outcome as if individual level data were used. SuSiE can also produce approximate results when some of the information are not available. The minimal required of summary statistics for SuSiE to work are z-scores (can be derived from p-values, as will be demonstrated below) and correlation matrix between variables. The correlation matrix in genetics is typically referred to as LD matrix (LD for linkage disequilibrium). One can use external reference panels to estimate it when this matrix cannot be obtained from samples directly.
 
@@ -77,7 +77,7 @@ For starters, we assume there are at most 5 causal variables, i.e. set `L=5`, al
 
 We also set SuSiE prior variance to 0.1. 
 
-### Using $\hat{beta}$ and $\text{SE}(\hat{\beta})$
+### Using $\hat{\beta}$ and $\text{SE}(\hat{\beta})$
 
 With the knowledge of variance of $y$, `susieR` can result in coefficent estimates in the original scale of data,
 
@@ -102,14 +102,6 @@ fitted_bhat_standardize <- susie_bhat(bhat = finemap$sumstats[1,,1],
                                       scaled_prior_variance = 0.1, 
                                       estimate_prior_variance = FALSE)
 ```
-
-Here is the summary of the input and the output coefficient scale:
-
-  known var(y)    |  coefficient scale
-------------------|-------------------
-  yes             |  same scale as $\hat{beta}$ and $\text{SE}(\hat{\beta})$
-------------------|-------------------
-  no              |  same scale as $\hat{beta}$ and $\text{SE}(\hat{\beta})$ from standardized X, y
 
 Using `summary` function, we can examine the posterior inclusion probability (PIP) for each variable, and the 95% credible sets. 
 
@@ -146,7 +138,7 @@ plot(coef(fitted), coef(fitted_bhat_standardize))
 
 ### Using $z$ scores
 
-For $z$ score input, `susieR` can only output coefficients in standardized $X$, $y$ scale. It is practically setting $\hat{beta}$ to $z$ score and $\text{SE}(\hat{\beta})$ and variance of $y$ to one,
+For $z$ score input, `susieR` can only output coefficients in standardized $X$, $y$ scale. It is practically setting $\hat{\beta}$ to $z$ score and $\text{SE}(\hat{\beta})$ and variance of $y$ to one,
 
 ```{r}
 fitted_z_n <- susie_bhat(bhat = z_scores, shat = 1, 
@@ -156,7 +148,7 @@ fitted_z_n <- susie_bhat(bhat = z_scores, shat = 1,
                          estimate_prior_variance = FALSE)
 ```
 
-The result should agree with using $\hat{beta}$ and $\text{SE}(\hat{\beta})$ when variance of $y$ is set to one,
+The result should agree with using $\hat{\beta}$ and $\text{SE}(\hat{\beta})$ when variance of $y$ is set to one,
 
 ```{r}
 plot(coef(fitted_z_n), coef(fitted_bhat_standardize))

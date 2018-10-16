@@ -29,7 +29,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.5.0</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.5.0.0</span>
       </span>
     </div>
 
@@ -99,7 +99,7 @@
 <div id="summary-statistics-from-simple-regression" class="section level2">
 <h2 class="hasAnchor">
 <a href="#summary-statistics-from-simple-regression" class="anchor"></a>Summary statistics from simple regression</h2>
-<p>Summary statistics of genetic association studies typically contain odds ratio (or beta coefficient), p-value and minor allele frequencies. These information can be used to perform fine-mapping with sufficient summary statistics, which additionally require sample size, variance of phenotype, and most importantly a matrix of correlation between variables.</p>
+<p>Summary statistics of genetic association studies typically contain odds ratio (or <span class="math inline">\(\hat{\beta}\)</span> coefficient), p-value and minor allele frequencies. These information can be used to perform fine-mapping with sufficient summary statistics, which additionally require sample size, variance of phenotype, and most importantly a matrix of correlation between variables.</p>
 <p>When the aforementioned sufficient summary statistica are provided, SuSiE can produce the exact same outcome as if individual level data were used. SuSiE can also produce approximate results when some of the information are not available. The minimal required of summary statistics for SuSiE to work are z-scores (can be derived from p-values, as will be demonstrated below) and correlation matrix between variables. The correlation matrix in genetics is typically referred to as LD matrix (LD for linkage disequilibrium). One can use external reference panels to estimate it when this matrix cannot be obtained from samples directly.</p>
 <p>Caution that the LD matrix has to be correlation matrix <span class="math inline">\(r\)</span>, not <span class="math inline">\(r^2\)</span> or <span class="math inline">\(abs(r)\)</span>.</p>
 <p>Our example data-set additionally provides summary statistics for fitting per-variable univariate simple regression. The results are <span class="math inline">\(\hat{\beta}\)</span> and <span class="math inline">\(SE(\hat{\beta})\)</span> from which the p-values (from <em>t</em>-distribution) and <span class="math inline">\(z\)</span>-scores can be derived. Again we focus only on results from the first data-set:</p>
@@ -121,7 +121,7 @@ z_scores =<span class="st"> </span><span class="kw">abs</span>(<span class="kw">
 <p>We also set SuSiE prior variance to 0.1.</p>
 <div id="using-hatbeta-and-textsehatbeta" class="section level3">
 <h3 class="hasAnchor">
-<a href="#using-hatbeta-and-textsehatbeta" class="anchor"></a>Using <span class="math inline">\(\hat{beta}\)</span> and <span class="math inline">\(\text{SE}(\hat{\beta})\)</span>
+<a href="#using-hatbeta-and-textsehatbeta" class="anchor"></a>Using <span class="math inline">\(\hat{\beta}\)</span> and <span class="math inline">\(\text{SE}(\hat{\beta})\)</span>
 </h3>
 <p>With the knowledge of variance of <span class="math inline">\(y\)</span>, <code>susieR</code> can result in coefficent estimates in the original scale of data,</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fitted_bhat &lt;-<span class="st"> </span><span class="kw"><a href="../reference/susie_bhat.html">susie_bhat</a></span>(<span class="dt">bhat =</span> finemap$sumstats[<span class="dv">1</span>,,<span class="dv">1</span>], 
@@ -139,32 +139,6 @@ z_scores =<span class="st"> </span><span class="kw">abs</span>(<span class="kw">
                                       <span class="dt">L =</span> <span class="dv">5</span>, 
                                       <span class="dt">scaled_prior_variance =</span> <span class="fl">0.1</span>, 
                                       <span class="dt">estimate_prior_variance =</span> <span class="ot">FALSE</span>)</code></pre></div>
-<p>Here is the summary of the input and the output coefficient scale:</p>
-<table style="width:54%;" class="table">
-<colgroup>
-<col width="26%">
-<col width="27%">
-</colgroup>
-<thead><tr class="header">
-<th>known var(y)</th>
-<th>coefficient scale</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td>yes</td>
-<td>same scale as <span class="math inline">\(\hat{beta}\)</span> and <span class="math inline">\(\text{SE}(\hat{\beta})\)</span>
-</td>
-</tr>
-<tr class="even">
-<td>——————</td>
-<td>——————-</td>
-</tr>
-<tr class="odd">
-<td>no</td>
-<td>same scale as <span class="math inline">\(\hat{beta}\)</span> and <span class="math inline">\(\text{SE}(\hat{\beta})\)</span> from standardized X, y</td>
-</tr>
-</tbody>
-</table>
 <p>Using <code>summary</code> function, we can examine the posterior inclusion probability (PIP) for each variable, and the 95% credible sets.</p>
 <p>Here, we are the 95% credible sets.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(fitted_bhat)$cs
@@ -223,13 +197,13 @@ z_scores =<span class="st"> </span><span class="kw">abs</span>(<span class="kw">
 <div id="using-z-scores" class="section level3">
 <h3 class="hasAnchor">
 <a href="#using-z-scores" class="anchor"></a>Using <span class="math inline">\(z\)</span> scores</h3>
-<p>For <span class="math inline">\(z\)</span> score input, <code>susieR</code> can only output coefficients in standardized <span class="math inline">\(X\)</span>, <span class="math inline">\(y\)</span> scale. It is practically setting <span class="math inline">\(\hat{beta}\)</span> to <span class="math inline">\(z\)</span> score and <span class="math inline">\(\text{SE}(\hat{\beta})\)</span> and variance of <span class="math inline">\(y\)</span> to one,</p>
+<p>For <span class="math inline">\(z\)</span> score input, <code>susieR</code> can only output coefficients in standardized <span class="math inline">\(X\)</span>, <span class="math inline">\(y\)</span> scale. It is practically setting <span class="math inline">\(\hat{\beta}\)</span> to <span class="math inline">\(z\)</span> score and <span class="math inline">\(\text{SE}(\hat{\beta})\)</span> and variance of <span class="math inline">\(y\)</span> to one,</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fitted_z_n &lt;-<span class="st"> </span><span class="kw"><a href="../reference/susie_bhat.html">susie_bhat</a></span>(<span class="dt">bhat =</span> z_scores, <span class="dt">shat =</span> <span class="dv">1</span>, 
                          <span class="dt">R =</span> R, <span class="dt">n =</span> <span class="kw">nrow</span>(finemap$data$X), 
                          <span class="dt">L =</span> <span class="dv">5</span>, 
                          <span class="dt">scaled_prior_variance =</span> <span class="fl">0.1</span>, 
                          <span class="dt">estimate_prior_variance =</span> <span class="ot">FALSE</span>)</code></pre></div>
-<p>The result should agree with using <span class="math inline">\(\hat{beta}\)</span> and <span class="math inline">\(\text{SE}(\hat{\beta})\)</span> when variance of <span class="math inline">\(y\)</span> is set to one,</p>
+<p>The result should agree with using <span class="math inline">\(\hat{\beta}\)</span> and <span class="math inline">\(\text{SE}(\hat{\beta})\)</span> when variance of <span class="math inline">\(y\)</span> is set to one,</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">plot</span>(<span class="kw">coef</span>(fitted_z_n), <span class="kw">coef</span>(fitted_bhat_standardize))</code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="finemapping_summary_statistics_files/figure-html/unnamed-chunk-15-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
