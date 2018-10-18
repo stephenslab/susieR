@@ -5,7 +5,16 @@
 #' @importFrom Matrix t
 #' @importFrom Matrix tcrossprod
 #' @keywords internal
-compute_Xb = function(X, b){
+compute_Xb = function(X, b, trendfiltering=FALSE, order=0){
+  #when applying trend filtering
+  if (trendfiltering) {
+    cm = attr(X, 'scaled:center')
+    csd = attr(X, 'scaled:scale')
+    scaled.Xb = compute_Dinvb(order, b/csd)
+    Xb <- scaled.Xb - sum(cm*b/csd)
+    return(as.numeric(Xb))
+  }
+  
   if (is.matrix(X)) { #when X is a dense matrix
     return(tcrossprod(X,t(b))) #tcrossprod(A,B) performs A%*%t(B) but faster
   } else {
@@ -26,7 +35,14 @@ compute_Xb = function(X, b){
 #' @return a p vector
 #' @importFrom Matrix t
 #' @importFrom Matrix crossprod
-compute_Xty = function(X, y){
+compute_Xty = function(X, y, trendfiltering=FALSE, order=0){
+  if (trendfiltering) {
+    cm = attr(X, 'scaled:center')
+    csd = attr(X, 'scaled:scale')
+    Xty = compute_Dinvty(order,y) / csd - cm/csd * sum(y)
+    return(as.numeric(Xty))
+  }
+  
   if (is.matrix(X)) { #when X is a dense matrix
     return(crossprod(X,y)) #corssprod(A,B) performs t(A)%*%B but faster
   } else { #when X is sparse matrix
@@ -44,7 +60,11 @@ compute_Xty = function(X, y){
 #' @param X is a scaled dense matrix or an unscaled sparse matrix
 #' @return a L by n matrix
 #' @importFrom Matrix t
-compute_MXt = function(M, X){
+compute_MXt = function(M, X, trendfiltering=FALSE, order=0){
+  if (trendfiltering) {
+    return(as.matrix(t(apply(M,1,function(b) compute_Xb(X, b, trendfiltering, order)))))
+  }
+  
   if(is.matrix(X)){
     return(tcrossprod(M,X))
   }else{

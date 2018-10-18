@@ -23,8 +23,8 @@
 #' @importFrom stats uniroot
 #' @importFrom Matrix colSums
 #'
-single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL,optimize_V=FALSE){
-  Xty = compute_Xty(X, Y)
+single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL,optimize_V=FALSE, trendfiltering, order){
+  Xty = compute_Xty(X, Y, trendfiltering, order)
   betahat = (1/attr(X, "d")) * Xty
   shat2 = residual_variance/attr(X, "d")
   if (is.null(prior_weights))
