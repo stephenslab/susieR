@@ -6,7 +6,7 @@
 \usage{
 susie_auto(X, Y, L_init = 1, L_max = 512, verbose = FALSE,
   init_tol = 1, standardize = TRUE, intercept = TRUE,
-  max_iter = 100, tol = 0.01)
+  max_iter = 100, tol = 0.01, ...)
 }
 \arguments{
 \item{X}{an n by p matrix of covariates}
