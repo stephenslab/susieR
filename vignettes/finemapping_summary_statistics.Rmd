@@ -25,20 +25,19 @@ set.seed(1)
 ## The data-set
 
 ```{r}
-finemap <-
-  readRDS(system.file("datafiles","N3finemapping.rds",package = "susieR"))
+data(N3finemapping)
 ```
 
 Notice that we've simulated 2 sets of $Y$ as 2 simulation replicates. Here we'll focus on the first data-set.
 
 ```{r}
-dim(finemap$data$Y)
+dim(data$Y)
 ```
 
 Here are the 3 "true" signals in the first data-set:
 
 ```{r}
-b <- finemap$data$true_coef[,1]
+b <- data$true_coef[,1]
 plot(b, pch=16, ylab='effect size')
 ```
 
@@ -60,15 +59,15 @@ Our example data-set additionally provides summary statistics for fitting per-va
 Again we focus only on results from the first data-set:
 
 ```{r}
-p_values = 2 * pt(-abs(finemap$sumstats[1,,1] / finemap$sumstats[2,,1]), df = nrow(finemap$data$X) - 2)
-z_scores = abs(qnorm(p_values/2)) * sign(finemap$sumstats[1,,1])
+p_values = 2 * pt(-abs(sumstats[1,,1] / sumstats[2,,1]), df = nrow(data$X) - 2)
+z_scores = abs(qnorm(p_values/2)) * sign(sumstats[1,,1])
 susie_plot(z_scores, y = "z", b=b)
 ```
 
 For this example the correlation matrix can be computed directly from data provide,
 
 ```{r}
-R <- cor(finemap$data$X)
+R <- cor(data$X)
 ```
 
 ## Fine-mapping with `susieR` with the knowledge of sample size n
@@ -82,10 +81,10 @@ We also set SuSiE prior variance to 0.1.
 With the knowledge of variance of $y$, `susieR` can result in coefficent estimates in the original scale of data,
 
 ```{r}
-fitted_bhat <- susie_bhat(bhat = finemap$sumstats[1,,1], 
-                          shat = finemap$sumstats[2,,1], 
-                          R = R, n = nrow(finemap$data$X), 
-                          var_y = var(finemap$data$Y[,1]),
+fitted_bhat <- susie_bhat(bhat = sumstats[1,,1], 
+                          shat = sumstats[2,,1], 
+                          R = R, n = nrow(data$X), 
+                          var_y = var(data$Y[,1]),
                           L = 5, 
                           scaled_prior_variance = 0.1, 
                           estimate_prior_variance = FALSE, 
@@ -95,9 +94,9 @@ fitted_bhat <- susie_bhat(bhat = finemap$sumstats[1,,1],
 Without the knowledge of variance of $y$, `susieR` gives the coefficients in standardized $X$, $y$ scale,
 
 ```{r}
-fitted_bhat_standardize <- susie_bhat(bhat = finemap$sumstats[1,,1], 
-                                      shat = finemap$sumstats[2,,1], 
-                                      R = R, n = nrow(finemap$data$X), 
+fitted_bhat_standardize <- susie_bhat(bhat = sumstats[1,,1], 
+                                      shat = sumstats[2,,1], 
+                                      R = R, n = nrow(data$X), 
                                       L = 5, 
                                       scaled_prior_variance = 0.1, 
                                       estimate_prior_variance = FALSE)
@@ -124,7 +123,7 @@ The true causal variables are colored red. The 95% CS identified are circled in 
 The result should be identical to using the individual level data,
 
 ```{r}
-fitted = susie(finemap$data$X, finemap$data$Y[,1],
+fitted = susie(data$X, data$Y[,1],
                 L=5,
                 estimate_residual_variance = TRUE, 
                 scaled_prior_variance = 0.1,
@@ -142,7 +141,7 @@ For $z$ score input, `susieR` can only output coefficients in standardized $X$, 
 
 ```{r}
 fitted_z_n <- susie_bhat(bhat = z_scores, shat = 1, 
-                         R = R, n = nrow(finemap$data$X), 
+                         R = R, n = nrow(data$X), 
                          L = 5, 
                          scaled_prior_variance = 0.1, 
                          estimate_prior_variance = FALSE)
