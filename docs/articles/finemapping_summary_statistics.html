@@ -29,7 +29,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.5.0.0</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.5.0.350</span>
       </span>
     </div>
 
@@ -64,7 +64,7 @@
       <h1>Fine-mapping with summary statistics</h1>
                         <h4 class="author">Yuxin Zou and Gao Wang</h4>
             
-            <h4 class="date">2018-10-16</h4>
+            <h4 class="date">2018-10-19</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/master/vignettes/finemapping_summary_statistics.Rmd"><code>vignettes/finemapping_summary_statistics.Rmd</code></a></small>
       <div class="hidden name"><code>finemapping_summary_statistics.Rmd</code></div>
@@ -79,13 +79,13 @@
 <div id="the-data-set" class="section level2">
 <h2 class="hasAnchor">
 <a href="#the-data-set" class="anchor"></a>The data-set</h2>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">finemap &lt;-
-<span class="st">  </span><span class="kw">readRDS</span>(<span class="kw">system.file</span>(<span class="st">"datafiles"</span>,<span class="st">"N3finemapping.rds"</span>,<span class="dt">package =</span> <span class="st">"susieR"</span>))</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">data</span>(N3finemapping)
+<span class="kw">attach</span>(N3finemapping)</code></pre></div>
 <p>Notice that we’ve simulated 2 sets of <span class="math inline">\(Y\)</span> as 2 simulation replicates. Here we’ll focus on the first data-set.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">dim</span>(finemap$data$Y)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">dim</span>(data$Y)
 <span class="co"># [1] 574   2</span></code></pre></div>
 <p>Here are the 3 “true” signals in the first data-set:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">b &lt;-<span class="st"> </span>finemap$data$true_coef[,<span class="dv">1</span>]
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">b &lt;-<span class="st"> </span>data$true_coef[,<span class="dv">1</span>]
 <span class="kw">plot</span>(b, <span class="dt">pch=</span><span class="dv">16</span>, <span class="dt">ylab=</span><span class="st">'effect size'</span>)</code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="finemapping_summary_statistics_files/figure-html/unnamed-chunk-4-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
@@ -103,8 +103,8 @@
 <p>When the aforementioned sufficient summary statistica are provided, SuSiE can produce the exact same outcome as if individual level data were used. SuSiE can also produce approximate results when some of the information are not available. The minimal required of summary statistics for SuSiE to work are z-scores (can be derived from p-values, as will be demonstrated below) and correlation matrix between variables. The correlation matrix in genetics is typically referred to as LD matrix (LD for linkage disequilibrium). One can use external reference panels to estimate it when this matrix cannot be obtained from samples directly.</p>
 <p>Caution that the LD matrix has to be correlation matrix <span class="math inline">\(r\)</span>, not <span class="math inline">\(r^2\)</span> or <span class="math inline">\(abs(r)\)</span>.</p>
 <p>Our example data-set additionally provides summary statistics for fitting per-variable univariate simple regression. The results are <span class="math inline">\(\hat{\beta}\)</span> and <span class="math inline">\(SE(\hat{\beta})\)</span> from which the p-values (from <em>t</em>-distribution) and <span class="math inline">\(z\)</span>-scores can be derived. Again we focus only on results from the first data-set:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">p_values =<span class="st"> </span><span class="dv">2</span> *<span class="st"> </span><span class="kw">pt</span>(-<span class="kw">abs</span>(finemap$sumstats[<span class="dv">1</span>,,<span class="dv">1</span>] /<span class="st"> </span>finemap$sumstats[<span class="dv">2</span>,,<span class="dv">1</span>]), <span class="dt">df =</span> <span class="kw">nrow</span>(finemap$data$X) -<span class="st"> </span><span class="dv">2</span>)
-z_scores =<span class="st"> </span><span class="kw">abs</span>(<span class="kw">qnorm</span>(p_values/<span class="dv">2</span>)) *<span class="st"> </span><span class="kw">sign</span>(finemap$sumstats[<span class="dv">1</span>,,<span class="dv">1</span>])
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">p_values =<span class="st"> </span><span class="dv">2</span> *<span class="st"> </span><span class="kw">pt</span>(-<span class="kw">abs</span>(sumstats[<span class="dv">1</span>,,<span class="dv">1</span>] /<span class="st"> </span>sumstats[<span class="dv">2</span>,,<span class="dv">1</span>]), <span class="dt">df =</span> <span class="kw">nrow</span>(data$X) -<span class="st"> </span><span class="dv">2</span>)
+z_scores =<span class="st"> </span><span class="kw">abs</span>(<span class="kw">qnorm</span>(p_values/<span class="dv">2</span>)) *<span class="st"> </span><span class="kw">sign</span>(sumstats[<span class="dv">1</span>,,<span class="dv">1</span>])
 <span class="kw"><a href="../reference/susie_plot.html">susie_plot</a></span>(z_scores, <span class="dt">y =</span> <span class="st">"z"</span>, <span class="dt">b=</span>b)</code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="finemapping_summary_statistics_files/figure-html/unnamed-chunk-6-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
@@ -112,7 +112,7 @@ z_scores =<span class="st"> </span><span class="kw">abs</span>(<span class="kw">
 </p>
 </div>
 <p>For this example the correlation matrix can be computed directly from data provide,</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">R &lt;-<span class="st"> </span><span class="kw">cor</span>(finemap$data$X)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">R &lt;-<span class="st"> </span><span class="kw">cor</span>(data$X)</code></pre></div>
 </div>
 <div id="fine-mapping-with-susier-with-the-knowledge-of-sample-size-n" class="section level2">
 <h2 class="hasAnchor">
@@ -124,18 +124,18 @@ z_scores =<span class="st"> </span><span class="kw">abs</span>(<span class="kw">
 <a href="#using-hatbeta-and-textsehatbeta" class="anchor"></a>Using <span class="math inline">\(\hat{\beta}\)</span> and <span class="math inline">\(\text{SE}(\hat{\beta})\)</span>
 </h3>
 <p>With the knowledge of variance of <span class="math inline">\(y\)</span>, <code>susieR</code> can result in coefficent estimates in the original scale of data,</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fitted_bhat &lt;-<span class="st"> </span><span class="kw"><a href="../reference/susie_bhat.html">susie_bhat</a></span>(<span class="dt">bhat =</span> finemap$sumstats[<span class="dv">1</span>,,<span class="dv">1</span>], 
-                          <span class="dt">shat =</span> finemap$sumstats[<span class="dv">2</span>,,<span class="dv">1</span>], 
-                          <span class="dt">R =</span> R, <span class="dt">n =</span> <span class="kw">nrow</span>(finemap$data$X), 
-                          <span class="dt">var_y =</span> <span class="kw">var</span>(finemap$data$Y[,<span class="dv">1</span>]),
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fitted_bhat &lt;-<span class="st"> </span><span class="kw"><a href="../reference/susie_bhat.html">susie_bhat</a></span>(<span class="dt">bhat =</span> sumstats[<span class="dv">1</span>,,<span class="dv">1</span>], 
+                          <span class="dt">shat =</span> sumstats[<span class="dv">2</span>,,<span class="dv">1</span>], 
+                          <span class="dt">R =</span> R, <span class="dt">n =</span> <span class="kw">nrow</span>(data$X), 
+                          <span class="dt">var_y =</span> <span class="kw">var</span>(data$Y[,<span class="dv">1</span>]),
                           <span class="dt">L =</span> <span class="dv">5</span>, 
                           <span class="dt">scaled_prior_variance =</span> <span class="fl">0.1</span>, 
                           <span class="dt">estimate_prior_variance =</span> <span class="ot">FALSE</span>, 
                           <span class="dt">standardize =</span> <span class="ot">TRUE</span>)</code></pre></div>
 <p>Without the knowledge of variance of <span class="math inline">\(y\)</span>, <code>susieR</code> gives the coefficients in standardized <span class="math inline">\(X\)</span>, <span class="math inline">\(y\)</span> scale,</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fitted_bhat_standardize &lt;-<span class="st"> </span><span class="kw"><a href="../reference/susie_bhat.html">susie_bhat</a></span>(<span class="dt">bhat =</span> finemap$sumstats[<span class="dv">1</span>,,<span class="dv">1</span>], 
-                                      <span class="dt">shat =</span> finemap$sumstats[<span class="dv">2</span>,,<span class="dv">1</span>], 
-                                      <span class="dt">R =</span> R, <span class="dt">n =</span> <span class="kw">nrow</span>(finemap$data$X), 
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fitted_bhat_standardize &lt;-<span class="st"> </span><span class="kw"><a href="../reference/susie_bhat.html">susie_bhat</a></span>(<span class="dt">bhat =</span> sumstats[<span class="dv">1</span>,,<span class="dv">1</span>], 
+                                      <span class="dt">shat =</span> sumstats[<span class="dv">2</span>,,<span class="dv">1</span>], 
+                                      <span class="dt">R =</span> R, <span class="dt">n =</span> <span class="kw">nrow</span>(data$X), 
                                       <span class="dt">L =</span> <span class="dv">5</span>, 
                                       <span class="dt">scaled_prior_variance =</span> <span class="fl">0.1</span>, 
                                       <span class="dt">estimate_prior_variance =</span> <span class="ot">FALSE</span>)</code></pre></div>
@@ -160,7 +160,7 @@ z_scores =<span class="st"> </span><span class="kw">abs</span>(<span class="kw">
 </div>
 <p>The true causal variables are colored red. The 95% CS identified are circled in different colors.</p>
 <p>The result should be identical to using the individual level data,</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fitted =<span class="st"> </span><span class="kw"><a href="../reference/susie.html">susie</a></span>(finemap$data$X, finemap$data$Y[,<span class="dv">1</span>],
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fitted =<span class="st"> </span><span class="kw"><a href="../reference/susie.html">susie</a></span>(data$X, data$Y[,<span class="dv">1</span>],
                 <span class="dt">L=</span><span class="dv">5</span>,
                 <span class="dt">estimate_residual_variance =</span> <span class="ot">TRUE</span>, 
                 <span class="dt">scaled_prior_variance =</span> <span class="fl">0.1</span>,
@@ -199,7 +199,7 @@ z_scores =<span class="st"> </span><span class="kw">abs</span>(<span class="kw">
 <a href="#using-z-scores" class="anchor"></a>Using <span class="math inline">\(z\)</span> scores</h3>
 <p>For <span class="math inline">\(z\)</span> score input, <code>susieR</code> can only output coefficients in standardized <span class="math inline">\(X\)</span>, <span class="math inline">\(y\)</span> scale. It is practically setting <span class="math inline">\(\hat{\beta}\)</span> to <span class="math inline">\(z\)</span> score and <span class="math inline">\(\text{SE}(\hat{\beta})\)</span> and variance of <span class="math inline">\(y\)</span> to one,</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fitted_z_n &lt;-<span class="st"> </span><span class="kw"><a href="../reference/susie_bhat.html">susie_bhat</a></span>(<span class="dt">bhat =</span> z_scores, <span class="dt">shat =</span> <span class="dv">1</span>, 
-                         <span class="dt">R =</span> R, <span class="dt">n =</span> <span class="kw">nrow</span>(finemap$data$X), 
+                         <span class="dt">R =</span> R, <span class="dt">n =</span> <span class="kw">nrow</span>(data$X), 
                          <span class="dt">L =</span> <span class="dv">5</span>, 
                          <span class="dt">scaled_prior_variance =</span> <span class="fl">0.1</span>, 
                          <span class="dt">estimate_prior_variance =</span> <span class="ot">FALSE</span>)</code></pre></div>
@@ -283,7 +283,7 @@ z_scores =<span class="st"> </span><span class="kw">abs</span>(<span class="kw">
 <span class="co"># [1] stats     graphics  grDevices utils     datasets  methods   base     </span>
 <span class="co"># </span>
 <span class="co"># other attached packages:</span>
-<span class="co"># [1] susieR_0.5.0</span>
+<span class="co"># [1] susieR_0.5.0.0350</span>
 <span class="co"># </span>
 <span class="co"># loaded via a namespace (and not attached):</span>
 <span class="co">#  [1] Rcpp_0.12.19        knitr_1.20          xml2_1.2.0         </span>

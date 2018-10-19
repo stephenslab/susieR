@@ -35,7 +35,7 @@ set.seed(1)
 
 ```{r}
 data(N3finemapping)
-ls()
+attach(N3finemapping)
 ```
 
 `data` contains regression data-set $X$ and $y$, along with some other

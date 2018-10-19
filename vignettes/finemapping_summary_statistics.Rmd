@@ -26,6 +26,7 @@ set.seed(1)
 
 ```{r}
 data(N3finemapping)
+attach(N3finemapping)
 ```
 
 Notice that we've simulated 2 sets of $Y$ as 2 simulation replicates. Here we'll focus on the first data-set.

@@ -29,7 +29,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.5.0</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.5.0.350</span>
       </span>
     </div>
 
@@ -64,7 +64,7 @@
       <h1>Fine-mapping examples</h1>
                         <h4 class="author">Gao Wang</h4>
             
-            <h4 class="date">2018-10-16</h4>
+            <h4 class="date">2018-10-19</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/master/vignettes/finemapping.Rmd"><code>vignettes/finemapping.Rmd</code></a></small>
       <div class="hidden name"><code>finemapping.Rmd</code></div>
@@ -80,20 +80,18 @@
 <div id="the-data-set" class="section level2">
 <h2 class="hasAnchor">
 <a href="#the-data-set" class="anchor"></a>The data-set</h2>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">finemap &lt;-
-<span class="st">  </span><span class="kw">readRDS</span>(<span class="kw">system.file</span>(<span class="st">"datafiles"</span>,<span class="st">"N3finemapping.rds"</span>,<span class="dt">package =</span> <span class="st">"susieR"</span>))
-<span class="kw">names</span>(finemap)
-<span class="co"># [1] "data"     "sumstats"</span></code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">data</span>(N3finemapping)
+<span class="kw">attach</span>(N3finemapping)</code></pre></div>
 <p><code>data</code> contains regression data-set <span class="math inline">\(X\)</span> and <span class="math inline">\(y\)</span>, along with some other relevant properties in the context of genetic studies. It also contains the “true” regression coefficent the data is simulated from.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">names</span>(finemap$data)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">names</span>(data)
 <span class="co"># [1] "X"                 "chrom"             "pos"              </span>
 <span class="co"># [4] "true_coef"         "residual_variance" "Y"                </span>
 <span class="co"># [7] "allele_freq"       "V"</span></code></pre></div>
 <p>Notice that we’ve simulated 2 sets of <span class="math inline">\(Y\)</span> as 2 simulation replicates. Here we’ll focus on the first data-set.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">dim</span>(finemap$data$Y)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">dim</span>(data$Y)
 <span class="co"># [1] 574   2</span></code></pre></div>
 <p>Here are the 3 “true” signals in the first data-set:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">b &lt;-<span class="st"> </span>finemap$data$true_coef[,<span class="dv">1</span>]
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">b &lt;-<span class="st"> </span>data$true_coef[,<span class="dv">1</span>]
 <span class="kw">plot</span>(b, <span class="dt">pch=</span><span class="dv">16</span>, <span class="dt">ylab=</span><span class="st">'effect size'</span>)</code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="finemapping_files/figure-html/unnamed-chunk-5-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
@@ -108,7 +106,7 @@
 <h2 class="hasAnchor">
 <a href="#simple-regression-summary-statistics" class="anchor"></a>Simple regression summary statistics</h2>
 <p>The data-set additionally provides summary statistics for fitting univariate simple regression variable by variable. The results are <span class="math inline">\(\hat{\beta}\)</span> and <span class="math inline">\(SE(\hat{\beta})\)</span> from which z-scores can be derived. Again we focus only on results from the first data-set:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">z_scores &lt;-<span class="st"> </span><span class="kw">with</span>(finemap,sumstats[<span class="dv">1</span>,,] /<span class="st"> </span>sumstats[<span class="dv">2</span>,,])
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">z_scores &lt;-<span class="st"> </span>sumstats[<span class="dv">1</span>,,] /<span class="st"> </span>sumstats[<span class="dv">2</span>,,]
 z_scores &lt;-<span class="st"> </span>z_scores[,<span class="dv">1</span>]
 <span class="kw"><a href="../reference/susie_plot.html">susie_plot</a></span>(z_scores, <span class="dt">y =</span> <span class="st">"z"</span>, <span class="dt">b=</span>b)</code></pre></div>
 <div class="figure" style="text-align: center">
@@ -123,7 +121,7 @@ z_scores &lt;-<span class="st"> </span>z_scores[,<span class="dv">1</span>]
 </h2>
 <p>For starters, we assume there are at most 5 causal variables, i.e., set <code>L=5</code>, although SuSiE is robust to the choice of <code>L</code>.</p>
 <p>We set SuSiE prior variance to 0.1, and update residual variance in the variational algorithm that fits SuSiE model. The <code>susieR</code> function call is:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fitted &lt;-<span class="st"> </span><span class="kw"><a href="../reference/susie.html">susie</a></span>(finemap$data$X, finemap$data$Y[,<span class="dv">1</span>],
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fitted &lt;-<span class="st"> </span><span class="kw"><a href="../reference/susie.html">susie</a></span>(data$X, data$Y[,<span class="dv">1</span>],
                 <span class="dt">L=</span><span class="dv">5</span>,
                 <span class="dt">estimate_residual_variance =</span> <span class="ot">TRUE</span>, 
                 <span class="dt">scaled_prior_variance =</span> <span class="fl">0.1</span>,
@@ -175,8 +173,8 @@ z_scores &lt;-<span class="st"> </span>z_scores[,<span class="dv">1</span>]
 <p>The 3 causal signals have been captured by the 3 CS reported here. The 3rd CS contains many variables, including the true causal variable <code>403</code>. The minimum absolute correlation is 0.86.</p>
 <p>If we use the default 90% coverage for credible sets, we still capture the 3 signals, but “purity” of the 3rd CS is now 0.91 and size of the CS is also a bit smaller.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">sets &lt;-<span class="st"> </span><span class="kw"><a href="../reference/susie_get_CS.html">susie_get_CS</a></span>(fitted,
-                     <span class="dt">X =</span> finemap$data$X,
-                     <span class="dt">coverage =</span> <span class="fl">0.9</span>,
+                     <span class="dt">X =</span> data$X,
+             <span class="dt">coverage =</span> <span class="fl">0.9</span>,
                      <span class="dt">min_abs_corr =</span> <span class="fl">0.1</span>)</code></pre></div>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(sets)
 <span class="co"># $cs</span>
@@ -250,7 +248,7 @@ z3[<span class="kw">order</span>(z3[,<span class="dv">2</span>], <span class="dt
 <h3 class="hasAnchor">
 <a href="#choice-of-priors" class="anchor"></a>Choice of priors</h3>
 <p>We found that SuSiE is generally robust to choice of priors. Here we set scaled prior variance (percentage of variance explained) to 0.2, and compare with previous results:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fitted =<span class="st"> </span><span class="kw"><a href="../reference/susie.html">susie</a></span>(finemap$data$X, finemap$data$Y[,<span class="dv">1</span>],
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fitted =<span class="st"> </span><span class="kw"><a href="../reference/susie.html">susie</a></span>(data$X, data$Y[,<span class="dv">1</span>],
                <span class="dt">L=</span><span class="dv">5</span>,
                <span class="dt">estimate_residual_variance =</span> <span class="ot">TRUE</span>, 
                <span class="dt">scaled_prior_variance =</span> <span class="fl">0.2</span>)
@@ -288,7 +286,7 @@ z3[<span class="kw">order</span>(z3[,<span class="dv">2</span>], <span class="dt
 <span class="co"># [1] stats     graphics  grDevices utils     datasets  methods   base     </span>
 <span class="co"># </span>
 <span class="co"># other attached packages:</span>
-<span class="co"># [1] susieR_0.5.0</span>
+<span class="co"># [1] susieR_0.5.0.0350</span>
 <span class="co"># </span>
 <span class="co"># loaded via a namespace (and not attached):</span>
 <span class="co">#  [1] Rcpp_0.12.19        knitr_1.20          xml2_1.2.0         </span>
