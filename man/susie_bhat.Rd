@@ -4,7 +4,7 @@
 \alias{susie_bhat}
 \title{Summary statistics version of SuSiE on betahat, the corresponding standard error, and correlation (or covariance) matrix}
 \usage{
-susie_bhat(bhat, shat, R, n, var_y = 1, L = 10,
+susie_bhat(bhat, shat, R, n, var_y = 1, r_tol = 1e-08, L = 10,
   scaled_prior_variance = 0.2, estimate_prior_variance = FALSE,
   prior_weights = NULL, null_weight = NULL, standardize = TRUE,
   coverage = 0.95, min_abs_corr = 0.5, verbose = FALSE,
@@ -20,6 +20,8 @@ susie_bhat(bhat, shat, R, n, var_y = 1, L = 10,
 \item{n}{sample size.}
 
 \item{var_y}{the (sample) variance of y. If it is unknown, the coefficients (returned from `coef`) are on the standardized X, y scale.}
+
+\item{r_tol}{tolerance level for eigen value check of positive semidefinite matrix of R.}
 
 \item{L}{maximum number of non-zero effects.}
 

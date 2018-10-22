@@ -153,21 +153,22 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10,
   return(s)
 }
 
-#' @title Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix
+#' @title Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix.
 #' @param z a p vector of z scores.
 #' @param R a p by p symmetric and positive semidefinite matrix. It can be X'X, covariance matrix or correlation matrix.
+#' @param r_tol tolerance level for eigen value check of positive semidefinite matrix of R.
 #' @param L maximum number of non-zero effects.
-#' @param prior_weights a p vector of prior probability that each element is non-zero
-#' @param null_weight probability of no effect, for each single effect model
+#' @param prior_weights a p vector of prior probability that each element is non-zero.
+#' @param null_weight probability of no effect, for each single effect model.
 #' @param coverage coverage of confident sets. Default to 0.95 for 95\% credible interval.
 #' @param min_abs_corr minimum of absolute value of correlation allowed in a credible set.
-#' @param verbose if TRUE outputs some progress messages
-#' @param track_fit add an attribute \code{trace} to output that saves current values of all iterations
+#' @param verbose if TRUE outputs some progress messages.
+#' @param track_fit add an attribute \code{trace} to output that saves current values of all iterations.
 #' @param ... further arguments to be passed to \code{\link{susie_ss}}
 #' @return a susie fit
 #'
 #' @export
-susie_z = function(z, R,
+susie_z = function(z, R, r_tol = 1e-08,
                    L=10,
                    prior_weights = NULL, null_weight = NULL,
                    coverage=0.95, min_abs_corr=0.5,
@@ -180,7 +181,7 @@ susie_z = function(z, R,
     stop('R is not a symmetric matrix.')
   }
   eigenvalues <- eigen(R, only.values = TRUE)$values
-  eigenvalues[abs(eigenvalues) < 1e-08] <- 0
+  eigenvalues[abs(eigenvalues) < r_tol] <- 0
   if(any(eigenvalues < 0)){
     stop('R is not a positive semidefinite matrix.')
   }
@@ -208,6 +209,7 @@ susie_z = function(z, R,
 #' @param R a p by p symmetric and positive semidefinite matrix. It can be X'X, covariance matrix or correlation matrix.
 #' @param n sample size.
 #' @param var_y the (sample) variance of y. If it is unknown, the coefficients (returned from `coef`) are on the standardized X, y scale.
+#' @param r_tol tolerance level for eigen value check of positive semidefinite matrix of R.
 #' @param L maximum number of non-zero effects.
 #' @param scaled_prior_variance the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times)
 #' @param estimate_prior_variance indicates whether to estimate prior (currently not recommended as not working as well)
@@ -226,7 +228,7 @@ susie_z = function(z, R,
 #' @return a susie fit
 #'
 #' @export
-susie_bhat = function(bhat, shat, R, n, var_y = 1,
+susie_bhat = function(bhat, shat, R, n, var_y = 1, r_tol = 1e-08,
                       L=10,
                       scaled_prior_variance=0.2,
                       estimate_prior_variance = FALSE,
@@ -245,7 +247,7 @@ susie_bhat = function(bhat, shat, R, n, var_y = 1,
   }
 
   eigenvalues <- eigen(R, only.values = TRUE)$values
-  eigenvalues[abs(eigenvalues) < 1e-08] <- 0
+  eigenvalues[abs(eigenvalues) < r_tol] <- 0
   if(any(eigenvalues < 0)){
     stop('R is not a positive semidefinite matrix.')
   }

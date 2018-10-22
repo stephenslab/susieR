@@ -2,30 +2,32 @@
 % Please edit documentation in R/susie_ss.R
 \name{susie_z}
 \alias{susie_z}
-\title{Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix}
+\title{Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix.}
 \usage{
-susie_z(z, R, L = 10, prior_weights = NULL, null_weight = NULL,
-  coverage = 0.95, min_abs_corr = 0.5, verbose = FALSE,
-  track_fit = FALSE, ...)
+susie_z(z, R, r_tol = 1e-08, L = 10, prior_weights = NULL,
+  null_weight = NULL, coverage = 0.95, min_abs_corr = 0.5,
+  verbose = FALSE, track_fit = FALSE, ...)
 }
 \arguments{
 \item{z}{a p vector of z scores.}
 
 \item{R}{a p by p symmetric and positive semidefinite matrix. It can be X'X, covariance matrix or correlation matrix.}
 
+\item{r_tol}{tolerance level for eigen value check of positive semidefinite matrix of R.}
+
 \item{L}{maximum number of non-zero effects.}
 
-\item{prior_weights}{a p vector of prior probability that each element is non-zero}
+\item{prior_weights}{a p vector of prior probability that each element is non-zero.}
 
-\item{null_weight}{probability of no effect, for each single effect model}
+\item{null_weight}{probability of no effect, for each single effect model.}
 
 \item{coverage}{coverage of confident sets. Default to 0.95 for 95\% credible interval.}
 
 \item{min_abs_corr}{minimum of absolute value of correlation allowed in a credible set.}
 
-\item{verbose}{if TRUE outputs some progress messages}
+\item{verbose}{if TRUE outputs some progress messages.}
 
-\item{track_fit}{add an attribute \code{trace} to output that saves current values of all iterations}
+\item{track_fit}{add an attribute \code{trace} to output that saves current values of all iterations.}
 
 \item{...}{further arguments to be passed to \code{\link{susie_ss}}}
 }
@@ -33,5 +35,5 @@ susie_z(z, R, L = 10, prior_weights = NULL, null_weight = NULL,
 a susie fit
 }
 \description{
-Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix
+Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix.
 }
