@@ -5,14 +5,11 @@
 #' @importFrom Matrix t
 #' @importFrom Matrix tcrossprod
 #' @keywords internal
-compute_Xb = function(X, b, trendfiltering=FALSE, order=0){
+compute_Xb = function(X, b){
   #when applying trend filtering
-  if (trendfiltering) {
-    cm = attr(X, 'scaled:center')
-    csd = attr(X, 'scaled:scale')
-    scaled.Xb = compute_Dinvb(order, b/csd)
-    Xb <- scaled.Xb - sum(cm*b/csd)
-    return(as.numeric(Xb))
+  if (!is.null(attr(X, 'order'))) {
+    order = attr(X, 'order')
+    return(as.numeric(compute_Dinvb(order, b)))
   }
   
   if (is.matrix(X)) { #when X is a dense matrix
@@ -35,12 +32,11 @@ compute_Xb = function(X, b, trendfiltering=FALSE, order=0){
 #' @return a p vector
 #' @importFrom Matrix t
 #' @importFrom Matrix crossprod
-compute_Xty = function(X, y, trendfiltering=FALSE, order=0){
-  if (trendfiltering) {
-    cm = attr(X, 'scaled:center')
-    csd = attr(X, 'scaled:scale')
-    Xty = compute_Dinvty(order,y) / csd - cm/csd * sum(y)
-    return(as.numeric(Xty))
+compute_Xty = function(X, y){
+  #when applying trend filtering
+  if (!is.null(attr(X, 'order'))) {
+    order = attr(X, 'order')
+    return(as.numeric(compute_Dinvty(order,y)))
   }
   
   if (is.matrix(X)) { #when X is a dense matrix
@@ -60,9 +56,9 @@ compute_Xty = function(X, y, trendfiltering=FALSE, order=0){
 #' @param X is a scaled dense matrix or an unscaled sparse matrix
 #' @return a L by n matrix
 #' @importFrom Matrix t
-compute_MXt = function(M, X, trendfiltering=FALSE, order=0){
-  if (trendfiltering) {
-    return(as.matrix(t(apply(M,1,function(b) compute_Xb(X, b, trendfiltering, order)))))
+compute_MXt = function(M, X){
+  if (!is.null(attr(X, 'order')))  {
+    return(as.matrix(t(apply(M,1,function(b) compute_Xb(X, b)))))
   }
   
   if(is.matrix(X)){

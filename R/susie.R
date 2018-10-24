@@ -69,10 +69,6 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
                  max_iter=100,tol=1e-3,
                  verbose=FALSE,track_fit=FALSE,trendfiltering=FALSE,order=0) {
   
-  if (trendfiltering) {
-    X = create_Dinv(order, length(Y))
-  }
-  
   # Check input X.
   if (!(is.double(X) & is.matrix(X)) & !inherits(X,"CsparseMatrix"))
     stop("Input X must be a double-precision matrix, or a sparse matrix.")
@@ -95,7 +91,7 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
   if(intercept){
     Y = Y-mean_y
   }
-  X = safe_colScale(X,center=intercept, scale=standardize)
+  X = safe_colScale(X,center=intercept, scale=standardize,trendfiltering=trendfiltering)
   # initialize susie fit
   s = init_setup(n,p,L,scaled_prior_variance,residual_variance,prior_weights,null_weight,as.numeric(var(Y)))
   if (!missing(s_init)) {
@@ -115,19 +111,19 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
     #s = add_null_effect(s,0)
     if (track_fit)
       tracking[[i]] = s
-    s = update_each_effect(X, Y, s, estimate_prior_variance, trendfiltering, order)
+    s = update_each_effect(X, Y, s, estimate_prior_variance)
     if(verbose){
-        print(paste0("objective:",get_objective(X,Y,s,trendfiltering,order)))
+        print(paste0("objective:",get_objective(X,Y,s)))
     }
     if(estimate_residual_variance){
-      s$sigma2 = estimate_residual_variance(X,Y,s,trendfiltering,order)
+      s$sigma2 = estimate_residual_variance(X,Y,s)
       if(verbose){
-        print(paste0("objective:",get_objective(X,Y,s,trendfiltering,order)))
+        print(paste0("objective:",get_objective(X,Y,s)))
       }
     }
     #s = remove_null_effects(s)
 
-    elbo[i+1] = get_objective(X,Y,s,trendfiltering,order)
+    elbo[i+1] = get_objective(X,Y,s)
     if((elbo[i+1]-elbo[i])<tol) break;
   }
   elbo = elbo[1:(i+1)] #remove trailing NAs
