@@ -10,12 +10,7 @@ safe_colScale = function(X,
                     scale = TRUE,
                     add_attr = TRUE,
                     rows = NULL,
-                    cols = NULL, 
-                    trendfiltering) {
-  
-  if (trendfiltering) {
-    return(X)
-  }
+                    cols = NULL) {
   
   if (!is.null(rows) && !is.null(cols)) {
     X <- X[rows, cols, drop = FALSE]

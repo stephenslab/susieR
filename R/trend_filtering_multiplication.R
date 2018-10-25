@@ -72,6 +72,18 @@ compute_Dinv2tEb2 = function(order, y, Eb2){
   return(sum(cumsum(base^2)*Eb2))
 }
 
+compute_tfcm = function(order, y){
+  n = length(y)
+  base = rep(1,n)
+  for (i in 1:(order+1)){
+    base = -cumsum(base)
+  }
+  return(base/n)
+}
+
+compute_tfcsd = functionn(order, y){
+  
+}
 
 
 

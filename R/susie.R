@@ -67,7 +67,7 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
                  s_init = NULL,coverage=0.95,min_abs_corr=0.5,
                  compute_univariate_zscore = FALSE,
                  max_iter=100,tol=1e-3,
-                 verbose=FALSE,track_fit=FALSE,trendfiltering=FALSE,order=0) {
+                 verbose=FALSE,track_fit=FALSE) {
   
   # Check input X.
   if (!(is.double(X) & is.matrix(X)) & !inherits(X,"CsparseMatrix"))
@@ -91,7 +91,7 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
   if(intercept){
     Y = Y-mean_y
   }
-  X = safe_colScale(X,center=intercept, scale=standardize,trendfiltering=trendfiltering)
+  X = safe_colScale(X,center=intercept, scale=standardize)
   # initialize susie fit
   s = init_setup(n,p,L,scaled_prior_variance,residual_variance,prior_weights,null_weight,as.numeric(var(Y)))
   if (!missing(s_init)) {
