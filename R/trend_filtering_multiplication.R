@@ -43,47 +43,6 @@ compute_Dinvty = function(order,y){
   return(y)
 }
 
-#' @title Compute colSums(Dinv * Dinv)
-#' @param order is the order of trend filtering
-#' @param y an n vector
-#' @return an n vector
-compute_colSumsDinv2 = function(order, y){
-  n = length(y)
-  base = rep(-1, n)
-  if (order==0) return(cumsum(base^2))
-  for (i in 1:order){
-    base = cumsum(base)
-  }
-  return(cumsum(base^2))
-}
-
-#' @title Compute sum(t(Dinv * Dinv) * Eb2)
-#' @param order is the order of trend filtering
-#' @param y an n vector
-#' @param Eb2 an n vector
-#' @return a scalar
-compute_Dinv2tEb2 = function(order, y, Eb2){
-  n = length(y)
-  base = rep(-1, n)
-  if (order==0) return(sum(cumsum(base^2)*Eb2))
-  for (i in 1:order){
-    base = cumsum(base)
-  }
-  return(sum(cumsum(base^2)*Eb2))
-}
-
-compute_tfcm = function(order, y){
-  n = length(y)
-  base = rep(1,n)
-  for (i in 1:(order+1)){
-    base = -cumsum(base)
-  }
-  return(base/n)
-}
-
-compute_tfcsd = functionn(order, y){
-  
-}
 
 
 
