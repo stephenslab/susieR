@@ -57,20 +57,20 @@ def dap_single_z(z, ld, prefix, args):
     return extract_dap_output(prefix)
 
 def dap_batch(X, Y, prefix, *args):
-    return dict([(r, dap_single(X, Y[:,r], f'{prefix}_condition_{r+1}', r+1, args)) for r in range(Y.shape[1])])
+    return dict([(f'V{r+1}', dap_single(X, Y[:,r], f'{prefix}_condition_{r+1}', r+1, args)) for r in range(Y.shape[1])])
 
 def dap_batch_z(z, ld, prefix, *args):
-    return dict([(r, dap_single_z(z[:,r], ld, f'{prefix}_condition_{r+1}', args)) for r in range(z.shape[1])])
+    return dict([(f'V{r+1}', dap_single_z(z[:,r], ld, f'{prefix}_condition_{r+1}', args)) for r in range(z.shape[1])])
 
-
+import os
 from dsc.dsc_io import load_rds, save_rds
 import tempfile
 import warnings
 if not sys.warnoptions:
     warnings.simplefilter("ignore")
 
-input_file = sys.argv[1]
-output_file = sys.argv[2]
+input_file = os.path.expanduser(sys.argv[1])
+output_file = os.path.expanduser(sys.argv[2])
 args = sys.argv[3:]
 data = load_rds(input_file)['data']
 cache = tempfile.NamedTemporaryFile(suffix = '.dap')
