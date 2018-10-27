@@ -13,7 +13,10 @@ compute_Xb = function(X, b){
     cm = attr(X, 'scaled:center')
     csd = attr(X, 'scaled:scale')
     #scale Xb
-    scaled.Xb <- tcrossprod(X, t(b/csd))
+    #when trend filtering
+    if (class(X) == "tfmatrix") scaled.Xb <- compute_Dinvb(attr(X, 'order'), b/csd)
+    #when X is sparse
+    else scaled.Xb <- tcrossprod(X, t(b/csd))
     #center Xb
     Xb <- scaled.Xb - sum(cm*b/csd)
     return(as.numeric(Xb))
@@ -32,8 +35,11 @@ compute_Xty = function(X, y){
   } else { #when X is sparse matrix
   cm = attr(X, 'scaled:center')
   csd = attr(X, 'scaled:scale')
-  ytX        <- crossprod(y, X)
-  scaled.Xty <- t(ytX/csd)
+  ytX <- crossprod(y, X)
+  #when trend filtering 
+  if (class(X) == "tfmatrix") scaled.Xty <- compute_Dinvty(attr(X, 'order'),y)/csd
+  #when X is sparse
+  else scaled.Xty <- t(ytX/csd)
   centered.scaled.Xty <- scaled.Xty - cm/csd * sum(y)
   return(as.numeric(centered.scaled.Xty))
   }
@@ -50,6 +56,10 @@ compute_MXt = function(M, X){
   }else{
     cm = attr(X, 'scaled:center')
     csd = attr(X, 'scaled:scale')
+    #when trend filtring
+    if (class(X) == "tfmatrix") return(as.matrix(t(apply(M,1,function(b) compute_Xb(X, b)))))
+    #when X is sparse
+    else return(as.matrix(tcrossprod(M,sweep(X,2,csd,"/")) - drop(tcrossprod(M, t(cm/csd)))))
 
     # This should be the same as
     #
@@ -60,8 +70,6 @@ compute_MXt = function(M, X){
     #   M %*% (t(X)/csd) - drop(tcrossprod(M,t(cm/csd)))
     #
     # but should be more memory-efficient.
-    return(as.matrix(tcrossprod(M,sweep(X,2,csd,"/")) -
-                     drop(tcrossprod(M, t(cm/csd)))))
   }
 }
 

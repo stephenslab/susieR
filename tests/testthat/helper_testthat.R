@@ -32,6 +32,50 @@ simulate = function(n=100, p=200, sparse=F) {
          warn.conflict=F)
 }
 
+simulate_tf = function(order){
+  n = 1000 
+  D = diag(-1, n)
+  for (i in 1:(n-1)){
+    D[i, i+1] = 1
+  }
+  if (order==0) {
+    set.seed(1)
+    beta = c(rep(0,100),rep(1,100),rep(3,100),rep(-2,100),rep(0,600))
+    y = beta + rnorm(n)
+    X = solve(D)
+  } else if (order==1) {
+    set.seed(1)
+    beta = numeric(n)
+    for (i in 1:n){
+      if (i <= 100){
+        beta[i] = 0.001*i + 2
+      } else if (i <= 300){
+        beta[i] = 5*0.001*i + 1.6
+      } else{
+        beta[i] = 6.1 - 10*0.001*i
+      }
+    }
+    y = beta + rnorm(n)
+    X = solve(D%*%D)
+  } else if (order==2) {
+    set.seed(1)
+    beta = numeric(n)
+    for (i in 1:n){
+      if (i <= 100){
+        beta[i] = (0.001*i)^2
+      } else if (i <= 700){
+        beta[i] = -5*(0.001*i)^2 + 0.06
+      } else{
+        beta[i] = 3*(0.001*i)^2 - 3.86
+      }
+    }
+    y = beta + rnorm(n)
+    X = solve(D%*%D%*%D)
+  }
+  attach(list(X=X, y=y),
+         warn.conflict=F)
+}
+
 expect_equal_susie_update = function(new.res, original.res){
   new.res$alpha = as.matrix(new.res$alpha, p, 1)
   new.res$mu = as.matrix(new.res$mu, p, 1)
