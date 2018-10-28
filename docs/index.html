@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.5.0.350</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.6.0.0</span>
       </span>
     </div>
 
@@ -75,7 +75,7 @@
 <h2 class="hasAnchor">
 <a href="#setup" class="anchor"></a>Setup</h2>
 <p>To automatically retrieve and install <code>susieR</code> from this repository,</p>
-<p><code>R    devtools::install_github("stephenslab/susieR")</code></p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1">devtools<span class="op">::</span><span class="kw"><a href="http://www.rdocumentation.org/packages/devtools/topics/reexports">install_github</a></span>(<span class="st">"stephenslab/susieR"</span>)</a></code></pre></div>
 </div>
 <div id="quick-start" class="section level2">
 <h2 class="hasAnchor">
@@ -87,11 +87,11 @@
 <a href="#developer-notes" class="anchor"></a>Developer notes</h2>
 <ul>
 <li><p>When any changes are made to <code>roxygen2</code> markup, simply run <code><a href="http://www.rdocumentation.org/packages/devtools/topics/document">devtools::document()</a></code> to update package <code>NAMESPACE</code> and documentation files.</p></li>
-<li><p>Run <code><a href="http://pkgdown.r-lib.org/reference/build_site.html">pkgdown::build_site()</a></code> to build the website. Getting <code>pkgdown</code> to work properly can be frustrating due to numerous &amp; fragile dependencies. If <code>pkgdown</code> does not work for you out of the box you can use this <code>docker</code> command to run all vignettes and build the site:</p></li>
+<li><p>Run <code><a href="https://pkgdown.r-lib.org/reference/build_site.html">pkgdown::build_site()</a></code> to build the website. Getting <code>pkgdown</code> to work properly can be frustrating due to numerous &amp; fragile dependencies. If <code>pkgdown</code> does not work for you out of the box you can use this <code>docker</code> command to run all vignettes and build the site:</p></li>
 </ul>
-<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">docker</span> run --rm --security-opt label:disable -t -P -w <span class="ot">$PWD</span> -v <span class="ot">$PWD</span>:<span class="ot">$PWD</span> \
-    -u <span class="ot">$UID</span>:<span class="ot">${GROUPS[0]}</span> -e HOME=/home/<span class="ot">$USER</span> -e USER=<span class="ot">$USER</span> gaow/susie \
-    R --slave -e <span class="st">"pkgdown::build_site(lazy=TRUE, examples=FALSE)"</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ex">docker</span> run --rm --security-opt label:disable -t -P -w <span class="va">$PWD</span> -v <span class="va">$PWD</span>:<span class="va">$PWD</span> \</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">    -u <span class="va">$UID</span>:<span class="va">${GROUPS[0]}</span> -e HOME=/home/<span class="va">$USER</span> -e USER=<span class="va">$USER</span> gaow/susie \</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">    R --slave -e <span class="st">"pkgdown::build_site(lazy=TRUE, examples=FALSE)"</span></a></code></pre></div>
 </div>
 </div>
   </div>

@@ -1,6 +1,6 @@
-pandoc: 1.17.0.2
-pkgdown: 1.1.0.9000
-pkgdown_sha: 98bfe0fdfd59b33ef1a88ef6896cd60f805f0e81
+pandoc: 2.2.1
+pkgdown: 1.1.0
+pkgdown_sha: ~
 articles:
   finemapping: finemapping.html
   finemapping_summary_statistics: finemapping_summary_statistics.html

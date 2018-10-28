@@ -29,7 +29,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.5.0</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.6.0.0</span>
       </span>
     </div>
 
@@ -64,7 +64,7 @@
       <h1>Trend filtering</h1>
                         <h4 class="author">Matthew Stephens</h4>
             
-            <h4 class="date">2018-10-16</h4>
+            <h4 class="date">2018-10-28</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/master/vignettes/trend_filtering.Rmd"><code>vignettes/trend_filtering.Rmd</code></a></small>
       <div class="hidden name"><code>trend_filtering.Rmd</code></div>
@@ -83,93 +83,86 @@
 <div id="examples" class="section level1">
 <h1 class="hasAnchor">
 <a href="#examples" class="anchor"></a>Examples</h1>
-<p>Here we apply SuSiE to perform 0th order trend filtering in some simple simulated examples.</p>
-<p>First we set up <span class="math inline">\(X\)</span> as the matrix with step functions in the columns:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">n=<span class="dv">1000</span>
-X =<span class="st"> </span><span class="kw">matrix</span>(<span class="dv">0</span>,<span class="dt">nrow=</span>n,<span class="dt">ncol=</span>n<span class="dv">-1</span>)
-for(j in <span class="dv">1</span>:(n<span class="dv">-1</span>)){
-  for(i in (j<span class="dv">+1</span>):n){
-    X[i,j] =<span class="st"> </span><span class="dv">1</span>
-  }
-}</code></pre></div>
-<p>Now simulate some data where <span class="math inline">\(\mu\)</span> is a step function with four steps. Here the regression is truly sparse and susie should do well.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(susieR)
-<span class="kw">set.seed</span>(<span class="dv">1</span>)
-mu =<span class="st"> </span><span class="kw">c</span>(<span class="kw">rep</span>(<span class="dv">0</span>,<span class="dv">100</span>),<span class="kw">rep</span>(<span class="dv">1</span>,<span class="dv">100</span>),<span class="kw">rep</span>(<span class="dv">3</span>,<span class="dv">100</span>),<span class="kw">rep</span>(-<span class="dv">2</span>,<span class="dv">100</span>),<span class="kw">rep</span>(<span class="dv">0</span>,<span class="dv">600</span>))
-y =<span class="st"> </span>mu +<span class="st"> </span><span class="kw">rnorm</span>(n)
-s =<span class="st"> </span><span class="kw"><a href="../reference/susie.html">susie</a></span>(X,y,<span class="dt">L=</span><span class="dv">10</span>)</code></pre></div>
+<p>Here we apply SuSiE to perform 0th order trend filtering in some simple simulated examples. We have implemented in <code>susieR</code> 0.6.0 a funciton <code>susie_trendfilter</code> which internally creates <span class="math inline">\(X\)</span> matrix with step functions in the columns to match input <span class="math inline">\(y\)</span>. The algebra have been optimized to work on such trendfiltering matrices. Here we simulate some data where <span class="math inline">\(\mu\)</span> is a step function with four steps, a 0th order trendfiltering problem. The regression is truly sparse and SuSiE should do well.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">library</span>(susieR)</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">set.seed</span>(<span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">n=<span class="dv">1000</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">mu =<span class="st"> </span><span class="kw">c</span>(<span class="kw">rep</span>(<span class="dv">0</span>,<span class="dv">100</span>),<span class="kw">rep</span>(<span class="dv">1</span>,<span class="dv">100</span>),<span class="kw">rep</span>(<span class="dv">3</span>,<span class="dv">100</span>),<span class="kw">rep</span>(<span class="op">-</span><span class="dv">2</span>,<span class="dv">100</span>),<span class="kw">rep</span>(<span class="dv">0</span>,<span class="dv">600</span>))</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">y =<span class="st"> </span>mu <span class="op">+</span><span class="st"> </span><span class="kw">rnorm</span>(n)</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">s =<span class="st"> </span><span class="kw"><a href="../reference/susie_trendfilter.html">susie_trendfilter</a></span>(y, <span class="dv">0</span>, <span class="dt">L=</span><span class="dv">10</span>)</a></code></pre></div>
 <p>Plot results: the truth is black, and susie estimate is red.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">plot</span>(y,<span class="dt">pch=</span><span class="st">"."</span>)
-<span class="kw">lines</span>(mu,<span class="dt">col=</span><span class="dv">1</span>,<span class="dt">lwd=</span><span class="dv">3</span>)
-<span class="kw">lines</span>(<span class="kw">predict</span>(s),<span class="dt">col=</span><span class="dv">2</span>,<span class="dt">lwd=</span><span class="dv">2</span>)</code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">plot</span>(y,<span class="dt">pch=</span><span class="st">"."</span>)</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"><span class="kw">lines</span>(mu,<span class="dt">col=</span><span class="dv">1</span>,<span class="dt">lwd=</span><span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="kw">lines</span>(<span class="kw">predict</span>(s),<span class="dt">col=</span><span class="dv">2</span>,<span class="dt">lwd=</span><span class="dv">2</span>)</a></code></pre></div>
+<div class="figure" style="text-align: center">
+<img src="trend_filtering_files/figure-html/unnamed-chunk-2-1.png" alt="&amp;nbsp;" width="540"><p class="caption">
+ 
+</p>
+</div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1">s<span class="op">$</span>sigma2</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2"><span class="co"># [1] 1.080401</span></a></code></pre></div>
+<p>In the next example mu increases linearly. Thus we are approximating a linear function by step functions. Here the truth is not trully ``sparse", so we might expect performance to be poor, but it is not too bad.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">set.seed</span>(<span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">mu =<span class="st"> </span><span class="kw">seq</span>(<span class="dv">0</span>,<span class="dv">4</span>,<span class="dt">length=</span><span class="dv">1000</span>)</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">y =<span class="st"> </span>mu <span class="op">+</span><span class="st"> </span><span class="kw">rnorm</span>(n)</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">s =<span class="st"> </span><span class="kw"><a href="../reference/susie_trendfilter.html">susie_trendfilter</a></span>(y,<span class="dv">0</span>,<span class="dt">L=</span><span class="dv">10</span>)</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5"><span class="kw">plot</span>(y,<span class="dt">pch=</span><span class="st">"."</span>)</a>
+<a class="sourceLine" id="cb4-6" data-line-number="6"><span class="kw">lines</span>(mu,<span class="dt">col=</span><span class="dv">1</span>,<span class="dt">lwd=</span><span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb4-7" data-line-number="7"><span class="kw">lines</span>(<span class="kw">predict</span>(s),<span class="dt">col=</span><span class="dv">2</span>,<span class="dt">lwd=</span><span class="dv">2</span>)</a></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="trend_filtering_files/figure-html/unnamed-chunk-3-1.png" alt="&amp;nbsp;" width="540"><p class="caption">
  
 </p>
 </div>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">s$sigma2
-<span class="co"># [1] 1.08047</span></code></pre></div>
-<p>In the next example mu increases linearly. Thus we are approximating a linear function by step functions. Here the truth is not trully ``sparse“, so we might expect performance to be poor, but it is not too bad.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">set.seed</span>(<span class="dv">1</span>)
-mu =<span class="st"> </span><span class="kw">seq</span>(<span class="dv">0</span>,<span class="dv">4</span>,<span class="dt">length=</span><span class="dv">1000</span>)
-y =<span class="st"> </span>mu +<span class="st"> </span><span class="kw">rnorm</span>(n)
-s =<span class="st"> </span><span class="kw"><a href="../reference/susie.html">susie</a></span>(X,y,<span class="dt">L=</span><span class="dv">10</span>)
-<span class="kw">plot</span>(y,<span class="dt">pch=</span><span class="st">"."</span>)
-<span class="kw">lines</span>(mu,<span class="dt">col=</span><span class="dv">1</span>,<span class="dt">lwd=</span><span class="dv">3</span>)
-<span class="kw">lines</span>(<span class="kw">predict</span>(s),<span class="dt">col=</span><span class="dv">2</span>,<span class="dt">lwd=</span><span class="dv">2</span>)</code></pre></div>
+<p>Compare with the genlasso (lasso-based) solution (blue). (This will require installation of the <code>genlasso</code> package.)</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="kw">library</span>(genlasso)</a>
+<a class="sourceLine" id="cb5-2" data-line-number="2"><span class="co"># Loading required package: Matrix</span></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3"><span class="co"># Loading required package: igraph</span></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4"><span class="co"># </span></a>
+<a class="sourceLine" id="cb5-5" data-line-number="5"><span class="co"># Attaching package: 'igraph'</span></a>
+<a class="sourceLine" id="cb5-6" data-line-number="6"><span class="co"># The following objects are masked from 'package:stats':</span></a>
+<a class="sourceLine" id="cb5-7" data-line-number="7"><span class="co"># </span></a>
+<a class="sourceLine" id="cb5-8" data-line-number="8"><span class="co">#     decompose, spectrum</span></a>
+<a class="sourceLine" id="cb5-9" data-line-number="9"><span class="co"># The following object is masked from 'package:base':</span></a>
+<a class="sourceLine" id="cb5-10" data-line-number="10"><span class="co"># </span></a>
+<a class="sourceLine" id="cb5-11" data-line-number="11"><span class="co">#     union</span></a>
+<a class="sourceLine" id="cb5-12" data-line-number="12">y.tf =<span class="st"> </span><span class="kw"><a href="http://www.rdocumentation.org/packages/genlasso/topics/trendfilter">trendfilter</a></span>(y,<span class="dt">ord=</span><span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb5-13" data-line-number="13">y.tf.cv =<span class="st"> </span><span class="kw"><a href="http://www.rdocumentation.org/packages/genlasso/topics/cv.trendfilter">cv.trendfilter</a></span>(y.tf)</a>
+<a class="sourceLine" id="cb5-14" data-line-number="14"><span class="co"># Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ...</span></a>
+<a class="sourceLine" id="cb5-15" data-line-number="15"></a>
+<a class="sourceLine" id="cb5-16" data-line-number="16"><span class="kw">plot</span>(y,<span class="dt">pch=</span><span class="st">"."</span>)</a>
+<a class="sourceLine" id="cb5-17" data-line-number="17"><span class="kw">lines</span>(mu,<span class="dt">col=</span><span class="dv">1</span>,<span class="dt">lwd=</span><span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb5-18" data-line-number="18"><span class="kw">lines</span>(<span class="kw">predict</span>(s),<span class="dt">col=</span><span class="dv">2</span>,<span class="dt">lwd=</span><span class="dv">2</span>)</a>
+<a class="sourceLine" id="cb5-19" data-line-number="19"><span class="kw">lines</span>(y.tf<span class="op">$</span>fit[,<span class="kw">which</span>(y.tf<span class="op">$</span>lambda<span class="op">==</span>y.tf.cv<span class="op">$</span>lambda.min)],<span class="dt">col=</span><span class="dv">4</span>,<span class="dt">lwd=</span><span class="dv">2</span>)</a></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="trend_filtering_files/figure-html/unnamed-chunk-4-1.png" alt="&amp;nbsp;" width="540"><p class="caption">
  
 </p>
 </div>
-<p>Compare with the genlasso (lasso-based) solution (blue). (This will require installation of the genlasso package.)</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(genlasso)
-<span class="co"># Loading required package: Matrix</span>
-<span class="co"># Loading required package: igraph</span>
-<span class="co"># </span>
-<span class="co"># Attaching package: 'igraph'</span>
-<span class="co"># The following objects are masked from 'package:stats':</span>
-<span class="co"># </span>
-<span class="co">#     decompose, spectrum</span>
-<span class="co"># The following object is masked from 'package:base':</span>
-<span class="co"># </span>
-<span class="co">#     union</span>
-y.tf =<span class="st"> </span><span class="kw"><a href="http://www.rdocumentation.org/packages/genlasso/topics/trendfilter">trendfilter</a></span>(y,<span class="dt">ord=</span><span class="dv">0</span>)
-y.tf.cv =<span class="st"> </span><span class="kw"><a href="http://www.rdocumentation.org/packages/genlasso/topics/cv.trendfilter">cv.trendfilter</a></span>(y.tf)
-<span class="co"># Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ...</span>
-
-<span class="kw">plot</span>(y,<span class="dt">pch=</span><span class="st">"."</span>)
-<span class="kw">lines</span>(mu,<span class="dt">col=</span><span class="dv">1</span>,<span class="dt">lwd=</span><span class="dv">3</span>)
-<span class="kw">lines</span>(<span class="kw">predict</span>(s),<span class="dt">col=</span><span class="dv">2</span>,<span class="dt">lwd=</span><span class="dv">2</span>)
-<span class="kw">lines</span>(y.tf$fit[,<span class="kw">which</span>(y.tf$lambda==y.tf.cv$lambda.min)],<span class="dt">col=</span><span class="dv">4</span>,<span class="dt">lwd=</span><span class="dv">2</span>)</code></pre></div>
+<p>What happens if we have linear trend plus a sudden change.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="kw">set.seed</span>(<span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2">mu =<span class="st"> </span><span class="kw">seq</span>(<span class="dv">0</span>,<span class="dv">4</span>,<span class="dt">length=</span><span class="dv">1000</span>)</a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">mu =<span class="st"> </span>mu <span class="op">+</span><span class="st"> </span><span class="kw">c</span>(<span class="kw">rep</span>(<span class="dv">0</span>,<span class="dv">500</span>),<span class="kw">rep</span>(<span class="dv">4</span>,<span class="dv">500</span>))</a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">y =<span class="st"> </span>mu <span class="op">+</span><span class="st"> </span><span class="kw">rnorm</span>(n)</a>
+<a class="sourceLine" id="cb6-5" data-line-number="5">s =<span class="st"> </span><span class="kw"><a href="../reference/susie_trendfilter.html">susie_trendfilter</a></span>(y,<span class="dv">0</span>,<span class="dt">L=</span><span class="dv">10</span>)</a>
+<a class="sourceLine" id="cb6-6" data-line-number="6">y.tf =<span class="st"> </span><span class="kw"><a href="http://www.rdocumentation.org/packages/genlasso/topics/trendfilter">trendfilter</a></span>(y,<span class="dt">ord=</span><span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb6-7" data-line-number="7">y.tf.cv =<span class="st"> </span><span class="kw"><a href="http://www.rdocumentation.org/packages/genlasso/topics/cv.trendfilter">cv.trendfilter</a></span>(y.tf)</a>
+<a class="sourceLine" id="cb6-8" data-line-number="8"><span class="co"># Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ...</span></a>
+<a class="sourceLine" id="cb6-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb6-10" data-line-number="10"><span class="kw">plot</span>(y,<span class="dt">pch=</span><span class="st">"."</span>)</a>
+<a class="sourceLine" id="cb6-11" data-line-number="11"><span class="kw">lines</span>(mu,<span class="dt">col=</span><span class="dv">1</span>,<span class="dt">lwd=</span><span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb6-12" data-line-number="12"><span class="kw">lines</span>(<span class="kw">predict</span>(s),<span class="dt">col=</span><span class="dv">2</span>,<span class="dt">lwd=</span><span class="dv">2</span>)</a>
+<a class="sourceLine" id="cb6-13" data-line-number="13"><span class="kw">lines</span>(y.tf<span class="op">$</span>fit[,<span class="kw">which</span>(y.tf<span class="op">$</span>lambda<span class="op">==</span>y.tf.cv<span class="op">$</span>lambda.min)],<span class="dt">col=</span><span class="dv">4</span>,<span class="dt">lwd=</span><span class="dv">2</span>)</a></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="trend_filtering_files/figure-html/unnamed-chunk-5-1.png" alt="&amp;nbsp;" width="540"><p class="caption">
  
 </p>
 </div>
-<p>What happens if we have linear trend plus a sudden change.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">mu =<span class="st"> </span><span class="kw">seq</span>(<span class="dv">0</span>,<span class="dv">4</span>,<span class="dt">length=</span><span class="dv">1000</span>)
-mu =<span class="st"> </span>mu +<span class="st"> </span><span class="kw">c</span>(<span class="kw">rep</span>(<span class="dv">0</span>,<span class="dv">500</span>),<span class="kw">rep</span>(<span class="dv">4</span>,<span class="dv">500</span>))
-y =<span class="st"> </span>mu +<span class="st"> </span><span class="kw">rnorm</span>(n)
-s =<span class="st"> </span><span class="kw"><a href="../reference/susie.html">susie</a></span>(X,y,<span class="dt">L=</span><span class="dv">10</span>)
-y.tf =<span class="st"> </span><span class="kw"><a href="http://www.rdocumentation.org/packages/genlasso/topics/trendfilter">trendfilter</a></span>(y,<span class="dt">ord=</span><span class="dv">0</span>)
-y.tf.cv =<span class="st"> </span><span class="kw"><a href="http://www.rdocumentation.org/packages/genlasso/topics/cv.trendfilter">cv.trendfilter</a></span>(y.tf)
-<span class="co"># Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ...</span>
-
-<span class="kw">plot</span>(y,<span class="dt">pch=</span><span class="st">"."</span>)
-<span class="kw">lines</span>(mu,<span class="dt">col=</span><span class="dv">1</span>,<span class="dt">lwd=</span><span class="dv">3</span>)
-<span class="kw">lines</span>(<span class="kw">predict</span>(s),<span class="dt">col=</span><span class="dv">2</span>,<span class="dt">lwd=</span><span class="dv">2</span>)
-<span class="kw">lines</span>(y.tf$fit[,<span class="kw">which</span>(y.tf$lambda==y.tf.cv$lambda.min)],<span class="dt">col=</span><span class="dv">4</span>,<span class="dt">lwd=</span><span class="dv">2</span>)</code></pre></div>
-<div class="figure" style="text-align: center">
-<img src="trend_filtering_files/figure-html/unnamed-chunk-6-1.png" alt="&amp;nbsp;" width="540"><p class="caption">
- 
-</p>
-</div>
 <p>The two fits seem similar in accuracy. We can check this mumerically:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">sqrt</span>(<span class="kw">mean</span>((mu-y.tf$fit[,<span class="kw">which</span>(y.tf$lambda==y.tf.cv$lambda.min)])^<span class="dv">2</span>))
-<span class="co"># [1] 0.201545</span>
-<span class="kw">sqrt</span>(<span class="kw">mean</span>((mu-<span class="kw">predict</span>(s))^<span class="dv">2</span>))
-<span class="co"># [1] 0.167487</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="kw">sqrt</span>(<span class="kw">mean</span>((mu<span class="op">-</span>y.tf<span class="op">$</span>fit[,<span class="kw">which</span>(y.tf<span class="op">$</span>lambda<span class="op">==</span>y.tf.cv<span class="op">$</span>lambda.min)])<span class="op">^</span><span class="dv">2</span>))</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2"><span class="co"># [1] 0.1413506</span></a>
+<a class="sourceLine" id="cb7-3" data-line-number="3"><span class="kw">sqrt</span>(<span class="kw">mean</span>((mu<span class="op">-</span><span class="kw">predict</span>(s))<span class="op">^</span><span class="dv">2</span>))</a>
+<a class="sourceLine" id="cb7-4" data-line-number="4"><span class="co"># [1] 0.1556271</span></a></code></pre></div>
 </div>
   </div>
 
