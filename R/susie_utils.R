@@ -66,8 +66,8 @@ get_purity = function(pos, X, Xcorr, n = 100) {
   }
 }
 
-# @title `cor` function with specified warning muffled
-#'
+#' @title `cor` function with specified warning muffled
+#' @keywords internal
 #' @importFrom stats cor
 muffled_corr = function(x)
   withCallingHandlers(cor(x),
@@ -76,8 +76,8 @@ muffled_corr = function(x)
                         invokeRestart("muffleWarning")
                     } )
 
-# @title `cov2cor` function with specified warning muffled
-#'
+#' @title `cov2cor` function with specified warning muffled
+#' @keywords internal
 #' @importFrom stats cov2cor
 muffled_cov2cor = function(x)
   withCallingHandlers(cov2cor(x),
@@ -86,7 +86,8 @@ muffled_cov2cor = function(x)
                           invokeRestart("muffleWarning")
                       } )
 
-# @title check for symmetric matrix
+#' @title check for symmetric matrix
+#' @keywords internal
 
 is_symmetric_matrix = function(x) {
     res = isSymmetric(x)
@@ -377,4 +378,13 @@ susie_get_prior_variance <- function(res) {
 #' @export
 susie_get_residual_variance <- function(res) {
   return(res$sigma2)
+}
+
+#' @title Get evidence lower bound (ELBO) from fitted SuSiE model
+#' @param res a susie fit, the output of `susieR::susie()`.
+#' @param all whether or not to get ELBO from all iterations
+#' @export
+susie_get_objective <- function(res, all = c(FALSE, TRUE)) {
+  if (all) return(res$elbo)
+  else return(res$elbo[length(res$elbo)])
 }

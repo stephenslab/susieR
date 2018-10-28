@@ -33,23 +33,23 @@ simulate = function(n=100, p=200, sparse=F) {
 }
 
 simulate_tf = function(order){
-  n = 1000 
+  n = 50
   D = diag(-1, n)
   for (i in 1:(n-1)){
     D[i, i+1] = 1
   }
   if (order==0) {
     set.seed(1)
-    beta = c(rep(0,100),rep(1,100),rep(3,100),rep(-2,100),rep(0,600))
+    beta = c(rep(0,5),rep(1,5),rep(3,5),rep(-2,5),rep(0,30))
     y = beta + rnorm(n)
     X = solve(D)
   } else if (order==1) {
     set.seed(1)
     beta = numeric(n)
     for (i in 1:n){
-      if (i <= 100){
+      if (i <= 5){
         beta[i] = 0.001*i + 2
-      } else if (i <= 300){
+      } else if (i <= 15){
         beta[i] = 5*0.001*i + 1.6
       } else{
         beta[i] = 6.1 - 10*0.001*i
@@ -61,9 +61,9 @@ simulate_tf = function(order){
     set.seed(1)
     beta = numeric(n)
     for (i in 1:n){
-      if (i <= 100){
+      if (i <= 5){
         beta[i] = (0.001*i)^2
-      } else if (i <= 700){
+      } else if (i <= 35){
         beta[i] = -5*(0.001*i)^2 + 0.06
       } else{
         beta[i] = 3*(0.001*i)^2 - 3.86

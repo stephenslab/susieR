@@ -1,11 +1,11 @@
-# @title Get objective function from data and susie fit object.
+#' @title Get objective function from data and susie fit object.
 #'
 #' @param XtX a p by p matrix, X'X
 #' @param Xty a p vector, X'Y,
 #' @param s a susie fit object
 #' @param var_y the (sample) variance of the vector Y
 #' @param n sample size
-#'
+#' @keywords internal
 get_objective_ss = function(XtX, Xty, s, var_y, n) {
   return(Eloglik_ss(XtX,Xty,s,var_y, n)-sum(s$KL))
 }

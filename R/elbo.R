@@ -1,9 +1,7 @@
-# @title Get objective function from data and susie fit object.
-#'
+#' @title Get objective function from data and susie fit object.
 #' @param data A flash data object.
-#'
 #' @param f A flash fit object.
-#'
+#' @keywords internal
 get_objective = function(X, Y, s) {
   return(Eloglik(X,Y,s)-sum(s$KL))
 }
