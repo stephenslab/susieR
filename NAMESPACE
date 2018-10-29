@@ -3,6 +3,7 @@
 S3method(coef,susie)
 S3method(predict,susie)
 S3method(summary,susie)
+export(compute_ss)
 export(susie)
 export(susie_auto)
 export(susie_bhat)
