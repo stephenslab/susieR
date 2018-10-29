@@ -10,6 +10,7 @@ r_packages:
   
 env:
   global:
+    - R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
     - _R_CHECK_FORCE_SUGGESTS_: false
 
 after_success:
