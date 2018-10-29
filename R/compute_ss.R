@@ -4,7 +4,7 @@
 #' @param standardize logical flag (default=TRUE) for whether to standardize columns of X to unit variance prior to fitting.
 #' @return a list with the input for `susie_ss`
 #' @importFrom methods as
-#' @keywords internal
+#' @export
 compute_ss = function(X, y, standardize = TRUE){
   y = y - mean(y)
   is.sparse = !(is.matrix(X))
