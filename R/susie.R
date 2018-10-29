@@ -68,7 +68,6 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
                  compute_univariate_zscore = FALSE,
                  max_iter=100,tol=1e-3,
                  verbose=FALSE,track_fit=FALSE) {
-  
   # Check input X.
   if (!(is.double(X) & is.matrix(X)) & !inherits(X,"CsparseMatrix"))
     stop("Input X must be a double-precision matrix, or a sparse matrix.")

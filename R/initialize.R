@@ -25,6 +25,8 @@ susie_init_coef = function(coef_index, coef_value, p) {
 
 # @title Set default susie initialization
 init_setup = function(n, p, L, scaled_prior_variance, residual_variance, prior_weights, null_weight, varY) {
+  if (!is.numeric(scaled_prior_variance) || scaled_prior_variance < 0 || scaled_prior_variance > 1)
+    stop("scaled prior variance should be in between 0 and 1")
   if(is.null(residual_variance))
     residual_variance = varY
   if(is.null(prior_weights))
