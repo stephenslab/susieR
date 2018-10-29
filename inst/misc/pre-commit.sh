@@ -28,6 +28,6 @@ else
         Rscript -e 'devtools::document()' &> /dev/null && git add man/*.Rd
         echo "Running unit tests ..."
         Rscript -e 'devtools::test()'
-        Rscript -e 'library(susieR); testthat::test_examples(".")'
+        Rscript -e 'library(susieR); tests = testthat::test_examples(".")'
     fi
 fi
