@@ -187,6 +187,7 @@ check_r_matrix <- function(R, expected_dim, r_tol) {
 #' @title Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix.
 #' @param z a p vector of z scores.
 #' @param R a p by p symmetric and positive semidefinite matrix. It can be X'X, covariance matrix or correlation matrix.
+#' @param n sample size.
 #' @param r_tol tolerance level for eigen value check of positive semidefinite matrix of R.
 #' @param L maximum number of non-zero effects.
 #' @param prior_weights a p vector of prior probability that each element is non-zero.
@@ -199,20 +200,22 @@ check_r_matrix <- function(R, expected_dim, r_tol) {
 #' @return a susie fit
 #'
 #' @export
-susie_z = function(z, R, r_tol = 1e-08,
-                   L=10,
+susie_z = function(z, R, n, r_tol = 1e-08,
+                   L=10, scaled_prior_variance=0.2,
+                   estimate_prior_variance = FALSE,
                    prior_weights = NULL, null_weight = NULL,
                    coverage=0.95, min_abs_corr=0.5,
                    verbose=FALSE, track_fit = FALSE, ...){
+
   R = check_r_matrix(R, length(z), r_tol)
-  susie_ss(XtX = R, Xty = z,
-           n = 2, var_y = 1,
-           L = L,
-           estimate_prior_variance = TRUE,
-           prior_weights = prior_weights, null_weight = null_weight,
-           standardize = TRUE,
-           coverage=coverage, min_abs_corr=min_abs_corr,
-           verbose=verbose, track_fit = track_fit, ...)
+
+  susie_bhat(bhat = z, shat = 1, R = R, n = n, r_tol=r_tol,
+             L = L,
+             scaled_prior_variance = scaled_prior_variance,
+             estimate_prior_variance = estimate_prior_variance,
+             prior_weights = prior_weights, null_weight = null_weight,
+             coverage=coverage, min_abs_corr=min_abs_corr,
+             verbose=verbose, track_fit = track_fit, ...)
 }
 
 #' @title Summary statistics version of SuSiE on betahat, the corresponding standard error, and correlation (or covariance) matrix
@@ -249,7 +252,7 @@ susie_bhat = function(bhat, shat, R, n, var_y = 1, r_tol = 1e-08,
                       coverage=0.95, min_abs_corr=0.5,
                       verbose=FALSE, track_fit = FALSE, ...){
   if(missing(n)) {
-    stop('n must be provided. If there is no information about n, use susie_z instead.')
+    stop('n must be provided')
   }
   if(length(shat) == 1) {
     shat = rep(shat, length(bhat))
@@ -260,7 +263,7 @@ susie_bhat = function(bhat, shat, R, n, var_y = 1, r_tol = 1e-08,
   #
   that = bhat/shat
   R2 = that^2/(that^2 + n-2)
-  sigma2 = var_y*(n-1)*(1-R2)/(n-2)
+  sigma2 = (n-1)*(1-R2)/(n-2)
   #
   R = check_r_matrix(R, length(bhat), r_tol)
   #
@@ -268,8 +271,8 @@ susie_bhat = function(bhat, shat, R, n, var_y = 1, r_tol = 1e-08,
     XtX = (n-1)*R
     Xty = sqrt(sigma2) * sqrt(n-1) * that
   } else {
-    XtXdiag = sigma2/(shat^2)
-    Xty = bhat * XtXdiag
+    XtXdiag = var_y*sigma2/(shat^2)
+    Xty = that * var_y* sigma2/shat
     XtX = t(R * sqrt(XtXdiag)) * sqrt(XtXdiag)
   }
 

@@ -4,7 +4,8 @@
 \alias{susie_z}
 \title{Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix.}
 \usage{
-susie_z(z, R, r_tol = 1e-08, L = 10, prior_weights = NULL,
+susie_z(z, R, n, r_tol = 1e-08, L = 10, scaled_prior_variance = 0.2,
+  estimate_prior_variance = FALSE, prior_weights = NULL,
   null_weight = NULL, coverage = 0.95, min_abs_corr = 0.5,
   verbose = FALSE, track_fit = FALSE, ...)
 }
@@ -12,6 +13,8 @@ susie_z(z, R, r_tol = 1e-08, L = 10, prior_weights = NULL,
 \item{z}{a p vector of z scores.}
 
 \item{R}{a p by p symmetric and positive semidefinite matrix. It can be X'X, covariance matrix or correlation matrix.}
+
+\item{n}{sample size.}
 
 \item{r_tol}{tolerance level for eigen value check of positive semidefinite matrix of R.}
 

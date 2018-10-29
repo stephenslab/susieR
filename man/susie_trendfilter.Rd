@@ -17,3 +17,8 @@ SuSiE fit for trend filtering
 \description{
 perform trend filtering using SuSiE
 }
+\examples{
+susie_trendfilter(y, 0)
+susie_trendfilter(y, 1, L=20)
+susie_trenndfilter(y, 0, estimate_prior_variance = TRUE)
+}
