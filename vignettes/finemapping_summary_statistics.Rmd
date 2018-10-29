@@ -52,7 +52,7 @@ So the underlying causal variables are 403, 653 and 773.
 
 Summary statistics of genetic association studies typically contain odds ratio (or $\hat{\beta}$ coefficient), p-value and minor allele frequencies. These information can be used to perform fine-mapping with sufficient summary statistics, which additionally require sample size, variance of phenotype, and most importantly a matrix of correlation between variables.
 
-When the aforementioned sufficient summary statistica are provided, SuSiE can produce the exact same outcome as if individual level data were used. SuSiE can also produce approximate results when some of the information are not available. The minimal required of summary statistics for SuSiE to work are z-scores (can be derived from p-values, as will be demonstrated below) and correlation matrix between variables. The correlation matrix in genetics is typically referred to as LD matrix (LD for linkage disequilibrium). One can use external reference panels to estimate it when this matrix cannot be obtained from samples directly.
+When the aforementioned sufficient summary statistica are provided, SuSiE can produce the exact same outcome as if individual level data were used. SuSiE can also produce approximate results when some of the information are not available. The minimal required of summary statistics for SuSiE to work are z-scores (can be derived from p-values, as will be demonstrated below), correlation matrix between variables, the sample size. The correlation matrix in genetics is typically referred to as LD matrix (LD for linkage disequilibrium). One can use external reference panels to estimate it when this matrix cannot be obtained from samples directly.
 
 Caution that the LD matrix has to be correlation matrix $r$, not $r^2$ or $abs(r)$.
 
@@ -126,26 +126,25 @@ The result should be identical to using the individual level data,
 ```{r}
 fitted = susie(data$X, data$Y[,1],
                 L=5,
-                estimate_residual_variance = TRUE, 
+                estimate_residual_variance = FALSE, 
+                estimate_prior_variance = FALSE,
                 scaled_prior_variance = 0.1,
                 verbose = TRUE)
 plot(fitted$pip, fitted_bhat$pip)
 ```
 
 ```{r}
-plot(coef(fitted), coef(fitted_bhat_standardize))
+plot(coef(fitted), coef(fitted_bhat))
 ```
 
 ### Using $z$ scores
 
-For $z$ score input, `susieR` can only output coefficients in standardized $X$, $y$ scale. It is practically setting $\hat{\beta}$ to $z$ score and $\text{SE}(\hat{\beta})$ and variance of $y$ to one,
+For $z$ score input, `susieR` can only output coefficients in standardized $X$, $y$ scale.
 
 ```{r}
-fitted_z_n <- susie_bhat(bhat = z_scores, shat = 1, 
-                         R = R, n = nrow(data$X), 
-                         L = 5, 
-                         scaled_prior_variance = 0.1, 
-                         estimate_prior_variance = FALSE)
+fitted_z_n <- susie_z(z_scores, R = R, n = nrow(data$X), 
+                      L = 5, 
+                      scaled_prior_variance = 0.1)
 ```
 
 The result should agree with using $\hat{\beta}$ and $\text{SE}(\hat{\beta})$ when variance of $y$ is set to one,
@@ -160,35 +159,22 @@ summary(fitted_z_n)$cs
 
 and the PIP plot
 ```{r}
-susie_plot(fitted_bhat, y="PIP", b=b)
+susie_plot(fitted_z_n, y="PIP", b=b)
 ```
 
 ## Fine-mapping with `susieR` without the knowledge of sample size
 
-With only $z$ and $R$ as input, the inference on effects are more conservative. 
-For $z$ score input, `susieR` estimates prior variance in the iterative variable selection algorithm,
-and output coefficients in standardized $X$, $y$ scale, 
+If the sample size is not available, the user should guess the sample size. If you want conervative inference on effects, use a small sample size; if you want aggressive result, use a large sample size is large.
 
-
+Here we use sample size 40 as an example
 ```{r}
-fitted_z <- susie_z(z = z_scores,R = R,L = 5)
+fitted_z <- susie_z(z = z_scores,R = R, n = 40, L = 5, scaled_prior_variance = 0.1)
 ```
 
-We can check the 95% credible set:
-
-```{r}
-summary(fitted_z)$cs
-```
-and the PIP
+There is no confidence set. We can check the PIP
 
 ```{r}
 susie_plot(fitted_z, y="PIP", b=b)
-```
-
-We compare result with when $n$ is known,
-
-```{r}
-plot(coef(fitted_z), coef(fitted_z_n))
 ```
 
 ## Session information
