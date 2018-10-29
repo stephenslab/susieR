@@ -96,7 +96,7 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10,
   attr(XtX, "scaled:scale") <- csd
 
   # initialize susie fit
-  s = init_setup(n,p,L,scaled_prior_variance,residual_variance,
+  s = init_setup(0,p,L,scaled_prior_variance,residual_variance,
                  prior_weights,null_weight,as.numeric(var_y))
   s$Xr = NULL; s$XtXr = rep(0,p)
 
