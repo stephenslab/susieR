@@ -384,7 +384,7 @@ susie_get_residual_variance <- function(res) {
 #' @param res a susie fit, the output of `susieR::susie()`.
 #' @param all whether or not to get ELBO from all iterations
 #' @export
-susie_get_objective <- function(res, all = c(FALSE, TRUE)) {
+susie_get_objective <- function(res, all = FALSE) {
   if (all) return(res$elbo)
   else return(res$elbo[length(res$elbo)])
 }

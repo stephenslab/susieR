@@ -153,6 +153,37 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10,
   return(s)
 }
 
+
+#' @title Check input covariance / correlation matrix
+#' @param R a p by p matrix of X'X, covariance matrix or correlation matrix
+#' @return a verified matrix
+#' @keywords internal
+
+check_r_matrix <- function(R, expected_dim, r_tol) {
+  n = nrow(R)
+  if(n != expected_dim) {
+    stop(paste0('The dimension of R (', n, ' by ', n, ') does not agree with expected (', expected_dim, ' by ', expected_dim, ')'))
+  }
+  if(!is_symmetric_matrix(R)){
+    stop('R is not a symmetric matrix.')
+  }
+  eigenvalues <- eigen(R, only.values = TRUE)$values
+  eigenvalues[abs(eigenvalues) < r_tol] <- 0
+  if(any(eigenvalues < 0)){
+    stop('R is not a positive semidefinite matrix.')
+  }
+
+  X0 = diag(R) == 0
+  # convert any input R to correlation matrix
+  # if R has 0 colums and rows, cov2cor produces NaN and warning
+  R = muffled_cov2cor(R)
+  # change the columns and rows with NaN to 0
+  if(sum(X0) > 0){
+    R[X0, ] = R[,X0] = 0
+  }
+  return(R)
+}
+
 #' @title Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix.
 #' @param z a p vector of z scores.
 #' @param R a p by p symmetric and positive semidefinite matrix. It can be X'X, covariance matrix or correlation matrix.
@@ -173,26 +204,7 @@ susie_z = function(z, R, r_tol = 1e-08,
                    prior_weights = NULL, null_weight = NULL,
                    coverage=0.95, min_abs_corr=0.5,
                    verbose=FALSE, track_fit = FALSE, ...){
-  if(nrow(R) != length(z)){
-    stop('The dimension of R does not agree with length of z.')
-  }
-
-  if(!is_symmetric_matrix(R)){
-    stop('R is not a symmetric matrix.')
-  }
-  eigenvalues <- eigen(R, only.values = TRUE)$values
-  eigenvalues[abs(eigenvalues) < r_tol] <- 0
-  if(any(eigenvalues < 0)){
-    stop('R is not a positive semidefinite matrix.')
-  }
-
-  X0 = diag(R) == 0
-  # convert any input R to correlation matrix
-  # if R has 0 colums and rows, cov2cor produces NaN and warning
-  R = muffled_cov2cor(R)
-  # change the columns and rows with NaN to 0
-  R[X0, ] = R[,X0] = 0
-
+  R = check_r_matrix(R, length(z), r_tol)
   susie_ss(XtX = R, Xty = z,
            n = 2, var_y = 1,
            L = L,
@@ -236,47 +248,26 @@ susie_bhat = function(bhat, shat, R, n, var_y = 1, r_tol = 1e-08,
                       standardize = TRUE,
                       coverage=0.95, min_abs_corr=0.5,
                       verbose=FALSE, track_fit = FALSE, ...){
-  if(missing(n)){
+  if(missing(n)) {
     stop('n must be provided. If there is no information about n, use susie_z instead.')
   }
-  if(nrow(R) != length(bhat)){
-    stop('The dimension of R does not agree with length of bhat.')
-  }
-  if(!is_symmetric_matrix(R)){
-    stop('R is not a symmetric matrix.')
-  }
-
-  eigenvalues <- eigen(R, only.values = TRUE)$values
-  eigenvalues[abs(eigenvalues) < r_tol] <- 0
-  if(any(eigenvalues < 0)){
-    stop('R is not a positive semidefinite matrix.')
-  }
-
-  if(length(shat) == 1){
+  if(length(shat) == 1) {
     shat = rep(shat, length(bhat))
   }
-  if(length(bhat) != length(shat)){
+  if(length(bhat) != length(shat)) {
     stop('The length of bhat does not agree with length of shat.')
   }
-
-  X0 = diag(R) == 0
-  # convert to correlation matrix
-  # if R has 0 colums and rows, cov2cor produces NaN and warning
-  R = muffled_cov2cor(R)
-  # change the columns and rows with NaN to 0
-  if(sum(X0) > 0){
-    R[X0, ] = R[,X0] = 0
-  }
-
+  #
   that = bhat/shat
-
   R2 = that^2/(that^2 + n-2)
   sigma2 = var_y*(n-1)*(1-R2)/(n-2)
-
-  if(missing(var_y)){
+  #
+  R = check_r_matrix(R, length(bhat), r_tol)
+  #
+  if(missing(var_y)) {
     XtX = (n-1)*R
     Xty = sqrt(sigma2) * sqrt(n-1) * that
-  }else{
+  } else {
     XtXdiag = sigma2/(shat^2)
     Xty = bhat * XtXdiag
     XtX = t(R * sqrt(XtXdiag)) * sqrt(XtXdiag)
