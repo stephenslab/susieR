@@ -13,6 +13,7 @@ install:
 
 environment:
   global:
+    R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
     _R_CHECK_FORCE_SUGGESTS_: true
     USE_RTOOLS: yes
     WARNINGS_ARE_ERRORS: 
