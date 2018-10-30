@@ -20,7 +20,7 @@ get_ER2 = function(X,Y,s){
   Xrsum = colSums(Xr)
 
   postb2 = s$alpha * s$mu2 #posterior second moment
-
+ 
   return(sum((Y-Xrsum)^2) - sum(Xr^2) + sum(attr(X, "d")*t(postb2)))
 }
 
@@ -32,5 +32,6 @@ get_ER2 = function(X,Y,s){
 # @param Eb2 the posterior second moment of b (p vector) (alpha * mu2)
 SER_posterior_e_loglik = function(X,Y,s2,Eb,Eb2){
   n = nrow(X)
-  -0.5*n*log(2*pi*s2)  - (0.5/s2) * (sum(Y*Y) - 2*sum(Y*compute_Xb(X, Eb)) + sum(attr(X, "X2t")*as.vector(Eb2)))
+  if (class(X)=='tfmatrix') return(-0.5*n*log(2*pi*s2) - (0.5/s2) * (sum(Y*Y) - 2*sum(Y*compute_Xb(X, Eb)) + compute_tf_X2tEb2(attr(X, 'order'), n, Eb2)))
+  else return(-0.5*n*log(2*pi*s2)  - (0.5/s2) * (sum(Y*Y) - 2*sum(Y*compute_Xb(X, Eb)) + sum(attr(X, "X2t")*as.vector(Eb2))))
 }

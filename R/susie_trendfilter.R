@@ -10,10 +10,20 @@
 #' susie_trendfilter(y, 1, L=20)
 #' susie_trenndfilter(y, 0, estimate_prior_variance = TRUE)
 #' @export
-susie_trendfilter = function(Y, order, ...){
-  X = create_Dinv(order, length(Y))
+susie_trendfilter = function(Y, order, standardize=TRUE,...){
+  n = length(Y)
+  X = matrix(1,n,n)
   class(X) = "tfmatrix"
   attr(X, "order") = order
+  if (standardize) {
+    attr(X, "d") <- compute_tf_std_d(order, n)
+    attr(X, "scaled:center") <- compute_tf_cm(order, n)
+    attr(X, "scaled:scale") <- compute_tf_csd(order, n)
+  } else {
+    attr(X, "d") <- compute_tf_d(order, n)
+    attr(X, "scaled:center") <- rep(0,n)
+    attr(X, "scaled:scale") <- rep(1,n)
+  }
   s = susie(X=X, Y=Y, ...)
   return(s)
 }
