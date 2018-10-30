@@ -274,9 +274,9 @@ susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,...){
   if(is.null(b)){b = rep(0,length(p))}
   if(is.null(pos)){pos = 1:length(p)}
   plot(pos,p,col="black",xlab="",ylab=ylab, pch=16, ...)
-  if (is_susie) {
+  if (is_susie && !is.null(model$sets$cs)) {
     for(i in rev(1:nrow(model$alpha))){
-      if (!is.null(model$sets$cs_index) && ! (i %in% model$sets$cs_index)) {
+      if (!is.null(model$sets$cs_index) && !(i %in% model$sets$cs_index)) {
         next
       }
       if (!is.null(model$sets$purity) && max_cs < 1 && model$sets$purity[which(model$sets$cs_index==i),1] >= max_cs) {
