@@ -1,9 +1,9 @@
 language: r
 cache: packages
 latex: false
-sudo: false
 warnings_are_errors: false
 r_build_args: --no-build-vignettes
+r_check_args: --ignore-vignettes
 
 r_packages:
   - covr
@@ -15,15 +15,6 @@ env:
 
 after_success:
   - Rscript -e 'covr::codecov()'
-
-before_install:
-  - mkdir -p ~/.R
-  - echo "CC=gcc-4.9 -std=c11" >> ~/.R/Makevars
-  - echo "CXX=g++-4.9" >> ~/.R/Makevars
-  - echo "CXX11=g++-4.9" >> ~/.R/Makevars
-  - echo "F77=gfortran-4.9" >> ~/.R/Makevars
-  - echo "FC=gfortran-4.9" >> ~/.R/Makevars
-  - cat ~/.R/Makevars
 
 branches:
   only:
