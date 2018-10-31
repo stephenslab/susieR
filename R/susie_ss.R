@@ -209,7 +209,10 @@ susie_z = function(z, R, n, r_tol = 1e-08,
 
   R = check_r_matrix(R, length(z), r_tol)
 
-  susie_bhat(bhat = z, shat = 1, R = R, n = n, r_tol=r_tol,
+  # change z to t
+  t = qt(pnorm(-abs(z)), df = n-2) # all negative
+  t[which(z > 0)] = -1 * t[which(z > 0)]
+  susie_bhat(bhat = t, shat = 1, R = R, n = n, r_tol=r_tol,
              L = L,
              scaled_prior_variance = scaled_prior_variance,
              estimate_prior_variance = estimate_prior_variance,
