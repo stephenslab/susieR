@@ -1,7 +1,7 @@
 #susie_trendfilter
 
 #' @title perform trend filtering using SuSiE
-#' @param Y an n vector
+#' @param y an n vector
 #' @param order a scalar for the order of trend filtering
 #' @return SuSiE fit for trend filtering
 #' @examples
@@ -10,9 +10,9 @@
 #' susie_trendfilter(y, 1, L=20)
 #' susie_trenndfilter(y, 0, estimate_prior_variance = TRUE)
 #' @export
-susie_trendfilter = function(Y, order, standardize=TRUE,...){
-  n = length(Y)
-  X = matrix(1,n,n)
+susie_trendfilter = function(y, order, standardize=TRUE,...){
+  n = length(y)
+  X = diag(n)
   class(X) = "tfmatrix"
   attr(X, "order") = order
   if (standardize) {
@@ -24,6 +24,6 @@ susie_trendfilter = function(Y, order, standardize=TRUE,...){
     attr(X, "scaled:center") <- rep(0,n)
     attr(X, "scaled:scale") <- rep(1,n)
   }
-  s = susie(X=X, Y=Y, ...)
+  s = susie(X=X, Y=y, ...)
   return(s)
 }

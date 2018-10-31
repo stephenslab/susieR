@@ -110,7 +110,6 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
   elbo[1] = -Inf;
   tracking = list()
 
-  DEBUG = list()
   for(i in 1:max_iter){
     #s = add_null_effect(s,0)
     if (track_fit)
