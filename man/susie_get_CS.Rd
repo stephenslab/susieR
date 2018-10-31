@@ -2,7 +2,7 @@
 % Please edit documentation in R/susie_utils.R
 \name{susie_get_CS}
 \alias{susie_get_CS}
-\title{Extract credible sets from SuSiE model}
+\title{Extract credible sets from SuSiE fit}
 \usage{
 susie_get_CS(res, X = NULL, Xcorr = NULL, coverage = 0.95,
   min_abs_corr = 0.5, dedup = TRUE)
@@ -11,29 +11,35 @@ susie_get_CS(res, X = NULL, Xcorr = NULL, coverage = 0.95,
 \item{res}{a susie fit, the output of `susieR::susie()`, or simply the posterior
 inclusion probability matrix alpha.}
 
-\item{X}{N by P matrix of variables.
+\item{X}{N by P matrix of values of the P variables (covariates) in N samples.
 When provided, correlation between variables will be computed and used to remove
-credible sets whose minimum correlation between variables is smaller than `min_abs_corr` (see below).}
+CSs whose minimum correlation among variables is smaller than `min_abs_corr` (see below).}
 
-\item{Xcorr}{P by P matrix of correlations between variables.
-when provided, it will be used to remove credible sets
-whose minimum correlation between variables is smaller than `min_abs_corr` (see below).}
+\item{Xcorr}{P by P matrix of correlations between variables (covariates).
+When provided, it will be used to remove CSs
+whose minimum correlation among variables is smaller than `min_abs_corr` (see below).}
 
-\item{coverage}{coverage of confident sets. Default to 0.95 for 95\% credible interval.}
+\item{coverage}{a number (in [0,1]) specifying desired coverage of each CS}
 
-\item{min_abs_corr}{minimum of absolute value of correlation allowed in a credible set.
-Default set to 0.5 to correspond to squared correlation of 0.25,
-a commonly used threshold for genotype data in genetics studies.}
+\item{min_abs_corr}{a "purity" threshold for the CS. Any CS that contains
+a pair of variables with correlation less than this threshold will be filtered out and not reported.}
 
-\item{dedup}{Remove duplicated CS, default to TRUE}
+\item{dedup}{If TRUE, "deduplicate" - that is remove duplicated CSs.}
 }
 \value{
-a list of `cs`, and additionally `purity` and selected `cs_index` if `X` or `Xcorr` was provided.
+a list with elements:
+
+\item{cs}{a list, each element corresponds to a CS, and is a vector containing the indices of the variables in the CS.}
+\item{coverage}{the nominal coverage specified for each CS.}
+\item{purity}{(If `X` or `Xcorr` are provided), the purity of each CS.}
+\item{cs_index}{(If `X` or `Xcorr` are provided) the index (in 1,...,L) of each reported CS in the supplied susie fit.}
 }
 \description{
-Extract credible sets from SuSiE model
+Extract credible sets from SuSiE fit
 }
 \details{
-It reports indices of variables in each credible set identified,
-as well as summaries of correlation between variables within each set.
+Reports indices of variables in each credible set (CS) identified,
+as well as summaries of correlation among the variables included in each CS.
+If desired, one can filter out CSs that do not meet a specified purity threshold (min_abs_corr);
+to do this either `X` or `Xcorr` must be supplied.
 }
