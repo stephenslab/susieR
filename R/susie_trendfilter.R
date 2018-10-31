@@ -5,10 +5,15 @@
 #' @param order a scalar for the order of trend filtering
 #' @return SuSiE fit for trend filtering
 #' @examples
-#' y = c(rep(0,5),rep(1,5),rep(3,5),rep(-2,5),rep(0,30)) + rnorm(50)
-#' susie_trendfilter(y, 0)
-#' susie_trendfilter(y, 1, L=20)
-#' susie_trenndfilter(y, 0, estimate_prior_variance = TRUE)
+#' set.seed(1)
+#' mu = c(rep(0,5),rep(1,5),rep(3,5),rep(-2,5),rep(0,30))
+#' y = mu + rnorm(50)
+#' s = susie_trendfilter(y, 0)
+#' plot(y,pch=".")
+#' lines(mu,col=1,lwd=3)
+#' lines(predict(s),col=2,lwd=2)
+#' s0 = susie_trenndfilter(y, 0, estimate_prior_variance = TRUE)
+#' s1 = susie_trendfilter(y, 1, L=20)
 #' @export
 susie_trendfilter = function(y, order, standardize=TRUE,...){
   n = length(y)
