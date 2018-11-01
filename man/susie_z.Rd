@@ -5,9 +5,9 @@
 \title{Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix.}
 \usage{
 susie_z(z, R, n, r_tol = 1e-08, L = 10, scaled_prior_variance = 0.2,
-  estimate_prior_variance = FALSE, prior_weights = NULL,
-  null_weight = NULL, coverage = 0.95, min_abs_corr = 0.5,
-  verbose = FALSE, track_fit = FALSE, ...)
+  estimate_residual_variance = TRUE, estimate_prior_variance = FALSE,
+  prior_weights = NULL, null_weight = NULL, coverage = 0.95,
+  min_abs_corr = 0.5, verbose = FALSE, track_fit = FALSE, ...)
 }
 \arguments{
 \item{z}{a p vector of z scores.}
@@ -19,6 +19,12 @@ susie_z(z, R, n, r_tol = 1e-08, L = 10, scaled_prior_variance = 0.2,
 \item{r_tol}{tolerance level for eigen value check of positive semidefinite matrix of R.}
 
 \item{L}{maximum number of non-zero effects.}
+
+\item{scaled_prior_variance}{the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )}
+
+\item{estimate_residual_variance}{indicates whether to estimate residual variance}
+
+\item{estimate_prior_variance}{indicates whether to estimate prior (currently not recommended as not working as well)}
 
 \item{prior_weights}{a p vector of prior probability that each element is non-zero.}
 

@@ -16,6 +16,7 @@
 #' @param L maximum number of non-zero effects
 #' @param scaled_prior_variance the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )
 #' @param residual_variance the residual variance (defaults to variance of Y)
+#' @param estimate_residual_variance indicates whether to estimate residual variance
 #' @param estimate_prior_variance indicates whether to estimate prior (currently not recommended as not working as well)
 #' @param prior_weights a p vector of prior probability that each element is non-zero
 #' @param null_weight probability of no effect, for each single effect model
@@ -60,6 +61,7 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10,
                     residual_variance=NULL,
                     prior_weights = NULL, null_weight = NULL,
                     standardize = TRUE,
+                    estimate_residual_variance = TRUE,
                     estimate_prior_variance = FALSE,
                     max_iter=100,s_init = NULL, intercept_value=0,
                     coverage=0.95, min_abs_corr=0.5,
@@ -122,11 +124,21 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10,
     s = update_each_effect_ss(XtX, Xty, s, estimate_prior_variance)
     alpha_new = s$alpha
 
+    if(verbose){
+      print(paste0("objective:",get_objective_ss(XtX, Xty, s, var_y, n)))
+    }
+    if(estimate_residual_variance){
+      est_sigma2 = estimate_residual_variance_ss(XtX,Xty,s,var_y,n)
+      if(est_sigma2 < 0){
+        stop('Estimating residual variance failed: the estimated value is negative')
+      }
+      s$sigma2 = est_sigma2
+      if(verbose){
+        print(paste0("objective:",get_objective_ss(XtX, Xty, s, var_y, n)))
+      }
+    }
     elbo[i+1] = get_objective_ss(XtX, Xty, s, var_y, n)
 
-    if(verbose){
-      print(paste0("objective:",elbo[i+1]))
-    }
     if(max(abs(alpha_new - alpha_old)) < tol) break;
 
     # if((elbo[i+1]-elbo[i])<tol) break;
@@ -190,6 +202,9 @@ check_r_matrix <- function(R, expected_dim, r_tol) {
 #' @param n sample size.
 #' @param r_tol tolerance level for eigen value check of positive semidefinite matrix of R.
 #' @param L maximum number of non-zero effects.
+#' @param scaled_prior_variance the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )
+#' @param estimate_residual_variance indicates whether to estimate residual variance
+#' @param estimate_prior_variance indicates whether to estimate prior (currently not recommended as not working as well)
 #' @param prior_weights a p vector of prior probability that each element is non-zero.
 #' @param null_weight probability of no effect, for each single effect model.
 #' @param coverage coverage of confident sets. Default to 0.95 for 95\% credible interval.
@@ -202,12 +217,11 @@ check_r_matrix <- function(R, expected_dim, r_tol) {
 #' @export
 susie_z = function(z, R, n, r_tol = 1e-08,
                    L=10, scaled_prior_variance=0.2,
+                   estimate_residual_variance = TRUE,
                    estimate_prior_variance = FALSE,
                    prior_weights = NULL, null_weight = NULL,
                    coverage=0.95, min_abs_corr=0.5,
                    verbose=FALSE, track_fit = FALSE, ...){
-
-  R = check_r_matrix(R, length(z), r_tol)
 
   # change z to t
   t = qt(pnorm(-abs(z)), df = n-2) # all negative
@@ -216,6 +230,7 @@ susie_z = function(z, R, n, r_tol = 1e-08,
              L = L,
              scaled_prior_variance = scaled_prior_variance,
              estimate_prior_variance = estimate_prior_variance,
+             estimate_residual_variance = estimate_residual_variance,
              prior_weights = prior_weights, null_weight = null_weight,
              coverage=coverage, min_abs_corr=min_abs_corr,
              verbose=verbose, track_fit = track_fit, ...)
@@ -230,6 +245,7 @@ susie_z = function(z, R, n, r_tol = 1e-08,
 #' @param r_tol tolerance level for eigen value check of positive semidefinite matrix of R.
 #' @param L maximum number of non-zero effects.
 #' @param scaled_prior_variance the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times)
+#' @param estimate_residual_variance indicates whether to estimate residual variance
 #' @param estimate_prior_variance indicates whether to estimate prior (currently not recommended as not working as well)
 #' @param prior_weights a p vector of prior probability that each element is non-zero
 #' @param null_weight probability of no effect, for each single effect model
@@ -249,6 +265,7 @@ susie_z = function(z, R, n, r_tol = 1e-08,
 susie_bhat = function(bhat, shat, R, n, var_y = 1, r_tol = 1e-08,
                       L=10,
                       scaled_prior_variance=0.2,
+                      estimate_residual_variance = TRUE,
                       estimate_prior_variance = FALSE,
                       prior_weights = NULL, null_weight = NULL,
                       standardize = TRUE,
@@ -281,6 +298,7 @@ susie_bhat = function(bhat, shat, R, n, var_y = 1, r_tol = 1e-08,
 
   susie_ss(XtX = XtX, Xty = Xty, n = n, var_y = var_y, L = L,
            scaled_prior_variance = scaled_prior_variance,
+           estimate_residual_variance = estimate_residual_variance,
            estimate_prior_variance = estimate_prior_variance,
            prior_weights = prior_weights, null_weight = null_weight,
            standardize = standardize,

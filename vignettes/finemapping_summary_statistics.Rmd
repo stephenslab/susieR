@@ -88,6 +88,7 @@ fitted_bhat <- susie_bhat(bhat = sumstats[1,,1],
                           var_y = var(data$Y[,1]),
                           L = 5, 
                           scaled_prior_variance = 0.1, 
+                          estimate_residual_variance = TRUE, 
                           estimate_prior_variance = FALSE, 
                           standardize = TRUE)
 ```
@@ -100,6 +101,7 @@ fitted_bhat_standardize <- susie_bhat(bhat = sumstats[1,,1],
                                       R = R, n = nrow(data$X), 
                                       L = 5, 
                                       scaled_prior_variance = 0.1, 
+                                      estimate_residual_variance = TRUE,
                                       estimate_prior_variance = FALSE)
 ```
 
@@ -123,17 +125,17 @@ The true causal variables are colored red. The 95% CS identified are circled in 
 
 The result should be identical to using the individual level data,
 
-```{r}
+```{r, fig.width=6,fig.height=6}
 fitted = susie(data$X, data$Y[,1],
                 L=5,
-                estimate_residual_variance = FALSE, 
+                estimate_residual_variance = TRUE, 
                 estimate_prior_variance = FALSE,
                 scaled_prior_variance = 0.1,
                 verbose = TRUE)
-plot(fitted$pip, fitted_bhat$pip)
+plot(fitted$pip, fitted_bhat$pip, ylim=c(0,1))
 ```
 
-```{r}
+```{r, fig.width=6,fig.height=6}
 plot(coef(fitted), coef(fitted_bhat))
 ```
 
@@ -144,12 +146,13 @@ For $z$ score input, `susieR` can only output coefficients in standardized $X$, 
 ```{r}
 fitted_z_n <- susie_z(z_scores, R = R, n = nrow(data$X), 
                       L = 5, 
-                      scaled_prior_variance = 0.1)
+                      scaled_prior_variance = 0.1, 
+                      estimate_residual_variance = TRUE)
 ```
 
 The result should agree with using $\hat{\beta}$ and $\text{SE}(\hat{\beta})$ when variance of $y$ is set to one,
 
-```{r}
+```{r, fig.width=6,fig.height=6}
 plot(coef(fitted_z_n), coef(fitted_bhat_standardize))
 ```
 
@@ -164,14 +167,20 @@ susie_plot(fitted_z_n, y="PIP", b=b)
 
 ## Fine-mapping with `susieR` without the knowledge of sample size
 
-If the sample size is not available, the user should guess the sample size. If you want conervative inference on effects, use a small sample size; if you want aggressive result, use a large sample size is large.
+If the sample size is not available, the user should guess the sample size. If you want conservative inference on effects, use a small sample size; if you want aggressive result, use a large sample size is large.
 
-Here we use sample size 40 as an example
+Here we use sample size 50 as an example
 ```{r}
-fitted_z <- susie_z(z = z_scores,R = R, n = 40, L = 5, scaled_prior_variance = 0.1)
+fitted_z <- susie_z(z = z_scores,R = R, n = 50, L=1, 
+                    scaled_prior_variance = 0.1, 
+                    estimate_residual_variance = TRUE)
 ```
 
-There is no confidence set. We can check the PIP
+```{r}
+summary(fitted_z)$cs
+```
+
+There is one confidence set that captures the true effect 773. We can check the PIP
 
 ```{r}
 susie_plot(fitted_z, y="PIP", b=b)
