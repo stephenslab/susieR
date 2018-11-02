@@ -392,6 +392,10 @@ susie_get_residual_variance <- function(res) {
 #' @param all whether or not to get ELBO from all iterations
 #' @export
 susie_get_objective <- function(res, all = FALSE) {
+  if (!all(diff(res$elbo) >= 0)) {
+    warning('Objective is not non-decreasing')
+    all = TRUE
+  }
   if (all) return(res$elbo)
   else return(res$elbo[length(res$elbo)])
 }
