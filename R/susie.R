@@ -70,7 +70,7 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
                  verbose=FALSE,track_fit=FALSE) {
   
   # Check input X.
-  if (!(is.double(X) & is.matrix(X)) & !inherits(X,"CsparseMatrix"))
+  if (!(is.double(X) & is.matrix(X)) & !inherits(X,"CsparseMatrix") & is.null(attr(X,"matrix.type")))
     stop("Input X must be a double-precision matrix, or a sparse matrix.")
   if (is.numeric(null_weight) && null_weight == 0) null_weight = NULL
   if (!is.null(null_weight)) {
@@ -92,7 +92,7 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
     Y = Y-mean_y
   }
 
-  if (class(X)!='tfmatrix') X = safe_colScale(X,center=intercept, scale=standardize)
+  if (is.null(attr(X,"matrix.type"))) X = safe_colScale(X,center=intercept, scale=standardize)
   
   
   # initialize susie fit
