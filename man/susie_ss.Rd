@@ -9,7 +9,7 @@ susie_ss(XtX, Xty, n, var_y = 1, L = 10, scaled_prior_variance = 0.2,
   standardize = TRUE, estimate_residual_variance = TRUE,
   estimate_prior_variance = FALSE, max_iter = 100, s_init = NULL,
   intercept_value = 0, coverage = 0.95, min_abs_corr = 0.5,
-  tol = 1e-04, verbose = FALSE, track_fit = FALSE)
+  tol = 0.001, verbose = FALSE, track_fit = FALSE)
 }
 \arguments{
 \item{XtX}{a p by p matrix, X'X, where columns of X are centered to have mean 0}

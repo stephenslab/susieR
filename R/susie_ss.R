@@ -65,7 +65,7 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10,
                     estimate_prior_variance = FALSE,
                     max_iter=100,s_init = NULL, intercept_value=0,
                     coverage=0.95, min_abs_corr=0.5,
-                    tol=1e-4, verbose=FALSE, track_fit = FALSE){
+                    tol=1e-3, verbose=FALSE, track_fit = FALSE){
   # Check input XtX.
   if (!(is.double(XtX) & is.matrix(XtX)) & !inherits(XtX,"CsparseMatrix"))
     stop("Input X must be a double-precision matrix, or a sparse matrix.")
@@ -116,13 +116,13 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10,
   elbo[1] = -Inf;
   tracking = list()
 
-  alpha_new = s$alpha
+  # alpha_new = s$alpha
   for(i in 1:max_iter){
     if (track_fit)
       tracking[[i]] = s
-    alpha_old = alpha_new
+    # alpha_old = alpha_new
     s = update_each_effect_ss(XtX, Xty, s, estimate_prior_variance)
-    alpha_new = s$alpha
+    # alpha_new = s$alpha
 
     if(verbose){
       print(paste0("objective:",get_objective_ss(XtX, Xty, s, var_y, n)))
@@ -139,9 +139,9 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10,
     }
     elbo[i+1] = get_objective_ss(XtX, Xty, s, var_y, n)
 
-    if(max(abs(alpha_new - alpha_old)) < tol) break;
+    # if(max(abs(alpha_new - alpha_old)) < tol) break;
 
-    # if((elbo[i+1]-elbo[i])<tol) break;
+    if((elbo[i+1]-elbo[i])<tol) break;
   }
   elbo = elbo[1:(i+1)] #remove trailing NAs
   s$elbo <- elbo
