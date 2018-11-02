@@ -29,7 +29,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.6.0.0</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.6.1.382</span>
       </span>
     </div>
 
@@ -64,7 +64,7 @@
       <h1>Fine-mapping with summary statistics</h1>
                         <h4 class="author">Yuxin Zou and Gao Wang</h4>
             
-            <h4 class="date">2018-10-28</h4>
+            <h4 class="date">2018-11-02</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/master/vignettes/finemapping_summary_statistics.Rmd"><code>vignettes/finemapping_summary_statistics.Rmd</code></a></small>
       <div class="hidden name"><code>finemapping_summary_statistics.Rmd</code></div>
@@ -100,7 +100,7 @@
 <h2 class="hasAnchor">
 <a href="#summary-statistics-from-simple-regression" class="anchor"></a>Summary statistics from simple regression</h2>
 <p>Summary statistics of genetic association studies typically contain odds ratio (or <span class="math inline">\(\hat{\beta}\)</span> coefficient), p-value and minor allele frequencies. These information can be used to perform fine-mapping with sufficient summary statistics, which additionally require sample size, variance of phenotype, and most importantly a matrix of correlation between variables.</p>
-<p>When the aforementioned sufficient summary statistica are provided, SuSiE can produce the exact same outcome as if individual level data were used. SuSiE can also produce approximate results when some of the information are not available. The minimal required of summary statistics for SuSiE to work are z-scores (can be derived from p-values, as will be demonstrated below) and correlation matrix between variables. The correlation matrix in genetics is typically referred to as LD matrix (LD for linkage disequilibrium). One can use external reference panels to estimate it when this matrix cannot be obtained from samples directly.</p>
+<p>When the aforementioned sufficient summary statistica are provided, SuSiE can produce the exact same outcome as if individual level data were used. SuSiE can also produce approximate results when some of the information are not available. The minimal required of summary statistics for SuSiE to work are z-scores (can be derived from p-values, as will be demonstrated below), correlation matrix between variables, the sample size. The correlation matrix in genetics is typically referred to as LD matrix (LD for linkage disequilibrium). One can use external reference panels to estimate it when this matrix cannot be obtained from samples directly.</p>
 <p>Caution that the LD matrix has to be correlation matrix <span class="math inline">\(r\)</span>, not <span class="math inline">\(r^2\)</span> or <span class="math inline">\(abs(r)\)</span>.</p>
 <p>Our example data-set additionally provides summary statistics for fitting per-variable univariate simple regression. The results are <span class="math inline">\(\hat{\beta}\)</span> and <span class="math inline">\(SE(\hat{\beta})\)</span> from which the p-values (from <em>t</em>-distribution) and <span class="math inline">\(z\)</span>-scores can be derived. Again we focus only on results from the first data-set:</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" data-line-number="1">p_values =<span class="st"> </span><span class="dv">2</span> <span class="op">*</span><span class="st"> </span><span class="kw">pt</span>(<span class="op">-</span><span class="kw">abs</span>(sumstats[<span class="dv">1</span>,,<span class="dv">1</span>] <span class="op">/</span><span class="st"> </span>sumstats[<span class="dv">2</span>,,<span class="dv">1</span>]), <span class="dt">df =</span> <span class="kw">nrow</span>(data<span class="op">$</span>X) <span class="op">-</span><span class="st"> </span><span class="dv">2</span>)</a>
@@ -130,26 +130,28 @@
 <a class="sourceLine" id="cb8-4" data-line-number="4">                          <span class="dt">var_y =</span> <span class="kw">var</span>(data<span class="op">$</span>Y[,<span class="dv">1</span>]),</a>
 <a class="sourceLine" id="cb8-5" data-line-number="5">                          <span class="dt">L =</span> <span class="dv">5</span>, </a>
 <a class="sourceLine" id="cb8-6" data-line-number="6">                          <span class="dt">scaled_prior_variance =</span> <span class="fl">0.1</span>, </a>
-<a class="sourceLine" id="cb8-7" data-line-number="7">                          <span class="dt">estimate_prior_variance =</span> <span class="ot">FALSE</span>, </a>
-<a class="sourceLine" id="cb8-8" data-line-number="8">                          <span class="dt">standardize =</span> <span class="ot">TRUE</span>)</a></code></pre></div>
+<a class="sourceLine" id="cb8-7" data-line-number="7">                          <span class="dt">estimate_residual_variance =</span> <span class="ot">TRUE</span>, </a>
+<a class="sourceLine" id="cb8-8" data-line-number="8">                          <span class="dt">estimate_prior_variance =</span> <span class="ot">FALSE</span>, </a>
+<a class="sourceLine" id="cb8-9" data-line-number="9">                          <span class="dt">standardize =</span> <span class="ot">TRUE</span>)</a></code></pre></div>
 <p>Without the knowledge of variance of <span class="math inline">\(y\)</span>, <code>susieR</code> gives the coefficients in standardized <span class="math inline">\(X\)</span>, <span class="math inline">\(y\)</span> scale,</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" data-line-number="1">fitted_bhat_standardize &lt;-<span class="st"> </span><span class="kw"><a href="../reference/susie_bhat.html">susie_bhat</a></span>(<span class="dt">bhat =</span> sumstats[<span class="dv">1</span>,,<span class="dv">1</span>], </a>
 <a class="sourceLine" id="cb9-2" data-line-number="2">                                      <span class="dt">shat =</span> sumstats[<span class="dv">2</span>,,<span class="dv">1</span>], </a>
 <a class="sourceLine" id="cb9-3" data-line-number="3">                                      <span class="dt">R =</span> R, <span class="dt">n =</span> <span class="kw">nrow</span>(data<span class="op">$</span>X), </a>
 <a class="sourceLine" id="cb9-4" data-line-number="4">                                      <span class="dt">L =</span> <span class="dv">5</span>, </a>
 <a class="sourceLine" id="cb9-5" data-line-number="5">                                      <span class="dt">scaled_prior_variance =</span> <span class="fl">0.1</span>, </a>
-<a class="sourceLine" id="cb9-6" data-line-number="6">                                      <span class="dt">estimate_prior_variance =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
+<a class="sourceLine" id="cb9-6" data-line-number="6">                                      <span class="dt">estimate_residual_variance =</span> <span class="ot">TRUE</span>,</a>
+<a class="sourceLine" id="cb9-7" data-line-number="7">                                      <span class="dt">estimate_prior_variance =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
 <p>Using <code>summary</code> function, we can examine the posterior inclusion probability (PIP) for each variable, and the 95% credible sets.</p>
 <p>Here, we are the 95% credible sets.</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="kw">summary</span>(fitted_bhat)<span class="op">$</span>cs</a>
 <a class="sourceLine" id="cb10-2" data-line-number="2"><span class="co">#   cs cs_log10bf cs_avg_r2 cs_min_r2</span></a>
-<a class="sourceLine" id="cb10-3" data-line-number="3"><span class="co"># 1  3  12.947239 1.0000000 1.0000000</span></a>
-<a class="sourceLine" id="cb10-4" data-line-number="4"><span class="co"># 2  1  17.621410 0.9816575 0.9634847</span></a>
-<a class="sourceLine" id="cb10-5" data-line-number="5"><span class="co"># 3  2   9.874888 0.9114032 0.6907024</span></a>
-<a class="sourceLine" id="cb10-6" data-line-number="6"><span class="co">#                                                                                                                  variable</span></a>
-<a class="sourceLine" id="cb10-7" data-line-number="7"><span class="co"># 1                                                                                                                     653</span></a>
-<a class="sourceLine" id="cb10-8" data-line-number="8"><span class="co"># 2                                                                                                                 773,777</span></a>
-<a class="sourceLine" id="cb10-9" data-line-number="9"><span class="co"># 3 360,361,362,365,368,372,373,374,379,381,383,384,386,387,388,389,391,392,396,397,398,399,400,401,403,404,405,407,408,415</span></a></code></pre></div>
+<a class="sourceLine" id="cb10-3" data-line-number="3"><span class="co"># 1  3   16.28925 1.0000000 1.0000000</span></a>
+<a class="sourceLine" id="cb10-4" data-line-number="4"><span class="co"># 2  1   22.12365 0.9816575 0.9634847</span></a>
+<a class="sourceLine" id="cb10-5" data-line-number="5"><span class="co"># 3  2   12.63580 0.9357997 0.7545197</span></a>
+<a class="sourceLine" id="cb10-6" data-line-number="6"><span class="co">#                                                                                                  variable</span></a>
+<a class="sourceLine" id="cb10-7" data-line-number="7"><span class="co"># 1                                                                                                     653</span></a>
+<a class="sourceLine" id="cb10-8" data-line-number="8"><span class="co"># 2                                                                                                 773,777</span></a>
+<a class="sourceLine" id="cb10-9" data-line-number="9"><span class="co"># 3 362,372,373,374,379,381,383,384,386,387,388,389,391,392,396,397,398,399,400,401,403,404,405,407,408,415</span></a></code></pre></div>
 <p>The 3 causal signals have been captured by the 3 CS reported here. The 3rd CS contains many variables, including the true causal variable 403.</p>
 <p>We can also plot the posterior inclusion probability (PIP),</p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="kw"><a href="../reference/susie_plot.html">susie_plot</a></span>(fitted_bhat, <span class="dt">y=</span><span class="st">"PIP"</span>, <span class="dt">b=</span>b)</a></code></pre></div>
@@ -163,33 +165,34 @@
 <div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" data-line-number="1">fitted =<span class="st"> </span><span class="kw"><a href="../reference/susie.html">susie</a></span>(data<span class="op">$</span>X, data<span class="op">$</span>Y[,<span class="dv">1</span>],</a>
 <a class="sourceLine" id="cb12-2" data-line-number="2">                <span class="dt">L=</span><span class="dv">5</span>,</a>
 <a class="sourceLine" id="cb12-3" data-line-number="3">                <span class="dt">estimate_residual_variance =</span> <span class="ot">TRUE</span>, </a>
-<a class="sourceLine" id="cb12-4" data-line-number="4">                <span class="dt">scaled_prior_variance =</span> <span class="fl">0.1</span>,</a>
-<a class="sourceLine" id="cb12-5" data-line-number="5">                <span class="dt">verbose =</span> <span class="ot">TRUE</span>)</a>
-<a class="sourceLine" id="cb12-6" data-line-number="6"><span class="co"># [1] "objective:-1384.57253292456"</span></a>
-<a class="sourceLine" id="cb12-7" data-line-number="7"><span class="co"># [1] "objective:-1381.26163424408"</span></a>
-<a class="sourceLine" id="cb12-8" data-line-number="8"><span class="co"># [1] "objective:-1380.75139979919"</span></a>
-<a class="sourceLine" id="cb12-9" data-line-number="9"><span class="co"># [1] "objective:-1380.74854534135"</span></a>
-<a class="sourceLine" id="cb12-10" data-line-number="10"><span class="co"># [1] "objective:-1380.6759533616"</span></a>
-<a class="sourceLine" id="cb12-11" data-line-number="11"><span class="co"># [1] "objective:-1380.67587727196"</span></a>
-<a class="sourceLine" id="cb12-12" data-line-number="12"><span class="co"># [1] "objective:-1377.04794661565"</span></a>
-<a class="sourceLine" id="cb12-13" data-line-number="13"><span class="co"># [1] "objective:-1376.93001122693"</span></a>
-<a class="sourceLine" id="cb12-14" data-line-number="14"><span class="co"># [1] "objective:-1373.29122910603"</span></a>
-<a class="sourceLine" id="cb12-15" data-line-number="15"><span class="co"># [1] "objective:-1373.25708807704"</span></a>
-<a class="sourceLine" id="cb12-16" data-line-number="16"><span class="co"># [1] "objective:-1373.20171636119"</span></a>
-<a class="sourceLine" id="cb12-17" data-line-number="17"><span class="co"># [1] "objective:-1373.20167955938"</span></a>
-<a class="sourceLine" id="cb12-18" data-line-number="18"><span class="co"># [1] "objective:-1373.20062377817"</span></a>
-<a class="sourceLine" id="cb12-19" data-line-number="19"><span class="co"># [1] "objective:-1373.20062375159"</span></a>
-<a class="sourceLine" id="cb12-20" data-line-number="20"><span class="co"># [1] "objective:-1373.20061073365"</span></a>
-<a class="sourceLine" id="cb12-21" data-line-number="21"><span class="co"># [1] "objective:-1373.20061072967"</span></a>
-<a class="sourceLine" id="cb12-22" data-line-number="22"><span class="kw">plot</span>(fitted<span class="op">$</span>pip, fitted_bhat<span class="op">$</span>pip)</a></code></pre></div>
+<a class="sourceLine" id="cb12-4" data-line-number="4">                <span class="dt">estimate_prior_variance =</span> <span class="ot">FALSE</span>,</a>
+<a class="sourceLine" id="cb12-5" data-line-number="5">                <span class="dt">scaled_prior_variance =</span> <span class="fl">0.1</span>,</a>
+<a class="sourceLine" id="cb12-6" data-line-number="6">                <span class="dt">verbose =</span> <span class="ot">TRUE</span>)</a>
+<a class="sourceLine" id="cb12-7" data-line-number="7"><span class="co"># [1] "objective:-1384.57253292456"</span></a>
+<a class="sourceLine" id="cb12-8" data-line-number="8"><span class="co"># [1] "objective:-1381.26163424408"</span></a>
+<a class="sourceLine" id="cb12-9" data-line-number="9"><span class="co"># [1] "objective:-1380.75139979919"</span></a>
+<a class="sourceLine" id="cb12-10" data-line-number="10"><span class="co"># [1] "objective:-1380.74854534135"</span></a>
+<a class="sourceLine" id="cb12-11" data-line-number="11"><span class="co"># [1] "objective:-1380.6759533616"</span></a>
+<a class="sourceLine" id="cb12-12" data-line-number="12"><span class="co"># [1] "objective:-1380.67587727196"</span></a>
+<a class="sourceLine" id="cb12-13" data-line-number="13"><span class="co"># [1] "objective:-1377.04794661565"</span></a>
+<a class="sourceLine" id="cb12-14" data-line-number="14"><span class="co"># [1] "objective:-1376.93001122693"</span></a>
+<a class="sourceLine" id="cb12-15" data-line-number="15"><span class="co"># [1] "objective:-1373.29122910603"</span></a>
+<a class="sourceLine" id="cb12-16" data-line-number="16"><span class="co"># [1] "objective:-1373.25708807704"</span></a>
+<a class="sourceLine" id="cb12-17" data-line-number="17"><span class="co"># [1] "objective:-1373.20171636119"</span></a>
+<a class="sourceLine" id="cb12-18" data-line-number="18"><span class="co"># [1] "objective:-1373.20167955938"</span></a>
+<a class="sourceLine" id="cb12-19" data-line-number="19"><span class="co"># [1] "objective:-1373.20062377817"</span></a>
+<a class="sourceLine" id="cb12-20" data-line-number="20"><span class="co"># [1] "objective:-1373.20062375159"</span></a>
+<a class="sourceLine" id="cb12-21" data-line-number="21"><span class="co"># [1] "objective:-1373.20061073365"</span></a>
+<a class="sourceLine" id="cb12-22" data-line-number="22"><span class="co"># [1] "objective:-1373.20061072967"</span></a>
+<a class="sourceLine" id="cb12-23" data-line-number="23"><span class="kw">plot</span>(fitted<span class="op">$</span>pip, fitted_bhat<span class="op">$</span>pip, <span class="dt">ylim=</span><span class="kw">c</span>(<span class="dv">0</span>,<span class="dv">1</span>))</a></code></pre></div>
 <div class="figure" style="text-align: center">
-<img src="finemapping_summary_statistics_files/figure-html/unnamed-chunk-12-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
+<img src="finemapping_summary_statistics_files/figure-html/unnamed-chunk-12-1.png" alt="&amp;nbsp;" width="720"><p class="caption">
  
 </p>
 </div>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="kw">plot</span>(<span class="kw">coef</span>(fitted), <span class="kw">coef</span>(fitted_bhat_standardize))</a></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="kw">plot</span>(<span class="kw">coef</span>(fitted), <span class="kw">coef</span>(fitted_bhat))</a></code></pre></div>
 <div class="figure" style="text-align: center">
-<img src="finemapping_summary_statistics_files/figure-html/unnamed-chunk-13-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
+<img src="finemapping_summary_statistics_files/figure-html/unnamed-chunk-13-1.png" alt="&amp;nbsp;" width="720"><p class="caption">
  
 </p>
 </div>
@@ -197,30 +200,29 @@
 <div id="using-z-scores" class="section level3">
 <h3 class="hasAnchor">
 <a href="#using-z-scores" class="anchor"></a>Using <span class="math inline">\(z\)</span> scores</h3>
-<p>For <span class="math inline">\(z\)</span> score input, <code>susieR</code> can only output coefficients in standardized <span class="math inline">\(X\)</span>, <span class="math inline">\(y\)</span> scale. It is practically setting <span class="math inline">\(\hat{\beta}\)</span> to <span class="math inline">\(z\)</span> score and <span class="math inline">\(\text{SE}(\hat{\beta})\)</span> and variance of <span class="math inline">\(y\)</span> to one,</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" data-line-number="1">fitted_z_n &lt;-<span class="st"> </span><span class="kw"><a href="../reference/susie_bhat.html">susie_bhat</a></span>(<span class="dt">bhat =</span> z_scores, <span class="dt">shat =</span> <span class="dv">1</span>, </a>
-<a class="sourceLine" id="cb14-2" data-line-number="2">                         <span class="dt">R =</span> R, <span class="dt">n =</span> <span class="kw">nrow</span>(data<span class="op">$</span>X), </a>
-<a class="sourceLine" id="cb14-3" data-line-number="3">                         <span class="dt">L =</span> <span class="dv">5</span>, </a>
-<a class="sourceLine" id="cb14-4" data-line-number="4">                         <span class="dt">scaled_prior_variance =</span> <span class="fl">0.1</span>, </a>
-<a class="sourceLine" id="cb14-5" data-line-number="5">                         <span class="dt">estimate_prior_variance =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
+<p>For <span class="math inline">\(z\)</span> score input, <code>susieR</code> can only output coefficients in standardized <span class="math inline">\(X\)</span>, <span class="math inline">\(y\)</span> scale.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" data-line-number="1">fitted_z_n &lt;-<span class="st"> </span><span class="kw"><a href="../reference/susie_z.html">susie_z</a></span>(z_scores, <span class="dt">R =</span> R, <span class="dt">n =</span> <span class="kw">nrow</span>(data<span class="op">$</span>X), </a>
+<a class="sourceLine" id="cb14-2" data-line-number="2">                      <span class="dt">L =</span> <span class="dv">5</span>, </a>
+<a class="sourceLine" id="cb14-3" data-line-number="3">                      <span class="dt">scaled_prior_variance =</span> <span class="fl">0.1</span>, </a>
+<a class="sourceLine" id="cb14-4" data-line-number="4">                      <span class="dt">estimate_residual_variance =</span> <span class="ot">TRUE</span>)</a></code></pre></div>
 <p>The result should agree with using <span class="math inline">\(\hat{\beta}\)</span> and <span class="math inline">\(\text{SE}(\hat{\beta})\)</span> when variance of <span class="math inline">\(y\)</span> is set to one,</p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="kw">plot</span>(<span class="kw">coef</span>(fitted_z_n), <span class="kw">coef</span>(fitted_bhat_standardize))</a></code></pre></div>
 <div class="figure" style="text-align: center">
-<img src="finemapping_summary_statistics_files/figure-html/unnamed-chunk-15-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
+<img src="finemapping_summary_statistics_files/figure-html/unnamed-chunk-15-1.png" alt="&amp;nbsp;" width="720"><p class="caption">
  
 </p>
 </div>
 <div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="kw">summary</span>(fitted_z_n)<span class="op">$</span>cs</a>
 <a class="sourceLine" id="cb16-2" data-line-number="2"><span class="co">#   cs cs_log10bf cs_avg_r2 cs_min_r2</span></a>
-<a class="sourceLine" id="cb16-3" data-line-number="3"><span class="co"># 1  3  12.389806 1.0000000 1.0000000</span></a>
-<a class="sourceLine" id="cb16-4" data-line-number="4"><span class="co"># 2  1  16.622625 0.9816575 0.9634847</span></a>
-<a class="sourceLine" id="cb16-5" data-line-number="5"><span class="co"># 3  2   9.616246 0.9098701 0.6907024</span></a>
-<a class="sourceLine" id="cb16-6" data-line-number="6"><span class="co">#                                                                                                                      variable</span></a>
-<a class="sourceLine" id="cb16-7" data-line-number="7"><span class="co"># 1                                                                                                                         653</span></a>
-<a class="sourceLine" id="cb16-8" data-line-number="8"><span class="co"># 2                                                                                                                     773,777</span></a>
-<a class="sourceLine" id="cb16-9" data-line-number="9"><span class="co"># 3 360,361,362,365,366,368,372,373,374,379,381,383,384,386,387,388,389,391,392,396,397,398,399,400,401,403,404,405,407,408,415</span></a></code></pre></div>
+<a class="sourceLine" id="cb16-3" data-line-number="3"><span class="co"># 1  3   16.28925 1.0000000 1.0000000</span></a>
+<a class="sourceLine" id="cb16-4" data-line-number="4"><span class="co"># 2  1   22.12365 0.9816575 0.9634847</span></a>
+<a class="sourceLine" id="cb16-5" data-line-number="5"><span class="co"># 3  2   12.63580 0.9357997 0.7545197</span></a>
+<a class="sourceLine" id="cb16-6" data-line-number="6"><span class="co">#                                                                                                  variable</span></a>
+<a class="sourceLine" id="cb16-7" data-line-number="7"><span class="co"># 1                                                                                                     653</span></a>
+<a class="sourceLine" id="cb16-8" data-line-number="8"><span class="co"># 2                                                                                                 773,777</span></a>
+<a class="sourceLine" id="cb16-9" data-line-number="9"><span class="co"># 3 362,372,373,374,379,381,383,384,386,387,388,389,391,392,396,397,398,399,400,401,403,404,405,407,408,415</span></a></code></pre></div>
 <p>and the PIP plot</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="kw"><a href="../reference/susie_plot.html">susie_plot</a></span>(fitted_bhat, <span class="dt">y=</span><span class="st">"PIP"</span>, <span class="dt">b=</span>b)</a></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="kw"><a href="../reference/susie_plot.html">susie_plot</a></span>(fitted_z_n, <span class="dt">y=</span><span class="st">"PIP"</span>, <span class="dt">b=</span>b)</a></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="finemapping_summary_statistics_files/figure-html/unnamed-chunk-17-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
  
@@ -231,29 +233,18 @@
 <div id="fine-mapping-with-susier-without-the-knowledge-of-sample-size" class="section level2">
 <h2 class="hasAnchor">
 <a href="#fine-mapping-with-susier-without-the-knowledge-of-sample-size" class="anchor"></a>Fine-mapping with <code>susieR</code> without the knowledge of sample size</h2>
-<p>With only <span class="math inline">\(z\)</span> and <span class="math inline">\(R\)</span> as input, the inference on effects are more conservative. For <span class="math inline">\(z\)</span> score input, <code>susieR</code> estimates prior variance in the iterative variable selection algorithm, and output coefficients in standardized <span class="math inline">\(X\)</span>, <span class="math inline">\(y\)</span> scale,</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb18-1" data-line-number="1">fitted_z &lt;-<span class="st"> </span><span class="kw"><a href="../reference/susie_z.html">susie_z</a></span>(<span class="dt">z =</span> z_scores,<span class="dt">R =</span> R,<span class="dt">L =</span> <span class="dv">5</span>)</a></code></pre></div>
-<p>We can check the 95% credible set:</p>
+<p>If the sample size is not available, the user should guess the sample size. If you want conservative inference on effects, use a small sample size; if you want aggressive result, use a large sample size is large.</p>
+<p>Here we use sample size 50 as an example</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb18-1" data-line-number="1">fitted_z &lt;-<span class="st"> </span><span class="kw"><a href="../reference/susie_z.html">susie_z</a></span>(<span class="dt">z =</span> z_scores,<span class="dt">R =</span> R, <span class="dt">n =</span> <span class="dv">50</span>, <span class="dt">L=</span><span class="dv">1</span>, </a>
+<a class="sourceLine" id="cb18-2" data-line-number="2">                    <span class="dt">scaled_prior_variance =</span> <span class="fl">0.1</span>, </a>
+<a class="sourceLine" id="cb18-3" data-line-number="3">                    <span class="dt">estimate_residual_variance =</span> <span class="ot">TRUE</span>)</a></code></pre></div>
 <div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="kw">summary</span>(fitted_z)<span class="op">$</span>cs</a>
-<a class="sourceLine" id="cb19-2" data-line-number="2"><span class="co">#   cs cs_log10bf cs_avg_r2 cs_min_r2</span></a>
-<a class="sourceLine" id="cb19-3" data-line-number="3"><span class="co"># 1  2   13.48473 1.0000000 1.0000000</span></a>
-<a class="sourceLine" id="cb19-4" data-line-number="4"><span class="co"># 2  1   18.64257 0.9816575 0.9634847</span></a>
-<a class="sourceLine" id="cb19-5" data-line-number="5"><span class="co"># 3  3   10.21614 0.9170449 0.6907024</span></a>
-<a class="sourceLine" id="cb19-6" data-line-number="6"><span class="co">#                                                                                                                  variable</span></a>
-<a class="sourceLine" id="cb19-7" data-line-number="7"><span class="co"># 1                                                                                                                     653</span></a>
-<a class="sourceLine" id="cb19-8" data-line-number="8"><span class="co"># 2                                                                                                                 773,777</span></a>
-<a class="sourceLine" id="cb19-9" data-line-number="9"><span class="co"># 3 360,362,365,366,368,372,373,374,379,381,383,384,386,387,388,389,391,392,396,397,398,399,400,401,403,404,405,407,408,415</span></a></code></pre></div>
-<p>and the PIP</p>
+<a class="sourceLine" id="cb19-2" data-line-number="2"><span class="co">#   cs cs_log10bf cs_avg_r2 cs_min_r2 variable</span></a>
+<a class="sourceLine" id="cb19-3" data-line-number="3"><span class="co"># 1  1   52.80117 0.9816575 0.9634847  773,777</span></a></code></pre></div>
+<p>There is one confidence set that captures the true effect 773. We can check the PIP</p>
 <div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="kw"><a href="../reference/susie_plot.html">susie_plot</a></span>(fitted_z, <span class="dt">y=</span><span class="st">"PIP"</span>, <span class="dt">b=</span>b)</a></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="finemapping_summary_statistics_files/figure-html/unnamed-chunk-20-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
- 
-</p>
-</div>
-<p>We compare result with when <span class="math inline">\(n\)</span> is known,</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="kw">plot</span>(<span class="kw">coef</span>(fitted_z), <span class="kw">coef</span>(fitted_z_n))</a></code></pre></div>
-<div class="figure" style="text-align: center">
-<img src="finemapping_summary_statistics_files/figure-html/unnamed-chunk-21-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
  
 </p>
 </div>
@@ -262,36 +253,36 @@
 <h2 class="hasAnchor">
 <a href="#session-information" class="anchor"></a>Session information</h2>
 <p>Here are some details about the computing environment, including the versions of R, and the R packages, used to generate these results.</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb22-1" data-line-number="1"><span class="kw">sessionInfo</span>()</a>
-<a class="sourceLine" id="cb22-2" data-line-number="2"><span class="co"># R version 3.5.1 (2018-07-02)</span></a>
-<a class="sourceLine" id="cb22-3" data-line-number="3"><span class="co"># Platform: x86_64-pc-linux-gnu (64-bit)</span></a>
-<a class="sourceLine" id="cb22-4" data-line-number="4"><span class="co"># Running under: Debian GNU/Linux buster/sid</span></a>
-<a class="sourceLine" id="cb22-5" data-line-number="5"><span class="co"># </span></a>
-<a class="sourceLine" id="cb22-6" data-line-number="6"><span class="co"># Matrix products: default</span></a>
-<a class="sourceLine" id="cb22-7" data-line-number="7"><span class="co"># BLAS: /usr/lib/x86_64-linux-gnu/atlas/libblas.so.3.10.3</span></a>
-<a class="sourceLine" id="cb22-8" data-line-number="8"><span class="co"># LAPACK: /usr/lib/x86_64-linux-gnu/atlas/liblapack.so.3.10.3</span></a>
-<a class="sourceLine" id="cb22-9" data-line-number="9"><span class="co"># </span></a>
-<a class="sourceLine" id="cb22-10" data-line-number="10"><span class="co"># locale:</span></a>
-<a class="sourceLine" id="cb22-11" data-line-number="11"><span class="co"># [1] C</span></a>
-<a class="sourceLine" id="cb22-12" data-line-number="12"><span class="co"># </span></a>
-<a class="sourceLine" id="cb22-13" data-line-number="13"><span class="co"># attached base packages:</span></a>
-<a class="sourceLine" id="cb22-14" data-line-number="14"><span class="co"># [1] stats     graphics  grDevices utils     datasets  methods   base     </span></a>
-<a class="sourceLine" id="cb22-15" data-line-number="15"><span class="co"># </span></a>
-<a class="sourceLine" id="cb22-16" data-line-number="16"><span class="co"># other attached packages:</span></a>
-<a class="sourceLine" id="cb22-17" data-line-number="17"><span class="co"># [1] susieR_0.6.0</span></a>
-<a class="sourceLine" id="cb22-18" data-line-number="18"><span class="co"># </span></a>
-<a class="sourceLine" id="cb22-19" data-line-number="19"><span class="co"># loaded via a namespace (and not attached):</span></a>
-<a class="sourceLine" id="cb22-20" data-line-number="20"><span class="co">#  [1] Rcpp_0.12.18       knitr_1.20         xml2_1.2.0        </span></a>
-<a class="sourceLine" id="cb22-21" data-line-number="21"><span class="co">#  [4] magrittr_1.5       roxygen2_6.1.0     MASS_7.3-50       </span></a>
-<a class="sourceLine" id="cb22-22" data-line-number="22"><span class="co">#  [7] lattice_0.20-35    R6_2.2.2           rlang_0.2.2       </span></a>
-<a class="sourceLine" id="cb22-23" data-line-number="23"><span class="co"># [10] highr_0.7          stringr_1.3.1      tools_3.5.1       </span></a>
-<a class="sourceLine" id="cb22-24" data-line-number="24"><span class="co"># [13] grid_3.5.1         matrixStats_0.54.0 htmltools_0.3.6   </span></a>
-<a class="sourceLine" id="cb22-25" data-line-number="25"><span class="co"># [16] commonmark_1.5     yaml_2.2.0         rprojroot_1.3-2   </span></a>
-<a class="sourceLine" id="cb22-26" data-line-number="26"><span class="co"># [19] digest_0.6.17      assertthat_0.2.0   pkgdown_1.1.0     </span></a>
-<a class="sourceLine" id="cb22-27" data-line-number="27"><span class="co"># [22] crayon_1.3.4       Matrix_1.2-14      fs_1.2.6          </span></a>
-<a class="sourceLine" id="cb22-28" data-line-number="28"><span class="co"># [25] memoise_1.1.0      evaluate_0.11      rmarkdown_1.10    </span></a>
-<a class="sourceLine" id="cb22-29" data-line-number="29"><span class="co"># [28] stringi_1.2.4      compiler_3.5.1     desc_1.2.0        </span></a>
-<a class="sourceLine" id="cb22-30" data-line-number="30"><span class="co"># [31] backports_1.1.2    expm_0.999-3</span></a></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="kw">sessionInfo</span>()</a>
+<a class="sourceLine" id="cb21-2" data-line-number="2"><span class="co"># R version 3.5.1 (2018-07-02)</span></a>
+<a class="sourceLine" id="cb21-3" data-line-number="3"><span class="co"># Platform: x86_64-pc-linux-gnu (64-bit)</span></a>
+<a class="sourceLine" id="cb21-4" data-line-number="4"><span class="co"># Running under: Debian GNU/Linux buster/sid</span></a>
+<a class="sourceLine" id="cb21-5" data-line-number="5"><span class="co"># </span></a>
+<a class="sourceLine" id="cb21-6" data-line-number="6"><span class="co"># Matrix products: default</span></a>
+<a class="sourceLine" id="cb21-7" data-line-number="7"><span class="co"># BLAS: /usr/lib/x86_64-linux-gnu/atlas/libblas.so.3.10.3</span></a>
+<a class="sourceLine" id="cb21-8" data-line-number="8"><span class="co"># LAPACK: /usr/lib/x86_64-linux-gnu/atlas/liblapack.so.3.10.3</span></a>
+<a class="sourceLine" id="cb21-9" data-line-number="9"><span class="co"># </span></a>
+<a class="sourceLine" id="cb21-10" data-line-number="10"><span class="co"># locale:</span></a>
+<a class="sourceLine" id="cb21-11" data-line-number="11"><span class="co"># [1] C</span></a>
+<a class="sourceLine" id="cb21-12" data-line-number="12"><span class="co"># </span></a>
+<a class="sourceLine" id="cb21-13" data-line-number="13"><span class="co"># attached base packages:</span></a>
+<a class="sourceLine" id="cb21-14" data-line-number="14"><span class="co"># [1] stats     graphics  grDevices utils     datasets  methods   base     </span></a>
+<a class="sourceLine" id="cb21-15" data-line-number="15"><span class="co"># </span></a>
+<a class="sourceLine" id="cb21-16" data-line-number="16"><span class="co"># other attached packages:</span></a>
+<a class="sourceLine" id="cb21-17" data-line-number="17"><span class="co"># [1] susieR_0.6.1.0382</span></a>
+<a class="sourceLine" id="cb21-18" data-line-number="18"><span class="co"># </span></a>
+<a class="sourceLine" id="cb21-19" data-line-number="19"><span class="co"># loaded via a namespace (and not attached):</span></a>
+<a class="sourceLine" id="cb21-20" data-line-number="20"><span class="co">#  [1] Rcpp_0.12.19       knitr_1.20         xml2_1.2.0        </span></a>
+<a class="sourceLine" id="cb21-21" data-line-number="21"><span class="co">#  [4] magrittr_1.5       roxygen2_6.1.0     MASS_7.3-51       </span></a>
+<a class="sourceLine" id="cb21-22" data-line-number="22"><span class="co">#  [7] lattice_0.20-35    R6_2.3.0           rlang_0.3.0.1     </span></a>
+<a class="sourceLine" id="cb21-23" data-line-number="23"><span class="co"># [10] highr_0.7          stringr_1.3.1      tools_3.5.1       </span></a>
+<a class="sourceLine" id="cb21-24" data-line-number="24"><span class="co"># [13] grid_3.5.1         matrixStats_0.54.0 htmltools_0.3.6   </span></a>
+<a class="sourceLine" id="cb21-25" data-line-number="25"><span class="co"># [16] commonmark_1.6     yaml_2.2.0         rprojroot_1.3-2   </span></a>
+<a class="sourceLine" id="cb21-26" data-line-number="26"><span class="co"># [19] digest_0.6.18      assertthat_0.2.0   pkgdown_1.1.0     </span></a>
+<a class="sourceLine" id="cb21-27" data-line-number="27"><span class="co"># [22] crayon_1.3.4       Matrix_1.2-14      fs_1.2.6          </span></a>
+<a class="sourceLine" id="cb21-28" data-line-number="28"><span class="co"># [25] memoise_1.1.0      evaluate_0.12      rmarkdown_1.10    </span></a>
+<a class="sourceLine" id="cb21-29" data-line-number="29"><span class="co"># [28] stringi_1.2.4      compiler_3.5.1     desc_1.2.0        </span></a>
+<a class="sourceLine" id="cb21-30" data-line-number="30"><span class="co"># [31] backports_1.1.2    expm_0.999-3</span></a></code></pre></div>
 </div>
   </div>
 

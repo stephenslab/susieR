@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Extract credible sets from SuSiE model — susie_get_CS • susieR</title>
+<title>Extract credible sets from SuSiE fit — susie_get_CS • susieR</title>
 
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
@@ -30,9 +30,9 @@
 
 
 
-<meta property="og:title" content="Extract credible sets from SuSiE model — susie_get_CS" />
+<meta property="og:title" content="Extract credible sets from SuSiE fit — susie_get_CS" />
 
-<meta property="og:description" content="Extract credible sets from SuSiE model" />
+<meta property="og:description" content="Extract credible sets from SuSiE fit" />
 <meta name="twitter:card" content="summary" />
 
 
@@ -61,7 +61,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.5.0</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.6.1.382</span>
       </span>
     </div>
 
@@ -94,14 +94,14 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Extract credible sets from SuSiE model</h1>
+    <h1>Extract credible sets from SuSiE fit</h1>
     <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/susie_utils.R'><code>R/susie_utils.R</code></a></small>
     <div class="hidden name"><code>susie_get_CS.Rd</code></div>
     </div>
 
     <div class="ref-description">
     
-    <p>Extract credible sets from SuSiE model</p>
+    <p>Extract credible sets from SuSiE fit</p>
     
     </div>
 
@@ -118,40 +118,46 @@ inclusion probability matrix alpha.</p></td>
     </tr>
     <tr>
       <th>X</th>
-      <td><p>N by P matrix of variables.
+      <td><p>N by P matrix of values of the P variables (covariates) in N samples.
 When provided, correlation between variables will be computed and used to remove
-credible sets whose minimum correlation between variables is smaller than `min_abs_corr` (see below).</p></td>
+CSs whose minimum correlation among variables is smaller than `min_abs_corr` (see below).</p></td>
     </tr>
     <tr>
       <th>Xcorr</th>
-      <td><p>P by P matrix of correlations between variables.
-when provided, it will be used to remove credible sets
-whose minimum correlation between variables is smaller than `min_abs_corr` (see below).</p></td>
+      <td><p>P by P matrix of correlations between variables (covariates).
+When provided, it will be used to remove CSs
+whose minimum correlation among variables is smaller than `min_abs_corr` (see below).</p></td>
     </tr>
     <tr>
       <th>coverage</th>
-      <td><p>coverage of confident sets. Default to 0.95 for 95% credible interval.</p></td>
+      <td><p>a number (in [0,1]) specifying desired coverage of each CS</p></td>
     </tr>
     <tr>
       <th>min_abs_corr</th>
-      <td><p>minimum of absolute value of correlation allowed in a credible set.
-Default set to 0.5 to correspond to squared correlation of 0.25,
-a commonly used threshold for genotype data in genetics studies.</p></td>
+      <td><p>a "purity" threshold for the CS. Any CS that contains
+a pair of variables with correlation less than this threshold will be filtered out and not reported.</p></td>
     </tr>
     <tr>
       <th>dedup</th>
-      <td><p>Remove duplicated CS, default to TRUE</p></td>
+      <td><p>If TRUE, "deduplicate" - that is remove duplicated CSs.</p></td>
     </tr>
     </table>
     
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>a list of `cs`, and additionally `purity` and selected `cs_index` if `X` or `Xcorr` was provided.</p>
+    <p>a list with elements:</p>
+<dt>cs</dt><dd><p>a list, each element corresponds to a CS, and is a vector containing the indices of the variables in the CS.</p></dd>
+<dt>coverage</dt><dd><p>the nominal coverage specified for each CS.</p></dd>
+<dt>purity</dt><dd><p>(If `X` or `Xcorr` are provided), the purity of each CS.</p></dd>
+<dt>cs_index</dt><dd><p>(If `X` or `Xcorr` are provided) the index (in 1,...,L) of each reported CS in the supplied susie fit.</p></dd>
+
     
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p>It reports indices of variables in each credible set identified,
-as well as summaries of correlation between variables within each set.</p>
+    <p>Reports indices of variables in each credible set (CS) identified,
+as well as summaries of correlation among the variables included in each CS.
+If desired, one can filter out CSs that do not meet a specified purity threshold (min_abs_corr);
+to do this either `X` or `Xcorr` must be supplied.</p>
     
 
   </div>

@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix — susie_z • susieR</title>
+<title>Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix. — susie_z • susieR</title>
 
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
@@ -30,9 +30,9 @@
 
 
 
-<meta property="og:title" content="Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix — susie_z" />
+<meta property="og:title" content="Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix. — susie_z" />
 
-<meta property="og:description" content="Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix" />
+<meta property="og:description" content="Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix." />
 <meta name="twitter:card" content="summary" />
 
 
@@ -61,7 +61,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.5.0</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.6.1.382</span>
       </span>
     </div>
 
@@ -94,20 +94,21 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix</h1>
+    <h1>Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix.</h1>
     <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/susie_ss.R'><code>R/susie_ss.R</code></a></small>
     <div class="hidden name"><code>susie_z.Rd</code></div>
     </div>
 
     <div class="ref-description">
     
-    <p>Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix</p>
+    <p>Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix.</p>
     
     </div>
 
-    <pre class="usage"><span class='fu'>susie_z</span>(<span class='no'>z</span>, <span class='no'>R</span>, <span class='kw'>L</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>prior_weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>null_weight</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>coverage</span> <span class='kw'>=</span> <span class='fl'>0.95</span>, <span class='kw'>min_abs_corr</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>track_fit</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='no'>...</span>)</pre>
+    <pre class="usage"><span class='fu'>susie_z</span>(<span class='no'>z</span>, <span class='no'>R</span>, <span class='no'>n</span>, <span class='kw'>r_tol</span> <span class='kw'>=</span> <span class='fl'>1e-08</span>, <span class='kw'>L</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>scaled_prior_variance</span> <span class='kw'>=</span> <span class='fl'>0.2</span>,
+  <span class='kw'>estimate_residual_variance</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>estimate_prior_variance</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>prior_weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>null_weight</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>coverage</span> <span class='kw'>=</span> <span class='fl'>0.95</span>,
+  <span class='kw'>min_abs_corr</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>track_fit</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='no'>...</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -121,16 +122,36 @@
       <td><p>a p by p symmetric and positive semidefinite matrix. It can be X'X, covariance matrix or correlation matrix.</p></td>
     </tr>
     <tr>
+      <th>n</th>
+      <td><p>sample size.</p></td>
+    </tr>
+    <tr>
+      <th>r_tol</th>
+      <td><p>tolerance level for eigen value check of positive semidefinite matrix of R.</p></td>
+    </tr>
+    <tr>
       <th>L</th>
       <td><p>maximum number of non-zero effects.</p></td>
     </tr>
     <tr>
+      <th>scaled_prior_variance</th>
+      <td><p>the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )</p></td>
+    </tr>
+    <tr>
+      <th>estimate_residual_variance</th>
+      <td><p>indicates whether to estimate residual variance</p></td>
+    </tr>
+    <tr>
+      <th>estimate_prior_variance</th>
+      <td><p>indicates whether to estimate prior (currently not recommended as not working as well)</p></td>
+    </tr>
+    <tr>
       <th>prior_weights</th>
-      <td><p>a p vector of prior probability that each element is non-zero</p></td>
+      <td><p>a p vector of prior probability that each element is non-zero.</p></td>
     </tr>
     <tr>
       <th>null_weight</th>
-      <td><p>probability of no effect, for each single effect model</p></td>
+      <td><p>probability of no effect, for each single effect model.</p></td>
     </tr>
     <tr>
       <th>coverage</th>
@@ -142,11 +163,11 @@
     </tr>
     <tr>
       <th>verbose</th>
-      <td><p>if TRUE outputs some progress messages</p></td>
+      <td><p>if TRUE outputs some progress messages.</p></td>
     </tr>
     <tr>
       <th>track_fit</th>
-      <td><p>add an attribute <code>trace</code> to output that saves current values of all iterations</p></td>
+      <td><p>add an attribute <code>trace</code> to output that saves current values of all iterations.</p></td>
     </tr>
     <tr>
       <th>...</th>

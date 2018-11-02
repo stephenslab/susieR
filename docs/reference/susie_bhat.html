@@ -61,7 +61,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.5.0</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.6.1.382</span>
       </span>
     </div>
 
@@ -105,11 +105,11 @@
     
     </div>
 
-    <pre class="usage"><span class='fu'>susie_bhat</span>(<span class='no'>bhat</span>, <span class='no'>shat</span>, <span class='no'>R</span>, <span class='no'>n</span>, <span class='kw'>var_y</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>L</span> <span class='kw'>=</span> <span class='fl'>10</span>,
-  <span class='kw'>scaled_prior_variance</span> <span class='kw'>=</span> <span class='fl'>0.2</span>, <span class='kw'>estimate_prior_variance</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>prior_weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>null_weight</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>standardize</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>coverage</span> <span class='kw'>=</span> <span class='fl'>0.95</span>, <span class='kw'>min_abs_corr</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>track_fit</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='no'>...</span>)</pre>
+    <pre class="usage"><span class='fu'>susie_bhat</span>(<span class='no'>bhat</span>, <span class='no'>shat</span>, <span class='no'>R</span>, <span class='no'>n</span>, <span class='kw'>var_y</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>r_tol</span> <span class='kw'>=</span> <span class='fl'>1e-08</span>, <span class='kw'>L</span> <span class='kw'>=</span> <span class='fl'>10</span>,
+  <span class='kw'>scaled_prior_variance</span> <span class='kw'>=</span> <span class='fl'>0.2</span>, <span class='kw'>estimate_residual_variance</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>estimate_prior_variance</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>prior_weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>null_weight</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>standardize</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>coverage</span> <span class='kw'>=</span> <span class='fl'>0.95</span>,
+  <span class='kw'>min_abs_corr</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>track_fit</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='no'>...</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -135,12 +135,20 @@
       <td><p>the (sample) variance of y. If it is unknown, the coefficients (returned from `coef`) are on the standardized X, y scale.</p></td>
     </tr>
     <tr>
+      <th>r_tol</th>
+      <td><p>tolerance level for eigen value check of positive semidefinite matrix of R.</p></td>
+    </tr>
+    <tr>
       <th>L</th>
       <td><p>maximum number of non-zero effects.</p></td>
     </tr>
     <tr>
       <th>scaled_prior_variance</th>
       <td><p>the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times)</p></td>
+    </tr>
+    <tr>
+      <th>estimate_residual_variance</th>
+      <td><p>indicates whether to estimate residual variance</p></td>
     </tr>
     <tr>
       <th>estimate_prior_variance</th>
