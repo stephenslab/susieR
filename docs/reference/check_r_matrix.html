@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Articles • susieR</title>
+<title>Check input covariance / correlation matrix — check_r_matrix • susieR</title>
 
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
@@ -30,7 +30,10 @@
 
 
 
-<meta property="og:title" content="Articles" />
+<meta property="og:title" content="Check input covariance / correlation matrix — check_r_matrix" />
+
+<meta property="og:description" content="Check input covariance / correlation matrix" />
+<meta name="twitter:card" content="summary" />
 
 
 
@@ -46,7 +49,7 @@
   </head>
 
   <body>
-    <div class="container template-article-index">
+    <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -58,7 +61,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.6.1.383</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.6.1.382</span>
       </span>
     </div>
 
@@ -91,23 +94,42 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-      <h1>Articles</h1>
+    <h1>Check input covariance / correlation matrix</h1>
+    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/susie_ss.R'><code>R/susie_ss.R</code></a></small>
+    <div class="hidden name"><code>check_r_matrix.Rd</code></div>
     </div>
 
-    <div class="section ">
-      <h3>Vignettes</h3>
-      <p class="section-desc"><p>The following vignettes provide detailed illustrations of the susieR package, as well as guidance on correct application of the statistical methods.</p></p>
-
-      <ul>
-        <li><a href="mwe.html">A minimal example</a></li>
-        <li><a href="finemapping.html">Fine-mapping examples</a></li>
-        <li><a href="finemapping_summary_statistics.html">Fine-mapping with summary statistics</a></li>
-        <li><a href="l0_initialization.html">SuSiE with L0Learn initialization example</a></li>
-        <li><a href="trend_filtering.html">Trend filtering</a></li>
-        <li><a href="sparse_matrix_strategy.html">Sparse matrix multiplication strategy</a></li>
-        <li><a href="sparse_susie_eval.html">Evaluation of sparse version of SuSiE</a></li>
-      </ul>
+    <div class="ref-description">
+    
+    <p>Check input covariance / correlation matrix</p>
+    
     </div>
+
+    <pre class="usage"><span class='fu'>check_r_matrix</span>(<span class='no'>R</span>, <span class='no'>expected_dim</span>, <span class='no'>r_tol</span>)</pre>
+    
+    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
+    <table class="ref-arguments">
+    <colgroup><col class="name" /><col class="desc" /></colgroup>
+    <tr>
+      <th>R</th>
+      <td><p>a p by p matrix of X'X, covariance matrix or correlation matrix</p></td>
+    </tr>
+    </table>
+    
+    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
+
+    <p>a verified matrix</p>
+    
+
+  </div>
+  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
+    <h2>Contents</h2>
+    <ul class="nav nav-pills nav-stacked">
+      <li><a href="#arguments">Arguments</a></li>
+      
+      <li><a href="#value">Value</a></li>
+          </ul>
+
   </div>
 </div>
 

@@ -7,7 +7,7 @@ Description: Fits a sparse regression model with up to L effects,
     computationally efficient variational Bayes approach (unpublished
     data).
 Date: 2018-11-02
-Version: 0.6.1.0383
+Version: 0.6.1.0384
 Authors@R: c(person("Matthew","Stephens",role=c("aut","cre"),
                     email="mstephens@uchicago.edu"),
              person("Yuxin","Zou",role="aut"),

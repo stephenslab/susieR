@@ -165,11 +165,10 @@ and the PIP plot
 susie_plot(fitted_z_n, y="PIP", b=b)
 ```
 
-## Fine-mapping with `susieR` without the knowledge of sample size
+## Impact of sample size specification
 
-If the sample size is not available, the user should guess the sample size. If you want conservative inference on effects, use a small sample size; if you want aggressive result, use a large sample size is large.
+We require sample size input for summary statistics applications. Mis-specification of sample size will have an impact on the result. For example here we use a small sample size $N=50$,
 
-Here we use sample size 50 as an example
 ```{r}
 fitted_z <- susie_z(z = z_scores,R = R, n = 50, L=1, 
                     scaled_prior_variance = 0.1, 
@@ -180,7 +179,7 @@ fitted_z <- susie_z(z = z_scores,R = R, n = 50, L=1,
 summary(fitted_z)$cs
 ```
 
-There is one confidence set that captures the true effect 773. We can check the PIP
+There is one credible set that captures the true effect 773.
 
 ```{r}
 susie_plot(fitted_z, y="PIP", b=b)
