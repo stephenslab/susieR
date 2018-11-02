@@ -81,8 +81,8 @@ susie_plot(z_scores, y = "z", b=b)
 
 ## Fine-mapping with `susieR`
 
-For starters, we assume there are at most 5 causal variables, i.e.,
-set `L=5`, although SuSiE is robust to the choice of `L`.
+For starters, we assume there are at most 10 causal variables, i.e.,
+set `L = 10`, although SuSiE is robust to the choice of `L`.
 
 We set SuSiE prior variance to 0.1, and update residual variance in
 the variational algorithm that fits SuSiE model. The `susieR` function
@@ -90,7 +90,7 @@ call is:
 
 ```{r}
 fitted <- susie(data$X, data$Y[,1],
-                L=5,
+                L = 10,
                 estimate_residual_variance = TRUE, 
                 scaled_prior_variance = 0.1,
 				verbose = TRUE)
@@ -155,7 +155,7 @@ and compare with previous results:
 
 ```{r}
 fitted = susie(data$X, data$Y[,1],
-               L=5,
+               L = 10,
                estimate_residual_variance = TRUE, 
                scaled_prior_variance = 0.2)
 susie_plot(fitted, y='PIP', b=b)
