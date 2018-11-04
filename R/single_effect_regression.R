@@ -57,9 +57,9 @@ single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL
   post_var = (1/V + attr(X, "d")/residual_variance)^(-1) # posterior variance
   post_mean = (1/residual_variance) * post_var * Xty
   post_mean2 = post_var + post_mean^2 # second moment
-  loglik = maxlbf + log(weighted_sum_w) + sum(dnorm(Y,0,sqrt(residual_variance),log=TRUE))
   # BF for single effect model
-  lbf_model = maxlbf + weighted_sum_w
+  lbf_model = maxlbf + log(weighted_sum_w)
+  loglik = lbf_model + sum(dnorm(Y,0,sqrt(residual_variance),log=TRUE))
   return(list(alpha=alpha,mu=post_mean,mu2 = post_mean2,lbf=lbf,lbf_model=lbf_model,V=V,loglik=loglik))
 }
 

@@ -131,7 +131,7 @@ expect_equal_SER_ss = function(new.res, original.res){
   expect_equal(new.res$mu2, original.res$mu2)
   expect_equal(new.res$lbf, original.res$lbf)
   expect_equal(new.res$V, original.res$V)
-  expect_equal(new.res$logBF, original.res$logBF)
+  expect_equal(new.res$lbf_model, original.res$lbf_model)
 }
 
 expect_equal_susie = function(new.res, original.res){

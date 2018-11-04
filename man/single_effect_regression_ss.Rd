@@ -28,7 +28,7 @@ a list with elements: \cr
 \item{mu2}{vector of posterior second moments (conditional on inclusion)}
 \item{lbf}{vector of log Bayes factors for each variable}
 \item{V}{the prior variance (after optimization, if optimize_V is TRUE)}
-\item{logBF}{(scalar) the loglikelihood for the total model minus the log-likelihood for the null model}
+\item{lbf_model}{(scalar) the loglikelihood for the total model minus the log-likelihood for the null model}
 }
 \description{
 Bayesian single-effect linear regression of Y on X.

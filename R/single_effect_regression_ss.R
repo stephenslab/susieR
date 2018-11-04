@@ -18,7 +18,7 @@
 #' \item{mu2}{vector of posterior second moments (conditional on inclusion)}
 #' \item{lbf}{vector of log Bayes factors for each variable}
 #' \item{V}{the prior variance (after optimization, if optimize_V is TRUE)}
-#' \item{logBF}{(scalar) the loglikelihood for the total model minus the log-likelihood for the null model}
+#' \item{lbf_model}{(scalar) the loglikelihood for the total model minus the log-likelihood for the null model}
 #'
 #' @importFrom stats uniroot
 #'
@@ -56,9 +56,6 @@ single_effect_regression_ss = function(Xty,dXtX,V=1,residual_variance=1,prior_we
   post_var = (1/V + dXtX/residual_variance)^(-1) # posterior variance
   post_mean = (1/residual_variance) * post_var * Xty
   post_mean2 = post_var + post_mean^2 # second moment
-  logBF = maxlbf + log(weighted_sum_w) #analogue of loglik in the non-summary case
-
-  # BF for single effect model
-  lbf_model = maxlbf + weighted_sum_w
-  return(list(alpha=alpha,mu=post_mean,mu2 = post_mean2,lbf=lbf, V=V, logBF = logBF, lbf_model=lbf_model))
+  lbf_model = maxlbf + log(weighted_sum_w) #analogue of loglik in the non-summary case
+  return(list(alpha=alpha,mu=post_mean,mu2 = post_mean2,lbf=lbf, V=V, lbf_model=lbf_model))
 }
