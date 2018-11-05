@@ -9,7 +9,6 @@ get_objective = function(X, Y, s) {
 # @title expected loglikelihood for a susie fit
 Eloglik = function(X,Y,s){
   n = nrow(X)
-  p = ncol(X)
   result =  -(n/2) * log(2*pi* s$sigma2) - (1/(2*s$sigma2)) * get_ER2(X,Y,s)
   return(result)
 }

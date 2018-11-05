@@ -12,7 +12,6 @@ get_objective_ss = function(XtX, Xty, s, var_y, n) {
 
 # @title expected loglikelihood for a susie fit
 Eloglik_ss = function(XtX,Xty,s, var_y, n){
-  p = ncol(XtX)
   result =  -(n/2) * log(2*pi* s$sigma2) - (1/(2*s$sigma2)) * get_ER2_ss(XtX,Xty,s,var_y,n)
   return(result)
 }
