@@ -29,7 +29,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.6.1.384</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.6.2.389</span>
       </span>
     </div>
 
@@ -64,7 +64,7 @@
       <h1>Fine-mapping examples</h1>
                         <h4 class="author">Gao Wang</h4>
             
-            <h4 class="date">2018-11-02</h4>
+            <h4 class="date">2018-11-05</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/master/vignettes/finemapping.Rmd"><code>vignettes/finemapping.Rmd</code></a></small>
       <div class="hidden name"><code>finemapping.Rmd</code></div>
@@ -176,7 +176,7 @@
 <a class="sourceLine" id="cb9-24" data-line-number="24"><span class="co"># [1] 0.95</span></a></code></pre></div>
 <p>The 3 causal signals have been captured by the 3 CS reported here. The 3rd CS contains many variables, including the true causal variable <code>403</code>. The minimum absolute correlation is 0.86.</p>
 <p>If we use the default 90% coverage for credible sets, we still capture the 3 signals, but “purity” of the 3rd CS is now 0.91 and size of the CS is also a bit smaller.</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" data-line-number="1">sets &lt;-<span class="st"> </span><span class="kw"><a href="../reference/susie_get_CS.html">susie_get_CS</a></span>(fitted,</a>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" data-line-number="1">sets &lt;-<span class="st"> </span><span class="kw"><a href="../reference/susie_get_cs.html">susie_get_cs</a></span>(fitted,</a>
 <a class="sourceLine" id="cb10-2" data-line-number="2">                     <span class="dt">X =</span> data<span class="op">$</span>X,</a>
 <a class="sourceLine" id="cb10-3" data-line-number="3">             <span class="dt">coverage =</span> <span class="fl">0.9</span>,</a>
 <a class="sourceLine" id="cb10-4" data-line-number="4">                     <span class="dt">min_abs_corr =</span> <span class="fl">0.1</span>)</a></code></pre></div>
@@ -285,7 +285,7 @@
 <a class="sourceLine" id="cb15-14" data-line-number="14"><span class="co"># [1] stats     graphics  grDevices utils     datasets  methods   base     </span></a>
 <a class="sourceLine" id="cb15-15" data-line-number="15"><span class="co"># </span></a>
 <a class="sourceLine" id="cb15-16" data-line-number="16"><span class="co"># other attached packages:</span></a>
-<a class="sourceLine" id="cb15-17" data-line-number="17"><span class="co"># [1] susieR_0.6.1.0382</span></a>
+<a class="sourceLine" id="cb15-17" data-line-number="17"><span class="co"># [1] susieR_0.6.2.0389</span></a>
 <a class="sourceLine" id="cb15-18" data-line-number="18"><span class="co"># </span></a>
 <a class="sourceLine" id="cb15-19" data-line-number="19"><span class="co"># loaded via a namespace (and not attached):</span></a>
 <a class="sourceLine" id="cb15-20" data-line-number="20"><span class="co">#  [1] Rcpp_0.12.19       knitr_1.20         xml2_1.2.0        </span></a>

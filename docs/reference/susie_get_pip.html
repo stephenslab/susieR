@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Extract credible sets from SuSiE fit — susie_get_CS • susieR</title>
+<title>Compute posterior inclusion probability (PIP) for all variables — susie_get_pip • susieR</title>
 
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
@@ -30,9 +30,9 @@
 
 
 
-<meta property="og:title" content="Extract credible sets from SuSiE fit — susie_get_CS" />
+<meta property="og:title" content="Compute posterior inclusion probability (PIP) for all variables — susie_get_pip" />
 
-<meta property="og:description" content="Extract credible sets from SuSiE fit" />
+<meta property="og:description" content="Compute posterior inclusion probability (PIP) for all variables" />
 <meta name="twitter:card" content="summary" />
 
 
@@ -61,7 +61,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.6.1.382</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.6.2.389</span>
       </span>
     </div>
 
@@ -94,19 +94,18 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Extract credible sets from SuSiE fit</h1>
+    <h1>Compute posterior inclusion probability (PIP) for all variables</h1>
     <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/susie_utils.R'><code>R/susie_utils.R</code></a></small>
-    <div class="hidden name"><code>susie_get_CS.Rd</code></div>
+    <div class="hidden name"><code>susie_get_pip.Rd</code></div>
     </div>
 
     <div class="ref-description">
     
-    <p>Extract credible sets from SuSiE fit</p>
+    <p>Compute posterior inclusion probability (PIP) for all variables</p>
     
     </div>
 
-    <pre class="usage"><span class='fu'>susie_get_CS</span>(<span class='no'>res</span>, <span class='kw'>X</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>Xcorr</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>coverage</span> <span class='kw'>=</span> <span class='fl'>0.95</span>,
-  <span class='kw'>min_abs_corr</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>dedup</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)</pre>
+    <pre class="usage"><span class='fu'>susie_get_pip</span>(<span class='no'>res</span>, <span class='kw'>include_index</span> <span class='kw'>=</span> <span class='kw'>NULL</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -117,47 +116,14 @@
 inclusion probability matrix alpha.</p></td>
     </tr>
     <tr>
-      <th>X</th>
-      <td><p>N by P matrix of values of the P variables (covariates) in N samples.
-When provided, correlation between variables will be computed and used to remove
-CSs whose minimum correlation among variables is smaller than `min_abs_corr` (see below).</p></td>
-    </tr>
-    <tr>
-      <th>Xcorr</th>
-      <td><p>P by P matrix of correlations between variables (covariates).
-When provided, it will be used to remove CSs
-whose minimum correlation among variables is smaller than `min_abs_corr` (see below).</p></td>
-    </tr>
-    <tr>
-      <th>coverage</th>
-      <td><p>a number (in [0,1]) specifying desired coverage of each CS</p></td>
-    </tr>
-    <tr>
-      <th>min_abs_corr</th>
-      <td><p>a "purity" threshold for the CS. Any CS that contains
-a pair of variables with correlation less than this threshold will be filtered out and not reported.</p></td>
-    </tr>
-    <tr>
-      <th>dedup</th>
-      <td><p>If TRUE, "deduplicate" - that is remove duplicated CSs.</p></td>
+      <th>include_index</th>
+      <td><p>index of single effect models to consider when calculating PIP. Default to NULL.</p></td>
     </tr>
     </table>
     
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>a list with elements:</p>
-<dt>cs</dt><dd><p>a list, each element corresponds to a CS, and is a vector containing the indices of the variables in the CS.</p></dd>
-<dt>coverage</dt><dd><p>the nominal coverage specified for each CS.</p></dd>
-<dt>purity</dt><dd><p>(If `X` or `Xcorr` are provided), the purity of each CS.</p></dd>
-<dt>cs_index</dt><dd><p>(If `X` or `Xcorr` are provided) the index (in 1,...,L) of each reported CS in the supplied susie fit.</p></dd>
-
-    
-    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
-
-    <p>Reports indices of variables in each credible set (CS) identified,
-as well as summaries of correlation among the variables included in each CS.
-If desired, one can filter out CSs that do not meet a specified purity threshold (min_abs_corr);
-to do this either `X` or `Xcorr` must be supplied.</p>
+    <p>a vector of posterior inclusion probability.</p>
     
 
   </div>
@@ -167,8 +133,6 @@ to do this either `X` or `Xcorr` must be supplied.</p>
       <li><a href="#arguments">Arguments</a></li>
       
       <li><a href="#value">Value</a></li>
-
-      <li><a href="#details">Details</a></li>
           </ul>
 
   </div>

@@ -29,7 +29,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.5.0</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.6.2.389</span>
       </span>
     </div>
 
@@ -64,7 +64,7 @@
       <h1>Sparse matrix multiplication strategy</h1>
                         <h4 class="author">Kaiqian Zhang</h4>
             
-            <h4 class="date">2018-10-16</h4>
+            <h4 class="date">2018-11-05</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/master/vignettes/sparse_matrix_strategy.Rmd"><code>vignettes/sparse_matrix_strategy.Rmd</code></a></small>
       <div class="hidden name"><code>sparse_matrix_strategy.Rmd</code></div>
@@ -76,12 +76,12 @@
 <div id="set-up-environment" class="section level2">
 <h2 class="hasAnchor">
 <a href="#set-up-environment" class="anchor"></a>Set up environment</h2>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(susieR)
-<span class="kw">library</span>(Matrix)
-<span class="kw">library</span>(microbenchmark)
-<span class="kw">library</span>(ggplot2)
-<span class="kw">library</span>(cowplot)
-<span class="kw">set.seed</span>(<span class="dv">1</span>)</code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">library</span>(susieR)</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">library</span>(Matrix)</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">library</span>(microbenchmark)</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">library</span>(ggplot2)</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">library</span>(cowplot)</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">set.seed</span>(<span class="dv">1</span>)</a></code></pre></div>
 </div>
 <div id="goal" class="section level2">
 <h2 class="hasAnchor">
@@ -115,7 +115,7 @@
 <a href="#computing-boldsymboltildexb" class="anchor"></a>Computing <span class="math inline">\(\boldsymbol{\tilde{X}b}\)</span>
 </h3>
 <p>Suppose we want to compute <span class="math inline">\(\tilde{X}b\)</span>, where <span class="math inline">\(\tilde{X}\)</span> is a scaled n by p matrix and <span class="math inline">\(b\)</span> is a p vector. Our goal is to express <span class="math inline">\(\tilde{X}b\)</span> into a term involving unscaled <span class="math inline">\(X\)</span> matrix multiplication to achieve sparse matrix operation.</p>
-\begin{equation}
+<p><span class="math display">\[\begin{equation}
 \begin{aligned}
 \tilde{X}b
 &amp;= \sum_{j=1}^{p} \tilde{X}_{\cdot j} b_j \\
@@ -124,7 +124,7 @@
    \sum_{j=1}^{p} \frac{\mu_j}{\sigma_j}b_j \\
 &amp;= X b / \sigma - \mu^Tb/\sigma,
 \end{aligned}
-\end{equation}
+\end{equation}\]</span></p>
 <p>where <span class="math inline">\(\mu\)</span> is a <em>p</em>-vector of column means, and <span class="math inline">\(\sigma\)</span> is a <em>p</em>-vector of column standard deviations.</p>
 </div>
 <div id="computing-boldsymboltildexty" class="section level3">
@@ -132,7 +132,7 @@
 <a href="#computing-boldsymboltildexty" class="anchor"></a>Computing <span class="math inline">\(\boldsymbol{\tilde{X}^Ty}\)</span>
 </h3>
 <p>Suppose we want to compute <span class="math inline">\(\tilde{X}^Ty\)</span>, where <span class="math inline">\(\tilde{X}\)</span> is a scaled n by p matrix and <span class="math inline">\(y\)</span> is an n vector. Similarly, we express <span class="math inline">\(\tilde{X}^Ty\)</span> using unscaled <span class="math inline">\(X\)</span> so that we can perform sparse matrix multiplication. We have the following:</p>
-\begin{equation}
+<p><span class="math display">\[\begin{equation}
 \begin{aligned}
 \tilde{X}^Ty &amp;= \sum_{i=1}^{n} \tilde{X}_{i.}y_i \\
 &amp;= \sum_{i=1}^{n} \frac{X_{i.} - \mu}{\sigma}y_i \\
@@ -140,7 +140,7 @@
    \frac{\mu}{\sigma}\sum_{i=1}^{n} y_i \\
 &amp;= \frac{1}{\sigma}(X^Ty) - \frac{\mu}{\sigma}y^T 1,
 \end{aligned}
-\end{equation}
+\end{equation}\]</span></p>
 <p>where <span class="math inline">\(\mu\)</span> is a <em>p</em>-vector of column means, and <span class="math inline">\(\sigma\)</span> is a <em>p</em>-vector of columnwise standard deviations.</p>
 </div>
 </div>
@@ -148,39 +148,39 @@
 <h2 class="hasAnchor">
 <a href="#simulations" class="anchor"></a>Simulations</h2>
 <p>We simulate an <code>n = 1000</code> by <code>p = 10000</code> matrix <code>X</code> at sparsity <span class="math inline">\(99\%\)</span>, i.e. <span class="math inline">\(99\%\)</span> entries are zeros. We compare results between normal matrix computation and our sparse strategy as well as comparing speed using microbenchmark.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">create_sparsity_mat &lt;-<span class="st"> </span>function(sparsity, n, p) {
-  nonzero          &lt;-<span class="st"> </span><span class="kw">round</span>(n*p*(<span class="dv">1</span>-sparsity))
-  nonzero.idx      &lt;-<span class="st"> </span><span class="kw">sample</span>(n*p, nonzero)
-  mat              &lt;-<span class="st"> </span><span class="kw">numeric</span>(n*p)
-  mat[nonzero.idx] &lt;-<span class="st"> </span><span class="dv">1</span>
-  mat              &lt;-<span class="st"> </span><span class="kw">matrix</span>(mat, <span class="dt">nrow=</span>n,<span class="dt">ncol=</span>p)
-  <span class="kw">return</span>(mat)
-}
-n &lt;-<span class="st"> </span><span class="dv">1000</span>
-p &lt;-<span class="st"> </span><span class="dv">10000</span></code></pre></div>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">X.dense  &lt;-<span class="st"> </span><span class="kw">create_sparsity_mat</span>(<span class="fl">0.99</span>,n,p)
-X.sparse &lt;-<span class="st"> </span><span class="kw">as</span>(X.dense,<span class="st">"dgCMatrix"</span>)
-X.tilde  &lt;-<span class="st"> </span>susieR:::<span class="kw">safe_colScale</span>(X.dense) <span class="co">#returns a scaled X if input is a dense matrix</span>
-X &lt;-<span class="st"> </span>susieR:::<span class="kw">safe_colScale</span>(X.sparse) <span class="co">#return an unsacled sparse X if input is a sparse matrix </span>
-                                     <span class="co">#but computes column means and standard deviations</span></code></pre></div>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">b &lt;-<span class="st"> </span><span class="kw">rnorm</span>(p)
-y &lt;-<span class="st"> </span><span class="kw">rnorm</span>(n)</code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" data-line-number="1">create_sparsity_mat &lt;-<span class="st"> </span><span class="cf">function</span>(sparsity, n, p) {</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">  nonzero          &lt;-<span class="st"> </span><span class="kw">round</span>(n<span class="op">*</span>p<span class="op">*</span>(<span class="dv">1</span><span class="op">-</span>sparsity))</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">  nonzero.idx      &lt;-<span class="st"> </span><span class="kw">sample</span>(n<span class="op">*</span>p, nonzero)</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">  mat              &lt;-<span class="st"> </span><span class="kw">numeric</span>(n<span class="op">*</span>p)</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">  mat[nonzero.idx] &lt;-<span class="st"> </span><span class="dv">1</span></a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">  mat              &lt;-<span class="st"> </span><span class="kw">matrix</span>(mat, <span class="dt">nrow=</span>n,<span class="dt">ncol=</span>p)</a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">  <span class="kw">return</span>(mat)</a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">}</a>
+<a class="sourceLine" id="cb2-9" data-line-number="9">n &lt;-<span class="st"> </span><span class="dv">1000</span></a>
+<a class="sourceLine" id="cb2-10" data-line-number="10">p &lt;-<span class="st"> </span><span class="dv">10000</span></a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1">X.dense  &lt;-<span class="st"> </span><span class="kw">create_sparsity_mat</span>(<span class="fl">0.99</span>,n,p)</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">X.sparse &lt;-<span class="st"> </span><span class="kw">as</span>(X.dense,<span class="st">"dgCMatrix"</span>)</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">X.tilde  &lt;-<span class="st"> </span>susieR<span class="op">:::</span><span class="kw">safe_colScale</span>(X.dense) <span class="co">#returns a scaled X if input is a dense matrix</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">X &lt;-<span class="st"> </span>susieR<span class="op">:::</span><span class="kw">safe_colScale</span>(X.sparse) <span class="co">#return an unsacled sparse X if input is a sparse matrix </span></a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">                                     <span class="co">#but computes column means and standard deviations</span></a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" data-line-number="1">b &lt;-<span class="st"> </span><span class="kw">rnorm</span>(p)</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">y &lt;-<span class="st"> </span><span class="kw">rnorm</span>(n)</a></code></pre></div>
 <div id="benchmark-for-computing-boldsymboltildexb" class="section level3">
 <h3 class="hasAnchor">
 <a href="#benchmark-for-computing-boldsymboltildexb" class="anchor"></a>Benchmark for computing <span class="math inline">\(\boldsymbol{\tilde{X}b}\)</span>
 </h3>
 <p>The final results of two methods when computing <span class="math inline">\(\tilde{X}b\)</span> are very close.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">res1 &lt;-<span class="st"> </span>X.tilde %*%<span class="st"> </span>b
-res2 &lt;-<span class="st"> </span>susieR:::<span class="kw"><a href="../reference/compute_Xb.html">compute_Xb</a></span>(X,b)
-<span class="kw">max</span>(<span class="kw">abs</span>(res1 -<span class="st"> </span>res2))
-<span class="co"># [1] 1.875833e-12</span></code></pre></div>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">compute_Xb_benchmark &lt;-<span class="st"> </span><span class="kw"><a href="http://www.rdocumentation.org/packages/microbenchmark/topics/microbenchmark">microbenchmark</a></span>(
-  <span class="dt">dense  =</span> (use.normal.Xb &lt;-<span class="st"> </span>X.tilde%*%b),
-  <span class="dt">sparse =</span> (use.sparse.Xb &lt;-<span class="st"> </span>susieR:::<span class="kw"><a href="../reference/compute_Xb.html">compute_Xb</a></span>(X,b)),
-  <span class="dt">times =</span> <span class="dv">20</span>,<span class="dt">unit =</span> <span class="st">"s"</span>)</code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" data-line-number="1">res1 &lt;-<span class="st"> </span>X.tilde <span class="op">%*%</span><span class="st"> </span>b</a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">res2 &lt;-<span class="st"> </span>susieR<span class="op">:::</span><span class="kw"><a href="../reference/compute_Xb.html">compute_Xb</a></span>(X,b)</a>
+<a class="sourceLine" id="cb5-3" data-line-number="3"><span class="kw">max</span>(<span class="kw">abs</span>(res1 <span class="op">-</span><span class="st"> </span>res2))</a>
+<a class="sourceLine" id="cb5-4" data-line-number="4"><span class="co"># [1] 1.875833e-12</span></a></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" data-line-number="1">compute_Xb_benchmark &lt;-<span class="st"> </span><span class="kw"><a href="http://www.rdocumentation.org/packages/microbenchmark/topics/microbenchmark">microbenchmark</a></span>(</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="dt">dense  =</span> (use.normal.Xb &lt;-<span class="st"> </span>X.tilde<span class="op">%*%</span>b),</a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">  <span class="dt">sparse =</span> (use.sparse.Xb &lt;-<span class="st"> </span>susieR<span class="op">:::</span><span class="kw"><a href="../reference/compute_Xb.html">compute_Xb</a></span>(X,b)),</a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">  <span class="dt">times =</span> <span class="dv">20</span>,<span class="dt">unit =</span> <span class="st">"s"</span>)</a></code></pre></div>
 <p>Our sparse strategy demonstrates an obvious advantage over the normal matrix multiplication in computing <span class="math inline">\(\tilde{X}b\)</span>.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/autoplot">autoplot</a></span>(compute_Xb_benchmark)
-<span class="co"># Coordinate system already present. Adding new coordinate system, which will replace the existing one.</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="kw"><a href="ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span>(compute_Xb_benchmark)</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2"><span class="co"># Coordinate system already present. Adding new coordinate system, which will replace the existing one.</span></a></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="sparse_matrix_strategy_files/figure-html/unnamed-chunk-7-1.png" alt="&amp;nbsp;" width="540"><p class="caption">
  
@@ -192,17 +192,17 @@ res2 &lt;-<span class="st"> </span>susieR:::<span class="kw"><a href="../referen
 <a href="#benchmark-for-computing-boldsymboltildexty" class="anchor"></a>Benchmark for computing <span class="math inline">\(\boldsymbol{\tilde{X}^Ty}\)</span>
 </h3>
 <p>The final results of two methods when computing <span class="math inline">\(\tilde{X}^Ty\)</span> are almost the same.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">res3 &lt;-<span class="st"> </span><span class="kw">t</span>(X.tilde) %*%<span class="st"> </span>y
-res4 &lt;-<span class="st"> </span>susieR:::<span class="kw"><a href="../reference/compute_Xty.html">compute_Xty</a></span>(X,y)
-<span class="kw">max</span>(<span class="kw">abs</span>(res3 -<span class="st"> </span>res4))
-<span class="co"># [1] 2.273737e-13</span></code></pre></div>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">compute_Xty_benchmark =<span class="st"> </span><span class="kw"><a href="http://www.rdocumentation.org/packages/microbenchmark/topics/microbenchmark">microbenchmark</a></span>(
-  <span class="dt">dense  =</span> (use.normal.Xty &lt;-<span class="st"> </span><span class="kw">t</span>(X.tilde)%*%y),
-  <span class="dt">sparse =</span> (use.sparse.Xty &lt;-<span class="st"> </span>susieR:::<span class="kw"><a href="../reference/compute_Xty.html">compute_Xty</a></span>(X, y)),
-  <span class="dt">times =</span> <span class="dv">20</span>,<span class="dt">unit =</span> <span class="st">"s"</span>)</code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" data-line-number="1">res3 &lt;-<span class="st"> </span><span class="kw">t</span>(X.tilde) <span class="op">%*%</span><span class="st"> </span>y</a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">res4 &lt;-<span class="st"> </span>susieR<span class="op">:::</span><span class="kw"><a href="../reference/compute_Xty.html">compute_Xty</a></span>(X,y)</a>
+<a class="sourceLine" id="cb8-3" data-line-number="3"><span class="kw">max</span>(<span class="kw">abs</span>(res3 <span class="op">-</span><span class="st"> </span>res4))</a>
+<a class="sourceLine" id="cb8-4" data-line-number="4"><span class="co"># [1] 2.273737e-13</span></a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" data-line-number="1">compute_Xty_benchmark =<span class="st"> </span><span class="kw"><a href="http://www.rdocumentation.org/packages/microbenchmark/topics/microbenchmark">microbenchmark</a></span>(</a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">  <span class="dt">dense  =</span> (use.normal.Xty &lt;-<span class="st"> </span><span class="kw">t</span>(X.tilde)<span class="op">%*%</span>y),</a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">  <span class="dt">sparse =</span> (use.sparse.Xty &lt;-<span class="st"> </span>susieR<span class="op">:::</span><span class="kw"><a href="../reference/compute_Xty.html">compute_Xty</a></span>(X, y)),</a>
+<a class="sourceLine" id="cb9-4" data-line-number="4">  <span class="dt">times =</span> <span class="dv">20</span>,<span class="dt">unit =</span> <span class="st">"s"</span>)</a></code></pre></div>
 <p>Our sparse strategy evidently has a better performance than the normal method in computing <span class="math inline">\(\tilde{X}^Ty\)</span>.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/autoplot">autoplot</a></span>(compute_Xty_benchmark)
-<span class="co"># Coordinate system already present. Adding new coordinate system, which will replace the existing one.</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="kw"><a href="ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span>(compute_Xty_benchmark)</a>
+<a class="sourceLine" id="cb10-2" data-line-number="2"><span class="co"># Coordinate system already present. Adding new coordinate system, which will replace the existing one.</span></a></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="sparse_matrix_strategy_files/figure-html/unnamed-chunk-10-1.png" alt="&amp;nbsp;" width="540"><p class="caption">
  

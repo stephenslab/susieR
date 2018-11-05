@@ -29,7 +29,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.5.0</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.6.2.389</span>
       </span>
     </div>
 
@@ -64,7 +64,7 @@
       <h1>Evaluation of sparse version of SuSiE</h1>
                         <h4 class="author">Kaiqian Zhang</h4>
             
-            <h4 class="date">2018-10-16</h4>
+            <h4 class="date">2018-11-05</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/master/vignettes/sparse_susie_eval.Rmd"><code>vignettes/sparse_susie_eval.Rmd</code></a></small>
       <div class="hidden name"><code>sparse_susie_eval.Rmd</code></div>
@@ -76,9 +76,9 @@
 <div id="set-up-environment" class="section level2">
 <h2 class="hasAnchor">
 <a href="#set-up-environment" class="anchor"></a>Set up environment</h2>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(Matrix)
-<span class="kw">library</span>(susieR)
-<span class="kw">set.seed</span>(<span class="dv">1</span>)</code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">library</span>(Matrix)</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">library</span>(susieR)</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">set.seed</span>(<span class="dv">1</span>)</a></code></pre></div>
 </div>
 <div id="overview" class="section level2">
 <h2 class="hasAnchor">
@@ -90,31 +90,31 @@
 <h2 class="hasAnchor">
 <a href="#simulate-data" class="anchor"></a>Simulate data</h2>
 <p>We randomly simulate a <code>n=1000</code> by <code>p=1000</code> dense matrix and a sparse matrix at sparsity <span class="math inline">\(99\%\)</span>, i.e. <span class="math inline">\(99\%\)</span> entries are zeros.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">create_sparsity_mat =<span class="st"> </span>function(sparsity, n, p) {
-  nonzero          &lt;-<span class="st"> </span><span class="kw">round</span>(n*p*(<span class="dv">1</span>-sparsity))
-  nonzero.idx      &lt;-<span class="st"> </span><span class="kw">sample</span>(n*p, nonzero)
-  mat              &lt;-<span class="st"> </span><span class="kw">numeric</span>(n*p)
-  mat[nonzero.idx] &lt;-<span class="st"> </span><span class="dv">1</span>
-  mat              &lt;-<span class="st"> </span><span class="kw">matrix</span>(mat, <span class="dt">nrow=</span>n, <span class="dt">ncol=</span>p)
-  <span class="kw">return</span>(mat)
-}</code></pre></div>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">n &lt;-<span class="st"> </span><span class="dv">1000</span>
-p &lt;-<span class="st"> </span><span class="dv">1000</span>
-beta &lt;-<span class="st"> </span><span class="kw">rep</span>(<span class="dv">0</span>,p)
-beta[<span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">300</span>,<span class="dv">400</span>,<span class="dv">1000</span>)] &lt;-<span class="st"> </span><span class="dv">10</span> 
-X.dense  &lt;-<span class="st"> </span><span class="kw">create_sparsity_mat</span>(<span class="fl">0.99</span>,n,p)
-X.sparse &lt;-<span class="st"> </span><span class="kw">as</span>(X.dense,<span class="st">"dgCMatrix"</span>)
-y &lt;-<span class="st"> </span><span class="kw">c</span>(X.dense %*%<span class="st"> </span>beta +<span class="st"> </span><span class="kw">rnorm</span>(n))</code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" data-line-number="1">create_sparsity_mat =<span class="st"> </span><span class="cf">function</span>(sparsity, n, p) {</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">  nonzero          &lt;-<span class="st"> </span><span class="kw">round</span>(n<span class="op">*</span>p<span class="op">*</span>(<span class="dv">1</span><span class="op">-</span>sparsity))</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">  nonzero.idx      &lt;-<span class="st"> </span><span class="kw">sample</span>(n<span class="op">*</span>p, nonzero)</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">  mat              &lt;-<span class="st"> </span><span class="kw">numeric</span>(n<span class="op">*</span>p)</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">  mat[nonzero.idx] &lt;-<span class="st"> </span><span class="dv">1</span></a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">  mat              &lt;-<span class="st"> </span><span class="kw">matrix</span>(mat, <span class="dt">nrow=</span>n, <span class="dt">ncol=</span>p)</a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">  <span class="kw">return</span>(mat)</a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">}</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1">n &lt;-<span class="st"> </span><span class="dv">1000</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">p &lt;-<span class="st"> </span><span class="dv">1000</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">beta &lt;-<span class="st"> </span><span class="kw">rep</span>(<span class="dv">0</span>,p)</a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">beta[<span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">300</span>,<span class="dv">400</span>,<span class="dv">1000</span>)] &lt;-<span class="st"> </span><span class="dv">10</span> </a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">X.dense  &lt;-<span class="st"> </span><span class="kw">create_sparsity_mat</span>(<span class="fl">0.99</span>,n,p)</a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">X.sparse &lt;-<span class="st"> </span><span class="kw">as</span>(X.dense,<span class="st">"dgCMatrix"</span>)</a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">y &lt;-<span class="st"> </span><span class="kw">c</span>(X.dense <span class="op">%*%</span><span class="st"> </span>beta <span class="op">+</span><span class="st"> </span><span class="kw">rnorm</span>(n))</a></code></pre></div>
 </div>
 <div id="x-in-a-dense-form" class="section level2">
 <h2 class="hasAnchor">
 <a href="#x-in-a-dense-form" class="anchor"></a><code>X</code> in a dense form</h2>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">susie.dense &lt;-<span class="st"> </span><span class="kw"><a href="../reference/susie.html">susie</a></span>(X.dense,y)</code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" data-line-number="1">susie.dense &lt;-<span class="st"> </span><span class="kw"><a href="../reference/susie.html">susie</a></span>(X.dense,y)</a></code></pre></div>
 </div>
 <div id="x-in-a-sparse-form" class="section level2">
 <h2 class="hasAnchor">
 <a href="#x-in-a-sparse-form" class="anchor"></a><code>X</code> in a sparse form</h2>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">susie.sparse &lt;-<span class="st"> </span><span class="kw"><a href="../reference/susie.html">susie</a></span>(X.sparse,y)</code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" data-line-number="1">susie.sparse &lt;-<span class="st"> </span><span class="kw"><a href="../reference/susie.html">susie</a></span>(X.sparse,y)</a></code></pre></div>
 </div>
 <div id="further-step" class="section level2">
 <h2 class="hasAnchor">
