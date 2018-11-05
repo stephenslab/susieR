@@ -113,7 +113,7 @@ capture the 3 signals, but "purity" of the 3rd CS is now 0.91 and size
 of the CS is also a bit smaller.
 
 ```{r}
-sets <- susie_get_CS(fitted,
+sets <- susie_get_cs(fitted,
                      X = data$X,
 	  	     coverage = 0.9,
                      min_abs_corr = 0.1)

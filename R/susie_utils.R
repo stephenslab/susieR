@@ -120,7 +120,7 @@ is_symmetric_matrix = function(x) {
 #' \item{cs_index}{(If `X` or `Xcorr` are provided) the index (in 1,...,L) of each reported CS in the supplied susie fit.}
 #'
 #' @export
-susie_get_CS = function(res,
+susie_get_cs = function(res,
                         X = NULL, Xcorr = NULL,
                         coverage = 0.95,
                         min_abs_corr = 0.5,
@@ -177,7 +177,7 @@ susie_get_CS = function(res,
 #' @param include_index index of single effect models to consider when calculating PIP. Default to NULL.
 #' @return a vector of posterior inclusion probability.
 #' @export
-susie_get_PIP = function(res, include_index = NULL) {
+susie_get_pip = function(res, include_index = NULL) {
   if (class(res) == "susie")
     res = res$alpha
   if (!is.null(include_index)) {

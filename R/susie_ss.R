@@ -158,8 +158,8 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10,
   ## SuSiE CS and PIP
   if (!is.null(coverage) && !is.null(min_abs_corr)) {
     R = muffled_cov2cor(XtX)
-    s$sets = susie_get_CS(s, coverage=coverage, Xcorr=R, min_abs_corr=min_abs_corr)
-    s$pip = susie_get_PIP(s,s$sets$cs_index)
+    s$sets = susie_get_cs(s, coverage=coverage, Xcorr=R, min_abs_corr=min_abs_corr)
+    s$pip = susie_get_pip(s,s$sets$cs_index)
   }
 
   return(s)
