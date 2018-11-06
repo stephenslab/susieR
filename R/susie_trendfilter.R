@@ -17,7 +17,7 @@
 #' @export
 susie_trendfilter = function(y, order, standardize=TRUE,...){
   n = length(y)
-  X <- sparseMatrix(i=NULL,j=NULL,dims=c(n,n))
+  X <- Matrix::sparseMatrix(i=NULL,j=NULL,dims=c(n,n))
   attr(X, "matrix.type") = "tfmatrix"
   attr(X, "order") = order
   if (standardize) {

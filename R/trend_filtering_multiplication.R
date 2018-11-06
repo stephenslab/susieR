@@ -1,24 +1,5 @@
 #trend filtering multiplication helper functions
 
-#' @title Create a D-inverse matrix as input X
-#' @param order is the order of trend filtering
-#' @param n the length of y
-#' @return a D-inverse matrix
-#' @importFrom expm %^%
-#' @keywords internal
-create_tf_X = function(order, n){
-  #form a basis D
-  D = diag(-1, n)
-  for (i in 1:(n-1)){
-    D[i, i+1] = 1
-  }
-  #form D^(k+1)
-  # %^% uses the package 'expm'
-  D = D %^% (order+1)
-  #return inverse of D^(k+1)
-  return(solve(D))
-}
-
 #' @title Compute unscaled X \%*\% b using the special structure of trend filtering 
 #' @param order is the order of trend filtering
 #' @param b an n=p vector
