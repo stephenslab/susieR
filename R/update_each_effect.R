@@ -13,11 +13,13 @@ update_each_effect <- function (X, Y, s, estimate_prior_variance=FALSE) {
     for (l in 1:L){
       # remove lth effect from fitted values
       s$Xr = s$Xr - compute_Xb(X, (s$alpha[l,] * s$mu[l,]))
+      
       #compute residuals
       R = Y - s$Xr
 
       res <- single_effect_regression(R,X,s$V[l],s$sigma2,s$pi,
                                       estimate_prior_variance)
+      
 
       # Update the variational estimate of the posterior mean.
       s$mu[l,] <- res$mu
