@@ -15,22 +15,20 @@
 #' s0 = susie_trendfilter(y, 0, estimate_prior_variance = TRUE)
 #' s1 = susie_trendfilter(y, 1, L=20)
 #' @export
-susie_trendfilter = function(y, order, normalize=TRUE,...){
+susie_trendfilter = function(y, order, standardize=TRUE, intercept=TRUE, ...){
   n = length(y)
   X <- Matrix::sparseMatrix(i=NULL,j=NULL,dims=c(n,n))
   attr(X, "matrix.type") = "tfmatrix"
   attr(X, "order") = order
-  if (normalize) {
-    attr(X, "d") <- compute_tf_std_d(order, n)
-    attr(X, "scaled:center") <- compute_tf_cm(order, n)
-    attr(X, "scaled:scale") <- compute_tf_csd(order, n)
-    s = susie(X=X, Y=y, ...)
-  } else {
-    attr(X, "d") <- compute_tf_d(order, n)
+  attr(X, "scaled:center") <- compute_tf_cm(order, n)
+  attr(X, "scaled:scale") <- compute_tf_csd(order, n)
+  attr(X, "d") <- compute_tf_d(order, n, attr(X, "scaled:center"), attr(X, "scaled:scale"), standardize, intercept)
+  if (!intercept){
     attr(X, "scaled:center") <- rep(0,n)
-    attr(X, "scaled:scale") <- rep(1,n)
-    s = susie(X=X, Y=y, standardize=FALSE, intercept=FALSE,...)
   }
-  
+  if (!standardize){
+    attr(X, "scaled:scale") <- rep(1,n)
+  }
+  s = susie(X=X, Y=y, standardize=standardize, intercept=intercept,...)
   return(s)
 }

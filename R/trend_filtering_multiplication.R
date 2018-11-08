@@ -24,18 +24,31 @@ compute_tf_Xty = function(order,y){
   return(y)
 }
 
-#' @title Compute colSums(X * X), where X is an unstandardized trend filtering matrix
+#' @title Compute colSums(X * X) for X under four scenarios
 #' @param order is the order of trend filtering
 #' @param n the length of y
+#' @param cm column means of X
+#' @param csd column standard deviations of X
+#' @param intercept a boolean denotes whether mean centering X
+#' @param standardize a boolean denotes whether scaling X by standard deviation
 #' @return an n vector
 #' @keywords internal
-compute_tf_d = function(order, n){
+compute_tf_d = function(order, n, cm, csd, standardize=FALSE, intercept=FALSE){
   base = rep(-1, n)
-  if (order==0) return(cumsum(base^2))
-  for (i in 1:order){
-    base = cumsum(base)
+  if (order==0) d=cumsum(base^2)
+  else {
+    for (i in 1:order){
+      base = cumsum(base)
+    }
+    d=cumsum(base^2) 
   }
-  return(cumsum(base^2))
+  if(intercept){
+    d = d - 2*compute_tf_Xty(order, rep(1,n))*cm + n*cm^2
+  }
+  if(standardize){
+    d = d/csd^2
+  }
+  return(d)
 }
 
 #' @title Compute column mean of the trend filtering matrix X
@@ -63,7 +76,7 @@ compute_tf_csd = function(order, n){
   return(csd)
 }
 
-#' @title Compute colSums(X * X), where X is a standardized trend filtering matrix
+#' @title A fast way to compute colSums(X * X), where X is a mean-centered and standardized trend filtering matrix
 #' @param order is the order of trend filtering
 #' @param n the length of y
 #' @return an n vector
