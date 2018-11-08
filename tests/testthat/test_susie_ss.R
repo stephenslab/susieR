@@ -1,7 +1,6 @@
 context("test_susie_ss.R")
 
-test_that("Results from summary stat vs original data",{
-  simulate(200,1000)
+test_that("Results from summary stat vs original data", with(simulate(200,1000), {
   ss = compute_ss(X, y, standardize = FALSE)
 
   res = susie(X, y, intercept = TRUE, standardize = TRUE, max_iter = 2,
@@ -23,10 +22,9 @@ test_that("Results from summary stat vs original data",{
   csd[csd==0] = 1
   X.cs = t( (t(X) - cm) / csd )
   expect_equal(crossprod(X.cs, res$fitted), res2$Xtfitted)
-})
+}))
 
-test_that("Results from summary stat vs original data: estimate residual variance",{
-  simulate(200,1000)
+test_that("Results from summary stat vs original data: estimate residual variance", with(simulate(200,1000), {
   ss = compute_ss(X, y, standardize = FALSE)
 
   res = susie(X, y, intercept = TRUE, standardize = TRUE, max_iter = 2,
@@ -49,4 +47,4 @@ test_that("Results from summary stat vs original data: estimate residual varianc
   csd[csd==0] = 1
   X.cs = t( (t(X) - cm) / csd )
   expect_equal(crossprod(X.cs, res$fitted), res2$Xtfitted)
-})
+}))

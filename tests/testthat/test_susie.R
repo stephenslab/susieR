@@ -1,11 +1,10 @@
 context("test_susie.R")
 
-test_that("susie agrees with version 0.3",{
+test_that("susie agrees with version 0.3", with(simulate(sparse=T), {
   original.res  = readRDS('susiefit_original_res.rds')
   original.res2 = readRDS('susiefit_original_res2.rds')
   original.res3 = readRDS('susiefit_original_res3.rds')
   original.res4 = readRDS('susiefit_original_res4.rds')
-  simulate(sparse=T)
   
   dense.res = susie(X, y, tol=1E-2)
   sparse.res = susie(X.sparse, y, tol=1E-2)
@@ -30,4 +29,4 @@ test_that("susie agrees with version 0.3",{
   expect_equal_susie(dense.res3, original.res3)
   expect_equal_susie(sparse.res4, original.res4)
   expect_equal_susie(dense.res4, original.res4)
-})
+}))

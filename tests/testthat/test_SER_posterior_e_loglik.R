@@ -1,8 +1,7 @@
 context("test_SER_posterior_e_loglik.R")
 
-test_that("SER_posterior_e_loglik agrees with version 0.3",{
+test_that("SER_posterior_e_loglik agrees with version 0.3", with(simulate(sparse=T), {
   original.res = readRDS('SER_original_res.rds')
-  simulate(sparse=T)
   Eb = rep(1, p)
   Eb2 = rep(1, p)
   s2 = s$sigma2
@@ -16,4 +15,4 @@ test_that("SER_posterior_e_loglik agrees with version 0.3",{
   expect_equal(dense.res, original.res)
   expect_equal(sparse.res, original.res)
  
-})
+}))

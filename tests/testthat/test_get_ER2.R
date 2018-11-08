@@ -1,8 +1,8 @@
 context("test_get_ER2.R")
 
-test_that("get_ER2 agrees with version 0.3",{
+test_that("get_ER2 agrees with version 0.3", with(simulate(sparse = TRUE), {
   original.res = readRDS('ER2_original_res.rds')
-  simulate(sparse = TRUE)
+  
   
   scaledX = safe_colScale(X)
   scaledX.sparse = safe_colScale(X.sparse)
@@ -12,4 +12,4 @@ test_that("get_ER2 agrees with version 0.3",{
   
   expect_equal(dense.res, original.res)
   expect_equal(sparse.res, original.res)
-})
+}))

@@ -1,8 +1,7 @@
 context("test_sparse_multiplication.R")
 
-test_that("sparse version sparse_multiplication",{
+test_that("sparse version sparse_multiplication", with(simulate(sparse = TRUE), {
   set.seed(1)
-  simulate(sparse = TRUE)
   L = 10
   M = matrix(rnorm(L*p), L, p)
   scaled.X = safe_colScale(X)
@@ -15,4 +14,4 @@ test_that("sparse version sparse_multiplication",{
                check.attributes =  FALSE,tol = 1e-12)
   expect_equal(compute_MXt(M, scaled.X), M%*%t(scaled.X),
                check.attributes = FALSE,tol = 1e-12)
-})
+}))

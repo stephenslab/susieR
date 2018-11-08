@@ -1,7 +1,6 @@
 context("test_intercept_standardize.R")
 
-test_that("scaling and intercept works as expected",{
-  simulate(200,1000)
+test_that("scaling and intercept works as expected", with(simulate(200,1000), {
   s1 = susie(X,y,intercept= TRUE, standardize=TRUE)
   s2 = susie(X,y,intercept = FALSE, standardize = FALSE)
   s3 = susie(X,y,intercept =TRUE, standardize = FALSE)
@@ -14,4 +13,4 @@ test_that("scaling and intercept works as expected",{
 
   expect_equal(s2$intercept, 0)
   expect_equal(s4$intercept, 0)
-})
+}))

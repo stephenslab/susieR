@@ -1,7 +1,7 @@
 context("test_compute_tf.R")
 
 expect_equal_compute_tf = function(order){
-  simulate_tf(order)
+  with(simulate_tf(order), {
   scaled_X = safe_colScale(X)
   set.seed(1)
   b = rnorm(length(y))
@@ -40,6 +40,7 @@ expect_equal_compute_tf = function(order){
   attr(M, "scaled:scale") <- rep(1,n)
   X2tEb2 = compute_tf_X2tEb2(M, Eb2=Eb2)
   expect_equal(X2tEb2, sum(t(X * X) * Eb2))
+  })
 }
 
 test_that("computation about trend filtering",{
