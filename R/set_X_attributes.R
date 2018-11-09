@@ -27,12 +27,7 @@ set_X_attributes = function(X,
       attr(X, "scaled:scale") <- rep(1, n)
     }
   } else { # for matrix X
-
-    if (!is.null(attr(X, 'scaled.X'))) {
-      X.dense = attr(X, 'scaled.X')
-    } else {
-      X.dense = as.matrix(X)
-    }
+    X.dense = as.matrix(X)
     ################
     # Get the column means
     ################
