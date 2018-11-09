@@ -91,9 +91,9 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
     Y = Y-mean_y
   }
 
-  if (is.null(attr(X,"matrix.type"))) X = safe_colScale(X,center=intercept, scale=standardize)
-  
-  
+  X = safe_colScale(X,center=intercept, scale=standardize)
+
+
   # initialize susie fit
   s = init_setup(n,p,L,scaled_prior_variance,residual_variance,prior_weights,null_weight,as.numeric(var(Y)))
   if (!missing(s_init)) {
@@ -102,7 +102,7 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
   } else {
     s = init_finalize(s)
   }
-  
+
 
   #initialize elbo to NA
   elbo = rep(NA,max_iter+1)
