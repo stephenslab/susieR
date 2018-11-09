@@ -3,6 +3,8 @@
 #' @title perform trend filtering using SuSiE
 #' @param y an n vector
 #' @param order a scalar for the order of trend filtering
+#' @param standardize boolean indicating whether to standardize
+#' @param ... other parameters to pass to susie call
 #' @return SuSiE fit for trend filtering
 #' @examples
 #' set.seed(1)
@@ -15,11 +17,11 @@
 #' s0 = susie_trendfilter(y, 0, estimate_prior_variance = TRUE)
 #' s1 = susie_trendfilter(y, 1, L=20)
 #' @export
-susie_trendfilter = function(y, order, standardize=TRUE, intercept=TRUE, ...){
+susie_trendfilter = function(y, order,standardize=TRUE,...){
   n = length(y)
   X <- Matrix::sparseMatrix(i=NULL,j=NULL,dims=c(n,n))
   attr(X, "matrix.type") = "tfmatrix"
   attr(X, "order") = order
-  s = susie(X=X, Y=y, standardize=standardize, intercept=intercept,...)
+  s = susie(X=X, Y=y, standardize=standardize, ...)
   return(s)
 }
