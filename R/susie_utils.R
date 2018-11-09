@@ -203,10 +203,10 @@ univariate_regression = function(X, y, Z=NULL, centered=FALSE,
                                  return_residuals=FALSE) {
   if (!centered) {
     y = y - mean(y)
-    X = safe_colScale(X, center=TRUE, scale = FALSE)
+    X = set_X_attributes(X, center=TRUE, scale = FALSE)
   }
   if (!is.null(Z)) {
-    if (!centered) Z = safe_colScale(Z, center=TRUE, scale=FALSE)
+    if (!centered) Z = set_X_attributes(Z, center=TRUE, scale=FALSE)
     y = .lm.fit(Z, y)$residuals
   }
   output = try(do.call(rbind,

@@ -1,9 +1,9 @@
-context("test_sparse_safe_colScale.R")
+context("test_sparse_set_X_attributes.R")
 
-test_that("sparse version safe_colScale", with(simulate(sparse=T), {
+test_that("sparse version set_X_attributes", with(simulate(sparse=T), {
   
-  dense.res = safe_colScale(X)
-  sparse.res = safe_colScale(X.sparse)
+  dense.res = set_X_attributes(X)
+  sparse.res = set_X_attributes(X.sparse)
   
   expect_equal(sparse.res, X.sparse, check.attributes=FALSE)
   expect_equal(attr(dense.res, 'scaled:center'), attr(sparse.res, 'scaled:center'))

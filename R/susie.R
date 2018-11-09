@@ -91,7 +91,7 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
     Y = Y-mean_y
   }
 
-  X = safe_colScale(X,center=intercept, scale=standardize)
+  X = set_X_attributes(X,center=intercept, scale=standardize)
 
 
   # initialize susie fit

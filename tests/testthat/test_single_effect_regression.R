@@ -4,8 +4,8 @@ test_that("single_effect_regression agrees with version 0.3", with(simulate(spar
   original.res = readRDS('singleReg_original_res.rds')
   V = 0.2
   
-  scaledX = safe_colScale(X)
-  scaledX.sparse = safe_colScale(X.sparse)
+  scaledX = set_X_attributes(X)
+  scaledX.sparse = set_X_attributes(X.sparse)
   
   dense.res = single_effect_regression(y,scaledX,V)
   sparse.res = single_effect_regression(y,scaledX.sparse,V)

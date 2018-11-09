@@ -2,7 +2,7 @@ context("test_compute_tf.R")
 
 expect_equal_compute_tf = function(order){
   with(simulate_tf(order), {
-  scaled_X = safe_colScale(X)
+  scaled_X = set_X_attributes(X)
   set.seed(1)
   b = rnorm(length(y))
   Xb = compute_tf_Xb(order, b=b) 

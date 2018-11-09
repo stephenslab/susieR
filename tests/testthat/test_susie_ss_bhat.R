@@ -17,7 +17,7 @@ test_that("Results from ss bhat interface vs original data: no standardize", wit
   expect_equal(fit$mu, orig$mu)
   expect_equal(fit$mu2, orig$mu2)
   expect_equal(fit$V, orig$V)
-  X.c = safe_colScale(X, center = TRUE, scale = FALSE)
+  X.c = set_X_attributes(X, center = TRUE, scale = FALSE)
   expect_equal(crossprod(X.c, orig$fitted), fit$Xtfitted)
 }))
 
@@ -25,8 +25,8 @@ test_that("Results from ss bhat interface vs original data: standardize", with(s
   ss = univariate_regression(X, y)
   R = cor(X)
 
-  X.s = safe_colScale(X, center = FALSE, scale = TRUE)
-  X.cs = safe_colScale(X, center = TRUE, scale = TRUE)
+  X.s = set_X_attributes(X, center = FALSE, scale = TRUE)
+  X.cs = set_X_attributes(X, center = TRUE, scale = TRUE)
   orig = susie(X.s, y, intercept = TRUE, standardize = TRUE, max_iter = 2,
                estimate_residual_variance=FALSE, estimate_prior_variance = FALSE)
 
@@ -46,8 +46,8 @@ test_that("Results from ss bhat interface: t statistics", with(simulate(200,1000
   ss = univariate_regression(X, y)
   R = cor(X)
 
-  X.s = safe_colScale(X, center = FALSE, scale = TRUE)
-  X.cs = safe_colScale(X, center = TRUE, scale = TRUE)
+  X.s = set_X_attributes(X, center = FALSE, scale = TRUE)
+  X.cs = set_X_attributes(X, center = TRUE, scale = TRUE)
 
   orig = susie(X.s, y/sd(y), intercept = TRUE, standardize = TRUE, max_iter = 2,
                estimate_residual_variance=FALSE, estimate_prior_variance = FALSE)
@@ -71,8 +71,8 @@ test_that("Results from ss z interface: z scores", with(simulate(200,1000), {
   z[t > 0] = -z[t>0]
   R = cor(X)
 
-  X.s = safe_colScale(X, center = FALSE, scale = TRUE)
-  X.cs = safe_colScale(X, center = TRUE, scale = TRUE)
+  X.s = set_X_attributes(X, center = FALSE, scale = TRUE)
+  X.cs = set_X_attributes(X, center = TRUE, scale = TRUE)
 
   orig = susie(X.s, y/sd(y), intercept = TRUE, standardize = TRUE, max_iter = 2,
                estimate_residual_variance=FALSE, estimate_prior_variance = FALSE)
