@@ -1,15 +1,15 @@
-#' @title sets the  attributes for the X matrix 
+#' @title sets the attributes for the X matrix 
 #' @param X an n by p data matrix that can be a dense, sparse, or trend filtering matrix
 #' @param center boolean indicating mean centering or not
 #' @param scale boolean indicating scaled by standard deviation or not
-#' @return X with several attributes e.g.
+#' @return X with three attributes e.g.
 #'         attr(X, 'scaled:center') is a p vector of column means of X
 #'         attr(X, 'scaled:scale') is a p vector of column standard deviations of X
 #'         attr(X, 'd') is a p vector of column sums of X^2
-#'         attr(X, 'X2t') is a p by n matrix: (X^2)^T
-#' if X is a trend filtering matrix, return the initial X with additional attributes: scaled:center, scaled:scale, and d
-#' if X is a dense matrix, return a scaled X 
-#' if X is a sparse matrix, return the initial X with additional attributes: scaled:center, scaled:scale, d, and X2t  
+#' if X is a trend filtering matrix, return the initial X with three attributes;
+#' if X is a dense matrix, return the scaled X with three attributes;
+#' if X is a sparse matrix, return the initial X with three attributes.
+
 set_X_attributes = function(X,
                          center = TRUE,
                          scale = TRUE) {
@@ -37,15 +37,12 @@ set_X_attributes = function(X,
   } else { 
     # if X is a dense or sparse matrix
     X.dense = as.matrix(X)
-    ################
-    # Get the column means
-    ################
+    # get column means
     cm = colMeans(X.dense, na.rm = TRUE)
-    ################
-    # Get the column sd
-    ################
+    # get column standard deviations
     if (scale) {
       csd = matrixStats::colSds(X.dense, center = cm)
+      # set sd = 1 when the column has variance 0
       csd[csd == 0] = 1
     } else {
       # just divide by 1 if not
@@ -56,13 +53,12 @@ set_X_attributes = function(X,
       cm = rep(0, length = length(cm))
     }
     X.dense = t((t(X.dense) - cm) / csd)
-    # if X is dense
     if (is.matrix(X)) {
+      # if X is dense, change X into centered and scaled version as required by inputs
       X = X.dense
     }
-    # if X is sparse
+    # set attributes for either dense or sparse X
     attr(X, "d") <- Matrix::colSums(X.dense * X.dense)
-    attr(X, "X2t") <- t(X.dense * X.dense)
     attr(X, "scaled:center") <- cm
     attr(X, "scaled:scale") <- csd
   }

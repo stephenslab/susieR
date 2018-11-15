@@ -87,16 +87,6 @@ compute_tf_std_d = function(order, n){
   return(res)
 }
 
-#' @title Compute sum(t(X * X) * Eb2), where X is a standardized trend filtering matrix
-#' @param X a trend filtering matrix
-#' @param Eb2 an n vector
-#' @return a scalar
-#' @keywords internal
-compute_tf_X2tEb2 = function(X, Eb2){
-  return(sum(attr(X,'d')*Eb2))
-}
-
-
 
 
 
