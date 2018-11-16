@@ -34,21 +34,29 @@ compute_tf_Xty = function(order,y){
 #' @return an n vector
 #' @keywords internal
 compute_tf_d = function(order, n, cm, csd, standardize=FALSE, intercept=FALSE){
-  base = rep(-1, n)
-  if (order==0) d=cumsum(base^2)
-  else {
-    for (i in 1:order){
-      base = cumsum(base)
+  if (intercept){
+    # when standardize=TRUE, intercept=TRUE: by special observation d = [n-1, n-1, ...]
+    d = rep(n-1, n)
+    if (order==0) d[n] = 0
+    if (!standardize){
+      # when standardize=FALSE, intercept=TRUE: d = [n-1, n-1, ...] * (csd^2)
+      d = d*csd^2
     }
-    d=cumsum(base^2) 
+    return(d)
+  }else{
+    # when standardize=FALSE, intercept=FALSE: d = colSums(X^2)
+    base = rep(-1, n)
+    if (order==0) d=cumsum(base^2)
+    else {
+      for (i in 1:order) base = cumsum(base)
+      d=cumsum(base^2) 
+    }
+    if (standardize){
+      # when standardize=TRUE, intercept=TRUE: d = colSums(X^2) / (csd^2)
+      d = d/csd^2
+    }
+    return(d)
   }
-  if(intercept){
-    d = d - 2*compute_tf_Xty(order, rep(1,n))*cm + n*cm^2
-  }
-  if(standardize){
-    d = d/csd^2
-  }
-  return(d)
 }
 
 #' @title Compute column mean of the trend filtering matrix X
@@ -87,6 +95,21 @@ compute_tf_std_d = function(order, n){
   return(res)
 }
 
-
-
+# compute_tf_d = function(order, n, cm, csd, standardize=FALSE, intercept=FALSE){
+#   base = rep(-1, n)
+#   if (order==0) d=cumsum(base^2)
+#   else {
+#     for (i in 1:order){
+#       base = cumsum(base)
+#     }
+#     d=cumsum(base^2)
+#   }
+#   if(intercept){
+#     d = d - 2*compute_tf_Xty(order, rep(1,n))*cm + n*cm^2
+#   }
+#   if(standardize){
+#     d = d/csd^2
+#   }
+#   return(d)
+# }
 
