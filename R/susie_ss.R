@@ -280,8 +280,12 @@ susie_bhat = function(bhat, shat, R, n, var_y = 1, r_tol = 1e-08,
   if(length(bhat) != length(shat)) {
     stop('The length of bhat does not agree with length of shat.')
   }
+  if(anyNA(bhat) || anyNA(shat)){
+    stop('The input summary statistics have missing value.')
+  }
   #
   that = bhat/shat
+  that[is.na(that)] = 0
   R2 = that^2/(that^2 + n-2)
   sigma2 = (n-1)*(1-R2)/(n-2)
   #
