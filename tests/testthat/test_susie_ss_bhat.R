@@ -67,27 +67,3 @@ test_that("Results from ss bhat interface: t statistics",{
   expect_equal(crossprod(X.cs, orig$fitted), fit$Xtfitted)
 })
 
-test_that("Results from ss z interface: z scores",{
-  simulate(200,1000)
-  ss = univariate_regression(X, y)
-  t = ss$betahat/ss$sebetahat
-  z = qnorm(pt(-abs(t), df = 198))
-  z[t > 0] = -z[t>0]
-  R = cor(X)
-
-  X.s = safe_colScale(X, center = FALSE, scale = TRUE)
-  X.cs = safe_colScale(X, center = TRUE, scale = TRUE)
-
-  orig = susie(X.s, y/sd(y), intercept = TRUE, standardize = TRUE, max_iter = 2,
-               estimate_residual_variance=FALSE, estimate_prior_variance = FALSE)
-
-  fit = susie_z(z, R = R, n = n, standardize = TRUE,
-                max_iter = 2, estimate_prior_variance = FALSE,
-                estimate_residual_variance = FALSE)
-
-  expect_equal(fit$alpha, orig$alpha)
-  expect_equal(fit$mu, orig$mu)
-  expect_equal(fit$mu2, orig$mu2)
-  expect_equal(fit$V, orig$V)
-  expect_equal(crossprod(X.cs, orig$fitted), fit$Xtfitted)
-})

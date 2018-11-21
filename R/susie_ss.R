@@ -199,12 +199,8 @@ check_r_matrix <- function(R, expected_dim, r_tol) {
 #' @title Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix.
 #' @param z a p vector of z scores.
 #' @param R a p by p symmetric and positive semidefinite matrix. It can be X'X, covariance matrix or correlation matrix.
-#' @param n sample size.
 #' @param r_tol tolerance level for eigen value check of positive semidefinite matrix of R.
 #' @param L maximum number of non-zero effects.
-#' @param scaled_prior_variance the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )
-#' @param estimate_residual_variance indicates whether to estimate residual variance
-#' @param estimate_prior_variance indicates whether to estimate prior (currently not recommended as not working as well)
 #' @param prior_weights a p vector of prior probability that each element is non-zero.
 #' @param null_weight probability of no effect, for each single effect model.
 #' @param coverage coverage of confident sets. Default to 0.95 for 95\% credible interval.
@@ -215,22 +211,18 @@ check_r_matrix <- function(R, expected_dim, r_tol) {
 #' @return a susie fit
 #'
 #' @export
-susie_z = function(z, R, n, r_tol = 1e-08,
-                   L=10, scaled_prior_variance=0.2,
-                   estimate_residual_variance = TRUE,
-                   estimate_prior_variance = FALSE,
+susie_z = function(z, R, r_tol = 1e-08,
+                   L=10,
                    prior_weights = NULL, null_weight = NULL,
                    coverage=0.95, min_abs_corr=0.5,
                    verbose=FALSE, track_fit = FALSE, ...){
 
-  # change z to t
-  t = qt(pnorm(-abs(z)), df = n-2) # all negative
-  t[which(z > 0)] = -1 * t[which(z > 0)]
-  susie_bhat(bhat = t, shat = 1, R = R, n = n, r_tol=r_tol,
+  R = check_r_matrix(R, length(z), r_tol)
+
+  susie_ss(XtX = R, Xty = z, n=2, var_y=1,
              L = L,
-             scaled_prior_variance = scaled_prior_variance,
-             estimate_prior_variance = estimate_prior_variance,
-             estimate_residual_variance = estimate_residual_variance,
+             estimate_prior_variance = TRUE,
+             estimate_residual_variance = FALSE,
              prior_weights = prior_weights, null_weight = null_weight,
              coverage=coverage, min_abs_corr=min_abs_corr,
              verbose=verbose, track_fit = track_fit, ...)

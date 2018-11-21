@@ -144,25 +144,16 @@ plot(coef(fitted), coef(fitted_bhat))
 For $z$ score input, `susieR` can only output coefficients in standardized $X$, $y$ scale.
 
 ```{r}
-fitted_z_n <- susie_z(z_scores, R = R, n = nrow(data$X), 
-                      L = 10, 
-                      scaled_prior_variance = 0.1, 
-                      estimate_residual_variance = TRUE)
-```
-
-The result should agree with using $\hat{\beta}$ and $\text{SE}(\hat{\beta})$ when variance of $y$ is set to one,
-
-```{r, fig.width=6,fig.height=6}
-plot(coef(fitted_z_n), coef(fitted_bhat_standardize))
+fitted_z <- susie_z(z_scores, R = R, L = 10)
 ```
 
 ```{r}
-summary(fitted_z_n)$cs
+summary(fitted_z)$cs
 ```
 
 and the PIP plot
 ```{r}
-susie_plot(fitted_z_n, y="PIP", b=b)
+susie_plot(fitted_z, y="PIP", b=b)
 ```
 
 ## Session information
