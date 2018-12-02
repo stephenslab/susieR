@@ -280,13 +280,15 @@ susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,...){
   }
   if(is.null(b)){b = rep(0,length(p))}
   if(is.null(pos)){pos = 1:length(p)}
+  legend_text = list(col = vector(), purity = vector(), size = vector())
   plot(pos,p,col="black",xlab="",ylab=ylab, pch=16, ...)
   if (is_susie && !is.null(model$sets$cs)) {
     for(i in rev(1:nrow(model$alpha))){
       if (!is.null(model$sets$cs_index) && !(i %in% model$sets$cs_index)) {
         next
       }
-      if (!is.null(model$sets$purity) && max_cs < 1 && model$sets$purity[which(model$sets$cs_index==i),1] >= max_cs) {
+      purity = model$sets$purity[which(model$sets$cs_index==i),1]
+      if (!is.null(model$sets$purity) && max_cs < 1 && purity >= max_cs) {
         x0 = pos[model$sets$cs[[which(model$sets$cs_index==i)]]]
         y1 = p[model$sets$cs[[which(model$sets$cs_index==i)]]]
       } else if (n_in_CS(model, model$sets$coverage)[i]<max_cs) {
@@ -305,6 +307,19 @@ susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,...){
         segments(x0,y0,x1,y1,lwd=1.5,col='gray')
       }
       points(x0, y1,col=i+2,cex=1.5,lwd=2.5)
+      legend_text$col = append(i+2, legend_text$col)
+      legend_text$purity = append(round(purity,2), legend_text$purity)
+      legend_text$size = append(length(x0), legend_text$size)
+    }
+    if (length(legend_text$col) > 0) {
+      # plot legend
+      text = vector()
+      for (i in 1:length(legend_text$col)) {
+        if (legend_text$size[i] == 1) text[i] = paste0("L", legend_text$col[i]-2, ": C=1")
+        else text[i] = paste0("L", legend_text$col[i]-2, ": C=", legend_text$size[i], "/R=", legend_text$purity[i])
+      }
+      legend(par("xaxp")[1], 1.1 * par("yaxp")[2], text,
+        xpd = TRUE, horiz = TRUE, inset = c(0, 0), bty = "n", pch = 15, col = legend_text$col, cex = 0.75)
     }
   }
   points(pos[b!=0],p[b!=0],col=2,pch=16)
