@@ -253,13 +253,14 @@ calc_z = function(X,y,centered=FALSE){
 #' @param pos coordinates of variables to plot, default to all variables
 #' @param b for simulated data, specify b = true effects (highlights in red).
 #' @param max_cs the biggest CS to display, based on purity (set max_cs in between 0 and 1) or size (>1).
+#' @param add_legend if TRUE, add a legend to annotate the size and purity of each CS discovered.
 #' @importFrom stats pnorm
 #' @importFrom graphics plot
 #' @importFrom graphics segments
 #' @importFrom graphics points
 #'
 #' @export
-susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,...){
+susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,add_legend=FALSE,...){
   is_susie = (class(model) == "susie")
   ylab = y
   if (y=='z') {
@@ -311,7 +312,7 @@ susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,...){
       legend_text$purity = append(round(purity,2), legend_text$purity)
       legend_text$size = append(length(x0), legend_text$size)
     }
-    if (length(legend_text$col) > 0) {
+    if (length(legend_text$col) > 0 && add_legend) {
       # plot legend
       text = vector()
       for (i in 1:length(legend_text$col)) {

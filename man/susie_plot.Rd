@@ -5,7 +5,7 @@
 \title{Plot per variable summary in SuSiE CSs}
 \usage{
 susie_plot(model, y, add_bar = FALSE, pos = NULL, b = NULL,
-  max_cs = 400, ...)
+  max_cs = 400, add_legend = FALSE, ...)
 }
 \arguments{
 \item{model}{a susie fit, the output of `susieR::susie()`.
@@ -23,6 +23,8 @@ or a random label to plot input data as is.}
 \item{b}{for simulated data, specify b = true effects (highlights in red).}
 
 \item{max_cs}{the biggest CS to display, based on purity (set max_cs in between 0 and 1) or size (>1).}
+
+\item{add_legend}{if TRUE, add a legend to annotate the size and purity of each CS discovered.}
 }
 \description{
 Plot per variable summary in SuSiE CSs

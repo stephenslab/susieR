@@ -6,8 +6,8 @@ Description: Fits a sparse regression model with up to L effects,
     where L is user-specified. The fitting procedure uses a new,
     computationally efficient variational Bayes approach (unpublished
     data).
-Date: 2018-12-02
-Version: 0.6.2.0393
+Date: 2018-12-04
+Version: 0.6.2.0394
 Authors@R: c(person("Matthew","Stephens",role=c("aut","cre"),
                     email="mstephens@uchicago.edu"),
              person("Yuxin","Zou",role="aut"),
