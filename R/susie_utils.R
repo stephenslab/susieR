@@ -178,12 +178,19 @@ susie_get_cs = function(res,
 #' @return a vector of posterior inclusion probability.
 #' @export
 susie_get_pip = function(res, include_index = NULL) {
-  if (class(res) == "susie")
-    res = res$alpha
+  if (class(res) == "susie") {
+    if (res$null_index > 0) {
+      res = res$alpha[,-res$null_index]
+    } else {
+      res = res$alpha
+    }
+  }
   if (!is.null(include_index)) {
     res = res[include_index,,drop=FALSE]
+    return(as.vector(1 - apply(1 - res, 2, prod)))
+  } else {
+    return(rep(0, ncol(res)))
   }
-  return(as.vector(1 - apply(1 - res, 2, prod)))
 }
 
 # compute standard error for regression coef

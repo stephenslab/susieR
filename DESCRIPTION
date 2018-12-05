@@ -6,8 +6,8 @@ Description: Fits a sparse regression model with up to L effects,
     where L is user-specified. The fitting procedure uses a new,
     computationally efficient variational Bayes approach (unpublished
     data).
-Date: 2018-12-04
-Version: 0.6.2.0394
+Date: 2018-12-05
+Version: 0.6.2.0395
 Authors@R: c(person("Matthew","Stephens",role=c("aut","cre"),
                     email="mstephens@uchicago.edu"),
              person("Yuxin","Zou",role="aut"),
@@ -19,7 +19,7 @@ BugReports: https://github.com/stephenslab/susieR/issues
 License: MIT + file LICENSE
 LazyData: true
 NeedsCompilation: no
-RoxygenNote: 6.1.0.9000
+RoxygenNote: 6.1.1
 Depends: R (>= 3.0.0)
 Imports:
     methods,
