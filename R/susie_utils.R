@@ -174,17 +174,22 @@ susie_get_cs = function(res,
 #' @title Compute posterior inclusion probability (PIP) for all variables
 #' @param res a susie fit, the output of `susieR::susie()`, or simply the posterior
 #' inclusion probability matrix alpha.
-#' @param include_index index of single effect models to consider when calculating PIP. Default to NULL.
+#' @param prune_by_cs Whether or not to ignore single effects not in reported CS when calculating PIP. Default to FALSE.
 #' @return a vector of posterior inclusion probability.
 #' @export
-susie_get_pip = function(res, include_index = NULL) {
+susie_get_pip = function(res, prune_by_cs = FALSE) {
+  include_index = NULL
   if (class(res) == "susie") {
+    include_index = res$sets$cs_index
     if (res$null_index > 0) {
       res = res$alpha[,-res$null_index]
     } else {
       res = res$alpha
     }
+  } else {
+    prune_by_cs = FALSE
   }
+  if (!prune_by_cs) return(as.vector(1 - apply(1 - res, 2, prod)))
   if (!is.null(include_index)) {
     res = res[include_index,,drop=FALSE]
     return(as.vector(1 - apply(1 - res, 2, prod)))
