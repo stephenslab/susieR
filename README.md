@@ -24,7 +24,7 @@ which we call "Iterative Bayesian Forward Selection".
 The output of the fitting procedure is a number of "Credible Sets" (CSs),
 which are each designed to have high probability to contain a variable with non-zero effect,
 while at the same time being as small as possible. You can think of the CSs as 
-being a set of ``highly correlated" variables that are each associated with the response:
+being a set of "highly correlated" variables that are each associated with the response:
 you can be confident that one of the variables has a non-zero coefficient, but 
 they are too correlated to be sure which one.
 
