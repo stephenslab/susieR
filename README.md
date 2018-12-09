@@ -14,7 +14,7 @@ One example of this is genetic fine-mapping applications, and this application
 was a major motivation for developing these methods. However, the methods
 should also be useful more generally.
 
-The methods iare based on a new model for sparse multiple regression,
+The methods are based on a new model for sparse multiple regression,
 which we call the "Sum of Single Effects" (SuSiE) model.
 This model, which will be described in a manuscript in preparation (Wang et al),
 lends itself to a particularly simple and intuitive fitting procedure - 
