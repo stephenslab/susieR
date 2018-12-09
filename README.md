@@ -21,7 +21,7 @@ lends itself to a particularly simple and intuitive fitting procedure -
 effectively a Bayesian modification of simple forward selection,
 which we call ``Iterative Bayesian Forward Selection".
 
-The output of the fitting procedure is a number of ``Credible Sets" (CSs),
+The output of the fitting procedure is a number of "Credible Sets" (CSs),
 which are each designed to have high probability to contain a variable with non-zero effect,
 while at the same time being as small as possible. You can think of the CSs as 
 being a set of ``highly correlated" variables that are each associated with the response:
