@@ -2,18 +2,20 @@ Encoding: UTF-8
 Type: Package
 Package: susieR
 Title: Fit Sum of Single Effects Linear Regression Model
-Description: Fits a sparse regression model with up to L effects,
-    where L is user-specified. The fitting procedure uses a new,
-    computationally efficient variational Bayes approach (unpublished
-    data).
-Date: 2018-12-05
-Version: 0.6.2.0396
-Authors@R: c(person("Matthew","Stephens",role=c("aut","cre"),
+Description: The package implements a simple new way to perform variable selection in
+	multiple regression ($y=Xb+e$), using computationally efficient variational Bayes approach. 
+	The methods implemented here are particularly
+	well-suited to settings where some of the X variables are highly correlated, and
+	the true effects are highly sparse (e.g. <20 non-zero effects in the vector $b$),
+	although it is also useful to more general applications.
+Date: 2018-12-08
+Version: 0.6.2.0403
+Authors@R: c(person("Gao","Wang",role=c("aut", "cre"),
                     email="mstephens@uchicago.edu"),
+             person("Peter","Carbonetto",role="aut"),
              person("Yuxin","Zou",role="aut"),
              person("Kaiqian","Zhang",role="aut"),
-             person("Peter","Carbonetto",role="aut"),
-             person("Gao","Wang",role="aut"))
+	     person("Matthew","Stephens",role=c("aut")))
 URL: https://github.com/stephenslab/susieR
 BugReports: https://github.com/stephenslab/susieR/issues
 License: MIT + file LICENSE
