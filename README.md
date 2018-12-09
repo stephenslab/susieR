@@ -19,7 +19,7 @@ which we call the "Sum of Single Effects" (SuSiE) model.
 This model, which will be described in a manuscript in preparation (Wang et al),
 lends itself to a particularly simple and intuitive fitting procedure - 
 effectively a Bayesian modification of simple forward selection,
-which we call ``Iterative Bayesian Forward Selection".
+which we call "Iterative Bayesian Forward Selection".
 
 The output of the fitting procedure is a number of "Credible Sets" (CSs),
 which are each designed to have high probability to contain a variable with non-zero effect,
