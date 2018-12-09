@@ -28,7 +28,8 @@ being a set of "highly correlated" variables that are each associated with the r
 you can be confident that one of the variables has a non-zero coefficient, but 
 they are too correlated to be sure which one.
 
-The package is developed by Gao Wang, Matthew Stephens and other members of the [Stephens Lab](http://stephenslab.uchicago.edu/) at the University of Chicago. Please see DESCRIPTION file for a full list.
+The package is developed by Gao Wang, Peter Carbonetto, Yuxin Zou, Kaiqian Zhang, and Matthew Stephens 
+from the [Stephens Lab](http://stephenslab.uchicago.edu/) at the University of Chicago. 
 
 This is very much work in progress. Please
 [post issues](https://github.com/stephenslab/susieR/issues) to ask
