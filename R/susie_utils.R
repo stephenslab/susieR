@@ -178,24 +178,26 @@ susie_get_cs = function(res,
 #' @return a vector of posterior inclusion probability.
 #' @export
 susie_get_pip = function(res, prune_by_cs = FALSE) {
-  include_index = NULL
   if (class(res) == "susie") {
-    include_index = res$sets$cs_index
-    if (res$null_index > 0) {
-      res = res$alpha[,-res$null_index]
+    # drop null weight columns
+    if (res$null_index > 0) res$alpha = res$alpha[,-res$null_index]
+    # drop the single effect with estimated prior zero 
+    include_idx = which(res$V != 0)
+    # only consider variables in reported CS
+    # this is not what we do in the SuSiE paper
+    # so by default prune_by_cs = FALSE means we do not run the following code
+    if (!is.null(res$sets$cs_index) && prune_by_cs)
+      include_idx = intersect(include_idx, res$sets$cs_index)
+    if (is.null(res$sets$cs_index) && prune_by_cs)
+      include_idx = numeric(0)
+    # now extract relevant rows from alpha matrix
+    if (length(include_idx) > 0) {
+      res = res$alpha[include_idx,,drop=FALSE]
     } else {
-      res = res$alpha
+      res = matrix(0,1,ncol(res$alpha))
     }
-  } else {
-    prune_by_cs = FALSE
   }
-  if (!prune_by_cs) return(as.vector(1 - apply(1 - res, 2, prod)))
-  if (!is.null(include_index)) {
-    res = res[include_index,,drop=FALSE]
-    return(as.vector(1 - apply(1 - res, 2, prod)))
-  } else {
-    return(rep(0, ncol(res)))
-  }
+  return(as.vector(1 - apply(1 - res, 2, prod)))
 }
 
 # compute standard error for regression coef
