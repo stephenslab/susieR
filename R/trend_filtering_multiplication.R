@@ -1,4 +1,5 @@
-#trend filtering multiplication helper functions
+#trend filtering multiplication helper functions 
+#test trend filtering branch
 
 #' @title Compute unscaled X \%*\% b using the special structure of trend filtering 
 #' @param order is the order of trend filtering
@@ -94,6 +95,7 @@ compute_tf_std_d = function(order, n){
   if (order==0) res[n] = 0
   return(res)
 }
+
 
 # compute_tf_d = function(order, n, cm, csd, standardize=FALSE, intercept=FALSE){
 #   base = rep(-1, n)
