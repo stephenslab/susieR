@@ -8,8 +8,8 @@ Description: The package implements a simple new way to perform variable selecti
 	well-suited to settings where some of the X variables are highly correlated, and
 	the true effects are highly sparse (e.g. <20 non-zero effects in the vector $b$),
 	although it is also useful to more general applications.
-Date: 2018-12-14
-Version: 0.6.2.0406
+Date: 2018-12-18
+Version: 0.6.2.0407
 Authors@R: c(person("Gao","Wang",role=c("aut", "cre"),
                     email="mstephens@uchicago.edu"),
              person("Peter","Carbonetto",role="aut"),

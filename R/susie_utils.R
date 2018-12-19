@@ -261,7 +261,7 @@ calc_z = function(X,y,centered=FALSE){
 #' It has to contain `z`, `PIP` and optionally `sets`.
 #' It is also possible to take in a vector of z-score or PIP,
 #' in order to plot data from other software program.
-#' @param y a string indicating what to plot: z (for z-score), PIP,
+#' @param y a string indicating what to plot: z (for z-score), PIP, log10PIP
 #' or a random label to plot input data as is.
 #' @param add_bar add horizontal bar to signals in credible interval.
 #' @param pos coordinates of variables to plot, default to all variables
@@ -289,14 +289,18 @@ susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,add_legen
   } else if (y=='PIP') {
     if (is_susie) p = model$pip
     else p = model
+  } else if (y=='log10PIP') {
+    if (is_susie) p = log10(model$pip)
+    else p = log10(model)
+    ylab = "log10(PIP)"
   } else {
-    if (is_susie) stop('Need to specify z or PIP for SuSiE fits.')
+    if (is_susie) stop('Need to specify z or PIP or log10PIP for SuSiE fits.')
     p = model
   }
   if(is.null(b)){b = rep(0,length(p))}
   if(is.null(pos)){pos = 1:length(p)}
   legend_text = list(col = vector(), purity = vector(), size = vector())
-  plot(pos,p,col="black",xlab="",ylab=ylab, pch=16, ...)
+  plot(pos,p,col="black", ylab=ylab, pch=16, ...)
   if (is_susie && !is.null(model$sets$cs)) {
     for(i in rev(1:nrow(model$alpha))){
       if (!is.null(model$sets$cs_index) && !(i %in% model$sets$cs_index)) {

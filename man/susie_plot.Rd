@@ -13,7 +13,7 @@ It has to contain `z`, `PIP` and optionally `sets`.
 It is also possible to take in a vector of z-score or PIP,
 in order to plot data from other software program.}
 
-\item{y}{a string indicating what to plot: z (for z-score), PIP,
+\item{y}{a string indicating what to plot: z (for z-score), PIP, log10PIP
 or a random label to plot input data as is.}
 
 \item{add_bar}{add horizontal bar to signals in credible interval.}
