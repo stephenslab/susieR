@@ -26,13 +26,15 @@ susie_init_coef = function(coef_index, coef_value, p) {
 # @title Set default susie initialization
 init_setup = function(n, p, L, scaled_prior_variance, residual_variance, prior_weights, null_weight, varY) {
   if (!is.numeric(scaled_prior_variance) || scaled_prior_variance < 0 || scaled_prior_variance > 1)
-    stop("scaled prior variance should be in between 0 and 1")
+    stop("Scaled prior variance should be in between 0 and 1")
   if(is.null(residual_variance))
     residual_variance = varY
   if(is.null(prior_weights))
     prior_weights = rep(1/p, p)
   if(length(prior_weights) != p)
     stop("Prior weights must have length p.")
+  if (p < L)
+    stop("Number of single effects L should not exceed number of variable p")
   s = list(alpha=matrix(1/p,nrow=L,ncol=p),
            mu=matrix(0,nrow=L,ncol=p),
            mu2=matrix(0,nrow=L,ncol=p),
