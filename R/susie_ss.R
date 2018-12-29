@@ -141,17 +141,18 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10,
 
     # if(max(abs(alpha_new - alpha_old)) < tol) break;
 
-    if((elbo[i+1]-elbo[i])<tol) break;
+    if((elbo[i+1]-elbo[i])<tol) {
+      s$converged = TRUE
+      break;
+    }
   }
   elbo = elbo[1:(i+1)] #remove trailing NAs
   s$elbo <- elbo
   s$niter <- i
 
-  if (s$niter == max_iter) {
+  if (is.null(s$converged)) {
     warning(paste("IBSS algorithm did not converge in", max_iter, "iterations!"))
     s$converged = FALSE
-  } else {
-    s$converged = TRUE
   }
 
   s$intercept = intercept_value
