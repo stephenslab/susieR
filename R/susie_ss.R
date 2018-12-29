@@ -147,6 +147,13 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10,
   s$elbo <- elbo
   s$niter <- i
 
+  if (s$niter == max_iter) {
+    warning(paste("IBSS algorithm did not converge in", max_iter, "iterations!"))
+    s$converged = FALSE
+  } else {
+    s$converged = TRUE
+  }
+
   s$intercept = intercept_value
   s$Xtfitted = s$XtXr
 

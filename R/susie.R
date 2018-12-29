@@ -129,6 +129,13 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
   s$elbo <- elbo
   s$niter <- i
 
+  if (s$niter == max_iter) {
+    warning(paste("IBSS algorithm did not converge in", max_iter, "iterations!"))
+    s$converged = FALSE
+  } else {
+    s$converged = TRUE
+  }
+
   if(intercept){
     s$intercept = mean_y - sum(attr(X,"scaled:center")* (colSums(s$alpha*s$mu)/attr(X,"scaled:scale")))# estimate intercept (unshrunk)
     s$fitted = s$Xr + mean_y
