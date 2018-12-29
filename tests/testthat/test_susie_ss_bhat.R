@@ -6,13 +6,13 @@ test_that("Results from ss bhat interface vs original data: no standardize",{
 
   R = cor(X)
 
-  orig = susie(X, y, intercept = TRUE, standardize = FALSE, max_iter = 2,
-              estimate_residual_variance=FALSE, estimate_prior_variance = FALSE)
+  expect_warning(orig <- susie(X, y, intercept = TRUE, standardize = FALSE, max_iter = 2,
+              estimate_residual_variance=FALSE, estimate_prior_variance = FALSE))
 
-  fit = susie_bhat(bhat = ss$betahat, shat = ss$sebetahat, R = R,
+  expect_warning(fit <- susie_bhat(bhat = ss$betahat, shat = ss$sebetahat, R = R,
                    var_y = var(y), n = n, standardize = FALSE,
                    max_iter = 2, estimate_prior_variance = FALSE,
-                   estimate_residual_variance = FALSE)
+                   estimate_residual_variance = FALSE))
 
   expect_equal(fit$alpha, orig$alpha)
   expect_equal(fit$mu, orig$mu)
@@ -29,13 +29,13 @@ test_that("Results from ss bhat interface vs original data: standardize",{
 
   X.s = safe_colScale(X, center = FALSE, scale = TRUE)
   X.cs = safe_colScale(X, center = TRUE, scale = TRUE)
-  orig = susie(X.s, y, intercept = TRUE, standardize = TRUE, max_iter = 2,
-               estimate_residual_variance=FALSE, estimate_prior_variance = FALSE)
+  expect_warning(orig <- susie(X.s, y, intercept = TRUE, standardize = TRUE, max_iter = 2,
+               estimate_residual_variance=FALSE, estimate_prior_variance = FALSE))
 
-  fit = susie_bhat(bhat = ss$betahat, shat = ss$sebetahat, R = R,
+  expect_warning(fit <- susie_bhat(bhat = ss$betahat, shat = ss$sebetahat, R = R,
                    n = n, var_y = var(y), standardize = TRUE,
                    max_iter = 2, estimate_prior_variance = FALSE,
-                   estimate_residual_variance = FALSE)
+                   estimate_residual_variance = FALSE))
 
   expect_equal(fit$alpha, orig$alpha)
   expect_equal(fit$mu, orig$mu)
@@ -52,13 +52,13 @@ test_that("Results from ss bhat interface: t statistics",{
   X.s = safe_colScale(X, center = FALSE, scale = TRUE)
   X.cs = safe_colScale(X, center = TRUE, scale = TRUE)
 
-  orig = susie(X.s, y/sd(y), intercept = TRUE, standardize = TRUE, max_iter = 2,
-               estimate_residual_variance=FALSE, estimate_prior_variance = FALSE)
+  expect_warning(orig <- susie(X.s, y/sd(y), intercept = TRUE, standardize = TRUE, max_iter = 2,
+               estimate_residual_variance=FALSE, estimate_prior_variance = FALSE))
 
-  fit = susie_bhat(bhat = ss$betahat/ss$sebetahat, shat = 1, R = R,
+  expect_warning(fit <- susie_bhat(bhat = ss$betahat/ss$sebetahat, shat = 1, R = R,
                    n = n, standardize = TRUE,
                    max_iter = 2, estimate_prior_variance = FALSE,
-                   estimate_residual_variance = FALSE)
+                   estimate_residual_variance = FALSE))
 
   expect_equal(fit$alpha, orig$alpha)
   expect_equal(fit$mu, orig$mu)

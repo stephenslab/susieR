@@ -4,12 +4,12 @@ test_that("Results from summary stat vs original data",{
   simulate(200,1000)
   ss = compute_ss(X, y, standardize = FALSE)
 
-  res = susie(X, y, intercept = TRUE, standardize = TRUE, max_iter = 2,
-              estimate_residual_variance=FALSE, estimate_prior_variance = FALSE)
+  expect_warning(res <- susie(X, y, intercept = TRUE, standardize = TRUE, max_iter = 2,
+              estimate_residual_variance=FALSE, estimate_prior_variance = FALSE))
 
-  res2 = susie_ss(ss$XtX, ss$Xty, var_y = ss$vary,
+  expect_warning(res2 <- susie_ss(ss$XtX, ss$Xty, var_y = ss$vary,
                   n = ss$n, standardize = TRUE, max_iter = 2,
-                  estimate_prior_variance =FALSE, estimate_residual_variance = FALSE)
+                  estimate_prior_variance =FALSE, estimate_residual_variance = FALSE))
 
   expect_equal(res$alpha, res2$alpha)
   expect_equal(res$mu, res2$mu)
@@ -29,12 +29,12 @@ test_that("Results from summary stat vs original data: estimate residual varianc
   simulate(200,1000)
   ss = compute_ss(X, y, standardize = FALSE)
 
-  res = susie(X, y, intercept = TRUE, standardize = TRUE, max_iter = 2,
-              estimate_residual_variance=TRUE, estimate_prior_variance = FALSE)
+  expect_warning(res <- susie(X, y, intercept = TRUE, standardize = TRUE, max_iter = 2,
+              estimate_residual_variance=TRUE, estimate_prior_variance = FALSE))
 
-  res2 = susie_ss(ss$XtX, ss$Xty, var_y = ss$vary,
+  expect_warning(res2 <- susie_ss(ss$XtX, ss$Xty, var_y = ss$vary,
                   n = ss$n, standardize = TRUE, max_iter = 2,
-                  estimate_prior_variance = FALSE, estimate_residual_variance = TRUE)
+                  estimate_prior_variance = FALSE, estimate_residual_variance = TRUE))
 
   expect_equal(res$alpha, res2$alpha)
   expect_equal(res$mu, res2$mu)
