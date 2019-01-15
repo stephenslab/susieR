@@ -69,8 +69,8 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
                  max_iter=100,tol=1e-3,
                  verbose=FALSE,track_fit=FALSE) {
   # Check input X.
-  if (!(is.double(X) & is.matrix(X)) & !inherits(X,"CsparseMatrix"))
-    stop("Input X must be a double-precision matrix, or a sparse matrix.")
+  if (!(is.double(X) & is.matrix(X)) & !inherits(X,"CsparseMatrix") & is.null(attr(X,"matrix.type")))
+    stop("Input X must be a double-precision matrix, or a sparse matrix, or a trend filtering matrix.")
   if (is.numeric(null_weight) && null_weight == 0) null_weight = NULL
   if (!is.null(null_weight)) {
     if (!is.numeric(null_weight))
@@ -90,7 +90,7 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
   if(intercept){
     Y = Y-mean_y
   }
-  X = safe_colScale(X,center=intercept, scale=standardize)
+  X = set_X_attributes(X,center=intercept, scale=standardize)
   # initialize susie fit
   s = init_setup(n,p,L,scaled_prior_variance,residual_variance,prior_weights,null_weight,as.numeric(var(Y)))
   if (!missing(s_init)) {

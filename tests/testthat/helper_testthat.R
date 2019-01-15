@@ -28,8 +28,7 @@ simulate = function(n=100, p=200, sparse=F) {
            Xr=rep(5,n), KL=rep(1.2,L),
            sigma2=residual_variance,
       V=scaled_prior_variance * as.numeric(var(y)))
-  attach(list(X=X, X.sparse=X.sparse, s=s, y=y, n=n, p=p, b=beta),
-         warn.conflict=F)
+  return(list(X=X, X.sparse=X.sparse, s=s, y=y, n=n, p=p, b=beta))
 }
 
 simulate_tf = function(order){
@@ -72,8 +71,7 @@ simulate_tf = function(order){
     y = beta + rnorm(n)
     X = solve(D%*%D%*%D)
   }
-  attach(list(X=X, y=y),
-         warn.conflict=F)
+  return(list(X=X, y=y))
 }
 
 expect_equal_susie_update = function(new.res, original.res){
