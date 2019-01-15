@@ -182,7 +182,8 @@ susie_get_pip = function(res, prune_by_cs = FALSE) {
     # drop null weight columns
     if (res$null_index > 0) res$alpha = res$alpha[,-res$null_index]
     # drop the single effect with estimated prior zero 
-    include_idx = which(res$V != 0)
+    if (is.numeric(res$V)) include_idx = which(res$V != 0)
+    else include_idx = 1:nrow(res$alpha)
     # only consider variables in reported CS
     # this is not what we do in the SuSiE paper
     # so by default prune_by_cs = FALSE means we do not run the following code
