@@ -119,7 +119,7 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10,
   # alpha_new = s$alpha
   for(i in 1:max_iter){
     if (track_fit)
-      tracking[[i]] = s
+      tracking[[i]] = susie_slim(s)
     # alpha_old = alpha_new
     s = update_each_effect_ss(XtX, Xty, s, estimate_prior_variance)
     # alpha_new = s$alpha

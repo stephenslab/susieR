@@ -181,7 +181,7 @@ susie_get_pip = function(res, prune_by_cs = FALSE) {
   if (class(res) == "susie") {
     # drop null weight columns
     if (res$null_index > 0) res$alpha = res$alpha[,-res$null_index]
-    # drop the single effect with estimated prior zero 
+    # drop the single effect with estimated prior zero
     if (is.numeric(res$V)) include_idx = which(res$V != 0)
     else include_idx = 1:nrow(res$alpha)
     # only consider variables in reported CS
@@ -434,3 +434,10 @@ susie_get_objective <- function(res, all = FALSE) {
   if (all) return(res$elbo)
   else return(res$elbo[length(res$elbo)])
 }
+
+#' @title Slim the result of fitted SuSiE model
+#' @param res a susie fit, the output of `susieR::susie()`
+susie_slim = function(res){
+  list(alpha = res$alpha, niter = res$niter)
+}
+
