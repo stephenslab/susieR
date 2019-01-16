@@ -22,24 +22,6 @@ expect_equal_compute_tf = function(order){
   
   std_d = compute_tf_std_d(order, n=length(y))
   expect_equal(std_d, colSums(scaled_X*scaled_X))
-  
-  set.seed(2)
-  n = length(y)
-  Eb2 = rnorm(n)
-  M <- Matrix::sparseMatrix(i=NULL,j=NULL,dims=c(n,n))
-  attr(M, "matrix.type") = "tfmatrix"
-  attr(M, "order") = order
-  attr(M, "d") <- compute_tf_std_d(order, n)
-  attr(M, "scaled:center") <- compute_tf_cm(order, n)
-  attr(M, "scaled:scale") <- compute_tf_csd(order, n)
-  X2tEb2 = compute_tf_X2tEb2(M, Eb2=Eb2)
-  expect_equal(X2tEb2, sum(t(scaled_X * scaled_X) * Eb2))
-  
-  attr(M, "d") <- compute_tf_d(order, n)
-  attr(M, "scaled:center") <- rep(0,n)
-  attr(M, "scaled:scale") <- rep(1,n)
-  X2tEb2 = compute_tf_X2tEb2(M, Eb2=Eb2)
-  expect_equal(X2tEb2, sum(t(X * X) * Eb2))
   })
 }
 
