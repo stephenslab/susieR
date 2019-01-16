@@ -4,12 +4,16 @@
 \alias{susie_trendfilter}
 \title{perform trend filtering using SuSiE}
 \usage{
-susie_trendfilter(y, order, standardize = TRUE, intercept = TRUE, ...)
+susie_trendfilter(y, order, standardize = TRUE, ...)
 }
 \arguments{
 \item{y}{an n vector}
 
 \item{order}{a scalar for the order of trend filtering}
+
+\item{standardize}{boolean indicating whether to standardize}
+
+\item{...}{other parameters to pass to susie call}
 }
 \value{
 SuSiE fit for trend filtering
