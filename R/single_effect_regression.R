@@ -31,16 +31,15 @@ single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL
     prior_weights = rep(1/ncol(X), ncol(X))
 
   if(optimize_V){
-    if(loglik.grad(0,betahat,shat2,prior_weights)<0){
-      V=0
-    } else {
       ##V.o = optim(par=log(V),fn=negloglik.logscale,gr = negloglik.grad.logscale,betahat=betahat,shat2=shat2,prior_weights=prior_weights,method="BFGS")
       ##if(V.o$convergence!=0){
       ##  warning("optimization over prior variance failed to converge")
       ##}
       V.u=uniroot(negloglik.grad.logscale,c(-10,10),extendInt = "upX",betahat=betahat,shat2=shat2,prior_weights=prior_weights)
       V = exp(V.u$root)
-    }
+      if(loglik(0,betahat,shat2,prior_weights) >= loglik(V,betahat,shat2,prior_weights)){
+        V=0 # set V exactly 0 if that beats the numerical value
+      }
   }
 
   lbf = dnorm(betahat,0,sqrt(V+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
@@ -64,6 +63,23 @@ single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL
 }
 
 # In these functions s2 represents residual_variance and shat2 is an estimate of it
+
+#' The log likelihood function for SER model (based on summary data betahat, shat2), as a function of prior variance V
+#' @importFrom Matrix colSums
+#' @importFrom stats dnorm
+loglik = function(V,betahat,shat2,prior_weights) {
+
+  lbf = dnorm(betahat,0,sqrt(V+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
+  #log(bf) on each SNP
+
+  lbf[shat2==Inf] = 0 # deal with special case of infinite shat2 (eg happens if X does not vary)
+
+  maxlbf = max(lbf)
+  w = exp(lbf-maxlbf) # w =BF/BFmax
+  w_weighted = w * prior_weights
+  weighted_sum_w = sum(w_weighted)
+  return(log(weighted_sum_w)+ maxlbf)
+}
 
 #' @importFrom Matrix colSums
 #' @importFrom stats dnorm
