@@ -8,7 +8,7 @@
 compute_ss = function(X, y, standardize = TRUE){
   y = y - mean(y)
   is.sparse = !(is.matrix(X))
-  X = safe_colScale(as.matrix(X), center=TRUE, scale = standardize)
+  X = set_X_attributes(as.matrix(X), center=TRUE, scale = standardize)
 
   XtX = crossprod(X)
   if(is.sparse){
