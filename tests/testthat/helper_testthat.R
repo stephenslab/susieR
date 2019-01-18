@@ -18,7 +18,6 @@ simulate = function(n=100, p=200, sparse=F) {
     X = matrix(rnorm(n*p,3,4),n,p)
     X.sparse = NA
   }
-  set.seed(1)
   y = c(X %*% beta + rnorm(n))
   L = 10
   residual_variance = 0.8
@@ -33,18 +32,17 @@ simulate = function(n=100, p=200, sparse=F) {
 }
 
 simulate_tf = function(order){
+  set.seed(2)
   n = 50
   D = diag(-1, n)
   for (i in 1:(n-1)){
     D[i, i+1] = 1
   }
   if (order==0) {
-    set.seed(1)
     beta = c(rep(0,5),rep(1,5),rep(3,5),rep(-2,5),rep(0,30))
     y = beta + rnorm(n)
     X = solve(D)
   } else if (order==1) {
-    set.seed(1)
     beta = numeric(n)
     for (i in 1:n){
       if (i <= 5){
@@ -58,7 +56,6 @@ simulate_tf = function(order){
     y = beta + rnorm(n)
     X = solve(D%*%D)
   } else if (order==2) {
-    set.seed(1)
     beta = numeric(n)
     for (i in 1:n){
       if (i <= 5){
