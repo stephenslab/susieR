@@ -18,6 +18,7 @@ simulate = function(n=100, p=200, sparse=F) {
     X = matrix(rnorm(n*p,3,4),n,p)
     X.sparse = NA
   }
+  set.seed(1)
   y = c(X %*% beta + rnorm(n))
   L = 10
   residual_variance = 0.8
