@@ -31,15 +31,7 @@ single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL
     prior_weights = rep(1/ncol(X), ncol(X))
 
   if(optimize_V){
-      ##V.o = optim(par=log(V),fn=negloglik.logscale,gr = negloglik.grad.logscale,betahat=betahat,shat2=shat2,prior_weights=prior_weights,method="BFGS")
-      ##if(V.o$convergence!=0){
-      ##  warning("optimization over prior variance failed to converge")
-      ##}
-      V.u=uniroot(negloglik.grad.logscale,c(-10,10),extendInt = "upX",betahat=betahat,shat2=shat2,prior_weights=prior_weights)
-      V = exp(V.u$root)
-      if(loglik(0,betahat,shat2,prior_weights) >= loglik(V,betahat,shat2,prior_weights)){
-        V=0 # set V exactly 0 if that beats the numerical value
-      }
+    V = est_V(betahat, shat2, prior_weights)
   }
 
   lbf = dnorm(betahat,0,sqrt(V+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
@@ -60,6 +52,21 @@ single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL
   lbf_model = maxlbf + log(weighted_sum_w)
   loglik = lbf_model + sum(dnorm(Y,0,sqrt(residual_variance),log=TRUE))
   return(list(alpha=alpha,mu=post_mean,mu2 = post_mean2,lbf=lbf,lbf_model=lbf_model,V=V,loglik=loglik))
+}
+
+#' @title estimate prior variance
+#' @keywords internal
+est_V = function(betahat, shat2, prior_weights) {
+  ##V.o = optim(par=log(V),fn=negloglik.logscale,gr = negloglik.grad.logscale,betahat=betahat,shat2=shat2,prior_weights=prior_weights,method="BFGS")
+  ##if(V.o$convergence!=0){
+  ##  warning("optimization over prior variance failed to converge")
+  ##}
+  V.u=uniroot(negloglik.grad.logscale,c(-10,10),extendInt = "upX",betahat=betahat,shat2=shat2,prior_weights=prior_weights)
+  V = exp(V.u$root)
+  if(loglik(0,betahat,shat2,prior_weights) >= loglik(V,betahat,shat2,prior_weights)){
+    V=0 # set V exactly 0 if that beats the numerical value
+  }
+  return(V)
 }
 
 # In these functions s2 represents residual_variance and shat2 is an estimate of it
