@@ -29,16 +29,18 @@ single_effect_regression_ss = function(Xty,dXtX,V=1,residual_variance=1,prior_we
     prior_weights = rep(1/length(dXtX), length(dXtX))
 
   if(optimize_V){
-    if(loglik.grad(0,betahat,shat2,prior_weights)<0){
-      V=0
-    } else {
+    # if(loglik.grad(0,betahat,shat2,prior_weights)<0){
+    #   V=0
+    # } else {
       #V.o = optim(par=log(V),fn=negloglik.logscale,gr = negloglik.grad.logscale, X=X,Y=Y,s2=s2,method="BFGS")
       #if(V.o$convergence!=0){
       #  warning("optimization over prior variance failed to converge")
       #}
       V.u=uniroot(negloglik.grad.logscale,c(-10,10),extendInt = "upX",betahat=betahat,shat2=shat2,prior_weights=prior_weights)
       V = exp(V.u$root)
-    }
+      if(loglik(0,betahat,shat2,prior_weights) >= loglik(V,betahat,shat2,prior_weights)){
+        V=0 # set V exactly 0 if that beats the numerical value
+      }
   }
 
   lbf = dnorm(betahat,0,sqrt(V+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
