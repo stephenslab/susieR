@@ -77,9 +77,7 @@ test_that("Results from ss z interface: z scores", with(simulate(200,1000), {
   orig = susie(X.s, y/sd(y), intercept = TRUE, standardize = TRUE, max_iter = 2,
                estimate_residual_variance=FALSE, estimate_prior_variance = FALSE)
   
-  fit = susie_z(z, R = R, n = n, standardize = TRUE,
-                max_iter = 2, estimate_prior_variance = FALSE,
-                estimate_residual_variance = FALSE)
+  fit = susie_z(z, R = R, standardize = TRUE, max_iter = 2)
   
   expect_equal(fit$alpha, orig$alpha)
   expect_equal(fit$mu, orig$mu)
