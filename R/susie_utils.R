@@ -425,11 +425,11 @@ susie_get_residual_variance <- function(res) {
 #' @title Get evidence lower bound (ELBO) from fitted SuSiE model
 #' @param res a susie fit, the output of `susieR::susie()`.
 #' @param all whether or not to get ELBO from all iterations
+#' @param warning_tol warn if ELBO is non-decreasing by this tolerance level (default set to 1E-6)
 #' @export
-susie_get_objective <- function(res, all = FALSE) {
-  if (!all(diff(res$elbo) >= 0)) {
+susie_get_objective <- function(res, all = FALSE, warning_tol = 1E-6) {
+  if (!all(diff(res$elbo) >= warning_tol)) {
     warning('Objective is not non-decreasing')
-    all = TRUE
   }
   if (all) return(res$elbo)
   else return(res$elbo[length(res$elbo)])
