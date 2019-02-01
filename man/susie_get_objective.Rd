@@ -4,12 +4,14 @@
 \alias{susie_get_objective}
 \title{Get evidence lower bound (ELBO) from fitted SuSiE model}
 \usage{
-susie_get_objective(res, all = FALSE)
+susie_get_objective(res, all = FALSE, warning_tol = 1e-06)
 }
 \arguments{
 \item{res}{a susie fit, the output of `susieR::susie()`.}
 
 \item{all}{whether or not to get ELBO from all iterations}
+
+\item{warning_tol}{warn if ELBO is non-decreasing by this tolerance level (default set to 1E-6)}
 }
 \description{
 Get evidence lower bound (ELBO) from fitted SuSiE model

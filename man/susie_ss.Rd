@@ -4,12 +4,13 @@
 \alias{susie_ss}
 \title{Bayesian sum of single-effect (susie) linear regression using summary stat}
 \usage{
-susie_ss(XtX, Xty, n, var_y = 1, L = 10, scaled_prior_variance = 0.2,
-  residual_variance = NULL, prior_weights = NULL, null_weight = NULL,
-  standardize = TRUE, estimate_residual_variance = TRUE,
-  estimate_prior_variance = FALSE, max_iter = 100, s_init = NULL,
-  intercept_value = 0, coverage = 0.95, min_abs_corr = 0.5,
-  tol = 0.001, verbose = FALSE, track_fit = FALSE)
+susie_ss(XtX, Xty, n, var_y = 1, L = 10, type = c("sufficient", "z"),
+  scaled_prior_variance = 0.2, residual_variance = NULL,
+  prior_weights = NULL, null_weight = NULL, standardize = TRUE,
+  estimate_residual_variance = TRUE, estimate_prior_variance = FALSE,
+  max_iter = 100, s_init = NULL, intercept_value = 0,
+  coverage = 0.95, min_abs_corr = 0.5, tol = 0.001,
+  verbose = FALSE, track_fit = FALSE)
 }
 \arguments{
 \item{XtX}{a p by p matrix, X'X, where columns of X are centered to have mean 0}
@@ -21,6 +22,8 @@ susie_ss(XtX, Xty, n, var_y = 1, L = 10, scaled_prior_variance = 0.2,
 \item{var_y}{the (sample) variance of the vector Y}
 
 \item{L}{maximum number of non-zero effects}
+
+\item{type}{sufficient or z scores}
 
 \item{scaled_prior_variance}{the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )}
 
