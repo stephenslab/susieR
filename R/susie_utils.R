@@ -428,7 +428,7 @@ susie_get_residual_variance <- function(res) {
 #' @param warning_tol warn if ELBO is non-decreasing by this tolerance level (default set to 1E-6)
 #' @export
 susie_get_objective <- function(res, all = FALSE, warning_tol = 1E-6) {
-  if (!all(diff(res$elbo) >= warning_tol)) {
+  if (!all(diff(res$elbo) >= (-1 * warning_tol))) {
     warning('Objective is not non-decreasing')
   }
   if (all) return(res$elbo)
