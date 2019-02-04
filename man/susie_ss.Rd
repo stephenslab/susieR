@@ -4,8 +4,9 @@
 \alias{susie_ss}
 \title{Bayesian sum of single-effect (susie) linear regression using summary stat}
 \usage{
-susie_ss(XtX, Xty, n, var_y = 1, L = 10, scaled_prior_variance = 0.2,
-  residual_variance = NULL, prior_weights = NULL, null_weight = NULL,
+susie_ss(XtX, Xty, n, var_y = 1, L = 10, type = c("sufficient", "z"),
+  scaled_prior_variance = 0.2, residual_variance = NULL,
+  r_tol = 1e-08, prior_weights = NULL, null_weight = NULL,
   standardize = TRUE, estimate_residual_variance = TRUE,
   estimate_prior_variance = FALSE, max_iter = 100, s_init = NULL,
   intercept_value = 0, coverage = 0.95, min_abs_corr = 0.5,
@@ -22,9 +23,13 @@ susie_ss(XtX, Xty, n, var_y = 1, L = 10, scaled_prior_variance = 0.2,
 
 \item{L}{maximum number of non-zero effects}
 
+\item{type}{sufficient or z scores}
+
 \item{scaled_prior_variance}{the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )}
 
 \item{residual_variance}{the residual variance (defaults to variance of Y)}
+
+\item{r_tol}{tolerance level for eigen value check of positive semidefinite matrix of R.}
 
 \item{prior_weights}{a p vector of prior probability that each element is non-zero}
 

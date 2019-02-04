@@ -9,7 +9,7 @@ estimate_residual_variance_z(R, z, s)
 \arguments{
 \item{R}{a p by p}
 
-\item{z}{an n vector}
+\item{z}{a p vector}
 
 \item{s}{a susie fit}
 }

@@ -14,10 +14,12 @@
 #' @param n sample size
 #' @param var_y the (sample) variance of the vector Y
 #' @param L maximum number of non-zero effects
+#' @param type sufficient or z scores
 #' @param scaled_prior_variance the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )
 #' @param residual_variance the residual variance (defaults to variance of Y)
 #' @param estimate_residual_variance indicates whether to estimate residual variance
 #' @param estimate_prior_variance indicates whether to estimate prior (currently not recommended as not working as well)
+#' @param r_tol tolerance level for eigen value check of positive semidefinite matrix of R.
 #' @param prior_weights a p vector of prior probability that each element is non-zero
 #' @param null_weight probability of no effect, for each single effect model
 #' @param standardize logical flag (default=TRUE) for whether to standardize columns of X to unit variance prior to fitting.
@@ -56,9 +58,10 @@
 #' coef(res)
 #'
 #' @export
-susie_ss = function(XtX, Xty, n, var_y = 1, L=10,
+susie_ss = function(XtX, Xty, n, var_y = 1, L=10, type = c('sufficient', 'z'),
                     scaled_prior_variance=0.2,
                     residual_variance=NULL,
+                    r_tol = 1e-08,
                     prior_weights = NULL, null_weight = NULL,
                     standardize = TRUE,
                     estimate_residual_variance = TRUE,
@@ -66,6 +69,7 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10,
                     max_iter=100,s_init = NULL, intercept_value=0,
                     coverage=0.95, min_abs_corr=0.5,
                     tol=1e-3, verbose=FALSE, track_fit = FALSE){
+  type = match.arg(type)
   # Check input XtX.
   if (!(is.double(XtX) & is.matrix(XtX)) & !inherits(XtX,"CsparseMatrix"))
     stop("Input X must be a double-precision matrix, or a sparse matrix.")
@@ -84,6 +88,10 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10,
   }
 
   p = ncol(XtX)
+
+  if(type == 'z'){
+    XtX = set_R_attributes(XtX, p, r_tol = r_tol, Xty)
+  }
 
   if(standardize){
     dXtX = diag(XtX)
@@ -125,19 +133,24 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10,
     # alpha_new = s$alpha
 
     if(verbose){
-      print(paste0("objective:",get_objective_ss(XtX, Xty, s, var_y, n)))
+      print(paste0("objective:",ifelse(type == 'sufficient', get_objective_ss(XtX, Xty, s, var_y, n), get_objective_z(XtX, Xty, s))))
     }
     if(estimate_residual_variance){
-      est_sigma2 = estimate_residual_variance_ss(XtX,Xty,s,var_y,n)
+      if(type == 'sufficient'){
+        est_sigma2 = estimate_residual_variance_ss(XtX,Xty,s,var_y,n)
+      }
+      else{
+        est_sigma2 = estimate_residual_variance_z(XtX,Xty,s)
+      }
       if(est_sigma2 < 0){
         stop('Estimating residual variance failed: the estimated value is negative')
       }
       s$sigma2 = est_sigma2
       if(verbose){
-        print(paste0("objective:",get_objective_ss(XtX, Xty, s, var_y, n)))
+        print(paste0("objective:",ifelse(type == 'sufficient', get_objective_ss(XtX, Xty, s, var_y, n), get_objective_z(XtX, Xty, s))))
       }
     }
-    elbo[i+1] = get_objective_ss(XtX, Xty, s, var_y, n)
+    elbo[i+1] = ifelse(type == 'sufficient', get_objective_ss(XtX, Xty, s, var_y, n), get_objective_z(XtX, Xty, s))
 
     # if(max(abs(alpha_new - alpha_old)) < tol) break;
 
@@ -220,17 +233,18 @@ check_r_matrix <- function(R, expected_dim, r_tol) {
 #'
 #' @export
 susie_z = function(z, R, r_tol = 1e-08,
-                   L=10,
+                   L=10, estimate_residual_variance = TRUE,
                    prior_weights = NULL, null_weight = NULL,
                    coverage=0.95, min_abs_corr=0.5,
                    verbose=FALSE, track_fit = FALSE, ...){
 
   R = check_r_matrix(R, length(z), r_tol)
 
-  susie_ss(XtX = R, Xty = z, n=2, var_y=1,
+  susie_ss(XtX = R, Xty = z, n=2, var_y=1, type = 'z',
              L = L,
              estimate_prior_variance = TRUE,
-             estimate_residual_variance = FALSE,
+             estimate_residual_variance = estimate_residual_variance,
+             r_tol=r_tol,
              prior_weights = prior_weights, null_weight = null_weight,
              coverage=coverage, min_abs_corr=min_abs_corr,
              verbose=verbose, track_fit = track_fit, ...)
@@ -309,3 +323,5 @@ susie_bhat = function(bhat, shat, R, n, var_y = 1, r_tol = 1e-08,
            coverage=coverage, min_abs_corr=min_abs_corr,
            verbose=verbose, track_fit = track_fit, ...)
 }
+
+

@@ -7,9 +7,9 @@
 estimate_residual_variance_ss(XtX, Xty, s, var_y, n)
 }
 \arguments{
-\item{XtX}{an n by p matrix of covariantes}
+\item{XtX}{a p by p matrix}
 
-\item{Xty}{an n vector of data}
+\item{Xty}{a p vector}
 
 \item{s}{a susie fit}
 
