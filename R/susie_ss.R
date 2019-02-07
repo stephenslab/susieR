@@ -19,6 +19,7 @@
 #' @param residual_variance the residual variance (defaults to variance of Y)
 #' @param estimate_residual_variance indicates whether to estimate residual variance
 #' @param estimate_prior_variance indicates whether to estimate prior (currently not recommended as not working as well)
+#' @param optimize_option the method to estimate V, 'uniroot' or 'EM'
 #' @param r_tol tolerance level for eigen value check of positive semidefinite matrix of R.
 #' @param prior_weights a p vector of prior probability that each element is non-zero
 #' @param null_weight probability of no effect, for each single effect model
@@ -66,10 +67,13 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10, type = c('sufficient', 'z'),
                     standardize = TRUE,
                     estimate_residual_variance = TRUE,
                     estimate_prior_variance = FALSE,
+                    optimize_option = c('uniroot','EM'),
                     max_iter=100,s_init = NULL, intercept_value=0,
                     coverage=0.95, min_abs_corr=0.5,
                     tol=1e-3, verbose=FALSE, track_fit = FALSE){
   type = match.arg(type)
+  optimize_option = match.arg(optimize_option)
+
   # Check input XtX.
   if (!(is.double(XtX) & is.matrix(XtX)) & !inherits(XtX,"CsparseMatrix"))
     stop("Input X must be a double-precision matrix, or a sparse matrix.")
@@ -129,7 +133,7 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10, type = c('sufficient', 'z'),
     if (track_fit)
       tracking[[i]] = susie_slim(s)
     # alpha_old = alpha_new
-    s = update_each_effect_ss(XtX, Xty, s, estimate_prior_variance)
+    s = update_each_effect_ss(XtX, Xty, s, estimate_prior_variance,optimize_option)
     # alpha_new = s$alpha
 
     if(verbose){
@@ -222,6 +226,8 @@ check_r_matrix <- function(R, expected_dim, r_tol) {
 #' @param R a p by p symmetric and positive semidefinite matrix. It can be X'X, covariance matrix or correlation matrix.
 #' @param r_tol tolerance level for eigen value check of positive semidefinite matrix of R.
 #' @param L maximum number of non-zero effects.
+#' @param estimate_residual_variance indicates whether to estimate residual variance
+#' @param optimize_option the method to estimate V, 'uniroot' or 'EM'
 #' @param prior_weights a p vector of prior probability that each element is non-zero.
 #' @param null_weight probability of no effect, for each single effect model.
 #' @param coverage coverage of confident sets. Default to 0.95 for 95\% credible interval.
@@ -234,6 +240,7 @@ check_r_matrix <- function(R, expected_dim, r_tol) {
 #' @export
 susie_z = function(z, R, r_tol = 1e-08,
                    L=10, estimate_residual_variance = TRUE,
+                   optimize_option = c('uniroot','EM'),
                    prior_weights = NULL, null_weight = NULL,
                    coverage=0.95, min_abs_corr=0.5,
                    verbose=FALSE, track_fit = FALSE, ...){
@@ -241,13 +248,14 @@ susie_z = function(z, R, r_tol = 1e-08,
   R = check_r_matrix(R, length(z), r_tol)
 
   susie_ss(XtX = R, Xty = z, n=2, var_y=1, type = 'z',
-             L = L,
-             estimate_prior_variance = TRUE,
-             estimate_residual_variance = estimate_residual_variance,
-             r_tol=r_tol,
-             prior_weights = prior_weights, null_weight = null_weight,
-             coverage=coverage, min_abs_corr=min_abs_corr,
-             verbose=verbose, track_fit = track_fit, ...)
+           L = L,
+           estimate_prior_variance = TRUE,
+           estimate_residual_variance = estimate_residual_variance,
+           optimize_option = optimize_option,
+           r_tol=r_tol,
+           prior_weights = prior_weights, null_weight = null_weight,
+           coverage=coverage, min_abs_corr=min_abs_corr,
+           verbose=verbose, track_fit = track_fit, ...)
 }
 
 #' @title Summary statistics version of SuSiE on betahat, the corresponding standard error, and correlation (or covariance) matrix
@@ -261,6 +269,7 @@ susie_z = function(z, R, r_tol = 1e-08,
 #' @param scaled_prior_variance the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times)
 #' @param estimate_residual_variance indicates whether to estimate residual variance
 #' @param estimate_prior_variance indicates whether to estimate prior (currently not recommended as not working as well)
+#' @param optimize_option the method to estimate V, 'uniroot' or 'EM'
 #' @param prior_weights a p vector of prior probability that each element is non-zero
 #' @param null_weight probability of no effect, for each single effect model
 #' @param standardize logical flag (default=TRUE) for whether to standardize columns of X to unit variance prior to fitting. It is useful when `var_y` is given.
@@ -281,6 +290,7 @@ susie_bhat = function(bhat, shat, R, n, var_y = 1, r_tol = 1e-08,
                       scaled_prior_variance=0.2,
                       estimate_residual_variance = TRUE,
                       estimate_prior_variance = FALSE,
+                      optimize_option = c('uniroot','EM'),
                       prior_weights = NULL, null_weight = NULL,
                       standardize = TRUE,
                       coverage=0.95, min_abs_corr=0.5,
@@ -318,6 +328,7 @@ susie_bhat = function(bhat, shat, R, n, var_y = 1, r_tol = 1e-08,
            scaled_prior_variance = scaled_prior_variance,
            estimate_residual_variance = estimate_residual_variance,
            estimate_prior_variance = estimate_prior_variance,
+           optimize_option = optimize_option,
            prior_weights = prior_weights, null_weight = null_weight,
            standardize = standardize,
            coverage=coverage, min_abs_corr=min_abs_corr,

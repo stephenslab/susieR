@@ -3,8 +3,9 @@
 #' @param Xty a p vector
 #' @param s_init a list with elements sigma2, V, alpha, mu, Xr
 #' @param estimate_prior_variance boolean indicating whether to estimate prior variance
+#' @param optimize_option the method to estimate V, 'uniroot' or 'EM'
 #' @importFrom Matrix diag
-update_each_effect_ss <- function (XtX, Xty, s_init, estimate_prior_variance=FALSE) {
+update_each_effect_ss <- function (XtX, Xty, s_init, estimate_prior_variance=FALSE, optimize_option = c('uniroot','EM')) {
 
   # Repeat for each effect to update
   s = s_init
@@ -17,7 +18,7 @@ update_each_effect_ss <- function (XtX, Xty, s_init, estimate_prior_variance=FAL
 
       #compute residuals
       XtR = Xty - s$XtXr
-      res = single_effect_regression_ss(as.matrix(XtR),attr(XtX, "d"),s$V[l],s$sigma2,s$pi,estimate_prior_variance)
+      res = single_effect_regression_ss(as.matrix(XtR),attr(XtX, "d"),s$V[l],s$sigma2,s$pi,estimate_prior_variance, optimize_option)
       # Update the variational estimate of the posterior mean.
       s$mu[l,] <- res$mu
       s$alpha[l,] <- res$alpha

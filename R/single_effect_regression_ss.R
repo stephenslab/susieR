@@ -11,6 +11,7 @@
 #' @param residual_variance the residual variance
 #' @param prior_weights a p vector of prior weights
 #' @param optimize_V boolean indicating whether to optimize V (by maximum likelihood)
+#' @param optimize_option the method to estimate V, 'uniroot' or 'EM'
 #' @return a list with elements: \cr
 #' \item{alpha}{vector of posterior inclusion probabilities. ie alpha[i] is posterior probability that
 #'  that b[i] is non-zero}
@@ -22,13 +23,13 @@
 #'
 #' @importFrom stats uniroot
 #'
-single_effect_regression_ss = function(Xty,dXtX,V=1,residual_variance=1,prior_weights=NULL,optimize_V=FALSE){
+single_effect_regression_ss = function(Xty,dXtX,V=1,residual_variance=1,prior_weights=NULL,optimize_V=FALSE, optimize_option = c('uniroot','EM')){
   betahat = (1/dXtX) * Xty
   shat2 = residual_variance/dXtX
   if (is.null(prior_weights))
     prior_weights = rep(1/length(dXtX), length(dXtX))
 
-  if(optimize_V){
+  if(optimize_V && optimize_option == 'uniroot'){
     V = est_V(betahat, shat2, prior_weights)
   }
 
@@ -48,5 +49,8 @@ single_effect_regression_ss = function(Xty,dXtX,V=1,residual_variance=1,prior_we
   post_mean = (1/residual_variance) * post_var * Xty
   post_mean2 = post_var + post_mean^2 # second moment
   lbf_model = maxlbf + log(weighted_sum_w) #analogue of loglik in the non-summary case
+  if(optimize_V && optimize_option == 'EM'){
+    V = sum(alpha*post_mean2)
+  }
   return(list(alpha=alpha,mu=post_mean,mu2 = post_mean2,lbf=lbf, V=V, lbf_model=lbf_model))
 }

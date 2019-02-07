@@ -5,9 +5,9 @@
 \title{Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix.}
 \usage{
 susie_z(z, R, r_tol = 1e-08, L = 10,
-  estimate_residual_variance = TRUE, prior_weights = NULL,
-  null_weight = NULL, coverage = 0.95, min_abs_corr = 0.5,
-  verbose = FALSE, track_fit = FALSE, ...)
+  estimate_residual_variance = TRUE, optimize_option = c("uniroot",
+  "EM"), prior_weights = NULL, null_weight = NULL, coverage = 0.95,
+  min_abs_corr = 0.5, verbose = FALSE, track_fit = FALSE, ...)
 }
 \arguments{
 \item{z}{a p vector of z scores.}
@@ -17,6 +17,10 @@ susie_z(z, R, r_tol = 1e-08, L = 10,
 \item{r_tol}{tolerance level for eigen value check of positive semidefinite matrix of R.}
 
 \item{L}{maximum number of non-zero effects.}
+
+\item{estimate_residual_variance}{indicates whether to estimate residual variance}
+
+\item{optimize_option}{the method to estimate V, 'uniroot' or 'EM'}
 
 \item{prior_weights}{a p vector of prior probability that each element is non-zero.}
 
