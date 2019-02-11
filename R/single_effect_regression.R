@@ -23,7 +23,7 @@
 #' @importFrom stats uniroot
 #' @importFrom Matrix colSums
 #'
-single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL,optimize_V=FALSE){
+single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL, s=NULL, optimize_V=FALSE, optimV_method='EM'){
   Xty = compute_Xty(X, Y)
   betahat = (1/attr(X, "d")) * Xty
   shat2 = residual_variance/attr(X, "d")
@@ -31,7 +31,17 @@ single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL
     prior_weights = rep(1/ncol(X), ncol(X))
 
   if(optimize_V){
-    V = est_V(betahat, shat2, prior_weights)
+    if(optimV_method=='EM'){
+      V = est_V_EM(s)
+    } else if (optimV_method=='uniroot'){
+      V = est_V_uniroot(betahat, shat2, prior_weights)
+    } else {
+      stop('Please choose an optimization method for estimating prior variance: either EM or uniroot.')
+    }
+
+    if(loglik(0,betahat,shat2,prior_weights) >= loglik(V,betahat,shat2,prior_weights)){
+      V=0 # set V exactly 0 if that beats the numerical value
+    }
   }
 
   lbf = dnorm(betahat,0,sqrt(V+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
@@ -56,16 +66,15 @@ single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL
 
 #' @title estimate prior variance
 #' @keywords internal
-est_V = function(betahat, shat2, prior_weights) {
-  ##V.o = optim(par=log(V),fn=negloglik.logscale,gr = negloglik.grad.logscale,betahat=betahat,shat2=shat2,prior_weights=prior_weights,method="BFGS")
-  ##if(V.o$convergence!=0){
-  ##  warning("optimization over prior variance failed to converge")
-  ##}
+est_V_EM = function(s){
+  return(sum(s$alpha * s$mu2))
+}
+
+#' @title estimate prior variance
+#' @keywords internal
+est_V_uniroot = function(betahat, shat2, prior_weights){
   V.u=uniroot(negloglik.grad.logscale,c(-10,10),extendInt = "upX",betahat=betahat,shat2=shat2,prior_weights=prior_weights)
   V = exp(V.u$root)
-  if(loglik(0,betahat,shat2,prior_weights) >= loglik(V,betahat,shat2,prior_weights)){
-    V=0 # set V exactly 0 if that beats the numerical value
-  }
   return(V)
 }
 

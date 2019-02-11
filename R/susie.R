@@ -64,6 +64,7 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
                  standardize=TRUE,intercept=TRUE,
                  estimate_residual_variance=TRUE,
                  estimate_prior_variance = FALSE,
+                 optimV_method = 'EM',
                  s_init = NULL,coverage=0.95,min_abs_corr=0.5,
                  compute_univariate_zscore = FALSE,
                  max_iter=100,tol=1e-3,
@@ -110,7 +111,7 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
     #s = add_null_effect(s,0)
     if (track_fit)
       tracking[[i]] = susie_slim(s)
-    s = update_each_effect(X, Y, s, estimate_prior_variance)
+    s = update_each_effect(X, Y, s, estimate_prior_variance,optimV_method)
     if(verbose){
         print(paste0("objective:",get_objective(X,Y,s)))
     }

@@ -4,7 +4,7 @@
 #' @param s a SuSiE fit
 #' @param estimate_prior_variance boolean indicating whether to estimate prior variance
 #' @param colSum of X^2
-update_each_effect <- function (X, Y, s, estimate_prior_variance=FALSE) {
+update_each_effect <- function (X, Y, s, estimate_prior_variance=FALSE, optimV_method='EM') {
 
   # Repeat for each effect to update
   L = nrow(s$alpha)
@@ -16,8 +16,8 @@ update_each_effect <- function (X, Y, s, estimate_prior_variance=FALSE) {
       #compute residuals
       R = Y - s$Xr
 
-      res <- single_effect_regression(R,X,s$V[l],s$sigma2,s$pi,
-                                      estimate_prior_variance)
+      res <- single_effect_regression(R,X,s$V[l],s$sigma2,s$pi,s,
+                                      estimate_prior_variance, optimV_method)
 
       # Update the variational estimate of the posterior mean.
       s$mu[l,] <- res$mu
