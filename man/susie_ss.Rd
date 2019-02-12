@@ -8,8 +8,8 @@ susie_ss(XtX, Xty, n, var_y = 1, L = 10, type = c("sufficient", "z"),
   scaled_prior_variance = 0.2, residual_variance = NULL,
   r_tol = 1e-08, prior_weights = NULL, null_weight = NULL,
   standardize = TRUE, estimate_residual_variance = TRUE,
-  estimate_prior_variance = FALSE, optimize_option = c("uniroot",
-  "EM"), max_iter = 100, s_init = NULL, intercept_value = 0,
+  estimate_prior_variance = FALSE, optimize_option = c("EM",
+  "uniroot"), max_iter = 100, s_init = NULL, intercept_value = 0,
   coverage = 0.95, min_abs_corr = 0.5, tol = 0.001,
   verbose = FALSE, track_fit = FALSE)
 }

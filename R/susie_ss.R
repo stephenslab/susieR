@@ -67,7 +67,7 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10, type = c('sufficient', 'z'),
                     standardize = TRUE,
                     estimate_residual_variance = TRUE,
                     estimate_prior_variance = FALSE,
-                    optimize_option = c('uniroot','EM'),
+                    optimize_option = c('EM', 'uniroot'),
                     max_iter=100,s_init = NULL, intercept_value=0,
                     coverage=0.95, min_abs_corr=0.5,
                     tol=1e-3, verbose=FALSE, track_fit = FALSE){
