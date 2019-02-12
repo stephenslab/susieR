@@ -6,8 +6,8 @@
 \usage{
 susie_bhat(bhat, shat, R, n, var_y = 1, r_tol = 1e-08, L = 10,
   scaled_prior_variance = 0.2, estimate_residual_variance = TRUE,
-  estimate_prior_variance = FALSE, optimize_option = c("uniroot",
-  "EM"), prior_weights = NULL, null_weight = NULL,
+  estimate_prior_variance = FALSE, optimize_option = c("EM",
+  "uniroot"), prior_weights = NULL, null_weight = NULL,
   standardize = TRUE, coverage = 0.95, min_abs_corr = 0.5,
   verbose = FALSE, track_fit = FALSE, ...)
 }
