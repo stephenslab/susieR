@@ -5,8 +5,8 @@
 \title{Bayesian single-effect linear regression of Y on X.}
 \usage{
 single_effect_regression_ss(Xty, dXtX, V = 1, residual_variance = 1,
-  prior_weights = NULL, optimize_V = FALSE,
-  optimize_option = c("uniroot", "EM"))
+  prior_weights = NULL, optimize_V = FALSE, optimize_option = c("EM",
+  "uniroot"))
 }
 \arguments{
 \item{Xty}{a p vector}

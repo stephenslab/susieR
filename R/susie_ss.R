@@ -67,7 +67,7 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10, type = c('sufficient', 'z'),
                     standardize = TRUE,
                     estimate_residual_variance = TRUE,
                     estimate_prior_variance = FALSE,
-                    optimize_option = c('uniroot','EM'),
+                    optimize_option = c('EM', 'uniroot'),
                     max_iter=100,s_init = NULL, intercept_value=0,
                     coverage=0.95, min_abs_corr=0.5,
                     tol=1e-3, verbose=FALSE, track_fit = FALSE){
@@ -240,13 +240,14 @@ check_r_matrix <- function(R, expected_dim, r_tol) {
 #' @export
 susie_z = function(z, R, r_tol = 1e-08,
                    L=10, estimate_residual_variance = TRUE,
-                   optimize_option = c('uniroot','EM'),
+                   optimize_option = c('EM', 'uniroot'),
                    prior_weights = NULL, null_weight = NULL,
                    coverage=0.95, min_abs_corr=0.5,
                    verbose=FALSE, track_fit = FALSE, ...){
 
   R = check_r_matrix(R, length(z), r_tol)
 
+  optimize_option = match.arg(optimize_option)
   susie_ss(XtX = R, Xty = z, n=2, var_y=1, type = 'z',
            L = L,
            estimate_prior_variance = TRUE,
@@ -290,7 +291,7 @@ susie_bhat = function(bhat, shat, R, n, var_y = 1, r_tol = 1e-08,
                       scaled_prior_variance=0.2,
                       estimate_residual_variance = TRUE,
                       estimate_prior_variance = FALSE,
-                      optimize_option = c('uniroot','EM'),
+                      optimize_option = c('EM', 'uniroot'),
                       prior_weights = NULL, null_weight = NULL,
                       standardize = TRUE,
                       coverage=0.95, min_abs_corr=0.5,
@@ -324,6 +325,7 @@ susie_bhat = function(bhat, shat, R, n, var_y = 1, r_tol = 1e-08,
     XtX = t(R * sqrt(XtXdiag)) * sqrt(XtXdiag)
   }
 
+  optimize_option = match.arg(optimize_option)
   susie_ss(XtX = XtX, Xty = Xty, n = n, var_y = var_y, L = L,
            scaled_prior_variance = scaled_prior_variance,
            estimate_residual_variance = estimate_residual_variance,

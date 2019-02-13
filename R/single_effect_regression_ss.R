@@ -23,14 +23,14 @@
 #'
 #' @importFrom stats uniroot
 #'
-single_effect_regression_ss = function(Xty,dXtX,V=1,residual_variance=1,prior_weights=NULL,optimize_V=FALSE, optimize_option = c('uniroot','EM')){
+single_effect_regression_ss = function(Xty,dXtX,V=1,residual_variance=1,prior_weights=NULL,optimize_V=FALSE, optimize_option = c('EM','uniroot')){
   betahat = (1/dXtX) * Xty
   shat2 = residual_variance/dXtX
   if (is.null(prior_weights))
     prior_weights = rep(1/length(dXtX), length(dXtX))
 
   if(optimize_V && optimize_option == 'uniroot'){
-    V = est_V(betahat, shat2, prior_weights)
+    V = est_V_uniroot(betahat, shat2, prior_weights)
   }
 
   lbf = dnorm(betahat,0,sqrt(V+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
