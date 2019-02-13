@@ -30,14 +30,26 @@ single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL
   if (is.null(prior_weights))
     prior_weights = rep(1/ncol(X), ncol(X))
 
-  if(optimize_V){
-    if(optimV_method=="uniroot"){
-      V = est_V_uniroot(betahat, shat2, prior_weights)
-      if(loglik(0,betahat,shat2,prior_weights) >= loglik(V,betahat,shat2,prior_weights)){
-        V=0 # set V exactly 0 if that beats the numerical value
-      }
+  #if we estimate prior variance, we start from some initialization
+  #if(optimize_V & l==1){
+  #  V = max(betahat^2 -shat2, na.rm = TRUE)
+  #}
+
+  if(optimize_V & optimV_method=="uniroot"){
+    V = est_V_uniroot(betahat, shat2, prior_weights)
+    if(loglik(0,betahat,shat2,prior_weights) >= loglik(V,betahat,shat2,prior_weights)){
+      V=0 # set V exactly 0 if that beats the numerical value
     }
   }
+
+  if(optimize_V & optimV_method=="optim"){
+    lV = optim(par=log(max(betahat^2-shat2, na.rm = TRUE)), fn=neg.loglik.logscale, betahat=betahat, shat2=shat2, prior_weights = prior_weights, method='Brent', lower = -10, upper = 10)$par
+    V = exp(lV)
+    if(loglik(0,betahat,shat2,prior_weights) >= loglik(V,betahat,shat2,prior_weights)){
+      V=0 # set V exactly 0 if that beats the numerical value
+    }
+  }
+
 
   lbf = dnorm(betahat,0,sqrt(V+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
   #log(bf) on each SNP
@@ -87,6 +99,10 @@ loglik = function(V,betahat,shat2,prior_weights) {
   w_weighted = w * prior_weights
   weighted_sum_w = sum(w_weighted)
   return(log(weighted_sum_w)+ maxlbf)
+}
+
+neg.loglik.logscale = function(lV,betahat,shat2,prior_weights){
+  return(-loglik(exp(lV),betahat,shat2,prior_weights))
 }
 
 #' @importFrom Matrix colSums
