@@ -11,7 +11,7 @@
 #' @param residual_variance the residual variance
 #' @param prior_weights a p vector of prior weights
 #' @param optimize_V boolean indicating whether to optimize V (by maximum likelihood)
-#' @param optimize_option the method to estimate V, 'uniroot' or 'EM'
+#' @param optimV_method the method to estimate V, 'EM', 'optim', 'uniroot'
 #' @return a list with elements: \cr
 #' \item{alpha}{vector of posterior inclusion probabilities. ie alpha[i] is posterior probability that
 #'  that b[i] is non-zero}
@@ -23,15 +23,29 @@
 #'
 #' @importFrom stats uniroot
 #'
-single_effect_regression_ss = function(Xty,dXtX,V=1,residual_variance=1,prior_weights=NULL,optimize_V=FALSE, optimize_option = c('EM','uniroot')){
+single_effect_regression_ss = function(Xty,dXtX,V=1,residual_variance=1,prior_weights=NULL,optimize_V=FALSE, optimV_method = c('EM','optim','uniroot'), niter){
   betahat = (1/dXtX) * Xty
   shat2 = residual_variance/dXtX
   if (is.null(prior_weights))
     prior_weights = rep(1/length(dXtX), length(dXtX))
 
-  if(optimize_V && optimize_option == 'uniroot'){
+  if(optimize_V && optimV_method == 'uniroot'){
     V = est_V_uniroot(betahat, shat2, prior_weights)
+    if(loglik(0,betahat,shat2,prior_weights) >= loglik(V,betahat,shat2,prior_weights)){
+      V=0 # set V exactly 0 if that beats the numerical value
+    }
   }
+
+  if(optimize_V && optimV_method=="optim"){
+    lV = optim(par=log(max(betahat^2-shat2, na.rm = TRUE)), fn=neg.loglik.logscale,
+               gr = negloglik.grad.logscale, betahat=betahat, shat2=shat2, prior_weights = prior_weights,
+               method='Brent', lower = -10, upper = 15)$par
+    V = exp(lV)
+    if(loglik(0,betahat,shat2,prior_weights) >= loglik(V,betahat,shat2,prior_weights)){
+      V=0 # set V exactly 0 if that beats the numerical value
+    }
+  }
+
 
   lbf = dnorm(betahat,0,sqrt(V+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
   #log(bf) on each SNP
@@ -49,7 +63,8 @@ single_effect_regression_ss = function(Xty,dXtX,V=1,residual_variance=1,prior_we
   post_mean = (1/residual_variance) * post_var * Xty
   post_mean2 = post_var + post_mean^2 # second moment
   lbf_model = maxlbf + log(weighted_sum_w) #analogue of loglik in the non-summary case
-  if(optimize_V && optimize_option == 'EM'){
+  if(optimize_V && optimV_method == 'EM'){
+    # if(niter <= 5 || niter %% 3)
     V = sum(alpha*post_mean2)
   }
   return(list(alpha=alpha,mu=post_mean,mu2 = post_mean2,lbf=lbf, V=V, lbf_model=lbf_model))

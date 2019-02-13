@@ -8,7 +8,7 @@ susie_ss(XtX, Xty, n, var_y = 1, L = 10, type = c("sufficient", "z"),
   scaled_prior_variance = 0.2, residual_variance = NULL,
   r_tol = 1e-08, prior_weights = NULL, null_weight = NULL,
   standardize = TRUE, estimate_residual_variance = TRUE,
-  estimate_prior_variance = FALSE, optimize_option = c("EM",
+  estimate_prior_variance = FALSE, optimV_method = c("EM", "optim",
   "uniroot"), max_iter = 100, s_init = NULL, intercept_value = 0,
   coverage = 0.95, min_abs_corr = 0.5, tol = 0.001,
   verbose = FALSE, track_fit = FALSE)
@@ -46,7 +46,7 @@ to think more carefully about specifying
 
 \item{estimate_prior_variance}{indicates whether to estimate prior (currently not recommended as not working as well)}
 
-\item{optimize_option}{the method to estimate V, 'uniroot' or 'EM'}
+\item{optimV_method}{the method to estimate V, 'EM', 'optim' or 'uniroot'}
 
 \item{max_iter}{maximum number of iterations to perform}
 

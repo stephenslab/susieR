@@ -5,7 +5,7 @@
 \title{update each effect once}
 \usage{
 update_each_effect_ss(XtX, Xty, s_init, estimate_prior_variance = FALSE,
-  optimize_option = c("uniroot", "EM"))
+  optimV_method = c("EM", "optim", "uniroot"), niter)
 }
 \arguments{
 \item{XtX}{a p by p matrix, t(X)X}
@@ -16,7 +16,7 @@ update_each_effect_ss(XtX, Xty, s_init, estimate_prior_variance = FALSE,
 
 \item{estimate_prior_variance}{boolean indicating whether to estimate prior variance}
 
-\item{optimize_option}{the method to estimate V, 'uniroot' or 'EM'}
+\item{optimV_method}{the method to estimate V, 'EM', 'optim', or 'uniroot'}
 }
 \description{
 update each effect once
