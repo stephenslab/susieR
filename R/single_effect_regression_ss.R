@@ -23,13 +23,13 @@
 #'
 #' @importFrom stats uniroot
 #'
-single_effect_regression_ss = function(Xty,dXtX,V=1,residual_variance=1,prior_weights=NULL,optimize_V=FALSE, optimV_method = c('EM','optim','uniroot'), niter){
+single_effect_regression_ss = function(Xty,dXtX,V=1,residual_variance=1,prior_weights=NULL,optimize_V=FALSE, optimV_method = "EM", niter){
   betahat = (1/dXtX) * Xty
   shat2 = residual_variance/dXtX
   if (is.null(prior_weights))
     prior_weights = rep(1/length(dXtX), length(dXtX))
 
-  if(optimize_V && optimV_method == 'uniroot'){
+  if(optimize_V && optimV_method == "uniroot"){
     V = est_V_uniroot(betahat, shat2, prior_weights)
     if(loglik(0,betahat,shat2,prior_weights) >= loglik(V,betahat,shat2,prior_weights)){
       V=0 # set V exactly 0 if that beats the numerical value
@@ -63,7 +63,7 @@ single_effect_regression_ss = function(Xty,dXtX,V=1,residual_variance=1,prior_we
   post_mean = (1/residual_variance) * post_var * Xty
   post_mean2 = post_var + post_mean^2 # second moment
   lbf_model = maxlbf + log(weighted_sum_w) #analogue of loglik in the non-summary case
-  if(optimize_V && optimV_method == 'EM'){
+  if(optimize_V && optimV_method == "EM"){
     # if(niter <= 5 || niter %% 3)
     V = sum(alpha*post_mean2)
   }

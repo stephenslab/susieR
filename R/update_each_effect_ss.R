@@ -5,7 +5,7 @@
 #' @param estimate_prior_variance boolean indicating whether to estimate prior variance
 #' @param optimV_method the method to estimate V, 'EM', 'optim', or 'uniroot'
 #' @importFrom Matrix diag
-update_each_effect_ss <- function (XtX, Xty, s_init, estimate_prior_variance=FALSE, optimV_method = c('EM', 'optim','uniroot'), niter) {
+update_each_effect_ss <- function (XtX, Xty, s_init, estimate_prior_variance=FALSE, optimV_method = "EM", niter) {
 
   # Repeat for each effect to update
   s = s_init
