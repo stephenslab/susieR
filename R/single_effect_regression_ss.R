@@ -66,6 +66,9 @@ single_effect_regression_ss = function(Xty,dXtX,V=1,residual_variance=1,prior_we
   if(optimize_V && optimV_method == "EM"){
     # if(niter <= 5 || niter %% 3)
     V = sum(alpha*post_mean2)
+    if(loglik(0,betahat,shat2,prior_weights) >= loglik(V,betahat,shat2,prior_weights)){
+      V=0 # set V exactly 0 if that beats the numerical value
+    }
   }
   return(list(alpha=alpha,mu=post_mean,mu2 = post_mean2,lbf=lbf, V=V, lbf_model=lbf_model))
 }
