@@ -23,24 +23,19 @@
 #' @importFrom stats uniroot
 #' @importFrom Matrix colSums
 #'
-single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL, optimize_V=FALSE, optimV_method='EM'){
+single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL, optimize_V=FALSE, optimV_method='optim'){
   Xty = compute_Xty(X, Y)
   betahat = (1/attr(X, "d")) * Xty
   shat2 = residual_variance/attr(X, "d")
   if (is.null(prior_weights))
     prior_weights = rep(1/ncol(X), ncol(X))
 
-  #if we estimate prior variance, we start from some initialization
-  #if(optimize_V & l==1){
-  #  V = max(betahat^2 -shat2, na.rm = TRUE)
-  #}
-
-  if(optimize_V & optimV_method=="uniroot"){
-    V = est_V_uniroot(betahat, shat2, prior_weights)
-    if(loglik(0,betahat,shat2,prior_weights) >= loglik(V,betahat,shat2,prior_weights)){
-      V=0 # set V exactly 0 if that beats the numerical value
-    }
-  }
+  # if(optimize_V & optimV_method=="uniroot"){
+  #   V = est_V_uniroot(betahat, shat2, prior_weights)
+  #   if(loglik(0,betahat,shat2,prior_weights) >= loglik(V,betahat,shat2,prior_weights)){
+  #     V=0 # set V exactly 0 if that beats the numerical value
+  #   }
+  # }
 
   if(optimize_V & optimV_method=="optim"){
     lV = optim(par=log(max(betahat^2-shat2, na.rm = TRUE)), fn=neg.loglik.logscale, betahat=betahat, shat2=shat2, prior_weights = prior_weights, method='Brent', lower = -10, upper = 10)$par
@@ -49,7 +44,6 @@ single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL
       V=0 # set V exactly 0 if that beats the numerical value
     }
   }
-
 
   lbf = dnorm(betahat,0,sqrt(V+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
   #log(bf) on each SNP
@@ -66,11 +60,14 @@ single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL
   # BF for single effect model
   lbf_model = maxlbf + log(weighted_sum_w)
   loglik = lbf_model + sum(dnorm(Y,0,sqrt(residual_variance),log=TRUE))
-  if(optimize_V){
-    if(optimV_method=="EM"){
-      V = sum(alpha*post_mean2)
+
+  if(optimize_V & optimV_method=="EM"){
+    V = sum(alpha*post_mean2)
+    if(loglik(0,betahat,shat2,prior_weights) >= loglik(V,betahat,shat2,prior_weights)){
+      V=0 # set V exactly 0 if that beats the numerical value
     }
   }
+
   return(list(alpha=alpha,mu=post_mean,mu2 = post_mean2,lbf=lbf,lbf_model=lbf_model,V=V,loglik=loglik))
 }
 

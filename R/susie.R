@@ -21,6 +21,7 @@
 #' @param intercept Should intercept be fitted (default=TRUE) or set to zero (FALSE). The latter is generally not recommended.
 #' @param estimate_residual_variance indicates whether to estimate residual variance
 #' @param estimate_prior_variance indicates whether to estimate prior (currently not recommended as not fully tested and assessed)
+#' @param optimV_method the method used for estimating prior variance. Options are 'EM' and 'optim', and default is 'optim'.
 #' @param s_init a previous susie fit with which to initialize
 #' @param coverage coverage of confident sets. Default to 0.95 for 95\% credible interval.
 #' @param min_abs_corr minimum of absolute value of correlation allowed in a credible set.
@@ -64,7 +65,7 @@ susie = function(X,Y,L=10,scaled_prior_variance=0.2,residual_variance=NULL,
                  standardize=TRUE,intercept=TRUE,
                  estimate_residual_variance=TRUE,
                  estimate_prior_variance = FALSE,
-                 optimV_method = 'EM',
+                 optimV_method = 'optim',
                  s_init = NULL,coverage=0.95,min_abs_corr=0.5,
                  compute_univariate_zscore = FALSE,
                  max_iter=100,tol=1e-3,

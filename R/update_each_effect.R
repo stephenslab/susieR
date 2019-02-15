@@ -4,7 +4,7 @@
 #' @param s a SuSiE fit
 #' @param estimate_prior_variance boolean indicating whether to estimate prior variance
 #' @param colSum of X^2
-update_each_effect <- function (X, Y, s, estimate_prior_variance=FALSE, optimV_method='EM') {
+update_each_effect <- function (X, Y, s, estimate_prior_variance=FALSE, optimV_method='optim') {
 
   # Repeat for each effect to update
   L = nrow(s$alpha)
