@@ -37,7 +37,7 @@ single_effect_regression_ss = function(Xty,dXtX,V=1,residual_variance=1,prior_we
   }
 
   if(optimize_V && optimV_method=="optim"){
-    lV = optim(par=log(max(betahat^2-shat2, na.rm = TRUE)), fn=neg.loglik.logscale,
+    lV = optim(par=log(max(c(betahat^2-shat2, 1), na.rm = TRUE)), fn=neg.loglik.logscale,
                gr = negloglik.grad.logscale, betahat=betahat, shat2=shat2, prior_weights = prior_weights,
                method='Brent', lower = -10, upper = 15)$par
     V = exp(lV)
