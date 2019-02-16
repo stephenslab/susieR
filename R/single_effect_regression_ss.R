@@ -11,7 +11,7 @@
 #' @param residual_variance the residual variance
 #' @param prior_weights a p vector of prior weights
 #' @param optimize_V boolean indicating whether to optimize V (by maximum likelihood)
-#' @param optimV_method the method to estimate V, 'EM', 'optim', 'uniroot'
+#' @param optimV_method the method to estimate V, 'optim', 'EM' or 'uniroot'
 #' @return a list with elements: \cr
 #' \item{alpha}{vector of posterior inclusion probabilities. ie alpha[i] is posterior probability that
 #'  that b[i] is non-zero}
@@ -23,7 +23,7 @@
 #'
 #' @importFrom stats uniroot
 #'
-single_effect_regression_ss = function(Xty,dXtX,V=1,residual_variance=1,prior_weights=NULL,optimize_V=FALSE, optimV_method = "EM", niter){
+single_effect_regression_ss = function(Xty,dXtX,V=1,residual_variance=1,prior_weights=NULL,optimize_V=FALSE, optimV_method = "optim", niter){
   betahat = (1/dXtX) * Xty
   shat2 = residual_variance/dXtX
   if (is.null(prior_weights))

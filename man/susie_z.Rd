@@ -5,7 +5,7 @@
 \title{Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix.}
 \usage{
 susie_z(z, R, r_tol = 1e-08, L = 10,
-  estimate_residual_variance = TRUE, optimV_method = c("EM", "optim",
+  estimate_residual_variance = TRUE, optimV_method = c("optim", "EM",
   "uniroot"), prior_weights = NULL, null_weight = NULL,
   coverage = 0.95, min_abs_corr = 0.5, verbose = FALSE,
   track_fit = FALSE, ...)
@@ -21,7 +21,7 @@ susie_z(z, R, r_tol = 1e-08, L = 10,
 
 \item{estimate_residual_variance}{indicates whether to estimate residual variance}
 
-\item{optimV_method}{the method to estimate V, 'EM', 'optim' or 'uniroot'}
+\item{optimV_method}{the method to estimate V, 'optim', 'EM' or 'uniroot'}
 
 \item{prior_weights}{a p vector of prior probability that each element is non-zero.}
 

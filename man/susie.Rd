@@ -8,7 +8,7 @@ susie(X, Y, L = 10, scaled_prior_variance = 0.2,
   residual_variance = NULL, prior_weights = NULL, null_weight = NULL,
   standardize = TRUE, intercept = TRUE,
   estimate_residual_variance = TRUE, estimate_prior_variance = FALSE,
-  optimV_method = "EM", s_init = NULL, coverage = 0.95,
+  optimV_method = "optim", s_init = NULL, coverage = 0.95,
   min_abs_corr = 0.5, compute_univariate_zscore = FALSE,
   max_iter = 100, tol = 0.001, verbose = FALSE, track_fit = FALSE)
 }
@@ -39,6 +39,8 @@ Any column of X that has zero variance is not standardized, but left as is.}
 \item{estimate_residual_variance}{indicates whether to estimate residual variance}
 
 \item{estimate_prior_variance}{indicates whether to estimate prior (currently not recommended as not fully tested and assessed)}
+
+\item{optimV_method}{the method used for estimating prior variance. Options are 'EM' and 'optim', and default is 'optim'.}
 
 \item{s_init}{a previous susie fit with which to initialize}
 

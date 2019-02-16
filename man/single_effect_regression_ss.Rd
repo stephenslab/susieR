@@ -5,7 +5,7 @@
 \title{Bayesian single-effect linear regression of Y on X.}
 \usage{
 single_effect_regression_ss(Xty, dXtX, V = 1, residual_variance = 1,
-  prior_weights = NULL, optimize_V = FALSE, optimV_method = "EM",
+  prior_weights = NULL, optimize_V = FALSE, optimV_method = "optim",
   niter)
 }
 \arguments{
@@ -21,7 +21,7 @@ single_effect_regression_ss(Xty, dXtX, V = 1, residual_variance = 1,
 
 \item{optimize_V}{boolean indicating whether to optimize V (by maximum likelihood)}
 
-\item{optimV_method}{the method to estimate V, 'EM', 'optim', 'uniroot'}
+\item{optimV_method}{the method to estimate V, 'optim', 'EM' or 'uniroot'}
 }
 \value{
 a list with elements: \cr
