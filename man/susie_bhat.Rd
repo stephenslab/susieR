@@ -6,10 +6,10 @@
 \usage{
 susie_bhat(bhat, shat, R, n, var_y = 1, r_tol = 1e-08, L = 10,
   scaled_prior_variance = 0.2, estimate_residual_variance = TRUE,
-  estimate_prior_variance = FALSE, optimV_method = c("optim", "EM",
-  "uniroot"), prior_weights = NULL, null_weight = NULL,
-  standardize = TRUE, coverage = 0.95, min_abs_corr = 0.5,
-  verbose = FALSE, track_fit = FALSE, ...)
+  estimate_prior_variance = FALSE, optimV_method = c("optim", "EM"),
+  prior_weights = NULL, null_weight = NULL, standardize = TRUE,
+  coverage = 0.95, min_abs_corr = 0.5, verbose = FALSE,
+  track_fit = FALSE, ...)
 }
 \arguments{
 \item{bhat}{a p vector of estimated effects.}
@@ -32,7 +32,7 @@ susie_bhat(bhat, shat, R, n, var_y = 1, r_tol = 1e-08, L = 10,
 
 \item{estimate_prior_variance}{indicates whether to estimate prior (currently not recommended as not working as well)}
 
-\item{optimV_method}{the method to estimate V, 'optim', 'EM' or 'uniroot'}
+\item{optimV_method}{the method to estimate V, 'optim' or 'EM'}
 
 \item{prior_weights}{a p vector of prior probability that each element is non-zero}
 
