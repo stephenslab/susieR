@@ -31,6 +31,8 @@ init_setup = function(n, p, L, scaled_prior_variance, residual_variance, prior_w
     residual_variance = varY
   if(is.null(prior_weights))
     prior_weights = rep(1/p, p)
+  else
+    prior_weights = prior_weights / sum(prior_weights)
   if(length(prior_weights) != p)
     stop("Prior weights must have length p.")
   if (p < L) L = p
