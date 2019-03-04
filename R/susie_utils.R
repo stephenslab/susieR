@@ -438,6 +438,6 @@ susie_get_objective <- function(res, all = FALSE, warning_tol = 1E-6) {
 #' @title Slim the result of fitted SuSiE model
 #' @param res a susie fit, the output of `susieR::susie()`
 susie_slim = function(res){
-  list(alpha = res$alpha, niter = res$niter)
+  list(alpha = res$alpha, niter = res$niter, V = res$V, sigma2 = res$sigma2)
 }
 
