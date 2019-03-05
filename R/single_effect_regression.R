@@ -39,7 +39,7 @@ single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL
   # }
 
   if(optimize_V & optimV_method=="optim"){
-    lV = optim(par=log(max(betahat^2-shat2, na.rm = TRUE)), fn=neg.loglik.logscale, betahat=betahat, shat2=shat2, prior_weights = prior_weights, method='Brent', lower = -10, upper = 10)$par
+    lV = optim(par=log(max(c(betahat^2-shat2, 1), na.rm = TRUE)), fn=neg.loglik.logscale, betahat=betahat, shat2=shat2, prior_weights = prior_weights, method='Brent', lower = -10, upper = 10)$par
     V = exp(lV)
     if(loglik(0,betahat,shat2,prior_weights) >= loglik(V,betahat,shat2,prior_weights)){
       V=0 # set V exactly 0 if that beats the numerical value
