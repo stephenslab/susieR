@@ -10,7 +10,7 @@ Title: Fit Sum of Single Effects Linear Regression Model Description:
     non-zero effects in the vector $b$), although it is also useful to
     more general applications.
 Date: 2019-03-05
-Version: 0.6.4.0455
+Version: 0.6.4.0456
 Authors@R: c(person("Gao","Wang",role=c("aut","cre"),
                     email="mstephens@uchicago.edu"),
              person("Peter","Carbonetto",role="aut"),
