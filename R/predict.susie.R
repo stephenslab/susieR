@@ -3,8 +3,9 @@
 #' @return a p+1 vector, the first element being an intercept, and the remaining p elements being estimated regression coefficients
 #' @method coef susie
 #' @export
-coef.susie = function(s){
-  c(s$intercept,colSums(s$alpha*s$mu)/s$X_column_scale_factors )
+coef.susie = function(object, ...){
+  s <- object
+  c(s$intercept,colSums(s$alpha*s$mu)/s$X_column_scale_factors)
 }
 
 #' @title predict future observations or extract coefficients from susie fit
@@ -14,7 +15,9 @@ coef.susie = function(s){
 #' @method predict susie
 #' @importFrom stats coef
 #' @export
-predict.susie = function(s,newx = NULL,type=c("response","coefficients")){
+predict.susie = function(object,newx = NULL,
+                         type=c("response","coefficients"),...) {
+  s <- object
   type <- match.arg(type)
   if (type=="coefficients"){
     if(!missing(newx)){

@@ -273,6 +273,8 @@ calc_z = function(X,y,centered=FALSE){
 #' @importFrom graphics plot
 #' @importFrom graphics segments
 #' @importFrom graphics points
+#' @importFrom graphics legend
+#' @importFrom graphics par
 #'
 #' @export
 susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,add_legend=FALSE,...){

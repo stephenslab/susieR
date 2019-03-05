@@ -22,6 +22,7 @@
 #' \item{lbf_model}{(scalar) the loglikelihood for the total model minus the log-likelihood for the null model}
 #'
 #' @importFrom stats uniroot
+#' @importFrom stats optim
 #'
 single_effect_regression_ss = function(Xty,dXtX,V=1,residual_variance=1,prior_weights=NULL,optimize_V=FALSE, optimV_method = "optim"){
   betahat = (1/dXtX) * Xty

@@ -21,6 +21,7 @@
 #' \item{loglik}{The log-likelihood p(Y|X,V)}
 #'
 #' @importFrom stats uniroot
+#' @importFrom stats optim
 #' @importFrom Matrix colSums
 #'
 single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL, optimize_V=FALSE, optimV_method='optim'){

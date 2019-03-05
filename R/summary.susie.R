@@ -3,7 +3,8 @@
 #' @return a data.frame of variables and a data.frame of credible sets
 #' @method summary susie
 #' @export
-summary.susie = function(s) {
+summary.susie = function (object, ...) {
+  s <- object
   if (is.null(s$sets))
     stop("Cannot summarize SuSiE object because credible set information is not available")
   variables = data.frame(cbind(1:length(s$pip), s$pip, -1))
