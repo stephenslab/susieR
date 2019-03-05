@@ -163,7 +163,7 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10, type = c('sufficient', 'z'),
       break;
     }
   }
-  elbo = elbo[1:(i+1)] #remove trailing NAs
+  elbo = elbo[2:(i+1)] # Remove first (infinite) entry, and trailing NAs.
   s$elbo <- elbo
   s$niter <- i
 

@@ -4,10 +4,10 @@
 \alias{coef.susie}
 \title{extract regression coefficients from susie fit}
 \usage{
-\method{coef}{susie}(s)
+\method{coef}{susie}(object, ...)
 }
 \arguments{
-\item{s}{a susie fit}
+\item{object}{a susie fit}
 }
 \value{
 a p+1 vector, the first element being an intercept, and the remaining p elements being estimated regression coefficients

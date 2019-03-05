@@ -4,11 +4,11 @@
 \alias{predict.susie}
 \title{predict future observations or extract coefficients from susie fit}
 \usage{
-\method{predict}{susie}(s, newx = NULL, type = c("response",
-  "coefficients"))
+\method{predict}{susie}(object, newx = NULL, type = c("response",
+  "coefficients"), ...)
 }
 \arguments{
-\item{s}{a susie fit}
+\item{object}{a susie fit}
 
 \item{newx}{a new value for X at which to do predictions}
 

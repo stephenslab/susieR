@@ -4,10 +4,10 @@
 \alias{summary.susie}
 \title{summarize susie fit}
 \usage{
-\method{summary}{susie}(s)
+\method{summary}{susie}(object, ...)
 }
 \arguments{
-\item{s}{a susie fit}
+\item{object}{a susie fit}
 }
 \value{
 a data.frame of variables and a data.frame of credible sets

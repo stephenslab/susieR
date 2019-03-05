@@ -1,5 +1,5 @@
 #' @title extract regression coefficients from susie fit
-#' @param s a susie fit
+#' @param object a susie fit
 #' @return a p+1 vector, the first element being an intercept, and the remaining p elements being estimated regression coefficients
 #' @method coef susie
 #' @export
@@ -9,7 +9,7 @@ coef.susie = function(object, ...){
 }
 
 #' @title predict future observations or extract coefficients from susie fit
-#' @param s a susie fit
+#' @param object a susie fit
 #' @param newx a new value for X at which to do predictions
 #' @param type if this is coefficients, then calls coef.susie
 #' @method predict susie
@@ -28,5 +28,5 @@ predict.susie = function(object,newx = NULL,
 
   if(missing(newx)){return(s$fitted)}
 
-  return(s$intercept + newx %*% coef(s)[-1])
+  return(drop(s$intercept + newx %*% coef(s)[-1]))
 }
