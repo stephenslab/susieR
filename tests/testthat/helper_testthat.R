@@ -132,7 +132,6 @@ expect_equal_SER_ss = function(new.res, original.res){
 
 expect_equal_susie = function(new.res, original.res){
   expect_equal_susie_update(new.res, original.res)
-  new.res$fitted = as.matrix(new.res$fitted, n, 1)
   expect_equal(new.res$elbo, original.res$elbo)
   expect_equal(new.res$niter, original.res$niter)
   expect_equal(new.res$intercept, original.res$intercept)
@@ -142,7 +141,6 @@ expect_equal_susie = function(new.res, original.res){
 
 expect_equal_susie_ss = function(new.res, original.res){
   expect_equal_susie_ss_update(new.res, original.res)
-  new.res$Xtfitted = as.matrix(new.res$Xtfitted, p, 1)
   expect_equal(new.res$elbo, original.res$elbo)
   expect_equal(new.res$niter, original.res$niter)
   expect_equal(new.res$intercept, original.res$intercept)
