@@ -204,9 +204,9 @@ check_r_matrix <- function(R, expected_dim, r_tol) {
   if(!is_symmetric_matrix(R)){
     stop('R is not a symmetric matrix.')
   }
-  eigenvalues <- eigen(R, only.values = TRUE)$values
-  eigenvalues[abs(eigenvalues) < r_tol] <- 0
-  if(any(eigenvalues < 0)){
+
+  E <- tryCatch(chol(R, pivot = TRUE),error = function(e) FALSE)
+  if (is.logical(E)) {
     stop('R is not a positive semidefinite matrix.')
   }
 
