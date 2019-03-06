@@ -12,7 +12,7 @@ Description: The package implements a simple new way to perform
 Date: 2019-03-05
 Version: 0.6.4.0458
 Authors@R: c(person("Gao","Wang",role=c("aut","cre"),
-                    email="mstephens@uchicago.edu"),
+                    email="gaow@uchicago.edu"),
              person("Peter","Carbonetto",role="aut"),
              person("Yuxin","Zou",role="aut"),
              person("Kaiqian","Zhang",role="aut"),
