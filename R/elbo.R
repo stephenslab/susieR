@@ -15,12 +15,11 @@ Eloglik = function(X,Y,s){
 
 # expected squared residuals
 get_ER2 = function(X,Y,s){
-  Xr = compute_MXt(s$alpha*s$mu, X)
-  Xrsum = colSums(Xr)
-
+  # Xr_L is L by N matrix
+  # s$Xr is column sum of Xr_L
+  Xr_L = compute_MXt(s$alpha*s$mu, X)
   postb2 = s$alpha * s$mu2 #posterior second moment
-
-  return(sum((Y-Xrsum)^2) - sum(Xr^2) + sum(attr(X, "d")*t(postb2)))
+  return(sum((Y-s$Xr)^2) - sum(Xr_L^2) + sum(attr(X, "d")*t(postb2)))
 }
 
 # @title posterior expected loglikelihood for a single effect regression
