@@ -20,7 +20,7 @@ which we call the "Sum of Single Effects" (SuSiE) model.  This model,
 which will be described in a manuscript in preparation (Wang et al),
 lends itself to a particularly simple and intuitive fitting procedure
 -- effectively a Bayesian modification of simple forward selection,
-which we call "Iterative Bayesian Forward Selection".
+which we call "Iterative Bayesian Step-wise Selection".
 
 The output of the fitting procedure is a number of "Credible Sets"
 (CSs), which are each designed to have high probability to contain a
@@ -65,8 +65,8 @@ in the shell:
 
     ```bash
     R CMD build --resave-data --no-build-vignettes susieR
-    R CMD INSTALL susieR_0.6.4.0470.tar.gz
-    R CMD check --as-cran --ignore-vignettes susieR_0.6.4.0470.tar.gz
+    R CMD INSTALL susieR_0.7.0.tar.gz
+    R CMD check --as-cran --ignore-vignettes susieR_0.7.0.tar.gz
     ```
 
 + Run `pkgdown::build_site()` to build the website. Getting `pkgdown`
