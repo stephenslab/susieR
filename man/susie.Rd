@@ -7,10 +7,11 @@
 susie(X, Y, L = min(10, ncol(X)), scaled_prior_variance = 0.2,
   residual_variance = NULL, prior_weights = NULL, null_weight = NULL,
   standardize = TRUE, intercept = TRUE,
-  estimate_residual_variance = TRUE, estimate_prior_variance = FALSE,
-  optimV_method = c("optim", "EM"), s_init = NULL, coverage = 0.95,
-  min_abs_corr = 0.5, compute_univariate_zscore = FALSE,
-  max_iter = 100, tol = 0.001, verbose = FALSE, track_fit = FALSE)
+  estimate_residual_variance = TRUE, estimate_prior_variance = TRUE,
+  estimate_prior_method = c("optim", "EM"), s_init = NULL,
+  coverage = 0.95, min_abs_corr = 0.5,
+  compute_univariate_zscore = FALSE, max_iter = 100, tol = 0.001,
+  verbose = FALSE, track_fit = FALSE)
 }
 \arguments{
 \item{X}{An n by p matrix of covariates.}
@@ -63,7 +64,7 @@ estimate of the variances.}
 \item{estimate_prior_variance}{If \code{estimate_prior_variance =
 TRUE}, the prior variance is estimated father than fixed.}
 
-\item{optimV_method}{The method used for estimating prior
+\item{estimate_prior_method}{The method used for estimating prior
 variance.}
 
 \item{s_init}{A previous susie fit with which to initialize.}

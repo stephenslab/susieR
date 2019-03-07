@@ -5,7 +5,7 @@
 \title{update each effect once}
 \usage{
 update_each_effect_ss(XtX, Xty, s_init, estimate_prior_variance = FALSE,
-  optimV_method = "optim")
+  estimate_prior_method = "optim")
 }
 \arguments{
 \item{XtX}{a p by p matrix, t(X)X}

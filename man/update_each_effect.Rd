@@ -5,7 +5,7 @@
 \title{update each effect once}
 \usage{
 update_each_effect(X, Y, s, estimate_prior_variance = FALSE,
-  optimV_method = "optim")
+  estimate_prior_method = "optim")
 }
 \arguments{
 \item{X}{an n by p matrix of covariantes}
