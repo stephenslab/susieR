@@ -5,8 +5,8 @@
 #' @param estimate_prior_variance boolean indicating whether to estimate prior variance
 #' @param optimV_method the method to estimate V, 'optim' or 'EM'
 #' @importFrom Matrix diag
-update_each_effect_ss <- function (XtX, Xty, s_init, estimate_prior_variance=FALSE, optimV_method = "optim") {
-
+update_each_effect_ss <- function (XtX, Xty, s_init, estimate_prior_variance=FALSE, estimate_prior_method="optim") {
+  if(estimate_prior_variance==FALSE) estimate_prior_method="none"
   # Repeat for each effect to update
   s = s_init
   L = nrow(s$alpha)
@@ -18,7 +18,7 @@ update_each_effect_ss <- function (XtX, Xty, s_init, estimate_prior_variance=FAL
 
       #compute residuals
       XtR = Xty - s$XtXr
-      res = single_effect_regression_ss(as.matrix(XtR),attr(XtX, "d"),s$V[l],s$sigma2,s$pi,estimate_prior_variance, optimV_method)
+      res = single_effect_regression_ss(as.matrix(XtR),attr(XtX, "d"),s$V[l],s$sigma2,s$pi,estimate_prior_method)
       # Update the variational estimate of the posterior mean.
       s$mu[l,] <- res$mu
       s$alpha[l,] <- res$alpha

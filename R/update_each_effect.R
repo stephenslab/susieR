@@ -3,9 +3,10 @@
 #' @param Y an n vector of data
 #' @param s a SuSiE fit
 #' @param estimate_prior_variance boolean indicating whether to estimate prior variance
-#' 
+#'
 update_each_effect <- function (X, Y, s, estimate_prior_variance=FALSE,
-                                optimV_method='optim') {
+                                estimate_prior_method="optim") {
+  if(estimate_prior_variance==FALSE) estimate_prior_method="none"
 
   # Repeat for each effect to update
   L = nrow(s$alpha)
@@ -18,7 +19,7 @@ update_each_effect <- function (X, Y, s, estimate_prior_variance=FALSE,
       R = Y - s$Xr
 
       res <- single_effect_regression(R,X,s$V[l],s$sigma2,s$pi,
-                                      estimate_prior_variance, optimV_method)
+                                      estimate_prior_method)
 
       # Update the variational estimate of the posterior mean.
       s$mu[l,] <- res$mu

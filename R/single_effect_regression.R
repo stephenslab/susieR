@@ -24,7 +24,8 @@
 #' @importFrom stats optim
 #' @importFrom Matrix colSums
 #'
-single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL, optimize_V=FALSE, optimV_method='optim'){
+single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL, optimize_V=c("none", "optim", "EM")){
+  optimize_V = match.arg(optimize_V)
   Xty = compute_Xty(X, Y)
   betahat = (1/attr(X, "d")) * Xty
   shat2 = residual_variance/attr(X, "d")
@@ -38,13 +39,15 @@ single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL
   #   }
   # }
 
-  if(optimize_V & optimV_method=="optim"){
-    lV = optim(par=log(max(c(betahat^2-shat2, 1), na.rm = TRUE)), fn=neg.loglik.logscale, betahat=betahat, shat2=shat2, prior_weights = prior_weights, method='Brent', lower = -10, upper = 10)$par
-    V = exp(lV)
-    if(loglik(0,betahat,shat2,prior_weights) >= loglik(V,betahat,shat2,prior_weights)){
-      V=0 # set V exactly 0 if that beats the numerical value
-    }
-  }
+  if(optimize_V=="optim") V=optimize_prior_variance(optimize_V, betahat, shat2, prior_weights, alpha=NULL, post_mean2=NULL)
+
+  # if(optimize_V & optimV_method=="optim"){
+  #   lV = optim(par=log(max(c(betahat^2-shat2, 1), na.rm = TRUE)), fn=neg.loglik.logscale, betahat=betahat, shat2=shat2, prior_weights = prior_weights, method='Brent', lower = -10, upper = 10)$par
+  #   V = exp(lV)
+  #   if(loglik(0,betahat,shat2,prior_weights) >= loglik(V,betahat,shat2,prior_weights)){
+  #     V=0 # set V exactly 0 if that beats the numerical value
+  #   }
+  # }
 
   lbf = dnorm(betahat,0,sqrt(V+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
   #log(bf) on each SNP
@@ -62,12 +65,13 @@ single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL
   lbf_model = maxlbf + log(weighted_sum_w)
   loglik = lbf_model + sum(dnorm(Y,0,sqrt(residual_variance),log=TRUE))
 
-  if(optimize_V & optimV_method=="EM"){
-    V = sum(alpha*post_mean2)
-    if(loglik(0,betahat,shat2,prior_weights) >= loglik(V,betahat,shat2,prior_weights)){
-      V=0 # set V exactly 0 if that beats the numerical value
-    }
-  }
+  if(optimize_V=="EM") V=optimize_prior_variance(optimize_V, betahat, shat2, prior_weights, alpha, post_mean2)
+  # if(optimize_V & optimV_method=="EM"){
+  #   V = sum(alpha*post_mean2)
+  #   if(loglik(0,betahat,shat2,prior_weights) >= loglik(V,betahat,shat2,prior_weights)){
+  #     V=0 # set V exactly 0 if that beats the numerical value
+  #   }
+  # }
 
   return(list(alpha=alpha,mu=post_mean,mu2 = post_mean2,lbf=lbf,lbf_model=lbf_model,V=V,loglik=loglik))
 }
@@ -77,6 +81,19 @@ single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL
 est_V_uniroot = function(betahat, shat2, prior_weights){
   V.u=uniroot(negloglik.grad.logscale,c(-10,10),extendInt = "upX",betahat=betahat,shat2=shat2,prior_weights=prior_weights)
   V = exp(V.u$root)
+  return(V)
+}
+
+optimize_prior_variance = function(optimize_V, betahat, shat2, prior_weights, alpha=NULL, post_mean2=NULL){
+  if(optimize_V=="optim"){
+    lV = optim(par=log(max(c(betahat^2-shat2, 1), na.rm = TRUE)), fn=neg.loglik.logscale, betahat=betahat, shat2=shat2, prior_weights = prior_weights, method='Brent', lower = -10, upper = 10)$par
+    V = exp(lV)
+  }else if(optimize_V=="uniroot"){
+    V = est_V_uniroot(betahat, shat2, prior_weights)
+  }else if(optimize_V=="EM"){
+    V = sum(alpha*post_mean2)
+  }else stop('Invalid option for `optimize_V` method')
+  if(loglik(0,betahat,shat2,prior_weights) >= loglik(V,betahat,shat2,prior_weights)) V=0 # set V exactly 0 if that beats the numerical value
   return(V)
 }
 
