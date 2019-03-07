@@ -32,22 +32,7 @@ single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL
   if (is.null(prior_weights))
     prior_weights = rep(1/ncol(X), ncol(X))
 
-  # if(optimize_V & optimV_method=="uniroot"){
-  #   V = est_V_uniroot(betahat, shat2, prior_weights)
-  #   if(loglik(0,betahat,shat2,prior_weights) >= loglik(V,betahat,shat2,prior_weights)){
-  #     V=0 # set V exactly 0 if that beats the numerical value
-  #   }
-  # }
-
   if(optimize_V=="optim") V=optimize_prior_variance(optimize_V, betahat, shat2, prior_weights, alpha=NULL, post_mean2=NULL)
-
-  # if(optimize_V & optimV_method=="optim"){
-  #   lV = optim(par=log(max(c(betahat^2-shat2, 1), na.rm = TRUE)), fn=neg.loglik.logscale, betahat=betahat, shat2=shat2, prior_weights = prior_weights, method='Brent', lower = -10, upper = 10)$par
-  #   V = exp(lV)
-  #   if(loglik(0,betahat,shat2,prior_weights) >= loglik(V,betahat,shat2,prior_weights)){
-  #     V=0 # set V exactly 0 if that beats the numerical value
-  #   }
-  # }
 
   lbf = dnorm(betahat,0,sqrt(V+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
   #log(bf) on each SNP
@@ -66,12 +51,6 @@ single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL
   loglik = lbf_model + sum(dnorm(Y,0,sqrt(residual_variance),log=TRUE))
 
   if(optimize_V=="EM") V=optimize_prior_variance(optimize_V, betahat, shat2, prior_weights, alpha, post_mean2)
-  # if(optimize_V & optimV_method=="EM"){
-  #   V = sum(alpha*post_mean2)
-  #   if(loglik(0,betahat,shat2,prior_weights) >= loglik(V,betahat,shat2,prior_weights)){
-  #     V=0 # set V exactly 0 if that beats the numerical value
-  #   }
-  # }
 
   return(list(alpha=alpha,mu=post_mean,mu2 = post_mean2,lbf=lbf,lbf_model=lbf_model,V=V,loglik=loglik))
 }
@@ -86,7 +65,7 @@ est_V_uniroot = function(betahat, shat2, prior_weights){
 
 optimize_prior_variance = function(optimize_V, betahat, shat2, prior_weights, alpha=NULL, post_mean2=NULL){
   if(optimize_V=="optim"){
-    lV = optim(par=log(max(c(betahat^2-shat2, 1), na.rm = TRUE)), fn=neg.loglik.logscale, betahat=betahat, shat2=shat2, prior_weights = prior_weights, method='Brent', lower = -10, upper = 10)$par
+    lV = optim(par=log(max(c(betahat^2-shat2, 1), na.rm = TRUE)), fn=neg.loglik.logscale, betahat=betahat, shat2=shat2, prior_weights = prior_weights, method='Brent', lower = -10, upper = 15)$par
     V = exp(lV)
   }else if(optimize_V=="uniroot"){
     V = est_V_uniroot(betahat, shat2, prior_weights)
