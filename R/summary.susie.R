@@ -1,7 +1,7 @@
 #' @title summarize susie fit
 #' @param object a susie fit
 #' @return a data.frame of variables and a data.frame of credible sets
-#' @method summary susie
+#' @export summary.susie
 #' @export
 summary.susie = function (object, ...) {
   if (is.null(object$sets))
