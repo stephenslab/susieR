@@ -65,8 +65,8 @@ in the shell:
 
     ```bash
     R CMD build --resave-data --no-build-vignettes susieR
-    R CMD INSTALL susieR_0.6.4.0458.tar.gz
-    R CMD check --as-cran --ignore-vignettes susieR_0.6.4.0458.tar.gz
+    R CMD INSTALL susieR_0.6.4.0469.tar.gz
+    R CMD check --as-cran --ignore-vignettes susieR_0.6.4.0469.tar.gz
     ```
 
 + Run `pkgdown::build_site()` to build the website. Getting `pkgdown`
