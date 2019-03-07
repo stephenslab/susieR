@@ -20,17 +20,15 @@ test_that("susie for trend filtering",{
   })
   #order 1 trend filtering
   with(simulate_tf(1), {
-    original.s1 = susie(X,y)
-    s1 = susie_trendfilter(y,1)
-    original.s1.ns.ni = susie(X,y,standardize=FALSE,intercept=FALSE)
-    s1.ns.ni = suppressWarnings(susie_trendfilter(y,1,standardize=FALSE,
-                                                  intercept=FALSE))
-    original.s1.ns = susie(X,y,standardize=FALSE,intercept=TRUE)
-    s1.ns = suppressWarnings(susie_trendfilter(y,1,standardize=FALSE,
-                                               intercept=TRUE))
-    original.s1.ni = susie(X,y,standardize=TRUE,intercept=FALSE)
-    s1.ni = suppressWarnings(susie_trendfilter(y,1,standardize=TRUE,
-                                               intercept=FALSE))
+    supressWarnings(
+    original.s1 <- susie(X,y)
+    s1 <- susie_trendfilter(y,1)
+    original.s1.ns.ni <- susie(X,y,standardize=FALSE,intercept=FALSE)
+    s1.ns.ni <- susie_trendfilter(y,1,standardize=FALSE,intercept=FALSE)
+    original.s1.ns <- susie(X,y,standardize=FALSE,intercept=TRUE)
+    s1.ns <- susie_trendfilter(y,1,standardize=FALSE,intercept=TRUE)
+    original.s1.ni <- susie(X,y,standardize=TRUE,intercept=FALSE)
+    s1.ni <- susie_trendfilter(y,1,standardize=TRUE,intercept=FALSE))
     
     expect_equal_susie(s1, original.s1)
     expect_equal_susie(s1.ns.ni, original.s1.ns.ni)
@@ -42,14 +40,11 @@ test_that("susie for trend filtering",{
     original.s2 = susie(X,y)
     s2 = susie_trendfilter(y,2)
     original.s2.ns.ni = susie(X,y,standardize=FALSE,intercept=FALSE)
-    s2.ns.ni = suppressWarnings(susie_trendfilter(y,2,standardize=FALSE,
-                                                  intercept=FALSE))
+    s2.ns.ni = susie_trendfilter(y,2,standardize=FALSE,intercept=FALSE)
     original.s2.ns = susie(X,y,standardize=FALSE,intercept=TRUE)
-    s2.ns = suppressWarnings(susie_trendfilter(y,2,standardize=FALSE,
-                                               intercept=TRUE))
+    s2.ns = susie_trendfilter(y,2,standardize=FALSE,intercept=TRUE)
     original.s2.ni = susie(X,y,standardize=TRUE,intercept=FALSE)
-    s2.ni = suppressWarnings(susie_trendfilter(y,2,standardize=TRUE,
-                                               intercept=FALSE))
+    s2.ni = susie_trendfilter(y,2,standardize=TRUE,intercept=FALSE)
     
     expect_equal_susie(s2, original.s2)
     expect_equal_susie(s2.ns.ni, original.s2.ns.ni)
