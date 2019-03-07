@@ -16,7 +16,7 @@ update_each_effect_ss(XtX, Xty, s_init, estimate_prior_variance = FALSE,
 
 \item{estimate_prior_variance}{boolean indicating whether to estimate prior variance}
 
-\item{optimV_method}{the method to estimate V, 'optim' or 'EM'}
+\item{estimate_prior_method}{The method used for estimating prior variance, 'optim' or 'EM'}
 }
 \description{
 update each effect once

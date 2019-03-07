@@ -18,9 +18,7 @@ single_effect_regression_ss(Xty, dXtX, V = 1, residual_variance = 1,
 
 \item{prior_weights}{a p vector of prior weights}
 
-\item{optimize_V}{boolean indicating whether to optimize V (by maximum likelihood)}
-
-\item{optimV_method}{the method to estimate V, 'optim' or 'EM'}
+\item{optimize_V}{indicating the method to optimize V (by maximum likelihood)}
 }
 \value{
 a list with elements: \cr

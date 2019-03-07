@@ -10,8 +10,7 @@
 #' @param V the prior variance
 #' @param residual_variance the residual variance
 #' @param prior_weights a p vector of prior weights
-#' @param optimize_V boolean indicating whether to optimize V (by maximum likelihood)
-#' @param optimV_method the method to estimate V, 'optim' or 'EM'
+#' @param optimize_V indicating the method to optimize V (by maximum likelihood)
 #' @return a list with elements: \cr
 #' \item{alpha}{vector of posterior inclusion probabilities. ie alpha[i] is posterior probability that
 #'  that b[i] is non-zero}

@@ -3,7 +3,7 @@
 #' @param Xty a p vector
 #' @param s_init a list with elements sigma2, V, alpha, mu, Xr
 #' @param estimate_prior_variance boolean indicating whether to estimate prior variance
-#' @param optimV_method the method to estimate V, 'optim' or 'EM'
+#' @param estimate_prior_method The method used for estimating prior variance, 'optim' or 'EM'
 #' @importFrom Matrix diag
 update_each_effect_ss <- function (XtX, Xty, s_init, estimate_prior_variance=FALSE, estimate_prior_method="optim") {
   if(estimate_prior_variance==FALSE) estimate_prior_method="none"
