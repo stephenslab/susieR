@@ -127,7 +127,9 @@ susie_get_cs = function(res,
                         dedup = TRUE) {
   if (class(res) == "susie") {
     null_index = res$null_index
-    res = res$alpha
+    if (is.numeric(res$V)) include_idx = which(res$V != 0)
+    else include_idx = 1:nrow(res$alpha)
+    res = res$alpha[include_idx, , drop=F]
   } else {
     null_index = 0
   }
@@ -146,9 +148,6 @@ susie_get_cs = function(res,
   # https://github.com/stephenslab/susieR/issues/21
   if (dedup) cs = cs[!duplicated(cs)]
   # drop the single effect with estimated prior zero
-  if (is.numeric(res$V)) include_idx = which(res$V != 0)
-  else include_idx = 1:nrow(res$alpha)
-  cs = cs[include_idx]
   # compute and filter by "purity"
   if (is.null(Xcorr) && is.null(X)) {
     return(list(cs=cs,coverage=coverage))
