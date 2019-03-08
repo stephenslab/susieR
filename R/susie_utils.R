@@ -145,6 +145,10 @@ susie_get_cs = function(res,
   # FIXME: see issue 21
   # https://github.com/stephenslab/susieR/issues/21
   if (dedup) cs = cs[!duplicated(cs)]
+  # drop the single effect with estimated prior zero
+  if (is.numeric(res$V)) include_idx = which(res$V != 0)
+  else include_idx = 1:nrow(res$alpha)
+  cs = cs[include_idx]
   # compute and filter by "purity"
   if (is.null(Xcorr) && is.null(X)) {
     return(list(cs=cs,coverage=coverage))
