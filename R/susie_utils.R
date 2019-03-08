@@ -127,7 +127,6 @@ susie_get_cs = function(res,
                         dedup = TRUE) {
   if (class(res) == "susie") {
     null_index = res$null_index
-    if (res$null_index > 0) res$alpha = res$alpha[,-res$null_index]
     if (is.numeric(res$V)) include_idx = which(res$V != 0)
     else include_idx = 1:nrow(res$alpha)
     if (length(include_idx) == 0) return(list(cs = NULL,coverage=coverage))
