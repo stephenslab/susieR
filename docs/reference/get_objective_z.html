@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Get evidence lower bound (ELBO) from fitted SuSiE model — susie_get_objective • susieR</title>
+<title>Get objective function from data and susie fit object. — get_objective_z • susieR</title>
 
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
@@ -30,9 +30,9 @@
 
 
 
-<meta property="og:title" content="Get evidence lower bound (ELBO) from fitted SuSiE model — susie_get_objective" />
+<meta property="og:title" content="Get objective function from data and susie fit object. — get_objective_z" />
 
-<meta property="og:description" content="Get evidence lower bound (ELBO) from fitted SuSiE model" />
+<meta property="og:description" content="Get objective function from data and susie fit object." />
 <meta name="twitter:card" content="summary" />
 
 
@@ -94,33 +94,33 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Get evidence lower bound (ELBO) from fitted SuSiE model</h1>
-    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/susie_utils.R'><code>R/susie_utils.R</code></a></small>
-    <div class="hidden name"><code>susie_get_objective.Rd</code></div>
+    <h1>Get objective function from data and susie fit object.</h1>
+    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/elbo_z.R'><code>R/elbo_z.R</code></a></small>
+    <div class="hidden name"><code>get_objective_z.Rd</code></div>
     </div>
 
     <div class="ref-description">
     
-    <p>Get evidence lower bound (ELBO) from fitted SuSiE model</p>
+    <p>Get objective function from data and susie fit object.</p>
     
     </div>
 
-    <pre class="usage"><span class='fu'>susie_get_objective</span>(<span class='no'>res</span>, <span class='kw'>all</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>warning_tol</span> <span class='kw'>=</span> <span class='fl'>1e-06</span>)</pre>
+    <pre class="usage"><span class='fu'>get_objective_z</span>(<span class='no'>R</span>, <span class='no'>z</span>, <span class='no'>s</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>res</th>
-      <td><p>a susie fit, the output of `susieR::susie()`.</p></td>
+      <th>s</th>
+      <td><p>a susie fit object</p></td>
     </tr>
     <tr>
-      <th>all</th>
-      <td><p>whether or not to get ELBO from all iterations</p></td>
+      <th>XtX</th>
+      <td><p>a p by p matrix, X'X</p></td>
     </tr>
     <tr>
-      <th>warning_tol</th>
-      <td><p>warn if ELBO is non-decreasing by this tolerance level (default set to 1E-6)</p></td>
+      <th>Xty</th>
+      <td><p>a p vector, X'Y,</p></td>
     </tr>
     </table>
     

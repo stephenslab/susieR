@@ -29,7 +29,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.6.2.389</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.7.1.0</span>
       </span>
     </div>
 
@@ -64,7 +64,7 @@
       <h1>Sparse matrix multiplication strategy</h1>
                         <h4 class="author">Kaiqian Zhang</h4>
             
-            <h4 class="date">2018-11-05</h4>
+            <h4 class="date">2019-03-11</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/master/vignettes/sparse_matrix_strategy.Rmd"><code>vignettes/sparse_matrix_strategy.Rmd</code></a></small>
       <div class="hidden name"><code>sparse_matrix_strategy.Rmd</code></div>
@@ -160,8 +160,8 @@
 <a class="sourceLine" id="cb2-10" data-line-number="10">p &lt;-<span class="st"> </span><span class="dv">10000</span></a></code></pre></div>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1">X.dense  &lt;-<span class="st"> </span><span class="kw">create_sparsity_mat</span>(<span class="fl">0.99</span>,n,p)</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2">X.sparse &lt;-<span class="st"> </span><span class="kw">as</span>(X.dense,<span class="st">"dgCMatrix"</span>)</a>
-<a class="sourceLine" id="cb3-3" data-line-number="3">X.tilde  &lt;-<span class="st"> </span>susieR<span class="op">:::</span><span class="kw">safe_colScale</span>(X.dense) <span class="co">#returns a scaled X if input is a dense matrix</span></a>
-<a class="sourceLine" id="cb3-4" data-line-number="4">X &lt;-<span class="st"> </span>susieR<span class="op">:::</span><span class="kw">safe_colScale</span>(X.sparse) <span class="co">#return an unsacled sparse X if input is a sparse matrix </span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">X.tilde  &lt;-<span class="st"> </span>susieR<span class="op">:::</span><span class="kw"><a href="../reference/set_X_attributes.html">set_X_attributes</a></span>(X.dense) <span class="co">#returns a scaled X if input is a dense matrix</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">X &lt;-<span class="st"> </span>susieR<span class="op">:::</span><span class="kw"><a href="../reference/set_X_attributes.html">set_X_attributes</a></span>(X.sparse) <span class="co">#return an unsacled sparse X if input is a sparse matrix </span></a>
 <a class="sourceLine" id="cb3-5" data-line-number="5">                                     <span class="co">#but computes column means and standard deviations</span></a></code></pre></div>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" data-line-number="1">b &lt;-<span class="st"> </span><span class="kw">rnorm</span>(p)</a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">y &lt;-<span class="st"> </span><span class="kw">rnorm</span>(n)</a></code></pre></div>
@@ -179,7 +179,7 @@
 <a class="sourceLine" id="cb6-3" data-line-number="3">  <span class="dt">sparse =</span> (use.sparse.Xb &lt;-<span class="st"> </span>susieR<span class="op">:::</span><span class="kw"><a href="../reference/compute_Xb.html">compute_Xb</a></span>(X,b)),</a>
 <a class="sourceLine" id="cb6-4" data-line-number="4">  <span class="dt">times =</span> <span class="dv">20</span>,<span class="dt">unit =</span> <span class="st">"s"</span>)</a></code></pre></div>
 <p>Our sparse strategy demonstrates an obvious advantage over the normal matrix multiplication in computing <span class="math inline">\(\tilde{X}b\)</span>.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="kw"><a href="ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span>(compute_Xb_benchmark)</a>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span>(compute_Xb_benchmark)</a>
 <a class="sourceLine" id="cb7-2" data-line-number="2"><span class="co"># Coordinate system already present. Adding new coordinate system, which will replace the existing one.</span></a></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="sparse_matrix_strategy_files/figure-html/unnamed-chunk-7-1.png" alt="&amp;nbsp;" width="540"><p class="caption">
@@ -201,7 +201,7 @@
 <a class="sourceLine" id="cb9-3" data-line-number="3">  <span class="dt">sparse =</span> (use.sparse.Xty &lt;-<span class="st"> </span>susieR<span class="op">:::</span><span class="kw"><a href="../reference/compute_Xty.html">compute_Xty</a></span>(X, y)),</a>
 <a class="sourceLine" id="cb9-4" data-line-number="4">  <span class="dt">times =</span> <span class="dv">20</span>,<span class="dt">unit =</span> <span class="st">"s"</span>)</a></code></pre></div>
 <p>Our sparse strategy evidently has a better performance than the normal method in computing <span class="math inline">\(\tilde{X}^Ty\)</span>.</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="kw"><a href="ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span>(compute_Xty_benchmark)</a>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span>(compute_Xty_benchmark)</a>
 <a class="sourceLine" id="cb10-2" data-line-number="2"><span class="co"># Coordinate system already present. Adding new coordinate system, which will replace the existing one.</span></a></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="sparse_matrix_strategy_files/figure-html/unnamed-chunk-10-1.png" alt="&amp;nbsp;" width="540"><p class="caption">
@@ -232,7 +232,7 @@
 
 
       <footer><div class="copyright">
-  <p>Developed by Matthew Stephens, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto, Gao Wang.</p>
+  <p>Developed by Gao Wang, Peter Carbonetto, Yuxin Zou, Kaiqian Zhang, Matthew Stephens.</p>
 </div>
 
 <div class="pkgdown">

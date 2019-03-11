@@ -61,7 +61,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.6.2.389</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.7.1</span>
       </span>
     </div>
 
@@ -106,7 +106,7 @@
     </div>
 
     <pre class="usage"><span class='fu'>single_effect_regression_ss</span>(<span class='no'>Xty</span>, <span class='no'>dXtX</span>, <span class='kw'>V</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>residual_variance</span> <span class='kw'>=</span> <span class='fl'>1</span>,
-  <span class='kw'>prior_weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>optimize_V</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</pre>
+  <span class='kw'>prior_weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>optimize_V</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"none"</span>, <span class='st'>"optim"</span>, <span class='st'>"EM"</span>))</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -133,7 +133,7 @@
     </tr>
     <tr>
       <th>optimize_V</th>
-      <td><p>boolean indicating whether to optimize V (by maximum likelihood)</p></td>
+      <td><p>indicating the method to optimize V (by maximum likelihood)</p></td>
     </tr>
     </table>
     
@@ -175,7 +175,7 @@ Only the summary statistcs t(X)Y and diagonal elements of t(X)X are avialable.</
 
       <footer>
       <div class="copyright">
-  <p>Developed by Matthew Stephens, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto, Gao Wang.</p>
+  <p>Developed by Gao Wang, Peter Carbonetto, Yuxin Zou, Kaiqian Zhang, Matthew Stephens.</p>
 </div>
 
 <div class="pkgdown">

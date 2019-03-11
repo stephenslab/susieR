@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Create D-inverse matrix as input X — create_Dinv • susieR</title>
+<title>sets the attributes for the X matrix — set_X_attributes • susieR</title>
 
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
@@ -30,9 +30,9 @@
 
 
 
-<meta property="og:title" content="Create D-inverse matrix as input X — create_Dinv" />
+<meta property="og:title" content="sets the attributes for the X matrix — set_X_attributes" />
 
-<meta property="og:description" content="Create D-inverse matrix as input X" />
+<meta property="og:description" content="sets the attributes for the X matrix" />
 <meta name="twitter:card" content="summary" />
 
 
@@ -61,7 +61,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.6.1.382</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.7.1</span>
       </span>
     </div>
 
@@ -94,35 +94,45 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Create D-inverse matrix as input X</h1>
-    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/trend_filtering_multiplication.R'><code>R/trend_filtering_multiplication.R</code></a></small>
-    <div class="hidden name"><code>create_Dinv.Rd</code></div>
+    <h1>sets the attributes for the X matrix</h1>
+    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/set_X_attributes.R'><code>R/set_X_attributes.R</code></a></small>
+    <div class="hidden name"><code>set_X_attributes.Rd</code></div>
     </div>
 
     <div class="ref-description">
     
-    <p>Create D-inverse matrix as input X</p>
+    <p>sets the attributes for the X matrix</p>
     
     </div>
 
-    <pre class="usage"><span class='fu'>create_Dinv</span>(<span class='no'>order</span>, <span class='no'>n</span>)</pre>
+    <pre class="usage"><span class='fu'>set_X_attributes</span>(<span class='no'>X</span>, <span class='kw'>center</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>scale</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>order</th>
-      <td><p>is the order of trend filtering</p></td>
+      <th>X</th>
+      <td><p>an n by p data matrix that can be a dense, sparse, or trend filtering matrix</p></td>
     </tr>
     <tr>
-      <th>n</th>
-      <td><p>the length of y</p></td>
+      <th>center</th>
+      <td><p>boolean indicating mean centering or not</p></td>
+    </tr>
+    <tr>
+      <th>scale</th>
+      <td><p>boolean indicating scaled by standard deviation or not</p></td>
     </tr>
     </table>
     
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>a D-inverse matrix</p>
+    <p>X with three attributes e.g.
+        attr(X, 'scaled:center') is a p vector of column means of X
+        attr(X, 'scaled:scale') is a p vector of column standard deviations of X
+        attr(X, 'd') is a p vector of column sums of X^2
+if X is a trend filtering matrix, return the initial X with three attributes;
+if X is a dense matrix, return the scaled X with three attributes;
+if X is a sparse matrix, return the initial X with three attributes.</p>
     
 
   </div>
@@ -139,7 +149,7 @@
 
       <footer>
       <div class="copyright">
-  <p>Developed by Matthew Stephens, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto, Gao Wang.</p>
+  <p>Developed by Gao Wang, Peter Carbonetto, Yuxin Zou, Kaiqian Zhang, Matthew Stephens.</p>
 </div>
 
 <div class="pkgdown">

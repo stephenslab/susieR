@@ -29,7 +29,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.6.2.389</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.7.1.0</span>
       </span>
     </div>
 
@@ -64,7 +64,7 @@
       <h1>Trend filtering</h1>
                         <h4 class="author">Matthew Stephens</h4>
             
-            <h4 class="date">2018-11-05</h4>
+            <h4 class="date">2019-03-11</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/master/vignettes/trend_filtering.Rmd"><code>vignettes/trend_filtering.Rmd</code></a></small>
       <div class="hidden name"><code>trend_filtering.Rmd</code></div>
@@ -100,7 +100,7 @@
 </p>
 </div>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1">s<span class="op">$</span>sigma2</a>
-<a class="sourceLine" id="cb3-2" data-line-number="2"><span class="co"># [1] 1.080401</span></a></code></pre></div>
+<a class="sourceLine" id="cb3-2" data-line-number="2"><span class="co"># [1] 1.076834</span></a></code></pre></div>
 <p>In the next example mu increases linearly. Thus we are approximating a linear function by step functions. Here the truth is not trully ``sparse", so we might expect performance to be poor, but it is not too bad.</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">set.seed</span>(<span class="dv">1</span>)</a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">mu =<span class="st"> </span><span class="kw">seq</span>(<span class="dv">0</span>,<span class="dv">4</span>,<span class="dt">length=</span><span class="dv">1000</span>)</a>
@@ -162,7 +162,7 @@
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="kw">sqrt</span>(<span class="kw">mean</span>((mu<span class="op">-</span>y.tf<span class="op">$</span>fit[,<span class="kw">which</span>(y.tf<span class="op">$</span>lambda<span class="op">==</span>y.tf.cv<span class="op">$</span>lambda.min)])<span class="op">^</span><span class="dv">2</span>))</a>
 <a class="sourceLine" id="cb7-2" data-line-number="2"><span class="co"># [1] 0.1413506</span></a>
 <a class="sourceLine" id="cb7-3" data-line-number="3"><span class="kw">sqrt</span>(<span class="kw">mean</span>((mu<span class="op">-</span><span class="kw">predict</span>(s))<span class="op">^</span><span class="dv">2</span>))</a>
-<a class="sourceLine" id="cb7-4" data-line-number="4"><span class="co"># [1] 0.1556271</span></a></code></pre></div>
+<a class="sourceLine" id="cb7-4" data-line-number="4"><span class="co"># [1] 0.1833487</span></a></code></pre></div>
 </div>
   </div>
 
@@ -181,7 +181,7 @@
 
 
       <footer><div class="copyright">
-  <p>Developed by Matthew Stephens, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto, Gao Wang.</p>
+  <p>Developed by Gao Wang, Peter Carbonetto, Yuxin Zou, Kaiqian Zhang, Matthew Stephens.</p>
 </div>
 
 <div class="pkgdown">

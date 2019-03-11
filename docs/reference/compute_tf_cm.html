@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Compute unscaled D-inverse %*% b using special structure of D-inverse — compute_Dinvb • susieR</title>
+<title>Compute column mean of the trend filtering matrix X — compute_tf_cm • susieR</title>
 
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
@@ -30,9 +30,9 @@
 
 
 
-<meta property="og:title" content="Compute unscaled D-inverse %*% b using special structure of D-inverse — compute_Dinvb" />
+<meta property="og:title" content="Compute column mean of the trend filtering matrix X — compute_tf_cm" />
 
-<meta property="og:description" content="Compute unscaled D-inverse %*% b using special structure of D-inverse" />
+<meta property="og:description" content="Compute column mean of the trend filtering matrix X" />
 <meta name="twitter:card" content="summary" />
 
 
@@ -61,7 +61,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.6.1.382</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.7.1</span>
       </span>
     </div>
 
@@ -94,18 +94,18 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Compute unscaled D-inverse %*% b using special structure of D-inverse</h1>
+    <h1>Compute column mean of the trend filtering matrix X</h1>
     <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/trend_filtering_multiplication.R'><code>R/trend_filtering_multiplication.R</code></a></small>
-    <div class="hidden name"><code>compute_Dinvb.Rd</code></div>
+    <div class="hidden name"><code>compute_tf_cm.Rd</code></div>
     </div>
 
     <div class="ref-description">
     
-    <p>Compute unscaled D-inverse %*% b using special structure of D-inverse</p>
+    <p>Compute column mean of the trend filtering matrix X</p>
     
     </div>
 
-    <pre class="usage"><span class='fu'>compute_Dinvb</span>(<span class='no'>order</span>, <span class='no'>b</span>)</pre>
+    <pre class="usage"><span class='fu'>compute_tf_cm</span>(<span class='no'>order</span>, <span class='no'>n</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -115,8 +115,8 @@
       <td><p>is the order of trend filtering</p></td>
     </tr>
     <tr>
-      <th>b</th>
-      <td><p>an n=p vector</p></td>
+      <th>n</th>
+      <td><p>the length of y</p></td>
     </tr>
     </table>
     
@@ -139,7 +139,7 @@
 
       <footer>
       <div class="copyright">
-  <p>Developed by Matthew Stephens, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto, Gao Wang.</p>
+  <p>Developed by Gao Wang, Peter Carbonetto, Yuxin Zou, Kaiqian Zhang, Matthew Stephens.</p>
 </div>
 
 <div class="pkgdown">

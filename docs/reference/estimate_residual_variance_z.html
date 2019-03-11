@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Get evidence lower bound (ELBO) from fitted SuSiE model — susie_get_objective • susieR</title>
+<title>Estimate residual variance for summary statistics — estimate_residual_variance_z • susieR</title>
 
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
@@ -30,9 +30,9 @@
 
 
 
-<meta property="og:title" content="Get evidence lower bound (ELBO) from fitted SuSiE model — susie_get_objective" />
+<meta property="og:title" content="Estimate residual variance for summary statistics — estimate_residual_variance_z" />
 
-<meta property="og:description" content="Get evidence lower bound (ELBO) from fitted SuSiE model" />
+<meta property="og:description" content="Estimate residual variance for summary statistics" />
 <meta name="twitter:card" content="summary" />
 
 
@@ -94,33 +94,33 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Get evidence lower bound (ELBO) from fitted SuSiE model</h1>
-    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/susie_utils.R'><code>R/susie_utils.R</code></a></small>
-    <div class="hidden name"><code>susie_get_objective.Rd</code></div>
+    <h1>Estimate residual variance for summary statistics</h1>
+    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/estimate_residual_variance.R'><code>R/estimate_residual_variance.R</code></a></small>
+    <div class="hidden name"><code>estimate_residual_variance_z.Rd</code></div>
     </div>
 
     <div class="ref-description">
     
-    <p>Get evidence lower bound (ELBO) from fitted SuSiE model</p>
+    <p>Estimate residual variance for summary statistics</p>
     
     </div>
 
-    <pre class="usage"><span class='fu'>susie_get_objective</span>(<span class='no'>res</span>, <span class='kw'>all</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>warning_tol</span> <span class='kw'>=</span> <span class='fl'>1e-06</span>)</pre>
+    <pre class="usage"><span class='fu'>estimate_residual_variance_z</span>(<span class='no'>R</span>, <span class='no'>z</span>, <span class='no'>s</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>res</th>
-      <td><p>a susie fit, the output of `susieR::susie()`.</p></td>
+      <th>R</th>
+      <td><p>a p by p</p></td>
     </tr>
     <tr>
-      <th>all</th>
-      <td><p>whether or not to get ELBO from all iterations</p></td>
+      <th>z</th>
+      <td><p>a p vector</p></td>
     </tr>
     <tr>
-      <th>warning_tol</th>
-      <td><p>warn if ELBO is non-decreasing by this tolerance level (default set to 1E-6)</p></td>
+      <th>s</th>
+      <td><p>a susie fit</p></td>
     </tr>
     </table>
     

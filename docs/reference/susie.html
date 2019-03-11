@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>SUm of Single Effect (SuSiE) Regression of Y on X — susie • susieR</title>
+<title>SUm of Single Effects (SuSiE) Regression — susie • susieR</title>
 
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
@@ -30,9 +30,18 @@
 
 
 
-<meta property="og:title" content="SUm of Single Effect (SuSiE) Regression of Y on X — susie" />
+<meta property="og:title" content="SUm of Single Effects (SuSiE) Regression — susie" />
 
-<meta property="og:description" content="SUm of Single Effect (SuSiE) Regression of Y on X" />
+<meta property="og:description" content="Performs Bayesian multiple linear regression of Y on
+  X; that is, this function fits the regression model \(Y = sum_l
+  Xb_l + e\), where elements of e are i.i.d. normal with zero
+  mean and variance residual_variance, and \(sum_l b_l\) is
+  a vector of length p representing the effects to be estimated. The
+  SuSiE assumption is that each b_l has exactly one non-zero
+  element. The prior on the non-zero element is normal with zero mean
+  and variance var(Y)*scaled_prior_variance.
+The model is fitted using the &quot;Iterative Bayesian Stepwise
+  Selection&quot; (IBSS) algorithm." />
 <meta name="twitter:card" content="summary" />
 
 
@@ -61,7 +70,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.5.0</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.7.1</span>
       </span>
     </div>
 
@@ -94,22 +103,32 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>SUm of Single Effect (SuSiE) Regression of Y on X</h1>
+    <h1>SUm of Single Effects (SuSiE) Regression</h1>
     <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/susie.R'><code>R/susie.R</code></a></small>
     <div class="hidden name"><code>susie.Rd</code></div>
     </div>
 
     <div class="ref-description">
     
-    <p>SUm of Single Effect (SuSiE) Regression of Y on X</p>
+    <p>Performs Bayesian multiple linear regression of Y on
+  X; that is, this function fits the regression model \(Y = sum_l
+  Xb_l + e\), where elements of e are <em>i.i.d.</em> normal with zero
+  mean and variance <code>residual_variance</code>, and \(sum_l b_l\) is
+  a vector of length p representing the effects to be estimated. The
+  SuSiE assumption is that each b_l has exactly one non-zero
+  element. The prior on the non-zero element is normal with zero mean
+  and variance <code>var(Y)*scaled_prior_variance</code>.</p>
+<p>The model is fitted using the "Iterative Bayesian Stepwise
+  Selection" (IBSS) algorithm.</p>
     
     </div>
 
-    <pre class="usage"><span class='fu'>susie</span>(<span class='no'>X</span>, <span class='no'>Y</span>, <span class='kw'>L</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>scaled_prior_variance</span> <span class='kw'>=</span> <span class='fl'>0.2</span>,
+    <pre class="usage"><span class='fu'>susie</span>(<span class='no'>X</span>, <span class='no'>Y</span>, <span class='kw'>L</span> <span class='kw'>=</span> <span class='fu'>min</span>(<span class='fl'>10</span>, <span class='fu'>ncol</span>(<span class='no'>X</span>)), <span class='kw'>scaled_prior_variance</span> <span class='kw'>=</span> <span class='fl'>0.2</span>,
   <span class='kw'>residual_variance</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>prior_weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>null_weight</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>standardize</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>intercept</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>estimate_residual_variance</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>estimate_prior_variance</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>s_init</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>coverage</span> <span class='kw'>=</span> <span class='fl'>0.95</span>, <span class='kw'>min_abs_corr</span> <span class='kw'>=</span> <span class='fl'>0.5</span>,
+  <span class='kw'>estimate_residual_variance</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>estimate_prior_variance</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>estimate_prior_method</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"optim"</span>, <span class='st'>"EM"</span>), <span class='kw'>s_init</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>coverage</span> <span class='kw'>=</span> <span class='fl'>0.95</span>, <span class='kw'>min_abs_corr</span> <span class='kw'>=</span> <span class='fl'>0.5</span>,
   <span class='kw'>compute_univariate_zscore</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>max_iter</span> <span class='kw'>=</span> <span class='fl'>100</span>, <span class='kw'>tol</span> <span class='kw'>=</span> <span class='fl'>0.001</span>,
   <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>track_fit</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</pre>
     
@@ -118,112 +137,180 @@
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>X</th>
-      <td><p>an n by p matrix of covariates</p></td>
+      <td><p>An n by p matrix of covariates.</p></td>
     </tr>
     <tr>
       <th>Y</th>
-      <td><p>an n vector</p></td>
+      <td><p>A vector of length n.</p></td>
     </tr>
     <tr>
       <th>L</th>
-      <td><p>maximum number of non-zero effects</p></td>
+      <td><p>Number of components (nonzero elements) in the SuSiE
+regression model. If <code>L</code> is larger than the number of
+covariate (p), <code>L</code> is set to p.</p></td>
     </tr>
     <tr>
       <th>scaled_prior_variance</th>
-      <td><p>the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times). The prior variance on each non-zero element of b is set to be var(Y)*scaled_prior_variance.</p></td>
+      <td><p>The scaled prior variance. This is
+ either a scalar, or a vector of length <code>L</code>. The prior variance
+of each non-zero element of b is set to
+<code>var(Y)*scaled_prior_variance</code>. If
+<code>estimate_prior_variance = TRUE</code>, this input provides the
+initial estimates of the prior variances.</p></td>
     </tr>
     <tr>
       <th>residual_variance</th>
-      <td><p>the residual variance (defaults to variance of Y)</p></td>
+      <td><p>The variance of the residual. If
+<code>estimate_residual_variance = TRUE</code>, this value provides the
+initial estimate of the residual variance. By default, it is set to
+<code>var(Y)</code>.</p></td>
     </tr>
     <tr>
       <th>prior_weights</th>
-      <td><p>a p vector of prior probability that each element is non-zero</p></td>
+      <td><p>A vector of length p, in which each entry
+gives the prior probability that corresponding column of X has a
+nonzero effect on the outcome, Y.</p></td>
     </tr>
     <tr>
       <th>null_weight</th>
-      <td><p>probability of no effect, for each single effect model</p></td>
+      <td><p>Prior probability of no effect (a number between
+0 and 1, and cannot be exactly 1).</p></td>
     </tr>
     <tr>
       <th>standardize</th>
-      <td><p>logical flag (default=TRUE) for whether to standardize columns of X to unit variance prior to fitting.
-Note that `scaled_prior_variance` specifies the prior on the coefficients of X *after* standardization (if performed).
-If you do not standardize you may need
-to think more carefully about specifying
-`scaled_prior_variance`. Whatever the value of standardize, the coefficients (returned from `coef`) are for X on the original input scale.
-Any column of X that has zero variance is not standardized, but left as is.</p></td>
+      <td><p>If <code>standardize = TRUE</code>, standardize the
+columns of X to unit variance prior to fitting. Note that
+`scaled_prior_variance` specifies the prior on the coefficients of
+X <em>after</em> standardization (if it is performed). If you do not
+standardize, you may need to think more carefully about specifying
+<code>scaled_prior_variance</code>. Whatever your choice, the
+coefficients returned by <code>coef</code> are given for <code>X</code> on the
+original input scale. Any column of <code>X</code> that has zero variance is
+not standardized, but left as is.</p></td>
     </tr>
     <tr>
       <th>intercept</th>
-      <td><p>Should intercept be fitted (default=TRUE) or set to zero (FALSE). The latter is generally not recommended.</p></td>
+      <td><p>If <code>intercept = TRUE</code>, the intercept is
+fitted; otherwise, it is set to zero. Setting <code>intercept =
+FALSE</code> is generally not recommended.</p></td>
     </tr>
     <tr>
       <th>estimate_residual_variance</th>
-      <td><p>indicates whether to estimate residual variance</p></td>
+      <td><p>If
+<code>estimate_residual_variance = TRUE</code>, the variance of the
+residual is estimated separately for each of the <code>L</code>
+components, and <code>scaled_prior_variance</code> is used as an initial
+estimate of the variances.</p></td>
     </tr>
     <tr>
       <th>estimate_prior_variance</th>
-      <td><p>indicates whether to estimate prior (currently not recommended as not fully tested and assessed)</p></td>
+      <td><p>If <code>estimate_prior_variance =
+TRUE</code>, the prior variance is estimated father than fixed.</p></td>
+    </tr>
+    <tr>
+      <th>estimate_prior_method</th>
+      <td><p>The method used for estimating prior
+variance.</p></td>
     </tr>
     <tr>
       <th>s_init</th>
-      <td><p>a previous susie fit with which to initialize</p></td>
+      <td><p>A previous susie fit with which to initialize.</p></td>
     </tr>
     <tr>
       <th>coverage</th>
-      <td><p>coverage of confident sets. Default to 0.95 for 95% credible interval.</p></td>
+      <td><p>A number between 0 and 1 specifying the coverage of
+the estimated confidence sets.</p></td>
     </tr>
     <tr>
       <th>min_abs_corr</th>
-      <td><p>minimum of absolute value of correlation allowed in a credible set.
-Default set to 0.5 to correspond to squared correlation of 0.25,
-a commonly used threshold for genotype data in genetics studies.</p></td>
+      <td><p>Minimum of absolute value of correlation
+allowed in a credible set. The default, 0.5, corresponds to squared
+correlation of 0.25, which is a commonly used threshold for
+genotype data in genetics studies.</p></td>
     </tr>
     <tr>
       <th>compute_univariate_zscore</th>
-      <td><p>if true, outputs z-score from per variable univariate regression</p></td>
+      <td><p>If <code>compute_univariate_zscore
+= TRUE</code>, the univariate regression z-scores are outputted for each
+variable.</p></td>
     </tr>
     <tr>
       <th>max_iter</th>
-      <td><p>maximum number of iterations to perform</p></td>
+      <td><p>Maximum number of iterations of the IBSS fitting
+procedure.</p></td>
     </tr>
     <tr>
       <th>tol</th>
-      <td><p>convergence tolerance</p></td>
+      <td><p>A small, non-negative number specifying the convergence
+tolerance for the IBSS fitting procedure. The fitting procedure
+will halt when the difference in the variational lower bound, or
+"ELBO" (this is the objective function to be maximized), is less
+than <code>tol</code>.</p></td>
     </tr>
     <tr>
       <th>verbose</th>
-      <td><p>if true outputs some progress messages</p></td>
+      <td><p>If <code>verbose = TRUE</code>, the algorithm's
+progress and a summary of the optimization settings are printed to
+the console.</p></td>
     </tr>
     <tr>
       <th>track_fit</th>
-      <td><p>add an attribute <code>trace</code> to output that saves current values of all iterations</p></td>
+      <td><p>If <code>track_fit = TRUE</code>, an object <code>trace</code>
+is also returned containing detailed information about the
+estimates at each iteration of the IBSS fitting procedure.</p></td>
     </tr>
     </table>
     
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>a susie fit, which is a list with some or all of the following elements<br /></p>
-<dt>alpha</dt><dd><p>an L by p matrix of posterior inclusion probabilites</p></dd>
-<dt>mu</dt><dd><p>an L by p matrix of posterior means (conditional on inclusion)</p></dd>
-<dt>mu2</dt><dd><p>an L by p matrix of posterior second moments (conditional on inclusion)</p></dd>
-<dt>Xr</dt><dd><p>an n vector of fitted values, equal to X times colSums(alpha*mu))</p></dd>
-<dt>sigma2</dt><dd><p>residual variance</p></dd>
-<dt>V</dt><dd><p>prior variance</p></dd>
-<dt>elbo</dt><dd><p>a vector of values of elbo achieved (objective function)</p></dd>
-<dt>sets</dt><dd><p>a list of `cs`, `purity` and selected `cs_index`</p></dd>
-<dt>pip</dt><dd><p>a vector of posterior inclusion probability</p></dd>
-<dt>z</dt><dd><p>a vector of univariate z-scores</p></dd>
+    <p>A <code>"susie"</code> object with some or all of the following
+  elements:</p>
+<dt>alpha</dt><dd><p>An L by p matrix of posterior inclusion probabilites.</p></dd>
+
+<dt>mu</dt><dd><p>An L by p matrix of posterior means, conditional on
+  inclusion.</p></dd>
+
+<dt>mu2</dt><dd><p>An L by p matrix of posterior second moments,
+  conditional on inclusion.</p></dd>
+
+<dt>Xr</dt><dd><p>An vector of length n, equal to <code>X %*% colSums(alpha
+  * mu)</code>.</p></dd>
+
+<dt>intercept</dt><dd><p>The intercept (fixed or estimated).</p></dd>
+
+<dt>sigma2</dt><dd><p>Residual variance (fixed or estimated).</p></dd>
+
+<dt>V</dt><dd><p>Prior variance of the non-zero elements of b, equal to
+  <code>scaled_prior_variance * var(Y)</code>.</p></dd>
+
+<dt>elbo</dt><dd><p>The value of the variational lower bound, or "ELBO"
+  (the objective function to be maximized), achieved at each
+  iteration of the IBSS fitting procedure.</p></dd>
+
+<dt>fitted</dt><dd><p>Vector of length n containing the "fitted" values of
+  the outcome.</p></dd>
+
+<dt>sets</dt><dd><p>Credible sets estimated from model fit; see
+  <code><a href='susie_get_cs.html'>susie_get_cs</a></code> for details.</p></dd>
+
+<dt>pip</dt><dd><p>A vector of length p giving the (marginal) posterior
+  inclusion probabilities for all p covariates.</p></dd>
+
+<dt>z</dt><dd><p>A vector of univariate z-scores.</p></dd>
+
+<dt>niter</dt><dd><p>Number of IBSS iterations that were run.</p></dd>
+
+<dt>converged</dt><dd><p><code>TRUE</code> or <code>FALSE</code>, indicating whether
+  the IBSS converged to a solution within the chosen tolerance
+  level.</p></dd>
 
     
-    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
+    <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
 
-    <p>Performs Bayesian multiple linear regression of Y on X.
-That is, this function
-fits the regression model Y= sum_l Xb_l + e, where elements of e are iid N(0,residual_variance) and the
-sum_l b_l is a p vector of effects to be estimated.
-The assumption is that each b_l has exactly one non-zero element, with all elements
-equally likely to be non-zero. The prior on the non-zero element is N(0,var=var(Y)*scaled_prior_variance).</p>
+    <p>G. Wang, A. Sarkar, P. Carbonetto and M. Stephens (2018). A simple
+new approach to variable selection in regression, with application
+to genetic fine-mapping. <em>bioRxiv</em>
+<a href='https://doi.org/10.1101/501114'>https://doi.org/10.1101/501114</a>.</p>
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
@@ -235,7 +322,7 @@ equally likely to be non-zero. The prior on the non-zero element is N(0,var=var(
 <span class='no'>beta</span>[<span class='fl'>1</span>:<span class='fl'>4</span>] <span class='kw'>=</span> <span class='fl'>1</span>
 <span class='no'>X</span> <span class='kw'>=</span> <span class='fu'>matrix</span>(<span class='fu'>rnorm</span>(<span class='no'>n</span>*<span class='no'>p</span>),<span class='kw'>nrow</span><span class='kw'>=</span><span class='no'>n</span>,<span class='kw'>ncol</span><span class='kw'>=</span><span class='no'>p</span>)
 <span class='no'>y</span> <span class='kw'>=</span> <span class='no'>X</span> <span class='kw'>%*%</span> <span class='no'>beta</span> + <span class='fu'>rnorm</span>(<span class='no'>n</span>)
-<span class='no'>res</span> <span class='kw'>=</span><span class='fu'>susie</span>(<span class='no'>X</span>,<span class='no'>y</span>,<span class='kw'>L</span><span class='kw'>=</span><span class='fl'>10</span>)
+<span class='no'>res</span> <span class='kw'>=</span> <span class='fu'>susie</span>(<span class='no'>X</span>,<span class='no'>y</span>,<span class='kw'>L</span><span class='kw'>=</span><span class='fl'>10</span>)
 <span class='fu'>coef</span>(<span class='no'>res</span>)
 <span class='fu'>plot</span>(<span class='no'>y</span>,<span class='fu'>predict</span>(<span class='no'>res</span>))
 
@@ -248,7 +335,7 @@ equally likely to be non-zero. The prior on the non-zero element is N(0,var=var(
       
       <li><a href="#value">Value</a></li>
 
-      <li><a href="#details">Details</a></li>
+      <li><a href="#references">References</a></li>
       
       <li><a href="#examples">Examples</a></li>
     </ul>
@@ -258,7 +345,7 @@ equally likely to be non-zero. The prior on the non-zero element is N(0,var=var(
 
       <footer>
       <div class="copyright">
-  <p>Developed by Matthew Stephens, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto, Gao Wang.</p>
+  <p>Developed by Gao Wang, Peter Carbonetto, Yuxin Zou, Kaiqian Zhang, Matthew Stephens.</p>
 </div>
 
 <div class="pkgdown">

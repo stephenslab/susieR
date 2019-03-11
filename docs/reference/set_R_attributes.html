@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Get evidence lower bound (ELBO) from fitted SuSiE model — susie_get_objective • susieR</title>
+<title>sets the attributes for the X matrix — set_R_attributes • susieR</title>
 
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
@@ -30,9 +30,9 @@
 
 
 
-<meta property="og:title" content="Get evidence lower bound (ELBO) from fitted SuSiE model — susie_get_objective" />
+<meta property="og:title" content="sets the attributes for the X matrix — set_R_attributes" />
 
-<meta property="og:description" content="Get evidence lower bound (ELBO) from fitted SuSiE model" />
+<meta property="og:description" content="sets the attributes for the X matrix" />
 <meta name="twitter:card" content="summary" />
 
 
@@ -94,35 +94,45 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Get evidence lower bound (ELBO) from fitted SuSiE model</h1>
-    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/susie_utils.R'><code>R/susie_utils.R</code></a></small>
-    <div class="hidden name"><code>susie_get_objective.Rd</code></div>
+    <h1>sets the attributes for the X matrix</h1>
+    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/set_R_attributes.R'><code>R/set_R_attributes.R</code></a></small>
+    <div class="hidden name"><code>set_R_attributes.Rd</code></div>
     </div>
 
     <div class="ref-description">
     
-    <p>Get evidence lower bound (ELBO) from fitted SuSiE model</p>
+    <p>sets the attributes for the X matrix</p>
     
     </div>
 
-    <pre class="usage"><span class='fu'>susie_get_objective</span>(<span class='no'>res</span>, <span class='kw'>all</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>warning_tol</span> <span class='kw'>=</span> <span class='fl'>1e-06</span>)</pre>
+    <pre class="usage"><span class='fu'>set_R_attributes</span>(<span class='no'>R</span>, <span class='no'>expected_dim</span>, <span class='no'>r_tol</span>, <span class='no'>z</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>res</th>
-      <td><p>a susie fit, the output of `susieR::susie()`.</p></td>
+      <th>R</th>
+      <td><p>a p by p LD matrix</p></td>
     </tr>
     <tr>
-      <th>all</th>
-      <td><p>whether or not to get ELBO from all iterations</p></td>
+      <th>expected_dim</th>
+      <td><p>the expected dimension for R</p></td>
     </tr>
     <tr>
-      <th>warning_tol</th>
-      <td><p>warn if ELBO is non-decreasing by this tolerance level (default set to 1E-6)</p></td>
+      <th>r_tol</th>
+      <td><p>tolerance level for eigen value check of positive semidefinite matrix of R.</p></td>
+    </tr>
+    <tr>
+      <th>z</th>
+      <td><p>a p vector of z scores</p></td>
     </tr>
     </table>
+    
+    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
+
+    <p>R with two attributes e.g.
+        attr(R, 'det') is the determinant of R. It is 1 if R is not full rank.
+        attr(R, 'ztRinvz') is t(z)R^-1z. We use pseudoinverse of R when R is not invertible.</p>
     
 
   </div>
@@ -130,7 +140,9 @@
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
       <li><a href="#arguments">Arguments</a></li>
-                </ul>
+      
+      <li><a href="#value">Value</a></li>
+          </ul>
 
   </div>
 </div>
