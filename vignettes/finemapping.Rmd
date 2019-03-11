@@ -84,7 +84,10 @@ susie_plot(z_scores, y = "z", b=b)
 For starters, we assume there are at most 10 causal variables, i.e.,
 set `L = 10`, although SuSiE is robust to the choice of `L`.
 
-We set SuSiE prior variance to 0.1, and update residual variance in
+Notice that by default SuSiE estimates prior effect size from data. For
+fine-mapping applications, however, we often have some knowledge of SuSiE prior effect
+size since it is parameterized as percentage of variance explained. Here for this eQTL
+fine-mapping application we set SuSiE prior variance to 0.1, and update residual variance in
 the variational algorithm that fits SuSiE model. The `susieR` function
 call is:
 
@@ -92,6 +95,7 @@ call is:
 fitted <- susie(data$X, data$Y[,1],
                 L = 10,
                 estimate_residual_variance = TRUE, 
+                estimate_prior_variance = FALSE,
                 scaled_prior_variance = 0.1,
 				verbose = TRUE)
 ```
@@ -157,11 +161,21 @@ and compare with previous results:
 fitted = susie(data$X, data$Y[,1],
                L = 10,
                estimate_residual_variance = TRUE, 
+               estimate_prior_variance = FALSE, 
                scaled_prior_variance = 0.2)
 susie_plot(fitted, y='PIP', b=b)
 ```
 
-which largely remains unchanged.
+which largely remains unchanged. We also illustrate below analysis using 
+default prior estimated from data,
+
+```{r}
+fitted = susie(data$X, data$Y[,1],
+               L = 10,
+               estimate_residual_variance = TRUE)
+susie_plot(fitted, y='PIP', b=b)
+```
+
 
 ## Session information
 
