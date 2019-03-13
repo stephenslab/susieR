@@ -334,7 +334,7 @@ susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,add_legen
       }
       points(x0, y1,col=i+2,cex=1.5,lwd=2.5)
       legend_text$col = append(i+2, legend_text$col)
-      legend_text$purity = append(round(purity,2), legend_text$purity)
+      legend_text$purity = append(round(purity,4), legend_text$purity)
       legend_text$size = append(length(x0), legend_text$size)
     }
     if (length(legend_text$col) > 0 && add_legend) {
