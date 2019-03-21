@@ -4,21 +4,18 @@
 \alias{set_R_attributes}
 \title{sets the attributes for the X matrix}
 \usage{
-set_R_attributes(R, expected_dim, r_tol, z)
+set_R_attributes(R, r_tol, expected_dim)
 }
 \arguments{
 \item{R}{a p by p LD matrix}
-
-\item{expected_dim}{the expected dimension for R}
 
 \item{r_tol}{tolerance level for eigen value check of positive semidefinite matrix of R.}
 
 \item{z}{a p vector of z scores}
 }
 \value{
-R with two attributes e.g.
-        attr(R, 'det') is the determinant of R. It is 1 if R is not full rank.
-        attr(R, 'ztRinvz') is t(z)R^{-1}z. We use pseudoinverse of R when R is not invertible.
+R with attribute e.g.
+        attr(R, 'svdR') is the svd of R.
 }
 \description{
 sets the attributes for the X matrix

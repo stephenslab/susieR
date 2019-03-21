@@ -1,28 +1,36 @@
 #' @title sets the attributes for the X matrix
 #' @param R a p by p LD matrix
-#' @param expected_dim the expected dimension for R
 #' @param r_tol tolerance level for eigen value check of positive semidefinite matrix of R.
 #' @param z a p vector of z scores
-#' @return R with two attributes e.g.
-#'         attr(R, 'det') is the determinant of R. It is 1 if R is not full rank.
-#'         attr(R, 'ztRinvz') is t(z)R^{-1}z. We use pseudoinverse of R when R is not invertible.
+#' @return R with attribute e.g.
+#'         attr(R, 'svdR') is the svd of R.
 
-set_R_attributes = function(R, expected_dim, r_tol, z) {
-  svdR <- svd(R)
-  eigenvalues <- svdR$d
+set_R_attributes = function(R, r_tol, expected_dim) {
+  if(nrow(R) != expected_dim) {
+    stop(paste0('The dimension of R (', nrow(R), ' by ', nrow(R), ') does not agree with expected (', expected_dim, ' by ', expected_dim, ')'))
+  }
+  if(!is_symmetric_matrix(R)){
+    stop('R is not a symmetric matrix.')
+  }
+
+  X0 = diag(R) == 0
+  # convert any input R to correlation matrix
+  # if R has 0 colums and rows, cov2cor produces NaN and warning
+  R = muffled_cov2cor(R)
+  # change the columns and rows with NaN to 0
+  if(sum(X0) > 0){
+    R[X0, ] = R[,X0] = 0
+  }
+
+  eigenR <- eigen(R, symmetric = TRUE)
+  eigenvalues <- eigenR$values
   eigenvalues[abs(eigenvalues) < r_tol] <- 0
-
-  if(all(eigenvalues > 0)){
-    attr(R, 'det') = prod(eigenvalues)
-  }else{
-    attr(R, 'det') = 1
+  if(any(eigenvalues < 0)){
+    stop('R is not a positive semidefinite matrix.')
   }
 
-  if(!missing(z)){
-    Dinv = numeric(expected_dim)
-    Dinv[eigenvalues != 0] = 1/(eigenvalues[eigenvalues!=0])
-    attr(R, 'ztRinvz') <- sum(z*(svdR$v %*% (Dinv * crossprod(svdR$u, z))))
-  }
+  eigenR$values = eigenvalues
+  attr(R, 'eigenR') = eigenR
 
   return(R)
 }

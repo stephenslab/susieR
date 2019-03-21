@@ -182,74 +182,6 @@ susie_ss = function(XtX, Xty, yty, n, L=10,
 }
 
 
-#' @title Check input covariance / correlation matrix
-#' @param R a p by p matrix of X'X, covariance matrix or correlation matrix
-#' @return a verified matrix
-#' @keywords internal
-
-check_r_matrix <- function(R, expected_dim, r_tol) {
-  n = nrow(R)
-  if(n != expected_dim) {
-    stop(paste0('The dimension of R (', n, ' by ', n, ') does not agree with expected (', expected_dim, ' by ', expected_dim, ')'))
-  }
-  if(!is_symmetric_matrix(R)){
-    stop('R is not a symmetric matrix.')
-  }
-
-  E <- tryCatch(chol(R, pivot = TRUE),error = function(e) FALSE)
-  if (is.logical(E)) {
-    stop('R is not a positive semidefinite matrix.')
-  }
-
-  X0 = diag(R) == 0
-  # convert any input R to correlation matrix
-  # if R has 0 colums and rows, cov2cor produces NaN and warning
-  R = muffled_cov2cor(R)
-  # change the columns and rows with NaN to 0
-  if(sum(X0) > 0){
-    R[X0, ] = R[,X0] = 0
-  }
-  return(R)
-}
-
-#' @title Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix.
-#' @param z a p vector of z scores.
-#' @param R a p by p symmetric and positive semidefinite matrix. It can be X'X, covariance matrix or correlation matrix.
-#' @param r_tol tolerance level for eigen value check of positive semidefinite matrix of R.
-#' @param L maximum number of non-zero effects.
-#' @param estimate_residual_variance indicates whether to estimate residual variance
-#' @param estimate_prior_method The method used for estimating prior variance, 'optim' or 'EM'
-#' @param prior_weights a p vector of prior probability that each element is non-zero.
-#' @param null_weight probability of no effect, for each single effect model.
-#' @param coverage coverage of confident sets. Default to 0.95 for 95\% credible interval.
-#' @param min_abs_corr minimum of absolute value of correlation allowed in a credible set.
-#' @param verbose if TRUE outputs some progress messages.
-#' @param track_fit add an attribute \code{trace} to output that saves current values of all iterations.
-#' @param ... further arguments to be passed to \code{\link{susie_ss}}
-#' @return a susie fit
-#'
-#' @export
-susie_z = function(z, R, r_tol = 1e-08,
-                   L=10, estimate_residual_variance = TRUE,
-                   estimate_prior_method = c("optim", "EM"),
-                   prior_weights = NULL, null_weight = NULL,
-                   coverage=0.95, min_abs_corr=0.5,
-                   verbose=FALSE, track_fit = FALSE, ...){
-
-  R = check_r_matrix(R, length(z), r_tol)
-
-  estimate_prior_method = match.arg(estimate_prior_method)
-  susie_ss(XtX = R, Xty = z, n=2, var_y=1, type = 'z',
-           L = L,
-           estimate_prior_variance = TRUE,
-           estimate_residual_variance = estimate_residual_variance,
-           estimate_prior_method = estimate_prior_method,
-           r_tol=r_tol,
-           prior_weights = prior_weights, null_weight = null_weight,
-           coverage=coverage, min_abs_corr=min_abs_corr,
-           verbose=verbose, track_fit = track_fit, ...)
-}
-
 #' @title Summary statistics version of SuSiE on betahat, the corresponding standard error, and correlation (or covariance) matrix
 #' @param bhat a p vector of estimated effects.
 #' @param shat a p vector of corresponding standard errors.
@@ -305,7 +237,7 @@ susie_bhat = function(bhat, shat, R, n, var_y = 1, r_tol = 1e-08,
   R2 = that^2/(that^2 + n-2)
   sigma2 = (n-1)*(1-R2)/(n-2)
   #
-  R = check_r_matrix(R, length(bhat), r_tol)
+  R = set_R_attributes(R, r_tol, length(bhat))
   #
   if(missing(var_y)) {
     XtX = (n-1)*R
