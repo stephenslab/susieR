@@ -4,7 +4,7 @@
 \alias{estimate_residual_variance_ss}
 \title{Estimate residual variance for summary statistics}
 \usage{
-estimate_residual_variance_ss(XtX, Xty, s, var_y, n)
+estimate_residual_variance_ss(XtX, Xty, s, yty, n)
 }
 \arguments{
 \item{XtX}{a p by p matrix}
@@ -13,7 +13,7 @@ estimate_residual_variance_ss(XtX, Xty, s, var_y, n)
 
 \item{s}{a susie fit}
 
-\item{var_y}{variance of y}
+\item{yty}{a scaler, Y'Y, where Y is centered to have mean 0}
 
 \item{n}{sample size}
 }
