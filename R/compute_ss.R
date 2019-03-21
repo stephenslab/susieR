@@ -16,7 +16,7 @@ compute_ss = function(X, y, standardize = TRUE){
   }
   Xty = c(y %*% X)
   n = length(y)
-  vary = var(y)
+  yty = sum(y^2)
 
-  return(list(XtX = XtX, Xty = Xty, vary = vary, n = n))
+  return(list(XtX = XtX, Xty = Xty, yty = yty, n = n))
 }

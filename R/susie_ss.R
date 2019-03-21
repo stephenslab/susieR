@@ -11,8 +11,8 @@
 #' equally likely to be non-zero. The prior on the non-zero element is N(0,var=scaled_prior_variance*var(Y)).
 #' @param XtX a p by p matrix, X'X, where columns of X are centered to have mean 0
 #' @param Xty a p vector, X'Y, where columns of X are centered and Y is centered to have mean 0
+#' @param yty a scaler, Y'Y, where Y is centered to have mean 0
 #' @param n sample size
-#' @param var_y the (sample) variance of the vector Y
 #' @param L maximum number of non-zero effects
 #' @param type sufficient or z scores
 #' @param scaled_prior_variance the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )
@@ -59,7 +59,7 @@
 #' coef(res)
 #'
 #' @export
-susie_ss = function(XtX, Xty, n, var_y = 1, L=10, type = c('sufficient', 'z'),
+susie_ss = function(XtX, Xty, yty, n, L=10,
                     scaled_prior_variance=0.2,
                     residual_variance=NULL,
                     r_tol = 1e-08,
@@ -71,7 +71,6 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10, type = c('sufficient', 'z'),
                     max_iter=100,s_init = NULL, intercept_value=0,
                     coverage=0.95, min_abs_corr=0.5,
                     tol=1e-3, verbose=FALSE, track_fit = FALSE){
-  type = match.arg(type)
   # Process input estimate_prior_method.
   estimate_prior_method <- match.arg(estimate_prior_method)
 
@@ -94,10 +93,6 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10, type = c('sufficient', 'z'),
 
   p = ncol(XtX)
 
-  if(type == 'z'){
-    XtX = set_R_attributes(XtX, p, r_tol = r_tol, Xty)
-  }
-
   if(standardize){
     dXtX = diag(XtX)
     csd = sqrt(dXtX/(n-1))
@@ -112,7 +107,7 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10, type = c('sufficient', 'z'),
 
   # initialize susie fit
   s = init_setup(0,p,L,scaled_prior_variance,residual_variance,
-                 prior_weights,null_weight,as.numeric(var_y))
+                 prior_weights,null_weight,yty/(n-1))
   s$Xr = NULL; s$XtXr = rep(0,p)
 
   if (!missing(s_init)) {
@@ -138,24 +133,19 @@ susie_ss = function(XtX, Xty, n, var_y = 1, L=10, type = c('sufficient', 'z'),
     # alpha_new = s$alpha
 
     if(verbose){
-      print(paste0("objective:",ifelse(type == 'sufficient', get_objective_ss(XtX, Xty, s, var_y, n), get_objective_z(XtX, Xty, s))))
+      print(paste0("objective:",get_objective_ss(XtX, Xty, s, yty, n)))
     }
     if(estimate_residual_variance){
-      if(type == 'sufficient'){
-        est_sigma2 = estimate_residual_variance_ss(XtX,Xty,s,var_y,n)
-      }
-      else{
-        est_sigma2 = estimate_residual_variance_z(XtX,Xty,s)
-      }
+      est_sigma2 = estimate_residual_variance_ss(XtX,Xty,s,yty,n)
       if(est_sigma2 < 0){
         stop('Estimating residual variance failed: the estimated value is negative')
       }
       s$sigma2 = est_sigma2
       if(verbose){
-        print(paste0("objective:",ifelse(type == 'sufficient', get_objective_ss(XtX, Xty, s, var_y, n), get_objective_z(XtX, Xty, s))))
+        print(paste0("objective:",get_objective_ss(XtX, Xty, s, yty, n)))
       }
     }
-    elbo[i+1] = ifelse(type == 'sufficient', get_objective_ss(XtX, Xty, s, var_y, n), get_objective_z(XtX, Xty, s))
+    elbo[i+1] = get_objective_ss(XtX, Xty, s, yty, n)
 
     # if(max(abs(alpha_new - alpha_old)) < tol) break;
 
@@ -327,7 +317,7 @@ susie_bhat = function(bhat, shat, R, n, var_y = 1, r_tol = 1e-08,
   }
 
   estimate_prior_method = match.arg(estimate_prior_method)
-  susie_ss(XtX = XtX, Xty = Xty, n = n, var_y = var_y, L = L,
+  susie_ss(XtX = XtX, Xty = Xty, yty = var_y * (n-1), n = n, L = L,
            scaled_prior_variance = scaled_prior_variance,
            estimate_residual_variance = estimate_residual_variance,
            estimate_prior_variance = estimate_prior_variance,

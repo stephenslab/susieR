@@ -3,22 +3,22 @@
 #' @param XtX a p by p matrix, X'X
 #' @param Xty a p vector, X'Y,
 #' @param s a susie fit object
-#' @param var_y the (sample) variance of the vector Y
+#' @param yty a scaler, Y'Y, where Y is centered to have mean 0
 #' @param n sample size
 #' @keywords internal
-get_objective_ss = function(XtX, Xty, s, var_y, n) {
-  return(Eloglik_ss(XtX,Xty,s,var_y, n)-sum(s$KL))
+get_objective_ss = function(XtX, Xty, s, yty, n) {
+  return(Eloglik_ss(XtX,Xty,s,yty, n)-sum(s$KL))
 }
 
 # @title expected loglikelihood for a susie fit
-Eloglik_ss = function(XtX,Xty,s, var_y, n){
-  result =  -(n/2) * log(2*pi* s$sigma2) - (1/(2*s$sigma2)) * get_ER2_ss(XtX,Xty,s,var_y,n)
+Eloglik_ss = function(XtX,Xty,s, yty, n){
+  result =  -(n/2) * log(2*pi* s$sigma2) - (1/(2*s$sigma2)) * get_ER2_ss(XtX,Xty,s,yty)
   return(result)
 }
 
 # @title expected squared residuals
 # @importFrom Matrix diag
-get_ER2_ss = function(XtX,Xty,s,var_y,n){
+get_ER2_ss = function(XtX,Xty,s,yty){
   B = s$alpha*s$mu
   XB2 = sum((B%*%XtX) * B)
 
@@ -26,7 +26,7 @@ get_ER2_ss = function(XtX,Xty,s,var_y,n){
   d = attr(XtX, "d")
   postb2 = s$alpha * s$mu2 #posterior second moment
 
-  return(var_y*(n-1) - 2*sum(betabar * Xty) + sum(betabar * (XtX %*% betabar)) -
+  return(yty - 2*sum(betabar * Xty) + sum(betabar * (XtX %*% betabar)) -
            XB2 + sum(d*t(postb2)))
 }
 

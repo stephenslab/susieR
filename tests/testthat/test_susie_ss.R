@@ -6,7 +6,7 @@ test_that("Results from summary stat vs original data", with(simulate(200,1000),
   expect_warning(res <- susie(X, y, intercept = TRUE, standardize = TRUE, max_iter = 2,
                               estimate_residual_variance=FALSE, estimate_prior_variance = FALSE))
 
-  expect_warning(res2 <- susie_ss(ss$XtX, ss$Xty, var_y = ss$vary,
+  expect_warning(res2 <- susie_ss(ss$XtX, ss$Xty, yty = ss$yty,
                                   n = ss$n, standardize = TRUE, max_iter = 2,
                                   estimate_prior_variance =FALSE, estimate_residual_variance = FALSE))
 
@@ -30,7 +30,7 @@ test_that("Results from summary stat vs original data: estimate residual varianc
   expect_warning(res <- susie(X, y, intercept = TRUE, standardize = TRUE, max_iter = 2,
               estimate_residual_variance=TRUE, estimate_prior_variance = FALSE))
 
-  expect_warning(res2 <- susie_ss(ss$XtX, ss$Xty, var_y = ss$vary,
+  expect_warning(res2 <- susie_ss(ss$XtX, ss$Xty, yty = ss$yty,
                   n = ss$n, standardize = TRUE, max_iter = 2,
                   estimate_prior_variance = FALSE, estimate_residual_variance = TRUE))
 
