@@ -447,3 +447,14 @@ susie_slim = function(res){
   list(alpha = res$alpha, niter = res$niter, V = res$V, sigma2 = res$sigma2)
 }
 
+#' @title Get posterior mean for coefficients from fitted SuSiE model
+#' @param res a susie fit
+susie_get_posterior_mean = function(res){
+  colSums(res$alpha*s$mu)/res$X_column_scale_factors
+}
+
+#' @title Get posterior standard deviation for coefficients from fitted SuSiE model
+#' @param res a susie fit
+susie_get_posterior_sd = function(res){
+  sqrt(colSums(res$alpha * res$mu2 - (res$alpha*res$mu)^2))/(res$X_column_scale_factors)
+}
