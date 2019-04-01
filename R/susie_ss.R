@@ -38,6 +38,7 @@
 #' @param tol convergence tolerance based on alpha
 #' @param verbose if true outputs some progress messages
 #' @param track_fit add an attribute \code{trace} to output that saves current values of all iterations
+#' @param skip_checks whether to skip the checks for XtX and Xty
 #' @return a susie fit, which is a list with some or all of the following elements\cr
 #' \item{alpha}{an L by p matrix of posterior inclusion probabilites}
 #' \item{mu}{an L by p matrix of posterior means (conditional on inclusion)}
@@ -55,7 +56,7 @@
 #' X        <- matrix(rnorm(n*p),nrow=n,ncol=p)
 #' y        <- c(X %*% beta + rnorm(n))
 #' input_ss <- compute_ss(X,y,standardize = TRUE)
-#' res      <- with(input_ss,susie_ss(XtX,Xty,n,vary))
+#' res      <- with(input_ss,susie_ss(XtX,Xty,yty,n))
 #' coef(res)
 #'
 #' @export
@@ -70,7 +71,7 @@ susie_ss = function(XtX, Xty, yty, n, L=10,
                     estimate_prior_method = c("optim","EM"),
                     max_iter=100,s_init = NULL, intercept_value=0,
                     coverage=0.95, min_abs_corr=0.5,
-                    tol=1e-3, verbose=FALSE, track_fit = FALSE){
+                    tol=1e-3, verbose=FALSE, track_fit = FALSE, skip_checks=FALSE){
   # Process input estimate_prior_method.
   estimate_prior_method <- match.arg(estimate_prior_method)
 
@@ -104,6 +105,18 @@ susie_ss = function(XtX, Xty, yty, n, L=10,
   }
   attr(XtX, "d") <- diag(XtX)
   attr(XtX, "scaled:scale") <- csd
+
+  attr(XtX, 'eigen') <- eigen(XtX, symmetric = TRUE)
+  attr(XtX, 'eigen')$values[abs(attr(XtX, 'eigen')$values) < r_tol] <- 0
+
+  # check whether Xty in space spanned by the non-zero eigenvectors of XtX
+  if(!skip_checks){
+    A = attr(XtX, 'eigen')$vectors[,attr(XtX, 'eigen')$values!=0]
+    in_space = all.equal(as.vector(A%*%solve(crossprod(A)) %*% crossprod(A, Xty)), Xty)
+    if(!in_space){
+      stop('Xty does not lie in the space of non-zero eigenvectors of XtX')
+    }
+  }
 
   # initialize susie fit
   s = init_setup(0,p,L,scaled_prior_variance,residual_variance,
@@ -181,6 +194,35 @@ susie_ss = function(XtX, Xty, yty, n, L=10,
   return(s)
 }
 
+#' @title Check input covariance / correlation matrix
+#' @param R a p by p matrix of X'X, covariance matrix or correlation matrix
+#' @return a verified matrix
+#' @keywords internal
+
+check_r_matrix <- function(R, expected_dim, r_tol) {
+  n = nrow(R)
+  if(n != expected_dim) {
+    stop(paste0('The dimension of R (', n, ' by ', n, ') does not agree with expected (', expected_dim, ' by ', expected_dim, ')'))
+  }
+  if(!is_symmetric_matrix(R)){
+    stop('R is not a symmetric matrix.')
+  }
+
+  E <- tryCatch(chol(R, pivot = TRUE, tol=r_tol),error = function(e) FALSE)
+  if (is.logical(E)) {
+    stop('R is not a positive semidefinite matrix.')
+  }
+
+  X0 = diag(R) == 0
+  # convert any input R to correlation matrix
+  # if R has 0 colums and rows, cov2cor produces NaN and warning
+  R = muffled_cov2cor(R)
+  # change the columns and rows with NaN to 0
+  if(sum(X0) > 0){
+    R[X0, ] = R[,X0] = 0
+  }
+  return(R)
+}
 
 #' @title Summary statistics version of SuSiE on betahat, the corresponding standard error, and correlation (or covariance) matrix
 #' @param bhat a p vector of estimated effects.
@@ -237,7 +279,7 @@ susie_bhat = function(bhat, shat, R, n, var_y = 1, r_tol = 1e-08,
   R2 = that^2/(that^2 + n-2)
   sigma2 = (n-1)*(1-R2)/(n-2)
   #
-  R = set_R_attributes(R, r_tol, length(bhat))
+  R = check_r_matrix(R, length(bhat), r_tol)
   #
   if(missing(var_y)) {
     XtX = (n-1)*R

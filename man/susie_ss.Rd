@@ -11,7 +11,7 @@ susie_ss(XtX, Xty, yty, n, L = 10, scaled_prior_variance = 0.2,
   estimate_prior_method = c("optim", "EM"), max_iter = 100,
   s_init = NULL, intercept_value = 0, coverage = 0.95,
   min_abs_corr = 0.5, tol = 0.001, verbose = FALSE,
-  track_fit = FALSE)
+  track_fit = FALSE, skip_checks = FALSE)
 }
 \arguments{
 \item{XtX}{a p by p matrix, X'X, where columns of X are centered to have mean 0}
@@ -64,6 +64,8 @@ Set to NULL if you want coef.susie() not to include an intercept term (and so on
 
 \item{track_fit}{add an attribute \code{trace} to output that saves current values of all iterations}
 
+\item{skip_checks}{whether to skip the checks for XtX and Xty}
+
 \item{type}{sufficient or z scores}
 }
 \value{
@@ -99,7 +101,7 @@ beta[1:4] <- 1
 X        <- matrix(rnorm(n*p),nrow=n,ncol=p)
 y        <- c(X \%*\% beta + rnorm(n))
 input_ss <- compute_ss(X,y,standardize = TRUE)
-res      <- with(input_ss,susie_ss(XtX,Xty,n,vary))
+res      <- with(input_ss,susie_ss(XtX,Xty,yty,n))
 coef(res)
 
 }
