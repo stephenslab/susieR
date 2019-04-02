@@ -20,7 +20,6 @@
 #' \item{V}{the prior variance (after optimization, if optimize_V is TRUE)}
 #' \item{lbf_model}{(scalar) the loglikelihood for the total model minus the log-likelihood for the null model}
 #'
-#' @importFrom mvtnorm dmvnorm
 #'
 single_effect_regression_rss = function(z,Sigma,V=1,residual_variance=1,prior_weights=NULL,optimize_V=c("none", "optim", "EM")){
   p = length(z)
