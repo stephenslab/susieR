@@ -208,7 +208,7 @@ check_r_matrix <- function(R, expected_dim, r_tol) {
     stop('R is not a symmetric matrix.')
   }
 
-  E <- tryCatch(chol(R, pivot = TRUE, tol=r_tol),error = function(e) FALSE)
+  E <- tryCatch(suppressWarnings(chol(R, pivot = TRUE, tol=r_tol)),error = function(e) FALSE)
   if (is.logical(E)) {
     stop('R is not a positive semidefinite matrix.')
   }

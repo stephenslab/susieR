@@ -74,18 +74,24 @@ susie_rss = function(z, R, L=10, lambda = 0,
   p = ncol(R)
 
   # Check input R.
-  R = set_R_attributes(R, r_tol, length(z))
+  ## eigen decomposition
+  R = set_R_attributes(R, length(z))
 
   attr(R, "d") <- diag(R)
   attr(R, "scaled:scale") <- rep(1, length = p)
 
-  # check whether z in space spanned by the non-zero eigenvectors of R
+  ## check whether z in space spanned by the non-zero eigenvectors of R
   if(!skip_checks){
     A = attr(R, 'eigenR')$vectors[,attr(R, 'eigenR')$values!=0]
     in_space = all.equal(as.vector(A%*%solve(crossprod(A)) %*% crossprod(A, z)), z)
     if(in_space!=TRUE){
-      warning('z does not lie in the space of non-zero eigenvectors of R')
+      warning('z score does not lie in the space of non-zero eigenvectors of R')
     }
+  }
+  ## R psd
+  attr(R, 'eigenR')$values[abs(attr(R, 'eigenR')$values) < r_tol] <- 0
+  if(any(attr(R, 'eigenR')$values < 0)){
+    stop('R is not a positive semidefinite matrix.')
   }
 
   # initialize susie fit
@@ -144,20 +150,14 @@ susie_rss = function(z, R, L=10, lambda = 0,
       }else{
         if(restrict){
           sigma2 = seq(0.1,1,by=0.1)
-          tmp = s
-          obj = numeric(length(sigma2))
-          for(j in 1:length(sigma2)){
-            tmp$sigma2 = sigma2[j]
-            obj[j] = Eloglik_rss(R, z, tmp)
-          }
         }else{
           sigma2 = seq(0.1,6,by=0.1)
-          tmp = s
-          obj = numeric(length(sigma2))
-          for(j in 1:length(sigma2)){
-            tmp$sigma2 = sigma2[j]
-            obj[j] = Eloglik_rss(R, z, tmp)
-          }
+        }
+        tmp = s
+        obj = numeric(length(sigma2))
+        for(j in 1:length(sigma2)){
+          tmp$sigma2 = sigma2[j]
+          obj[j] = Eloglik_rss(R, z, tmp)
         }
         est_sigma2 = sigma2[which.max(obj)]
       }
@@ -226,15 +226,3 @@ update_Sigma = function(R, sigma2, z){
 #   s$sigma2 = sigma2
 #   -Eloglik_rss(R, z, s)
 # }
-
-#' @title SuSiE on z scores and correlation matrix.
-#' @param z a p vector of z scores.
-#' @param R a p by p symmetric and positive semidefinite correlation matrix.
-#' @param ... further arguments to be passed to \code{\link{susie_rss}}
-#' @return a susie fit
-#'
-#' @export
-susie_z = function(z, R, ...){
-
-  susie_rss(z = z, R = R, ...)
-}

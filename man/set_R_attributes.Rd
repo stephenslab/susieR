@@ -2,21 +2,19 @@
 % Please edit documentation in R/set_R_attributes.R
 \name{set_R_attributes}
 \alias{set_R_attributes}
-\title{sets the attributes for the X matrix}
+\title{sets the attributes for the R matrix}
 \usage{
-set_R_attributes(R, r_tol, expected_dim)
+set_R_attributes(R, expected_dim)
 }
 \arguments{
 \item{R}{a p by p LD matrix}
-
-\item{r_tol}{tolerance level for eigen value check of positive semidefinite matrix of R.}
 
 \item{z}{a p vector of z scores}
 }
 \value{
 R with attribute e.g.
-        attr(R, 'svdR') is the svd of R.
+        attr(R, 'eigenR') is the eigen decomposition of R.
 }
 \description{
-sets the attributes for the X matrix
+sets the attributes for the R matrix
 }
