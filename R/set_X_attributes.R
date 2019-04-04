@@ -1,4 +1,4 @@
-#' @title sets the attributes for the X matrix 
+#' @title sets the attributes for the X matrix
 #' @param X an n by p data matrix that can be a dense, sparse, or trend filtering matrix
 #' @param center boolean indicating mean centering or not
 #' @param scale boolean indicating scaled by standard deviation or not
@@ -34,14 +34,14 @@ set_X_attributes = function(X,
     if (!scale) {
       attr(X, "scaled:scale") <- rep(1, n)
     }
-  } else { 
+  } else {
     # if X is a dense or sparse matrix
     X.dense = as.matrix(X)
     # get column means
     cm = colMeans(X.dense, na.rm = TRUE)
     # get column standard deviations
     if (scale) {
-      csd = matrixStats::colSds(X.dense, center = cm)
+      csd = matrixStats::colSds(X.dense)
       # set sd = 1 when the column has variance 0
       csd[csd == 0] = 1
     } else {
