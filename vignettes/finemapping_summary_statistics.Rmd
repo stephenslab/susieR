@@ -130,30 +130,12 @@ fitted = susie(data$X, data$Y[,1],
                 L = 10,
                 estimate_residual_variance = TRUE, 
                 estimate_prior_variance = FALSE,
-                scaled_prior_variance = 0.1,
-                verbose = TRUE)
+                scaled_prior_variance = 0.1)
 plot(fitted$pip, fitted_bhat$pip, ylim=c(0,1))
 ```
 
 ```{r, fig.width=6,fig.height=6}
 plot(coef(fitted), coef(fitted_bhat))
-```
-
-### Using $z$ scores
-
-For $z$ score input, `susieR` can only output coefficients in standardized $X$, $y$ scale.
-
-```{r}
-fitted_z <- susie_z(z_scores, R = R, L = 10)
-```
-
-```{r}
-summary(fitted_z)$cs
-```
-
-and the PIP plot
-```{r}
-susie_plot(fitted_z, y="PIP", b=b)
 ```
 
 ## Session information
