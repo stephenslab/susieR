@@ -84,7 +84,7 @@ susie_ss = function(XtX, Xty, yty, n, L=10,
       stop("Null weight must be numeric")
     if (null_weight<0 || null_weight>=1)
       stop('Null weight must be between 0 and 1')
-    if (missing(prior_weights))
+    if (is.null(prior_weights))
       prior_weights = c(rep(1/ncol(XtX)*(1-null_weight), ncol(XtX)), null_weight)
     else
       prior_weights = c(prior_weights * (1-null_weight), null_weight)
