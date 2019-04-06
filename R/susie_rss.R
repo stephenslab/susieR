@@ -55,6 +55,20 @@ susie_rss = function(z, R, L=10, lambda = 0,
   }
   estimate_prior_method <- match.arg(estimate_prior_method)
 
+  # replace NA in z with 0
+  if (any(is.na(z))){
+    warning('z scores contain NA, it is replaced with 0.')
+    z[is.na(z)] = 0
+  }
+  # replace NA in R with 0
+  if(any(is.na(R))){
+    warning('R matrix contains NA, it is replaced with 0.')
+    isnaR = is.na(R)
+    naind = which(rowSums(isnaR) == ncol(R)-1)
+    R[,naind] = 0
+    R[naind,] = 0
+    R[isnaR] = 0
+  }
   if (!(is.double(R) & is.matrix(R)) & !inherits(R,"CsparseMatrix"))
     stop("Input X must be a double-precision matrix, or a sparse matrix.")
   if (is.numeric(null_weight) && null_weight == 0) null_weight = NULL

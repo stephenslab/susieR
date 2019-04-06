@@ -213,6 +213,14 @@ check_r_matrix <- function(R, expected_dim, r_tol) {
     stop('R is not a positive semidefinite matrix.')
   }
 
+  if(any(is.na(R))){
+    warning('R matrix contains NA, it is replaced with 0.')
+    isnaR = is.na(R)
+    naind = which(rowSums(isnaR) == ncol(R)-1)
+    R[,naind] = 0
+    R[naind,] = 0
+    R[isnaR] = 0
+  }
   X0 = diag(R) == 0
   # convert any input R to correlation matrix
   # if R has 0 colums and rows, cov2cor produces NaN and warning
