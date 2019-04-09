@@ -73,11 +73,6 @@ simulate_tf = function(order){
 }
 
 expect_equal_susie_update = function(new.res, original.res){
-  new.res$alpha = as.matrix(new.res$alpha, p, 1)
-  new.res$mu = as.matrix(new.res$mu, p, 1)
-  new.res$mu2 = as.matrix(new.res$mu2, p, 1)
-  new.res$Xr = as.matrix(new.res$Xr, n, 1)
-
   expect_equal(new.res$alpha, original.res$alpha)
   expect_equal(new.res$mu, original.res$mu)
   expect_equal(new.res$mu2, original.res$mu2)
@@ -88,11 +83,6 @@ expect_equal_susie_update = function(new.res, original.res){
 }
 
 expect_equal_susie_ss_update = function(new.res, original.res){
-  new.res$alpha = as.matrix(new.res$alpha, p, 1)
-  new.res$mu = as.matrix(new.res$mu, p, 1)
-  new.res$mu2 = as.matrix(new.res$mu2, p, 1)
-  new.res$XtXr = as.matrix(new.res$XtXr, p, 1)
-
   expect_equal(new.res$alpha, original.res$alpha)
   expect_equal(new.res$mu, original.res$mu)
   expect_equal(new.res$mu2, original.res$mu2)
@@ -103,11 +93,6 @@ expect_equal_susie_ss_update = function(new.res, original.res){
 }
 
 expect_equal_SER = function(new.res, original.res){
-  new.res$alpha = as.matrix(new.res$alpha, p, 1)
-  new.res$mu = as.matrix(new.res$mu, p, 1)
-  new.res$mu2 = as.matrix(new.res$mu2, p, 1)
-  new.res$lbf = as.matrix(new.res$lbf, p, 1)
-
   expect_equal(new.res$alpha, original.res$alpha)
   expect_equal(new.res$mu, original.res$mu)
   expect_equal(new.res$mu2, original.res$mu2)
@@ -117,11 +102,6 @@ expect_equal_SER = function(new.res, original.res){
 }
 
 expect_equal_SER_ss = function(new.res, original.res){
-  new.res$alpha = as.matrix(new.res$alpha, p, 1)
-  new.res$mu = as.matrix(new.res$mu, p, 1)
-  new.res$mu2 = as.matrix(new.res$mu2, p, 1)
-  new.res$lbf = as.matrix(new.res$lbf, p, 1)
-
   expect_equal(new.res$alpha, original.res$alpha)
   expect_equal(new.res$mu, original.res$mu)
   expect_equal(new.res$mu2, original.res$mu2)

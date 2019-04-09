@@ -6,6 +6,10 @@ test_that("susie agrees with version 0.3", with(simulate(sparse=T), {
   original.res3 = readRDS('susiefit_original_res3.rds')
   original.res4 = readRDS('susiefit_original_res4.rds')
 
+  original.res$Xr = as.vector(original.res$Xr)
+  original.res2$Xr = as.vector(original.res2$Xr)
+  original.res3$Xr = as.vector(original.res3$Xr)
+  original.res4$Xr = as.vector(original.res4$Xr)
   dense.res = susie(X, y, tol=1E-2, estimate_prior_variance = FALSE)
   sparse.res = susie(X.sparse, y, tol=1E-2, estimate_prior_variance = FALSE)
 

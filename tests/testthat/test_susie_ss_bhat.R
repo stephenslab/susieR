@@ -18,6 +18,7 @@ test_that("Results from ss bhat interface vs original data: no standardize", wit
   expect_equal(fit$mu2, orig$mu2)
   expect_equal(fit$V, orig$V)
   X.c = set_X_attributes(X, center = TRUE, scale = FALSE)
+  X.c = t((t(X.c) - attr(X.c, 'scaled:center'))/attr(X.c, 'scaled:scale'))
   expect_equal(crossprod(X.c, orig$fitted), fit$Xtfitted)
 }))
 
@@ -26,7 +27,10 @@ test_that("Results from ss bhat interface vs original data: standardize", with(s
   R = cor(X)
 
   X.s = set_X_attributes(X, center = FALSE, scale = TRUE)
+  X.s = t((t(X.s) - attr(X.s, 'scaled:center'))/attr(X.s, 'scaled:scale'))
   X.cs = set_X_attributes(X, center = TRUE, scale = TRUE)
+  X.cs = t((t(X.cs) - attr(X.cs, 'scaled:center'))/attr(X.cs, 'scaled:scale'))
+
   expect_warning(orig <- susie(X.s, y, intercept = TRUE, standardize = TRUE, max_iter = 2,
                estimate_residual_variance=FALSE, estimate_prior_variance = FALSE))
 
@@ -47,7 +51,9 @@ test_that("Results from ss bhat interface: t statistics", with(simulate(200,1000
   R = cor(X)
 
   X.s = set_X_attributes(X, center = FALSE, scale = TRUE)
+  X.s = t((t(X.s) - attr(X.s, 'scaled:center'))/attr(X.s, 'scaled:scale'))
   X.cs = set_X_attributes(X, center = TRUE, scale = TRUE)
+  X.cs = t((t(X.cs) - attr(X.cs, 'scaled:center'))/attr(X.cs, 'scaled:scale'))
 
   expect_warning(orig <- susie(X.s, y/sd(y), intercept = TRUE, standardize = TRUE, max_iter = 2,
                estimate_residual_variance=FALSE, estimate_prior_variance = FALSE))

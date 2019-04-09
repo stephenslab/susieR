@@ -9,7 +9,7 @@ compute_ss = function(X, y, standardize = TRUE){
   y = y - mean(y)
   is.sparse = !(is.matrix(X))
   X = set_X_attributes(as.matrix(X), center=TRUE, scale = standardize)
-
+  X = t((t(X) - attr(X, 'scaled:center'))/attr(X, 'scaled:scale'))
   XtX = crossprod(X)
   if(is.sparse){
     XtX = as(XtX,"dgCMatrix")

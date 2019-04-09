@@ -1,14 +1,12 @@
-#' @title sets the attributes for the X matrix
-#' @param X an n by p data matrix that can be a dense, sparse, or trend filtering matrix
-#' @param center boolean indicating mean centering or not
-#' @param scale boolean indicating scaled by standard deviation or not
+#' @title sets three attributes for matrix X
+#' @param X an n by p data matrix that can be either a trend filtering matrix or a regular dense/sparse matrix
+#' @param center boolean indicating centered by column means or not
+#' @param scale boolean indicating scaled by column standard deviations or not
 #' @return X with three attributes e.g.
-#'         attr(X, 'scaled:center') is a p vector of column means of X
-#'         attr(X, 'scaled:scale') is a p vector of column standard deviations of X
-#'         attr(X, 'd') is a p vector of column sums of X^2
-#' if X is a trend filtering matrix, return the initial X with three attributes;
-#' if X is a dense matrix, return the scaled X with three attributes;
-#' if X is a sparse matrix, return the initial X with three attributes.
+#'         attr(X, 'scaled:center') is a p vector of column means of X if center=TRUE, a p vector of 0s otherwise.
+#'         attr(X, 'scaled:scale') is a p vector of column standard deviations of X if scale=TRUE, a p vector of 1s otherwise.
+#'         attr(X, 'd') is a p vector of column sums of X.standardized^2,
+#'         where X.standardized is the matrix X centered by attr(X, 'scaled:center') and scaled by attr(X, 'scaled:scale').
 
 set_X_attributes = function(X,
                             center = TRUE,
@@ -17,17 +15,10 @@ set_X_attributes = function(X,
   if (!is.null(attr(X, "matrix.type"))) {
     order <- attr(X,"order")
     n <- ncol(X)
+    # set three attributes for X
     attr(X, "scaled:center") <- compute_tf_cm(order, n)
     attr(X, "scaled:scale") <- compute_tf_csd(order, n)
-    attr(X, "d") <-
-      compute_tf_d(
-        order,
-        n,
-        attr(X, "scaled:center"),
-        attr(X, "scaled:scale"),
-        scale,
-        center
-      )
+    attr(X, "d") <- compute_tf_d(order,n,attr(X, "scaled:center"),attr(X, "scaled:scale"),scale,center)
     if (!center) {
       attr(X, "scaled:center") <- rep(0, n)
     }
@@ -35,7 +26,7 @@ set_X_attributes = function(X,
       attr(X, "scaled:scale") <- rep(1, n)
     }
   } else {
-    # if X is a dense or sparse matrix
+  # if X is either a dense or sparse ordinary matrix
     X.dense = as.matrix(X)
     # get column means
     cm = colMeans(X.dense, na.rm = TRUE)
@@ -53,11 +44,7 @@ set_X_attributes = function(X,
       cm = rep(0, length = length(cm))
     }
     X.dense = t((t(X.dense) - cm) / csd)
-    if (is.matrix(X)) {
-      # if X is dense, change X into centered and scaled version as required by inputs
-      X = X.dense
-    }
-    # set attributes for either dense or sparse X
+    # set three attributes for X
     attr(X, "d") <- Matrix::colSums(X.dense * X.dense)
     attr(X, "scaled:center") <- cm
     attr(X, "scaled:scale") <- csd
