@@ -97,7 +97,7 @@ susie_rss = function(z, R, L=10, lambda = 0,
   ## check whether z in space spanned by the non-zero eigenvectors of R
   if(!skip_checks){
     A = attr(R, 'eigenR')$vectors[,attr(R, 'eigenR')$values!=0]
-    in_space = all.equal(as.vector(A%*%solve(crossprod(A)) %*% crossprod(A, z)), z)
+    in_space = all.equal(as.vector(A %*% crossprod(A, z)), z)
     if(in_space!=TRUE){
       warning('z score does not lie in the space of non-zero eigenvectors of R')
     }

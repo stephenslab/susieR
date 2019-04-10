@@ -112,7 +112,7 @@ susie_ss = function(XtX, Xty, yty, n, L=10,
   # check whether Xty in space spanned by the non-zero eigenvectors of XtX
   if(!skip_checks){
     A = attr(XtX, 'eigen')$vectors[,attr(XtX, 'eigen')$values!=0]
-    in_space = all.equal(as.vector(A%*%solve(crossprod(A)) %*% crossprod(A, Xty)), Xty)
+    in_space = all.equal(as.vector(A %*% crossprod(A, Xty)), Xty)
     if(in_space!=TRUE){
       warning('Xty does not lie in the space of non-zero eigenvectors of XtX')
     }
