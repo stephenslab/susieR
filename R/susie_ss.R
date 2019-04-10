@@ -107,7 +107,7 @@ susie_ss = function(XtX, Xty, yty, n, L=10,
   attr(XtX, "scaled:scale") <- csd
 
   attr(XtX, 'eigen') <- eigen(XtX, symmetric = TRUE)
-  attr(XtX, 'eigen')$values[abs(attr(XtX, 'eigen')$values) < r_tol] <- 0
+  # attr(XtX, 'eigen')$values[abs(attr(XtX, 'eigen')$values) < r_tol] <- 0
 
   # check whether Xty in space spanned by the non-zero eigenvectors of XtX
   if(!skip_checks){
