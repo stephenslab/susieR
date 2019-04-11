@@ -4,53 +4,18 @@
 \alias{susie_bhat}
 \title{Summary statistics version of SuSiE on betahat, the corresponding standard error, and correlation (or covariance) matrix}
 \usage{
-susie_bhat(bhat, shat, R, n, var_y = 1, r_tol = 1e-08, L = 10,
-  scaled_prior_variance = 0.2, estimate_residual_variance = TRUE,
-  estimate_prior_variance = TRUE, estimate_prior_method = c("optim",
-  "EM"), prior_weights = NULL, null_weight = NULL,
-  standardize = TRUE, coverage = 0.95, min_abs_corr = 0.5,
-  verbose = FALSE, track_fit = FALSE, ...)
+susie_bhat(bhat, shat, R, n, var_y = 1, ...)
 }
 \arguments{
 \item{bhat}{a p vector of estimated effects.}
 
 \item{shat}{a p vector of corresponding standard errors.}
 
-\item{R}{a p by p symmetric and positive semidefinite matrix. It can be X'X, covariance matrix or correlation matrix.}
+\item{R}{a p by p symmetric and positive semidefinite matrix. It can be X'X, covariance matrix (X'X/(n-1)) or correlation matrix.}
 
 \item{n}{sample size.}
 
-\item{var_y}{the (sample) variance of y. If it is unknown, the coefficients (returned from `coef`) are on the standardized X, y scale.}
-
-\item{r_tol}{tolerance level for eigen value check of positive semidefinite matrix of R.}
-
-\item{L}{maximum number of non-zero effects.}
-
-\item{scaled_prior_variance}{the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times)}
-
-\item{estimate_residual_variance}{indicates whether to estimate residual variance}
-
-\item{estimate_prior_variance}{indicates whether to estimate prior}
-
-\item{estimate_prior_method}{The method used for estimating prior variance, 'optim' or 'EM'}
-
-\item{prior_weights}{a p vector of prior probability that each element is non-zero}
-
-\item{null_weight}{probability of no effect, for each single effect model}
-
-\item{standardize}{logical flag (default=TRUE) for whether to standardize columns of X to unit variance prior to fitting. It is useful when `var_y` is given.
-Note that `scaled_prior_variance` specifies the prior on the coefficients of X *after* standardization (if performed).
-If you do not standardize you may need
-to think more carefully about specifying `scaled_prior_variance`.
-Whatever the value of standardize, the coefficients (returned from `coef`) are on the bhat, shat scale.}
-
-\item{coverage}{coverage of confident sets. Default to 0.95 for 95\% credible interval.}
-
-\item{min_abs_corr}{minimum of absolute value of correlation allowed in a credible set.}
-
-\item{verbose}{if true outputs some progress messages}
-
-\item{track_fit}{add an attribute \code{trace} to output that saves current values of all iterations}
+\item{var_y}{the (sample) variance of y, defined as y'y/(n-1) . If it is unknown, the coefficients (returned from `coef`) are on the standardized X, y scale.}
 
 \item{...}{further arguments to be passed to \code{\link{susie_ss}}}
 }

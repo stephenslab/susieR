@@ -2,12 +2,12 @@
 % Please edit documentation in R/sparse_multiplication.R
 \name{compute_Xty}
 \alias{compute_Xty}
-\title{Compute t(scaled.X)\%*\%y using sparse multiplication}
+\title{Computes t(standardized.X)\%*\%y using sparse multiplication trick}
 \usage{
 compute_Xty(X, y)
 }
 \arguments{
-\item{X}{is a scaled dense matrix or an unscaled sparse matrix}
+\item{X}{an n by p unstandardized matrix with three attributes: attr(X, 'scaled:center'), attr(X, 'scaled:scale'), and attr(X, 'd')}
 
 \item{y}{an n vector}
 }
@@ -15,5 +15,5 @@ compute_Xty(X, y)
 a p vector
 }
 \description{
-Compute t(scaled.X)\%*\%y using sparse multiplication
+Computes t(standardized.X)\%*\%y using sparse multiplication trick
 }

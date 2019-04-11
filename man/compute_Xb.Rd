@@ -2,12 +2,12 @@
 % Please edit documentation in R/sparse_multiplication.R
 \name{compute_Xb}
 \alias{compute_Xb}
-\title{Compute scaled.X \%*\% b using sparse multiplication}
+\title{Computes standardized.X \%*\% b using sparse multiplication trick}
 \usage{
 compute_Xb(X, b)
 }
 \arguments{
-\item{X}{is a scaled dense matrix or an unscaled sparse matrix}
+\item{X}{an n by p unstandardized matrix with three attributes: attr(X, 'scaled:center'), attr(X, 'scaled:scale'), and attr(X, 'd')}
 
 \item{b}{a p vector}
 }
@@ -15,6 +15,6 @@ compute_Xb(X, b)
 an n vector
 }
 \description{
-Compute scaled.X \%*\% b using sparse multiplication
+Computes standardized.X \%*\% b using sparse multiplication trick
 }
 \keyword{internal}

@@ -3,6 +3,8 @@
 S3method(coef,susie)
 S3method(predict,susie)
 S3method(summary,susie)
+export(check_projection)
+export(check_semi_pd)
 export(coef.susie)
 export(compute_ss)
 export(predict.susie)

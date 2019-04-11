@@ -2,26 +2,24 @@
 % Please edit documentation in R/set_X_attributes.R
 \name{set_X_attributes}
 \alias{set_X_attributes}
-\title{sets the attributes for the X matrix}
+\title{sets three attributes for matrix X}
 \usage{
 set_X_attributes(X, center = TRUE, scale = TRUE)
 }
 \arguments{
-\item{X}{an n by p data matrix that can be a dense, sparse, or trend filtering matrix}
+\item{X}{an n by p data matrix that can be either a trend filtering matrix or a regular dense/sparse matrix}
 
-\item{center}{boolean indicating mean centering or not}
+\item{center}{boolean indicating centered by column means or not}
 
-\item{scale}{boolean indicating scaled by standard deviation or not}
+\item{scale}{boolean indicating scaled by column standard deviations or not}
 }
 \value{
 X with three attributes e.g.
-        attr(X, 'scaled:center') is a p vector of column means of X
-        attr(X, 'scaled:scale') is a p vector of column standard deviations of X
-        attr(X, 'd') is a p vector of column sums of X^2
-if X is a trend filtering matrix, return the initial X with three attributes;
-if X is a dense matrix, return the scaled X with three attributes;
-if X is a sparse matrix, return the initial X with three attributes.
+        attr(X, 'scaled:center') is a p vector of column means of X if center=TRUE, a p vector of 0s otherwise.
+        attr(X, 'scaled:scale') is a p vector of column standard deviations of X if scale=TRUE, a p vector of 1s otherwise.
+        attr(X, 'd') is a p vector of column sums of X.standardized^2,
+        where X.standardized is the matrix X centered by attr(X, 'scaled:center') and scaled by attr(X, 'scaled:scale').
 }
 \description{
-sets the attributes for the X matrix
+sets three attributes for matrix X
 }

@@ -2,18 +2,18 @@
 % Please edit documentation in R/sparse_multiplication.R
 \name{compute_MXt}
 \alias{compute_MXt}
-\title{Compute M\%*\%t(scaled.X) using sparse multiplication}
+\title{Computes M\%*\%t(standardized.X) using sparse multiplication trick}
 \usage{
 compute_MXt(M, X)
 }
 \arguments{
 \item{M}{a L by p matrix}
 
-\item{X}{is a scaled dense matrix or an unscaled sparse matrix}
+\item{X}{an n by p unstandardized matrix with three attributes: attr(X, 'scaled:center'), attr(X, 'scaled:scale'), and attr(X, 'd')}
 }
 \value{
 a L by n matrix
 }
 \description{
-Compute M\%*\%t(scaled.X) using sparse multiplication
+Computes M\%*\%t(standardized.X) using sparse multiplication trick
 }
