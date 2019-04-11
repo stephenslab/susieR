@@ -8,7 +8,7 @@ update_each_effect_ss(XtX, Xty, s_init, estimate_prior_variance = FALSE,
   estimate_prior_method = "optim")
 }
 \arguments{
-\item{XtX}{a p by p matrix, t(X)X}
+\item{XtX}{a p by p matrix, X'X}
 
 \item{Xty}{a p vector}
 

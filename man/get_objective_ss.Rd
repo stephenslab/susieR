@@ -9,11 +9,11 @@ get_objective_ss(XtX, Xty, s, yty, n)
 \arguments{
 \item{XtX}{a p by p matrix, X'X}
 
-\item{Xty}{a p vector, X'Y,}
+\item{Xty}{a p vector, X'y,}
 
 \item{s}{a susie fit object}
 
-\item{yty}{a scaler, Y'Y, where Y is centered to have mean 0}
+\item{yty}{a scaler, y'y, where y is centered to have mean 0}
 
 \item{n}{sample size}
 }

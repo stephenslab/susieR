@@ -13,6 +13,7 @@ check_semi_pd(A, tol)
 a list of result: \cr
 \item{matrix}{The matrix with eigen decomposition}
 \item{status}{whether A is positive semidefinite}
+\item{eigenvalues}{eigenvalues of A truncated by r_tol}
 }
 \description{
 Check whether A is positive semidefinite

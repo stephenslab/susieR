@@ -1,12 +1,12 @@
-#' @title Bayesian single-effect linear regression of Y on X.
-#' @details Performs single-effect linear regression of Y on X. That is, this function
-#' fits the regression model Y= Xb + e, where elements of e are iid N(0,residual_variance) and the
+#' @title Bayesian single-effect linear regression of y on X.
+#' @details Performs single-effect linear regression of y on X. That is, this function
+#' fits the regression model y= Xb + e, where elements of e are iid N(0,residual_variance) and the
 #' b is a p vector of effects to be estimated.
 #' The assumption is that b has exactly one non-zero element, with all elements
 #' equally likely to be non-zero. The prior on the non-zero element is N(0,var=V).
-#' Only the summary statistcs t(X)Y and diagonal elements of t(X)X are avialable.
+#' Only the summary statistcs X'y and diagonal elements of X'X are avialable.
 #' @param Xty a p vector
-#' @param dXtX a p vector, diagonal elements of t(X)X
+#' @param dXtX a p vector, diagonal elements of X'X
 #' @param V the prior variance
 #' @param residual_variance the residual variance
 #' @param prior_weights a p vector of prior weights

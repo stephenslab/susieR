@@ -2,7 +2,7 @@
 % Please edit documentation in R/single_effect_regression_ss.R
 \name{single_effect_regression_ss}
 \alias{single_effect_regression_ss}
-\title{Bayesian single-effect linear regression of Y on X.}
+\title{Bayesian single-effect linear regression of y on X.}
 \usage{
 single_effect_regression_ss(Xty, dXtX, V = 1, residual_variance = 1,
   prior_weights = NULL, optimize_V = c("none", "optim", "EM"))
@@ -10,7 +10,7 @@ single_effect_regression_ss(Xty, dXtX, V = 1, residual_variance = 1,
 \arguments{
 \item{Xty}{a p vector}
 
-\item{dXtX}{a p vector, diagonal elements of t(X)X}
+\item{dXtX}{a p vector, diagonal elements of X'X}
 
 \item{V}{the prior variance}
 
@@ -31,13 +31,13 @@ a list with elements: \cr
 \item{lbf_model}{(scalar) the loglikelihood for the total model minus the log-likelihood for the null model}
 }
 \description{
-Bayesian single-effect linear regression of Y on X.
+Bayesian single-effect linear regression of y on X.
 }
 \details{
-Performs single-effect linear regression of Y on X. That is, this function
-fits the regression model Y= Xb + e, where elements of e are iid N(0,residual_variance) and the
+Performs single-effect linear regression of y on X. That is, this function
+fits the regression model y= Xb + e, where elements of e are iid N(0,residual_variance) and the
 b is a p vector of effects to be estimated.
 The assumption is that b has exactly one non-zero element, with all elements
 equally likely to be non-zero. The prior on the non-zero element is N(0,var=V).
-Only the summary statistcs t(X)Y and diagonal elements of t(X)X are avialable.
+Only the summary statistcs X'y and diagonal elements of X'X are avialable.
 }

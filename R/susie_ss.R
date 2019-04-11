@@ -212,6 +212,7 @@ susie_ss = function(XtX, Xty, yty, n, L=10,
 #' @return a list of result: \cr
 #' \item{matrix}{The matrix with eigen decomposition}
 #' \item{status}{whether A is positive semidefinite}
+#' \item{eigenvalues}{eigenvalues of A truncated by r_tol}
 #' @export
 check_semi_pd <- function(A, tol){
   attr(A, 'eigen') = eigen(A, symmetric = TRUE)
@@ -224,7 +225,7 @@ check_semi_pd <- function(A, tol){
   #   stop('R is not a positive semidefinite matrix.')
   # }
 
-  return(list(matrix = A, status = !any(eigenvalues < 0)))
+  return(list(matrix = A, status = !any(eigenvalues < 0), eigenvalues = eigenvalues))
 }
 
 #' @title Check whether b in space spanned by the non-zero eigenvectors of A

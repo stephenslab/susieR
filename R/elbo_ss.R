@@ -1,9 +1,9 @@
 #' @title Get objective function from data and susie fit object.
 #'
 #' @param XtX a p by p matrix, X'X
-#' @param Xty a p vector, X'Y,
+#' @param Xty a p vector, X'y,
 #' @param s a susie fit object
-#' @param yty a scaler, Y'Y, where Y is centered to have mean 0
+#' @param yty a scaler, y'y, where y is centered to have mean 0
 #' @param n sample size
 #' @keywords internal
 get_objective_ss = function(XtX, Xty, s, yty, n) {

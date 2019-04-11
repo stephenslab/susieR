@@ -1,5 +1,5 @@
 #' @title update each effect once
-#' @param XtX a p by p matrix, t(X)X
+#' @param XtX a p by p matrix, X'X
 #' @param Xty a p vector
 #' @param s_init a list with elements sigma2, V, alpha, mu, Xr
 #' @param estimate_prior_variance boolean indicating whether to estimate prior variance

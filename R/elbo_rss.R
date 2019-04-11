@@ -10,7 +10,7 @@ get_objective_rss = function(R, z, s) {
 
 # @title expected loglikelihood for a susie fit
 Eloglik_rss = function(R,z,s){
-  d = s$sigma2 * attr(R, 'eigenR')$values + attr(R, 'lambda')
+  d = s$sigma2 * attr(R, 'eigen')$values + attr(R, 'lambda')
 
   if(attr(R, 'lambda') == 0){
     result =  -(sum(d!=0)/2) * log(2*pi*s$sigma2) -
@@ -26,15 +26,15 @@ Eloglik_rss = function(R,z,s){
 # @importFrom Matrix diag
 get_ER2_rss = function(R,z,s){
 
-  d = s$sigma2 * attr(R, 'eigenR')$values + attr(R, 'lambda')
+  d = s$sigma2 * attr(R, 'eigen')$values + attr(R, 'lambda')
 
   Dinv = 1/d
   Dinv[is.infinite(Dinv)] = 0
   SinvRj = lapply(1:length(z), function(j){
-    attr(R, 'eigenR')$vectors %*% (Dinv * crossprod(attr(R, 'eigenR')$vectors, R[,j]))
+    attr(R, 'eigen')$vectors %*% (Dinv * crossprod(attr(R, 'eigen')$vectors, R[,j]))
   })
 
-  zSinvz = sum(z * (attr(R, 'eigenR')$vectors %*% (Dinv * crossprod(attr(R, 'eigenR')$vectors, z))))
+  zSinvz = sum(z * (attr(R, 'eigen')$vectors %*% (Dinv * crossprod(attr(R, 'eigen')$vectors, z))))
 
 
   Z = s$alpha*s$mu
