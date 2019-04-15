@@ -65,7 +65,7 @@ in the shell:
 
     ```bash
     R CMD build --resave-data --no-build-vignettes susieR
-    R CMD INSTALL susieR_0.7.1.tar.gz
+    R CMD INSTALL susieR_0.8.0.tar.gz
     R CMD check --as-cran --ignore-vignettes susieR_0.8.0.tar.gz
     ```
 
