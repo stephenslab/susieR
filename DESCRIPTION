@@ -10,7 +10,7 @@ Description: The package implements a simple new way to perform
     effects are highly sparse (e.g. <20 non-zero effects in the vector
     $b$), although it is also useful to more general applications.
 Date: 2019-04-15
-Version: 0.8.0.0515
+Version: 0.8.1.0516
 Authors@R: c(person("Gao","Wang",role=c("aut","cre"),
                     email="gaow@uchicago.edu"),
              person("Peter","Carbonetto",role="aut"),

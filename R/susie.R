@@ -182,7 +182,7 @@ susie <- function(X,Y,L = min(10,ncol(X)),scaled_prior_variance = 0.2,
   if (!(is.double(X) & is.matrix(X)) & !inherits(X,"CsparseMatrix") & is.null(attr(X,"matrix.type")))
     stop("Input X must be a double-precision matrix, or a sparse matrix, or a trend filtering matrix.")
   if (is.numeric(null_weight) && null_weight == 0) null_weight = NULL
-  if (!is.null(null_weight)) {
+  if (!is.null(null_weight) && is.null(attr(X, "matrix.type"))) {
     if (!is.numeric(null_weight))
       stop("Null weight must be numeric")
     if (null_weight<0 || null_weight>=1)
