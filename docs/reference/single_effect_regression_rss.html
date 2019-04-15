@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Summary statistics version of SuSiE on betahat, the corresponding standard error, and correlation (or covariance) matrix — susie_bhat • susieR</title>
+<title>Bayesian single-effect linear regression of Y on X. — single_effect_regression_rss • susieR</title>
 
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
@@ -30,9 +30,9 @@
 
 
 
-<meta property="og:title" content="Summary statistics version of SuSiE on betahat, the corresponding standard error, and correlation (or covariance) matrix — susie_bhat" />
+<meta property="og:title" content="Bayesian single-effect linear regression of Y on X. — single_effect_regression_rss" />
 
-<meta property="og:description" content="Summary statistics version of SuSiE on betahat, the corresponding standard error, and correlation (or covariance) matrix" />
+<meta property="og:description" content="Bayesian single-effect linear regression of Y on X." />
 <meta name="twitter:card" content="summary" />
 
 
@@ -94,51 +94,69 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Summary statistics version of SuSiE on betahat, the corresponding standard error, and correlation (or covariance) matrix</h1>
-    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/susie_ss.R'><code>R/susie_ss.R</code></a></small>
-    <div class="hidden name"><code>susie_bhat.Rd</code></div>
+    <h1>Bayesian single-effect linear regression of Y on X.</h1>
+    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/single_effect_regression_rss.R'><code>R/single_effect_regression_rss.R</code></a></small>
+    <div class="hidden name"><code>single_effect_regression_rss.Rd</code></div>
     </div>
 
     <div class="ref-description">
     
-    <p>Summary statistics version of SuSiE on betahat, the corresponding standard error, and correlation (or covariance) matrix</p>
+    <p>Bayesian single-effect linear regression of Y on X.</p>
     
     </div>
 
-    <pre class="usage"><span class='fu'>susie_bhat</span>(<span class='no'>bhat</span>, <span class='no'>shat</span>, <span class='no'>R</span>, <span class='no'>n</span>, <span class='kw'>var_y</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='no'>...</span>)</pre>
+    <pre class="usage"><span class='fu'>single_effect_regression_rss</span>(<span class='no'>z</span>, <span class='no'>Sigma</span>, <span class='kw'>V</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>residual_variance</span> <span class='kw'>=</span> <span class='fl'>1</span>,
+  <span class='kw'>prior_weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>optimize_V</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"none"</span>, <span class='st'>"optim"</span>, <span class='st'>"EM"</span>))</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>bhat</th>
-      <td><p>a p vector of estimated effects.</p></td>
+      <th>z</th>
+      <td><p>a p vector</p></td>
     </tr>
     <tr>
-      <th>shat</th>
-      <td><p>a p vector of corresponding standard errors.</p></td>
+      <th>Sigma</th>
+      <td><p>residual_var * R + lambda I</p></td>
     </tr>
     <tr>
-      <th>R</th>
-      <td><p>a p by p symmetric and positive semidefinite matrix. It can be X'X, covariance matrix (X'X/(n-1)) or correlation matrix.</p></td>
+      <th>V</th>
+      <td><p>the prior variance</p></td>
     </tr>
     <tr>
-      <th>n</th>
-      <td><p>sample size.</p></td>
+      <th>residual_variance</th>
+      <td><p>the residual variance</p></td>
     </tr>
     <tr>
-      <th>var_y</th>
-      <td><p>the (sample) variance of y, defined as y'y/(n-1) . If it is unknown, the coefficients (returned from `coef`) are on the standardized X, y scale.</p></td>
+      <th>prior_weights</th>
+      <td><p>a p vector of prior weights</p></td>
     </tr>
     <tr>
-      <th>...</th>
-      <td><p>further arguments to be passed to <code><a href='susie_ss.html'>susie_ss</a></code></p></td>
+      <th>optimize_V</th>
+      <td><p>boolean indicating whether to optimize V (by maximum likelihood)</p></td>
     </tr>
     </table>
     
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>a susie fit</p>
+    <p>a list with elements: <br /></p>
+<dt>alpha</dt><dd><p>vector of posterior inclusion probabilities. ie alpha[i] is posterior probability that
+ that b[i] is non-zero</p></dd>
+<dt>mu</dt><dd><p>vector of posterior means (conditional on inclusion)</p></dd>
+<dt>mu2</dt><dd><p>vector of posterior second moments (conditional on inclusion)</p></dd>
+<dt>lbf</dt><dd><p>vector of log Bayes factors for each variable</p></dd>
+<dt>V</dt><dd><p>the prior variance (after optimization, if optimize_V is TRUE)</p></dd>
+<dt>lbf_model</dt><dd><p>(scalar) the loglikelihood for the total model minus the log-likelihood for the null model</p></dd>
+
+    
+    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
+
+    <p>Performs single-effect linear regression of Y on X. That is, this function
+fits the regression model Y= Xb + e, where elements of e are iid N(0,residual_variance) and the
+b is a p vector of effects to be estimated.
+The assumption is that b has exactly one non-zero element, with all elements
+equally likely to be non-zero. The prior on the non-zero element is N(0,var=V).
+Only the summary statistcs t(X)Y and diagonal elements of t(X)X are avialable.</p>
     
 
   </div>
@@ -148,6 +166,8 @@
       <li><a href="#arguments">Arguments</a></li>
       
       <li><a href="#value">Value</a></li>
+
+      <li><a href="#details">Details</a></li>
           </ul>
 
   </div>

@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Compute t(scaled.X)%*%y using sparse multiplication — compute_Xty • susieR</title>
+<title>Computes t(standardized.X)%*%y using sparse multiplication trick — compute_Xty • susieR</title>
 
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
@@ -30,9 +30,9 @@
 
 
 
-<meta property="og:title" content="Compute t(scaled.X)%*%y using sparse multiplication — compute_Xty" />
+<meta property="og:title" content="Computes t(standardized.X)%*%y using sparse multiplication trick — compute_Xty" />
 
-<meta property="og:description" content="Compute t(scaled.X)%*%y using sparse multiplication" />
+<meta property="og:description" content="Computes t(standardized.X)%*%y using sparse multiplication trick" />
 <meta name="twitter:card" content="summary" />
 
 
@@ -61,7 +61,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.7.1</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.8.0</span>
       </span>
     </div>
 
@@ -94,14 +94,14 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Compute t(scaled.X)%*%y using sparse multiplication</h1>
+    <h1>Computes t(standardized.X)%*%y using sparse multiplication trick</h1>
     <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/sparse_multiplication.R'><code>R/sparse_multiplication.R</code></a></small>
     <div class="hidden name"><code>compute_Xty.Rd</code></div>
     </div>
 
     <div class="ref-description">
     
-    <p>Compute t(scaled.X)%*%y using sparse multiplication</p>
+    <p>Computes t(standardized.X)%*%y using sparse multiplication trick</p>
     
     </div>
 
@@ -112,7 +112,7 @@
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>X</th>
-      <td><p>is a scaled dense matrix or an unscaled sparse matrix</p></td>
+      <td><p>an n by p unstandardized matrix with three attributes: attr(X, 'scaled:center'), attr(X, 'scaled:scale'), and attr(X, 'd')</p></td>
     </tr>
     <tr>
       <th>y</th>

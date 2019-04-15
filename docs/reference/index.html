@@ -58,7 +58,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.7.1.485</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.8.0</span>
       </span>
     </div>
 
@@ -112,6 +112,24 @@
       <tr>
         
         <td>
+          <p><code><a href="SER_posterior_e_loglik_rss.html">SER_posterior_e_loglik_rss()</a></code> </p>
+        </td>
+        <td><p>posterior expected loglikelihood for a single effect regression</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="check_projection.html">check_projection()</a></code> </p>
+        </td>
+        <td><p>Check whether b in space spanned by the non-zero eigenvectors of A</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="check_semi_pd.html">check_semi_pd()</a></code> </p>
+        </td>
+        <td><p>Check whether A is positive semidefinite</p></td>
+      </tr><tr>
+        
+        <td>
           <p><code><a href="coef.susie.html">coef(<i>&lt;susie&gt;</i>)</a></code> </p>
         </td>
         <td><p>extract regression coefficients from susie fit</p></td>
@@ -120,13 +138,13 @@
         <td>
           <p><code><a href="compute_MXt.html">compute_MXt()</a></code> </p>
         </td>
-        <td><p>Compute M%*%t(scaled.X) using sparse multiplication</p></td>
+        <td><p>Computes M%*%t(standardized.X) using sparse multiplication trick</p></td>
       </tr><tr>
         
         <td>
           <p><code><a href="compute_Xty.html">compute_Xty()</a></code> </p>
         </td>
-        <td><p>Compute t(scaled.X)%*%y using sparse multiplication</p></td>
+        <td><p>Computes t(standardized.X)%*%y using sparse multiplication trick</p></td>
       </tr><tr>
         
         <td>
@@ -168,13 +186,13 @@
         <td>
           <p><code><a href="set_R_attributes.html">set_R_attributes()</a></code> </p>
         </td>
-        <td><p>sets the attributes for the X matrix</p></td>
+        <td><p>sets the attributes for the R matrix</p></td>
       </tr><tr>
         
         <td>
           <p><code><a href="set_X_attributes.html">set_X_attributes()</a></code> </p>
         </td>
-        <td><p>sets the attributes for the X matrix</p></td>
+        <td><p>sets three attributes for matrix X</p></td>
       </tr><tr>
         
         <td>
@@ -184,9 +202,15 @@
       </tr><tr>
         
         <td>
-          <p><code><a href="single_effect_regression_ss.html">single_effect_regression_ss()</a></code> </p>
+          <p><code><a href="single_effect_regression_rss.html">single_effect_regression_rss()</a></code> </p>
         </td>
         <td><p>Bayesian single-effect linear regression of Y on X.</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="single_effect_regression_ss.html">single_effect_regression_ss()</a></code> </p>
+        </td>
+        <td><p>Bayesian single-effect linear regression of y on X.</p></td>
       </tr><tr>
         
         <td>
@@ -238,6 +262,18 @@
       </tr><tr>
         
         <td>
+          <p><code><a href="susie_get_posterior_mean.html">susie_get_posterior_mean()</a></code> </p>
+        </td>
+        <td><p>Get posterior mean for coefficients from fitted SuSiE model</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="susie_get_posterior_sd.html">susie_get_posterior_sd()</a></code> </p>
+        </td>
+        <td><p>Get posterior standard deviation for coefficients from fitted SuSiE model</p></td>
+      </tr><tr>
+        
+        <td>
           <p><code><a href="susie_get_prior_variance.html">susie_get_prior_variance()</a></code> </p>
         </td>
         <td><p>Get updated prior variance</p></td>
@@ -268,6 +304,12 @@
       </tr><tr>
         
         <td>
+          <p><code><a href="susie_rss.html">susie_rss()</a></code> </p>
+        </td>
+        <td><p>Bayesian sum of single-effect (susie) linear regression using z scores</p></td>
+      </tr><tr>
+        
+        <td>
           <p><code><a href="susie_slim.html">susie_slim()</a></code> </p>
         </td>
         <td><p>Slim the result of fitted SuSiE model</p></td>
@@ -286,13 +328,13 @@
       </tr><tr>
         
         <td>
-          <p><code><a href="susie_z.html">susie_z()</a></code> </p>
+          <p><code><a href="update_each_effect.html">update_each_effect()</a></code> </p>
         </td>
-        <td><p>Summary statistics version of SuSiE on z scores and correlation (or covariance) matrix.</p></td>
+        <td><p>update each effect once</p></td>
       </tr><tr>
         
         <td>
-          <p><code><a href="update_each_effect.html">update_each_effect()</a></code> </p>
+          <p><code><a href="update_each_effect_rss.html">update_each_effect_rss()</a></code> </p>
         </td>
         <td><p>update each effect once</p></td>
       </tr><tr>

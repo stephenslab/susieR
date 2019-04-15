@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Summary statistics version of SuSiE on betahat, the corresponding standard error, and correlation (or covariance) matrix — susie_bhat • susieR</title>
+<title>Check whether A is positive semidefinite — check_semi_pd • susieR</title>
 
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
@@ -30,9 +30,9 @@
 
 
 
-<meta property="og:title" content="Summary statistics version of SuSiE on betahat, the corresponding standard error, and correlation (or covariance) matrix — susie_bhat" />
+<meta property="og:title" content="Check whether A is positive semidefinite — check_semi_pd" />
 
-<meta property="og:description" content="Summary statistics version of SuSiE on betahat, the corresponding standard error, and correlation (or covariance) matrix" />
+<meta property="og:description" content="Check whether A is positive semidefinite" />
 <meta name="twitter:card" content="summary" />
 
 
@@ -94,51 +94,35 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Summary statistics version of SuSiE on betahat, the corresponding standard error, and correlation (or covariance) matrix</h1>
+    <h1>Check whether A is positive semidefinite</h1>
     <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/susie_ss.R'><code>R/susie_ss.R</code></a></small>
-    <div class="hidden name"><code>susie_bhat.Rd</code></div>
+    <div class="hidden name"><code>check_semi_pd.Rd</code></div>
     </div>
 
     <div class="ref-description">
     
-    <p>Summary statistics version of SuSiE on betahat, the corresponding standard error, and correlation (or covariance) matrix</p>
+    <p>Check whether A is positive semidefinite</p>
     
     </div>
 
-    <pre class="usage"><span class='fu'>susie_bhat</span>(<span class='no'>bhat</span>, <span class='no'>shat</span>, <span class='no'>R</span>, <span class='no'>n</span>, <span class='kw'>var_y</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='no'>...</span>)</pre>
+    <pre class="usage"><span class='fu'>check_semi_pd</span>(<span class='no'>A</span>, <span class='no'>tol</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>bhat</th>
-      <td><p>a p vector of estimated effects.</p></td>
-    </tr>
-    <tr>
-      <th>shat</th>
-      <td><p>a p vector of corresponding standard errors.</p></td>
-    </tr>
-    <tr>
-      <th>R</th>
-      <td><p>a p by p symmetric and positive semidefinite matrix. It can be X'X, covariance matrix (X'X/(n-1)) or correlation matrix.</p></td>
-    </tr>
-    <tr>
-      <th>n</th>
-      <td><p>sample size.</p></td>
-    </tr>
-    <tr>
-      <th>var_y</th>
-      <td><p>the (sample) variance of y, defined as y'y/(n-1) . If it is unknown, the coefficients (returned from `coef`) are on the standardized X, y scale.</p></td>
-    </tr>
-    <tr>
-      <th>...</th>
-      <td><p>further arguments to be passed to <code><a href='susie_ss.html'>susie_ss</a></code></p></td>
+      <th>A</th>
+      <td><p>a symmetric matrix</p></td>
     </tr>
     </table>
     
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>a susie fit</p>
+    <p>a list of result: <br /></p>
+<dt>matrix</dt><dd><p>The matrix with eigen decomposition</p></dd>
+<dt>status</dt><dd><p>whether A is positive semidefinite</p></dd>
+<dt>eigenvalues</dt><dd><p>eigenvalues of A truncated by r_tol</p></dd>
+
     
 
   </div>

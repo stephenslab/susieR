@@ -61,7 +61,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.7.1</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.8.0</span>
       </span>
     </div>
 
@@ -105,14 +105,14 @@
     
     </div>
 
-    <pre class="usage"><span class='fu'>susie_ss</span>(<span class='no'>XtX</span>, <span class='no'>Xty</span>, <span class='no'>n</span>, <span class='kw'>var_y</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>L</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>type</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"sufficient"</span>, <span class='st'>"z"</span>),
-  <span class='kw'>scaled_prior_variance</span> <span class='kw'>=</span> <span class='fl'>0.2</span>, <span class='kw'>residual_variance</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>r_tol</span> <span class='kw'>=</span> <span class='fl'>1e-08</span>, <span class='kw'>prior_weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>null_weight</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>standardize</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>estimate_residual_variance</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+    <pre class="usage"><span class='fu'>susie_ss</span>(<span class='no'>XtX</span>, <span class='no'>Xty</span>, <span class='no'>yty</span>, <span class='no'>n</span>, <span class='kw'>L</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>scaled_prior_variance</span> <span class='kw'>=</span> <span class='fl'>0.2</span>,
+  <span class='kw'>residual_variance</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>estimate_residual_variance</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
   <span class='kw'>estimate_prior_variance</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>estimate_prior_method</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"optim"</span>,
-  <span class='st'>"EM"</span>), <span class='kw'>max_iter</span> <span class='kw'>=</span> <span class='fl'>100</span>, <span class='kw'>s_init</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>intercept_value</span> <span class='kw'>=</span> <span class='fl'>0</span>,
-  <span class='kw'>coverage</span> <span class='kw'>=</span> <span class='fl'>0.95</span>, <span class='kw'>min_abs_corr</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>tol</span> <span class='kw'>=</span> <span class='fl'>0.001</span>,
-  <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>track_fit</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</pre>
+  <span class='st'>"EM"</span>), <span class='kw'>r_tol</span> <span class='kw'>=</span> <span class='fl'>1e-08</span>, <span class='kw'>prior_weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>null_weight</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>standardize</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>max_iter</span> <span class='kw'>=</span> <span class='fl'>100</span>, <span class='kw'>s_init</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>intercept_value</span> <span class='kw'>=</span> <span class='fl'>0</span>, <span class='kw'>coverage</span> <span class='kw'>=</span> <span class='fl'>0.95</span>, <span class='kw'>min_abs_corr</span> <span class='kw'>=</span> <span class='fl'>0.5</span>,
+  <span class='kw'>tol</span> <span class='kw'>=</span> <span class='fl'>0.001</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>track_fit</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>check_input</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -123,31 +123,39 @@
     </tr>
     <tr>
       <th>Xty</th>
-      <td><p>a p vector, X'Y, where columns of X are centered and Y is centered to have mean 0</p></td>
+      <td><p>a p vector, X'y, where columns of X are centered and y is centered to have mean 0</p></td>
+    </tr>
+    <tr>
+      <th>yty</th>
+      <td><p>a scaler, y'y, where y is centered to have mean 0</p></td>
     </tr>
     <tr>
       <th>n</th>
       <td><p>sample size</p></td>
     </tr>
     <tr>
-      <th>var_y</th>
-      <td><p>the (sample) variance of the vector Y</p></td>
-    </tr>
-    <tr>
       <th>L</th>
       <td><p>maximum number of non-zero effects</p></td>
     </tr>
     <tr>
-      <th>type</th>
-      <td><p>sufficient or z scores</p></td>
-    </tr>
-    <tr>
       <th>scaled_prior_variance</th>
-      <td><p>the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times )</p></td>
+      <td><p>the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times)</p></td>
     </tr>
     <tr>
       <th>residual_variance</th>
-      <td><p>the residual variance (defaults to variance of Y)</p></td>
+      <td><p>the residual variance (defaults to variance of y)</p></td>
+    </tr>
+    <tr>
+      <th>estimate_residual_variance</th>
+      <td><p>indicates whether to estimate residual variance</p></td>
+    </tr>
+    <tr>
+      <th>estimate_prior_variance</th>
+      <td><p>indicates whether to estimate prior</p></td>
+    </tr>
+    <tr>
+      <th>estimate_prior_method</th>
+      <td><p>The method used for estimating prior variance, 'optim' or 'EM'</p></td>
     </tr>
     <tr>
       <th>r_tol</th>
@@ -163,23 +171,11 @@
     </tr>
     <tr>
       <th>standardize</th>
-      <td><p>logical flag (default=TRUE) for whether to standardize columns of X to unit variance prior to fitting.
+      <td><p>logical flag (default=TRUE) for whether to adjust XtX and Xty such that they are computed from column standardized X, prior to fitting.
 Note that `scaled_prior_variance` specifies the prior on the coefficients of X *after* standardization (if performed).
 If you do not standardize you may need
 to think more carefully about specifying
 `scaled_prior_variance`. Whatever the value of standardize, the coefficients (returned from `coef`) are for X on the original input scale.</p></td>
-    </tr>
-    <tr>
-      <th>estimate_residual_variance</th>
-      <td><p>indicates whether to estimate residual variance</p></td>
-    </tr>
-    <tr>
-      <th>estimate_prior_variance</th>
-      <td><p>indicates whether to estimate prior</p></td>
-    </tr>
-    <tr>
-      <th>estimate_prior_method</th>
-      <td><p>The method used for estimating prior variance, 'optim' or 'EM'</p></td>
     </tr>
     <tr>
       <th>max_iter</th>
@@ -215,6 +211,12 @@ Set to NULL if you want coef.susie() not to include an intercept term (and so on
       <th>track_fit</th>
       <td><p>add an attribute <code>trace</code> to output that saves current values of all iterations</p></td>
     </tr>
+    <tr>
+      <th>check_input</th>
+      <td><p>whether to perform checks on XtX and Xty, the checks are:</p>
+<p>1. Check whether XtX is positive semidefinite</p>
+<p>2. Check whether Xty in space spanned by the non-zero eigenvectors of XtX</p></td>
+    </tr>
     </table>
     
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
@@ -230,16 +232,17 @@ Set to NULL if you want coef.susie() not to include an intercept term (and so on
     
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p>Performs sum of single-effect (susie) linear regression of Y on X when
+    <p>Performs sum of single-effect (susie) linear regression of y on X when
 only summary statistics are available. The summary data required are
-the p by p matrix X'X, the p vector X'Y, and the sample variance of Y, or (1/n)Y'Y. The summary stats should come from the same individuals.
-Both the columns of X and the vector Y
+the p by p matrix X'X, the p vector X'y, the sum of squares of y (y'y) and the sample size.
+The summary stats should come from the same individuals.
+Both the columns of X and the vector y
 should be centered to have mean 0 before
-computing these summary statistics; you may also want to scale each column of X and Y to have variance 1 (see examples).
-This function fits the regression model Y = sum_l Xb_l + e, where elements of e are iid N(0,var=residual_variance) and the
+computing these summary statistics; you may also want to scale each column of X and y to have variance 1 (see examples).
+This function fits the regression model y = sum_l Xb_l + e, where elements of e are iid N(0,var=residual_variance) and the
 sum_l b_l is a p vector of effects to be estimated.
 The assumption is that each b_l has exactly one non-zero element, with all elements
-equally likely to be non-zero. The prior on the non-zero element is N(0,var=scaled_prior_variance*var(Y)).</p>
+equally likely to be non-zero. The prior on the non-zero element is N(0,var=scaled_prior_variance*y'y/(n-1)).</p>
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
@@ -252,7 +255,7 @@ equally likely to be non-zero. The prior on the non-zero element is N(0,var=scal
 <span class='no'>X</span>        <span class='kw'>&lt;-</span> <span class='fu'>matrix</span>(<span class='fu'>rnorm</span>(<span class='no'>n</span>*<span class='no'>p</span>),<span class='kw'>nrow</span><span class='kw'>=</span><span class='no'>n</span>,<span class='kw'>ncol</span><span class='kw'>=</span><span class='no'>p</span>)
 <span class='no'>y</span>        <span class='kw'>&lt;-</span> <span class='fu'>c</span>(<span class='no'>X</span> <span class='kw'>%*%</span> <span class='no'>beta</span> + <span class='fu'>rnorm</span>(<span class='no'>n</span>))
 <span class='no'>input_ss</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='compute_ss.html'>compute_ss</a></span>(<span class='no'>X</span>,<span class='no'>y</span>,<span class='kw'>standardize</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
-<span class='no'>res</span>      <span class='kw'>&lt;-</span> <span class='fu'>with</span>(<span class='no'>input_ss</span>,<span class='fu'>susie_ss</span>(<span class='no'>XtX</span>,<span class='no'>Xty</span>,<span class='no'>n</span>,<span class='no'>vary</span>))
+<span class='no'>res</span>      <span class='kw'>&lt;-</span> <span class='fu'>with</span>(<span class='no'>input_ss</span>,<span class='fu'>susie_ss</span>(<span class='no'>XtX</span>,<span class='no'>Xty</span>,<span class='no'>yty</span>,<span class='no'>n</span>))
 <span class='fu'>coef</span>(<span class='no'>res</span>)
 
 <span class='co'># }</span></pre>

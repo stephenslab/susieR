@@ -35,7 +35,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.7.1.485</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.8.0</span>
       </span>
     </div>
 
@@ -79,7 +79,7 @@
 <h2 class="hasAnchor">
 <a href="#setup" class="anchor"></a>Setup</h2>
 <p>To automatically retrieve and install <code>susieR</code> from this repository,</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1">devtools<span class="op">::</span><span class="kw"><a href="http://www.rdocumentation.org/packages/devtools/topics/reexports">install_github</a></span>(<span class="st">"stephenslab/susieR@0.7.1"</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1">devtools<span class="op">::</span><span class="kw"><a href="http://www.rdocumentation.org/packages/devtools/topics/reexports">install_github</a></span>(<span class="st">"stephenslab/susieR@0.8.0"</span>)</a></code></pre></div>
 </div>
 <div id="quick-start" class="section level2">
 <h2 class="hasAnchor">
@@ -95,7 +95,7 @@
 <p>To install and test the susieR package, run the following commands in the shell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ex">R</span> CMD build --resave-data --no-build-vignettes susieR</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2"><span class="ex">R</span> CMD INSTALL susieR_0.7.1.tar.gz</a>
-<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="ex">R</span> CMD check --as-cran --ignore-vignettes susieR_0.7.1.tar.gz</a></code></pre></div>
+<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="ex">R</span> CMD check --as-cran --ignore-vignettes susieR_0.8.0.tar.gz</a></code></pre></div>
 </li>
 <li><p>Run <code><a href="https://pkgdown.r-lib.org/reference/build_site.html">pkgdown::build_site()</a></code> to build the website. Getting <code>pkgdown</code> to work properly can be frustrating due to numerous &amp; fragile dependencies. If <code>pkgdown</code> does not work for you out of the box you can use this <code>docker</code> command to run all vignettes and build the site:</p></li>
 </ul>

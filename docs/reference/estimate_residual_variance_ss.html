@@ -61,7 +61,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.7.1</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.8.0</span>
       </span>
     </div>
 
@@ -105,7 +105,7 @@
     
     </div>
 
-    <pre class="usage"><span class='fu'>estimate_residual_variance_ss</span>(<span class='no'>XtX</span>, <span class='no'>Xty</span>, <span class='no'>s</span>, <span class='no'>var_y</span>, <span class='no'>n</span>)</pre>
+    <pre class="usage"><span class='fu'>estimate_residual_variance_ss</span>(<span class='no'>XtX</span>, <span class='no'>Xty</span>, <span class='no'>s</span>, <span class='no'>yty</span>, <span class='no'>n</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -123,8 +123,8 @@
       <td><p>a susie fit</p></td>
     </tr>
     <tr>
-      <th>var_y</th>
-      <td><p>variance of y</p></td>
+      <th>yty</th>
+      <td><p>a scaler, Y'Y, where Y is centered to have mean 0</p></td>
     </tr>
     <tr>
       <th>n</th>

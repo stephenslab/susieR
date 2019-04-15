@@ -46,7 +46,7 @@ you have helped fixing bugs or making improvements to the source code.
 To automatically retrieve and install `susieR` from this repository,
 
    ```R
-   devtools::install_github("stephenslab/susieR@0.7.1")
+   devtools::install_github("stephenslab/susieR@0.8.0")
    ```
 
 ## Quick Start
@@ -66,7 +66,7 @@ in the shell:
     ```bash
     R CMD build --resave-data --no-build-vignettes susieR
     R CMD INSTALL susieR_0.7.1.tar.gz
-    R CMD check --as-cran --ignore-vignettes susieR_0.7.1.tar.gz
+    R CMD check --as-cran --ignore-vignettes susieR_0.8.0.tar.gz
     ```
 
 + Run `pkgdown::build_site()` to build the website. Getting `pkgdown`

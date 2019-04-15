@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>sets the attributes for the X matrix — set_R_attributes • susieR</title>
+<title>sets the attributes for the R matrix — set_R_attributes • susieR</title>
 
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
@@ -30,9 +30,9 @@
 
 
 
-<meta property="og:title" content="sets the attributes for the X matrix — set_R_attributes" />
+<meta property="og:title" content="sets the attributes for the R matrix — set_R_attributes" />
 
-<meta property="og:description" content="sets the attributes for the X matrix" />
+<meta property="og:description" content="sets the attributes for the R matrix" />
 <meta name="twitter:card" content="summary" />
 
 
@@ -61,7 +61,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.7.1</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.8.0</span>
       </span>
     </div>
 
@@ -94,18 +94,18 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>sets the attributes for the X matrix</h1>
+    <h1>sets the attributes for the R matrix</h1>
     <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/set_R_attributes.R'><code>R/set_R_attributes.R</code></a></small>
     <div class="hidden name"><code>set_R_attributes.Rd</code></div>
     </div>
 
     <div class="ref-description">
     
-    <p>sets the attributes for the X matrix</p>
+    <p>sets the attributes for the R matrix</p>
     
     </div>
 
-    <pre class="usage"><span class='fu'>set_R_attributes</span>(<span class='no'>R</span>, <span class='no'>expected_dim</span>, <span class='no'>r_tol</span>, <span class='no'>z</span>)</pre>
+    <pre class="usage"><span class='fu'>set_R_attributes</span>(<span class='no'>R</span>, <span class='no'>expected_dim</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -115,14 +115,6 @@
       <td><p>a p by p LD matrix</p></td>
     </tr>
     <tr>
-      <th>expected_dim</th>
-      <td><p>the expected dimension for R</p></td>
-    </tr>
-    <tr>
-      <th>r_tol</th>
-      <td><p>tolerance level for eigen value check of positive semidefinite matrix of R.</p></td>
-    </tr>
-    <tr>
       <th>z</th>
       <td><p>a p vector of z scores</p></td>
     </tr>
@@ -130,9 +122,8 @@
     
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>R with two attributes e.g.
-        attr(R, 'det') is the determinant of R. It is 1 if R is not full rank.
-        attr(R, 'ztRinvz') is t(z)R^-1z. We use pseudoinverse of R when R is not invertible.</p>
+    <p>R with attribute e.g.
+        attr(R, 'eigenR') is the eigen decomposition of R.</p>
     
 
   </div>

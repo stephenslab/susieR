@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Bayesian single-effect linear regression of Y on X. — single_effect_regression_ss • susieR</title>
+<title>Bayesian single-effect linear regression of y on X. — single_effect_regression_ss • susieR</title>
 
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
@@ -30,9 +30,9 @@
 
 
 
-<meta property="og:title" content="Bayesian single-effect linear regression of Y on X. — single_effect_regression_ss" />
+<meta property="og:title" content="Bayesian single-effect linear regression of y on X. — single_effect_regression_ss" />
 
-<meta property="og:description" content="Bayesian single-effect linear regression of Y on X." />
+<meta property="og:description" content="Bayesian single-effect linear regression of y on X." />
 <meta name="twitter:card" content="summary" />
 
 
@@ -61,7 +61,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.7.1</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.8.0</span>
       </span>
     </div>
 
@@ -94,14 +94,14 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Bayesian single-effect linear regression of Y on X.</h1>
+    <h1>Bayesian single-effect linear regression of y on X.</h1>
     <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/single_effect_regression_ss.R'><code>R/single_effect_regression_ss.R</code></a></small>
     <div class="hidden name"><code>single_effect_regression_ss.Rd</code></div>
     </div>
 
     <div class="ref-description">
     
-    <p>Bayesian single-effect linear regression of Y on X.</p>
+    <p>Bayesian single-effect linear regression of y on X.</p>
     
     </div>
 
@@ -117,7 +117,7 @@
     </tr>
     <tr>
       <th>dXtX</th>
-      <td><p>a p vector, diagonal elements of t(X)X</p></td>
+      <td><p>a p vector, diagonal elements of X'X</p></td>
     </tr>
     <tr>
       <th>V</th>
@@ -151,12 +151,12 @@
     
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p>Performs single-effect linear regression of Y on X. That is, this function
-fits the regression model Y= Xb + e, where elements of e are iid N(0,residual_variance) and the
+    <p>Performs single-effect linear regression of y on X. That is, this function
+fits the regression model y= Xb + e, where elements of e are iid N(0,residual_variance) and the
 b is a p vector of effects to be estimated.
 The assumption is that b has exactly one non-zero element, with all elements
 equally likely to be non-zero. The prior on the non-zero element is N(0,var=V).
-Only the summary statistcs t(X)Y and diagonal elements of t(X)X are avialable.</p>
+Only the summary statistcs X'y and diagonal elements of X'X are avialable.</p>
     
 
   </div>

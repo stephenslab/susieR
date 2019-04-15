@@ -61,7 +61,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.7.1</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.8.0</span>
       </span>
     </div>
 
@@ -105,7 +105,7 @@
     
     </div>
 
-    <pre class="usage"><span class='fu'>get_objective_ss</span>(<span class='no'>XtX</span>, <span class='no'>Xty</span>, <span class='no'>s</span>, <span class='no'>var_y</span>, <span class='no'>n</span>)</pre>
+    <pre class="usage"><span class='fu'>get_objective_ss</span>(<span class='no'>XtX</span>, <span class='no'>Xty</span>, <span class='no'>s</span>, <span class='no'>yty</span>, <span class='no'>n</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -116,15 +116,15 @@
     </tr>
     <tr>
       <th>Xty</th>
-      <td><p>a p vector, X'Y,</p></td>
+      <td><p>a p vector, X'y,</p></td>
     </tr>
     <tr>
       <th>s</th>
       <td><p>a susie fit object</p></td>
     </tr>
     <tr>
-      <th>var_y</th>
-      <td><p>the (sample) variance of the vector Y</p></td>
+      <th>yty</th>
+      <td><p>a scaler, y'y, where y is centered to have mean 0</p></td>
     </tr>
     <tr>
       <th>n</th>
