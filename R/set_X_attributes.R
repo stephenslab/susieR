@@ -9,8 +9,8 @@
 #'         where X.standardized is the matrix X centered by attr(X, 'scaled:center') and scaled by attr(X, 'scaled:scale').
 
 set_X_attributes = function(X,
-                            center = TRUE,
-                            scale = TRUE) {
+                             center = TRUE,
+                             scale = TRUE) {
   # if X is a trend filtering matrix
   if (!is.null(attr(X, "matrix.type"))) {
     order <- attr(X,"order")
@@ -26,28 +26,34 @@ set_X_attributes = function(X,
       attr(X, "scaled:scale") <- rep(1, n)
     }
   } else {
-  # if X is either a dense or sparse ordinary matrix
-    X.dense = as.matrix(X)
+    # if X is either a dense or sparse ordinary matrix
     # get column means
-    cm = colMeans(X.dense, na.rm = TRUE)
+    cm = Matrix::colMeans(X, na.rm = TRUE)
     # get column standard deviations
-    if (scale) {
-      csd = matrixStats::colSds(X.dense)
-      # set sd = 1 when the column has variance 0
-      csd[csd == 0] = 1
-    } else {
-      # just divide by 1 if not
-      csd = rep(1, length = length(cm))
-    }
+    csd = compute_colSds(X)
+    # set sd = 1 when the column has variance 0
+    csd[csd == 0] = 1
     if (!center) {
-      # just subtract 0
       cm = rep(0, length = length(cm))
     }
-    X.dense = t((t(X.dense) - cm) / csd)
+    if (!scale) {
+      csd = rep(1, length = length(cm))
+    }
+    X.std = (t(X) - cm) / csd
     # set three attributes for X
-    attr(X, "d") <- Matrix::colSums(X.dense * X.dense)
+    attr(X, "d") <- Matrix::rowSums(X.std * X.std)
     attr(X, "scaled:center") <- cm
     attr(X, "scaled:scale") <- csd
   }
   return(X)
+}
+
+
+#' @title computes column standard deviations for any type of matrix
+#'        replace matrixStats::colSds since this function only takes a dense matrix
+#' @param X an n by p matrix of any type, e.g. sparse, dense
+#' @return a p vector of column standard deviations
+compute_colSds = function(X){
+  n = nrow(X)
+  return(sqrt((colSums(X^2)/n - (colSums(X)/n)^2)*(n/(n-1))))
 }
