@@ -30,16 +30,15 @@ get_ER2_rss = function(R,z,s){
 
   Dinv = 1/d
   Dinv[is.infinite(Dinv)] = 0
-  SinvRj = lapply(1:length(z), function(j){
-    attr(R, 'eigen')$vectors %*% (Dinv * crossprod(attr(R, 'eigen')$vectors, R[,j]))
-  })
-
+  SinvR = attr(R, 'eigen')$vectors %*% ((Dinv*attr(R, 'eigen')$values) * t(attr(R, 'eigen')$vectors))
   zSinvz = sum(z * (attr(R, 'eigen')$vectors %*% (Dinv * crossprod(attr(R, 'eigen')$vectors, z))))
 
-
   Z = s$alpha*s$mu
-  SinvR = array(unlist(SinvRj), dim = c(length(z), length(z)))
-  RSinvR = R %*% SinvR
+  if(attr(R, 'lambda') == 0){
+    RSinvR = R/s$sigma2
+  }else{
+    RSinvR = R %*% SinvR
+  }
   RZ2 = sum((Z%*%RSinvR) * Z)
 
   zbar = colSums(Z)

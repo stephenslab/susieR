@@ -110,9 +110,9 @@ susie_rss = function(z, R, L=10, lambda = 0,
     if(proj$status == FALSE)
       warning('z does not lie in the space of non-zero eigenvectors of R')
   }
-  attr(R,'eigen')$values = semi_pd$eigenvalues
-  attr(R, "d") <- diag(R)
-  attr(R, "scaled:scale") <- rep(1, length = p)
+  attr(R, 'eigen')$values = semi_pd$eigenvalues
+  attr(R, 'd') <- diag(R)
+  attr(R, 'scaled:scale') <- rep(1, length = p)
 
   # initialize susie fit
   s = init_setup_rss(p,L,prior_variance,residual_variance,prior_weights,null_weight,1)
@@ -144,16 +144,6 @@ susie_rss = function(z, R, L=10, lambda = 0,
       print(paste0("before estimate sigma2 objective:",get_objective_rss(R, z, s)))
     }
     if(estimate_residual_variance){
-
-      # if(restrict){
-      #   est_sigma2 = optim(par=0.5, fn=estimate_sigma,
-      #                      R=R, z=z, s = s,
-      #                      method='Brent', lower = 0.01, upper = 1)$par
-      # }else{
-      #   est_sigma2 = optim(par=0.5, fn=estimate_sigma,
-      #                      R=R, z=z, s = s,
-      #                      method='Brent', lower = 0.01, upper = 300)$par
-      # }
 
       if(lambda == 0){
         tmp = s
@@ -232,17 +222,16 @@ update_Sigma = function(R, sigma2, z){
   Dinv = 1/(eigenS$values)
   Dinv[is.infinite(Dinv)] = 0
   attr(Sigma, 'eigenS') = eigenS
-  attr(Sigma, 'SinvRj') = lapply(1:length(z), function(j){
-    eigenS$vectors %*% (Dinv * crossprod(eigenS$vectors, R[,j]))
-  })
-  attr(Sigma, 'RjSinvRj') = sapply(1:length(z), function(j){
-    sum(R[,j] * attr(Sigma, 'SinvRj')[[j]])
-  })
-  attr(Sigma, 'zSinvz') = sum(z * (eigenS$vectors %*% (Dinv * crossprod(eigenS$vectors, z))))
+
+  # Sigma^(-1) R_j
+  attr(Sigma, 'SinvRj') = eigenS$vectors %*% (Dinv*attr(R, 'eigen')$values * t(eigenS$vectors))
+
+  if(attr(R, 'lambda')==0){
+    attr(Sigma, 'RjSinvRj') = attr(R, 'd')/sigma2
+  }else{
+    attr(Sigma, 'RjSinvRj') = diag(eigenS$vectors %*% (Dinv*(attr(R, 'eigen')$values^2) * t(eigenS$vectors)))
+  }
+
   return(Sigma)
 }
 
-# estimate_sigma = function(sigma2, R, z, s){
-#   s$sigma2 = sigma2
-#   -Eloglik_rss(R, z, s)
-# }

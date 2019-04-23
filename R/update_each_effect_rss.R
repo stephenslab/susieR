@@ -2,7 +2,7 @@
 #' @param R a p by p symmetric and positive semidefinite correlation matrix.
 #' @param z a p vector
 #' @param s_init a list with elements sigma2, V, alpha, mu, Xr
-#' @param Sigma positive definite, R + theta I
+#' @param Sigma sigma2*R + lambda I
 #' @param estimate_prior_variance boolean indicating whether to estimate prior variance
 #' @importFrom Matrix diag
 update_each_effect_rss <- function (R, z, s_init, Sigma, estimate_prior_variance=FALSE,estimate_prior_method="optim") {
