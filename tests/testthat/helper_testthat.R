@@ -8,6 +8,7 @@ create_sparsity_mat = function(sparsity, n, p){
 }
 
 simulate = function(n=100, p=200, sparse=F) {
+  suppressWarnings(RNGversion("3.5.0"))
   set.seed(1)
   beta = rep(0,p)
   beta[1:4] = 10
@@ -32,6 +33,7 @@ simulate = function(n=100, p=200, sparse=F) {
 }
 
 simulate_tf = function(order){
+  suppressWarnings(RNGversion("3.5.0"))
   set.seed(2)
   n = 50
   D = diag(-1, n)

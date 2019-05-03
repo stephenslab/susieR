@@ -3,7 +3,8 @@ context("test_compute_tf.R")
 expect_equal_compute_tf = function(order){
   with(simulate_tf(order), {
     X = set_X_attributes(X)
-    #X.standardized = t((t(X) - attr(X, 'scaled:center')) / attr(X, 'scaled:scale'))
+
+    suppressWarnings(RNGversion("3.5.0"))
     set.seed(1)
     b = rnorm(length(y))
     Xb = compute_tf_Xb(order, b=b)

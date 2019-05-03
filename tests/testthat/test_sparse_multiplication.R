@@ -1,6 +1,7 @@
 context("test_sparse_multiplication.R")
 
 test_that("sparse version sparse_multiplication", with(simulate(sparse = TRUE), {
+  suppressWarnings(RNGversion("3.5.0"))
   set.seed(1)
   L = 10
   M = matrix(rnorm(L*p), L, p)
