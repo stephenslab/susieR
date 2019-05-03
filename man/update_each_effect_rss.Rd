@@ -14,7 +14,7 @@ update_each_effect_rss(R, z, s_init, Sigma,
 
 \item{s_init}{a list with elements sigma2, V, alpha, mu, Xr}
 
-\item{Sigma}{positive definite, R + theta I}
+\item{Sigma}{sigma2*R + lambda I}
 
 \item{estimate_prior_variance}{boolean indicating whether to estimate prior variance}
 }

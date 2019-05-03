@@ -2,7 +2,7 @@
 % Please edit documentation in R/single_effect_regression_rss.R
 \name{single_effect_regression_rss}
 \alias{single_effect_regression_rss}
-\title{Bayesian single-effect linear regression of Y on X.}
+\title{Bayesian single-effect linear regression using z scores.}
 \usage{
 single_effect_regression_rss(z, Sigma, V = 1, residual_variance = 1,
   prior_weights = NULL, optimize_V = c("none", "optim", "EM"))
@@ -31,13 +31,19 @@ a list with elements: \cr
 \item{lbf_model}{(scalar) the loglikelihood for the total model minus the log-likelihood for the null model}
 }
 \description{
-Bayesian single-effect linear regression of Y on X.
+Bayesian single-effect linear regression using z scores.
 }
 \details{
-Performs single-effect linear regression of Y on X. That is, this function
-fits the regression model Y= Xb + e, where elements of e are iid N(0,residual_variance) and the
+Performs single-effect linear regression with z scores. That is, this function
+fits the regression model z = Rb + e, where e is N(0,residual_variance * R) and the
 b is a p vector of effects to be estimated.
 The assumption is that b has exactly one non-zero element, with all elements
 equally likely to be non-zero. The prior on the non-zero element is N(0,var=V).
-Only the summary statistcs t(X)Y and diagonal elements of t(X)X are avialable.
+
+Performs sum of single-effect (susie) linear regression with z scores.
+The summary data required are the p by p correlation matrix R, the p vector z. The summary stats should come from the same individuals.
+This function fits the regression model z = sum_l Rb_l + e, where e is N(0,residual_variance * R) and the
+sum_l b_l is a p vector of effects to be estimated.
+The assumption is that each b_l has exactly one non-zero element, with all elements
+equally likely to be non-zero. The prior on the non-zero element is N(0,var=prior_variance).
 }
