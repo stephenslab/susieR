@@ -2,16 +2,22 @@
 % Please edit documentation in R/susie_trendfilter.R
 \name{susie_trendfilter}
 \alias{susie_trendfilter}
-\title{perform trend filtering using SuSiE}
+\title{perform trend filtering using SuSiE, particularly designed for solving change points problem.
+       See aslo [Adaptive piecewise polynomial estimation via trend filtering](https://projecteuclid.org/euclid.aos/1395234979)(Ryan J. Tibshirani, 2014)
+       Implementation details can be found here \code{system.file("inst","mist","susie_trendfilter_imp_detail.pdf",package = "susieR")}}
 \usage{
-susie_trendfilter(y, order = 0, standardize = TRUE, ...)
+susie_trendfilter(y, order = 0, standardize = FALSE, use_mad = TRUE,
+  ...)
 }
 \arguments{
 \item{y}{an n vector}
 
-\item{order}{a scalar for the order of trend filtering}
+\item{order}{a scalar for the order of trend filtering, defualt order is 0
+order > 0 is not recommended due to local convergence problem.}
 
 \item{standardize}{boolean indicating whether to standardize}
+
+\item{use_mad}{boolean indicating whether to use MAD method to estimate residual variance in the SuSiE and initialize from this fit}
 
 \item{...}{other parameters to pass to susie call}
 }
@@ -19,7 +25,9 @@ susie_trendfilter(y, order = 0, standardize = TRUE, ...)
 SuSiE fit for trend filtering
 }
 \description{
-perform trend filtering using SuSiE
+perform trend filtering using SuSiE, particularly designed for solving change points problem.
+       See aslo [Adaptive piecewise polynomial estimation via trend filtering](https://projecteuclid.org/euclid.aos/1395234979)(Ryan J. Tibshirani, 2014)
+       Implementation details can be found here \code{system.file("inst","mist","susie_trendfilter_imp_detail.pdf",package = "susieR")}
 }
 \examples{
 set.seed(1)

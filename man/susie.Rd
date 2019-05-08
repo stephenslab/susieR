@@ -153,6 +153,8 @@ Performs Bayesian multiple linear regression of Y on
 
   The model is fitted using the "Iterative Bayesian Stepwise
   Selection" (IBSS) algorithm.
+
+  See also \code{susie_trendfilter} for the change points problem application.
 }
 \examples{
 

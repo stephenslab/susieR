@@ -31,7 +31,8 @@ Imports:
     stats,
     Matrix,
     matrixStats,
-    expm
+    expm,
+    wavethresh
 Suggests:
     reshape,
     ggplot2,

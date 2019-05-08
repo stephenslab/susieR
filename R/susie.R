@@ -12,6 +12,8 @@
 #'   The model is fitted using the "Iterative Bayesian Stepwise
 #'   Selection" (IBSS) algorithm.
 #'
+#'   See also \code{susie_trendfilter} for the change points problem application.
+#'
 #' @param X An n by p matrix of covariates.
 #'
 #' @param Y A vector of length n.
