@@ -19,7 +19,6 @@
 #' lines(mu,col=1,lwd=3)
 #' lines(predict(s),col=2,lwd=2)
 #' s0 = susie_trendfilter(y, 0, estimate_prior_variance = TRUE)
-#' s1 = susie_trendfilter(y, 1, L=20)
 #' @export
 susie_trendfilter = function(y, order=0,standardize=FALSE, use_mad=TRUE,...){
   if (order > 0){
