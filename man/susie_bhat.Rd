@@ -11,7 +11,8 @@ susie_bhat(bhat, shat, R, n, var_y = 1, ...)
 
 \item{shat}{a p vector of corresponding standard errors.}
 
-\item{R}{a p by p symmetric and positive semidefinite matrix. It can be X'X, covariance matrix (X'X/(n-1)) or correlation matrix.}
+\item{R}{a p by p symmetric and positive semidefinite matrix. It can be X'X, covariance matrix (X'X/(n-1)) or correlation matrix.
+It should from the same samples used to compute `bhat` and `shat`. Using out of sample matrix may produce unreliable results.}
 
 \item{n}{sample size.}
 

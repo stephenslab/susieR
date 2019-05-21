@@ -252,6 +252,7 @@ check_projection <- function(A, b){
 #' @param bhat a p vector of estimated effects.
 #' @param shat a p vector of corresponding standard errors.
 #' @param R a p by p symmetric and positive semidefinite matrix. It can be X'X, covariance matrix (X'X/(n-1)) or correlation matrix.
+#' It should from the same samples used to compute `bhat` and `shat`. Using out of sample matrix may produce unreliable results.
 #' @param n sample size.
 #' @param var_y the (sample) variance of y, defined as y'y/(n-1) . If it is unknown, the coefficients (returned from `coef`) are on the standardized X, y scale.
 #' @param ... further arguments to be passed to \code{\link{susie_ss}}

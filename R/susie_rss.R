@@ -55,6 +55,8 @@ susie_rss = function(z, R, L=10, lambda = 0,
                      coverage=0.95, min_abs_corr=0.5,
                      tol=1e-3, verbose=FALSE, track_fit = FALSE, check_input = FALSE){
 
+  warning('This method is under active development, so it should not be considered stable.')
+
   if(L > 1){
     warning('The maximum number of non-zero effects is greater than 1, this feature is experimental.')
   }
