@@ -12,7 +12,7 @@
 #'   The model is fitted using the "Iterative Bayesian Stepwise
 #'   Selection" (IBSS) algorithm.
 #'
-#'   See also \code{susie_trendfilter} for the change points problem application.
+#'   See also \code{susie_trendfilter} for applying susie to non-parametric regression, particularly changepoint problems
 #'
 #' @param X An n by p matrix of covariates.
 #'
