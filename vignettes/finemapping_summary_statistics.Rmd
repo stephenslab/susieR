@@ -113,7 +113,9 @@ Here, we are the 95% credible sets.
 summary(fitted_bhat)$cs
 ```
 
-The 3 causal signals have been captured by the 3 CS reported here. The 3rd CS contains many variables, including the true causal variable 403.
+The 3 causal signals have been captured by the 3 CS reported here. The
+3rd CS contains many variables, including the true causal variable
+403.
 
 We can also plot the posterior inclusion probability (PIP),
 

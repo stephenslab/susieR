@@ -6,6 +6,8 @@
 \usepackage{bm}
 \usepackage{mathabx}
 \usepackage{xspace}
+\usepackage{natbib}
+\bibliographystyle{apa}
 
 \newcommand{\susie}{\textsl{SuSiE}\xspace}
 \def\vb{\bm b}
@@ -76,7 +78,7 @@ D_{1} = \begin{bmatrix}
 In this case, the components of the trend filtering estimate form a
 piecewise constant structure, with break points corresponding to the
 nonzero entries of $D_{1}\hat{\vb} = (\hat{b}_2 - \hat{b}_1, \dots,
-\hat{b}_n - \hat{b}_{n-1})$ \cite{Tibshirani2014}. And when $k\geq 1$,
+\hat{b}_n - \hat{b}_{n-1})$ \citep{Tibshirani2014}. And when $k\geq 1$,
 the operator $D_{k+1}$ is defined recursively,
 
 \begin{align}\label{D1_2}
@@ -175,7 +177,7 @@ X_{k+1} \vb & = \underbrace{X_1 \dots X_1}_{k+1} \vb = f^{(k+1)}(\vb),
 where $k$ is the order of trend filtering. 
 
 \section{Computation of $X^Ty$} 
-\label{Computation-on-Xty}
+\label{computation-on-Xty}
 
 We consider $X_{k+1}^T\vy$. Here $X_{k+1} = (\hat{D}_{k+1})^{-1}$ in
 the trend filtering problem, and $\vy$ is an n vector. We have
@@ -211,7 +213,7 @@ X_{k+1}^T \vy & = \underbrace{X_1^T \dots X_1^T}_{k+1} \vy = g^{(k+1)}(\vy),
 where $k$ is the order of trend filtering.
 
 \section{Computation on $(X^2)^T 1$; i.e., colSums($X^2$)} 
-\label{Computation-on-d}
+\label{computation-on-d}
 
 To compute $(X_{k+1}^2)^T \bm{1}$, let's first explore the special
 structure of $X_{k+1}=(\hat{D}^{(k+1)})^{-1}$ for $k=0,1,2$.
@@ -282,7 +284,7 @@ And, obviously, the first row of $X_{k+1}$ is
 \end{equation}
 
 \section{Computation of $\mu$; i.e., column means} 
-\label{Computation-on-cm}
+\label{computation-on-cm}
 
 For each column $j = 1,2,\dots,n$,
 \begin{equation}
@@ -294,10 +296,10 @@ and $\bm{\mu} = [\mu_1, \mu_2, \dots, \mu_n]^T \in
 \bm{\mu} = \frac{1}{n} X_{k+1}^T \bm{1} 
          = \frac{1}{n} \text{cumsum}((X_{k+1})_{1.}),
 \end{equation}
-where $(X_{k+1})_{1.}$ is defined above in \ref{Computation-on-d}.
+where $(X_{k+1})_{1.}$ is defined above in \ref{computation-on-d}.
 
 \section{Computation of $\sigma$; i.e., column standard deviations} 
-\label{Computation-on-csd}
+\label{computation-on-csd}
 
 For each column $j=1,2,\dots, n$,
 
@@ -315,13 +317,13 @@ Hence, $\bm{\sigma} = [\sigma_1, \sigma_2, \dots, \sigma_n]^T \in
                  (\frac{1}{n}\text{colSums}(X))^2} \\
        & = \sqrt{\frac{1}{n}(X^2)^T \bm{1} + (\frac{1}{n} X^T \bm{1})^2},
 \end{align}
-where the first term involves \ref{Computation-on-d} and the second
-term is computed in \ref{Computation-on-cm}. Note that in the
+where the first term involves \ref{computation-on-d} and the second
+term is computed in \ref{computation-on-cm}. Note that in the
 algorithm, we set the column standard deviation 1 when the column has
 variance 0 for computation convenience.
 
-\section{Computation on $(\hat{X}^2)^T 1$ (i.e. colSums($\hat{X}^2$))} 
-\label{Computation-on-std-d}
+\section{Computation on $(\hat{X}^2)^T 1$; i.e., colSums($\hat{X}^2$)} 
+\label{computation-on-std-d}
 
 We want to compute colSums($\hat{X}^2$), where $\hat{X}$ is scaled by
 both column means $\bm{\mu} = [\mu_1, \mu_2, \ldots, \mu_n]^T \in
@@ -336,8 +338,8 @@ where $X = X_{k+1} = (\hat{D}_{k+1})^{-1}$ if the order is $k$.
 
 \section{Conclusion}
 
-Computation details from section \ref{Computation-on-Xb} to section
-\ref{Computation-on-std_d} explain how we can benefit from the unique
+Computation details from section \ref{computation-on-Xb} to section
+\ref{computation-on-std-d} explain how we can benefit from the unique
 structure of matrices from trend filtering problem. As shown by our
 formula, we do not need to form any matrix and complete \susie
 algorithm with $O(n)$ complexity.
