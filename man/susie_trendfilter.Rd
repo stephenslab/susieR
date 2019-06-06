@@ -2,13 +2,15 @@
 % Please edit documentation in R/susie_trendfilter.R
 \name{susie_trendfilter}
 \alias{susie_trendfilter}
-\title{Applies susie to perform trend filtering (especially changepoint problems), a type of non-parametric regression.}
+\title{Applies susie to perform trend filtering (especially
+  changepoint problems), a type of non-parametric regression.}
 \usage{
 susie_trendfilter(y, order = 0, standardize = FALSE, use_mad = TRUE,
   ...)
 }
 \arguments{
-\item{y}{an n vector of observations that are ordered in time or space (assumed equally-spaced)}
+\item{y}{an n vector of observations that are ordered in time or
+space (assumed equally-spaced)}
 
 \item{order}{an integer specifying the order of trend filtering. Default order=0, which corresponds
 to "changepoint" problems (i.e. piecewise constant mu). Although order > 0 is implemented, we do not recommend using it since we
@@ -28,16 +30,26 @@ typically improves reliability of results by reducing a tendency to converge to 
 a "susie" object; see ?susie for details
 }
 \description{
-Applies susie to perform trend filtering (especially changepoint problems), a type of non-parametric regression.
+Applies susie to perform trend filtering (especially
+  changepoint problems), a type of non-parametric regression.
 }
 \details{
-Fits the non-parametric Gaussian regression model $y=mu +e$, where the mean $mu$ is modelled
-as $mu=Xb$ where $X$ is a matrix with columns containing an appropriate basis and
-b is vector with a (sparse) SuSiE prior. In particular, when order=0, the $j$th column of $X$ is a vector with first $j$ elements equal to 0 and
-remaining elements equal to 1, so b_j corresponds to the change  in the  mean of y between indices $j$ and $j+1$.
-For background on trend filtering see [Adaptive piecewise polynomial estimation via trend filtering](https://projecteuclid.org/euclid.aos/1395234979)(Ryan J. Tibshirani, 2014)
-The implementation here exploits the special structure of $X$ whiuch means that the matrix-vector product $X'y$ is fast to compute in O(n) computation rather
-than $O(n^2)$ if $X$ were formed explicitly. Implementation details can be found at \code{system.file("inst","misc","susie_trendfilter_imp_detail.pdf",package = "susieR")}
+Fits the non-parametric Gaussian regression model $y=mu
++e$, where the mean $mu$ is modelled as $mu=Xb$ where $X$ is a
+matrix with columns containing an appropriate basis and b is vector
+with a (sparse) SuSiE prior. In particular, when order=0, the $j$th
+column of $X$ is a vector with first $j$ elements equal to 0 and
+remaining elements equal to 1, so b_j corresponds to the change in
+the mean of y between indices $j$ and $j+1$.  For background on
+trend filtering see [Adaptive piecewise polynomial estimation via
+trend
+filtering](https://projecteuclid.org/euclid.aos/1395234979)(Ryan
+J. Tibshirani, 2014) The implementation here exploits the special
+structure of $X$ whiuch means that the matrix-vector product $X'y$
+is fast to compute in O(n) computation rather than $O(n^2)$ if $X$
+were formed explicitly. For implementation details, view the
+"trendfiltering derivations" vignette by running
+\code{vignette("trendfiltering-derivations")}.
 }
 \examples{
 set.seed(1)

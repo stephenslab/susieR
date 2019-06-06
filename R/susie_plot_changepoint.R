@@ -21,7 +21,7 @@ susie_plot_changepoint <-
   CS = susie_get_cs(s)$cs
 
   p= ggplot2::ggplot(df) +
-    ggplot2::geom_point(data = df, ggplot2::aes(x=x, y=y)) +
+    ggplot2::geom_point(data = df, ggplot2::aes_string(x="x", y="y")) +
     ggplot2::geom_line(color=line_col,data = df,
                        ggplot2::aes_string(x = "x",y = "mu"), size=line_size)
   for(i in 1:length(CS)){
