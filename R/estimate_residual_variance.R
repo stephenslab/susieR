@@ -17,11 +17,3 @@ estimate_residual_variance = function(X,Y,s){
 estimate_residual_variance_ss = function(XtX,Xty,s,yty,n){
   return( (1/n)* get_ER2_ss(XtX,Xty,s,yty) )
 }
-
-#' @title Estimate residual variance for summary statistics
-#' @param R a p by p
-#' @param z a p vector
-#' @param s a susie fit
-estimate_residual_variance_z = function(R,z,s){
-  return( (1/length(z))* get_ER2_z(R,z,s) )
-}
