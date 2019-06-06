@@ -38,9 +38,7 @@ $\mathbf{A}^T$, the matrix inverse by $\mathbf{A}^{-1}$, and the
 matrix determinant by $\det(\mathbf{A})$. Finally, sets will be
 denoted by calligraphic letters ($\mathcal{A}$).
 
-\section{\susie for trend filtering}
-
-\subsection{Overview}
+\section{Overview}
 
 Trend filtering is a useful statistical tool for nonparametric
 regression. \cite{Kim07l1trend} first proposed $\ell_1$ trend
@@ -52,14 +50,15 @@ the $\ell_1$-regularized least squares problem. This motivates us to
 think about the connection between trend filtering and sparse
 approximation in general.
 
-\subsection{Trend filtering and sparse regression}
+\section{Trend filtering and sparse regression}
 
 Trend filtering problem is defined mathematically as follows. For a
 given integer $k \geq 0$, the kth order trend filtering is defined by
 a penalized least squares optimization problem,
 
 \begin{align}
-\hat{\vb} = \underset{\vb}{\mathrm{argmin}} \frac{1}{2}|| \vy- \vb||_2^2 + \frac{n^k}{k!}\lambda||D_{k+1}\vb||_1,
+\hat{\vb} = \underset{\vb}{\mathrm{argmin}} \frac{1}{2}|| \vy - 
+            \vb||_2^2 + \frac{n^k}{k!}\lambda||D_{k+1}\vb||_1,
 \end{align}
 where $\vy = [y_1 \dots y_n]^T$ is an n vector of observations,
 $\lambda$ is a tuning parameter, and $D_{k+1}$ is the discrete
@@ -93,18 +92,19 @@ were invertibe, we could write $\vb = (D_{k+1})^{-1}\bm{\beta}$ and
 the above problem would become
 
 \begin{align}
-\hat{\bm{\beta}} = \underset{\bm{\beta}}{\mathrm{argmin}} \frac{1}{2}||\vy- (D_{k+1})^{-1}\bm{\beta}||_2^2 + \frac{n^k}{k!}\lambda||\bm{\beta}||_1.
+\hat{\bm{\beta}} = \underset{\bm{\beta}}{\mathrm{argmin}} \frac{1}{2}||\vy - 
+(D_{k+1})^{-1}\bm{\beta}||_2^2 + \frac{n^k}{k!}\lambda||\bm{\beta}||_1.
 \end{align}
 We can consider this a sparse regression with $\ell_1$ regularization
 problem, where the design matrix is $X_{k+1} = (D_{k+1})^{-1}$.
 
-\subsection{Modification on $D$}
+\section{Modification of $D$}
 
 As we have seen, the trend filtering problem becomes a sparse
 regression with $\ell_1$ regularization if we consider the design
 matrix $X_{k+1} = (D_{k+1})^{-1}$. However, $D_{1} \in
 \mathbb{R}^{(n-1)\times n}$ is not invertible, so is $D_{k+1}$ for
-$k=1,2,\dots$. By observation, we complete $D_{1}$ as a square and
+$k=1,2,\dots$ By observation, we complete $D_{1}$ as a square and
 symmetric matrix
 
 \begin{align}
@@ -126,7 +126,7 @@ rows added at the bottom without changing any previous entry. With
 this modification, we are able to invert $\hat{D}_{k+1}$ and consider
 the inverse matrix as a design matrix in the sparse regression.
 
-\subsection{Special structure on $\hat{D}^{-1}$}
+\section{Special structure of $\hat{D}^{-1}$}
 
 After determining the design matrix $X$ in the sparse regression
 problem, we could apply \susie algorithm to help us find a possible
@@ -138,15 +138,16 @@ problem with $O(n)$ complexity. We will talk about how to make
 different computations linear in complexity by utilizing the special
 structure respectively.
 
-\subsection{Computation on $Xb$} 
-\label{Computation on Xb}
+\section{Computation of $Xb$} 
+\label{computation-on-Xb}
 
 In the trend filtering application, since $X_{k+1} =
 (\hat{D}_{k+1})^{-1}$, we obtain
 \begin{align}
-X_{k+1} \vb & = (\hat{D}_{k+1})^{-1} \vb = (\underbrace{\hat{D}_{1}\dots \hat{D}_{1}}_{k+1})^{-1} \vb \\
- & = \underbrace{(\hat{D}_{1})^{-1} \dots (\hat{D}_{1})^{-1}}_{k+1} \vb \\
- & = \underbrace{X_1 \dots X_1}_{k+1} \vb.
+X_{k+1} \vb & = (\hat{D}_{k+1})^{-1} \vb = 
+(\underbrace{\hat{D}_{1}\dots \hat{D}_{1}}_{k+1})^{-1} \vb \\
+ &= \underbrace{(\hat{D}_{1})^{-1} \dots (\hat{D}_{1})^{-1}}_{k+1} \vb \\
+ &= \underbrace{X_1 \dots X_1}_{k+1} \vb.
 \end{align}
 We notice that since 
 \begin{align}
@@ -161,7 +162,8 @@ X_1 = \begin{bmatrix}
 \end{align}
  
 \begin{align}
-X_1 \vb & = -1 \cdot [b_1+b_2+\dots+b_n, b_2+\dots+b_n, \dots, b_{n-1}+b_n, b_n]^T \\
+X_1 \vb & = -1 \cdot [b_1+b_2+\dots+b_n, b_2+\dots+b_n, \dots, 
+                      b_{n-1}+b_n, b_n]^T \\
 & = -1 \cdot \text{cumsum}(\text{reverse}(\vb)) .
 \end{align}
 Let $f: \mathbb{R}^n \to \mathbb{R}^n$ such that $f(\vx)=
@@ -172,8 +174,8 @@ X_{k+1} \vb & = \underbrace{X_1 \dots X_1}_{k+1} \vb = f^{(k+1)}(\vb),
 \end{align}
 where $k$ is the order of trend filtering. 
 
-\subsection{Computation on $X^T y$} 
-\label{Computation on Xty}
+\section{Computation of $X^Ty$} 
+\label{Computation-on-Xty}
 
 We consider $X_{k+1}^T\vy$. Here $X_{k+1} = (\hat{D}_{k+1})^{-1}$ in
 the trend filtering problem, and $\vy$ is an n vector. We have
@@ -208,7 +210,7 @@ X_{k+1}^T \vy & = \underbrace{X_1^T \dots X_1^T}_{k+1} \vy = g^{(k+1)}(\vy),
 \end{align}
 where $k$ is the order of trend filtering.
 
-\subsection{Computation on $(X^2)^T 1$ (i.e. colSums($X^2$))} 
+\section{Computation on $(X^2)^T 1$; i.e., colSums($X^2$)} 
 \label{Computation-on-d}
 
 To compute $(X_{k+1}^2)^T \bm{1}$, let's first explore the special
@@ -279,7 +281,7 @@ And, obviously, the first row of $X_{k+1}$ is
    \end{cases}
 \end{equation}
 
-\subsection{Computation on $\mu$ (i.e. column means)} 
+\section{Computation of $\mu$; i.e., column means} 
 \label{Computation-on-cm}
 
 For each column $j = 1,2,\dots,n$,
@@ -289,25 +291,28 @@ For each column $j = 1,2,\dots,n$,
 and $\bm{\mu} = [\mu_1, \mu_2, \dots, \mu_n]^T \in
 \mathbb{R}^n$. Hence we get
 \begin{equation}
- \bm{\mu} = \frac{1}{n} X_{k+1}^T \bm{1} = \frac{1}{n} \text{cumsum}((X_{k+1})_{1.}),
+\bm{\mu} = \frac{1}{n} X_{k+1}^T \bm{1} 
+         = \frac{1}{n} \text{cumsum}((X_{k+1})_{1.}),
 \end{equation}
 where $(X_{k+1})_{1.}$ is defined above in \ref{Computation-on-d}.
 
-\subsection{Computation on $\sigma$ (i.e. column standard deviations)} 
+\section{Computation of $\sigma$; i.e., column standard deviations} 
 \label{Computation-on-csd}
 
 For each column $j=1,2,\dots, n$,
 
 \begin{align}
 \sigma_j & = \sqrt{E[X_{.j}^2] - E[X_{.j}]^2} \\
-       & = \sqrt{\frac{1}{n}\sum_{i=1}^{n}X_{ij}^2 - (\frac{1}{n}\sum_{i=1}^{n} X_{ij})^2}.
+       & = \sqrt{\frac{1}{n}\sum_{i=1}^{n}X_{ij}^2 - 
+                (\frac{1}{n}\sum_{i=1}^{n} X_{ij})^2}.
 \end{align}
 Hence, $\bm{\sigma} = [\sigma_1, \sigma_2, \dots, \sigma_n]^T \in
 \mathbb{R}^n$ becomes
 
 \begin{align}
 \bm{\sigma} & = \sqrt{E[X^2] - E[X]^2} \\
-       & = \sqrt{\frac{1}{n}\text{colSums}(X^2) - (\frac{1}{n}\text{colSums}(X))^2} \\
+       & = \sqrt{\frac{1}{n}\text{colSums}(X^2) - 
+                 (\frac{1}{n}\text{colSums}(X))^2} \\
        & = \sqrt{\frac{1}{n}(X^2)^T \bm{1} + (\frac{1}{n} X^T \bm{1})^2},
 \end{align}
 where the first term involves \ref{Computation-on-d} and the second
@@ -315,7 +320,7 @@ term is computed in \ref{Computation-on-cm}. Note that in the
 algorithm, we set the column standard deviation 1 when the column has
 variance 0 for computation convenience.
 
-\subsection{Computation on $(\hat{X}^2)^T 1$ (i.e. colSums($\hat{X}^2$))} 
+\section{Computation on $(\hat{X}^2)^T 1$ (i.e. colSums($\hat{X}^2$))} 
 \label{Computation-on-std-d}
 
 We want to compute colSums($\hat{X}^2$), where $\hat{X}$ is scaled by
@@ -329,7 +334,7 @@ $j=1,2,\dots,n$,
 \end{equation*}
 where $X = X_{k+1} = (\hat{D}_{k+1})^{-1}$ if the order is $k$.  
 
-\subsection{Conclusion}
+\section{Conclusion}
 
 Computation details from section \ref{Computation-on-Xb} to section
 \ref{Computation-on-std_d} explain how we can benefit from the unique

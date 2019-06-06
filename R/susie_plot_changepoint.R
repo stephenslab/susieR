@@ -12,15 +12,18 @@
 #' y = mu + rnorm(500)
 #' s = susie_trendfilter(y)
 #' susie_plot_changepoint(s,y) # produces ggplot with credible sets for changepoints on top of plot
+#'
 #' @export
-susie_plot_changepoint = function(s,y, line_col="blue", line_size=1.5, cs_col="red"){
-
-  df<-data.frame(x = 1:length(y),y = y, mu = predict(s))
+#' 
+susie_plot_changepoint <-
+  function(s,y, line_col="blue", line_size=1.5, cs_col="red"){
+  df = data.frame(x = 1:length(y),y = y, mu = predict.susie(s))
   CS = susie_get_cs(s)$cs
 
   p= ggplot2::ggplot(df) +
     ggplot2::geom_point(data = df, ggplot2::aes(x=x, y=y)) +
-    ggplot2::geom_line(color=line_col,data = df, ggplot2::aes(x=x, y=mu), size=line_size)
+    ggplot2::geom_line(color=line_col,data = df,
+                       ggplot2::aes_string(x = "x",y = "mu"), size=line_size)
   for(i in 1:length(CS)){
     p = p + ggplot2::annotate("rect", fill = cs_col, alpha = 0.5,
                      xmin = min(CS[[i]])-0.5, xmax = max(CS[[i]])+0.5,
