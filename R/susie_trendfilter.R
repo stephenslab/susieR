@@ -18,7 +18,7 @@
 #' is fast to compute in O(n) computation rather than $O(n^2)$ if $X$
 #' were formed explicitly. For implementation details, view the
 #' "trendfiltering derivations" vignette by running
-#' \code{vignette("trendfiltering-derivations")}.
+#' \code{vignette("trendfiltering_derivations")}.
 #' 
 #' @param y an n vector of observations that are ordered in time or
 #'   space (assumed equally-spaced)

@@ -344,6 +344,6 @@ structure of matrices from trend filtering problem. As shown by our
 formula, we do not need to form any matrix and complete \susie
 algorithm with $O(n)$ complexity.
 
-\bibliography{trendfiltering-derivations}
+\bibliography{trendfiltering_derivations}
 
 \end{document}
