@@ -1,7 +1,7 @@
 Encoding: UTF-8
 Type: Package
 Package: susieR
-Title: Fit Sum of Single Effects Linear Regression Model
+Title: Fit Sum of Single Effects Linear Regression Model 
 Description: The package implements a simple new way to perform
     variable selection in multiple regression ($y=Xb+e$), using
     computationally efficient variational Bayes approach. The methods
@@ -10,7 +10,7 @@ Description: The package implements a simple new way to perform
     effects are highly sparse (e.g. <20 non-zero effects in the vector
     $b$), although it is also useful to more general applications.
 Date: 2019-06-06
-Version: 0.8.1.0526
+Version: 0.8.1.0525
 Authors@R: c(person("Gao","Wang",role=c("aut","cre"),
                     email="gaow@uchicago.edu"),
              person("Peter","Carbonetto",role="aut"),
@@ -24,15 +24,22 @@ LazyData: true
 NeedsCompilation: no
 RoxygenNote: 6.1.1
 Depends: R (>= 3.0.0)
-Imports: methods, graphics, grDevices, stats, Matrix, matrixStats,
-        expm, wavethresh
-Suggests: reshape, ggplot2, cowplot, testthat, microbenchmark, knitr,
-        rmarkdown, L0Learn
+Imports:
+    methods,
+    graphics,
+    grDevices,
+    stats,
+    Matrix,
+    matrixStats,
+    expm,
+    wavethresh
+Suggests:
+    reshape,
+    ggplot2,
+    cowplot,
+    testthat,
+    microbenchmark,
+    knitr,
+    rmarkdown,
+    L0Learn
 VignetteBuilder: knitr
-Packaged: 2019-06-07 19:13:51 UTC; pcarbo
-Author: Gao Wang [aut, cre],
-  Peter Carbonetto [aut],
-  Yuxin Zou [aut],
-  Kaiqian Zhang [aut],
-  Matthew Stephens [aut]
-Maintainer: Gao Wang <gaow@uchicago.edu>
