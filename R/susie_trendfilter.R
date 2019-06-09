@@ -2,7 +2,7 @@
 
 #' @title Applies susie to perform trend filtering (especially
 #'   changepoint problems), a type of non-parametric regression.
-#' 
+#'
 #' @details Fits the non-parametric Gaussian regression model $y=mu
 #' +e$, where the mean $mu$ is modelled as $mu=Xb$ where $X$ is a
 #' matrix with columns containing an appropriate basis and b is vector
@@ -19,10 +19,10 @@
 #' were formed explicitly. For implementation details, view the
 #' "trendfiltering derivations" vignette by running
 #' \code{vignette("trendfiltering_derivations")}.
-#' 
+#'
 #' @param y an n vector of observations that are ordered in time or
 #'   space (assumed equally-spaced)
-#' 
+#'
 #' @param order an integer specifying the order of trend filtering. Default order=0, which corresponds
 #' to "changepoint" problems (i.e. piecewise constant mu). Although order > 0 is implemented, we do not recommend using it since we
 #' find there are often problems with convergence of the algorithm to poor local optima, producing unreliable inferences.
@@ -45,7 +45,7 @@
 #' susie_get_cs(s) # returns credible sets (for indices of y that occur just before changepoints)
 #' susie_plot_changepoint(s,y) # produces ggplot with credible sets for changepoints on top of plot
 #' @export
-susie_trendfilter = function(y, order=0,standardize=FALSE, use_mad=TRUE,...){
+susie_trendfilter = function(y, order=0,standardize=FALSE, use_mad=TRUE, mad=1, ...){
   if (order > 0){
     warning("order>0 is not recommended (see ?susie_trendfilter for more explanation).")
   }
@@ -54,7 +54,11 @@ susie_trendfilter = function(y, order=0,standardize=FALSE, use_mad=TRUE,...){
   attr(X, "matrix.type") = "tfmatrix"
   attr(X, "order") = order
   if (use_mad){
-    mad = estimate_mad_residual_variance(y)
+    if (mad==1){
+      mad = estimate_mad_residual_variance_original(y)
+    } else {
+      mad = estimate_mad_residual_variance_revised(y)
+    }
     s_mad_init = suppressWarnings(susie(X=X, Y=y, standardize = standardize, estimate_residual_variance = FALSE, residual_variance = mad, ...))
     s = susie(X=X, Y=y, standardize=standardize, s_init=s_mad_init, ...)
   } else {
@@ -70,7 +74,7 @@ susie_trendfilter = function(y, order=0,standardize=FALSE, use_mad=TRUE,...){
 #' @importFrom wavethresh wd
 #' @importFrom wavethresh accessD
 #' @keywords internal
-estimate_mad_residual_variance = function(y){
+estimate_mad_residual_variance_original = function(y){
   n = length(y)
   y_reflect = c(y, rev(y))
   J = floor(log2(2*n))
@@ -81,3 +85,10 @@ estimate_mad_residual_variance = function(y){
   est_resid = (median(abs(wc_d))/0.6745)^2
   return(est_resid)
 }
+
+estimate_mad_residual_variance_revised = function(y){
+  return(0.5*(median(abs(diff(y))/0.6745)^2))
+}
+
+
+
