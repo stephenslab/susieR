@@ -1,10 +1,8 @@
 # susieR
 
-
 [![Travis Build Status](https://travis-ci.org/stephenslab/susieR.svg?branch=master)](https://travis-ci.org/stephenslab/susieR)
 [![Appveyor Build status](https://ci.appveyor.com/api/projects/status/tcgeqxd8q8krija6?svg=true)](https://ci.appveyor.com/project/pcarbo/susier)
 [![codecov](https://codecov.io/gh/stephenslab/susieR/branch/master/graph/badge.svg)](https://codecov.io/gh/stephenslab/susieR)
-
 
 The `susieR` package implements a simple new way to perform variable
 selection in multiple regression ($y=Xb+e$). The methods implemented
@@ -44,15 +42,17 @@ you have helped fixing bugs or making improvements to the source code.
 ## Setup
 
 To automatically retrieve and install `susieR` from this repository,
+with the vignettes included, run:
 
-   ```R
-   devtools::install_github("stephenslab/susieR@0.8.1")
-   ```
+```R
+devtools::install_github("stephenslab/susieR@0.8.0",build_vignettes = TRUE)
+```
 
 ## Quick Start
 
-[Here](https://stephenslab.github.io/susieR/articles/mwe.html) is a quick document to show `susieR` in action.
-For more documentation and examples please visit: https://stephenslab.github.io/susieR
+See [here](https://stephenslab.github.io/susieR/articles/mwe.html) for
+a brief illustration of `susieR`.  For more documentation and examples
+please visit https://stephenslab.github.io/susieR
 
 ## Developer notes
 
@@ -60,13 +60,13 @@ For more documentation and examples please visit: https://stephenslab.github.io/
 `devtools::document()` to update package `NAMESPACE`
 and documentation files.
 
-+ To install and test the susieR package, run the following commands
-in the shell:
++ To install and test the development version of susieR, run the
+following commands in the shell:
 
     ```bash
     R CMD build --resave-data --no-build-vignettes susieR
-    R CMD INSTALL susieR_0.8.1.tar.gz
-    R CMD check --as-cran --ignore-vignettes susieR_0.8.1.tar.gz
+    R CMD INSTALL susieR_0.8.1.0525.tar.gz
+    R CMD check --as-cran --ignore-vignettes susieR_0.8.1.0525.tar.gz
     ```
 
 + Run `pkgdown::build_site()` to build the website. Getting `pkgdown`
@@ -76,6 +76,6 @@ command to run all vignettes and build the site:
 
 ```bash
 docker run --rm --security-opt label:disable -t -P -w $PWD -v $PWD:$PWD \
-	-u $UID:${GROUPS[0]} -e HOME=/home/$USER -e USER=$USER gaow/susie \
-	R --slave -e "pkgdown::build_site(lazy=TRUE, examples=FALSE)"
+  -u $UID:${GROUPS[0]} -e HOME=/home/$USER -e USER=$USER gaow/susie \
+  R --slave -e "pkgdown::build_site(lazy=TRUE, examples=FALSE)"
 ```
