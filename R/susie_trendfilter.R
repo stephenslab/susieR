@@ -45,7 +45,7 @@
 #' susie_get_cs(s) # returns credible sets (for indices of y that occur just before changepoints)
 #' susie_plot_changepoint(s,y) # produces ggplot with credible sets for changepoints on top of plot
 #' @export
-susie_trendfilter = function(y, order=0,standardize=FALSE, use_mad=TRUE, mad=1, ...){
+susie_trendfilter = function(y, order=0,standardize=FALSE, use_mad=TRUE, ...){
   if (order > 0){
     warning("order>0 is not recommended (see ?susie_trendfilter for more explanation).")
   }
@@ -54,11 +54,7 @@ susie_trendfilter = function(y, order=0,standardize=FALSE, use_mad=TRUE, mad=1, 
   attr(X, "matrix.type") = "tfmatrix"
   attr(X, "order") = order
   if (use_mad){
-    if (mad==1){
-      mad = estimate_mad_residual_variance_original(y)
-    } else {
-      mad = estimate_mad_residual_variance_revised(y)
-    }
+    mad = estimate_mad_residual_variance(y)
     s_mad_init = suppressWarnings(susie(X=X, Y=y, standardize = standardize, estimate_residual_variance = FALSE, residual_variance = mad, ...))
     s = susie(X=X, Y=y, standardize=standardize, s_init=s_mad_init, ...)
   } else {
@@ -67,26 +63,11 @@ susie_trendfilter = function(y, order=0,standardize=FALSE, use_mad=TRUE, mad=1, 
   return(s)
 }
 
-
 #' @title estimate residual variance using MAD estimator
 #' @param y an n vector
 #' @return a scalar of estimated residual variance
-#' @importFrom wavethresh wd
-#' @importFrom wavethresh accessD
 #' @keywords internal
-estimate_mad_residual_variance_original = function(y){
-  n = length(y)
-  y_reflect = c(y, rev(y))
-  J = floor(log2(2*n))
-  y_reflect = y_reflect[1:2^J]
-  y_reflect = c(y_reflect, rev(y_reflect))
-  ywd = wd(y_reflect, filter.number=1, family="DaubExPhase")
-  wc_d = accessD(ywd, level=J-1)
-  est_resid = (median(abs(wc_d))/0.6745)^2
-  return(est_resid)
-}
-
-estimate_mad_residual_variance_revised = function(y){
+estimate_mad_residual_variance = function(y){
   return(0.5*(median(abs(diff(y))/0.6745)^2))
 }
 
