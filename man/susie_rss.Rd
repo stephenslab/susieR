@@ -4,9 +4,9 @@
 \alias{susie_rss}
 \title{Bayesian sum of single-effect (susie) linear regression using z scores}
 \usage{
-susie_rss(z, R, L = 10, lambda = 0, prior_variance = 50,
-  residual_variance = NULL, r_tol = 1e-08, prior_weights = NULL,
-  null_weight = NULL, restrict = TRUE,
+susie_rss(z, R, maf_thresh = 0, maf = NULL, L = 10, lambda = 0,
+  prior_variance = 50, residual_variance = NULL, r_tol = 1e-08,
+  prior_weights = NULL, null_weight = NULL, restrict = TRUE,
   estimate_residual_variance = TRUE, estimate_prior_variance = TRUE,
   estimate_prior_method = c("optim", "EM"), max_iter = 100,
   s_init = NULL, intercept_value = 0, coverage = 0.95,
@@ -17,6 +17,10 @@ susie_rss(z, R, L = 10, lambda = 0, prior_variance = 50,
 \item{z}{a p vector of z scores.}
 
 \item{R}{a p by p symmetric and positive semidefinite correlation matrix.}
+
+\item{maf_thresh}{threshold for MAF}
+
+\item{maf}{Minor Allele Frequency}
 
 \item{L}{maximum number of non-zero effects}
 

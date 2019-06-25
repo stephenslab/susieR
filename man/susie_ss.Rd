@@ -4,14 +4,14 @@
 \alias{susie_ss}
 \title{Bayesian sum of single-effect (susie) linear regression using summary stat}
 \usage{
-susie_ss(XtX, Xty, yty, n, L = 10, scaled_prior_variance = 0.2,
-  residual_variance = NULL, estimate_residual_variance = TRUE,
-  estimate_prior_variance = TRUE, estimate_prior_method = c("optim",
-  "EM"), r_tol = 1e-08, prior_weights = NULL, null_weight = NULL,
-  standardize = TRUE, max_iter = 100, s_init = NULL,
-  intercept_value = 0, coverage = 0.95, min_abs_corr = 0.5,
-  tol = 0.001, verbose = FALSE, track_fit = FALSE,
-  check_input = FALSE)
+susie_ss(XtX, Xty, yty, n, maf_thresh = 0, maf = NULL, L = 10,
+  scaled_prior_variance = 0.2, residual_variance = NULL,
+  estimate_residual_variance = TRUE, estimate_prior_variance = TRUE,
+  estimate_prior_method = c("optim", "EM"), r_tol = 1e-08,
+  prior_weights = NULL, null_weight = NULL, standardize = TRUE,
+  max_iter = 100, s_init = NULL, intercept_value = 0,
+  coverage = 0.95, min_abs_corr = 0.5, tol = 0.001,
+  verbose = FALSE, track_fit = FALSE, check_input = FALSE)
 }
 \arguments{
 \item{XtX}{a p by p matrix, X'X, where columns of X are centered to have mean 0}
@@ -21,6 +21,10 @@ susie_ss(XtX, Xty, yty, n, L = 10, scaled_prior_variance = 0.2,
 \item{yty}{a scaler, y'y, where y is centered to have mean 0}
 
 \item{n}{sample size}
+
+\item{maf_thresh}{threshold for MAF}
+
+\item{maf}{Minor Allele Frequency}
 
 \item{L}{maximum number of non-zero effects}
 

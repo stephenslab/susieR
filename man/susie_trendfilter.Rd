@@ -49,7 +49,7 @@ structure of $X$ whiuch means that the matrix-vector product $X'y$
 is fast to compute in O(n) computation rather than $O(n^2)$ if $X$
 were formed explicitly. For implementation details, view the
 "trendfiltering derivations" vignette by running
-\code{vignette("trendfiltering-derivations")}.
+\code{vignette("trendfiltering_derivations")}.
 }
 \examples{
 set.seed(1)

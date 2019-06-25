@@ -7,6 +7,8 @@
 #' equally likely to be non-zero. The prior on the non-zero element is N(0,var=prior_variance).
 #' @param z a p vector of z scores.
 #' @param R a p by p symmetric and positive semidefinite correlation matrix.
+#' @param maf_thresh threshold for MAF
+#' @param maf Minor Allele Frequency
 #' @param L maximum number of non-zero effects
 #' @param lambda fudge factor
 #' @param prior_variance the prior variance (vector of length L, or scalar. In latter case gets repeated L times )
@@ -43,7 +45,8 @@
 #' \item{V}{prior variance}
 #'
 #' @export
-susie_rss = function(z, R, L=10, lambda = 0,
+susie_rss = function(z, R, maf_thresh=0, maf=NULL,
+                     L=10, lambda = 0,
                      prior_variance=50,residual_variance=NULL,
                      r_tol = 1e-08,
                      prior_weights = NULL, null_weight = NULL,
@@ -73,6 +76,16 @@ susie_rss = function(z, R, L=10, lambda = 0,
   }
   if (!(is.double(R) & is.matrix(R)) & !inherits(R,"CsparseMatrix"))
     stop("Input X must be a double-precision matrix, or a sparse matrix.")
+
+  # MAF filter
+  if(!is.null(maf)){
+    if(length(maf) != length(z)){
+      stop(paste0('The length of maf does not agree with expected ', length(z)))
+    }
+    id = which(maf > maf_thresh)
+    R = R[id, id]
+    z = z[id]
+  }
 
   if (is.numeric(null_weight) && null_weight == 0) null_weight = NULL
   if (!is.null(null_weight)) {

@@ -14,6 +14,8 @@
 #' @param Xty a p vector, X'y, where columns of X are centered and y is centered to have mean 0
 #' @param yty a scaler, y'y, where y is centered to have mean 0
 #' @param n sample size
+#' @param maf_thresh threshold for MAF
+#' @param maf Minor Allele Frequency
 #' @param L maximum number of non-zero effects
 #' @param scaled_prior_variance the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times)
 #' @param residual_variance the residual variance (defaults to variance of y)
@@ -65,7 +67,8 @@
 #' coef(res)
 #'
 #' @export
-susie_ss = function(XtX, Xty, yty, n, L=10,
+susie_ss = function(XtX, Xty, yty, n, maf_thresh=0, maf=NULL,
+                    L=10,
                     scaled_prior_variance=0.2,
                     residual_variance=NULL,
                     estimate_residual_variance = TRUE,
@@ -91,6 +94,17 @@ susie_ss = function(XtX, Xty, yty, n, L=10,
     stop("Input X must be a double-precision matrix, or a sparse matrix.")
   if(any(is.na(XtX)))
     stop('XtX matrix contains NA.')
+
+  # MAF filter
+  if(!is.null(maf)){
+    if(length(maf) != length(Xty)){
+      stop(paste0('The length of maf does not agree with expected ', length(Xty)))
+    }
+    id = which(maf > maf_thresh)
+    XtX = XtX[id, id]
+    Xty = Xty[id]
+  }
+
   if(check_input){
     # Check whether XtX is positive semidefinite
     semi_pd = check_semi_pd(XtX, r_tol)
