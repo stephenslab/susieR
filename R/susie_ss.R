@@ -90,6 +90,9 @@ susie_ss = function(XtX, Xty, yty, n, maf_thresh=0, maf=NULL,
   if(!is_symmetric_matrix(XtX)){
     stop('XtX is not a symmetric matrix.')
   }
+  if(any(is.infinite(Xty))){
+    stop('Xty contains infinite value.')
+  }
   if (!(is.double(XtX) & is.matrix(XtX)) & !inherits(XtX,"CsparseMatrix"))
     stop("Input X must be a double-precision matrix, or a sparse matrix.")
   if(any(is.na(XtX)))
@@ -285,6 +288,9 @@ susie_bhat = function(bhat, shat, R, n, var_y = 1, ...){
   }
   if(anyNA(bhat) || anyNA(shat)){
     stop('The input summary statistics have missing value.')
+  }
+  if(any(shat==0)){
+    stop('shat contains zero.')
   }
   #
   that = bhat/shat

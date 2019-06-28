@@ -70,6 +70,9 @@ susie_rss = function(z, R, maf_thresh=0, maf=NULL,
     warning('z scores contain NA, it is replaced with 0.')
     z[is.na(z)] = 0
   }
+  if(any(is.infinite(z))){
+    stop('z contains infinite value.')
+  }
   # Check NA in R
   if(any(is.na(R))){
     stop('R matrix contains NA.')
