@@ -78,7 +78,7 @@ susie_rss = function(z, R, maf_thresh=0, maf=NULL,
     stop('R matrix contains NA.')
   }
   if (!(is.double(R) & is.matrix(R)) & !inherits(R,"CsparseMatrix"))
-    stop("Input X must be a double-precision matrix, or a sparse matrix.")
+    stop("Input R must be a double-precision matrix, or a sparse matrix.")
 
   # MAF filter
   if(!is.null(maf)){
