@@ -12,7 +12,7 @@ set_X_attributes = function(X,
                              center = TRUE,
                              scale = TRUE) {
   # if X is a trend filtering matrix
-  if (!is.null(attr(X, "matrix.type"))) {
+  if (is.tfmatrix(X)) {
     order <- attr(X,"order")
     n <- ncol(X)
     # set three attributes for X
@@ -48,6 +48,9 @@ set_X_attributes = function(X,
   return(X)
 }
 
+is.tfmatrix=function(X){
+  ifelse(is.null(attr(X, "matrix.type")),FALSE,attr(X,"matrix.type")=="tfmatrix")
+}
 
 #' @title computes column standard deviations for any type of matrix
 #'        replace matrixStats::colSds since this function only takes a dense matrix

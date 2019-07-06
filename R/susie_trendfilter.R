@@ -2,7 +2,7 @@
 
 #' @title Applies susie to perform trend filtering (especially
 #'   changepoint problems), a type of non-parametric regression.
-#' 
+#'
 #' @details Fits the non-parametric Gaussian regression model $y=mu
 #' +e$, where the mean $mu$ is modelled as $mu=Xb$ where $X$ is a
 #' matrix with columns containing an appropriate basis and b is vector
@@ -19,10 +19,10 @@
 #' were formed explicitly. For implementation details, view the
 #' "trendfiltering derivations" vignette by running
 #' \code{vignette("trendfiltering-derivations")}.
-#' 
+#'
 #' @param y an n vector of observations that are ordered in time or
 #'   space (assumed equally-spaced)
-#' 
+#'
 #' @param order an integer specifying the order of trend filtering. Default order=0, which corresponds
 #' to "changepoint" problems (i.e. piecewise constant mu). Although order > 0 is implemented, we do not recommend using it since we
 #' find there are often problems with convergence of the algorithm to poor local optima, producing unreliable inferences.
@@ -50,7 +50,7 @@ susie_trendfilter = function(y, order=0,standardize=FALSE, use_mad=TRUE,...){
     warning("order>0 is not recommended (see ?susie_trendfilter for more explanation).")
   }
   n = length(y)
-  X <- Matrix::sparseMatrix(i=NULL,j=NULL,dims=c(n,n))
+  X <- Matrix::sparseMatrix(i=NULL,j=NULL,dims=c(n,n)) # this is set so that ncol(X) and  nrow(X)  works
   attr(X, "matrix.type") = "tfmatrix"
   attr(X, "order") = order
   if (use_mad){

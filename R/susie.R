@@ -181,7 +181,7 @@ susie <- function(X,Y,L = min(10,ncol(X)),scaled_prior_variance = 0.2,
   estimate_prior_method <- match.arg(estimate_prior_method)
 
   # Check input X.
-  if (!(is.double(X) & is.matrix(X)) & !inherits(X,"CsparseMatrix") & is.null(attr(X,"matrix.type")))
+  if (!(is.double(X) & is.matrix(X)) & !inherits(X,"CsparseMatrix") & !is.tfmatrix(X))
     stop("Input X must be a double-precision matrix, or a sparse matrix, or a trend filtering matrix.")
   if (is.numeric(null_weight) && null_weight == 0) null_weight = NULL
   if (!is.null(null_weight) && is.null(attr(X, "matrix.type"))) {
