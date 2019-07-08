@@ -65,6 +65,16 @@ susie_rss = function(z, R, maf_thresh=0, maf=NULL,
   }
   estimate_prior_method <- match.arg(estimate_prior_method)
 
+  # MAF filter
+  if(!is.null(maf)){
+    if(length(maf) != length(z)){
+      stop(paste0('The length of maf does not agree with expected ', length(z)))
+    }
+    id = which(maf > maf_thresh)
+    R = R[id, id]
+    z = z[id]
+  }
+
   # replace NA in z with 0
   if (any(is.na(z))){
     warning('z scores contain NA, it is replaced with 0.')
@@ -79,16 +89,6 @@ susie_rss = function(z, R, maf_thresh=0, maf=NULL,
   }
   if (!(is.double(R) & is.matrix(R)) & !inherits(R,"CsparseMatrix"))
     stop("Input R must be a double-precision matrix, or a sparse matrix.")
-
-  # MAF filter
-  if(!is.null(maf)){
-    if(length(maf) != length(z)){
-      stop(paste0('The length of maf does not agree with expected ', length(z)))
-    }
-    id = which(maf > maf_thresh)
-    R = R[id, id]
-    z = z[id]
-  }
 
   if (is.numeric(null_weight) && null_weight == 0) null_weight = NULL
   if (!is.null(null_weight)) {
