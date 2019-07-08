@@ -5,3 +5,4 @@
 ^susieR.Rproj$
 ^\.Rproj\.user$
 ^\.travis\.yml$
+^.*\.Rproj$

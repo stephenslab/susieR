@@ -90,14 +90,6 @@ susie_ss = function(XtX, Xty, yty, n, maf_thresh=0, maf=NULL,
   if(!is_symmetric_matrix(XtX)){
     stop('XtX is not a symmetric matrix.')
   }
-  if(any(is.infinite(Xty))){
-    stop('Xty contains infinite value.')
-  }
-  if (!(is.double(XtX) & is.matrix(XtX)) & !inherits(XtX,"CsparseMatrix"))
-    stop("Input X must be a double-precision matrix, or a sparse matrix.")
-  if(any(is.na(XtX)))
-    stop('XtX matrix contains NA.')
-
   # MAF filter
   if(!is.null(maf)){
     if(length(maf) != length(Xty)){
@@ -107,6 +99,14 @@ susie_ss = function(XtX, Xty, yty, n, maf_thresh=0, maf=NULL,
     XtX = XtX[id, id]
     Xty = Xty[id]
   }
+
+  if(any(is.infinite(Xty))){
+    stop('Xty contains infinite value.')
+  }
+  if (!(is.double(XtX) & is.matrix(XtX)) & !inherits(XtX,"CsparseMatrix"))
+    stop("Input X must be a double-precision matrix, or a sparse matrix.")
+  if(any(is.na(XtX)))
+    stop('XtX matrix contains NA.')
 
   if(check_input){
     # Check whether XtX is positive semidefinite
@@ -272,11 +272,13 @@ check_projection <- function(A, b){
 #' It should from the same samples used to compute `bhat` and `shat`. Using out of sample matrix may produce unreliable results.
 #' @param n sample size.
 #' @param var_y the (sample) variance of y, defined as y'y/(n-1) . If it is unknown, the coefficients (returned from `coef`) are on the standardized X, y scale.
+#' @param maf_thresh threshold for MAF
+#' @param maf Minor Allele Frequency
 #' @param ... further arguments to be passed to \code{\link{susie_ss}}
 #' @return a susie fit
 #'
 #' @export
-susie_bhat = function(bhat, shat, R, n, var_y = 1, ...){
+susie_bhat = function(bhat, shat, R, n, var_y = 1, maf_thresh=0, maf=NULL, ...){
   if(missing(n)) {
     stop('n must be provided')
   }
@@ -286,6 +288,18 @@ susie_bhat = function(bhat, shat, R, n, var_y = 1, ...){
   if(length(bhat) != length(shat)) {
     stop('The length of bhat does not agree with length of shat.')
   }
+
+  # MAF filter
+  if(!is.null(maf)){
+    if(length(maf) != length(bhat)){
+      stop(paste0('The length of maf does not agree with expected ', length(bhat)))
+    }
+    id = which(maf > maf_thresh)
+    bhat = bhat[id]
+    shat = shat[id]
+    R = R[id,id]
+  }
+
   if(anyNA(bhat) || anyNA(shat)){
     stop('The input summary statistics have missing value.')
   }

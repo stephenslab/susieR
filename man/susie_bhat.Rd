@@ -4,7 +4,8 @@
 \alias{susie_bhat}
 \title{Summary statistics version of SuSiE on betahat, the corresponding standard error, and correlation (or covariance) matrix}
 \usage{
-susie_bhat(bhat, shat, R, n, var_y = 1, ...)
+susie_bhat(bhat, shat, R, n, var_y = 1, maf_thresh = 0, maf = NULL,
+  ...)
 }
 \arguments{
 \item{bhat}{a p vector of estimated effects.}
@@ -17,6 +18,10 @@ It should from the same samples used to compute `bhat` and `shat`. Using out of 
 \item{n}{sample size.}
 
 \item{var_y}{the (sample) variance of y, defined as y'y/(n-1) . If it is unknown, the coefficients (returned from `coef`) are on the standardized X, y scale.}
+
+\item{maf_thresh}{threshold for MAF}
+
+\item{maf}{Minor Allele Frequency}
 
 \item{...}{further arguments to be passed to \code{\link{susie_ss}}}
 }
