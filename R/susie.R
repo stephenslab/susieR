@@ -197,6 +197,9 @@ susie <- function(X,Y,L = min(10,ncol(X)),scaled_prior_variance = 0.2,
   }
   p = ncol(X)
   n = nrow(X)
+  if(is.stumps_matrix(X)){ #this is a special case; should probably deal with this better
+    p = p*n
+  }
   mean_y = mean(Y)
 
   # center and scale input.

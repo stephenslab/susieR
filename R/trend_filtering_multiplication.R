@@ -1,7 +1,15 @@
-#trend filtering multiplication helper functions 
+#trend filtering multiplication helper functions
 #test trend filtering branch
 
-#' @title Compute unscaled X \%*\% b using the special structure of trend filtering 
+
+make_tf_matrix = function(n,order){
+  X <- Matrix::sparseMatrix(i=NULL,j=NULL,dims=c(n,n)) # this is set so that ncol(X) and  nrow(X)  works
+  attr(X, "matrix.type") = "tfmatrix"
+  attr(X, "order") = order
+  return(X)
+}
+
+#' @title Compute unscaled X \%*\% b using the special structure of trend filtering
 #' @param order is the order of trend filtering
 #' @param b an n=p vector
 #' @return an n vector
@@ -50,7 +58,7 @@ compute_tf_d = function(order, n, cm, csd, standardize=FALSE, intercept=FALSE){
     if (order==0) d=cumsum(base^2)
     else {
       for (i in 1:order) base = cumsum(base)
-      d=cumsum(base^2) 
+      d=cumsum(base^2)
     }
     if (standardize){
       # when standardize=TRUE, intercept=TRUE: d = colSums(X^2) / (csd^2)

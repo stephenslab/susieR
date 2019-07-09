@@ -50,9 +50,7 @@ susie_trendfilter = function(y, order=0,standardize=FALSE, use_mad=TRUE,...){
     warning("order>0 is not recommended (see ?susie_trendfilter for more explanation).")
   }
   n = length(y)
-  X <- Matrix::sparseMatrix(i=NULL,j=NULL,dims=c(n,n)) # this is set so that ncol(X) and  nrow(X)  works
-  attr(X, "matrix.type") = "tfmatrix"
-  attr(X, "order") = order
+  X <- make_tf_matrix(n,order)
   if (use_mad){
     mad = estimate_mad_residual_variance(y)
     s_mad_init = suppressWarnings(susie(X=X, Y=y, standardize = standardize, estimate_residual_variance = FALSE, residual_variance = mad, ...))

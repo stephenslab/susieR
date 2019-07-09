@@ -50,15 +50,19 @@ get_purity = function(pos, X, Xcorr, n = 100) {
   } else {
     if (length(pos) > n) pos = sample(pos, n)
     if (is.null(Xcorr)) {
-      X_sub = X[,pos]
-      if (length(pos) > n) {
-        # remove identical columns
-        pos_rm = sapply(1:ncol(X_sub), function(i) all( abs(X_sub[,i] - mean(X_sub[,i])) < .Machine$double.eps ^ 0.5 ))
-        if (length(pos_rm)) {
-          X_sub = X_sub[,-pos_rm]
+      if(is.tfmatrix(X) | is.stumps_matrix(X)) #set purity =1 here as default to avoid filtering; could do better!
+        value = 1
+      else {
+        X_sub = X[,pos]
+        if (length(pos) > n) {
+          # remove identical columns
+          pos_rm = sapply(1:ncol(X_sub), function(i) all( abs(X_sub[,i] - mean(X_sub[,i])) < .Machine$double.eps ^ 0.5 ))
+          if (length(pos_rm)) {
+            X_sub = X_sub[,-pos_rm]
+          }
         }
+        value = abs(muffled_corr(as.matrix(X_sub)))
       }
-      value = abs(muffled_corr(as.matrix(X_sub)))
     } else {
       value = abs(Xcorr[pos, pos])
     }
