@@ -10,9 +10,10 @@
 #' @param br vector of length (p-1) specifying break points on x axis (ie where changepoints can occur)
 #' Elements of br must increase monotonically.
 #' @param order non-negative integer indicating order of trend filtering basis (0 is changepoint basis and is the only case we test and use)
+#' @keywords internal
 make_tfg_matrix = function(t,br,order=0){
   n = length(t) # number of data points
-  p = length(br)+1 # number of bins specified by breaks
+  p = length(br) + 1 # number of bins specified by breaks
   X <- Matrix::sparseMatrix(i=NULL,j=NULL,dims=c(n,p)) # this is set so that ncol(X) and  nrow(X)  works
   attr(X, "matrix.type") = "tfg_matrix"
   attr(X, "order") = order
@@ -37,7 +38,7 @@ compute_tfg_Xb = function(X,b){
   return(b[attr(X,"t_to_bin")]) #  maps bin means to a mean for each datapoint
 }
 
-#' @title Compute unscaled t(X) \%*\% y using the special structure of trend filtering
+#' @title Compute t(X) \%*\% y using the special structure of trend filtering
 #' @param X a tfg_matrix created by make_tfg_matrix
 #' @param y an n vector of data
 #' @return a p vector
@@ -50,3 +51,34 @@ compute_tfg_Xty = function(X,y){
   }
   return(y[attr(X,"bin_to_t")])
 }
+
+is.tfg_matrix=function(X){
+  ifelse(is.null(attr(X, "matrix.type")),FALSE,attr(X,"matrix.type")=="tfg_matrix")
+}
+
+#' @title Compute column mean of the general trend filtering matrix X
+#' @param X a general trend filtering matrix
+#' @return a p vector of column means
+#' @keywords internal
+compute_tfg_cm = function(X){
+  order = attr(X,"order")
+  base = hist(attr(X,"t"), breaks = c(-Inf,attr(X,"br"),Inf), plot=FALSE)$counts
+  for (i in 1:(order+1)){
+    base = -cumsum(base)
+  }
+  return(base/nrow(X))
+}
+
+#' @title Compute d=diag(Xcent'Xcent) where Xcent is the centered version of the general trend filtering matrix X
+#' @param X a general trend filtering matrix
+#' @return a p vector d=diag(Xcent'Xcent)
+#' @keywords internal
+compute_tfg_d = function(X){
+  order = attr(X,"order")
+  if(order!=0){
+    stop("not implemented for order!=0")
+  }
+  cm = compute_tfg_cm(X) # column means
+  return(nrow(X)*(- cm - cm^2))
+}
+

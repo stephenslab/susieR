@@ -12,7 +12,7 @@ set_X_attributes = function(X,
                              center = TRUE,
                              scale = TRUE) {
   # if X is a trend filtering matrix
-  if (is.tfmatrix(X)) {
+  if(is.tfmatrix(X)){
     order <- attr(X,"order")
     n <- ncol(X)
     # set three attributes for X
@@ -25,6 +25,13 @@ set_X_attributes = function(X,
     if (!scale) {
       attr(X, "scaled:scale") <- rep(1, n)
     }
+  } else if(is.tfg_matrix(X)){
+    if(center!=TRUE){stop("only center=TRUE implemented for tfg matrix")}
+    if(scale!=FALSE){stop("only scale=FALSE implemented for tfg matrix")}
+    if(attr(X,"order")!=0){stop("only order=0 implemented for tfg matrix")}
+    attr(X, "scaled:center") <- compute_tfg_cm(X)
+    attr(X, "scaled:scale") <- rep(1,ncol(X))
+    attr(X, "d") <- compute_tfg_d(X)
   } else if(is.stumps_matrix(X)){
     n <- nrow(X)
     p <- ncol(X)

@@ -17,3 +17,4 @@ Elements of br must increase monotonically.}
 \description{
 set up a general trend filtering matrix
 }
+\keyword{internal}

@@ -2,7 +2,7 @@
 % Please edit documentation in R/tfg_matrix.R
 \name{compute_tfg_Xty}
 \alias{compute_tfg_Xty}
-\title{Compute unscaled t(X) \%*\% y using the special structure of trend filtering}
+\title{Compute t(X) \%*\% y using the special structure of trend filtering}
 \usage{
 compute_tfg_Xty(X, y)
 }
@@ -15,6 +15,6 @@ compute_tfg_Xty(X, y)
 a p vector
 }
 \description{
-Compute unscaled t(X) \%*\% y using the special structure of trend filtering
+Compute t(X) \%*\% y using the special structure of trend filtering
 }
 \keyword{internal}

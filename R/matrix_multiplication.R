@@ -14,6 +14,8 @@ compute_Xb = function(X, b){
     scaled.Xb <- compute_tf_Xb(attr(X, 'order'), b/csd)
   else if(is.stumps_matrix(X)){
     scaled.Xb <- compute_stumps_Xb(attr(X, 'Xord'),  b/csd)
+  } else if(is.tfg_matrix(X)){
+    scaled.Xb <- compute_tfg_Xb(X,b/csd)
   } else
   #when X is an ordinary sparse/dense matrix
      scaled.Xb <- tcrossprod(X, t(b/csd))
@@ -38,6 +40,9 @@ compute_Xty = function(X, y){
     scaled.Xty <- compute_tf_Xty(attr(X, 'order'),y)/csd
   else if(is.stumps_matrix(X))
     scaled.Xty <- compute_stumps_Xty(attr(X,'Xord'),y)/csd
+  else if(is.tfg_matrix(X)){
+    scaled.Xty <- compute_tfg_Xty(X,y)/csd
+  }
   #when X is an ordinary sparse/dense matrix
   else
     scaled.Xty <- t(ytX/csd)
@@ -55,7 +60,7 @@ compute_MXt = function(M, X){
   cm = attr(X, 'scaled:center')
   csd = attr(X, 'scaled:scale')
   #when X is a trend filtering matrix
-  if (is.tfmatrix(X) | is.stumps_matrix(X)) {
+  if (is.tfmatrix(X) | is.stumps_matrix(X) | is.tfg_matrix(X)) {
     return(as.matrix(t(apply(M,1,function(b) compute_Xb(X, b)))))
   }
   #when X is an ordinary sparse/dense matrix
