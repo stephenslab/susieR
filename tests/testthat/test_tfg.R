@@ -33,4 +33,8 @@ test_that("tfg matches tf",{
   expect_equal(s$mu,s2$mu)
   expect_equal(s$alpha,s2$alpha)
 
+  o = sample(1:100)
+  s3 = susie_tfg(y[o],t[o],breaks =t[-100]) #to make them match have to make breaks not include the final observation
+  expect_equal(s2$mu, s3$mu)
+  expect_equal(s2$fitted[o], s3$fitted)
 })
