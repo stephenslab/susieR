@@ -45,7 +45,7 @@
 #' susie_get_cs(s) # returns credible sets (for indices of y that occur just before changepoints)
 #' susie_plot_changepoint(s,y) # produces ggplot with credible sets for changepoints on top of plot
 #' @export
-susie_trendfilter = function(y, order=0,standardize=FALSE, use_mad=TRUE, ...){
+susie_trendfilter = function(y, order=0, standardize=FALSE, use_mad=TRUE, ...){
   if (order > 0){
     warning("order>0 is not recommended (see ?susie_trendfilter for more explanation).")
   }
@@ -53,7 +53,7 @@ susie_trendfilter = function(y, order=0,standardize=FALSE, use_mad=TRUE, ...){
   X <- Matrix::sparseMatrix(i=NULL,j=NULL,dims=c(n,n))
   attr(X, "matrix.type") = "tfmatrix"
   attr(X, "order") = order
-  if (use_mad){
+  if (use_mad && !("s_init" %in% names(list(...)))) {
     mad = estimate_mad_residual_variance(y)
     s_mad_init = suppressWarnings(susie(X=X, Y=y, standardize = standardize, estimate_residual_variance = FALSE, residual_variance = mad, ...))
     s = susie(X=X, Y=y, standardize=standardize, s_init=s_mad_init, ...)
