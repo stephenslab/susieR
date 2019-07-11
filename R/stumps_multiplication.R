@@ -15,7 +15,7 @@ compute_stumps_Xb = function(Xord,b){
 }
 
 #' @title Compute unscaled t(Xexpand) \%*\% y here Xexpand is the n by np matrix formed by, for each of the p columns of Xrank form the n different stumps (changepoint basis functions), and concatentate
-#' @param Xrank is an n by p matrix whose jth column containing the ranks of the jth column of X
+#' @param Xord is an n by p matrix whose jth column containing order(X[,j])
 
 #' @param y an n vector
 #' @return an np vector

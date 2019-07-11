@@ -7,9 +7,9 @@
 compute_stumps_Xty(Xord, y)
 }
 \arguments{
-\item{y}{an n vector}
+\item{Xord}{is an n by p matrix whose jth column containing order(X[,j])}
 
-\item{Xrank}{is an n by p matrix whose jth column containing the ranks of the jth column of X}
+\item{y}{an n vector}
 }
 \value{
 an np vector

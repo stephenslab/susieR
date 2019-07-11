@@ -50,7 +50,7 @@ get_purity = function(pos, X, Xcorr, n = 100) {
   } else {
     if (length(pos) > n) pos = sample(pos, n)
     if (is.null(Xcorr)) {
-      if(is.tfmatrix(X) | is.stumps_matrix(X)) #set purity =1 here as default to avoid filtering; could do better!
+      if(!is.matrix(X)) #set purity =1 here as default to avoid filtering; could do better!
         value = 1
       else {
         X_sub = X[,pos]
@@ -209,7 +209,7 @@ susie_get_pip = function(res, prune_by_cs = FALSE) {
   return(as.vector(1 - apply(1 - res, 2, prod)))
 }
 
-# compute standard error for regression coef
+# compute standard error for regression coef; used only for X a matrix
 calc_stderr = function(X, residuals) {
     # S = (X'X)^-1 \Sigma
     sqrt(diag(sum(residuals^2) / (nrow(X) - 2) * chol2inv(chol(t(X) %*% X))))
@@ -224,6 +224,9 @@ calc_stderr = function(X, residuals) {
 #' @importFrom stats summary.lm
 univariate_regression = function(X, y, Z=NULL, centered=FALSE,
                                  return_residuals=FALSE) {
+  if(!is.matrix(X)){
+    stop("univariate_regression  requires X to be a matrix")
+  }
   if (!centered) {
     y = y - mean(y)
     X = set_X_attributes(X, center=TRUE, scale = FALSE)
@@ -232,6 +235,7 @@ univariate_regression = function(X, y, Z=NULL, centered=FALSE,
     if (!centered) Z = set_X_attributes(Z, center=TRUE, scale=FALSE)
     y = .lm.fit(Z, y)$residuals
   }
+
   output = try(do.call(rbind,
                        lapply(1:ncol(X), function(i) {
                          g = .lm.fit(cbind(1, X[,i]), y)

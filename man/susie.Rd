@@ -79,7 +79,7 @@ genotype data in genetics studies.}
 
 \item{compute_univariate_zscore}{If \code{compute_univariate_zscore
 = TRUE}, the univariate regression z-scores are outputted for each
-variable.}
+variable. This is implemented only for case where X is a matrix (not trendfiltering etc)}
 
 \item{max_iter}{Maximum number of iterations of the IBSS fitting
 procedure.}

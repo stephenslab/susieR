@@ -14,7 +14,7 @@
 make_tfg_matrix = function(t,br,order=0){
   n = length(t) # number of data points
   p = length(br) + 1 # number of bins specified by breaks
-  X <- Matrix::sparseMatrix(i=NULL,j=NULL,dims=c(n,p)) # this is set so that ncol(X) and  nrow(X)  works
+  X <- Matrix::sparseMatrix(i=NULL,j=NULL,dims=c(n,p)) # this is set so that ncol(X) and  get_nrow(X)  works
   attr(X, "matrix.type") = "tfg_matrix"
   attr(X, "order") = order
   attr(X,"t") <- t
@@ -68,7 +68,7 @@ compute_tfg_cm = function(X){
   for (i in 1:(order+1)){
     base = -cumsum(base)
   }
-  return(base/nrow(X))
+  return(base/get_nrow(X))
 }
 
 #' @title Compute d=diag(Xcent'Xcent) where Xcent is the centered version of the general trend filtering matrix X
@@ -81,6 +81,6 @@ compute_tfg_d = function(X){
     stop("not implemented for order!=0")
   }
   cm = compute_tfg_cm(X) # column means
-  return(nrow(X)*(- cm - cm^2))
+  return(get_nrow(X)*(- cm - cm^2))
 }
 

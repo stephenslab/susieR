@@ -79,7 +79,7 @@
 #'
 #' @param compute_univariate_zscore If \code{compute_univariate_zscore
 #'   = TRUE}, the univariate regression z-scores are outputted for each
-#'   variable.
+#'   variable. This is implemented only for case where X is a matrix (not trendfiltering etc)
 #'
 #' @param max_iter Maximum number of iterations of the IBSS fitting
 #'   procedure.
@@ -190,16 +190,17 @@ susie <- function(X,Y,L = min(10,ncol(X)),scaled_prior_variance = 0.2,
     if (null_weight<0 || null_weight>=1)
       stop('Null weight must be between 0 and 1')
     if (missing(prior_weights))
-      prior_weights = c(rep(1/ncol(X)*(1-null_weight), ncol(X)), null_weight)
+      prior_weights = c(rep(1/get_ncol(X)*(1-null_weight), get_ncol(X)), null_weight)
     else
       prior_weights = c(prior_weights * (1-null_weight), null_weight)
     X = cbind(X,0)
   }
-  p = ncol(X)
-  n = nrow(X)
-  if(is.stumps_matrix(X)){ #this is a special case; should probably deal with this better
-    p = p*n
+  if(compute_univariate_zscore & !is.matrix(X)){
+    stop("compute_univariate_zscore can be TRUE only if X is a matrix")
   }
+  p = get_ncol(X)
+  n = get_nrow(X)
+
   mean_y = mean(Y)
 
   # center and scale input.

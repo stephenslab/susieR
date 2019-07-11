@@ -30,7 +30,7 @@ single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL
   betahat = (1/get_d(X)) * Xty
   shat2 = residual_variance/get_d(X)
   if (is.null(prior_weights))
-    prior_weights = rep(1/ncol(X), ncol(X))
+    prior_weights = rep(1/get_ncol(X), get_ncol(X))
 
   if(optimize_V=="optim") V=optimize_prior_variance(optimize_V, betahat, shat2, prior_weights, alpha=NULL, post_mean2=NULL)
 
