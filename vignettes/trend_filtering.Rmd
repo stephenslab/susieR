@@ -116,3 +116,68 @@ sqrt(mean((mu-y.tf$fit[,which(y.tf$lambda==y.tf.cv$lambda.min)])^2))
 sqrt(mean((mu-predict(s))^2))
 ```
 
+
+# Generalized to allow non-equal spaced  points and specified breakpoints
+ 
+We are in the process of generalizing this approach to allow
+the user to  specify an x value (`t` for "time")  for each y value, and
+also to specify the locations of potential changepoints . 
+For example, if you  have non equal-spaced data you might
+want to specify potential changepoint locations that are equally spaced,
+rather than putting a higher prior on changepoints 
+Also if n is large then you might want to allow fewer changepoint
+locations for computational speed (although actually this may not turn
+out to be much faster... tbd!) Finally, this new approach will also allow
+prediction for out-of-sample data (not currently implemented in `susie_trendfilter`).
+
+This code is just to illustrate this as we develop it... 
+the interface is likely to change regularly and it is not intended for
+public use yet.
+```{r}
+set.seed(1)
+n=100
+mu = c(rep(10,n/2),rep(-5,n/2))
+y = mu + rnorm(n)
+s = susie_tfg(y)
+plot(y)
+lines(s$fitted,col=2,lwd=2)
+
+# now only allow breaks every tenth observations
+t = seq(0,1,length=n)
+breaks = seq(0,1,length=n/10)
+s = susie_tfg(y,t,breaks)
+plot(y)
+lines(s$fitted,col=2,lwd=2)
+
+#first check that we can recover the fitted values if we do prediction  on the training data
+Xtrain = susieR:::make_tfg_matrix(t,breaks,0) # we need to automate this process
+attr(Xtrain,"scaled:center") = 0
+attr(Xtrain,"scaled:scale") = 1
+#Xtrain = susieR:::set_X_attributes(Xtrain,TRUE,FALSE)
+plot(t,y)
+lines(t,s$fitted,col=2,lwd=2)
+points(t,susieR:::compute_Xb(Xtrain,coef(s)[-1])+s$intercept,col=3)
+```
+
+
+Now see how to predict out of sample: you have to make a tfg matrix like
+the training one, but with t set to the test values you want to predict for.
+Obviously we want to automate  this process...
+```{r}
+#  create a new  matrix for test data
+t_test = rnorm(100)
+Xtest = susieR:::make_tfg_matrix(t_test,breaks,0) # we need to automate this process
+attr(Xtest,"scaled:center") = 0
+attr(Xtest,"scaled:scale")  = 1
+
+plot(t,y,xlim=c(-2,2))
+lines(t,s$fitted,col=2)
+points(t_test,susieR:::compute_Xb(Xtest,coef(s)[-1])+s$intercept,col=3)
+
+```
+
+
+
+
+
+ 
