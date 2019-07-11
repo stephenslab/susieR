@@ -43,8 +43,7 @@ compute_Xty = function(X, y){
   } else {
     cm = get_cm(X)
     csd = get_csd(X)
-    ytX <- crossprod(y, X)
-    #scale Xty
+
     #when X is a trend filtering matrix
     if (is.tfmatrix(X))
       scaled.Xty <- compute_tf_Xty(get_order(X),y)/csd
@@ -53,8 +52,10 @@ compute_Xty = function(X, y){
     else if(is.tfg_matrix(X))
       scaled.Xty <- compute_tfg_Xty(X,y)/csd
     #when X is an ordinary sparse/dense matrix
-    else
+    else{
+      ytX <- crossprod(y, X)
       scaled.Xty <- t(ytX/csd)
+    }
     #center Xty
     centered.scaled.Xty <- scaled.Xty - cm/csd * sum(y)
     return(as.numeric(centered.scaled.Xty))

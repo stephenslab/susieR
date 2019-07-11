@@ -2,7 +2,7 @@
 % Please edit documentation in R/set_X_attributes.R
 \name{compute_colSds}
 \alias{compute_colSds}
-\title{computes column standard deviations for any type of matrix
+\title{computes column standard deviations for sparse or dense matrix
        replace matrixStats::colSds since this function only takes a dense matrix}
 \usage{
 compute_colSds(X)
@@ -14,6 +14,6 @@ compute_colSds(X)
 a p vector of column standard deviations
 }
 \description{
-computes column standard deviations for any type of matrix
+computes column standard deviations for sparse or dense matrix
        replace matrixStats::colSds since this function only takes a dense matrix
 }

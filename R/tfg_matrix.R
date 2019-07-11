@@ -14,7 +14,9 @@
 make_tfg_matrix = function(t,br,order=0){
   n = length(t) # number of data points
   p = length(br) + 1 # number of bins specified by breaks
-  X <- Matrix::sparseMatrix(i=NULL,j=NULL,dims=c(n,p)) # this is set so that ncol(X) and  get_nrow(X)  works
+  X <- numeric(0)
+  attr(X, "nrow") <- n
+  attr(X, "ncol") <- p
   attr(X, "matrix.type") = "tfg_matrix"
   attr(X, "order") = order
   attr(X,"t") <- t

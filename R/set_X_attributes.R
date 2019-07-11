@@ -13,12 +13,12 @@ set_X_attributes = function(X,
                              scale = TRUE) {
   # if X is a trend filtering matrix
   if(is.tfmatrix(X)){
-    order <- attr(X,"order")
-    n <- ncol(X)
+    order <- get_order(X)
+    n <- get_nrow(X)
     # set three attributes for X
     attr(X, "scaled:center") <- compute_tf_cm(order, n)
     attr(X, "scaled:scale") <- compute_tf_csd(order, n)
-    attr(X, "d") <- compute_tf_d(order,n,attr(X, "scaled:center"),attr(X, "scaled:scale"),scale,center)
+    attr(X, "d") <- compute_tf_d(order,n,get_cm(X),get_csd(X),scale,center)
     if (!center) {
       attr(X, "scaled:center") <- rep(0, n)
     }
@@ -30,22 +30,26 @@ set_X_attributes = function(X,
     if(scale!=FALSE){stop("only scale=FALSE implemented for tfg matrix")}
     if(attr(X,"order")!=0){stop("only order=0 implemented for tfg matrix")}
     attr(X, "scaled:center") <- compute_tfg_cm(X)
-    attr(X, "scaled:scale") <- rep(1,ncol(X))
+    attr(X, "scaled:scale") <- rep(1,get_ncol(X))
     attr(X, "d") <- compute_tfg_d(X)
   } else if(is.stumps_matrix(X)){
-    n <- nrow(X)
-    p <- ncol(X)
-    attr(X, "Xord") = apply(X,2,order) #  store ordering  information may want to rethink this later?
-
+    n <- get_nrow(X)
+    p <- get_ncol(X)
+    Xord <- apply(X,2,order)
+    X = numeric(0)
+    attr(X, "matrix.type") = "stumps_matrix"
+    attr(X, "Xord") = Xord #  store ordering  information may want to rethink this later?
+    attr(X, "nrow")  = n
+    attr(X, "ncol") = p
     # set three attributes for X
-    attr(X, "scaled:center") <- rep(compute_tf_cm(order=0, n),p)
-    attr(X, "scaled:scale") <- rep(compute_tf_csd(order=0, n),p)
-    attr(X, "d") <- rep(compute_tf_d(order=0,n,attr(X, "scaled:center"),attr(X, "scaled:scale"),scale,center),p)
+    attr(X, "scaled:center") <- rep(compute_tf_cm(order=0, n),p/n)
+    attr(X, "scaled:scale") <- rep(compute_tf_csd(order=0, n),p/n)
+    attr(X, "d") <- rep(compute_tf_d(order=0,n,attr(X, "scaled:center"),attr(X, "scaled:scale"),scale,center),p/n)
     if (!center) {
-      attr(X, "scaled:center") <- rep(0, n*p)
+      attr(X, "scaled:center") <- rep(0, p)
     }
     if (!scale) {
-      attr(X, "scaled:scale") <- rep(1, n*p)
+      attr(X, "scaled:scale") <- rep(1, p)
     }
   } else {
     # if X is either a dense or sparse ordinary matrix
@@ -79,11 +83,11 @@ is.stumps_matrix=function(X){
   ifelse(is.null(attr(X, "matrix.type")),FALSE,attr(X,"matrix.type")=="stumps_matrix")
 }
 
-#' @title computes column standard deviations for any type of matrix
+#' @title computes column standard deviations for sparse or dense matrix
 #'        replace matrixStats::colSds since this function only takes a dense matrix
 #' @param X an n by p matrix of any type, e.g. sparse, dense
 #' @return a p vector of column standard deviations
 compute_colSds = function(X){
-  n = nrow(X)
+  n = get_nrow(X)
   return(sqrt((colSums(X^2)/n - (colSums(X)/n)^2)*(n/(n-1))))
 }

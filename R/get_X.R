@@ -15,10 +15,19 @@ get_order = function(X){
 }
 
 get_nrow = function(X){
-  return(nrow(X))
+  if(is.list(X)){return(get_nrow(X[[1]]))}
+  if(is_valid_matrix(X)){return(nrow(X))}
+  return(attr(X,"nrow"))
 }
 
 get_ncol = function(X){
   if(is.stumps_matrix(X)){return(nrow(X)*ncol(X))} # might  want to improve this special case?
-  return(ncol(X))
+  if(is.list(X)){return(Reduce('+',lapply(X,get_ncol)))}
+  if(is_valid_matrix(X)){return(ncol(X))}
+  return(attr(X,"ncol"))
+}
+
+
+is_valid_matrix = function(X){
+  return((is.double(X) & is.matrix(X)) | inherits(X,"CsparseMatrix"))
 }

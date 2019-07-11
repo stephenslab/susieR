@@ -3,7 +3,9 @@
 
 
 make_tf_matrix = function(n,order){
-  X <- Matrix::sparseMatrix(i=NULL,j=NULL,dims=c(n,n)) # this is set so that ncol(X) and  nrow(X)  works
+  X <- numeric(0)
+  attr(X,"nrow") <- n
+  attr(X,"ncol") <- n
   attr(X, "matrix.type") = "tfmatrix"
   attr(X, "order") = order
   return(X)
