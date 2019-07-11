@@ -15,6 +15,11 @@ knitr::opts_chunk$set(collapse = TRUE,comment = "#",fig.width = 4.5,
                       fig.cap = "&nbsp;",dpi = 120)
 ```
 
+```{r}
+library(genlasso)
+library(susieR)
+```
+
 # Introduction
 
 Although we developed SuSiE primarily with the goal
@@ -23,12 +28,11 @@ in highly sparse settings -- and, in particular, for genetic fine-mapping --
 the approach also has considerable potential
 for application to other large-scale regression problems. Here
 we briefly illustrate this potential by applying it to a non-parametric
-regression problem that at first sight seems to be ill-suited to our approach. In particular, it does not involve
-strict sparsity, and the underlying correlation 
+regression problem that at first sight seems to be ill-suited to our approach. In particular the underlying correlation 
 structure of the explanatory variables
 is very different from the ``blocky" covariance structure of genetic data
 that SuSiE was designed for. Nonetheless, we will see that SuSiE performs
-well here despite this (partly due to its ability to capture non-sparse signals via Bayesian Model Averaging).
+well here despite this.
 
 Specifically, consider the non-parametric regression:
 $$y_t = \mu_t + e_t \quad t=1,\dots,T$$
@@ -51,7 +55,6 @@ trend filtering can be similarly implemented using different basis functions; he
 Here we apply SuSiE to perform 0th order trend filtering in some simple simulated examples. We have implemented in `susieR` 0.6.0 a funciton `susie_trendfilter` which internally creates $X$ matrix with step functions in the columns to match input $y$. The algebra have been optimized to work on such trendfiltering matrices. Here we simulate some data where $\mu$ is a step function with four steps, a 0th order trendfiltering problem. The regression is truly sparse and SuSiE should do well.
 
 ```{r}
-library(susieR)
 set.seed(1)
 n=1000
 mu = c(rep(0,100),rep(1,100),rep(3,100),rep(-2,100),rep(0,600))
@@ -83,7 +86,6 @@ Compare with the genlasso (lasso-based) solution (blue). (This will require inst
 of the `genlasso` package.)
 
 ```{r}
-library(genlasso)
 y.tf = trendfilter(y,ord=0)
 y.tf.cv = cv.trendfilter(y.tf)
 
