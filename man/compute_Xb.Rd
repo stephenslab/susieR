@@ -7,7 +7,7 @@
 compute_Xb(X, b)
 }
 \arguments{
-\item{X}{an n by p matrix with three attributes: attr(X, 'scaled:center'), attr(X, 'scaled:scale'), and attr(X, 'd')}
+\item{X}{an n by p matrix with three attributes: scaled:center, scaled:scale, and attr(X, 'd')}
 
 \item{b}{a p vector}
 }

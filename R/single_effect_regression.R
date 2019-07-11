@@ -27,8 +27,8 @@
 single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL, optimize_V=c("none", "optim", "EM")){
   optimize_V = match.arg(optimize_V)
   Xty = compute_Xty(X, Y)
-  betahat = (1/attr(X, "d")) * Xty
-  shat2 = residual_variance/attr(X, "d")
+  betahat = (1/get_d(X)) * Xty
+  shat2 = residual_variance/get_d(X)
   if (is.null(prior_weights))
     prior_weights = rep(1/ncol(X), ncol(X))
 
@@ -43,7 +43,7 @@ single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL
   w_weighted = w * prior_weights
   weighted_sum_w = sum(w_weighted)
   alpha = w_weighted / weighted_sum_w
-  post_var = (1/V + attr(X, "d")/residual_variance)^(-1) # posterior variance
+  post_var = (1/V + get_d(X)/residual_variance)^(-1) # posterior variance
   post_mean = (1/residual_variance) * post_var * Xty
   post_mean2 = post_var + post_mean^2 # second moment
   # BF for single effect model

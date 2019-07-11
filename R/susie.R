@@ -254,7 +254,7 @@ susie <- function(X,Y,L = min(10,ncol(X)),scaled_prior_variance = 0.2,
   }
 
   if(intercept){
-    s$intercept = mean_y - sum(attr(X,"scaled:center")* (colSums(s$alpha*s$mu)/attr(X,"scaled:scale")))# estimate intercept (unshrunk)
+    s$intercept = mean_y - sum(get_cm(X)* (colSums(s$alpha*s$mu)/get_csd(X)))# estimate intercept (unshrunk)
     s$fitted = s$Xr + mean_y
   } else {
     s$intercept = 0
@@ -278,6 +278,6 @@ susie <- function(X,Y,L = min(10,ncol(X)),scaled_prior_variance = 0.2,
     s$z = calc_z(X,Y,centered=intercept)
   }
   ## for prediction
-  s$X_column_scale_factors = attr(X,"scaled:scale")
+  s$X_column_scale_factors = get_csd(X)
   return(s)
 }

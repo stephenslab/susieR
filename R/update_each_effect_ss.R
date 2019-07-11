@@ -18,14 +18,14 @@ update_each_effect_ss <- function (XtX, Xty, s_init, estimate_prior_variance=FAL
 
       #compute residuals
       XtR = Xty - s$XtXr
-      res = single_effect_regression_ss(as.matrix(XtR),attr(XtX, "d"),s$V[l],s$sigma2,s$pi,estimate_prior_method)
+      res = single_effect_regression_ss(as.matrix(XtR),get_d(XtX),s$V[l],s$sigma2,s$pi,estimate_prior_method)
       # Update the variational estimate of the posterior mean.
       s$mu[l,] <- res$mu
       s$alpha[l,] <- res$alpha
       s$mu2[l,] <- res$mu2
       s$V[l] <- res$V
       s$lbf[l] <- res$lbf_model
-      s$KL[l] <- -res$lbf_model + SER_posterior_e_loglik_ss(attr(XtX, "d"),XtR,s$sigma2,res$alpha*res$mu,res$alpha*res$mu2)
+      s$KL[l] <- -res$lbf_model + SER_posterior_e_loglik_ss(get_d(XtX),XtR,s$sigma2,res$alpha*res$mu,res$alpha*res$mu2)
 
       s$XtXr <- s$XtXr + XtX %*% (s$alpha[l,]*s$mu[l,])
     }

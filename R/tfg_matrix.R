@@ -22,6 +22,8 @@ make_tfg_matrix = function(t,br,order=0){
   attr(X,"order_t") <- order(t)
   attr(X,"t_to_bin") <- .bincode(t,breaks = c(-Inf,br,Inf))
   attr(X,"bin_to_t") <- cumsum(hist(t, breaks = c(-Inf,br,Inf), plot=FALSE)$counts)
+  attr(X,"scaled:center") <- 0
+  attr(X,"scaled:scale") <- 1
   return(X)
 }
 
@@ -31,7 +33,7 @@ make_tfg_matrix = function(t,br,order=0){
 #' @return an n vector of the means at each data point
 #' @keywords internal
 compute_tfg_Xb = function(X,b){
-  order = attr(X,"order")
+  order = get_order(X)
   for(i in 1:(order+1)){
     b = rev(-1*cumsum(rev(b))) # computes mean in each bin
   }
@@ -44,7 +46,7 @@ compute_tfg_Xb = function(X,b){
 #' @return a p vector
 #' @keywords internal
 compute_tfg_Xty = function(X,y){
-  order = attr(X,"order")
+  order = get_order(X)
   y = y[attr(X,"order_t")] # sort y according to increasing t
   for (i in 1:(order+1)){
     y = -1*cumsum(y)
@@ -61,7 +63,7 @@ is.tfg_matrix=function(X){
 #' @return a p vector of column means
 #' @keywords internal
 compute_tfg_cm = function(X){
-  order = attr(X,"order")
+  order = get_order(X)
   base = hist(attr(X,"t"), breaks = c(-Inf,attr(X,"br"),Inf), plot=FALSE)$counts
   for (i in 1:(order+1)){
     base = -cumsum(base)
@@ -74,7 +76,7 @@ compute_tfg_cm = function(X){
 #' @return a p vector d=diag(Xcent'Xcent)
 #' @keywords internal
 compute_tfg_d = function(X){
-  order = attr(X,"order")
+  order = get_order(X)
   if(order!=0){
     stop("not implemented for order!=0")
   }

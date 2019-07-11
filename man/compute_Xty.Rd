@@ -7,7 +7,7 @@
 compute_Xty(X, y)
 }
 \arguments{
-\item{X}{an n by p unstandardized matrix with three attributes: attr(X, 'scaled:center'), attr(X, 'scaled:scale'), and attr(X, 'd')}
+\item{X}{an n by p unstandardized matrix with three attributes: scaled:center, scaled:scale, and attr(X, 'd')}
 
 \item{y}{an n vector}
 }

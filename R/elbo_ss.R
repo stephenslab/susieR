@@ -23,7 +23,7 @@ get_ER2_ss = function(XtX,Xty,s,yty){
   XB2 = sum((B%*%XtX) * B)
 
   betabar = colSums(B)
-  d = attr(XtX, "d")
+  d = get_d(XtX)
   postb2 = s$alpha * s$mu2 #posterior second moment
 
   return(yty - 2*sum(betabar * Xty) + sum(betabar * (XtX %*% betabar)) -
