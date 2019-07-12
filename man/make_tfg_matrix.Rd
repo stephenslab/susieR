@@ -4,13 +4,13 @@
 \alias{make_tfg_matrix}
 \title{set up a general trend filtering matrix}
 \usage{
-make_tfg_matrix(t, br, order = 0)
+make_tfg_matrix(t, br = t, order = 0)
 }
 \arguments{
 \item{t}{vector of length n specifying locations of data points on x axis}
 
 \item{br}{vector of length (p-1) specifying break points on x axis (ie where changepoints can occur)
-Elements of br must increase monotonically.}
+By default br=t which allows breaks to occur between every data point. Note that internally duplicate elements of br are removed.}
 
 \item{order}{non-negative integer indicating order of trend filtering basis (0 is changepoint basis and is the only case we test and use)}
 }

@@ -33,7 +33,7 @@ set.seed(1)
 n=100
 X = cbind(rnorm(n))
 y = (X[,1]>1)  + rnorm(n,0,0.1)
-s = susie_stumps(X[,1,drop=FALSE],y,standardize=FALSE)
+s = susie_stumps_old(X[,1,drop=FALSE],y,standardize=FALSE)
 
 plot(rank(X[,1]),y)
 o = order(X[,1])
@@ -50,8 +50,7 @@ s$sigma2 - s2$sigma2
 
 Here we try the new list-based approach...
 ```{r}
-xl= list(susieR:::make_tfg_matrix(X[,1],sort(X[,1]),0))
-s3 = susie(xl,y,standardize=FALSE)
+s3 = susie_stumps(X,y,include_linear = FALSE)
 s3$Xr-s$Xr
 s3$sigma2 - s$sigma2
 ```
@@ -74,15 +73,14 @@ plot(y[Xord[,2]])
 ```
 
 ```{r}
-s = susie_stumps(X,y,L=2,standardize=FALSE)
+s = susie_stumps_old(X,y,L=2,standardize=FALSE)
 plot(s$fitted,y)
 abline(a=0,b=1)
 ```
 
 Here we try the new list-based approach...
 ```{r}
-xl= list(susieR:::make_tfg_matrix(X[,1],sort(X[,1])[-n],0),susieR:::make_tfg_matrix(X[,2],sort(X[,2])[-n],0))
-s2 = susie(xl,y,standardize=FALSE,L=2)
+s2 = susie_stumps(X,y,L=2)
 s2$Xr-s$Xr
 plot(s2$fitted,y)
 plot(s2$fitted, s$fitted)
@@ -93,23 +91,3 @@ s2$elbo
 ```
 
 
-# New way to do it
-
-Now I'm working on a new way to do this. The idea  is
-to allow susie to take a list of Xs as input, and then get it
-to use the concatenation  of all those different Xs as  its  actual X.
-This  will allow for a mixture of trend-filtering/stumps and, say, linear terms.
-
-To start with I've changed the `compute_Xty` function to operate on a list of `X`  values and return result as a list.
-```{r}
-X_list = apply(X,2,function(x){susieR:::make_tfg_matrix(t=x,br=sort(x),order=0)})
-susieR:::compute_Xty(X_list,y)
-```
-
-
-Need to decide: how to deal with b (and alpha, mu etc) when X is a list.
-Should we just concatenate everything?
-THis make some things easier, but other things harder than having each one
-be a list. Need to think about this.
-
-Similarly, do we want to keep the Xty results as a list, or concatenate those?

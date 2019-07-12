@@ -1,12 +1,15 @@
 get_csd = function(X){
+  if(is.list(X)){return(unlist(lapply(X,get_csd)))}
   return(attr(X,'scaled:scale'))
 }
 
 get_cm = function(X){
+  if(is.list(X)){return(unlist(lapply(X,get_cm)))}
   return(attr(X,'scaled:center'))
 }
 
 get_d = function(X){
+  if(is.list(X)){return(unlist(lapply(X,get_d)))}
   return(attr(X,'d'))
 }
 

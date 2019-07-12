@@ -71,7 +71,7 @@ compute_MXt = function(M, X){
   cm = get_cm(X)
   csd = get_csd(X)
   #when X is a trend filtering matrix
-  if (is.tfmatrix(X) | is.stumps_matrix(X) | is.tfg_matrix(X)) {
+  if (is.tfmatrix(X) | is.stumps_matrix(X) | is.tfg_matrix(X) | is.list(X)) {
     return(as.matrix(t(apply(M,1,function(b) compute_Xb(X, b)))))
   }
   #when X is an ordinary sparse/dense matrix

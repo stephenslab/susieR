@@ -181,8 +181,7 @@ susie <- function(X,Y,L = min(10,ncol(X)),scaled_prior_variance = 0.2,
   estimate_prior_method <- match.arg(estimate_prior_method)
 
   # Check input X.
-  if (!is_valid_matrix(X) & !is.tfmatrix(X) & !is.tfg_matrix(X) & !is.stumps_matrix(X))
-    stop("Input X must be a double-precision matrix, or a sparse matrix, or a trend filtering type matrix.")
+  check_X(X)
   if (is.numeric(null_weight) && null_weight == 0) null_weight = NULL
   if (!is.null(null_weight) && is.null(attr(X, "matrix.type"))) {
     if (!is.numeric(null_weight))
@@ -207,7 +206,11 @@ susie <- function(X,Y,L = min(10,ncol(X)),scaled_prior_variance = 0.2,
   if(intercept){
     Y = Y-mean_y
   }
-  X = set_X_attributes(X,center=intercept, scale=standardize)
+
+  if(is.list(X)){
+    for(i in 1:length(X)){X[[i]] = set_X_attributes(X[[i]],center=intercept, scale=standardize)}
+  } else {X = set_X_attributes(X,center=intercept, scale=standardize)}
+
   # initialize susie fit
   s = init_setup(n,p,L,scaled_prior_variance,residual_variance,prior_weights,null_weight,as.numeric(var(Y)),standardize)
   if (!missing(s_init)) {
@@ -281,4 +284,13 @@ susie <- function(X,Y,L = min(10,ncol(X)),scaled_prior_variance = 0.2,
   ## for prediction
   s$X_column_scale_factors = get_csd(X)
   return(s)
+}
+
+
+check_X = function(X){
+  if(is.list(X)){lapply(X,check_X)}
+  else {
+  if (!is_valid_matrix(X) & !is.tfmatrix(X) & !is.tfg_matrix(X) & !is.stumps_matrix(X) &!is.list(X))
+    stop("Input X must be a double-precision matrix, or a sparse matrix, or a trend filtering type matrix, or a list with such elements")
+  }
 }

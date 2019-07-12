@@ -8,10 +8,11 @@
 #' set up a general trend filtering matrix
 #' @param t vector of length n specifying locations of data points on x axis
 #' @param br vector of length (p-1) specifying break points on x axis (ie where changepoints can occur)
-#' Elements of br must increase monotonically.
+#' By default br=t which allows breaks to occur between every data point. Note that internally duplicate elements of br are removed.
 #' @param order non-negative integer indicating order of trend filtering basis (0 is changepoint basis and is the only case we test and use)
 #' @keywords internal
-make_tfg_matrix = function(t,br,order=0){
+make_tfg_matrix = function(t,br=t,order=0){
+  br = unique(sort(br))
   n = length(t) # number of data points
   p = length(br) + 1 # number of bins specified by breaks
   X <- numeric(0)

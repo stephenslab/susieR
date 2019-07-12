@@ -42,9 +42,11 @@ set_X_attributes = function(X,
     attr(X, "nrow")  = n
     attr(X, "ncol") = p
     # set three attributes for X
-    attr(X, "scaled:center") <- rep(compute_tf_cm(order=0, n),p/n)
-    attr(X, "scaled:scale") <- rep(compute_tf_csd(order=0, n),p/n)
-    attr(X, "d") <- rep(compute_tf_d(order=0,n,attr(X, "scaled:center"),attr(X, "scaled:scale"),scale,center),p/n)
+    cm = compute_tf_cm(order=0, n)
+    csd = compute_tf_csd(order=0, n)
+    attr(X, "scaled:center") <- rep(cm,p/n)
+    attr(X, "scaled:scale") <- rep(csd,p/n)
+    attr(X, "d") <- rep(compute_tf_d(order=0,n,cm,csd,scale,center),p/n)
     if (!center) {
       attr(X, "scaled:center") <- rep(0, p)
     }
