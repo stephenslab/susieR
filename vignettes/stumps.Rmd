@@ -1,0 +1,115 @@
+---
+title: "SuSiE with stumps"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load libraries:
+
+```{r}
+library(susieR)
+```
+
+
+# Introduction
+
+My goal here is to test the idea of using stumps to do (non-)linear regression with SuSiE.
+
+Let $y$ be an $n$ vector $X$ be an $n \times p$ matrix of covariates,
+and let $x_j$ denote the $j$th column of $X$.
+
+The idea is that for each covariate vector $x_j$, we can let $y$ be non-linearly dependent on $x_j$ by using non-parametric regression - e.g. using the ranks of the elements of $x_j$ as the "time" axis, and using a changepoint (piecewise constant) basis. (Alternatively we could use a wavelet basis,  but those are not "stumps".)
+
+In the case $p=1$ we have effectively already implemented this (`susie_tf`). The idea is to generalize this beyond $p=1$.
+
+# Simulate with p=1
+
+Here the results should match trend filtering....
+```{r}
+set.seed(1)
+n=100
+X = cbind(rnorm(n))
+y = (X[,1]>1)  + rnorm(n,0,0.1)
+s = susie_stumps(X[,1,drop=FALSE],y,standardize=FALSE)
+
+plot(rank(X[,1]),y)
+o = order(X[,1])
+lines(sort(rank(X[,1])),(s$Xr+mean(y))[o])
+
+s2 = susie_trendfilter(y[o],0,use_mad=FALSE,standardize = FALSE)
+#plot(sort(rank(X[,1])),y[o])
+lines(sort(rank(X[,1])),s2$Xr+mean(y),col=2)
+
+s$Xr[o] - s2$Xr
+
+s$sigma2 - s2$sigma2
+```
+
+Here we try the new list-based approach...
+```{r}
+xl= list(susieR:::make_tfg_matrix(X[,1],sort(X[,1]),0))
+s3 = susie(xl,y,standardize=FALSE)
+s3$Xr-s$Xr
+s3$sigma2 - s$sigma2
+```
+
+
+# Case p=2
+
+Simulate some data to illustrate the idea
+```{r}
+X = cbind(rnorm(n),rnorm(n))
+y = (X[,1]>0) + (X[,2]>1) + rnorm(n,0,0.1)
+plot(X[,1],y)
+plot(X[,2],y)
+```
+
+```{r}
+Xord = apply(X,2,order) #the idea is we want to order y by these two different orderings
+plot(y[Xord[,1]])
+plot(y[Xord[,2]])
+```
+
+```{r}
+s = susie_stumps(X,y,L=2,standardize=FALSE)
+plot(s$fitted,y)
+abline(a=0,b=1)
+```
+
+Here we try the new list-based approach...
+```{r}
+xl= list(susieR:::make_tfg_matrix(X[,1],sort(X[,1])[-n],0),susieR:::make_tfg_matrix(X[,2],sort(X[,2])[-n],0))
+s2 = susie(xl,y,standardize=FALSE,L=2)
+s2$Xr-s$Xr
+plot(s2$fitted,y)
+plot(s2$fitted, s$fitted)
+s$V
+s2$V
+s$elbo
+s2$elbo
+```
+
+
+# New way to do it
+
+Now I'm working on a new way to do this. The idea  is
+to allow susie to take a list of Xs as input, and then get it
+to use the concatenation  of all those different Xs as  its  actual X.
+This  will allow for a mixture of trend-filtering/stumps and, say, linear terms.
+
+To start with I've changed the `compute_Xty` function to operate on a list of `X`  values and return result as a list.
+```{r}
+X_list = apply(X,2,function(x){susieR:::make_tfg_matrix(t=x,br=sort(x),order=0)})
+susieR:::compute_Xty(X_list,y)
+```
+
+
+Need to decide: how to deal with b (and alpha, mu etc) when X is a list.
+Should we just concatenate everything?
+THis make some things easier, but other things harder than having each one
+be a list. Need to think about this.
+
+Similarly, do we want to keep the Xty results as a list, or concatenate those?
