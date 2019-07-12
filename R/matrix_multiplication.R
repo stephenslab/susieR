@@ -7,10 +7,10 @@
 #' @keywords internal
 compute_Xb = function(X, b){
   if(is.list(X)){
-    stop("not implemented")
-    # so this current code doesnt' make sense... b may be different for each element of list X...
-    # may want b also to be a list?
-    Reduce(`+`, lapply(X,compute_Xb,b=b)) # perform Xb for each element in list and add the results
+    n_var = unlist(lapply(X,get_ncol)) # number of variables for each element of X
+    b_split = split_vector(b,n_var) # split b into a list of vectors
+    Xb = mapply(compute_Xb,X,b_split,SIMPLIFY=FALSE) # apply compute_Xb to elements of lists X,b_split
+    return(Reduce(`+`, Xb)) # add the results up
   } else {
     cm = get_cm(X)
     csd = get_csd(X)
@@ -38,8 +38,8 @@ compute_Xb = function(X, b){
 #' @importFrom Matrix t
 #' @importFrom Matrix crossprod
 compute_Xty = function(X, y){
-  if(is.list(X)){
-    lapply(X,compute_Xty,y=y) # perform Xty for each element in list and add the results
+  if(is.list(X)){ # perform Xty for each element in list and concatenate the results
+    unlist(lapply(X,compute_Xty,y=y))
   } else {
     cm = get_cm(X)
     csd = get_csd(X)
