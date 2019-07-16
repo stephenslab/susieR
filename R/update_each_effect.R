@@ -1,6 +1,6 @@
 #' @title update each effect once
-#' @param X an n by p matrix of covariantes
-#' @param Y an n vector of data
+#' @param X an n by p matrix of regressor variables
+#' @param Y an n vector of response variable
 #' @param s a SuSiE fit
 #' @param estimate_prior_variance boolean indicating whether to estimate prior variance
 #'
