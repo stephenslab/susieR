@@ -179,6 +179,16 @@ points(t_test,susieR:::compute_Xb(Xtest,coef(s)[-1])+s$intercept,col=3)
 ```
 
 
+```{r}
+X = cbind(t)
+s = susie_stumps(X,y,include_linear=FALSE)
+plot(t,y)
+lines(t,susie_stumps_predict(s,X,X,FALSE))
+plot(t,y,xlim=c(-2,2))
+fit = susie_stumps_predict(s,cbind(t_test),X,FALSE)
+points(t_test,fit,col=3)
+````
+
 
 
 

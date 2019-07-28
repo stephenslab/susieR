@@ -30,3 +30,17 @@ predict.susie = function(object,newx = NULL,
 
   return(drop(s$intercept + newx %*% coef(s)[-1]))
 }
+
+#' @title predict future observations from susie_stumps fit
+#' @param x a susie fit
+#' @param newx a new value for X at which to do predictions
+#' @param Xtrain the value of X used to train
+#' @param include_linear boolean for whether linear term was included in training
+#' @export
+susie_stumps_predict = function(s,newx,Xtrain,include_linear=TRUE){
+  xl = make_stumps_matrix(newx,include_linear,Xtrain)
+  compute_Xb(xl,coef(s)[-1])+s$intercept
+  # need to think how best to do this - need to create a matrix with same breaks
+  # as Xtrain, but with data from Xtest
+}
+

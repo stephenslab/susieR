@@ -11,6 +11,10 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(susieR)
+library(BART)
+library(caret)
+library(xgboost)
+library(magrittr)
 ```
 
 
@@ -90,4 +94,333 @@ s$elbo
 s2$elbo
 ```
 
+# Try p=2 again
+
+Here I define some functions to help compare xgboost and BART
+```{r}
+run_xgboost = function(x.train, y.train,x.test){
+  train.data = data.frame(y=y.train, X=x.train)
+  test.data= data.frame(X=x.test)
+  # Fit the model on the training set
+  set.seed(123)
+  model <- caret::train(
+    y ~., data = train.data, method = "xgbTree",
+    trControl = trainControl("cv", number = 10)
+  )
+  predictions <- model %>% predict(test.data)
+  return(list(fit=model, yhat.test.mean = predictions))
+}
+
+run_bart = function(x.train,y.train,x.test,...){
+  bartFit = wbart(x.train,y.train,x.test,...)
+  return(list(fit=bartFit,yhat.test.mean = bartFit$yhat.test.mean))
+}
+
+
+# susie
+run_susie_stumps = function(x.train, y.train, x.test, L=10,  include_linear=FALSE,...){
+  s = susie_stumps(x.train,y.train,L=L,include_linear = include_linear,...)
+  fit.test = susie_stumps_predict(s,x.test,x.train,include_linear)
+  return(list(fit=s, yhat.test.mean = fit.test))
+}
+
+```
+
+
+Here  I simulate  again $p=2$. For each variable we choose a threshold
+`thresh` randomly, and an effect size `b` randomly, and simulate `y`  
+based on that threshold.
+
+```{r}
+# simulate data with p covariates, relating y to x by "stumps"
+# sigma = residual variance
+# pi1 = proportion of covariates associated with y
+sim_thresh = function(ntrain,  ntest, p,  sigma=1, pi1=1){
+  n <- ntrain+ntest
+  X = matrix(rnorm(n*p), nrow=n)
+  thresh =  rnorm(p)
+
+  XX= X
+  for(i in 1:p){
+    XX[,i] = (X[,i]>thresh[i]) 
+  }
+
+  b = rnorm(p) * rbinom(p,1,pi1)
+
+  y = XX %*% b + sigma*rnorm(n)
+
+  train = 1:ntrain
+  y.train = y[train]
+  y.test = y[-train]
+  x.train = X[train,,drop=F]
+  x.test = X[-train,,drop=F]
+  
+  # here ind and true value of b used later to initialize susie from "true" model
+  return(list(y.train=y.train, y.test=y.test, x.train=x.train, x.test=x.test, ind = colSums(1-XX[train,]),b=b ))
+}
+```
+
+
+```{r}
+set.seed(1223)
+dat =  sim_thresh(100,10000,2,1)
+s.1 = run_susie_stumps(dat$x.train,dat$y.train,dat$x.test,L=1,include_linear = FALSE);
+s.10 = run_susie_stumps(dat$x.train,dat$y.train,dat$x.test,L=10,include_linear = FALSE)
+  
+s.1$fit$V
+s.1$fit$elbo
+s.10$fit$V
+s.10$fit$elbo
+plot(s.10$fit$fitted,dat$y.train)
+```
+
+
+
+```{r}
+RMSE(s.10$fit$fitted,dat$y.train)
+RMSE(s.10$yhat.test.mean,dat$y.test)
+```
+
+Here  I try boosting:
+```{r}
+xg = run_xgboost(dat$x.train,dat$y.train,dat$x.test)
+# Compute the average prediction error RMSE
+RMSE(xg$yhat.test.mean, dat$y.test)
+```
+
+Compare with RMSE for  mean of training  data:
+```{r}
+RMSE(rep(mean(dat$y.train),length(dat$y.test)),dat$y.test)
+```
+
+```{r}
+bb = run_bart(dat$x.train,dat$y.train,dat$x.test)
+RMSE(bb$yhat.test.mean, dat$y.test)
+
+# try sparse version
+bb.s = run_bart(dat$x.train,dat$y.train,dat$x.test,sparse=TRUE)
+RMSE(bb.s$yhat.test.mean,dat$y.test)
+```
+
+
+It looks like this is a case that is "nearly null"...
+
+
+
+# Try again with larger effects
+
+```{r}
+set.seed(1223)
+dat  =  sim_thresh(100,10000,10,0.1)
+
+s.10 = run_susie_stumps(dat$x.train,dat$y.train,dat$x.test,L=10,include_linear = FALSE)
+s.20 = run_susie_stumps(dat$x.train,dat$y.train,dat$x.test,L=20,include_linear = FALSE)
+ 
+s.10$fit$V
+s.10$fit$elbo
+plot(s.10$fit$fitted,dat$y.train)
+
+# training errors
+RMSE(s.10$fit$fitted,dat$y.train)
+# testing errors
+RMSE(s.10$yhat.test.mean,dat$y.test)
+RMSE(s.20$yhat.test.mean,dat$y.test)
+```
+
+boosting:
+```{r}
+xg = run_xgboost(dat$x.train,dat$y.train,dat$x.test)
+# Compute the average prediction error RMSE
+RMSE(xg$yhat.test.mean, dat$y.test)
+
+```
+
+Bart
+```{r}
+bb = run_bart(dat$x.train,dat$y.train,dat$x.test)
+RMSE(bb$yhat.test.mean, dat$y.test)
+
+# try sparse version
+bb.s = run_bart(dat$x.train,dat$y.train,dat$x.test,sparse=TRUE)
+RMSE(bb.s$yhat.test.mean,dat$y.test)
+```
+
+
+Try initializing susie from truth to check convergence
+
+```{r}
+p  = ncol(dat$x.train)
+n = nrow(dat$x.train)
+s_true =  susieR::susie_init_coef(coef_index = (0:(p-1))*(n+1) + dat$ind  ,coef_value = dat$b, p = p*(n+1))
+
+s_0 =  susie_stumps(dat$x.train,dat$y.train, FALSE,s_init = s_true,residual_variance=0.01,estimate_residual_variance = FALSE)
+s_1 = susie_stumps(dat$x.train,dat$y.train, FALSE,s_init = s_0)
+s_0$elbo
+s_1$elbo
+s.10$fit$elbo
+```
+
+
+# Try again with sparse effects
+
+Here only 10% of the 100 variables have an effect.
+Susie seems to have an advantage here...
+
+```{r}
+set.seed(1223)
+dat  =  sim_thresh(100,10000,100,0.1,0.1)
+
+s.10 = run_susie_stumps(dat$x.train,dat$y.train,dat$x.test,L=10,include_linear = FALSE)
+s.20 = run_susie_stumps(dat$x.train,dat$y.train,dat$x.test,L=20,include_linear = FALSE)
+ 
+# testing errors
+RMSE(s.10$yhat.test.mean,dat$y.test)
+RMSE(s.20$yhat.test.mean,dat$y.test)
+```
+
+boosting:
+```{r}
+xg = run_xgboost(dat$x.train,dat$y.train,dat$x.test)
+# Compute the average prediction error RMSE
+RMSE(xg$yhat.test.mean, dat$y.test)
+
+```
+
+Bart
+```{r}
+bb = run_bart(dat$x.train,dat$y.train,dat$x.test)
+RMSE(bb$yhat.test.mean, dat$y.test)
+
+# try sparse version
+bb.s = run_bart(dat$x.train,dat$y.train,dat$x.test,sparse=TRUE)
+RMSE(bb.s$yhat.test.mean,dat$y.test)
+```
+
+
+
+
+# t distributed errors
+
+Try  this to see if it is robust....
+```{r}
+set.seed(1223)
+ntrain <- 100
+ntest <-   10000
+n <- ntrain+ntest
+p <- 10
+X = matrix(rnorm(n*p), nrow=n)
+thresh =  rnorm(p)
+
+XX= X
+for(i in 1:p){
+  XX[,i] = (X[,i]>thresh[i])
+}
+
+b = rnorm(p)
+
+y = XX %*% b + 0.1*rt(n,df = 4)
+
+train = 1:ntrain
+y.train = y[train]
+y.test = y[-train]
+x.train = X[train,,drop=F]
+x.test = X[-train,,drop=F]
+```
+
+```{r}
+s.1 = susie_stumps(x.train,y.train,L=1,include_linear = FALSE)
+s.10 = susie_stumps(x.train,y.train,L=10,include_linear = FALSE)
+s.100 = susie_stumps(x.train,y.train,L=100,include_linear = FALSE)
+s.1$V
+s.1$elbo
+s.10$V
+s.10$elbo
+s.100$V
+s.100$elbo
+plot(s.100$fitted,y.train)
+fit.1.test = susie_stumps_predict(s.1,x.test,x.train,FALSE) 
+fit.10.test = susie_stumps_predict(s.10,x.test,x.train,FALSE) 
+fit.100.test = susie_stumps_predict(s.100,x.test,x.train,FALSE) 
+
+# training errors
+RMSE(predict(s.1),y.train)
+RMSE(predict(s.10),y.train)
+RMSE(predict(s.100),y.train)
+
+
+# testing errors
+RMSE(fit.1.test,y.test)
+RMSE(fit.10.test,y.test)
+RMSE(fit.100.test,y.test)
+```
+
+```{r}
+train.data = data.frame(y=y.train, X=x.train)
+test.data= data.frame(y=y.test,X=x.test)
+# Fit the model on the training set
+set.seed(123)
+model <- caret::train(
+  y ~., data = train.data, method = "xgbTree",
+  trControl = trainControl("cv", number = 10)
+  )
+# Best tuning parameter mtry
+model$bestTune
+# Make predictions on the test data
+predictions <- model %>% predict(test.data)
+# Compute the average prediction error RMSE
+RMSE(predictions, test.data$y)
+```
+
+# Example from BART package
+
+This example is simulated data from BART package 
+ (which  says it is the example from Friedman MARS paper).
+ Note that it has an interaction, so susie is not expected to work as well here.
+ (Although boosting outperforms susie and seems to only use level 1 trees if
+ i understand the besttune results....)
+
+
+```{r}
+f = function(x){
+10*sin(pi*x[,1]*x[,2]) + 20*(x[,3]-.5)^2+10*x[,4]+5*x[,5]
+}
+sigma = 1.0  #y = f(x) + sigma*z , z~N(0,1)
+
+n.train = 100      #number of observations
+n.test = 100000
+n = n.train+n.test
+set.seed(99)
+x=matrix(runif(n*10),n,10) #10 variables, only first 5 matter
+Ey = f(x)
+y=Ey+sigma*rnorm(n)
+
+train  = 1:n.train
+
+x.train = x[train,]
+y.train = y[train]
+Ey.train = Ey[train]
+
+x.test = x[-train,]
+y.test = y[-train]
+Ey.test = Ey[-train]
+
+
+ss.10 = run_susie_stumps(x.train,y.train,x.test,10)
+ss.10.l = run_susie_stumps(x.train,y.train,x.test,10,TRUE)
+ss.50 = run_susie_stumps(x.train,y.train,x.test,50)
+ss.50.l = run_susie_stumps(x.train,y.train,x.test,50,TRUE)
+
+bb = run_bart(x.train,y.train,x.test)
+
+RMSE(ss.10$yhat.test.mean,Ey.test)
+RMSE(ss.10.l$yhat.test.mean,Ey.test)
+RMSE(ss.50$yhat.test.mean,Ey.test)
+RMSE(ss.50.l$yhat.test.mean,Ey.test)
+RMSE(bb$yhat.test.mean,Ey.test)
+
+
+xg = run_xgboost(x.train,y.train,x.test)
+# Compute the average prediction error RMSE
+RMSE(xg$yhat.test.mean, Ey.test)
+```
 
