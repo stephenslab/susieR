@@ -26,11 +26,11 @@
 #'    either a scalar, or a vector of length \code{L}. The prior variance
 #'   of each non-zero element of b is set to
 #'   \code{var(Y)*scaled_prior_variance}. If
-#'   \code{estimate_prior_variance = TRUE}, this input provides the
+#'   \code{estimate_prior_variance = TRUE}, this input simply provides
 #'   initial estimates of the prior variances.
 #'
 #' @param residual_variance The variance of the residual. If
-#'   \code{estimate_residual_variance = TRUE}, this value provides the
+#'   \code{estimate_residual_variance = TRUE}, this value simply provides the
 #'   initial estimate of the residual variance. By default, it is set to
 #'   \code{var(Y)}.
 #'
@@ -56,13 +56,18 @@
 #'   FALSE} is generally not recommended.
 #'
 #' @param estimate_residual_variance If
-#'   \code{estimate_residual_variance = TRUE}, the variance of the
-#'   residual is estimated separately for each of the \code{L}
-#'   components, and \code{scaled_prior_variance} is used as an initial
-#'   estimate of the variances.
+#'   \code{estimate_residual_variance = TRUE}, the residual variance
+#'   is estimated (using \code{residual_variance} as an initial  value).
+#'   If \code{estimate_residual_variance = FALSE}
+#'   then the residual variance is fixed to the value supplied by \code{residual_variance}.
 #'
 #' @param estimate_prior_variance If \code{estimate_prior_variance =
-#'   TRUE}, the prior variance is estimated father than fixed.
+#'   TRUE}, the prior variance is estimated (a separate parameter for each of the \code{L}
+#'   effects). If provided, \code{scaled_prior_variance} is then used as an initial
+#'   point for the optimization. If \code{estimate_prior_variance = FALSE}
+#'   then the prior variance (for each of the \code{L} effects) is determined by the value
+#'   supplied to \code{scaled_prior_variance}.
+#
 #'
 #' @param estimate_prior_method The method used for estimating prior
 #'   variance.
