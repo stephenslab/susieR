@@ -217,7 +217,7 @@ susie_rss = function(z, R, maf_thresh=0, maf=NULL,
   s$intercept = intercept_value
   s$fitted = s$Rz
 
-  s$R_column_scale_factors = attr(R,"scaled:scale")
+  s$X_column_scale_factors = attr(R,"scaled:scale")
 
   if (track_fit)
     s$trace = tracking
