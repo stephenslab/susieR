@@ -247,6 +247,7 @@ update_Sigma = function(R, sigma2, z){
   if(attr(R, 'lambda')==0){
     attr(Sigma, 'RjSinvRj') = attr(R, 'd')/sigma2
   }else{
+    tmp = t(eigenS$vectors)
     attr(Sigma, 'RjSinvRj') = colSums(tmp * (Dinv*(attr(R, 'eigen')$values^2) * tmp))
   }
 
