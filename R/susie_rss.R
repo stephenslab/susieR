@@ -247,7 +247,7 @@ update_Sigma = function(R, sigma2, z){
   if(attr(R, 'lambda')==0){
     attr(Sigma, 'RjSinvRj') = attr(R, 'd')/sigma2
   }else{
-    attr(Sigma, 'RjSinvRj') = diag(eigenS$vectors %*% (Dinv*(attr(R, 'eigen')$values^2) * t(eigenS$vectors)))
+    attr(Sigma, 'RjSinvRj') = colSums(tmp * (Dinv*(attr(R, 'eigen')$values^2) * tmp))
   }
 
   return(Sigma)
