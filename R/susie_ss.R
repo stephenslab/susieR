@@ -257,7 +257,7 @@ check_projection <- function(A, b){
     attr(A, 'eigen') = eigen(A, symmetric = TRUE)
 
   B = attr(A, 'eigen')$vectors[,attr(A, 'eigen')$values!=0]
-  msg = all.equal(as.vector(B %*% crossprod(B, b)), b)
+  msg = all.equal(as.vector(B %*% crossprod(B, b)), b, check.names=FALSE)
 
   if (length(msg)==1 && msg == TRUE)
     return(list(status=T, msg=NA))
