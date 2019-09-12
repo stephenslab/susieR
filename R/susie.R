@@ -86,6 +86,8 @@
 #'   = TRUE}, the univariate regression z-scores are outputted for each
 #'   variable.
 #'
+#' @param na.rm Drop missing samples in y from both y and X inputs. Default set to FALSE.
+#'
 #' @param max_iter Maximum number of iterations of the IBSS fitting
 #'   procedure.
 #'
@@ -179,7 +181,7 @@ susie <- function(X,Y,L = min(10,ncol(X)),scaled_prior_variance = 0.2,
                  estimate_prior_method = c("optim","EM"),
                  s_init = NULL,coverage=0.95,min_abs_corr=0.5,
                  compute_univariate_zscore = FALSE,
-                 max_iter=100,tol=1e-3,
+                 na.rm = FALSE, max_iter=100,tol=1e-3,
                  verbose=FALSE,track_fit=FALSE) {
 
   # Process input estimate_prior_method.
@@ -200,6 +202,19 @@ susie <- function(X,Y,L = min(10,ncol(X)),scaled_prior_variance = 0.2,
       prior_weights = c(prior_weights * (1-null_weight), null_weight)
     X = cbind(X,0)
   }
+  if (any(is.na(X))) {
+    stop("Input X must not contain missing values.")
+  }
+  if (any(is.na(Y))) {
+    if (na.rm) {
+      samples_kept = which(!is.na(Y))
+      Y = Y[samples_kept]
+      X = X[samples_kept,]
+    } else {
+      stop("Input Y must not contain missing values.")
+    }
+  }
+  # Check input Y
   p = ncol(X)
   n = nrow(X)
   mean_y = mean(Y)

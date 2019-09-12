@@ -10,8 +10,8 @@ susie(X, Y, L = min(10, ncol(X)), scaled_prior_variance = 0.2,
   estimate_residual_variance = TRUE, estimate_prior_variance = TRUE,
   estimate_prior_method = c("optim", "EM"), s_init = NULL,
   coverage = 0.95, min_abs_corr = 0.5,
-  compute_univariate_zscore = FALSE, max_iter = 100, tol = 0.001,
-  verbose = FALSE, track_fit = FALSE)
+  compute_univariate_zscore = FALSE, na.rm = FALSE, max_iter = 100,
+  tol = 0.001, verbose = FALSE, track_fit = FALSE)
 }
 \arguments{
 \item{X}{An n by p matrix of covariates.}
@@ -84,6 +84,8 @@ genotype data in genetics studies.}
 \item{compute_univariate_zscore}{If \code{compute_univariate_zscore
 = TRUE}, the univariate regression z-scores are outputted for each
 variable.}
+
+\item{na.rm}{Drop missing samples in y from both y and X inputs. Default set to FALSE.}
 
 \item{max_iter}{Maximum number of iterations of the IBSS fitting
 procedure.}
