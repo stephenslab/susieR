@@ -224,6 +224,11 @@ calc_stderr = function(X, residuals) {
 #' @importFrom stats summary.lm
 univariate_regression = function(X, y, Z=NULL, centered=FALSE,
                                  return_residuals=FALSE) {
+  y_na = which(is.na(y))
+  if (length(y_na)) {
+    X = X[-y_na,]
+    y = y[-y_na]
+  }
   if (!centered) {
     y = y - mean(y)
     X = set_X_attributes(X, center=TRUE, scale = FALSE)
