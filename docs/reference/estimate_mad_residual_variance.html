@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>update each effect once — update_each_effect_ss • susieR</title>
+<title>estimate residual variance using MAD estimator — estimate_mad_residual_variance • susieR</title>
 
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
@@ -32,9 +32,9 @@
 
 
 
-<meta property="og:title" content="update each effect once — update_each_effect_ss" />
+<meta property="og:title" content="estimate residual variance using MAD estimator — estimate_mad_residual_variance" />
 
-<meta property="og:description" content="update each effect once" />
+<meta property="og:description" content="estimate residual variance using MAD estimator" />
 <meta name="twitter:card" content="summary" />
 
 
@@ -100,44 +100,31 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>update each effect once</h1>
-    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/update_each_effect_ss.R'><code>R/update_each_effect_ss.R</code></a></small>
-    <div class="hidden name"><code>update_each_effect_ss.Rd</code></div>
+    <h1>estimate residual variance using MAD estimator</h1>
+    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/susie_trendfilter.R'><code>R/susie_trendfilter.R</code></a></small>
+    <div class="hidden name"><code>estimate_mad_residual_variance.Rd</code></div>
     </div>
 
     <div class="ref-description">
     
-    <p>update each effect once</p>
+    <p>estimate residual variance using MAD estimator</p>
     
     </div>
 
-    <pre class="usage"><span class='fu'>update_each_effect_ss</span>(<span class='no'>XtX</span>, <span class='no'>Xty</span>, <span class='no'>s_init</span>, <span class='kw'>estimate_prior_variance</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>estimate_prior_method</span> <span class='kw'>=</span> <span class='st'>"optim"</span>)</pre>
+    <pre class="usage"><span class='fu'>estimate_mad_residual_variance</span>(<span class='no'>y</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>XtX</th>
-      <td><p>a p by p matrix, X'X</p></td>
-    </tr>
-    <tr>
-      <th>Xty</th>
-      <td><p>a p vector</p></td>
-    </tr>
-    <tr>
-      <th>s_init</th>
-      <td><p>a list with elements sigma2, V, alpha, mu, Xr</p></td>
-    </tr>
-    <tr>
-      <th>estimate_prior_variance</th>
-      <td><p>boolean indicating whether to estimate prior variance</p></td>
-    </tr>
-    <tr>
-      <th>estimate_prior_method</th>
-      <td><p>The method used for estimating prior variance, 'optim' or 'EM'</p></td>
+      <th>y</th>
+      <td><p>an n vector</p></td>
     </tr>
     </table>
+    
+    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
+
+    <p>a scalar of estimated residual variance</p>
     
 
   </div>
@@ -145,7 +132,9 @@
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
       <li><a href="#arguments">Arguments</a></li>
-                </ul>
+      
+      <li><a href="#value">Value</a></li>
+          </ul>
 
   </div>
 </div>

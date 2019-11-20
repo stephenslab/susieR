@@ -1,5 +1,5 @@
-#' @title Bayesian sum of single-effect (susie) linear regression using z scores
-#' @details Performs sum of single-effect (susie) linear regression with z scores.
+#' @title Bayesian sum of single-effect (SuSiE) linear regression using z scores
+#' @details Performs sum of single-effect (SuSiE) linear regression with z scores.
 #' The summary data required are the p by p correlation matrix R, the p vector z. The summary stats should come from the same individuals.
 #' This function fits the regression model z = sum_l Rb_l + e, where e is N(0,residual_variance * R) and the
 #' sum_l b_l is a p vector of effects to be estimated.
@@ -7,8 +7,8 @@
 #' equally likely to be non-zero. The prior on the non-zero element is N(0,var=prior_variance).
 #' @param z a p vector of z scores.
 #' @param R a p by p symmetric and positive semidefinite correlation matrix.
-#' @param maf_thresh threshold for MAF
-#' @param maf Minor Allele Frequency
+#' @param maf minor allele frequency; to be used along with `maf_thresh` to filter input summary statistics
+#' @param maf_thresh variants having MAF smaller than this threshold will be filtered out
 #' @param L maximum number of non-zero effects
 #' @param lambda fudge factor
 #' @param prior_variance the prior variance (vector of length L, or scalar. In latter case gets repeated L times )
@@ -45,7 +45,7 @@
 #' \item{V}{prior variance}
 #'
 #' @export
-susie_rss = function(z, R, maf_thresh=0, maf=NULL,
+susie_rss = function(z, R, maf=NULL, maf_thresh=0,
                      L=10, lambda = 0,
                      prior_variance=50,residual_variance=NULL,
                      r_tol = 1e-08,
@@ -56,14 +56,16 @@ susie_rss = function(z, R, maf_thresh=0, maf=NULL,
                      estimate_prior_method = c("optim","EM"),
                      max_iter=100,s_init = NULL, intercept_value=0,
                      coverage=0.95, min_abs_corr=0.5,
-                     tol=1e-3, verbose=FALSE, track_fit = FALSE, check_input = FALSE){
-
-  warning('This method is under active development, so it should not be considered stable.')
-
-  if(L > 1){
-    warning('The maximum number of non-zero effects is greater than 1, this feature is experimental.')
+                     tol=1e-3, verbose=FALSE, track_fit = FALSE, check_input = FALSE) {
+  # Check input R.
+  if(nrow(R) != length(z)) {
+    stop(paste0('The dimension of correlation matrix (', nrow(R), ' by ', ncol(R), ') does not agree with expected (', length(z), ' by ', length(z), ')'))
   }
-  estimate_prior_method <- match.arg(estimate_prior_method)
+  if(!is_symmetric_matrix(R)){
+    stop('R is not a symmetric matrix.')
+  }
+  if (!(is.double(R) & is.matrix(R)) & !inherits(R,"CsparseMatrix"))
+    stop("Input R must be a double-precision matrix, or a sparse matrix.")
 
   # MAF filter
   if(!is.null(maf)){
@@ -75,21 +77,18 @@ susie_rss = function(z, R, maf_thresh=0, maf=NULL,
     z = z[id]
   }
 
-  # replace NA in z with 0
-  if (any(is.na(z))){
-    warning('z scores contain NA, it is replaced with 0.')
-    z[is.na(z)] = 0
-  }
   if(any(is.infinite(z))){
     stop('z contains infinite value.')
   }
   # Check NA in R
   if(any(is.na(R))){
-    stop('R matrix contains NA.')
+    stop('R matrix contains missing values.')
   }
-  if (!(is.double(R) & is.matrix(R)) & !inherits(R,"CsparseMatrix"))
-    stop("Input R must be a double-precision matrix, or a sparse matrix.")
-
+  # replace NA in z with 0
+  if (any(is.na(z))){
+    warning('NA values in z-scores are replaced with 0.')
+    z[is.na(z)] = 0
+  }
   if (is.numeric(null_weight) && null_weight == 0) null_weight = NULL
   if (!is.null(null_weight)) {
     if (!is.numeric(null_weight))
@@ -106,13 +105,6 @@ susie_rss = function(z, R, maf_thresh=0, maf=NULL,
 
   p = ncol(R)
 
-  # Check input R.
-  if(nrow(R) != length(z)) {
-    stop(paste0('The dimension of R (', nrow(R), ' by ', ncol(R), ') does not agree with expected (', length(z), ' by ', length(z), ')'))
-  }
-  if(!is_symmetric_matrix(R)){
-    stop('R is not a symmetric matrix.')
-  }
   ## eigen decomposition
   semi_pd = check_semi_pd(R, r_tol)
   R = semi_pd$matrix
@@ -121,7 +113,7 @@ susie_rss = function(z, R, maf_thresh=0, maf=NULL,
   if(check_input){
     # Check whether R is positive semidefinite
     if(semi_pd$status == FALSE){
-      stop('R is not a positive semidefinite matrix.')
+      stop(paste0('The correlation matrix (', nrow(R), ' by ', ncol(R), 'is not a positive semidefinite matrix.'))
     }
     # Check whether z in space spanned by the non-zero eigenvectors of R
     proj = check_projection(R, z)
@@ -142,6 +134,7 @@ susie_rss = function(z, R, maf_thresh=0, maf=NULL,
     s = init_finalize_rss(s)
   }
 
+  estimate_prior_method <- match.arg(estimate_prior_method)
   # intialize elbo to NA
   elbo = rep(NA,max_iter+1)
   elbo[1] = -Inf;

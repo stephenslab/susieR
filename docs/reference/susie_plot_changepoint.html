@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>update each effect once — update_each_effect_ss • susieR</title>
+<title>Plot changepoint data and susie fit using ggplot2 — susie_plot_changepoint • susieR</title>
 
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
@@ -32,9 +32,9 @@
 
 
 
-<meta property="og:title" content="update each effect once — update_each_effect_ss" />
+<meta property="og:title" content="Plot changepoint data and susie fit using ggplot2 — susie_plot_changepoint" />
 
-<meta property="og:description" content="update each effect once" />
+<meta property="og:description" content="Plot changepoint data and susie fit using ggplot2" />
 <meta name="twitter:card" content="summary" />
 
 
@@ -100,52 +100,72 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>update each effect once</h1>
-    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/update_each_effect_ss.R'><code>R/update_each_effect_ss.R</code></a></small>
-    <div class="hidden name"><code>update_each_effect_ss.Rd</code></div>
+    <h1>Plot changepoint data and susie fit using ggplot2</h1>
+    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/susie_plot_changepoint.R'><code>R/susie_plot_changepoint.R</code></a></small>
+    <div class="hidden name"><code>susie_plot_changepoint.Rd</code></div>
     </div>
 
     <div class="ref-description">
     
-    <p>update each effect once</p>
+    <p>Plot changepoint data and susie fit using ggplot2</p>
     
     </div>
 
-    <pre class="usage"><span class='fu'>update_each_effect_ss</span>(<span class='no'>XtX</span>, <span class='no'>Xty</span>, <span class='no'>s_init</span>, <span class='kw'>estimate_prior_variance</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>estimate_prior_method</span> <span class='kw'>=</span> <span class='st'>"optim"</span>)</pre>
+    <pre class="usage"><span class='fu'>susie_plot_changepoint</span>(<span class='no'>s</span>, <span class='no'>y</span>, <span class='kw'>line_col</span> <span class='kw'>=</span> <span class='st'>"blue"</span>, <span class='kw'>line_size</span> <span class='kw'>=</span> <span class='fl'>1.5</span>,
+  <span class='kw'>cs_col</span> <span class='kw'>=</span> <span class='st'>"red"</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>XtX</th>
-      <td><p>a p by p matrix, X'X</p></td>
+      <th>s</th>
+      <td><p>a susie fit obtained by applying susie_trendfilter(y,order=0) to y</p></td>
     </tr>
     <tr>
-      <th>Xty</th>
-      <td><p>a p vector</p></td>
+      <th>y</th>
+      <td><p>an n vector of observations that are ordered in time or space (assumed equally-spaced)</p></td>
     </tr>
     <tr>
-      <th>s_init</th>
-      <td><p>a list with elements sigma2, V, alpha, mu, Xr</p></td>
+      <th>line_col</th>
+      <td><p>color for the line showing fitted values</p></td>
     </tr>
     <tr>
-      <th>estimate_prior_variance</th>
-      <td><p>boolean indicating whether to estimate prior variance</p></td>
+      <th>line_size</th>
+      <td><p>a size for the line</p></td>
     </tr>
     <tr>
-      <th>estimate_prior_method</th>
-      <td><p>The method used for estimating prior variance, 'optim' or 'EM'</p></td>
+      <th>cs_col</th>
+      <td><p>color for the shaded rectangles showing credible sets</p></td>
     </tr>
     </table>
     
+    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
+    <p>a ggplot2 object for plotting</p>
+    
+    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
+
+    <p>Plots original data, y, overlaid with line showing susie fitted value and shaded rectangles showing credible sets for changepoint locations</p>
+    
+
+    <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
+    <pre class="examples"><span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span>(<span class='fl'>1</span>)
+<span class='no'>mu</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>0</span>,<span class='fl'>50</span>),<span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>1</span>,<span class='fl'>50</span>),<span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>3</span>,<span class='fl'>50</span>),<span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(-<span class='fl'>2</span>,<span class='fl'>50</span>),<span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>0</span>,<span class='fl'>300</span>))
+<span class='no'>y</span> <span class='kw'>=</span> <span class='no'>mu</span> + <span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span>(<span class='fl'>500</span>)
+<span class='no'>s</span> <span class='kw'>=</span> <span class='fu'><a href='susie_trendfilter.html'>susie_trendfilter</a></span>(<span class='no'>y</span>)
+<span class='fu'>susie_plot_changepoint</span>(<span class='no'>s</span>,<span class='no'>y</span>) <span class='co'># produces ggplot with credible sets for changepoints on top of plot</span></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
       <li><a href="#arguments">Arguments</a></li>
-                </ul>
+      
+      <li><a href="#value">Value</a></li>
+
+      <li><a href="#details">Details</a></li>
+      
+      <li><a href="#examples">Examples</a></li>
+    </ul>
 
   </div>
 </div>

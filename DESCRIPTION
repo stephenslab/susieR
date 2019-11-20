@@ -13,9 +13,9 @@ Date: 2019-07-11
 Version: 0.8.1.0545
 Authors@R: c(person("Gao","Wang",role=c("aut","cre"),
                     email="gaow@uchicago.edu"),
-             person("Peter","Carbonetto",role="aut"),
              person("Yuxin","Zou",role="aut"),
              person("Kaiqian","Zhang",role="aut"),
+             person("Peter","Carbonetto",role="aut"),
 	     person("Matthew","Stephens",role="aut"))
 URL: https://github.com/stephenslab/susieR
 BugReports: https://github.com/stephenslab/susieR/issues

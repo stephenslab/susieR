@@ -2,9 +2,9 @@
 % Please edit documentation in R/susie_rss.R
 \name{susie_rss}
 \alias{susie_rss}
-\title{Bayesian sum of single-effect (susie) linear regression using z scores}
+\title{Bayesian sum of single-effect (SuSiE) linear regression using z scores}
 \usage{
-susie_rss(z, R, maf_thresh = 0, maf = NULL, L = 10, lambda = 0,
+susie_rss(z, R, maf = NULL, maf_thresh = 0, L = 10, lambda = 0,
   prior_variance = 50, residual_variance = NULL, r_tol = 1e-08,
   prior_weights = NULL, null_weight = NULL, restrict = TRUE,
   estimate_residual_variance = TRUE, estimate_prior_variance = TRUE,
@@ -18,9 +18,9 @@ susie_rss(z, R, maf_thresh = 0, maf = NULL, L = 10, lambda = 0,
 
 \item{R}{a p by p symmetric and positive semidefinite correlation matrix.}
 
-\item{maf_thresh}{threshold for MAF}
+\item{maf}{minor allele frequency; to be used along with `maf_thresh` to filter input summary statistics}
 
-\item{maf}{Minor Allele Frequency}
+\item{maf_thresh}{variants having MAF smaller than this threshold will be filtered out}
 
 \item{L}{maximum number of non-zero effects}
 
@@ -78,10 +78,10 @@ a susie fit, which is a list with some or all of the following elements\cr
 \item{V}{prior variance}
 }
 \description{
-Bayesian sum of single-effect (susie) linear regression using z scores
+Bayesian sum of single-effect (SuSiE) linear regression using z scores
 }
 \details{
-Performs sum of single-effect (susie) linear regression with z scores.
+Performs sum of single-effect (SuSiE) linear regression with z scores.
 The summary data required are the p by p correlation matrix R, the p vector z. The summary stats should come from the same individuals.
 This function fits the regression model z = sum_l Rb_l + e, where e is N(0,residual_variance * R) and the
 sum_l b_l is a p vector of effects to be estimated.

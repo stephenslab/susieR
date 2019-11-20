@@ -15,7 +15,9 @@ knitr::opts_chunk$set(collapse = TRUE,comment = "#",fig.width = 5,
                       fig.cap = "&nbsp;",dpi = 120)
 ```
 
-This vignette demonstrates how to use `susieR` with "summary statistics" in the context of genetic fine-mapping. We use the same simulated data as in [fine mapping vignette](finemapping.html). The simulated data is expression level of a gene ($y$) in $N \approx 600$ individuals. We want to identify with the genotype matrix $X_{N\times P}$ ($P=1000$) the genetic variables that causes changes in expression level. The data-set is shipped with `susieR`. It is simulated to have exactly 3 non-zero effects.
+This vignette demonstrates how to use `susieR` with "summary statistics" in the context of genetic fine-mapping. 
+We use the same simulated data as in [fine mapping vignette](finemapping.html). The simulated data is expression level of a gene ($y$) in $N \approx 600$ individuals. 
+We want to identify with the genotype matrix $X_{N\times P}$ ($P=1000$) the genetic variables that causes changes in expression level. The data-set is shipped with `susieR`. It is simulated to have exactly 3 non-zero effects.
 
 ```{r}
 library(susieR)
@@ -50,13 +52,15 @@ So the underlying causal variables are 403, 653 and 773.
 
 ## Summary statistics from simple regression
 
-Summary statistics of genetic association studies typically contain odds ratio (or $\hat{\beta}$ coefficient), p-value and minor allele frequencies. These information can be used to perform fine-mapping with sufficient summary statistics, which additionally require sample size, variance of phenotype, and most importantly a matrix of correlation between variables.
+Summary statistics of genetic association studies typically contain effect size ($\hat{\beta}$ coefficient from regression), p-value and minor allele frequencies. 
+These information can be used to perform fine-mapping with given an additional input of correlation matrix between variables.
+The correlation matrix in genetics is typically referred to as LD matrix (LD for linkage disequilibrium). 
+One may use external reference panels to estimate it when this matrix cannot be obtained from samples directly.
+Caution that LD matrix here has to be correlation matrix $r$, not $r^2$ or $abs(r)$.
 
-When the aforementioned sufficient summary statistica are provided, SuSiE can produce the exact same outcome as if individual level data were used. The correlation matrix in genetics is typically referred to as LD matrix (LD for linkage disequilibrium). One can use external reference panels to estimate it when this matrix cannot be obtained from samples directly.
-
-Caution that the LD matrix has to be correlation matrix $r$, not $r^2$ or $abs(r)$.
-
-Our example data-set additionally provides summary statistics for fitting per-variable univariate simple regression. The results are $\hat{\beta}$ and $SE(\hat{\beta})$ from which z-scores can be derived.
+Our example data-set additionally provides summary statistics for fitting per-variable univariate simple regression.
+The results are $\hat{\beta}$ and $SE(\hat{\beta})$ from which z-scores can be derived.
+Alternatively you can obtain z-scores from $\hat{\beta}$ and p-values if you are provided with those information.
 Again we focus only on results from the first data-set:
 
 ```{r}
@@ -75,34 +79,12 @@ R <- cor(data$X)
 
 For starters, we assume there are at most 10 causal variables, i.e. set `L = 10`, although SuSiE is generally robust to the choice of `L`.
 
-We also fix SuSiE prior variance to 0.1. In practice we can roughly estimate this from data. For example for QTL studies the number can be in between 1% to 20%.
-
-### Using $\hat{\beta}$ and $\text{SE}(\hat{\beta})$
-
-With the knowledge of variance of $y$, `susieR` can result in coefficent estimates in the original scale of data,
+SuSiE regression with summary statistics is implemented as `susie_rss` function, 
 
 ```{r}
-fitted_bhat <- susie_bhat(bhat = sumstats[1,,1], 
-                          shat = sumstats[2,,1], 
-                          R = R, n = nrow(data$X), 
-                          var_y = var(data$Y[,1]),
-                          L = 10, 
-                          scaled_prior_variance = 0.1, 
+fitted_rss <- susie_rss(z_scores, R, L = 10,
                           estimate_residual_variance = TRUE, 
-                          estimate_prior_variance = FALSE, 
-                          standardize = TRUE)
-```
-
-Without the knowledge of variance of $y$, `susieR` gives the coefficients in standardized $X$, $y$ scale,
-
-```{r}
-fitted_bhat_standardize <- susie_bhat(bhat = sumstats[1,,1], 
-                                      shat = sumstats[2,,1], 
-                                      R = R, n = nrow(data$X), 
-                                      L = 10, 
-                                      scaled_prior_variance = 0.1, 
-                                      estimate_residual_variance = TRUE,
-                                      estimate_prior_variance = FALSE)
+                          estimate_prior_variance = TRUE)
 ```
 
 Using `summary` function, we can examine the posterior inclusion probability (PIP) for each variable, and the 95% credible sets. 
@@ -110,7 +92,7 @@ Using `summary` function, we can examine the posterior inclusion probability (PI
 Here, we are the 95% credible sets.
 
 ```{r}
-summary(fitted_bhat)$cs
+summary(fitted_rss)$cs
 ```
 
 The 3 causal signals have been captured by the 3 CS reported here. The
@@ -120,24 +102,19 @@ The 3 causal signals have been captured by the 3 CS reported here. The
 We can also plot the posterior inclusion probability (PIP),
 
 ```{r}
-susie_plot(fitted_bhat, y="PIP", b=b)
+susie_plot(fitted_rss, y="PIP", b=b)
 ```
 
 The true causal variables are colored red. The 95% CS identified are circled in different colors.
 
-The result should be identical to using the individual level data,
+The result should be very similar to using the individual level data for this example, as the z-scores and correlation matrix (LD reference)
+come from the same genotype data-set.
 
 ```{r, fig.width=6,fig.height=6}
-fitted = susie(data$X, data$Y[,1],
-                L = 10,
+fitted = susie(data$X, data$Y[,1], L = 10,
                 estimate_residual_variance = TRUE, 
-                estimate_prior_variance = FALSE,
-                scaled_prior_variance = 0.1)
-plot(fitted$pip, fitted_bhat$pip, ylim=c(0,1))
-```
-
-```{r, fig.width=6,fig.height=6}
-plot(coef(fitted), coef(fitted_bhat))
+                estimate_prior_variance = TRUE)
+plot(fitted$pip, fitted_rss$pip, ylim=c(0,1))
 ```
 
 ## Session information
