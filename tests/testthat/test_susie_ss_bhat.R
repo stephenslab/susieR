@@ -8,7 +8,7 @@ test_that("Results from ss bhat interface vs original data: no standardize", wit
   expect_warning(orig <- susie(X, y, intercept = TRUE, standardize = FALSE, max_iter = 2,
               estimate_residual_variance=FALSE, estimate_prior_variance = FALSE))
 
-  expect_warning(fit <- susie_bhat(bhat = ss$betahat, shat = ss$sebetahat, R = R,
+  expect_warning(fit <- susie_suff_stat(bhat = ss$betahat, shat = ss$sebetahat, R = R,
                    var_y = var(y), n = n, standardize = FALSE,
                    max_iter = 2, estimate_prior_variance = FALSE,
                    estimate_residual_variance = FALSE))
@@ -34,7 +34,7 @@ test_that("Results from ss bhat interface vs original data: standardize", with(s
   expect_warning(orig <- susie(X.s, y, intercept = TRUE, standardize = TRUE, max_iter = 2,
                estimate_residual_variance=FALSE, estimate_prior_variance = FALSE))
 
-  expect_warning(fit <- susie_bhat(bhat = ss$betahat, shat = ss$sebetahat, R = R,
+  expect_warning(fit <- susie_suff_stat(bhat = ss$betahat, shat = ss$sebetahat, R = R,
                    n = n, var_y = var(y), standardize = TRUE,
                    max_iter = 2, estimate_prior_variance = FALSE,
                    estimate_residual_variance = FALSE))
@@ -58,7 +58,7 @@ test_that("Results from ss bhat interface: t statistics", with(simulate(200,1000
   expect_warning(orig <- susie(X.s, y/sd(y), intercept = TRUE, standardize = TRUE, max_iter = 2,
                estimate_residual_variance=FALSE, estimate_prior_variance = FALSE))
 
-  expect_warning(fit <- susie_bhat(bhat = ss$betahat/ss$sebetahat, shat = 1, R = R,
+  expect_warning(fit <- susie_suff_stat(bhat = ss$betahat/ss$sebetahat, shat = 1, R = R,
                    n = n, standardize = TRUE,
                    max_iter = 2, estimate_prior_variance = FALSE,
                    estimate_residual_variance = FALSE))

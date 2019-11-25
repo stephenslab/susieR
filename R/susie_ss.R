@@ -1,8 +1,10 @@
-#' @title Bayesian sum of single-effect (susie) linear regression using summary stat
+#' @title Bayesian sum of single-effect (susie) linear regression using sufficient summary stat
 #' @details Performs sum of single-effect (susie) linear regression of y on X when
-#' only summary statistics are available. The summary data required are
+#' only sufficient summary statistics are available. The sufficient summary data required are EITHER
+#' the p vector bhat, the p vector shat, the p by p symmetric and positive semidefinite correlation
+#' (or covariance) matrix R, the sample size n, the variance of y; OR
 #' the p by p matrix X'X, the p vector X'y, the sum of squares of y (y'y) and the sample size.
-#' The summary stats should come from the same individuals.
+#' The sufficient summary stats should come from the same individuals.
 #' Both the columns of X and the vector y
 #' should be centered to have mean 0 before
 #' computing these summary statistics; you may also want to scale each column of X and y to have variance 1 (see examples).
@@ -10,12 +12,17 @@
 #' sum_l b_l is a p vector of effects to be estimated.
 #' The assumption is that each b_l has exactly one non-zero element, with all elements
 #' equally likely to be non-zero. The prior on the non-zero element is N(0,var=scaled_prior_variance*y'y/(n-1)).
+#' @param bhat a p vector of estimated effects.
+#' @param shat a p vector of corresponding standard errors.
+#' @param R a p by p symmetric and positive semidefinite matrix. It can be X'X, covariance matrix (X'X/(n-1)) or correlation matrix.
+#' It should from the same samples used to compute `bhat` and `shat`. Using out of sample matrix may produce unreliable results.
+#' @param n sample size.
+#' @param var_y the (sample) variance of y, defined as y'y/(n-1) . If it is unknown, the coefficients (returned from `coef`) are on the standardized X, y scale.
 #' @param XtX a p by p matrix, X'X, where columns of X are centered to have mean 0
 #' @param Xty a p vector, X'y, where columns of X are centered and y is centered to have mean 0
 #' @param yty a scaler, y'y, where y is centered to have mean 0
-#' @param n sample size
-#' @param maf_thresh threshold for MAF
-#' @param maf Minor Allele Frequency
+#' @param maf minor allele frequency; to be used along with `maf_thresh` to filter input summary statistics
+#' @param maf_thresh variants having MAF smaller than this threshold will be filtered out
 #' @param L maximum number of non-zero effects
 #' @param scaled_prior_variance the scaled prior variance (vector of length L, or scalar. In latter case gets repeated L times)
 #' @param residual_variance the residual variance (defaults to variance of y)
@@ -63,25 +70,101 @@
 #' X        <- matrix(rnorm(n*p),nrow=n,ncol=p)
 #' y        <- c(X %*% beta + rnorm(n))
 #' input_ss <- compute_ss(X,y,standardize = TRUE)
-#' res      <- with(input_ss,susie_ss(XtX,Xty,yty,n))
-#' coef(res)
+#' ss = univariate_regression(X, y)
+#' res1      <- with(input_ss,susie_suff_stat(XtX = XtX,Xty = Xty, yty = yty,n))
+#' coef(res1)
+#' res2      <- with(ss,susie_suff_stat(bhat = betahat, shat = sebetahat, R = cov2cor(XtX), n, var_y = var(y)))
+#' coef(res2)
 #'
 #' @export
-susie_ss = function(XtX, Xty, yty, n, maf_thresh=0, maf=NULL,
-                    L=10,
-                    scaled_prior_variance=0.2,
-                    residual_variance=NULL,
-                    estimate_residual_variance = TRUE,
-                    estimate_prior_variance = TRUE,
-                    estimate_prior_method = c("optim","EM"),
-                    r_tol = 1e-08,
-                    prior_weights = NULL, null_weight = NULL,
-                    standardize = TRUE,
-                    max_iter=100,s_init = NULL, intercept_value=0,
-                    coverage=0.95, min_abs_corr=0.5,
-                    tol=1e-3, verbose=FALSE, track_fit = FALSE, check_input=FALSE){
+susie_suff_stat = function(bhat, shat, R, n, var_y = 1,
+                           XtX, Xty, yty, maf=NULL, maf_thresh=0,
+                           L=10,
+                           scaled_prior_variance=0.2,
+                           residual_variance=NULL,
+                           estimate_residual_variance = TRUE,
+                           estimate_prior_variance = TRUE,
+                           estimate_prior_method = c("optim","EM"),
+                           r_tol = 1e-08,
+                           prior_weights = NULL, null_weight = NULL,
+                           standardize = TRUE,
+                           max_iter=100,s_init = NULL, intercept_value=0,
+                           coverage=0.95, min_abs_corr=0.5,
+                           tol=1e-3, verbose=FALSE, track_fit = FALSE, check_input=FALSE){
   # Process input estimate_prior_method.
   estimate_prior_method <- match.arg(estimate_prior_method)
+
+  if(missing(n)) {
+    stop('n must be provided')
+  }
+
+  # Check sufficient stat input
+  ## check bhat, shat
+  missing_bhat = c(missing(bhat), missing(shat), missing(R))
+  ## check XtX, Xty
+  missing_XtX = c(missing(XtX), missing(Xty), missing(yty))
+
+  if(all(missing_bhat) & all(missing_XtX)){
+    stop('Please provide EITHER "bhat, shat, R, n, var(y)" OR "XtX, Xty, yty, n".')
+  }
+  if(any(missing_bhat) & any(missing_XtX)){
+    stop('Please provide EITHER "bhat, shat, R, n, var(y)" OR "XtX, Xty, yty, n".')
+  }
+  if(all(missing_bhat) & any(missing_XtX)){
+    stop('Please provide all "XtX, Xty, yty, n"')
+  }
+  if(all(missing_XtX) & any(missing_bhat)){
+    stop('Please provide all "bhat, shat, R, n, var(y)"')
+  }
+  if((!any(missing_XtX)) & (!all(missing_bhat))){
+    warning('Only use information from "XtX, Xty, yty, n"')
+  }
+  if((!any(missing_bhat))){
+    if(!all(missing_XtX)){
+      warning('Only use information from "bhat, shat, R, n, var(y)"')
+    }
+
+    # Compute XtX, Xty, yty from bhat, shat, R, n, var(y)
+    if(length(shat) == 1) {
+      shat = rep(shat, length(bhat))
+    }
+    if(length(bhat) != length(shat)) {
+      stop('The length of bhat does not agree with length of shat.')
+    }
+
+    if(anyNA(bhat) || anyNA(shat)){
+      stop('The input summary statistics have missing value.')
+    }
+    if(any(shat==0)){
+      stop('shat contains zero.')
+    }
+    #
+    that = bhat/shat
+    that[is.na(that)] = 0
+    R2 = that^2/(that^2 + n-2)
+    sigma2 = (n-1)*(1-R2)/(n-2)
+
+    # convert any input R to correlation matrix
+    # if R has 0 colums and rows, cov2cor produces NaN and warning
+    X0 = diag(R) == 0
+    R = muffled_cov2cor(R)
+    # change the columns and rows with NaN to 0
+    if(sum(X0) > 0){
+      R[X0, ] = R[,X0] = 0
+    }
+
+    #
+    if(missing(var_y)) {
+      XtX = (n-1)*R
+      Xty = sqrt(sigma2) * sqrt(n-1) * that
+    }else{
+      XtXdiag = var_y*sigma2/(shat^2)
+      Xty = that * var_y* sigma2/shat
+      XtX = t(R * sqrt(XtXdiag)) * sqrt(XtXdiag)
+    }
+    yty = var_y * (n-1)
+  }
+
 
   # Check input XtX.
   if(ncol(XtX) != length(Xty)) {
@@ -235,7 +318,7 @@ check_semi_pd <- function(A, tol){
   attr(A, 'eigen') = eigen(A, symmetric = TRUE)
 
   eigenvalues = attr(A, 'eigen')$values
-  eigenvalues[eigenvalues < tol] <- 0
+  eigenvalues[abs(eigenvalues) < tol] <- 0
 
   # E <- tryCatch(suppressWarnings(chol(R, pivot = TRUE, tol=r_tol)),error = function(e) FALSE)
   # if (is.logical(E)) {
@@ -264,74 +347,3 @@ check_projection <- function(A, b){
   else
     return(list(status=F,msg=msg))
 }
-
-#' @title Summary statistics version of SuSiE on betahat, the corresponding standard error, and correlation (or covariance) matrix
-#' @param bhat a p vector of estimated effects.
-#' @param shat a p vector of corresponding standard errors.
-#' @param R a p by p symmetric and positive semidefinite matrix. It can be X'X, covariance matrix (X'X/(n-1)) or correlation matrix.
-#' It should from the same samples used to compute `bhat` and `shat`. Using out of sample matrix may produce unreliable results.
-#' @param n sample size.
-#' @param var_y the (sample) variance of y, defined as y'y/(n-1) . If it is unknown, the coefficients (returned from `coef`) are on the standardized X, y scale.
-#' @param maf_thresh threshold for MAF
-#' @param maf Minor Allele Frequency
-#' @param ... further arguments to be passed to \code{\link{susie_ss}}
-#' @return a susie fit
-#'
-#' @export
-susie_bhat = function(bhat, shat, R, n, var_y = 1, maf_thresh=0, maf=NULL, ...){
-  if(missing(n)) {
-    stop('n must be provided')
-  }
-  if(length(shat) == 1) {
-    shat = rep(shat, length(bhat))
-  }
-  if(length(bhat) != length(shat)) {
-    stop('The length of bhat does not agree with length of shat.')
-  }
-
-  # MAF filter
-  if(!is.null(maf)){
-    if(length(maf) != length(bhat)){
-      stop(paste0('The length of maf does not agree with expected ', length(bhat)))
-    }
-    id = which(maf > maf_thresh)
-    bhat = bhat[id]
-    shat = shat[id]
-    R = R[id,id]
-  }
-
-  if(anyNA(bhat) || anyNA(shat)){
-    stop('The input summary statistics have missing value.')
-  }
-  if(any(shat==0)){
-    stop('shat contains zero.')
-  }
-  #
-  that = bhat/shat
-  that[is.na(that)] = 0
-  R2 = that^2/(that^2 + n-2)
-  sigma2 = (n-1)*(1-R2)/(n-2)
-
-  # convert any input R to correlation matrix
-  # if R has 0 colums and rows, cov2cor produces NaN and warning
-  X0 = diag(R) == 0
-  R = muffled_cov2cor(R)
-  # change the columns and rows with NaN to 0
-  if(sum(X0) > 0){
-    R[X0, ] = R[,X0] = 0
-  }
-
-  #
-  if(missing(var_y)) {
-    XtX = (n-1)*R
-    Xty = sqrt(sigma2) * sqrt(n-1) * that
-  } else {
-    XtXdiag = var_y*sigma2/(shat^2)
-    Xty = that * var_y* sigma2/shat
-    XtX = t(R * sqrt(XtXdiag)) * sqrt(XtXdiag)
-  }
-
-  susie_ss(XtX = XtX, Xty = Xty, yty = var_y * (n-1), n = n, ...)
-}
-
-

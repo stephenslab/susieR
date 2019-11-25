@@ -84,7 +84,7 @@ expect_equal_susie_update = function(new.res, original.res){
   expect_equal(new.res$V, original.res$V)
 }
 
-expect_equal_susie_ss_update = function(new.res, original.res){
+expect_equal_susie_suff_stat_update = function(new.res, original.res){
   expect_equal(new.res$alpha, original.res$alpha)
   expect_equal(new.res$mu, original.res$mu)
   expect_equal(new.res$mu2, original.res$mu2)
@@ -103,7 +103,7 @@ expect_equal_SER = function(new.res, original.res){
   expect_equal(new.res$loglik, original.res$loglik)
 }
 
-expect_equal_SER_ss = function(new.res, original.res){
+expect_equal_SER_suff_stat = function(new.res, original.res){
   expect_equal(new.res$alpha, original.res$alpha)
   expect_equal(new.res$mu, original.res$mu)
   expect_equal(new.res$mu2, original.res$mu2)
@@ -121,8 +121,8 @@ expect_equal_susie = function(new.res, original.res){
   expect_equal(new.res$X_column_scale_factors, original.res$X_column_scale_factors)
 }
 
-expect_equal_susie_ss = function(new.res, original.res){
-  expect_equal_susie_ss_update(new.res, original.res)
+expect_equal_susie_suff_stat = function(new.res, original.res){
+  expect_equal_susie_suff_stat_update(new.res, original.res)
   expect_equal(new.res$elbo, original.res$elbo)
   expect_equal(new.res$niter, original.res$niter)
   expect_equal(new.res$intercept, original.res$intercept)
