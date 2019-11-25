@@ -230,6 +230,8 @@ update_Sigma = function(R, sigma2, z){
   eigenS = attr(R, 'eigen')
   eigenS$values = sigma2*eigenS$values + attr(R, 'lambda')
 
+  # Positive = eigenS$values > 1e-8
+  # eigenS$values[!Positive] = 0
   Dinv = 1/(eigenS$values)
   Dinv[is.infinite(Dinv)] = 0
   attr(Sigma, 'eigenS') = eigenS

@@ -16,6 +16,11 @@ Eloglik_rss = function(R,z,s){
     result =  -(sum(d!=0)/2) * log(2*pi*s$sigma2) -
       0.5 * get_ER2_rss(R,z,s)
   }else{
+    # Positive = d > 1e-8
+    # d[!Positive] = 0
+    # result =  -(sum(d!=0)/2) * log(2*pi) - 0.5*sum(log(d[Positive])) -
+    #   0.5 * get_ER2_rss(R,z,s)
+
     result =  -(length(z)/2) * log(2*pi) - 0.5*sum(log(d)) -
       0.5 * get_ER2_rss(R,z,s)
   }
@@ -28,10 +33,14 @@ get_ER2_rss = function(R,z,s){
 
   d = s$sigma2 * attr(R, 'eigen')$values + attr(R, 'lambda')
 
+  # Positive = d > 1e-8
+  # d[!Positive] = 0
   Dinv = 1/d
   Dinv[is.infinite(Dinv)] = 0
   SinvR = attr(R, 'eigen')$vectors %*% ((Dinv*attr(R, 'eigen')$values) * t(attr(R, 'eigen')$vectors))
-  zSinvz = sum(z * (attr(R, 'eigen')$vectors %*% (Dinv * crossprod(attr(R, 'eigen')$vectors, z))))
+  Utz = crossprod(attr(R, 'eigen')$vectors, z)
+  zSinvz = sum( Utz * (Dinv * Utz))
+  # zSinvz = sum(z * (attr(R, 'eigen')$vectors %*% (Dinv * crossprod(attr(R, 'eigen')$vectors, z))))
 
   Z = s$alpha*s$mu
   if(attr(R, 'lambda') == 0){
