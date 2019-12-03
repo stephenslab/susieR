@@ -120,7 +120,7 @@ beta[1:4] <- 1
 X        <- matrix(rnorm(n*p),nrow=n,ncol=p)
 y        <- c(X \%*\% beta + rnorm(n))
 input_ss <- compute_ss(X,y,standardize = TRUE)
-ss = univariate_regression(X, y)
+ss = susieR:::univariate_regression(X, y)
 res1      <- with(input_ss,susie_suff_stat(XtX = XtX,Xty = Xty, yty = yty,n))
 coef(res1)
 res2      <- with(ss,susie_suff_stat(bhat = betahat, shat = sebetahat, R = cov2cor(XtX), n, var_y = var(y)))
