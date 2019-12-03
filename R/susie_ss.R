@@ -71,9 +71,10 @@
 #' y        <- c(X %*% beta + rnorm(n))
 #' input_ss <- compute_ss(X,y,standardize = TRUE)
 #' ss = susieR:::univariate_regression(X, y)
-#' res1      <- with(input_ss,susie_suff_stat(XtX = XtX,Xty = Xty, yty = yty,n))
+#' R = with(input_ss, cov2cor(XtX))
+#' res1      <- with(input_ss,susie_suff_stat(XtX = XtX,Xty = Xty, yty = yty,n=n))
 #' coef(res1)
-#' res2      <- with(ss,susie_suff_stat(bhat = betahat, shat = sebetahat, R = cov2cor(XtX), n, var_y = var(y)))
+#' res2      <- with(ss,susie_suff_stat(bhat = betahat, shat = sebetahat, R = R, n=n, var_y = var(y)))
 #' coef(res2)
 #'
 #' @export
