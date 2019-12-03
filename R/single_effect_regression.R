@@ -65,7 +65,7 @@ est_V_uniroot = function(betahat, shat2, prior_weights){
 
 optimize_prior_variance = function(optimize_V, betahat, shat2, prior_weights, alpha=NULL, post_mean2=NULL){
   if(optimize_V=="optim"){
-    lV = optim(par=log(max(c(betahat^2-shat2, 1), na.rm = TRUE)), fn=neg.loglik.logscale, betahat=betahat, shat2=shat2, prior_weights = prior_weights, method='Brent', lower = -10, upper = 15)$par
+    lV = optim(par=log(max(c(betahat^2-shat2, 1), na.rm = TRUE)), fn=neg.loglik.logscale, betahat=betahat, shat2=shat2, prior_weights = prior_weights, method='Brent', lower = -30, upper = 15)$par
     V = exp(lV)
   }else if(optimize_V=="uniroot"){
     V = est_V_uniroot(betahat, shat2, prior_weights)

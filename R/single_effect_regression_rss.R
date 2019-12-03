@@ -91,7 +91,7 @@ optimize_prior_variance_rss = function(optimize_V, z, Sigma, prior_weights, alph
     lV = optim(par=log(max(c((z^2) - (1/attr(Sigma, 'RjSinvRj')), 1e-6), na.rm = TRUE)),
                fn=neg.loglik_z.logscale_rss,
                z=z, Sigma = Sigma, prior_weights = prior_weights,
-               method='Brent', lower = -10, upper = 15)$par
+               method='Brent', lower = -30, upper = 15)$par
     V = exp(lV)
   }else if(optimize_V=="EM"){
     V = sum(alpha*post_mean2)
