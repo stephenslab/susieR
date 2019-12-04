@@ -11,7 +11,7 @@ susie_rss(z, R, maf = NULL, maf_thresh = 0, L = 10, lambda = 0,
   estimate_prior_method = c("optim", "EM"), max_iter = 100,
   s_init = NULL, intercept_value = 0, coverage = 0.95,
   min_abs_corr = 0.5, tol = 0.001, verbose = FALSE,
-  track_fit = FALSE, check_input = FALSE)
+  track_fit = FALSE, check_R = TRUE, check_z = TRUE)
 }
 \arguments{
 \item{z}{a p vector of z scores.}
@@ -62,11 +62,9 @@ Set to NULL if you want coef.susie() not to include an intercept term (and so on
 
 \item{track_fit}{add an attribute \code{trace} to output that saves current values of all iterations}
 
-\item{check_input}{whether to skip the checks for R and z, the checks are:
+\item{check_R}{check whether R is positive semidefinite}
 
-1. Check whether R is positive semidefinite
-
-2. Check whether z in space spanned by the non-zero eigenvectors of R}
+\item{check_z}{check whether z in space spanned by the non-zero eigenvectors of R}
 }
 \value{
 a susie fit, which is a list with some or all of the following elements\cr

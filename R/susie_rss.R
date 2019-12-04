@@ -27,14 +27,11 @@
 #' Set to NULL if you want coef.susie() not to include an intercept term (and so only return a p vector).
 #' @param coverage coverage of confident sets. Default to 0.95 for 95\% credible interval.
 #' @param min_abs_corr minimum of absolute value of correlation allowed in a credible set.
-#' @param tol convergence tolerance based on alpha
+#' @param tol convergence tolerance based on elbo
 #' @param verbose if true outputs some progress messages
 #' @param track_fit add an attribute \code{trace} to output that saves current values of all iterations
-#' @param check_input whether to skip the checks for R and z, the checks are:
-#'
-#' 1. Check whether R is positive semidefinite
-#'
-#' 2. Check whether z in space spanned by the non-zero eigenvectors of R
+#' @param check_R check whether R is positive semidefinite
+#' @param check_z check whether z in space spanned by the non-zero eigenvectors of R
 #'
 #' @return a susie fit, which is a list with some or all of the following elements\cr
 #' \item{alpha}{an L by p matrix of posterior inclusion probabilites}
@@ -56,7 +53,7 @@ susie_rss = function(z, R, maf=NULL, maf_thresh=0,
                      estimate_prior_method = c("optim","EM"),
                      max_iter=100,s_init = NULL, intercept_value=0,
                      coverage=0.95, min_abs_corr=0.5,
-                     tol=1e-3, verbose=FALSE, track_fit = FALSE, check_input = FALSE) {
+                     tol=1e-3, verbose=FALSE, track_fit = FALSE, check_R = TRUE, check_z = TRUE) {
   # Check input R.
   if(nrow(R) != length(z)) {
     stop(paste0('The dimension of correlation matrix (', nrow(R), ' by ', ncol(R), ') does not agree with expected (', length(z), ' by ', length(z), ')'))
@@ -109,18 +106,28 @@ susie_rss = function(z, R, maf=NULL, maf_thresh=0,
   semi_pd = check_semi_pd(R, r_tol)
   R = semi_pd$matrix
 
-  ## check whether z in space spanned by the non-zero eigenvectors of R
-  if(check_input){
-    # Check whether R is positive semidefinite
+  if(check_R){
     if(semi_pd$status == FALSE){
-      stop(paste0('The correlation matrix (', nrow(R), ' by ', ncol(R), 'is not a positive semidefinite matrix.'))
+      stop(paste0('The correlation matrix (', nrow(R), ' by ', ncol(R), 'is not a positive semidefinite matrix.
+                  With "check_R = FALSE", we set the negative eigenvalues to 0 and continue the computation.'))
     }
-    # Check whether z in space spanned by the non-zero eigenvectors of R
-    proj = check_projection(R, z)
-    if(proj$status == FALSE)
-      warning('z does not lie in the space of non-zero eigenvectors of R')
   }
   attr(R, 'eigen')$values = semi_pd$eigenvalues
+  if(semi_pd$status == FALSE){
+    attr(R, 'eigen')$values[semi_pd$eigenvalues < 0] = 0
+    warning('The negative eigenvalues are set to 0.')
+  }
+
+  ## check whether z in space spanned by the non-zero eigenvectors of R
+  if(check_z){
+    proj = check_projection(R, z)
+    if(proj$status == FALSE)
+      warning('z does not lie in the space of non-zero eigenvectors of R. The result is not reliable.
+              The vignette for possible solution is in preparation.')
+    else if(proj$status == TRUE)
+      warning('z is in space spanned by the non-zero eigenvectors of R.
+              Please set "check_z = FALSE" to save computation.')
+  }
   attr(R, 'd') <- diag(R)
   attr(R, 'scaled:scale') <- rep(1, length = p)
 
