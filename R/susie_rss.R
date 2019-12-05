@@ -106,27 +106,26 @@ susie_rss = function(z, R, maf=NULL, maf_thresh=0,
   semi_pd = check_semi_pd(R, r_tol)
   R = semi_pd$matrix
 
-  if(check_R){
-    if(semi_pd$status == FALSE){
+  if (check_R && semi_pd$status == FALSE) {
       stop(paste0('The correlation matrix (', nrow(R), ' by ', ncol(R), 'is not a positive semidefinite matrix.
-                  With "check_R = FALSE", we set the negative eigenvalues to 0 and continue the computation.'))
-    }
+                  You can bypass this by "check_R = FALSE" which instead sets negative eigenvalues to 0 to allow for continued computations.'))
   }
   attr(R, 'eigen')$values = semi_pd$eigenvalues
   if(semi_pd$status == FALSE){
     attr(R, 'eigen')$values[semi_pd$eigenvalues < 0] = 0
-    warning('The negative eigenvalues are set to 0.')
+    warning('Negative eigenvalues are set to 0.')
   }
 
   ## check whether z in space spanned by the non-zero eigenvectors of R
-  if(check_z){
+  if(check_z) {
     proj = check_projection(R, z)
-    if(proj$status == FALSE)
-      warning('z does not lie in the space of non-zero eigenvectors of R. The result is not reliable.
-              The vignette for possible solution is in preparation.')
-    else if(proj$status == TRUE)
-      warning('z is in space spanned by the non-zero eigenvectors of R.
-              Please set "check_z = FALSE" to save computation.')
+    if(proj$status == FALSE) {
+      warning('Input z does not lie in the space of non-zero eigenvectors of R. The result is thus not reliable.
+              Please refer to https://github.com/stephenslab/susieR/issues/91 for a possible solution.')
+    } else {
+      write('Input z is in space spanned by the non-zero eigenvectors of R.
+            You can safely set "check_z = FALSE" when you rerun the analysis, to save computation.', stderr())
+    }
   }
   attr(R, 'd') <- diag(R)
   attr(R, 'scaled:scale') <- rep(1, length = p)

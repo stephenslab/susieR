@@ -56,7 +56,7 @@ Set to NULL if you want coef.susie() not to include an intercept term (and so on
 
 \item{min_abs_corr}{minimum of absolute value of correlation allowed in a credible set.}
 
-\item{tol}{convergence tolerance based on alpha}
+\item{tol}{convergence tolerance based on elbo}
 
 \item{verbose}{if true outputs some progress messages}
 
