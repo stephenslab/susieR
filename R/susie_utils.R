@@ -222,19 +222,21 @@ calc_stderr = function(X, residuals) {
 #' @importFrom stats .lm.fit
 #' @importFrom stats coef
 #' @importFrom stats summary.lm
-univariate_regression = function(X, y, Z=NULL, centered=FALSE,
+univariate_regression = function(X, y, Z=NULL, center=TRUE, scale=FALSE,
                                  return_residuals=FALSE) {
   y_na = which(is.na(y))
   if (length(y_na)) {
     X = X[-y_na,]
     y = y[-y_na]
   }
-  if (!centered) {
+  if (center) {
     y = y - mean(y)
-    X = set_X_attributes(X, center=TRUE, scale = FALSE)
+    X = scale(X, center=TRUE, scale = scale)
+  } else {
+    X = scale(X, center=FALSE, scale = scale)
   }
   if (!is.null(Z)) {
-    if (!centered) Z = set_X_attributes(Z, center=TRUE, scale=FALSE)
+    if (center) Z = scale(Z, center=TRUE, scale=FALSE)
     y = .lm.fit(Z, y)$residuals
   }
   output = try(do.call(rbind,
@@ -264,10 +266,17 @@ univariate_regression = function(X, y, Z=NULL, centered=FALSE,
 }
 
 # computes z score (t-statistic) for association between each
-# column of X and y
-calc_z = function(X,y,centered=FALSE){
-  out = univariate_regression(X,y,centered=centered)
-  return(out$betahat/out$sebetahat)
+# column of X and Y
+calc_z = function(X,Y,center=FALSE,scale=FALSE){
+  univariate_z = function(X,Y,center,scale) {
+    out = univariate_regression(X,Y,center=center,scale=scale)
+    return(out$betahat/out$sebetahat)
+  }
+  if (is.null(dim(Y))) {
+    univariate_z(X,Y,center,scale)
+  } else {
+    do.call(cbind, lapply(1:ncol(Y), function(i) univariate_z(X, Y[,i], center=center, scale=scale)))
+  }
 }
 
 #' @title Plot per variable summary in SuSiE CSs

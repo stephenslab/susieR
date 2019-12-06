@@ -292,7 +292,7 @@ susie <- function(X,Y,L = min(10,ncol(X)),scaled_prior_variance = 0.2,
     if (!is.null(null_weight) && null_weight != 0) {
       X = X[,1:(ncol(X)-1)]
     }
-    s$z = calc_z(X,Y,centered=intercept)
+    s$z = calc_z(X,Y,center=intercept,scale=standardize)
   }
   ## for prediction
   s$X_column_scale_factors = attr(X,"scaled:scale")
