@@ -235,6 +235,7 @@ univariate_regression = function(X, y, Z=NULL, center=TRUE, scale=FALSE,
   } else {
     X = scale(X, center=FALSE, scale = scale)
   }
+  X[is.nan(X)] <- 0
   if (!is.null(Z)) {
     if (center) Z = scale(Z, center=TRUE, scale=FALSE)
     y = .lm.fit(Z, y)$residuals
