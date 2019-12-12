@@ -1,6 +1,6 @@
-context("test_susie_ss.R")
+context("test_susie_XtX_Xty.R")
 
-test_that("Results from summary stat vs original data", with(simulate(200,1000), {
+test_that("Results from sufficient stat vs original data", with(simulate(200,1000), {
   ss = compute_ss(X, y, standardize = FALSE)
 
   expect_warning(res <- susie(X, y, intercept = TRUE, standardize = TRUE, max_iter = 2,
@@ -24,7 +24,7 @@ test_that("Results from summary stat vs original data", with(simulate(200,1000),
   expect_equal(crossprod(X.cs, res$fitted), res2$Xtfitted)
 }))
 
-test_that("Results from summary stat vs original data: estimate residual variance", with(simulate(200,1000), {
+test_that("Results from sufficient stat vs original data: estimate residual variance", with(simulate(200,1000), {
   ss = compute_ss(X, y, standardize = FALSE)
 
   expect_warning(res <- susie(X, y, intercept = TRUE, standardize = TRUE, max_iter = 2,

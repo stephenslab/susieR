@@ -1,6 +1,6 @@
-context("test_susie_ss_interface.R")
+context("test_susie_beta_se.R")
 
-test_that("Results from ss bhat interface vs original data: no standardize", with(simulate(200,1000), {
+test_that("Results from sufficient stat interface vs original data: no standardize", with(simulate(200,1000), {
   ss = univariate_regression(X, y)
 
   R = cor(X)
@@ -22,7 +22,7 @@ test_that("Results from ss bhat interface vs original data: no standardize", wit
   expect_equal(crossprod(X.c, orig$fitted), fit$Xtfitted)
 }))
 
-test_that("Results from ss bhat interface vs original data: standardize", with(simulate(200,1000), {
+test_that("Results from sufficient stat interface vs original data: standardize", with(simulate(200,1000), {
   ss = univariate_regression(X, y)
   R = cor(X)
 
@@ -46,7 +46,7 @@ test_that("Results from ss bhat interface vs original data: standardize", with(s
   expect_equal(crossprod(X.cs, orig$fitted), fit$Xtfitted)
 }))
 
-test_that("Results from ss bhat interface: t statistics", with(simulate(200,1000), {
+test_that("Results from sufficient stat interface: t statistics", with(simulate(200,1000), {
   ss = univariate_regression(X, y)
   R = cor(X)
 
