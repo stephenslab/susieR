@@ -4,12 +4,12 @@
 \alias{set_R_attributes}
 \title{sets the attributes for the R matrix}
 \usage{
-set_R_attributes(R, expected_dim)
+set_R_attributes(R, r_tol)
 }
 \arguments{
 \item{R}{a p by p LD matrix}
 
-\item{z}{a p vector of z scores}
+\item{r_tol}{tolerance level for eigen value check of positive semidefinite matrix of R}
 }
 \value{
 R with attribute e.g.

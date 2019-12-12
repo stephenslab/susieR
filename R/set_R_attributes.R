@@ -1,27 +1,37 @@
 #' @title sets the attributes for the R matrix
 #' @param R a p by p LD matrix
-#' @param z a p vector of z scores
+#' @param r_tol tolerance level for eigen value check of positive semidefinite matrix of R
 #' @return R with attribute e.g.
 #'         attr(R, 'eigenR') is the eigen decomposition of R.
 
-set_R_attributes = function(R, expected_dim) {
-  if(nrow(R) != expected_dim) {
-    stop(paste0('The dimension of R (', nrow(R), ' by ', nrow(R), ') does not agree with expected (', expected_dim, ' by ', expected_dim, ')'))
-  }
-  if(!is_symmetric_matrix(R)){
-    stop('R is not a symmetric matrix.')
-  }
+set_R_attributes = function(R, r_tol){
+  if(is.null(attr(R, 'eigen')))
+    eigenR = eigen(R, symmetric = TRUE)
+  else
+    eigenR = attr(R, 'eigen')
 
-  X0 = diag(R) == 0
-  # convert any input R to correlation matrix
-  # if R has 0 colums and rows, cov2cor produces NaN and warning
-  R = muffled_cov2cor(R)
-  # change the columns and rows with NaN to 0
-  if(sum(X0) > 0){
-    R[X0, ] = R[,X0] = 0
+  eigenR$values[abs(eigenR$values) < r_tol] = 0
+  if(any(eigenR$values < 0)){
+    eigenR$values[eigenR$values < 0] = 0
+    warning('Negative eigenvalues are set to 0.')
   }
 
-  attr(R, 'eigenR') <- eigen(R, symmetric = TRUE)
+  tmp = eigenR$vectors %*% (t(eigenR$vectors) * eigenR$values)
+  if(all(abs(diag(tmp) - 1) < sqrt(.Machine$double.eps))){
+    diag(tmp) = 1
+    res = tmp
+  }else{
+    diagtmp_0.5 = diag(tmp)^(0.5)
+    diagtmp_0.5[diagtmp_0.5 == 0] = 1
+    normalize = apply(eigenR$vectors / diagtmp_0.5, 2, function(x) sqrt(sum(x^2)))
+    eigenR$values = normalize^2 * eigenR$values
+    eigenR$vectors = t(t(eigenR$vectors / diagtmp_0.5)/normalize)
+    res = eigenR$vectors %*% (t(eigenR$vectors) * eigenR$values)
+    diag(res) = 1
+  }
+  attr(res, 'eigen') = eigenR
+  attr(res, 'd') <- diag(res)
+  attr(res, 'scaled:scale') <- rep(1, length = nrow(R))
 
-  return(R)
+  return(res)
 }

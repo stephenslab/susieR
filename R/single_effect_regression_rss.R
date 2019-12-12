@@ -1,19 +1,18 @@
 #' @title Bayesian single-effect linear regression using z scores.
 #' @details Performs single-effect linear regression with z scores. That is, this function
-#' fits the regression model z = Rb + e, where e is N(0,residual_variance * R) and the
+#' fits the regression model z = Rb + e, where e is N(0,Sigma), Sigma = residual_var * R + lambda I, and the
 #' b is a p vector of effects to be estimated.
 #' The assumption is that b has exactly one non-zero element, with all elements
 #' equally likely to be non-zero. The prior on the non-zero element is N(0,var=V).
 #' @details Performs sum of single-effect (susie) linear regression with z scores.
 #' The summary data required are the p by p correlation matrix R, the p vector z. The summary stats should come from the same individuals.
-#' This function fits the regression model z = sum_l Rb_l + e, where e is N(0,residual_variance * R) and the
+#' This function fits the regression model z = sum_l Rb_l + e, where e is N(0,Sigma) and the
 #' sum_l b_l is a p vector of effects to be estimated.
 #' The assumption is that each b_l has exactly one non-zero element, with all elements
 #' equally likely to be non-zero. The prior on the non-zero element is N(0,var=prior_variance).
 #' @param z a p vector
 #' @param Sigma residual_var * R + lambda I
 #' @param V the prior variance
-#' @param residual_variance the residual variance
 #' @param prior_weights a p vector of prior weights
 #' @param optimize_V boolean indicating whether to optimize V (by maximum likelihood)
 #' @return a list with elements: \cr
@@ -26,7 +25,7 @@
 #' \item{lbf_model}{(scalar) the loglikelihood for the total model minus the log-likelihood for the null model}
 #'
 #'
-single_effect_regression_rss = function(z,Sigma,V=1,residual_variance=1,prior_weights=NULL,optimize_V=c("none", "optim", "EM")){
+single_effect_regression_rss = function(z,Sigma,V=1,prior_weights=NULL,optimize_V=c("none", "optim", "EM")){
   p = length(z)
   shat2 = 1/attr(Sigma, 'RjSinvRj')
   if (is.null(prior_weights))

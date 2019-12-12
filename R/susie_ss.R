@@ -340,11 +340,11 @@ check_projection <- function(A, b){
   if(is.null(attr(A, 'eigen')))
     attr(A, 'eigen') = eigen(A, symmetric = TRUE)
 
-  B = attr(A, 'eigen')$vectors[,attr(A, 'eigen')$values!=0]
+  B = attr(A, 'eigen')$vectors[,attr(A, 'eigen')$values > -sqrt(.Machine$double.eps)]
   msg = all.equal(as.vector(B %*% crossprod(B, b)), b, check.names=FALSE)
 
   if (length(msg)==1 && msg == TRUE)
     return(list(status=T, msg=NA))
   else
-    return(list(status=F,msg=msg))
+    return(list(status=F, msg=msg))
 }

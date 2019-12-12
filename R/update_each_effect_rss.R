@@ -19,7 +19,7 @@ update_each_effect_rss <- function (R, z, s_init, Sigma, estimate_prior_variance
 
       #compute residuals
       r = z - s$Rz
-      res = single_effect_regression_rss(as.vector(r),Sigma,s$V[l], s$sigma2,s$pi,estimate_prior_method)
+      res = single_effect_regression_rss(as.vector(r),Sigma,s$V[l], s$pi,estimate_prior_method)
       # Update the variational estimate of the posterior mean.
       s$mu[l,] <- res$mu
       s$alpha[l,] <- res$alpha

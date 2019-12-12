@@ -101,19 +101,11 @@ susie_rss = function(z, R, maf=NULL, maf_thresh=0,
   }
 
   p = ncol(R)
-
-  ## eigen decomposition
-  semi_pd = check_semi_pd(R, r_tol)
-  R = semi_pd$matrix
-
-  if (check_R && semi_pd$status == FALSE) {
-      stop(paste0('The correlation matrix (', nrow(R), ' by ', ncol(R), 'is not a positive semidefinite matrix.
-                  You can bypass this by "check_R = FALSE" which instead sets negative eigenvalues to 0 to allow for continued computations.'))
-  }
-  attr(R, 'eigen')$values = semi_pd$eigenvalues
-  if(semi_pd$status == FALSE){
-    attr(R, 'eigen')$values[semi_pd$eigenvalues < 0] = 0
-    warning('Negative eigenvalues are set to 0.')
+  ## eigen decomposition for R, fileter on eigenvalues
+  attr(R, 'eigen') = eigen(R, symmetric = T)
+  if (check_R && any(attr(R, 'eigen')$values < -r_tol)) {
+    stop(paste0('The correlation matrix (', nrow(R), ' by ', ncol(R), 'is not a positive semidefinite matrix.
+                You can bypass this by "check_R = FALSE" which instead sets negative eigenvalues to 0 to allow for continued computations.'))
   }
 
   ## check whether z in space spanned by the non-zero eigenvectors of R
@@ -127,9 +119,7 @@ susie_rss = function(z, R, maf=NULL, maf_thresh=0,
             You can safely set "check_z = FALSE" when you rerun the analysis, to save computation.', stderr())
     }
   }
-  attr(R, 'd') <- diag(R)
-  attr(R, 'scaled:scale') <- rep(1, length = p)
-
+  R = set_R_attributes(R, r_tol)
   # initialize susie fit
   s = init_setup_rss(p,L,prior_variance,residual_variance,prior_weights,null_weight,1)
 
@@ -242,7 +232,7 @@ update_Sigma = function(R, sigma2, z){
   Dinv[is.infinite(Dinv)] = 0
   attr(Sigma, 'eigenS') = eigenS
 
-  # Sigma^(-1) R_j
+  # Sigma^(-1) R_j = U (sigma2 D + lambda)^(-1) D U^T e_j
   attr(Sigma, 'SinvRj') = eigenS$vectors %*% (Dinv*attr(R, 'eigen')$values * t(eigenS$vectors))
 
   if(attr(R, 'lambda')==0){
