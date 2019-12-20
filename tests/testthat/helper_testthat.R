@@ -84,24 +84,24 @@ expect_equal_susie_update = function(new.res, original.res){
   expect_equal(new.res$V, original.res$V)
 }
 
-expect_equal_susie_suff_stat_update = function(new.res, original.res){
-  expect_equal(new.res$alpha, original.res$alpha)
-  expect_equal(new.res$mu, original.res$mu)
-  expect_equal(new.res$mu2, original.res$mu2)
-  expect_equal(new.res$XtXr, original.res$XtXr)
-  expect_equal(new.res$KL, original.res$KL)
-  expect_equal(new.res$sigma2, original.res$sigma2)
-  expect_equal(new.res$V, original.res$V)
+expect_equal_susie_suff_stat_update = function(new.res, original.res, tol = .Machine$double.eps^0.5){
+  expect_equal(new.res$alpha, original.res$alpha, tol = tol)
+  expect_equal(new.res$mu, original.res$mu, tol = tol)
+  expect_equal(new.res$mu2, original.res$mu2, tol = tol)
+  expect_equal(new.res$XtXr, original.res$XtXr, tol = tol)
+  expect_equal(new.res$KL, original.res$KL, tol = tol)
+  expect_equal(new.res$sigma2, original.res$sigma2, tol = tol)
+  expect_equal(new.res$V, original.res$V, tol = tol)
 }
 
-expect_equal_susie_rss_update = function(new.res, original.res){
-  expect_equal(new.res$alpha, original.res$alpha)
-  expect_equal(new.res$mu, original.res$mu)
-  expect_equal(new.res$mu2, original.res$mu2)
-  expect_equal(new.res$Rz, original.res$Rz)
-  expect_equal(new.res$KL, original.res$KL)
-  expect_equal(new.res$sigma2, original.res$sigma2)
-  expect_equal(new.res$V, original.res$V)
+expect_equal_susie_rss_update = function(new.res, original.res, tol = .Machine$double.eps^0.5){
+  expect_equal(new.res$alpha, original.res$alpha, tol = tol)
+  expect_equal(new.res$mu, original.res$mu, tol = tol)
+  expect_equal(new.res$mu2, original.res$mu2, tol = tol)
+  expect_equal(new.res$Rz, original.res$Rz, tol = tol)
+  expect_equal(new.res$KL, original.res$KL, tol = tol)
+  expect_equal(new.res$sigma2, original.res$sigma2, tol = tol)
+  expect_equal(new.res$V, original.res$V, tol = tol)
 }
 
 expect_equal_SER = function(new.res, original.res){
@@ -113,13 +113,13 @@ expect_equal_SER = function(new.res, original.res){
   expect_equal(new.res$loglik, original.res$loglik)
 }
 
-expect_equal_SER_suff_stat = function(new.res, original.res){
-  expect_equal(new.res$alpha, original.res$alpha)
-  expect_equal(new.res$mu, original.res$mu)
-  expect_equal(new.res$mu2, original.res$mu2)
-  expect_equal(new.res$lbf, original.res$lbf)
-  expect_equal(new.res$V, original.res$V)
-  expect_equal(new.res$lbf_model, original.res$lbf_model)
+expect_equal_SER_suff_stat = function(new.res, original.res, tol = .Machine$double.eps^0.5){
+  expect_equal(new.res$alpha, original.res$alpha, tol = tol)
+  expect_equal(new.res$mu, original.res$mu, tol = tol)
+  expect_equal(new.res$mu2, original.res$mu2, tol = tol)
+  expect_equal(new.res$lbf, original.res$lbf, tol = tol)
+  expect_equal(new.res$V, original.res$V, tol = tol)
+  expect_equal(new.res$lbf_model, original.res$lbf_model, tol = tol)
 }
 
 expect_equal_susie = function(new.res, original.res){
@@ -131,18 +131,18 @@ expect_equal_susie = function(new.res, original.res){
   expect_equal(new.res$X_column_scale_factors, original.res$X_column_scale_factors)
 }
 
-expect_equal_susie_suff_stat = function(new.res, original.res){
-  expect_equal_susie_suff_stat_update(new.res, original.res)
-  expect_equal(new.res$elbo, original.res$elbo)
-  expect_equal(new.res$niter, original.res$niter)
-  expect_equal(new.res$intercept, original.res$intercept)
-  expect_equal(new.res$Xtfitted, original.res$Xtfitted)
+expect_equal_susie_suff_stat = function(new.res, original.res, tol = .Machine$double.eps^0.5){
+  expect_equal_susie_suff_stat_update(new.res, original.res, tol = tol)
+  expect_equal(new.res$elbo, original.res$elbo, tol = tol)
+  expect_equal(new.res$niter, original.res$niter, tol = tol)
+  expect_equal(new.res$intercept, original.res$intercept, tol = tol)
+  expect_equal(new.res$Xtfitted, original.res$Xtfitted, tol = tol)
 }
 
-expect_equal_susie_rss = function(new.res, original.res){
-  expect_equal_susie_rss_update(new.res, original.res)
-  expect_equal(new.res$elbo, original.res$elbo)
-  expect_equal(new.res$niter, original.res$niter)
-  expect_equal(new.res$intercept, original.res$intercept)
-  expect_equal(new.res$Rz, original.res$Rz)
+expect_equal_susie_rss = function(new.res, original.res, tol = .Machine$double.eps^0.5){
+  expect_equal_susie_rss_update(new.res, original.res, tol = tol)
+  expect_equal(new.res$elbo, original.res$elbo, tol = tol)
+  expect_equal(new.res$niter, original.res$niter, tol = tol)
+  expect_equal(new.res$intercept, original.res$intercept, tol = tol)
+  expect_equal(new.res$Rz, original.res$Rz, tol = tol)
 }

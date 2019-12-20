@@ -13,7 +13,7 @@ test_that("update_each_effect_rss (lambda = 0) agrees with previous version ", w
   Sigma = update_Sigma(R, s$sigma2, z)
 
   res = update_each_effect_rss(R, z, s, Sigma)
-  expect_equal_susie_rss_update(res, original.res)
+  expect_equal_susie_rss_update(res, original.res, tol=1E-4)
 }))
 
 test_that("update_each_effect_rss (lambda = 1) agrees with previous version ", with(simulate(200, 500), {
@@ -29,5 +29,5 @@ test_that("update_each_effect_rss (lambda = 1) agrees with previous version ", w
   Sigma = update_Sigma(R, s$sigma2, z)
 
   res = update_each_effect_rss(R, z, s, Sigma)
-  expect_equal_susie_rss_update(res, original.res)
+  expect_equal_susie_rss_update(res, original.res, tol=1E-4)
 }))
