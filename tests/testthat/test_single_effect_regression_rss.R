@@ -21,8 +21,8 @@ test_that("single_effect_regression_rss (lambda = 1) agrees with previous versio
   original.res = readRDS('singleReg_rss_lambda1_res.rds')$s
   # the git commit id to previous result is readRDS('singleReg_rss_res.rds')$git_commit_id
 
-  ss = univariate_regression(dat$X, dat$y)
-  R = cor(dat$X)
+  ss = univariate_regression(X, y)
+  R = cor(X)
   z = ss$betahat/ss$sebetahat
   R = set_R_attributes(R, 1e-08)
   attr(R, 'lambda') = 1
