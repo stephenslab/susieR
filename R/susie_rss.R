@@ -194,7 +194,7 @@ susie_rss = function(z, R, maf=NULL, maf_thresh=0,
       break;
     }
   }
-  elbo = elbo[1:(i+1)] #remove trailing NAs
+  elbo = elbo[2:(i+1)] # Remove first (infinite) entry, and trailing NAs.
   s$elbo <- elbo
   s$niter <- i
 
