@@ -24,7 +24,6 @@ test_that("susie agrees with version 0.3", with(simulate(sparse=T), {
   dense.res4 = susie(X, y, standardize=FALSE, intercept = FALSE, tol=1E-2, estimate_prior_variance = FALSE)
   sparse.res4 = susie(X.sparse, y, standardize=FALSE, intercept = FALSE,
                       tol=1E-2, estimate_prior_variance = FALSE)
-
   expect_equal_susie(sparse.res, original.res)
   expect_equal_susie(dense.res, original.res)
   expect_equal_susie(sparse.res2, original.res2)
