@@ -8,14 +8,14 @@ create_sparsity_mat = function(sparsity, n, p){
   mat = numeric(n*p)
   mat[nonzero.idx] = 1
   mat = matrix(mat, nrow=n, ncol=p)
-  return(mat)     
+  return(mat)
 }
 
 set.seed(1)
 n = 100
 p = 200
 beta = rep(0,p)
-beta[1]    = 10 
+beta[1]    = 10
 beta[2]  = 10
 beta[3]  = 10
 beta[4] = 10
@@ -29,14 +29,14 @@ s = list(alpha=matrix(1/p,nrow=L,ncol=p),
          mu2=matrix(3,nrow=L,ncol=p),
          Xr=rep(5,n), KL=rep(1.2,L),
          sigma2=residual_variance, V=scaled_prior_variance * as.numeric(var(y)))
-X = susieR:::safe_colScale(X.dense)
+X = susieR:::set_X_attributes(X.dense)
 Eb = rep(1, p)
 Eb2 = rep(1, p)
 s2 = residual_variance
 V = scaled_prior_variance
 
 
-objective.original.res = susieR:::susie_get_objective(X, y, s)
+objective.original.res = susieR::susie_get_objective(s)
 saveRDS(objective.original.res, 'objective_original_res.rds')
 
 Eloglik.original.res = susieR:::Eloglik(X,y,s)

@@ -262,6 +262,15 @@ susie_suff_stat = function(bhat, shat, R, n, var_y = 1,
     if(verbose){
       print(paste0("objective:",get_objective_ss(XtX, Xty, s, yty, n)))
     }
+    # compute objective before updating residual variance
+    # because part of the objective s$kl has already been computed
+    # under the residual variance before the update
+    elbo[i+1] = get_objective_ss(XtX, Xty, s, yty, n)
+    # if(max(abs(alpha_new - alpha_old)) < tol) break;
+    if((elbo[i+1]-elbo[i])<tol) {
+      s$converged = TRUE
+      break;
+    }
     if(estimate_residual_variance){
       est_sigma2 = estimate_residual_variance_ss(XtX,Xty,s,yty,n)
       if(est_sigma2 < 0){
@@ -271,14 +280,6 @@ susie_suff_stat = function(bhat, shat, R, n, var_y = 1,
       if(verbose){
         print(paste0("objective:",get_objective_ss(XtX, Xty, s, yty, n)))
       }
-    }
-    elbo[i+1] = get_objective_ss(XtX, Xty, s, yty, n)
-
-    # if(max(abs(alpha_new - alpha_old)) < tol) break;
-
-    if((elbo[i+1]-elbo[i])<tol) {
-      s$converged = TRUE
-      break;
     }
   }
   elbo = elbo[2:(i+1)] # Remove first (infinite) entry, and trailing NAs.

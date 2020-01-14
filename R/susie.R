@@ -247,6 +247,14 @@ susie <- function(X,Y,L = min(10,ncol(X)),scaled_prior_variance = 0.2,
     if(verbose){
         print(paste0("objective:",get_objective(X,Y,s)))
     }
+    # compute objective before updating residual variance
+    # because part of the objective s$kl has already been computed
+    # under the residual variance before the update
+    elbo[i+1] = get_objective(X,Y,s)
+    if((elbo[i+1]-elbo[i])<tol) {
+      s$converged = TRUE
+      break;
+    }
     if(estimate_residual_variance){
       s$sigma2 = estimate_residual_variance(X,Y,s)
       if(verbose){
@@ -254,12 +262,6 @@ susie <- function(X,Y,L = min(10,ncol(X)),scaled_prior_variance = 0.2,
       }
     }
     #s = remove_null_effects(s)
-
-    elbo[i+1] = get_objective(X,Y,s)
-    if((elbo[i+1]-elbo[i])<tol) {
-      s$converged = TRUE
-      break;
-    }
   }
   elbo = elbo[2:(i+1)] # Remove first (infinite) entry, and trailing NAs.
   s$elbo <- elbo

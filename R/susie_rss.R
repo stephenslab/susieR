@@ -150,6 +150,14 @@ susie_rss = function(z, R, maf=NULL, maf_thresh=0,
     if(verbose){
       print(paste0("before estimate sigma2 objective:",get_objective_rss(R, z, s)))
     }
+    # compute objective before updating residual variance
+    # because part of the objective s$kl has already been computed
+    # under the residual variance before the update
+    elbo[i+1] = get_objective_rss(R, z, s)
+    if((elbo[i+1]-elbo[i])<tol) {
+      s$converged = TRUE
+      break;
+    }
     if(estimate_residual_variance){
 
       if(lambda == 0){
@@ -184,14 +192,7 @@ susie_rss = function(z, R, maf=NULL, maf_thresh=0,
       if(verbose){
         print(paste0("after estimate sigma2 objective:", get_objective_rss(R, z, s)))
       }
-
       Sigma = update_Sigma(R, s$sigma2, z)
-    }
-    elbo[i+1] = get_objective_rss(R, z, s)
-
-    if((elbo[i+1]-elbo[i])<tol) {
-      s$converged = TRUE
-      break;
     }
   }
   elbo = elbo[2:(i+1)] # Remove first (infinite) entry, and trailing NAs.
