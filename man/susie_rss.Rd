@@ -8,7 +8,7 @@ susie_rss(z, R, maf = NULL, maf_thresh = 0, L = 10, lambda = 0,
   prior_variance = 50, residual_variance = NULL, r_tol = 1e-08,
   prior_weights = NULL, null_weight = NULL, restrict = TRUE,
   estimate_residual_variance = TRUE, estimate_prior_variance = TRUE,
-  estimate_prior_method = c("optim", "EM"), max_iter = 100,
+  estimate_prior_method = c("optim", "EM", "simple"), max_iter = 100,
   s_init = NULL, intercept_value = 0, coverage = 0.95,
   min_abs_corr = 0.5, tol = 0.001, verbose = FALSE,
   track_fit = FALSE, check_R = TRUE, check_z = TRUE)
@@ -42,7 +42,10 @@ susie_rss(z, R, maf = NULL, maf_thresh = 0, L = 10, lambda = 0,
 
 \item{estimate_prior_variance}{indicates whether to estimate prior}
 
-\item{estimate_prior_method}{The method used for estimating prior variance, 'optim' or 'EM'}
+\item{estimate_prior_method}{The method used for estimating prior
+variance. "simple" method only compares the loglikelihood between
+using specified prior variance and using zero, and chose the one that
+gives larger loglikelihood.}
 
 \item{max_iter}{maximum number of iterations to perform}
 

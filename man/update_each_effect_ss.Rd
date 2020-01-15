@@ -21,3 +21,4 @@ update_each_effect_ss(XtX, Xty, s_init, estimate_prior_variance = FALSE,
 \description{
 update each effect once
 }
+\keyword{internal}

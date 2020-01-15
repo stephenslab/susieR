@@ -20,3 +20,4 @@ estimate_residual_variance_ss(XtX, Xty, s, yty, n)
 \description{
 Estimate residual variance for summary statistics
 }
+\keyword{internal}

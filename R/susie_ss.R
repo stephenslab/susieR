@@ -28,7 +28,7 @@
 #' @param residual_variance the residual variance (defaults to variance of y)
 #' @param estimate_residual_variance indicates whether to estimate residual variance
 #' @param estimate_prior_variance indicates whether to estimate prior
-#' @param estimate_prior_method The method used for estimating prior variance, 'optim' or 'EM'
+#' @param estimate_prior_method The method used for estimating prior variance.
 #' @param r_tol tolerance level for eigen value check of positive semidefinite matrix of R.
 #' @param prior_weights a p vector of prior probability that each element is non-zero
 #' @param null_weight probability of no effect, for each single effect model
@@ -85,7 +85,7 @@ susie_suff_stat = function(bhat, shat, R, n, var_y = 1,
                            residual_variance=NULL,
                            estimate_residual_variance = TRUE,
                            estimate_prior_variance = TRUE,
-                           estimate_prior_method = c("optim","EM"),
+                           estimate_prior_method = c("optim","EM","simple"),
                            r_tol = 1e-08,
                            prior_weights = NULL, null_weight = NULL,
                            standardize = TRUE,

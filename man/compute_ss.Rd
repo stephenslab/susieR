@@ -2,7 +2,7 @@
 % Please edit documentation in R/compute_ss.R
 \name{compute_ss}
 \alias{compute_ss}
-\title{Compute the needed summary statistics for `susie_ss` from the 'raw' data}
+\title{Compute sufficient statistics from input data}
 \usage{
 compute_ss(X, y, standardize = TRUE)
 }
@@ -14,8 +14,8 @@ compute_ss(X, y, standardize = TRUE)
 \item{standardize}{logical flag (default=TRUE) for whether to standardize columns of X to unit variance prior to fitting.}
 }
 \value{
-a list with the input for `susie_ss`
+a list of sufficient statistics
 }
 \description{
-Compute the needed summary statistics for `susie_ss` from the 'raw' data
+Compute sufficient statistics from input data
 }

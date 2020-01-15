@@ -23,14 +23,14 @@
 #' @importFrom stats uniroot
 #' @importFrom stats optim
 #'
-single_effect_regression_ss = function(Xty,dXtX,V=1,residual_variance=1,prior_weights=NULL,optimize_V=c("none", "optim", "EM")){
+single_effect_regression_ss = function(Xty,dXtX,V=1,residual_variance=1,prior_weights=NULL,optimize_V=c("none", "optim", "uniroot", "EM", "simple")){
   optimize_V = match.arg(optimize_V)
   betahat = (1/dXtX) * Xty
   shat2 = residual_variance/dXtX
   if (is.null(prior_weights))
     prior_weights = rep(1/length(dXtX), length(dXtX))
 
-  if(optimize_V=="optim") V=optimize_prior_variance(optimize_V, betahat, shat2, prior_weights, alpha=NULL, post_mean2=NULL)
+  if(optimize_V!="EM" && optimize_V!="none") V=optimize_prior_variance(optimize_V, betahat, shat2, prior_weights, alpha=NULL, post_mean2=NULL)
 
   lbf = dnorm(betahat,0,sqrt(V+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
   #log(bf) on each SNP

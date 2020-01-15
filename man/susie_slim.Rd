@@ -12,3 +12,4 @@ susie_slim(res)
 \description{
 Slim the result of fitted SuSiE model
 }
+\keyword{internal}

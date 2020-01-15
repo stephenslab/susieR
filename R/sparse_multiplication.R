@@ -24,6 +24,7 @@ compute_Xb = function(X, b){
 #' @return a p vector
 #' @importFrom Matrix t
 #' @importFrom Matrix crossprod
+#' @keywords internal
 compute_Xty = function(X, y){
   cm = attr(X, 'scaled:center')
   csd = attr(X, 'scaled:scale')
@@ -43,6 +44,7 @@ compute_Xty = function(X, y){
 #' @param X an n by p unstandardized matrix with three attributes: attr(X, 'scaled:center'), attr(X, 'scaled:scale'), and attr(X, 'd')
 #' @return a L by n matrix
 #' @importFrom Matrix t
+#' @keywords internal
 compute_MXt = function(M, X){
   cm = attr(X, 'scaled:center')
   csd = attr(X, 'scaled:scale')

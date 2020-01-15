@@ -19,7 +19,10 @@
 #' @param restrict whether to restrict the resiudal variance between 0 and 1
 #' @param estimate_residual_variance indicates whether to estimate residual variance
 #' @param estimate_prior_variance indicates whether to estimate prior
-#' @param estimate_prior_method The method used for estimating prior variance, 'optim' or 'EM'
+#' @param estimate_prior_method The method used for estimating prior
+#' variance. "simple" method only compares the loglikelihood between
+#' using specified prior variance and using zero, and chose the one that
+#' gives larger loglikelihood.
 #' @param max_iter maximum number of iterations to perform
 #' @param s_init a previous susie fit with which to initialize
 #' @param intercept_value a value to assign to the intercept (since the intercept cannot be estimated from centered summary data). This
@@ -50,7 +53,7 @@ susie_rss = function(z, R, maf=NULL, maf_thresh=0,
                      restrict = TRUE,
                      estimate_residual_variance = TRUE,
                      estimate_prior_variance = TRUE,
-                     estimate_prior_method = c("optim","EM"),
+                     estimate_prior_method = c("optim","EM","simple"),
                      max_iter=100,s_init = NULL, intercept_value=0,
                      coverage=0.95, min_abs_corr=0.5,
                      tol=1e-3, verbose=FALSE, track_fit = FALSE, check_R = TRUE, check_z = TRUE) {
@@ -122,7 +125,6 @@ susie_rss = function(z, R, maf=NULL, maf_thresh=0,
   R = set_R_attributes(R, r_tol)
   # initialize susie fit
   s = init_setup_rss(p,L,prior_variance,residual_variance,prior_weights,null_weight,1)
-
   if (!missing(s_init)) {
     s = modifyList(s, s_init)
     s = init_finalize_rss(s, R=R)

@@ -8,11 +8,11 @@ susie_suff_stat(bhat, shat, R, n, var_y = 1, XtX, Xty, yty, maf = NULL,
   maf_thresh = 0, L = 10, scaled_prior_variance = 0.2,
   residual_variance = NULL, estimate_residual_variance = TRUE,
   estimate_prior_variance = TRUE, estimate_prior_method = c("optim",
-  "EM"), r_tol = 1e-08, prior_weights = NULL, null_weight = NULL,
-  standardize = TRUE, max_iter = 100, s_init = NULL,
-  intercept_value = 0, coverage = 0.95, min_abs_corr = 0.5,
-  tol = 0.001, verbose = FALSE, track_fit = FALSE,
-  check_input = FALSE)
+  "EM", "simple"), r_tol = 1e-08, prior_weights = NULL,
+  null_weight = NULL, standardize = TRUE, max_iter = 100,
+  s_init = NULL, intercept_value = 0, coverage = 0.95,
+  min_abs_corr = 0.5, tol = 0.001, verbose = FALSE,
+  track_fit = FALSE, check_input = FALSE)
 }
 \arguments{
 \item{bhat}{a p vector of estimated effects.}
@@ -46,7 +46,7 @@ It should from the same samples used to compute `bhat` and `shat`. Using out of 
 
 \item{estimate_prior_variance}{indicates whether to estimate prior}
 
-\item{estimate_prior_method}{The method used for estimating prior variance, 'optim' or 'EM'}
+\item{estimate_prior_method}{The method used for estimating prior variance.}
 
 \item{r_tol}{tolerance level for eigen value check of positive semidefinite matrix of R.}
 

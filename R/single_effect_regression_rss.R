@@ -25,13 +25,13 @@
 #' \item{lbf_model}{(scalar) the loglikelihood for the total model minus the log-likelihood for the null model}
 #'
 #'
-single_effect_regression_rss = function(z,Sigma,V=1,prior_weights=NULL,optimize_V=c("none", "optim", "EM")){
+single_effect_regression_rss = function(z,Sigma,V=1,prior_weights=NULL,optimize_V=c("none", "optim", "uniroot", "EM", "simple")){
   p = length(z)
   shat2 = 1/attr(Sigma, 'RjSinvRj')
   if (is.null(prior_weights))
     prior_weights = rep(1/p, p)
 
-  if(optimize_V=="optim"){
+  if(optimize_V!="EM" && optimize_V!="none"){
     V=optimize_prior_variance_rss(optimize_V, z, Sigma, prior_weights, alpha=NULL, post_mean2=NULL)
   }
 
@@ -86,15 +86,17 @@ neg.loglik_z.logscale_rss = function(lV,z,Sigma,prior_weights){
 }
 
 optimize_prior_variance_rss = function(optimize_V, z, Sigma, prior_weights, alpha=NULL, post_mean2=NULL){
-  if(optimize_V=="optim"){
-    lV = optim(par=log(max(c((z^2) - (1/attr(Sigma, 'RjSinvRj')), 1e-6), na.rm = TRUE)),
+  if (optimize_V != "simple") {
+    if(optimize_V=="optim"){
+      lV = optim(par=log(max(c((z^2) - (1/attr(Sigma, 'RjSinvRj')), 1e-6), na.rm = TRUE)),
                fn=neg.loglik_z.logscale_rss,
                z=z, Sigma = Sigma, prior_weights = prior_weights,
                method='Brent', lower = -30, upper = 15)$par
-    V = exp(lV)
-  }else if(optimize_V=="EM"){
-    V = sum(alpha*post_mean2)
-  }else stop('Invalid option for `optimize_V` method')
+      V = exp(lV)
+    }else if(optimize_V=="EM"){
+      V = sum(alpha*post_mean2)
+    }else stop('Invalid option for `optimize_V` method')
+  }
   if(loglik_rss(0,z,Sigma,prior_weights) >= loglik_rss(V,z,Sigma,prior_weights)) V=0 # set V exactly 0 if that beats the numerical value
   return(V)
 }

@@ -45,7 +45,7 @@ To automatically retrieve and install `susieR` from this repository,
 with the vignettes included, run:
 
 ```R
-devtools::install_github("stephenslab/susieR@0.8.0",build_vignettes = TRUE)
+devtools::install_github("stephenslab/susieR@0.9.0",build_vignettes = TRUE)
 ```
 
 ## Quick Start
@@ -56,7 +56,7 @@ please visit https://stephenslab.github.io/susieR
 
 ## Developer notes
 
-+ When any changes are made to `roxygen2` markup, simply run 
++ When any changes are made to `roxygen2` markup, simply run
 `devtools::document()` to update package `NAMESPACE`
 and documentation files.
 
@@ -65,12 +65,12 @@ following commands in the shell:
 
     ```bash
     R CMD build --resave-data --no-build-vignettes susieR
-    R CMD INSTALL susieR_0.8.1.0525.tar.gz
-    R CMD check --as-cran --ignore-vignettes susieR_0.8.1.0525.tar.gz
+    R CMD INSTALL susieR_0.9.0.tar.gz
+    R CMD check --as-cran --ignore-vignettes susieR_0.9.0.tar.gz
     ```
 
 + Run `pkgdown::build_site()` to build the website. Getting `pkgdown`
-to work properly can be frustrating due to numerous & fragile dependencies. 
+to work properly can be frustrating due to numerous & fragile dependencies.
 If `pkgdown` does not work for you out of the box you can use this `docker`
 command to run all vignettes and build the site:
 

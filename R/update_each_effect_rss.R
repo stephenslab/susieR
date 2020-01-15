@@ -5,6 +5,7 @@
 #' @param Sigma sigma2*R + lambda I
 #' @param estimate_prior_variance boolean indicating whether to estimate prior variance
 #' @importFrom Matrix diag
+#' @keywords internal
 update_each_effect_rss <- function (R, z, s_init, Sigma, estimate_prior_variance=FALSE,estimate_prior_method="optim") {
 
   if(estimate_prior_variance==FALSE) estimate_prior_method="none"

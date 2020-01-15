@@ -16,3 +16,4 @@ estimate_residual_variance(X, Y, s)
 \description{
 Estimate residual variance
 }
+\keyword{internal}

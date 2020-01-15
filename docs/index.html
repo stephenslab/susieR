@@ -7,9 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fit Sum of Single Effects Linear Regression Model  • susieR</title>
 <!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script><!-- Bootstrap --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous">
-<!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="pkgdown.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous">
+<!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script><!-- sticky kit --><script src="https://cdnjs.cloudflare.com/ajax/libs/sticky-kit/1.1.3/sticky-kit.min.js" integrity="sha256-c4Rlo1ZozqTPE2RLuvbusY3+SU1pQaJC0TjuhygMipw=" crossorigin="anonymous"></script><!-- pkgdown --><link href="pkgdown.css" rel="stylesheet">
 <script src="pkgdown.js"></script><meta property="og:title" content="Fit Sum of Single Effects Linear Regression Model ">
 <meta property="og:description" content="The package implements a simple new way to perform
     variable selection in multiple regression ($y=Xb+e$), using
@@ -37,7 +36,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.8.1.545</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.9.0</span>
       </span>
     </div>
 
@@ -66,7 +65,6 @@
 <!--/.navbar -->
 
       
-
       </header><div class="row">
   <div class="contents col-md-9">
 <div id="susier" class="section level1">
@@ -82,7 +80,7 @@
 <h2 class="hasAnchor">
 <a href="#setup" class="anchor"></a>Setup</h2>
 <p>To automatically retrieve and install <code>susieR</code> from this repository, with the vignettes included, run:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">devtools::<span class="kw">install_github</span>(<span class="st">"stephenslab/susieR@0.8.0"</span>,<span class="dt">build_vignettes =</span> <span class="ot">TRUE</span>)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">devtools::<span class="kw">install_github</span>(<span class="st">"stephenslab/susieR@0.9.0"</span>,<span class="dt">build_vignettes =</span> <span class="ot">TRUE</span>)</code></pre></div>
 </div>
 <div id="quick-start" class="section level2">
 <h2 class="hasAnchor">
@@ -93,17 +91,17 @@
 <h2 class="hasAnchor">
 <a href="#developer-notes" class="anchor"></a>Developer notes</h2>
 <ul>
-<li><p>When any changes are made to <code>roxygen2</code> markup, simply run <code><a href="https://rdrr.io/pkg/devtools/man/document.html">devtools::document()</a></code> to update package <code>NAMESPACE</code> and documentation files.</p></li>
+<li><p>When any changes are made to <code>roxygen2</code> markup, simply run <code><a href="https://www.rdocumentation.org/packages/devtools/topics/document">devtools::document()</a></code> to update package <code>NAMESPACE</code> and documentation files.</p></li>
 <li>
 <p>To install and test the development version of susieR, run the following commands in the shell:</p>
-<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="ex">R</span> CMD build --resave-data --no-build-vignettes susieR
-<span class="ex">R</span> CMD INSTALL susieR_0.8.1.0525.tar.gz
-<span class="ex">R</span> CMD check --as-cran --ignore-vignettes susieR_0.8.1.0525.tar.gz</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">R</span> CMD build --resave-data --no-build-vignettes susieR
+<span class="kw">R</span> CMD INSTALL susieR_0.9.0.tar.gz
+<span class="kw">R</span> CMD check --as-cran --ignore-vignettes susieR_0.9.0.tar.gz</code></pre></div>
 </li>
 <li><p>Run <code><a href="https://pkgdown.r-lib.org/reference/build_site.html">pkgdown::build_site()</a></code> to build the website. Getting <code>pkgdown</code> to work properly can be frustrating due to numerous &amp; fragile dependencies. If <code>pkgdown</code> does not work for you out of the box you can use this <code>docker</code> command to run all vignettes and build the site:</p></li>
 </ul>
-<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="ex">docker</span> run --rm --security-opt label:disable -t -P -w <span class="va">$PWD</span> -v <span class="va">$PWD</span>:<span class="va">$PWD</span> \
-  -u <span class="va">$UID</span>:<span class="va">${GROUPS[0]}</span> -e HOME=/home/<span class="va">$USER</span> -e USER=<span class="va">$USER</span> gaow/susie \
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">docker</span> run --rm --security-opt label:disable -t -P -w <span class="ot">$PWD</span> -v <span class="ot">$PWD</span>:<span class="ot">$PWD</span> \
+  -u <span class="ot">$UID</span>:<span class="ot">${GROUPS[0]}</span> -e HOME=/home/<span class="ot">$USER</span> -e USER=<span class="ot">$USER</span> gaow/susie \
   R --slave -e <span class="st">"pkgdown::build_site(lazy=TRUE, examples=FALSE)"</span></code></pre></div>
 </div>
 </div>
@@ -149,20 +147,17 @@
 </div>
 </div>
 
-
       <footer><div class="copyright">
   <p>Developed by Gao Wang, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto, Matthew Stephens.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.3.0.</p>
 </div>
-
       </footer>
 </div>
 
   
-
 
   </body>
 </html>

@@ -23,8 +23,7 @@
 #' @importFrom stats uniroot
 #' @importFrom stats optim
 #' @importFrom Matrix colSums
-#'
-single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL, optimize_V=c("none", "optim", "EM")){
+single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL, optimize_V=c("none", "optim", "uniroot", "EM", "simple")){
   optimize_V = match.arg(optimize_V)
   Xty = compute_Xty(X, Y)
   betahat = (1/attr(X, "d")) * Xty
@@ -32,7 +31,7 @@ single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL
   if (is.null(prior_weights))
     prior_weights = rep(1/ncol(X), ncol(X))
 
-  if(optimize_V=="optim") V=optimize_prior_variance(optimize_V, betahat, shat2, prior_weights, alpha=NULL, post_mean2=NULL)
+  if(optimize_V!="EM" && optimize_V!="none") V=optimize_prior_variance(optimize_V, betahat, shat2, prior_weights, alpha=NULL, post_mean2=NULL)
 
   lbf = dnorm(betahat,0,sqrt(V+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
   #log(bf) on each SNP
@@ -64,14 +63,16 @@ est_V_uniroot = function(betahat, shat2, prior_weights){
 }
 
 optimize_prior_variance = function(optimize_V, betahat, shat2, prior_weights, alpha=NULL, post_mean2=NULL){
-  if(optimize_V=="optim"){
-    lV = optim(par=log(max(c(betahat^2-shat2, 1), na.rm = TRUE)), fn=neg.loglik.logscale, betahat=betahat, shat2=shat2, prior_weights = prior_weights, method='Brent', lower = -30, upper = 15)$par
-    V = exp(lV)
-  }else if(optimize_V=="uniroot"){
-    V = est_V_uniroot(betahat, shat2, prior_weights)
-  }else if(optimize_V=="EM"){
-    V = sum(alpha*post_mean2)
-  }else stop('Invalid option for `optimize_V` method')
+  if (optimize_V != "simple") {
+    if(optimize_V=="optim"){
+      lV = optim(par=log(max(c(betahat^2-shat2, 1), na.rm = TRUE)), fn=neg.loglik.logscale, betahat=betahat, shat2=shat2, prior_weights = prior_weights, method='Brent', lower = -30, upper = 15)$par
+      V = exp(lV)
+    }else if(optimize_V=="uniroot"){
+      V = est_V_uniroot(betahat, shat2, prior_weights)
+    }else if(optimize_V=="EM"){
+      V = sum(alpha*post_mean2)
+    }else stop('Invalid option for `optimize_V` method')
+  }
   if(loglik(0,betahat,shat2,prior_weights) >= loglik(V,betahat,shat2,prior_weights)) V=0 # set V exactly 0 if that beats the numerical value
   return(V)
 }
@@ -81,6 +82,7 @@ optimize_prior_variance = function(optimize_V, betahat, shat2, prior_weights, al
 #' The log likelihood function for SER model (based on summary data betahat, shat2), as a function of prior variance V
 #' @importFrom Matrix colSums
 #' @importFrom stats dnorm
+#' @keywords internal
 loglik = function(V,betahat,shat2,prior_weights) {
 
   lbf = dnorm(betahat,0,sqrt(V+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)

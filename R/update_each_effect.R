@@ -3,7 +3,7 @@
 #' @param Y an n vector of response variable
 #' @param s a SuSiE fit
 #' @param estimate_prior_variance boolean indicating whether to estimate prior variance
-#'
+#' @keywords internal
 update_each_effect <- function (X, Y, s, estimate_prior_variance=FALSE,
                                 estimate_prior_method="optim") {
   if(estimate_prior_variance==FALSE) estimate_prior_method="none"

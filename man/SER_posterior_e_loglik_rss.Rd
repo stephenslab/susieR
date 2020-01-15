@@ -20,3 +20,4 @@ SER_posterior_e_loglik_rss(R, Sigma, r, Ez, Ez2)
 \description{
 posterior expected loglikelihood for a single effect regression
 }
+\keyword{internal}

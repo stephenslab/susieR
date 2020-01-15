@@ -70,6 +70,3 @@ susie_trendfilter = function(y, order=0, standardize=FALSE, use_mad=TRUE, ...){
 estimate_mad_residual_variance = function(y){
   return(0.5*(median(abs(diff(y))/0.6745)^2))
 }
-
-
-

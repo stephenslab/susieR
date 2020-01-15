@@ -17,3 +17,4 @@ a p vector
 \description{
 Computes t(standardized.X)\%*\%y using sparse multiplication trick
 }
+\keyword{internal}

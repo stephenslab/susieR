@@ -1,8 +1,8 @@
-#' @title Compute the needed summary statistics for `susie_ss` from the 'raw' data
+#' @title Compute sufficient statistics from input data
 #' @param X an n by p matrix of covariates
 #' @param y an n vector
 #' @param standardize logical flag (default=TRUE) for whether to standardize columns of X to unit variance prior to fitting.
-#' @return a list with the input for `susie_ss`
+#' @return a list of sufficient statistics
 #' @importFrom methods as
 #' @export
 compute_ss = function(X, y, standardize = TRUE){

@@ -9,3 +9,4 @@ loglik(V, betahat, shat2, prior_weights)
 \description{
 The log likelihood function for SER model (based on summary data betahat, shat2), as a function of prior variance V
 }
+\keyword{internal}

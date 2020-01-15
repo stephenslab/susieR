@@ -19,3 +19,4 @@ update_each_effect(X, Y, s, estimate_prior_variance = FALSE,
 \description{
 update each effect once
 }
+\keyword{internal}

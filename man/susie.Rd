@@ -8,7 +8,7 @@ susie(X, Y, L = min(10, ncol(X)), scaled_prior_variance = 0.2,
   residual_variance = NULL, prior_weights = NULL, null_weight = NULL,
   standardize = TRUE, intercept = TRUE,
   estimate_residual_variance = TRUE, estimate_prior_variance = TRUE,
-  estimate_prior_method = c("optim", "EM"), s_init = NULL,
+  estimate_prior_method = c("optim", "EM", "simple"), s_init = NULL,
   coverage = 0.95, min_abs_corr = 0.5,
   compute_univariate_zscore = FALSE, na.rm = FALSE, max_iter = 100,
   tol = 0.001, verbose = FALSE, track_fit = FALSE)
@@ -69,7 +69,9 @@ then the prior variance (for each of the \code{L} effects) is determined by the 
 supplied to \code{scaled_prior_variance}.}
 
 \item{estimate_prior_method}{The method used for estimating prior
-variance.}
+variance. "simple" method only compares the loglikelihood between
+using specified prior variance and using zero, and chose the one that
+gives larger loglikelihood.}
 
 \item{s_init}{A previous susie fit with which to initialize.}
 

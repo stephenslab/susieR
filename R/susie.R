@@ -67,10 +67,11 @@
 #'   point for the optimization. If \code{estimate_prior_variance = FALSE}
 #'   then the prior variance (for each of the \code{L} effects) is determined by the value
 #'   supplied to \code{scaled_prior_variance}.
-#
 #'
 #' @param estimate_prior_method The method used for estimating prior
-#'   variance.
+#' variance. "simple" method only compares the loglikelihood between
+#' using specified prior variance and using zero, and chose the one that
+#' gives larger loglikelihood.
 #'
 #' @param s_init A previous susie fit with which to initialize.
 #'
@@ -178,7 +179,7 @@ susie <- function(X,Y,L = min(10,ncol(X)),scaled_prior_variance = 0.2,
                  standardize=TRUE,intercept=TRUE,
                  estimate_residual_variance=TRUE,
                  estimate_prior_variance = TRUE,
-                 estimate_prior_method = c("optim","EM"),
+                 estimate_prior_method = c("optim","EM","simple"),
                  s_init = NULL,coverage=0.95,min_abs_corr=0.5,
                  compute_univariate_zscore = FALSE,
                  na.rm = FALSE, max_iter=100,tol=1e-3,

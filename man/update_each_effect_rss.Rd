@@ -21,3 +21,4 @@ update_each_effect_rss(R, z, s_init, Sigma,
 \description{
 update each effect once
 }
+\keyword{internal}

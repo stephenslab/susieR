@@ -7,7 +7,6 @@
 #'         attr(X, 'scaled:scale') is a p vector of column standard deviations of X if scale=TRUE, a p vector of 1s otherwise.
 #'         attr(X, 'd') is a p vector of column sums of X.standardized^2,
 #'         where X.standardized is the matrix X centered by attr(X, 'scaled:center') and scaled by attr(X, 'scaled:scale').
-
 set_X_attributes = function(X,
                              center = TRUE,
                              scale = TRUE) {

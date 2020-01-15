@@ -7,9 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fine-mapping examples • susieR</title>
 <!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script><!-- Bootstrap --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous">
-<!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous">
+<!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script><!-- sticky kit --><script src="https://cdnjs.cloudflare.com/ajax/libs/sticky-kit/1.1.3/sticky-kit.min.js" integrity="sha256-c4Rlo1ZozqTPE2RLuvbusY3+SU1pQaJC0TjuhygMipw=" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
 <script src="../pkgdown.js"></script><meta property="og:title" content="Fine-mapping examples">
 <meta property="og:description" content="">
 <meta name="twitter:card" content="summary">
@@ -31,7 +30,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.8.1.545</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.9.0.0</span>
       </span>
     </div>
 
@@ -60,14 +59,13 @@
 <!--/.navbar -->
 
       
-
       </header><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1>Fine-mapping examples</h1>
                         <h4 class="author">Gao Wang</h4>
             
-            <h4 class="date">2019-11-20</h4>
+            <h4 class="date">2020-01-14</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/master/vignettes/finemapping.Rmd"><code>vignettes/finemapping.Rmd</code></a></small>
       <div class="hidden name"><code>finemapping.Rmd</code></div>
@@ -78,30 +76,30 @@
     
 <p>This vignette demonstrates <code>susieR</code> in the context of genetic fine-mapping. We use simulated data of expression level of a gene (<span class="math inline">\(y\)</span>) in <span class="math inline">\(N \approx 600\)</span> individuals. We want to identify with the genotype matrix <span class="math inline">\(X_{N\times P}\)</span> (<span class="math inline">\(P=1000\)</span>) the genetic variables that causes changes in expression level.</p>
 <p>The simulated data-set is <a href="https://github.com/stephenslab/susieR/blob/master/inst/datafiles/N3finemapping.rds">available here</a>, as part of the <code>susieR</code> package. It is simulated to have exactly 3 non-zero effects.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span>(susieR)
-<span class="kw"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span>(<span class="dv">1</span>)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(susieR)
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">1</span>)</code></pre></div>
 <div id="the-data-set" class="section level2">
 <h2 class="hasAnchor">
 <a href="#the-data-set" class="anchor"></a>The data-set</h2>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://rdrr.io/r/utils/data.html">data</a></span>(N3finemapping)
-<span class="kw"><a href="https://rdrr.io/r/base/attach.html">attach</a></span>(N3finemapping)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/data">data</a></span>(N3finemapping)
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/attach">attach</a></span>(N3finemapping)</code></pre></div>
 <p><code>data</code> contains regression data-set <span class="math inline">\(X\)</span> and <span class="math inline">\(y\)</span>, along with some other relevant properties in the context of genetic studies. It also contains the “true” regression coefficent the data is simulated from.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://rdrr.io/r/base/names.html">names</a></span>(data)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/names">names</a></span>(data)
 <span class="co"># [1] "X"                 "chrom"             "pos"              </span>
 <span class="co"># [4] "true_coef"         "residual_variance" "Y"                </span>
 <span class="co"># [7] "allele_freq"       "V"</span></code></pre></div>
 <p>Notice that we’ve simulated 2 sets of <span class="math inline">\(Y\)</span> as 2 simulation replicates. Here we’ll focus on the first data-set.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://rdrr.io/r/base/dim.html">dim</a></span>(data$Y)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/dim">dim</a></span>(data$Y)
 <span class="co"># [1] 574   2</span></code></pre></div>
 <p>Here are the 3 “true” signals in the first data-set:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">b &lt;-<span class="st"> </span>data$true_coef[,<span class="dv">1</span>]
-<span class="kw"><a href="https://rdrr.io/r/graphics/plot.html">plot</a></span>(b, <span class="dt">pch=</span><span class="dv">16</span>, <span class="dt">ylab=</span><span class="st">'effect size'</span>)</code></pre></div>
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b, <span class="dt">pch=</span><span class="dv">16</span>, <span class="dt">ylab=</span><span class="st">'effect size'</span>)</code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="finemapping_files/figure-html/unnamed-chunk-5-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
  
 </p>
 </div>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://rdrr.io/r/base/which.html">which</a></span>(b !=<span class="st"> </span><span class="dv">0</span>)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/which">which</a></span>(b !=<span class="st"> </span><span class="dv">0</span>)
 <span class="co"># [1] 403 653 773</span></code></pre></div>
 <p>So the underlying causal variables are 403, 653 and 773.</p>
 </div>
@@ -148,13 +146,12 @@ z_scores &lt;-<span class="st"> </span>z_scores[,<span class="dv">1</span>]
 <span class="co"># [1] "objective:-1381.13343270768"</span>
 <span class="co"># [1] "objective:-1381.13113705137"</span>
 <span class="co"># [1] "objective:-1381.1311369139"</span>
-<span class="co"># [1] "objective:-1381.13106293455"</span>
-<span class="co"># [1] "objective:-1381.13106291271"</span></code></pre></div>
+<span class="co"># [1] "objective:-1381.13106293455"</span></code></pre></div>
 <div id="credible-sets" class="section level3">
 <h3 class="hasAnchor">
 <a href="#credible-sets" class="anchor"></a>Credible sets</h3>
 <p>By default, we output 95% credible set:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://rdrr.io/r/base/print.html">print</a></span>(fitted$sets)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(fitted$sets)
 <span class="co"># $cs</span>
 <span class="co"># $cs$L3</span>
 <span class="co"># [1] 653</span>
@@ -184,7 +181,7 @@ z_scores &lt;-<span class="st"> </span>z_scores[,<span class="dv">1</span>]
                      <span class="dt">X =</span> data$X,
              <span class="dt">coverage =</span> <span class="fl">0.9</span>,
                      <span class="dt">min_abs_corr =</span> <span class="fl">0.1</span>)</code></pre></div>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://rdrr.io/r/base/print.html">print</a></span>(sets)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(sets)
 <span class="co"># $cs</span>
 <span class="co"># $cs$L3</span>
 <span class="co"># [1] 653</span>
@@ -221,9 +218,9 @@ z_scores &lt;-<span class="st"> </span>z_scores[,<span class="dv">1</span>]
 </div>
 <p>The true causal variables are colored red. The 95% CS identified are circled in different colors. Of interest is the cluster around position 400. The true signal is 403 but apparently it does not have the highest PIP. To compare ranking of PIP and original z-score in that CS:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">i  &lt;-<span class="st"> </span>fitted$sets$cs[[<span class="dv">3</span>]]
-z3 &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/cbind.html">cbind</a></span>(i,z_scores[i],fitted$pip[i])
-<span class="kw"><a href="https://rdrr.io/r/base/colnames.html">colnames</a></span>(z3) &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">'position'</span>, <span class="st">'z-score'</span>, <span class="st">'PIP'</span>)
-z3[<span class="kw"><a href="https://rdrr.io/r/base/order.html">order</a></span>(z3[,<span class="dv">2</span>], <span class="dt">decreasing =</span> <span class="ot">TRUE</span>),]
+z3 &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/cbind">cbind</a></span>(i,z_scores[i],fitted$pip[i])
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/colnames">colnames</a></span>(z3) &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">'position'</span>, <span class="st">'z-score'</span>, <span class="st">'PIP'</span>)
+z3[<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/order">order</a></span>(z3[,<span class="dv">2</span>], <span class="dt">decreasing =</span> <span class="ot">TRUE</span>),]
 <span class="co">#       position  z-score        PIP</span>
 <span class="co">#  [1,]      396 5.189811 0.06026797</span>
 <span class="co">#  [2,]      381 5.164794 0.08444210</span>
@@ -283,10 +280,10 @@ z3[<span class="kw"><a href="https://rdrr.io/r/base/order.html">order</a></span>
 <h2 class="hasAnchor">
 <a href="#session-information" class="anchor"></a>Session information</h2>
 <p>Here are some details about the computing environment, including the versions of R, and the R packages, used to generate these results.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://rdrr.io/r/utils/sessionInfo.html">sessionInfo</a></span>()
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/sessionInfo">sessionInfo</a></span>()
 <span class="co"># R version 3.5.3 (2019-03-11)</span>
 <span class="co"># Platform: x86_64-pc-linux-gnu (64-bit)</span>
-<span class="co"># Running under: LMDE 3 (cindy)</span>
+<span class="co"># Running under: BunsenLabs GNU/Linux 8.9 (Hydrogen)</span>
 <span class="co"># </span>
 <span class="co"># Matrix products: default</span>
 <span class="co"># BLAS: /usr/lib/atlas-base/atlas/libblas.so.3.0</span>
@@ -304,16 +301,17 @@ z3[<span class="kw"><a href="https://rdrr.io/r/base/order.html">order</a></span>
 <span class="co"># [1] stats     graphics  grDevices utils     datasets  methods   base     </span>
 <span class="co"># </span>
 <span class="co"># other attached packages:</span>
-<span class="co"># [1] susieR_0.8.1.0545</span>
+<span class="co"># [1] susieR_0.8.1.0571</span>
 <span class="co"># </span>
 <span class="co"># loaded via a namespace (and not attached):</span>
-<span class="co">#  [1] Rcpp_1.0.3       knitr_1.25       magrittr_1.5     MASS_7.3-51.1   </span>
-<span class="co">#  [5] lattice_0.20-38  R6_2.4.1         rlang_0.4.1      stringr_1.4.0   </span>
-<span class="co">#  [9] highr_0.8        tools_3.5.3      grid_3.5.3       xfun_0.9        </span>
-<span class="co"># [13] htmltools_0.3.6  yaml_2.2.0       assertthat_0.2.1 digest_0.6.22   </span>
-<span class="co"># [17] rprojroot_1.3-2  pkgdown_1.4.1    crayon_1.3.4     Matrix_1.2-16   </span>
-<span class="co"># [21] fs_1.3.0         memoise_1.1.0    evaluate_0.13    rmarkdown_1.15  </span>
-<span class="co"># [25] stringi_1.4.3    compiler_3.5.3   desc_1.2.0       backports_1.1.5</span></code></pre></div>
+<span class="co">#  [1] Rcpp_1.0.3       knitr_1.23       xml2_1.2.0       magrittr_1.5    </span>
+<span class="co">#  [5] roxygen2_6.1.1   MASS_7.3-51.1    lattice_0.20-38  R6_2.4.1        </span>
+<span class="co">#  [9] rlang_0.4.2      highr_0.8        stringr_1.4.0    tools_3.5.3     </span>
+<span class="co"># [13] grid_3.5.3       xfun_0.7         htmltools_0.3.6  commonmark_1.7  </span>
+<span class="co"># [17] yaml_2.2.0       digest_0.6.23    assertthat_0.2.1 rprojroot_1.3-2 </span>
+<span class="co"># [21] pkgdown_1.3.0    crayon_1.3.4     Matrix_1.2-16    fs_1.2.7        </span>
+<span class="co"># [25] memoise_1.1.0    evaluate_0.13    rmarkdown_1.13   stringi_1.4.3   </span>
+<span class="co"># [29] compiler_3.5.3   desc_1.2.0       backports_1.1.5</span></code></pre></div>
 </div>
   </div>
 
@@ -333,20 +331,17 @@ z3[<span class="kw"><a href="https://rdrr.io/r/base/order.html">order</a></span>
 </div>
 
 
-
       <footer><div class="copyright">
   <p>Developed by Gao Wang, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto, Matthew Stephens.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.3.0.</p>
 </div>
-
       </footer>
 </div>
 
   
-
 
   </body>
 </html>

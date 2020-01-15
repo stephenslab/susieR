@@ -17,3 +17,4 @@ a L by n matrix
 \description{
 Computes M\%*\%t(standardized.X) using sparse multiplication trick
 }
+\keyword{internal}
