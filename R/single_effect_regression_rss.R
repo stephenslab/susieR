@@ -32,7 +32,7 @@ single_effect_regression_rss = function(z,Sigma,V=1,prior_weights=NULL,optimize_
     prior_weights = rep(1/p, p)
 
   if(optimize_V!="EM" && optimize_V!="none"){
-    V=optimize_prior_variance_rss(optimize_V, z, Sigma, prior_weights, alpha=NULL, post_mean2=NULL)
+    V=optimize_prior_variance_rss(optimize_V, z, Sigma, prior_weights, alpha=NULL, post_mean2=NULL,V_init=V)
   }
 
   lbf = sapply(1:p, function(j){
@@ -85,7 +85,8 @@ neg.loglik_z.logscale_rss = function(lV,z,Sigma,prior_weights){
   return(-loglik_rss(exp(lV),z,Sigma,prior_weights))
 }
 
-optimize_prior_variance_rss = function(optimize_V, z, Sigma, prior_weights, alpha=NULL, post_mean2=NULL){
+optimize_prior_variance_rss = function(optimize_V, z, Sigma, prior_weights, alpha=NULL, post_mean2=NULL,V_init=NULL){
+  V = V_init
   if (optimize_V != "simple") {
     if(optimize_V=="optim"){
       lV = optim(par=log(max(c((z^2) - (1/attr(Sigma, 'RjSinvRj')), 1e-6), na.rm = TRUE)),
