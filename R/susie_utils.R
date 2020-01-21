@@ -129,10 +129,10 @@ susie_get_cs = function(res,
                         dedup = TRUE, squared = FALSE) {
   if (class(res) == "susie") {
     null_index = res$null_index
-    if (is.numeric(res$V)) include_idx = which(res$V > 1E-9)
-    else include_idx = 1:nrow(res$alpha)
+    if (is.numeric(res$V)) include_idx = res$V > 1E-9
+    else include_idx = rep(T, nrow(res$alpha))
     if (length(include_idx) == 0) return(list(cs = NULL,coverage=coverage))
-    res = res$alpha[include_idx, , drop=F]
+    # res = res$alpha[include_idx, , drop=F]
   } else {
     null_index = 0
   }
@@ -143,14 +143,15 @@ susie_get_cs = function(res,
     stop("Xcorr matrix must be symmetric")
   }
   # L by P binary matrix
-  status = in_CS(res, coverage)
+  status = in_CS(res$alpha, coverage)
   # an L list of CS positions
   cs = lapply(1:nrow(status), function(i) which(status[i,]!=0))
-  cs = cs[lapply(cs, length) > 0]
+  include_idx = include_idx * (lapply(cs, length) > 0)
   # FIXME: see issue 21
   # https://github.com/stephenslab/susieR/issues/21
-  if (dedup) cs = cs[!duplicated(cs)]
-  # drop the single effect with estimated prior zero
+  include_idx = include_idx * (!duplicated(cs))
+  cs = cs[as.logical(include_idx)]
+
   # compute and filter by "purity"
   if (is.null(Xcorr) && is.null(X)) {
     return(list(cs=cs,coverage=coverage))
@@ -167,12 +168,12 @@ susie_get_cs = function(res,
     if (length(is_pure) > 0) {
       cs = cs[is_pure]
       purity = purity[is_pure,]
-      row_names = paste0("L", is_pure)
+      row_names = paste0("L", which(include_idx>0)[is_pure])
       names(cs) = row_names
       rownames(purity) = row_names
       ## re-order CS list and purity rows based on purity
       ordering = order(purity[,1], decreasing=T)
-      return(list(cs = cs[ordering], purity = purity[ordering,], cs_index = is_pure[ordering],coverage=coverage))
+      return(list(cs = cs[ordering], purity = purity[ordering,], cs_index = which(include_idx>0)[is_pure[ordering]],coverage=coverage))
     } else {
       return(list(cs = NULL,coverage=coverage))
     }
@@ -303,6 +304,21 @@ calc_z = function(X,Y,center=FALSE,scale=FALSE){
 susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,add_legend=FALSE,...){
   is_susie = (class(model) == "susie")
   ylab = y
+  color <- c(
+    "dodgerblue2",
+    "green4",
+    "#6A3D9A", # purple
+    "#FF7F00", # orange
+    "gold1",
+    "skyblue2", "#FB9A99", # lt pink
+    "palegreen2",
+    "#CAB2D6", # lt purple
+    "#FDBF6F", # lt orange
+    "gray70", "khaki2",
+    "maroon", "orchid1", "deeppink1", "blue1", "steelblue4",
+    "darkturquoise", "green1", "yellow4", "yellow3",
+    "darkorange4", "brown"
+  )
   if (y=='z') {
     if (is_susie) {
       if (is.null(model$z))
@@ -351,8 +367,9 @@ susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,add_legen
         x1 = x0
         segments(x0,y0,x1,y1,lwd=1.5,col='gray')
       }
-      points(x0, y1,col=i+2,cex=1.5,lwd=2.5)
-      legend_text$col = append(i+2, legend_text$col)
+      points(x0, y1,col=head(color, 1),cex=1.5,lwd=2.5)
+      legend_text$col = append(head(color, 1), legend_text$col)
+      color = color[2:length(color)]
       legend_text$purity = append(round(purity,4), legend_text$purity)
       legend_text$size = append(length(x0), legend_text$size)
     }
