@@ -127,20 +127,18 @@ susie_get_cs = function(res,
                         coverage = 0.95,
                         min_abs_corr = 0.5,
                         dedup = TRUE, squared = FALSE) {
-  if (class(res) == "susie") {
-    null_index = res$null_index
-    if (is.numeric(res$V)) include_idx = res$V > 1E-9
-    else include_idx = rep(T, nrow(res$alpha))
-    if (length(include_idx) == 0) return(list(cs = NULL,coverage=coverage))
-    # res = res$alpha[include_idx, , drop=F]
-  } else {
-    null_index = 0
-  }
   if (!is.null(X) && !is.null(Xcorr)) {
     stop("Only one of X or Xcorr should be specified")
   }
   if (!is.null(Xcorr) && !is_symmetric_matrix(Xcorr)) {
     stop("Xcorr matrix must be symmetric")
+  }
+  if (class(res) == "susie") {
+    null_index = res$null_index
+    if (is.numeric(res$V)) include_idx = res$V > 1E-9
+    else include_idx = rep(T, nrow(res$alpha))
+  } else {
+    null_index = 0
   }
   # L by P binary matrix
   status = in_CS(res$alpha, coverage)
@@ -150,6 +148,7 @@ susie_get_cs = function(res,
   # FIXME: see issue 21
   # https://github.com/stephenslab/susieR/issues/21
   include_idx = include_idx * (!duplicated(cs))
+  if (sum(include_idx) == 0) return(list(cs = NULL,coverage=coverage))
   cs = cs[as.logical(include_idx)]
 
   # compute and filter by "purity"
@@ -369,7 +368,8 @@ susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,add_legen
       }
       points(x0, y1,col=head(color, 1),cex=1.5,lwd=2.5)
       legend_text$col = append(head(color, 1), legend_text$col)
-      color = color[2:length(color)]
+      # rotate color
+      color = c(color[-1], color[1])
       legend_text$purity = append(round(purity,4), legend_text$purity)
       legend_text$size = append(length(x0), legend_text$size)
     }
