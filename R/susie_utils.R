@@ -153,6 +153,7 @@ susie_get_cs = function(res,
 
   # compute and filter by "purity"
   if (is.null(Xcorr) && is.null(X)) {
+    names(cs) = paste0("L", which(include_idx))
     return(list(cs=cs,coverage=coverage))
   } else {
     purity = data.frame(do.call(rbind, lapply(1:length(cs), function(i)
