@@ -147,9 +147,9 @@ susie_get_cs = function(res,
   include_idx = include_idx * (lapply(cs, length) > 0)
   # FIXME: see issue 21
   # https://github.com/stephenslab/susieR/issues/21
-  include_idx = include_idx * (!duplicated(cs))
+  include_idx = as.logical(include_idx * (!duplicated(cs)))
   if (sum(include_idx) == 0) return(list(cs = NULL,coverage=coverage))
-  cs = cs[as.logical(include_idx)]
+  cs = cs[include_idx]
 
   # compute and filter by "purity"
   if (is.null(Xcorr) && is.null(X)) {
@@ -167,12 +167,12 @@ susie_get_cs = function(res,
     if (length(is_pure) > 0) {
       cs = cs[is_pure]
       purity = purity[is_pure,]
-      row_names = paste0("L", which(include_idx>0)[is_pure])
+      row_names = paste0("L", which(include_idx)[is_pure])
       names(cs) = row_names
       rownames(purity) = row_names
       ## re-order CS list and purity rows based on purity
       ordering = order(purity[,1], decreasing=T)
-      return(list(cs = cs[ordering], purity = purity[ordering,], cs_index = which(include_idx>0)[is_pure[ordering]],coverage=coverage))
+      return(list(cs = cs[ordering], purity = purity[ordering,], cs_index = which(include_idx)[is_pure[ordering]],coverage=coverage))
     } else {
       return(list(cs = NULL,coverage=coverage))
     }
