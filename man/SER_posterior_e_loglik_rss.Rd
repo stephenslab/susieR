@@ -4,14 +4,14 @@
 \alias{SER_posterior_e_loglik_rss}
 \title{posterior expected loglikelihood for a single effect regression}
 \usage{
-SER_posterior_e_loglik_rss(R, Sigma, r, Ez, Ez2)
+SER_posterior_e_loglik_rss(R, r, s2, Ez, Ez2)
 }
 \arguments{
 \item{R}{a p by p symmetric and positive semidefinite correlation matrix.}
 
-\item{Sigma}{residual_var * R + lambda I}
-
 \item{r}{residuals}
+
+\item{s2}{residual variance}
 
 \item{Eb}{the posterior mean of b (p vector) (alpha * mu)}
 

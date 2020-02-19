@@ -4,8 +4,16 @@
 \alias{susie_plot}
 \title{Plot per variable summary in SuSiE CSs}
 \usage{
-susie_plot(model, y, add_bar = FALSE, pos = NULL, b = NULL,
-  max_cs = 400, add_legend = FALSE, ...)
+susie_plot(
+  model,
+  y,
+  add_bar = FALSE,
+  pos = NULL,
+  b = NULL,
+  max_cs = 400,
+  add_legend = FALSE,
+  ...
+)
 }
 \arguments{
 \item{model}{a susie fit, the output of `susieR::susie()`.

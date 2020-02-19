@@ -4,15 +4,23 @@
 \alias{single_effect_regression_rss}
 \title{Bayesian single-effect linear regression using z scores.}
 \usage{
-single_effect_regression_rss(z, Sigma, V = 1, prior_weights = NULL,
-  optimize_V = c("none", "optim", "uniroot", "EM", "simple"))
+single_effect_regression_rss(
+  z,
+  R,
+  V = 1,
+  residual_variance = 1,
+  prior_weights = NULL,
+  optimize_V = c("none", "optim", "uniroot", "EM", "simple")
+)
 }
 \arguments{
 \item{z}{a p vector}
 
-\item{Sigma}{residual_var * R + lambda I}
+\item{R}{a p by p symmetric and positive semidefinite correlation matrix.}
 
 \item{V}{the prior variance}
+
+\item{residual_variance}{the residual variance}
 
 \item{prior_weights}{a p vector of prior weights}
 

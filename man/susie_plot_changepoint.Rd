@@ -4,8 +4,13 @@
 \alias{susie_plot_changepoint}
 \title{Plot changepoint data and susie fit using ggplot2}
 \usage{
-susie_plot_changepoint(s, y, line_col = "blue", line_size = 1.5,
-  cs_col = "red")
+susie_plot_changepoint(
+  s,
+  y,
+  line_col = "blue",
+  line_size = 1.5,
+  cs_col = "red"
+)
 }
 \arguments{
 \item{s}{a susie fit obtained by applying susie_trendfilter(y,order=0) to y}

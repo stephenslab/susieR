@@ -5,8 +5,7 @@
 \title{Applies susie to perform trend filtering (especially
   changepoint problems), a type of non-parametric regression.}
 \usage{
-susie_trendfilter(y, order = 0, standardize = FALSE, use_mad = TRUE,
-  ...)
+susie_trendfilter(y, order = 0, standardize = FALSE, use_mad = TRUE, ...)
 }
 \arguments{
 \item{y}{an n vector of observations that are ordered in time or

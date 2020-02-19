@@ -10,68 +10,43 @@ get_objective_rss = function(R, z, s) {
 
 # @title expected loglikelihood for a susie fit
 Eloglik_rss = function(R,z,s){
-  d = s$sigma2 * attr(R, 'eigen')$values + attr(R, 'lambda')
-
-  if(attr(R, 'lambda') == 0){
-    result =  -(sum(d!=0)/2) * log(2*pi*s$sigma2) -
-      0.5 * get_ER2_rss(R,z,s)
-  }else{
-    # Positive = d > 1e-8
-    # d[!Positive] = 0
-    # result =  -(sum(d!=0)/2) * log(2*pi) - 0.5*sum(log(d[Positive])) -
-    #   0.5 * get_ER2_rss(R,z,s)
-
-    result =  -(length(z)/2) * log(2*pi) - 0.5*sum(log(d)) -
-      0.5 * get_ER2_rss(R,z,s)
-  }
+  result =  -(length(attr(R, 'eigen')$values)/2) * log(2*pi*s$sigma2) -
+    (1/(2*s$sigma2)) * get_ER2_rss(R,z,s)
   return(result)
 }
 
 # @title expected squared residuals
 # @importFrom Matrix diag
 get_ER2_rss = function(R,z,s){
-
-  d = s$sigma2 * attr(R, 'eigen')$values + attr(R, 'lambda')
-
-  # Positive = d > 1e-8
-  # d[!Positive] = 0
-  Dinv = 1/d
-  Dinv[is.infinite(Dinv)] = 0
-  SinvR = attr(R, 'eigen')$vectors %*% ((Dinv*attr(R, 'eigen')$values) * t(attr(R, 'eigen')$vectors))
+  Dinv = 1/attr(R, 'eigen')$values
   Utz = crossprod(attr(R, 'eigen')$vectors, z)
-  zSinvz = sum( Utz * (Dinv * Utz))
-  # zSinvz = sum(z * (attr(R, 'eigen')$vectors %*% (Dinv * crossprod(attr(R, 'eigen')$vectors, z))))
+  zRinvz = sum( Utz * (Dinv * Utz))
 
   Z = s$alpha*s$mu
-  if(attr(R, 'lambda') == 0){
-    RSinvR = R/s$sigma2
-  }else{
-    RSinvR = R %*% SinvR
-  }
-  RZ2 = sum((Z%*%RSinvR) * Z)
+  RZ2 = sum((Z%*%R) * Z)
 
   zbar = colSums(Z)
-
+  Utzbar = crossprod(attr(R, 'eigen')$vectors, zbar)
+  Utz = crossprod(attr(R, 'eigen')$vectors, z)
   postb2 = s$alpha * s$mu2 #posterior second moment
 
-  return(zSinvz - 2*sum( (SinvR %*% z) * zbar) + sum(zbar * (RSinvR %*% zbar)) -
-           RZ2 + sum(diag(RSinvR)*t(postb2)))
+  return(zRinvz - 2*sum( Utzbar * Utz) + sum( (sqrt(attr(R, 'eigen')$values) * Utzbar)^2 ) -
+           RZ2 + sum(attr(R, 'd')*t(postb2)))
 }
 
 
 #' @title posterior expected loglikelihood for a single effect regression
 #' @param R a p by p symmetric and positive semidefinite correlation matrix.
-#' @param Sigma residual_var * R + lambda I
 #' @param r residuals
+#' @param s2 residual variance
 #' @param Eb the posterior mean of b (p vector) (alpha * mu)
 #' @param Eb2 the posterior second moment of b (p vector) (alpha * mu2)
 #' @keywords internal
-SER_posterior_e_loglik_rss = function(R, Sigma, r,Ez,Ez2){
-  eigenS = attr(Sigma,'eigenS')
-  Dinv = 1/(eigenS$values)
-  Dinv[is.infinite(Dinv)] = 0
-  rR = R %*% r
-  SinvEz = eigenS$vectors %*% (Dinv * crossprod(eigenS$vectors, Ez))
+SER_posterior_e_loglik_rss = function(R, r, s2, Ez,Ez2){
+  eigenR = attr(R,'eigen')
 
-  - (0.5) * (- 2*sum(rR*SinvEz) + sum(attr(Sigma, 'RjSinvRj')*as.vector(Ez2)))
+  rtU = crossprod(attr(R, 'eigen')$vectors, r)
+  Utz = crossprod(attr(R, 'eigen')$vectors, Ez)
+
+  - (1/(2*s2)) * (- 2*sum(rtU * Utz) + sum(attr(R, 'd')*as.vector(Ez2)))
 }

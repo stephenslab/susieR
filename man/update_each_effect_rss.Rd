@@ -4,17 +4,20 @@
 \alias{update_each_effect_rss}
 \title{update each effect once}
 \usage{
-update_each_effect_rss(R, z, s_init, Sigma,
-  estimate_prior_variance = FALSE, estimate_prior_method = "optim")
+update_each_effect_rss(
+  R,
+  z,
+  s,
+  estimate_prior_variance = FALSE,
+  estimate_prior_method = "optim"
+)
 }
 \arguments{
 \item{R}{a p by p symmetric and positive semidefinite correlation matrix.}
 
 \item{z}{a p vector}
 
-\item{s_init}{a list with elements sigma2, V, alpha, mu, Xr}
-
-\item{Sigma}{sigma2*R + lambda I}
+\item{s}{a list with elements sigma2, V, alpha, mu, Xr}
 
 \item{estimate_prior_variance}{boolean indicating whether to estimate prior variance}
 }
