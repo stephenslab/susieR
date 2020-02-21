@@ -10,6 +10,7 @@
 #' @param maf minor allele frequency; to be used along with `maf_thresh` to filter input summary statistics
 #' @param maf_thresh variants having MAF smaller than this threshold will be filtered out
 #' @param L maximum number of non-zero effects
+#' @param lambda fudge factor
 #' @param prior_variance the prior variance (vector of length L, or scalar. In latter case gets repeated L times )
 #' @param residual_variance the residual variance, a scaler between 0 and 1
 #' @param r_tol tolerance level for eigen value check of positive semidefinite matrix of R.
@@ -45,7 +46,7 @@
 #'
 #' @export
 susie_rss = function(z, R, maf=NULL, maf_thresh=0,
-                     L=10,
+                     L=10, lambda = 0,
                      prior_variance=50,residual_variance=NULL,
                      r_tol = 1e-08,
                      prior_weights = NULL, null_weight = NULL,
@@ -137,12 +138,15 @@ susie_rss = function(z, R, maf=NULL, maf_thresh=0,
   elbo[1] = -Inf;
   tracking = list()
 
+  attr(R, 'lambda') = lambda
+  Sigma = update_Sigma(R, s$sigma2, z) # sigma2*R + lambda I
+
   # alpha_new = s$alpha
   for(i in 1:max_iter){
     if (track_fit)
       tracking[[i]] = susie_slim(s)
     # alpha_old = alpha_new
-    s = update_each_effect_rss(R, z, s, estimate_prior_variance,estimate_prior_method)
+    s = update_each_effect_rss(R, z, s, Sigma, estimate_prior_variance,estimate_prior_method)
     # alpha_new = s$alpha
 
     if(verbose){
@@ -157,7 +161,11 @@ susie_rss = function(z, R, maf=NULL, maf_thresh=0,
       break;
     }
     if(estimate_residual_variance){
-        est_sigma2 = (1/length(attr(R, 'eigen')$values))* get_ER2_rss(R,z,s)
+
+      if(lambda == 0){
+        tmp = s
+        tmp$sigma2 = 1
+        est_sigma2 = (1/sum(attr(R, 'eigen')$values!=0))* get_ER2_rss(R,z,tmp)
         if(est_sigma2 < 0){
           stop('Estimating residual variance failed: the estimated value is negative')
         }
@@ -166,11 +174,27 @@ susie_rss = function(z, R, maf=NULL, maf_thresh=0,
             est_sigma2 = 1
           }
         }
+      }else{
+        if(restrict){
+          sigma2 = seq(0.1,1,by=0.1)
+        }else{
+          sigma2 = seq(0.1,6,by=0.1)
+        }
+        tmp = s
+        obj = numeric(length(sigma2))
+        for(j in 1:length(sigma2)){
+          tmp$sigma2 = sigma2[j]
+          obj[j] = Eloglik_rss(R, z, tmp)
+        }
+        est_sigma2 = sigma2[which.max(obj)]
+      }
+
       s$sigma2 = est_sigma2
 
       if(verbose){
         print(paste0("after estimate sigma2 objective:", get_objective_rss(R, z, s)))
       }
+      Sigma = update_Sigma(R, s$sigma2, z)
     }
   }
   elbo = elbo[2:(i+1)] # Remove first (infinite) entry, and trailing NAs.
@@ -198,5 +222,29 @@ susie_rss = function(z, R, maf=NULL, maf_thresh=0,
   }
 
   return(s)
+}
+
+update_Sigma = function(R, sigma2, z){
+  Sigma = sigma2*R + attr(R, 'lambda') *diag(length(z))
+  eigenS = attr(R, 'eigen')
+  eigenS$values = sigma2*eigenS$values + attr(R, 'lambda')
+
+  # Positive = eigenS$values > 1e-8
+  # eigenS$values[!Positive] = 0
+  Dinv = 1/(eigenS$values)
+  Dinv[is.infinite(Dinv)] = 0
+  attr(Sigma, 'eigenS') = eigenS
+
+  # Sigma^(-1) R_j = U (sigma2 D + lambda)^(-1) D U^T e_j
+  attr(Sigma, 'SinvRj') = eigenS$vectors %*% (Dinv*attr(R, 'eigen')$values * t(eigenS$vectors))
+
+  if(attr(R, 'lambda')==0){
+    attr(Sigma, 'RjSinvRj') = attr(R, 'd')/sigma2
+  }else{
+    tmp = t(eigenS$vectors)
+    attr(Sigma, 'RjSinvRj') = colSums(tmp * (Dinv*(attr(R, 'eigen')$values^2) * tmp))
+  }
+
+  return(Sigma)
 }
 

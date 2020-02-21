@@ -13,7 +13,7 @@ set_R_attributes(R, r_tol)
 }
 \value{
 R with attribute e.g.
-        attr(R, 'eigen') is the eigen decomposition of R.
+        attr(R, 'eigenR') is the eigen decomposition of R.
 }
 \description{
 sets the attributes for the R matrix

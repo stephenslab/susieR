@@ -4,29 +4,14 @@
 \alias{susie}
 \title{SUm of Single Effects (SuSiE) Regression}
 \usage{
-susie(
-  X,
-  Y,
-  L = min(10, ncol(X)),
-  scaled_prior_variance = 0.2,
-  residual_variance = NULL,
-  prior_weights = NULL,
-  null_weight = NULL,
-  standardize = TRUE,
-  intercept = TRUE,
-  estimate_residual_variance = TRUE,
-  estimate_prior_variance = TRUE,
-  estimate_prior_method = c("optim", "EM", "simple"),
-  s_init = NULL,
-  coverage = 0.95,
-  min_abs_corr = 0.5,
-  compute_univariate_zscore = FALSE,
-  na.rm = FALSE,
-  max_iter = 100,
-  tol = 0.001,
-  verbose = FALSE,
-  track_fit = FALSE
-)
+susie(X, Y, L = min(10, ncol(X)), scaled_prior_variance = 0.2,
+  residual_variance = NULL, prior_weights = NULL, null_weight = NULL,
+  standardize = TRUE, intercept = TRUE,
+  estimate_residual_variance = TRUE, estimate_prior_variance = TRUE,
+  estimate_prior_method = c("optim", "EM", "simple"), s_init = NULL,
+  coverage = 0.95, min_abs_corr = 0.5,
+  compute_univariate_zscore = FALSE, na.rm = FALSE, max_iter = 100,
+  tol = 0.001, verbose = FALSE, track_fit = FALSE)
 }
 \arguments{
 \item{X}{An n by p matrix of covariates.}

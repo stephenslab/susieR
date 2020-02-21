@@ -4,15 +4,8 @@
 \alias{susie_get_cs}
 \title{Extract credible sets from SuSiE fit}
 \usage{
-susie_get_cs(
-  res,
-  X = NULL,
-  Xcorr = NULL,
-  coverage = 0.95,
-  min_abs_corr = 0.5,
-  dedup = TRUE,
-  squared = FALSE
-)
+susie_get_cs(res, X = NULL, Xcorr = NULL, coverage = 0.95,
+  min_abs_corr = 0.5, dedup = TRUE, squared = FALSE)
 }
 \arguments{
 \item{res}{a susie fit, the output of `susieR::susie()`, or simply the posterior
