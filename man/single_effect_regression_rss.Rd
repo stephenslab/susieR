@@ -4,8 +4,13 @@
 \alias{single_effect_regression_rss}
 \title{Bayesian single-effect linear regression using z scores.}
 \usage{
-single_effect_regression_rss(z, Sigma, V = 1, prior_weights = NULL,
-  optimize_V = c("none", "optim", "uniroot", "EM", "simple"))
+single_effect_regression_rss(
+  z,
+  Sigma,
+  V = 1,
+  prior_weights = NULL,
+  optimize_V = c("none", "optim", "uniroot", "EM", "simple")
+)
 }
 \arguments{
 \item{z}{a p vector}

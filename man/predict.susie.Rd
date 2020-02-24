@@ -4,8 +4,7 @@
 \alias{predict.susie}
 \title{predict future observations or extract coefficients from susie fit}
 \usage{
-\method{predict}{susie}(object, newx = NULL, type = c("response",
-  "coefficients"), ...)
+\method{predict}{susie}(object, newx = NULL, type = c("response", "coefficients"), ...)
 }
 \arguments{
 \item{object}{a susie fit}

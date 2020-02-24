@@ -4,14 +4,30 @@
 \alias{susie}
 \title{SUm of Single Effects (SuSiE) Regression}
 \usage{
-susie(X, Y, L = min(10, ncol(X)), scaled_prior_variance = 0.2,
-  residual_variance = NULL, prior_weights = NULL, null_weight = NULL,
-  standardize = TRUE, intercept = TRUE,
-  estimate_residual_variance = TRUE, estimate_prior_variance = TRUE,
-  estimate_prior_method = c("optim", "EM", "simple"), s_init = NULL,
-  coverage = 0.95, min_abs_corr = 0.5,
-  compute_univariate_zscore = FALSE, na.rm = FALSE, max_iter = 100,
-  tol = 0.001, verbose = FALSE, track_fit = FALSE)
+susie(
+  X,
+  Y,
+  L = min(10, ncol(X)),
+  scaled_prior_variance = 0.2,
+  residual_variance = NULL,
+  prior_weights = NULL,
+  null_weight = NULL,
+  standardize = TRUE,
+  intercept = TRUE,
+  estimate_residual_variance = TRUE,
+  estimate_prior_variance = TRUE,
+  estimate_prior_method = c("optim", "EM", "simple"),
+  residual_variance_upperbound = Inf,
+  s_init = NULL,
+  coverage = 0.95,
+  min_abs_corr = 0.5,
+  compute_univariate_zscore = FALSE,
+  na.rm = FALSE,
+  max_iter = 100,
+  tol = 0.001,
+  verbose = FALSE,
+  track_fit = FALSE
+)
 }
 \arguments{
 \item{X}{An n by p matrix of covariates.}
@@ -57,7 +73,7 @@ FALSE} is generally not recommended.}
 
 \item{estimate_residual_variance}{If
 \code{estimate_residual_variance = TRUE}, the residual variance
-is estimated (using \code{residual_variance} as an initial  value).
+is estimated (using \code{residual_variance} as an initial value).
 If \code{estimate_residual_variance = FALSE}
 then the residual variance is fixed to the value supplied by \code{residual_variance}.}
 
@@ -72,6 +88,9 @@ supplied to \code{scaled_prior_variance}.}
 variance. "simple" method only compares the loglikelihood between
 using specified prior variance and using zero, and chose the one that
 gives larger loglikelihood.}
+
+\item{residual_variance_upperbound}{Upper bound for estiamted residual variance.
+It is used when \code{estimate_residual_variance = TRUE}.}
 
 \item{s_init}{A previous susie fit with which to initialize.}
 

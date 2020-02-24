@@ -89,7 +89,7 @@ optimize_prior_variance_rss = function(optimize_V, z, Sigma, prior_weights, alph
   V = V_init
   if (optimize_V != "simple") {
     if(optimize_V=="optim"){
-      lV = optim(par=log(max(c((z^2) - (1/attr(Sigma, 'RjSinvRj')), 1e-6), na.rm = TRUE)),
+      lV = optim(par=log(max(c((colSums(attr(Sigma,'SinvRj') * z)^2) - (1/attr(Sigma, 'RjSinvRj')), 1e-6), na.rm = TRUE)),
                fn=neg.loglik_z.logscale_rss,
                z=z, Sigma = Sigma, prior_weights = prior_weights,
                method='Brent', lower = -30, upper = 15)$par

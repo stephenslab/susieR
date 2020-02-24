@@ -1,9 +1,12 @@
 # @title Set default susie initialization
-init_setup_rss = function(p, L, prior_variance, residual_variance, prior_weights, null_weight, varY) {
+init_setup_rss = function(p, L, prior_variance, residual_variance, prior_weights, null_weight) {
   if (!is.numeric(prior_variance) || prior_variance < 0)
-    stop("Scaled prior variance should be positive number.")
+    stop("Prior variance should be positive number.")
+  if(!is.null(residual_variance) && (residual_variance>1 | residual_variance<0)){
+    stop('Residual variance should be a scaler between 0 and 1.')
+  }
   if(is.null(residual_variance))
-    residual_variance = varY
+    residual_variance = 1
   if(is.null(prior_weights))
     prior_weights = rep(1/p, p)
   if(length(prior_weights) != p)
@@ -15,7 +18,7 @@ init_setup_rss = function(p, L, prior_variance, residual_variance, prior_weights
            Rz=rep(0,p), KL=rep(NA,L),
            lbf=rep(NA,L),
            sigma2=residual_variance,
-           V=prior_variance * varY,
+           V=prior_variance,
            pi=prior_weights)
   if (is.null(null_weight)) s$null_index = 0
   else s$null_index = p
@@ -47,7 +50,7 @@ init_finalize_rss = function(s, R=NULL, Rz=NULL) {
     stop("dimension of mu and alpha in input object do not match")
   if (nrow(s$alpha) != length(s$V))
     stop("Input prior variance V must have length of nrow of alpha in input object")
-  ## update Xr
+  ## update Rz
   if (!missing(Rz))
     s$Rz = Rz
   if (!missing(R))

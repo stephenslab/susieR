@@ -28,5 +28,5 @@ test_that("RSS: null weight specification agrees with default", with(simulate(20
   res2 = susie_rss(z = z, R = R,
                    estimate_prior_variance = TRUE, estimate_residual_variance = TRUE,
                    null_weight = 1/(ncol(R)+1), check_z = FALSE)
-  expect_equal_susie_suff_stat(res2,res1)
+  expect_equal_susie_suff_stat(res2,res1, tol=1e-06)
 }))

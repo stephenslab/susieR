@@ -57,7 +57,7 @@
 #'
 #' @param estimate_residual_variance If
 #'   \code{estimate_residual_variance = TRUE}, the residual variance
-#'   is estimated (using \code{residual_variance} as an initial  value).
+#'   is estimated (using \code{residual_variance} as an initial value).
 #'   If \code{estimate_residual_variance = FALSE}
 #'   then the residual variance is fixed to the value supplied by \code{residual_variance}.
 #'
@@ -72,6 +72,9 @@
 #' variance. "simple" method only compares the loglikelihood between
 #' using specified prior variance and using zero, and chose the one that
 #' gives larger loglikelihood.
+#'
+#' @param residual_variance_upperbound Upper bound for estiamted residual variance.
+#'   It is used when \code{estimate_residual_variance = TRUE}.
 #'
 #' @param s_init A previous susie fit with which to initialize.
 #'
@@ -180,6 +183,7 @@ susie <- function(X,Y,L = min(10,ncol(X)),scaled_prior_variance = 0.2,
                  estimate_residual_variance=TRUE,
                  estimate_prior_variance = TRUE,
                  estimate_prior_method = c("optim","EM","simple"),
+                 residual_variance_upperbound = Inf,
                  s_init = NULL,coverage=0.95,min_abs_corr=0.5,
                  compute_univariate_zscore = FALSE,
                  na.rm = FALSE, max_iter=100,tol=1e-3,
@@ -258,6 +262,9 @@ susie <- function(X,Y,L = min(10,ncol(X)),scaled_prior_variance = 0.2,
     }
     if(estimate_residual_variance){
       s$sigma2 = estimate_residual_variance(X,Y,s)
+      if(s$sigma2 > residual_variance_upperbound){
+        s$sigma2 = residual_variance_upperbound
+      }
       if(verbose){
         print(paste0("objective:",get_objective(X,Y,s)))
       }

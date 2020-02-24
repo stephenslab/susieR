@@ -9,25 +9,14 @@ set_R_attributes = function(R, r_tol){
   else
     eigenR = attr(R, 'eigen')
 
+  # drop small eigenvalues
   eigenR$values[abs(eigenR$values) < r_tol] = 0
   if(any(eigenR$values < 0)){
     eigenR$values[eigenR$values < 0] = 0
     warning('Negative eigenvalues are set to 0.')
   }
+  res = eigenR$vectors %*% (t(eigenR$vectors) * eigenR$values)
 
-  tmp = eigenR$vectors %*% (t(eigenR$vectors) * eigenR$values)
-  if(all(abs(diag(tmp) - 1) < sqrt(.Machine$double.eps))){
-    diag(tmp) = 1
-    res = tmp
-  }else{
-    diagtmp_0.5 = diag(tmp)^(0.5)
-    diagtmp_0.5[diagtmp_0.5 == 0] = 1
-    normalize = apply(eigenR$vectors / diagtmp_0.5, 2, function(x) sqrt(sum(x^2)))
-    eigenR$values = normalize^2 * eigenR$values
-    eigenR$vectors = t(t(eigenR$vectors / diagtmp_0.5)/normalize)
-    res = eigenR$vectors %*% (t(eigenR$vectors) * eigenR$values)
-    diag(res) = 1
-  }
   attr(res, 'eigen') = eigenR
   attr(res, 'd') <- diag(res)
   attr(res, 'scaled:scale') <- rep(1, length = nrow(R))

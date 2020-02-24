@@ -4,8 +4,14 @@
 \alias{update_each_effect_rss}
 \title{update each effect once}
 \usage{
-update_each_effect_rss(R, z, s_init, Sigma,
-  estimate_prior_variance = FALSE, estimate_prior_method = "optim")
+update_each_effect_rss(
+  R,
+  z,
+  s_init,
+  Sigma,
+  estimate_prior_variance = FALSE,
+  estimate_prior_method = "optim"
+)
 }
 \arguments{
 \item{R}{a p by p symmetric and positive semidefinite correlation matrix.}
