@@ -36,5 +36,5 @@ test_that("susie_rss agrees with susie_rss_lambda when lambda = 0", with(simulat
   res2 = susie_rss_lambda(z, R, lambda = 0, tol=1E-2, check_z = FALSE)
 
   expect_equal(res1$converged, TRUE)
-  expect_equal_susie_rss(res1, res2, tol=1e-06)
+  expect_equal_susie_rss(res1, res2, tol=1e-05)
 }))
