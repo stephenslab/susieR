@@ -77,10 +77,12 @@ optimize_prior_variance = function(optimize_V, betahat, shat2, prior_weights, al
   # set V exactly 0 if that beats the numerical value
   # by check_null_tol in loglik.
   # check_null_tol = 0.1 is exp(0.1) = 1.1 on likelihood scale;
-  # it means that the data have to favor the non-zero V model by a factor
-  # of 1.1 to be convincing that V is indeed non-zero. This is really modest
-  # compared to a formal LRT with p-value 0.05. But the idea is to not be too
-  # stringent on having non-zeros unless their effects are indeed neglible.
+  # it means that for parsimony reasons we set estiate of V to zero, if its
+  # numerical estimate is only "negligibly" different from zero. We use a likelihood
+  # ratio of exp(check_null_tol) to define "negligible" in this context.
+  # This is fairly modest condition compared to, say, a formal LRT with p-value 0.05.
+  # But the idea is to be lenient to non-zeros estimates unless they are indeed small enough
+  # to be neglible.
   # See more intuition at https://stephens999.github.io/fiveMinuteStats/LR_and_BF.html
   if(loglik(0,betahat,shat2,prior_weights) + check_null_tol >= loglik(V,betahat,shat2,prior_weights)) V=0
   return(V)
