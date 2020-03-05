@@ -85,7 +85,7 @@ neg.loglik_z.logscale_rss = function(lV,z,Sigma,prior_weights){
   return(-loglik_rss(exp(lV),z,Sigma,prior_weights))
 }
 
-optimize_prior_variance_rss = function(optimize_V, z, Sigma, prior_weights, alpha=NULL, post_mean2=NULL,V_init=NULL){
+optimize_prior_variance_rss = function(optimize_V, z, Sigma, prior_weights, alpha=NULL, post_mean2=NULL,V_init=NULL,check_null_tol=0.1){
   V = V_init
   if (optimize_V != "simple") {
     if(optimize_V=="optim"){
@@ -98,6 +98,14 @@ optimize_prior_variance_rss = function(optimize_V, z, Sigma, prior_weights, alph
       V = sum(alpha*post_mean2)
     }else stop('Invalid option for `optimize_V` method')
   }
-  if(loglik_rss(0,z,Sigma,prior_weights) >= loglik_rss(V,z,Sigma,prior_weights)) V=0 # set V exactly 0 if that beats the numerical value
+  # set V exactly 0 if that beats the numerical value
+  # by check_null_tol in loglik.
+  # check_null_tol = 0.1 is exp(0.1) = 1.1 on likelihood scale;
+  # it means that the data have to favor the non-zero V model by a factor
+  # of 1.1 to be convincing that V is indeed non-zero. This is really modest
+  # compared to a formal LRT with p-value 0.05. But the idea is to not be too
+  # stringent on having non-zeros unless their effects are indeed neglible.
+  # See more intuition at https://stephens999.github.io/fiveMinuteStats/LR_and_BF.html
+  if(loglik_rss(0,z,Sigma,prior_weights) + check_null_tol >= loglik_rss(V,z,Sigma,prior_weights)) V=0
   return(V)
 }
