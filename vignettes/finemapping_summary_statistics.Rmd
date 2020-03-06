@@ -117,6 +117,52 @@ fitted = susie(data$X, data$Y[,1], L = 10,
 plot(fitted$pip, fitted_rss$pip, ylim=c(0,1))
 ```
 
+## Using LD from reference panel
+
+We randomly generated reference panel genotype matrix `X_ref` which contains 500 indiviudals with similar LD pattern as original genotype matrix. 
+```{r echo=F}
+set.seed(1234)
+tmp = matrix(rnorm(500*1001), 500, 1001)
+eigenR = eigen(R)
+eigenR$values[eigenR$values < 1e-10] = 0
+X_ref = tmp %*% (eigenR$values * t(eigenR$vectors))
+R_ref = cor(X_ref)
+```
+
+Using susie_rss function with LD from reference panel, the model identifies 10 CSes and only one of them contains the true signal. 
+```{r}
+fitted_rss_ref <- susie_rss(z_scores, R_ref, L = 10,
+                            estimate_residual_variance = TRUE, 
+                            estimate_prior_variance = TRUE, check_z = F)
+```
+
+```{r}
+susie_plot(fitted_rss_ref, y="PIP", b=b)
+```
+
+We recommend the following modification on the LD matrix from reference panel. Suppose `X_ref` is column-standardized, we recommend estimating LD as
+$$
+\tilde{R} = \text{cov2cor}(\frac{1}{n_{ref}}(X_{ref}^\intercal X_{ref}+ zz^\intercal)) = \text{cov2cor}(\frac{1}{n_{ref}}(R_{ref}(n_{ref}-1)+ zz^\intercal)),
+$$
+where z is the original summary statistics, $n_{ref}$ is the sample size from the reference panel.
+
+```{r}
+R_ref_cor = cov2cor(R_ref*(500-1) + tcrossprod(z_scores))
+fitted_rss_ref_cor <- susie_rss(z_scores, R_ref_cor, L = 10,
+                                estimate_residual_variance = TRUE, 
+                                estimate_prior_variance = TRUE, check_z = F)
+```
+
+```{r}
+summary(fitted_rss_ref_cor)$cs
+```
+
+The model identifies 2 CSes with 2 true signals. It misses 1 true signal, but it is a better fit than using the correlation matrix from the reference pancel directly.
+
+```{r}
+susie_plot(fitted_rss_ref_cor, y="PIP", b=b)
+```
+
 ## Session information
 
 Here are some details about the computing environment, including the
