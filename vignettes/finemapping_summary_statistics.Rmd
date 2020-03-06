@@ -55,7 +55,7 @@ So the underlying causal variables are 403, 653 and 773.
 Summary statistics of genetic association studies typically contain effect size ($\hat{\beta}$ coefficient from regression), p-value and minor allele frequencies. 
 These information can be used to perform fine-mapping with given an additional input of correlation matrix between variables.
 The correlation matrix in genetics is typically referred to as LD matrix (LD for linkage disequilibrium). 
-One may use external reference panels to estimate it when this matrix cannot be obtained from samples directly.
+One may use external reference panels to estimate it when this matrix cannot be obtained from samples directly. There is a potential problem using LD from reference panel, and we demonstrated it in the next section.
 Caution that LD matrix here has to be correlation matrix $r$, not $r^2$ or $abs(r)$.
 
 Our example data-set additionally provides summary statistics for fitting per-variable univariate simple regression.
@@ -119,7 +119,9 @@ plot(fitted$pip, fitted_rss$pip, ylim=c(0,1))
 
 ## Using LD from reference panel
 
-We randomly generated reference panel genotype matrix `X_ref` which contains 500 indiviudals with similar LD pattern as original genotype matrix. 
+When original genotype information is not available, one may use reference panel to estimate LD matrix. If the LD pattern from the reference panel does not agree well with the original sample, it does not agree with the observed z scores neither. There could be lots of false discoveries. 
+
+We randomly generated 500 samples from $N(0,R)$ and treated them as reference panel genotype matrix `X_ref`.
 ```{r echo=F}
 set.seed(1234)
 tmp = matrix(rnorm(500*1001), 500, 1001)
@@ -129,7 +131,7 @@ X_ref = tmp %*% (eigenR$values * t(eigenR$vectors))
 R_ref = cor(X_ref)
 ```
 
-Using susie_rss function with LD from reference panel, the model identifies 10 CSes and only one of them contains the true signal. 
+Using susie_rss function with LD from reference panel, the model identifies 10 CSs and only one of them contains the true signal. 
 ```{r}
 fitted_rss_ref <- susie_rss(z_scores, R_ref, L = 10,
                             estimate_residual_variance = TRUE, 
@@ -140,7 +142,7 @@ fitted_rss_ref <- susie_rss(z_scores, R_ref, L = 10,
 susie_plot(fitted_rss_ref, y="PIP", b=b)
 ```
 
-We recommend the following modification on the LD matrix from reference panel. Suppose `X_ref` is column-standardized, we recommend estimating LD as
+**We recommend the following modification on the LD matrix from reference panel.** Suppose `X_ref` is column-standardized, we recommend estimating LD as
 $$
 \tilde{R} = \text{cov2cor}(\frac{1}{n_{ref}}(X_{ref}^\intercal X_{ref}+ zz^\intercal)) = \text{cov2cor}(\frac{1}{n_{ref}}(R_{ref}(n_{ref}-1)+ zz^\intercal)),
 $$
