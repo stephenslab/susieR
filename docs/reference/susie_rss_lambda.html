@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Bayesian sum of single-effect (SuSiE) linear regression using z scores — susie_rss • susieR</title>
+<title>Bayesian sum of single-effect (SuSiE) linear regression using z scores with lambda (internal test) — susie_rss_lambda • susieR</title>
 
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
@@ -30,9 +30,9 @@
 
 
 
-<meta property="og:title" content="Bayesian sum of single-effect (SuSiE) linear regression using z scores — susie_rss" />
+<meta property="og:title" content="Bayesian sum of single-effect (SuSiE) linear regression using z scores with lambda (internal test) — susie_rss_lambda" />
 
-<meta property="og:description" content="Bayesian sum of single-effect (SuSiE) linear regression using z scores" />
+<meta property="og:description" content="Bayesian sum of single-effect (SuSiE) linear regression using z scores with lambda (internal test)" />
 <meta name="twitter:card" content="summary" />
 
 
@@ -96,23 +96,24 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Bayesian sum of single-effect (SuSiE) linear regression using z scores</h1>
+    <h1>Bayesian sum of single-effect (SuSiE) linear regression using z scores with lambda (internal test)</h1>
     <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/susie_rss.R'><code>R/susie_rss.R</code></a></small>
-    <div class="hidden name"><code>susie_rss.Rd</code></div>
+    <div class="hidden name"><code>susie_rss_lambda.Rd</code></div>
     </div>
 
     <div class="ref-description">
     
-    <p>Bayesian sum of single-effect (SuSiE) linear regression using z scores</p>
+    <p>Bayesian sum of single-effect (SuSiE) linear regression using z scores with lambda (internal test)</p>
     
     </div>
 
-    <pre class="usage"><span class='fu'>susie_rss</span>(
+    <pre class="usage"><span class='fu'>susie_rss_lambda</span>(
   <span class='no'>z</span>,
   <span class='no'>R</span>,
   <span class='kw'>maf</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>maf_thresh</span> <span class='kw'>=</span> <span class='fl'>0</span>,
   <span class='kw'>L</span> <span class='kw'>=</span> <span class='fl'>10</span>,
+  <span class='kw'>lambda</span> <span class='kw'>=</span> <span class='fl'>0</span>,
   <span class='kw'>prior_variance</span> <span class='kw'>=</span> <span class='fl'>50</span>,
   <span class='kw'>residual_variance</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>r_tol</span> <span class='kw'>=</span> <span class='fl'>1e-08</span>,
@@ -122,7 +123,7 @@
   <span class='kw'>estimate_prior_variance</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
   <span class='kw'>estimate_prior_method</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='st'>"optim"</span>, <span class='st'>"EM"</span>, <span class='st'>"simple"</span>),
   <span class='kw'>max_iter</span> <span class='kw'>=</span> <span class='fl'>100</span>,
-  <span class='kw'>s_init</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/list'>list</a></span>(),
+  <span class='kw'>s_init</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>intercept_value</span> <span class='kw'>=</span> <span class='fl'>0</span>,
   <span class='kw'>coverage</span> <span class='kw'>=</span> <span class='fl'>0.95</span>,
   <span class='kw'>min_abs_corr</span> <span class='kw'>=</span> <span class='fl'>0.5</span>,
@@ -155,6 +156,10 @@
     <tr>
       <th>L</th>
       <td><p>maximum number of non-zero effects</p></td>
+    </tr>
+    <tr>
+      <th>lambda</th>
+      <td><p>fudge factor</p></td>
     </tr>
     <tr>
       <th>prior_variance</th>
@@ -249,8 +254,9 @@ Set to NULL if you want coef.susie() not to include an intercept term (and so on
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
     <p>Performs sum of single-effect (SuSiE) linear regression with z scores.
-The summary data required are the p by p correlation matrix R, the p vector z. The summary stats should come from the same individuals.
-This function fits the regression model z = sum_l Rb_l + e, where e is N(0,residual_variance * R) and the
+The summary data required are the p by p correlation matrix R, the p vector z.
+The summary stats should come from the same individuals.
+This function fits the regression model z = sum_l Rb_l + e, where e is N(0,residual_variance * R + lambda I) and the
 sum_l b_l is a p vector of effects to be estimated.
 The assumption is that each b_l has exactly one non-zero element, with all elements
 equally likely to be non-zero. The prior on the non-zero element is N(0,var=prior_variance).</p>
