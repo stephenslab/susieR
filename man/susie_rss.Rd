@@ -9,6 +9,7 @@ susie_rss(
   R,
   maf = NULL,
   maf_thresh = 0,
+  z_ld_weight = 0,
   L = 10,
   prior_variance = 50,
   residual_variance = NULL,
@@ -33,11 +34,15 @@ susie_rss(
 \arguments{
 \item{z}{a p vector of z scores.}
 
-\item{R}{a p by p symmetric and positive semidefinite correlation matrix.}
+\item{R}{a p by p symmetric and positive semidefinite correlation matrix. If it is from a reference panel,
+we recommend a modification on correlation matrix with parameter `z_ld_weight`.}
 
 \item{maf}{minor allele frequency; to be used along with `maf_thresh` to filter input summary statistics}
 
 \item{maf_thresh}{variants having MAF smaller than this threshold will be filtered out}
+
+\item{z_ld_weight}{the weight assigned to the z in the ld matrix, the ld matrix used in model is cov2cor((1-w) R + w zz').
+We recomment setting `z_ld_weight` as 1/number of samples in reference panel.}
 
 \item{L}{maximum number of non-zero effects}
 

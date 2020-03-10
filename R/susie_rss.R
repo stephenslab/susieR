@@ -6,9 +6,12 @@
 #' The assumption is that each b_l has exactly one non-zero element, with all elements
 #' equally likely to be non-zero. The prior on the non-zero element is N(0,var=prior_variance).
 #' @param z a p vector of z scores.
-#' @param R a p by p symmetric and positive semidefinite correlation matrix.
+#' @param R a p by p symmetric and positive semidefinite correlation matrix. If it is from a reference panel,
+#' we recommend a modification on correlation matrix with parameter `z_ld_weight`.
 #' @param maf minor allele frequency; to be used along with `maf_thresh` to filter input summary statistics
 #' @param maf_thresh variants having MAF smaller than this threshold will be filtered out
+#' @param z_ld_weight the weight assigned to the z in the ld matrix, the ld matrix used in model is cov2cor((1-w) R + w zz').
+#' We recomment setting `z_ld_weight` as 1/number of samples in reference panel.
 #' @param L maximum number of non-zero effects
 #' @param prior_variance the prior variance (vector of length L, or scalar. In latter case gets repeated L times )
 #' @param residual_variance the residual variance, a scaler between 0 and 1
@@ -43,7 +46,7 @@
 #' \item{V}{prior variance}
 #'
 #' @export
-susie_rss = function(z, R, maf=NULL, maf_thresh=0,
+susie_rss = function(z, R, maf=NULL, maf_thresh=0, z_ld_weight=0,
                      L=10, prior_variance=50, residual_variance=NULL,
                      r_tol=1E-08,
                      prior_weights=NULL, null_weight=NULL,
@@ -85,6 +88,12 @@ susie_rss = function(z, R, maf=NULL, maf_thresh=0,
     warning('NA values in z-scores are replaced with 0.')
     z[is.na(z)] = 0
   }
+
+  # modification of R
+  if(z_ld_weight > 0){
+    R = muffled_cov2cor((1-z_ld_weight)* R + z_ld_weight * tcrossprod(z))
+  }
+
   if (is.numeric(null_weight) && null_weight == 0) null_weight = NULL
   if (!is.null(null_weight)) {
     if (!is.numeric(null_weight))

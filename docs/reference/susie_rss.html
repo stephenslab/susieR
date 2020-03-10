@@ -112,6 +112,7 @@
   <span class='no'>R</span>,
   <span class='kw'>maf</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>maf_thresh</span> <span class='kw'>=</span> <span class='fl'>0</span>,
+  <span class='kw'>z_ld_weight</span> <span class='kw'>=</span> <span class='fl'>0</span>,
   <span class='kw'>L</span> <span class='kw'>=</span> <span class='fl'>10</span>,
   <span class='kw'>prior_variance</span> <span class='kw'>=</span> <span class='fl'>50</span>,
   <span class='kw'>residual_variance</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
@@ -142,7 +143,8 @@
     </tr>
     <tr>
       <th>R</th>
-      <td><p>a p by p symmetric and positive semidefinite correlation matrix.</p></td>
+      <td><p>a p by p symmetric and positive semidefinite correlation matrix. If it is from a reference panel,
+we recommend a modification on correlation matrix with parameter `z_ld_weight`.</p></td>
     </tr>
     <tr>
       <th>maf</th>
@@ -151,6 +153,11 @@
     <tr>
       <th>maf_thresh</th>
       <td><p>variants having MAF smaller than this threshold will be filtered out</p></td>
+    </tr>
+    <tr>
+      <th>z_ld_weight</th>
+      <td><p>the weight assigned to the z in the ld matrix, the ld matrix used in model is cov2cor((1-w) R + w zz').
+We recomment setting `z_ld_weight` as 1/number of samples in reference panel.</p></td>
     </tr>
     <tr>
       <th>L</th>

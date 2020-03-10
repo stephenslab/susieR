@@ -65,7 +65,7 @@
       <h1>Fine-mapping with summary statistics</h1>
                         <h4 class="author">Yuxin Zou and Gao Wang</h4>
             
-            <h4 class="date">2020-03-06</h4>
+            <h4 class="date">2020-03-10</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/master/vignettes/finemapping_summary_statistics.Rmd"><code>vignettes/finemapping_summary_statistics.Rmd</code></a></small>
       <div class="hidden name"><code>finemapping_summary_statistics.Rmd</code></div>
@@ -167,17 +167,18 @@ z_scores &lt;-<span class="st"> </span>z_scores[,<span class="dv">1</span>]
  
 </p>
 </div>
-<p><strong>We recommend the following modification on the LD matrix from reference panel.</strong> Suppose <code>X_ref</code> is column-standardized, we recommend estimating LD as <span class="math display">\[
-\tilde{R} = \text{cov2cor}(\frac{1}{n_{ref}}(X_{ref}^\intercal X_{ref}+ zz^\intercal)) = \text{cov2cor}(\frac{1}{n_{ref}}(R_{ref}(n_{ref}-1)+ zz^\intercal)),
-\]</span> where z is the original summary statistics, <span class="math inline">\(n_{ref}\)</span> is the sample size from the reference panel.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">R_ref_cor =<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/cor">cov2cor</a></span>(R_ref<span class="op">*</span>(<span class="dv">500</span><span class="op">-</span><span class="dv">1</span>) <span class="op">+</span><span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/crossprod">tcrossprod</a></span>(z_scores))
-fitted_rss_ref_cor &lt;-<span class="st"> </span><span class="kw"><a href="../reference/susie_rss.html">susie_rss</a></span>(z_scores, R_ref_cor, <span class="dt">L =</span> <span class="dv">10</span>,
+<p><strong>We recommend the following modification on the LD matrix from reference panel (<span class="math inline">\(R_{ref}\)</span>),</strong> <span class="math display">\[
+\tilde{R} = \text{cov2cor}((1-w)R_{ref}+ w zz^\intercal)),
+\]</span> where z is the original summary statistics. We suggest using <span class="math inline">\(w = 1/n_{ref}\)</span>, <span class="math inline">\(n_{ref}\)</span> is the sample size from the reference panel. The modified LD matrix becomes <span class="math display">\[
+\tilde{R} = \text{cov2cor}(\frac{n_{ref}-1}{n_{ref}}R_{ref}+ \frac{1}{n_{ref}} zz^\intercal)) = \text{cov2cor}(\frac{1}{n_{ref}}(X_{ref}^\intercal X_{ref}+ zz^\intercal)),
+\]</span> where <code>X_ref</code> is column-standardized. This modification is implemented in <code>susie_rss</code> with parameter <code>z_ld_weight</code>:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fitted_rss_ref_cor &lt;-<span class="st"> </span><span class="kw"><a href="../reference/susie_rss.html">susie_rss</a></span>(z_scores, R_ref, <span class="dt">z_ld_weight =</span> <span class="dv">1</span><span class="op">/</span><span class="dv">500</span>, <span class="dt">L =</span> <span class="dv">10</span>,
                                 <span class="dt">estimate_residual_variance =</span> <span class="ot">TRUE</span>, 
                                 <span class="dt">estimate_prior_variance =</span> <span class="ot">TRUE</span>, <span class="dt">check_z =</span> F)</code></pre></div>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(fitted_rss_ref_cor)<span class="op">$</span>cs
 <span class="co">#   cs cs_log10bf cs_avg_r2 cs_min_r2</span>
-<span class="co"># 1  1  24.610981 0.9923966 0.9848222</span>
-<span class="co"># 2  2   9.769512 0.9820434 0.8876664</span>
+<span class="co"># 1  1  24.610981 0.9924464 0.9849215</span>
+<span class="co"># 2  2   9.769512 0.9820339 0.8876028</span>
 <span class="co">#                                                                                              variable</span>
 <span class="co"># 1                                                                                             773,777</span>
 <span class="co"># 2 362,365,366,367,368,373,374,379,381,383,384,386,387,388,389,391,392,396,398,399,400,403,404,405,408</span></code></pre></div>
