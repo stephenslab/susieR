@@ -368,7 +368,7 @@ susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,add_legen
         segments(x0,y0,x1,y1,lwd=1.5,col='gray')
       }
       points(x0, y1,col=head(color, 1),cex=1.5,lwd=2.5)
-      legend_text$col = append(head(color, 1), legend_text$col)
+      legend_text$col = append(legend_text$col, head(color, 1))
       # rotate color
       color = c(color[-1], color[1])
       legend_text$purity = append(round(purity,4), legend_text$purity)
@@ -378,8 +378,8 @@ susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,add_legen
       # plot legend
       text = vector()
       for (i in 1:length(legend_text$col)) {
-        if (legend_text$size[i] == 1) text[i] = paste0("L", legend_text$col[i]-2, ": C=1")
-        else text[i] = paste0("L", legend_text$col[i]-2, ": C=", legend_text$size[i], "/R=", legend_text$purity[i])
+        if (legend_text$size[i] == 1) text[i] = paste0("L", i, ": C=1")
+        else text[i] = paste0("L", i, ": C=", legend_text$size[i], "/R=", legend_text$purity[i])
       }
       legend(par("xaxp")[1], 1.1 * par("yaxp")[2], text,
         xpd = TRUE, horiz = TRUE, inset = c(0, 0), bty = "n", pch = 15, col = legend_text$col, cex = 0.75)
