@@ -9,7 +9,8 @@ update_each_effect_ss(
   Xty,
   s_init,
   estimate_prior_variance = FALSE,
-  estimate_prior_method = "optim"
+  estimate_prior_method = "optim",
+  check_null_threshold = 0
 )
 }
 \arguments{
@@ -22,6 +23,8 @@ update_each_effect_ss(
 \item{estimate_prior_variance}{boolean indicating whether to estimate prior variance}
 
 \item{estimate_prior_method}{The method used for estimating prior variance, 'optim' or 'EM'}
+
+\item{check_null_threshold}{float a threshold on the log scale to compare likelihood between current estimate and zero the null}
 }
 \description{
 update each effect once

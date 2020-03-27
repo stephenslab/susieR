@@ -19,6 +19,7 @@ susie_rss(
   estimate_residual_variance = TRUE,
   estimate_prior_variance = TRUE,
   estimate_prior_method = c("optim", "EM", "simple"),
+  check_null_threshold = 0,
   max_iter = 100,
   s_init = list(),
   intercept_value = 0,
@@ -64,6 +65,12 @@ We recomment setting `z_ld_weight` as 1/number of samples in reference panel.}
 variance. "simple" method only compares the loglikelihood between
 using specified prior variance and using zero, and chose the one that
 gives larger loglikelihood.}
+
+\item{check_null_threshold}{when prior variance is estimated, compare the
+estimate with the null and set prior variance to null (zero) unless the log-likelihood
+using the estimate is larger than that of null by this threshold. For example,
+you can set it to 0.1 to nudge the estimate towards zero. Default is 0. Notice that setting it to non-zero
+may lead to decreasing ELBO in some cases.}
 
 \item{max_iter}{maximum number of iterations to perform}
 

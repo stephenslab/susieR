@@ -9,7 +9,8 @@ update_each_effect(
   Y,
   s,
   estimate_prior_variance = FALSE,
-  estimate_prior_method = "optim"
+  estimate_prior_method = "optim",
+  check_null_threshold
 )
 }
 \arguments{
@@ -20,6 +21,8 @@ update_each_effect(
 \item{s}{a SuSiE fit}
 
 \item{estimate_prior_variance}{boolean indicating whether to estimate prior variance}
+
+\item{check_null_threshold}{float a threshold on the log scale to compare likelihood between current estimate and zero the null}
 }
 \description{
 update each effect once

@@ -21,6 +21,7 @@ susie_suff_stat(
   estimate_residual_variance = TRUE,
   estimate_prior_variance = TRUE,
   estimate_prior_method = c("optim", "EM", "simple"),
+  check_null_threshold = 0,
   r_tol = 1e-08,
   prior_weights = NULL,
   null_weight = NULL,
@@ -69,6 +70,12 @@ It should from the same samples used to compute `bhat` and `shat`. Using out of 
 \item{estimate_prior_variance}{indicates whether to estimate prior}
 
 \item{estimate_prior_method}{The method used for estimating prior variance.}
+
+\item{check_null_threshold}{when prior variance is estimated, compare the
+estimate with the null and set prior variance to null (zero) unless the log-likelihood
+using the estimate is larger than that of null by this threshold. For example,
+you can set it to 0.1 to nudge the estimate towards zero. Default is 0. Notice that setting it to non-zero
+may lead to decreasing ELBO in some cases.}
 
 \item{r_tol}{tolerance level for eigen value check of positive semidefinite matrix of R.}
 

@@ -9,7 +9,8 @@ single_effect_regression_rss(
   Sigma,
   V = 1,
   prior_weights = NULL,
-  optimize_V = c("none", "optim", "uniroot", "EM", "simple")
+  optimize_V = c("none", "optim", "uniroot", "EM", "simple"),
+  check_null_threshold = 0
 )
 }
 \arguments{
@@ -22,6 +23,8 @@ single_effect_regression_rss(
 \item{prior_weights}{a p vector of prior weights}
 
 \item{optimize_V}{boolean indicating whether to optimize V (by maximum likelihood)}
+
+\item{check_null_threshold}{float a threshold on the log scale to compare likelihood between current estimate and zero the null}
 }
 \value{
 a list with elements: \cr
