@@ -29,6 +29,11 @@
 #' @param estimate_residual_variance indicates whether to estimate residual variance
 #' @param estimate_prior_variance indicates whether to estimate prior
 #' @param estimate_prior_method The method used for estimating prior variance.
+#' @param check_null_threshold when prior variance is estimated, compare the
+#' estimate with the null and set prior variance to null (zero) unless the log-likelihood
+#' using the estimate is larger than that of null by this threshold. For example,
+#' you can set it to 0.1 to nudge the estimate towards zero. Default is 0. Notice that setting it to non-zero
+#' may lead to decreasing ELBO in some cases.
 #' @param r_tol tolerance level for eigen value check of positive semidefinite matrix of R.
 #' @param prior_weights a p vector of prior probability that each element is non-zero
 #' @param null_weight probability of no effect, for each single effect model
@@ -86,6 +91,7 @@ susie_suff_stat = function(bhat, shat, R, n, var_y = 1,
                            estimate_residual_variance = TRUE,
                            estimate_prior_variance = TRUE,
                            estimate_prior_method = c("optim","EM","simple"),
+                           check_null_threshold=0,
                            r_tol = 1e-08,
                            prior_weights = NULL, null_weight = NULL,
                            standardize = TRUE,
@@ -256,7 +262,7 @@ susie_suff_stat = function(bhat, shat, R, n, var_y = 1,
     if (track_fit)
       tracking[[i]] = susie_slim(s)
     # alpha_old = alpha_new
-    s = update_each_effect_ss(XtX, Xty, s, estimate_prior_variance,estimate_prior_method)
+    s = update_each_effect_ss(XtX, Xty, s, estimate_prior_variance,estimate_prior_method,check_null_threshold)
     # alpha_new = s$alpha
 
     if(verbose){

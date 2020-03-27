@@ -3,9 +3,10 @@
 #' @param Y an n vector of response variable
 #' @param s a SuSiE fit
 #' @param estimate_prior_variance boolean indicating whether to estimate prior variance
+#' @param check_null_threshold float a threshold on the log scale to compare likelihood between current estimate and zero the null
 #' @keywords internal
 update_each_effect <- function (X, Y, s, estimate_prior_variance=FALSE,
-                                estimate_prior_method="optim") {
+                                estimate_prior_method="optim",check_null_threshold) {
   if(estimate_prior_variance==FALSE) estimate_prior_method="none"
 
   # Repeat for each effect to update
@@ -19,7 +20,7 @@ update_each_effect <- function (X, Y, s, estimate_prior_variance=FALSE,
       R = Y - s$Xr
 
       res <- single_effect_regression(R,X,s$V[l],s$sigma2,s$pi,
-                                      estimate_prior_method)
+                                      estimate_prior_method,check_null_threshold)
 
       # Update the variational estimate of the posterior mean.
       s$mu[l,] <- res$mu

@@ -24,6 +24,11 @@
 #' variance. "simple" method only compares the loglikelihood between
 #' using specified prior variance and using zero, and chose the one that
 #' gives larger loglikelihood.
+#' @param check_null_threshold when prior variance is estimated, compare the
+#' estimate with the null and set prior variance to null (zero) unless the log-likelihood
+#' using the estimate is larger than that of null by this threshold. For example,
+#' you can set it to 0.1 to nudge the estimate towards zero. Default is 0. Notice that setting it to non-zero
+#' may lead to decreasing ELBO in some cases.
 #' @param max_iter maximum number of iterations to perform
 #' @param s_init a previous susie fit with which to initialize
 #' @param intercept_value a value to assign to the intercept (since the intercept cannot be estimated from centered summary data). This
@@ -53,6 +58,7 @@ susie_rss = function(z, R, maf=NULL, maf_thresh=0, z_ld_weight=0,
                      estimate_residual_variance=TRUE,
                      estimate_prior_variance=TRUE,
                      estimate_prior_method=c("optim", "EM", "simple"),
+                     check_null_threshold=0,
                      max_iter=100, s_init=list(), intercept_value=0,
                      coverage=0.95, min_abs_corr=0.5,
                      tol=1E-03, verbose=FALSE, track_fit=FALSE, check_R=TRUE, check_z=TRUE){
@@ -147,6 +153,7 @@ susie_rss = function(z, R, maf=NULL, maf_thresh=0, z_ld_weight=0,
             estimate_residual_variance=estimate_residual_variance,
             estimate_prior_variance=estimate_prior_variance,
             estimate_prior_method=estimate_prior_method,
+            check_null_threshold=check_null_threshold,
             residual_variance_upperbound=1,
             s_init=s_init, coverage=coverage, min_abs_corr=min_abs_corr,
             compute_univariate_zscore=FALSE,
@@ -182,6 +189,11 @@ susie_rss = function(z, R, maf=NULL, maf_thresh=0, z_ld_weight=0,
 #' variance. "simple" method only compares the loglikelihood between
 #' using specified prior variance and using zero, and chose the one that
 #' gives larger loglikelihood.
+#' @param check_null_threshold when prior variance is estimated, compare the
+#' estimate with the null and set prior variance to null (zero) unless the log-likelihood
+#' using the estimate is larger than that of null by this threshold. For example,
+#' you can set it to 0.1 to nudge the estimate towards zero. Default is 0. Notice that setting it to non-zero
+#' may lead to decreasing ELBO in some cases.
 #' @param max_iter maximum number of iterations to perform
 #' @param s_init a previous susie fit with which to initialize
 #' @param intercept_value a value to assign to the intercept (since the intercept cannot be estimated from centered summary data). This
@@ -210,6 +222,7 @@ susie_rss_lambda = function(z, R, maf=NULL, maf_thresh=0,
                             estimate_residual_variance=TRUE,
                             estimate_prior_variance=TRUE,
                             estimate_prior_method=c("optim","EM","simple"),
+                            check_null_threshold=0,
                             max_iter=100, s_init=NULL, intercept_value=0,
                             coverage=0.95, min_abs_corr=0.5,
                             tol=1e-3, verbose=FALSE, track_fit = FALSE,
@@ -301,7 +314,7 @@ susie_rss_lambda = function(z, R, maf=NULL, maf_thresh=0,
   for(i in 1:max_iter){
     if (track_fit)
       tracking[[i]] = susie_slim(s)
-    s = update_each_effect_rss(R, z, s, Sigma, estimate_prior_variance,estimate_prior_method)
+    s = update_each_effect_rss(R, z, s, Sigma, estimate_prior_variance,estimate_prior_method,check_null_threshold)
 
     if(verbose){
       print(paste0("before estimate sigma2 objective:",get_objective_rss(R, z, s)))

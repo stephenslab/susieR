@@ -4,9 +4,10 @@
 #' @param s_init a list with elements sigma2, V, alpha, mu, Xr
 #' @param estimate_prior_variance boolean indicating whether to estimate prior variance
 #' @param estimate_prior_method The method used for estimating prior variance, 'optim' or 'EM'
+#' @param check_null_threshold float a threshold on the log scale to compare likelihood between current estimate and zero the null
 #' @importFrom Matrix diag
 #' @keywords internal
-update_each_effect_ss <- function (XtX, Xty, s_init, estimate_prior_variance=FALSE, estimate_prior_method="optim") {
+update_each_effect_ss <- function (XtX, Xty, s_init, estimate_prior_variance=FALSE, estimate_prior_method="optim",check_null_threshold=0) {
   if(estimate_prior_variance==FALSE) estimate_prior_method="none"
   # Repeat for each effect to update
   s = s_init
@@ -19,7 +20,7 @@ update_each_effect_ss <- function (XtX, Xty, s_init, estimate_prior_variance=FAL
 
       #compute residuals
       XtR = Xty - s$XtXr
-      res = single_effect_regression_ss(as.matrix(XtR),attr(XtX, "d"),s$V[l],s$sigma2,s$pi,estimate_prior_method)
+      res = single_effect_regression_ss(as.matrix(XtR),attr(XtX, "d"),s$V[l],s$sigma2,s$pi,estimate_prior_method,check_null_threshold)
       # Update the variational estimate of the posterior mean.
       s$mu[l,] <- res$mu
       s$alpha[l,] <- res$alpha

@@ -10,6 +10,7 @@
 #' @param residual_variance the residual variance
 #' @param prior_weights a p vector of prior weights
 #' @param optimize_V boolean indicating whether to optimize V (by maximum likelihood)
+#' @param check_null_threshold float a threshold on the log scale to compare likelihood between current estimate and zero the null
 #' @return a list with elements: \cr
 #' \item{alpha}{vector of posterior inclusion probabilities. ie alpha[i] is posterior probability that
 #'  that b[i] is non-zero}
@@ -23,7 +24,7 @@
 #' @importFrom stats uniroot
 #' @importFrom stats optim
 #' @importFrom Matrix colSums
-single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL, optimize_V=c("none", "optim", "uniroot", "EM", "simple")){
+single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL, optimize_V=c("none", "optim", "uniroot", "EM", "simple"), check_null_threshold=0){
   optimize_V = match.arg(optimize_V)
   Xty = compute_Xty(X, Y)
   betahat = (1/attr(X, "d")) * Xty
@@ -31,7 +32,7 @@ single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL
   if (is.null(prior_weights))
     prior_weights = rep(1/ncol(X), ncol(X))
 
-  if(optimize_V!="EM" && optimize_V!="none") V=optimize_prior_variance(optimize_V, betahat, shat2, prior_weights, alpha=NULL, post_mean2=NULL, V_init=V)
+  if(optimize_V!="EM" && optimize_V!="none") V=optimize_prior_variance(optimize_V, betahat, shat2, prior_weights, alpha=NULL, post_mean2=NULL, V_init=V,check_null_threshold=check_null_threshold)
 
   lbf = dnorm(betahat,0,sqrt(V+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
   #log(bf) on each SNP
@@ -49,7 +50,7 @@ single_effect_regression = function(Y,X,V,residual_variance=1,prior_weights=NULL
   lbf_model = maxlbf + log(weighted_sum_w)
   loglik = lbf_model + sum(dnorm(Y,0,sqrt(residual_variance),log=TRUE))
 
-  if(optimize_V=="EM") V=optimize_prior_variance(optimize_V, betahat, shat2, prior_weights, alpha, post_mean2)
+  if(optimize_V=="EM") V=optimize_prior_variance(optimize_V, betahat, shat2, prior_weights, alpha, post_mean2, check_null_threshold=check_null_threshold)
 
   return(list(alpha=alpha,mu=post_mean,mu2 = post_mean2,lbf=lbf,lbf_model=lbf_model,V=V,loglik=loglik))
 }
@@ -62,7 +63,7 @@ est_V_uniroot = function(betahat, shat2, prior_weights){
   return(V)
 }
 
-optimize_prior_variance = function(optimize_V, betahat, shat2, prior_weights, alpha=NULL, post_mean2=NULL, V_init=NULL, check_null_tol = 0.1){
+optimize_prior_variance = function(optimize_V, betahat, shat2, prior_weights, alpha=NULL, post_mean2=NULL, V_init=NULL, check_null_threshold = 0){
   V = V_init
   if (optimize_V != "simple") {
     if(optimize_V=="optim"){
@@ -75,16 +76,16 @@ optimize_prior_variance = function(optimize_V, betahat, shat2, prior_weights, al
     }else stop('Invalid option for `optimize_V` method')
   }
   # set V exactly 0 if that beats the numerical value
-  # by check_null_tol in loglik.
-  # check_null_tol = 0.1 is exp(0.1) = 1.1 on likelihood scale;
+  # by check_null_threshold in loglik.
+  # check_null_threshold = 0.1 is exp(0.1) = 1.1 on likelihood scale;
   # it means that for parsimony reasons we set estiate of V to zero, if its
   # numerical estimate is only "negligibly" different from zero. We use a likelihood
-  # ratio of exp(check_null_tol) to define "negligible" in this context.
+  # ratio of exp(check_null_threshold) to define "negligible" in this context.
   # This is fairly modest condition compared to, say, a formal LRT with p-value 0.05.
   # But the idea is to be lenient to non-zeros estimates unless they are indeed small enough
   # to be neglible.
   # See more intuition at https://stephens999.github.io/fiveMinuteStats/LR_and_BF.html
-  if(loglik(0,betahat,shat2,prior_weights) + check_null_tol >= loglik(V,betahat,shat2,prior_weights)) V=0
+  if(loglik(0,betahat,shat2,prior_weights) + check_null_threshold >= loglik(V,betahat,shat2,prior_weights)) V=0
   return(V)
 }
 
@@ -167,8 +168,3 @@ lbf = function(V,shat2,T2){
   l[is.nan(l)] = 0
   return(l)
 }
-
-
-
-
-

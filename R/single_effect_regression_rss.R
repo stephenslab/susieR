@@ -15,6 +15,7 @@
 #' @param V the prior variance
 #' @param prior_weights a p vector of prior weights
 #' @param optimize_V boolean indicating whether to optimize V (by maximum likelihood)
+#' @param check_null_threshold float a threshold on the log scale to compare likelihood between current estimate and zero the null
 #' @return a list with elements: \cr
 #' \item{alpha}{vector of posterior inclusion probabilities. ie alpha[i] is posterior probability that
 #'  that b[i] is non-zero}
@@ -25,14 +26,14 @@
 #' \item{lbf_model}{(scalar) the loglikelihood for the total model minus the log-likelihood for the null model}
 #'
 #'
-single_effect_regression_rss = function(z,Sigma,V=1,prior_weights=NULL,optimize_V=c("none", "optim", "uniroot", "EM", "simple")){
+single_effect_regression_rss = function(z,Sigma,V=1,prior_weights=NULL,optimize_V=c("none", "optim", "uniroot", "EM", "simple"),check_null_threshold=0){
   p = length(z)
   shat2 = 1/attr(Sigma, 'RjSinvRj')
   if (is.null(prior_weights))
     prior_weights = rep(1/p, p)
 
   if(optimize_V!="EM" && optimize_V!="none"){
-    V=optimize_prior_variance_rss(optimize_V, z, Sigma, prior_weights, alpha=NULL, post_mean2=NULL,V_init=V)
+    V=optimize_prior_variance_rss(optimize_V, z, Sigma, prior_weights, alpha=NULL, post_mean2=NULL,V_init=V,check_null_threshold=check_null_threshold)
   }
 
   lbf = sapply(1:p, function(j){
@@ -56,7 +57,7 @@ single_effect_regression_rss = function(z,Sigma,V=1,prior_weights=NULL,optimize_
   lbf_model = maxlbf + log(weighted_sum_w) #analogue of loglik in the non-summary case
 
   if(optimize_V=="EM"){
-    V=optimize_prior_variance_rss(optimize_V, z, Sigma, prior_weights, alpha, post_mean2)
+    V=optimize_prior_variance_rss(optimize_V, z, Sigma, prior_weights, alpha, post_mean2,check_null_threshold=check_null_threshold)
   }
 
   return(list(alpha=alpha,mu=post_mean,mu2 = post_mean2,lbf=lbf, V=V, lbf_model=lbf_model))
@@ -85,7 +86,7 @@ neg.loglik_z.logscale_rss = function(lV,z,Sigma,prior_weights){
   return(-loglik_rss(exp(lV),z,Sigma,prior_weights))
 }
 
-optimize_prior_variance_rss = function(optimize_V, z, Sigma, prior_weights, alpha=NULL, post_mean2=NULL,V_init=NULL,check_null_tol=0.1){
+optimize_prior_variance_rss = function(optimize_V, z, Sigma, prior_weights, alpha=NULL, post_mean2=NULL,V_init=NULL,check_null_threshold=0){
   V = V_init
   if (optimize_V != "simple") {
     if(optimize_V=="optim"){
@@ -99,15 +100,15 @@ optimize_prior_variance_rss = function(optimize_V, z, Sigma, prior_weights, alph
     }else stop('Invalid option for `optimize_V` method')
   }
   # set V exactly 0 if that beats the numerical value
-  # by check_null_tol in loglik.
-  # check_null_tol = 0.1 is exp(0.1) = 1.1 on likelihood scale;
+  # by check_null_threshold in loglik.
+  # check_null_threshold = 0.1 is exp(0.1) = 1.1 on likelihood scale;
   # it means that for parsimony reasons we set estiate of V to zero, if its
   # numerical estimate is only "negligibly" different from zero. We use a likelihood
-  # ratio of exp(check_null_tol) to define "negligible" in this context.
+  # ratio of exp(check_null_threshold) to define "negligible" in this context.
   # This is fairly modest condition compared to, say, a formal LRT with p-value 0.05.
   # But the idea is to be lenient to non-zeros estimates unless they are indeed small enough
   # to be neglible.
   # See more intuition at https://stephens999.github.io/fiveMinuteStats/LR_and_BF.html
-  if(loglik_rss(0,z,Sigma,prior_weights) + check_null_tol >= loglik_rss(V,z,Sigma,prior_weights)) V=0
+  if(loglik_rss(0,z,Sigma,prior_weights) + check_null_threshold >= loglik_rss(V,z,Sigma,prior_weights)) V=0
   return(V)
 }

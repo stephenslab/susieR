@@ -11,6 +11,7 @@
 #' @param residual_variance the residual variance
 #' @param prior_weights a p vector of prior weights
 #' @param optimize_V indicating the method to optimize V (by maximum likelihood)
+#' @param check_null_threshold float a threshold on the log scale to compare likelihood between current estimate and zero the null
 #' @return a list with elements: \cr
 #' \item{alpha}{vector of posterior inclusion probabilities. ie alpha[i] is posterior probability that
 #'  that b[i] is non-zero}
@@ -23,14 +24,14 @@
 #' @importFrom stats uniroot
 #' @importFrom stats optim
 #'
-single_effect_regression_ss = function(Xty,dXtX,V=1,residual_variance=1,prior_weights=NULL,optimize_V=c("none", "optim", "uniroot", "EM", "simple")){
+single_effect_regression_ss = function(Xty,dXtX,V=1,residual_variance=1,prior_weights=NULL,optimize_V=c("none", "optim", "uniroot", "EM", "simple"),check_null_threshold=0){
   optimize_V = match.arg(optimize_V)
   betahat = (1/dXtX) * Xty
   shat2 = residual_variance/dXtX
   if (is.null(prior_weights))
     prior_weights = rep(1/length(dXtX), length(dXtX))
 
-  if(optimize_V!="EM" && optimize_V!="none") V=optimize_prior_variance(optimize_V, betahat, shat2, prior_weights, alpha=NULL, post_mean2=NULL,V_init=V)
+  if(optimize_V!="EM" && optimize_V!="none") V=optimize_prior_variance(optimize_V, betahat, shat2, prior_weights, alpha=NULL, post_mean2=NULL,V_init=V,check_null_threshold=check_null_threshold)
 
   lbf = dnorm(betahat,0,sqrt(V+shat2),log=TRUE) - dnorm(betahat,0,sqrt(shat2),log=TRUE)
   #log(bf) on each SNP
@@ -49,7 +50,7 @@ single_effect_regression_ss = function(Xty,dXtX,V=1,residual_variance=1,prior_we
   post_mean2 = post_var + post_mean^2 # second moment
   lbf_model = maxlbf + log(weighted_sum_w) #analogue of loglik in the non-summary case
 
-  if(optimize_V=="EM") V=optimize_prior_variance(optimize_V, betahat, shat2, prior_weights, alpha, post_mean2)
+  if(optimize_V=="EM") V=optimize_prior_variance(optimize_V, betahat, shat2, prior_weights, alpha, post_mean2,check_null_threshold=check_null_threshold)
 
   return(list(alpha=alpha,mu=post_mean,mu2 = post_mean2,lbf=lbf, V=V, lbf_model=lbf_model))
 }

@@ -4,9 +4,10 @@
 #' @param s_init a list with elements sigma2, V, alpha, mu, Xr
 #' @param Sigma sigma2*R + lambda I
 #' @param estimate_prior_variance boolean indicating whether to estimate prior variance
+#' @param check_null_threshold float a threshold on the log scale to compare likelihood between current estimate and zero the null
 #' @importFrom Matrix diag
 #' @keywords internal
-update_each_effect_rss <- function (R, z, s_init, Sigma, estimate_prior_variance=FALSE,estimate_prior_method="optim") {
+update_each_effect_rss <- function (R, z, s_init, Sigma, estimate_prior_variance=FALSE,estimate_prior_method="optim",check_null_threshold=0) {
 
   if(estimate_prior_variance==FALSE) estimate_prior_method="none"
   # Repeat for each effect to update
@@ -20,7 +21,7 @@ update_each_effect_rss <- function (R, z, s_init, Sigma, estimate_prior_variance
 
       #compute residuals
       r = z - s$Rz
-      res = single_effect_regression_rss(as.vector(r),Sigma,s$V[l], s$pi,estimate_prior_method)
+      res = single_effect_regression_rss(as.vector(r),Sigma,s$V[l], s$pi,estimate_prior_method,check_null_threshold)
       # Update the variational estimate of the posterior mean.
       s$mu[l,] <- res$mu
       s$alpha[l,] <- res$alpha

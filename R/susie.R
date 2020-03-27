@@ -73,6 +73,12 @@
 #' using specified prior variance and using zero, and chose the one that
 #' gives larger loglikelihood.
 #'
+#' @param check_null_threshold when prior variance is estimated, compare the
+#' estimate with the null and set prior variance to null (zero) unless the log-likelihood
+#' using the estimate is larger than that of null by this threshold. For example,
+#' you can set it to 0.1 to nudge the estimate towards zero. Default is 0. Notice that setting it to non-zero
+#' may lead to decreasing ELBO in some cases
+#'
 #' @param residual_variance_upperbound Upper bound for estiamted residual variance.
 #'   It is used when \code{estimate_residual_variance = TRUE}.
 #'
@@ -183,6 +189,7 @@ susie <- function(X,Y,L = min(10,ncol(X)),scaled_prior_variance = 0.2,
                  estimate_residual_variance=TRUE,
                  estimate_prior_variance = TRUE,
                  estimate_prior_method = c("optim","EM","simple"),
+                 check_null_threshold=0,
                  residual_variance_upperbound = Inf,
                  s_init = NULL,coverage=0.95,min_abs_corr=0.5,
                  compute_univariate_zscore = FALSE,
@@ -248,7 +255,7 @@ susie <- function(X,Y,L = min(10,ncol(X)),scaled_prior_variance = 0.2,
     #s = add_null_effect(s,0)
     if (track_fit)
       tracking[[i]] = susie_slim(s)
-    s = update_each_effect(X, Y, s, estimate_prior_variance,estimate_prior_method)
+    s = update_each_effect(X, Y, s, estimate_prior_variance,estimate_prior_method,check_null_threshold)
     if(verbose){
         print(paste0("objective:",get_objective(X,Y,s)))
     }
