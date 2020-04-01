@@ -54,6 +54,14 @@ See [here](https://stephenslab.github.io/susieR/articles/mwe.html) for
 a brief illustration of `susieR`.  For more documentation and examples
 please visit https://stephenslab.github.io/susieR
 
+## Citing this work
+
+If you find the `susieR` package or any of the source code in this
+repository useful for your work, please cite:
+
+> G Wang, A K Sarkar, P Carbonetto and M Stephens. A simple new approach to variable selection in regression, with application to genetic fine-mapping.
+> [bioRxiv](https://www.biorxiv.org/content/10.1101/501114v2) doi:10.1101/501114.
+
 ## Developer notes
 
 + When any changes are made to `roxygen2` markup, simply run
