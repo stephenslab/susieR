@@ -184,14 +184,15 @@ susie_get_cs = function(res,
 #' @param res a susie fit, the output of `susieR::susie()`, or simply the posterior
 #' inclusion probability matrix alpha.
 #' @param prune_by_cs Whether or not to ignore single effects not in reported CS when calculating PIP. Default to FALSE.
+#' @param prior_tol Filter out effects having estimated prior variance smaller than this threshold
 #' @return a vector of posterior inclusion probability.
 #' @export
-susie_get_pip = function(res, prune_by_cs = FALSE) {
+susie_get_pip = function(res, prune_by_cs = FALSE, prior_tol = 1E-9) {
   if (class(res) == "susie") {
     # drop null weight columns
     if (res$null_index > 0) res$alpha = res$alpha[,-res$null_index]
     # drop the single effect with estimated prior zero
-    if (is.numeric(res$V)) include_idx = which(res$V > 1E-9)
+    if (is.numeric(res$V)) include_idx = which(res$V > prior_tol)
     else include_idx = 1:nrow(res$alpha)
     # only consider variables in reported CS
     # this is not what we do in the SuSiE paper

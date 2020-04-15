@@ -79,6 +79,9 @@
 #' you can set it to 0.1 to nudge the estimate towards zero. Default is 0. Notice that setting it to non-zero
 #' may lead to decreasing ELBO in some cases
 #'
+#' @param prior_tol when prior variance is estimated, compare the estimated value to this tol at the end of
+#' the analysis and exclude a single effect from PIP computation if the estimated prior variance is smaller than it.
+#'
 #' @param residual_variance_upperbound Upper bound for estiamted residual variance.
 #'   It is used when \code{estimate_residual_variance = TRUE}.
 #'
@@ -189,7 +192,7 @@ susie <- function(X,Y,L = min(10,ncol(X)),scaled_prior_variance = 0.2,
                  estimate_residual_variance=TRUE,
                  estimate_prior_variance = TRUE,
                  estimate_prior_method = c("optim","EM","simple"),
-                 check_null_threshold=0,
+                 check_null_threshold=0, prior_tol=1E-9,
                  residual_variance_upperbound = Inf,
                  s_init = NULL,coverage=0.95,min_abs_corr=0.5,
                  compute_univariate_zscore = FALSE,
@@ -302,7 +305,7 @@ susie <- function(X,Y,L = min(10,ncol(X)),scaled_prior_variance = 0.2,
   ## SuSiE CS and PIP
   if (!is.null(coverage) && !is.null(min_abs_corr)) {
     s$sets = susie_get_cs(s, coverage=coverage, X=X, min_abs_corr=min_abs_corr)
-    s$pip = susie_get_pip(s, prune_by_cs = FALSE)
+    s$pip = susie_get_pip(s, prune_by_cs = FALSE, prior_tol = prior_tol)
   }
   ## report z-scores from univariate regression
   if (compute_univariate_zscore) {

@@ -22,6 +22,7 @@ susie_suff_stat(
   estimate_prior_variance = TRUE,
   estimate_prior_method = c("optim", "EM", "simple"),
   check_null_threshold = 0,
+  prior_tol = 1e-09,
   r_tol = 1e-08,
   prior_weights = NULL,
   null_weight = NULL,
@@ -76,6 +77,9 @@ estimate with the null and set prior variance to null (zero) unless the log-like
 using the estimate is larger than that of null by this threshold. For example,
 you can set it to 0.1 to nudge the estimate towards zero. Default is 0. Notice that setting it to non-zero
 may lead to decreasing ELBO in some cases.}
+
+\item{prior_tol}{when prior variance is estimated, compare the estimated value to this tol at the end of
+the analysis and exclude a single effect from PIP computation if the estimated prior variance is smaller than it.}
 
 \item{r_tol}{tolerance level for eigen value check of positive semidefinite matrix of R.}
 

@@ -4,13 +4,15 @@
 \alias{susie_get_pip}
 \title{Compute posterior inclusion probability (PIP) for all variables}
 \usage{
-susie_get_pip(res, prune_by_cs = FALSE)
+susie_get_pip(res, prune_by_cs = FALSE, prior_tol = 1e-09)
 }
 \arguments{
 \item{res}{a susie fit, the output of `susieR::susie()`, or simply the posterior
 inclusion probability matrix alpha.}
 
 \item{prune_by_cs}{Whether or not to ignore single effects not in reported CS when calculating PIP. Default to FALSE.}
+
+\item{prior_tol}{Filter out effects having estimated prior variance smaller than this threshold}
 }
 \value{
 a vector of posterior inclusion probability.

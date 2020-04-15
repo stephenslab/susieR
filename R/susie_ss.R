@@ -34,6 +34,8 @@
 #' using the estimate is larger than that of null by this threshold. For example,
 #' you can set it to 0.1 to nudge the estimate towards zero. Default is 0. Notice that setting it to non-zero
 #' may lead to decreasing ELBO in some cases.
+#' @param prior_tol when prior variance is estimated, compare the estimated value to this tol at the end of
+#' the analysis and exclude a single effect from PIP computation if the estimated prior variance is smaller than it.
 #' @param r_tol tolerance level for eigen value check of positive semidefinite matrix of R.
 #' @param prior_weights a p vector of prior probability that each element is non-zero
 #' @param null_weight probability of no effect, for each single effect model
@@ -91,7 +93,7 @@ susie_suff_stat = function(bhat, shat, R, n, var_y = 1,
                            estimate_residual_variance = TRUE,
                            estimate_prior_variance = TRUE,
                            estimate_prior_method = c("optim","EM","simple"),
-                           check_null_threshold=0,
+                           check_null_threshold=0, prior_tol = 1E-9,
                            r_tol = 1e-08,
                            prior_weights = NULL, null_weight = NULL,
                            standardize = TRUE,
@@ -309,7 +311,7 @@ susie_suff_stat = function(bhat, shat, R, n, var_y = 1,
   if (!is.null(coverage) && !is.null(min_abs_corr)) {
     R = muffled_cov2cor(XtX)
     s$sets = susie_get_cs(s, coverage=coverage, Xcorr=R, min_abs_corr=min_abs_corr)
-    s$pip = susie_get_pip(s, prune_by_cs = FALSE)
+    s$pip = susie_get_pip(s, prune_by_cs = FALSE, prior_tol = prior_tol)
   }
 
   return(s)

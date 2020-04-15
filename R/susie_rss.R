@@ -29,6 +29,8 @@
 #' using the estimate is larger than that of null by this threshold. For example,
 #' you can set it to 0.1 to nudge the estimate towards zero. Default is 0. Notice that setting it to non-zero
 #' may lead to decreasing ELBO in some cases.
+#' @param prior_tol when prior variance is estimated, compare the estimated value to this tol at the end of
+#' the analysis and exclude a single effect from PIP computation if the estimated prior variance is smaller than it.
 #' @param max_iter maximum number of iterations to perform
 #' @param s_init a previous susie fit with which to initialize
 #' @param intercept_value a value to assign to the intercept (since the intercept cannot be estimated from centered summary data). This
@@ -58,7 +60,7 @@ susie_rss = function(z, R, maf=NULL, maf_thresh=0, z_ld_weight=0,
                      estimate_residual_variance=TRUE,
                      estimate_prior_variance=TRUE,
                      estimate_prior_method=c("optim", "EM", "simple"),
-                     check_null_threshold=0,
+                     check_null_threshold=0, prior_tol = 1E-9,
                      max_iter=100, s_init=list(), intercept_value=0,
                      coverage=0.95, min_abs_corr=0.5,
                      tol=1E-03, verbose=FALSE, track_fit=FALSE, check_R=TRUE, check_z=TRUE){
@@ -153,7 +155,7 @@ susie_rss = function(z, R, maf=NULL, maf_thresh=0, z_ld_weight=0,
             estimate_residual_variance=estimate_residual_variance,
             estimate_prior_variance=estimate_prior_variance,
             estimate_prior_method=estimate_prior_method,
-            check_null_threshold=check_null_threshold,
+            check_null_threshold=check_null_threshold, prior_tol=prior_tol,
             residual_variance_upperbound=1,
             s_init=s_init, coverage=coverage, min_abs_corr=min_abs_corr,
             compute_univariate_zscore=FALSE,
@@ -194,6 +196,8 @@ susie_rss = function(z, R, maf=NULL, maf_thresh=0, z_ld_weight=0,
 #' using the estimate is larger than that of null by this threshold. For example,
 #' you can set it to 0.1 to nudge the estimate towards zero. Default is 0. Notice that setting it to non-zero
 #' may lead to decreasing ELBO in some cases.
+#' @param prior_tol when prior variance is estimated, compare the estimated value to this tol at the end of
+#' the analysis and exclude a single effect from PIP computation if the estimated prior variance is smaller than it
 #' @param max_iter maximum number of iterations to perform
 #' @param s_init a previous susie fit with which to initialize
 #' @param intercept_value a value to assign to the intercept (since the intercept cannot be estimated from centered summary data). This
@@ -222,7 +226,7 @@ susie_rss_lambda = function(z, R, maf=NULL, maf_thresh=0,
                             estimate_residual_variance=TRUE,
                             estimate_prior_variance=TRUE,
                             estimate_prior_method=c("optim","EM","simple"),
-                            check_null_threshold=0,
+                            check_null_threshold=0, prior_tol = 1E-9,
                             max_iter=100, s_init=NULL, intercept_value=0,
                             coverage=0.95, min_abs_corr=0.5,
                             tol=1e-3, verbose=FALSE, track_fit = FALSE,
@@ -379,7 +383,7 @@ susie_rss_lambda = function(z, R, maf=NULL, maf_thresh=0,
   if (!is.null(coverage) && !is.null(min_abs_corr)) {
     R = muffled_cov2cor(R)
     s$sets = susie_get_cs(s, coverage=coverage, Xcorr=R, min_abs_corr=min_abs_corr)
-    s$pip = susie_get_pip(s, prune_by_cs = FALSE)
+    s$pip = susie_get_pip(s, prune_by_cs = FALSE, prior_tol = prior_tol)
   }
 
   return(s)
