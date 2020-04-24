@@ -147,7 +147,8 @@ susie_get_cs = function(res,
   include_idx = include_idx * (lapply(cs, length) > 0)
   # FIXME: see issue 21
   # https://github.com/stephenslab/susieR/issues/21
-  include_idx = as.logical(include_idx * (!duplicated(cs)))
+  if (dedup) include_idx = include_idx * (!duplicated(cs))
+  include_idx = as.logical(include_idx)
   if (sum(include_idx) == 0) return(list(cs = NULL,coverage=coverage))
   cs = cs[include_idx]
 
