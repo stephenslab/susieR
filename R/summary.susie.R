@@ -16,7 +16,7 @@ summary.susie = function (object, ...) {
       for (i in 1:length(object$sets$cs)) {
         variables$cs[variables$variable %in% object$sets$cs[[i]]] = object$sets$cs_index[[i]]
         cs$cs[i] = object$sets$cs_index[[i]]
-        cs$cs_log10bf[i] = object$lbf[cs$cs[i]]
+        cs$cs_log10bf[i] = log10(exp(object$lbf[cs$cs[i]]))
         cs$cs_avg_r2[i] = object$sets$purity$mean.abs.corr[i]^2
         cs$cs_min_r2[i] = object$sets$purity$min.abs.corr[i]^2
         cs$variable[i] = paste(object$sets$cs[[i]], collapse=',')
