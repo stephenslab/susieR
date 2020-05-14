@@ -500,3 +500,10 @@ susie_get_posterior_mean = function(res){
 susie_get_posterior_sd = function(res){
   sqrt(colSums(res$alpha * res$mu2 - (res$alpha*res$mu)^2))/(res$X_column_scale_factors)
 }
+
+#' @title Get number of iterations from fitted SuSiE model
+#' @param res a susie fit
+#' @export
+susie_get_niter = function(res) {
+  return(res$niter)
+}
