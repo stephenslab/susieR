@@ -30,13 +30,13 @@ in_CS_x = function(x, coverage = 0.9){
 # returns an l by p binary matrix
 # indicating which variables are in susie credible sets
 in_CS = function(res, coverage = 0.9){
-  if (class(res) == "susie")
+  if (inherits(res,"susie"))
     res = res$alpha
   t(apply(res,1,function(x) in_CS_x(x, coverage)))
 }
 
 n_in_CS = function(res, coverage = 0.9){
-  if (class(res) == "susie")
+  if (inherits(res,"susie"))
     res = res$alpha
   apply(res,1,function(x) n_in_CS_x(x, coverage))
 }
@@ -133,7 +133,7 @@ susie_get_cs = function(res,
   if (!is.null(Xcorr) && !is_symmetric_matrix(Xcorr)) {
     stop("Xcorr matrix must be symmetric")
   }
-  if (class(res) == "susie") {
+  if (inherits(res,"susie")) {
     null_index = res$null_index
     if (is.numeric(res$V)) include_idx = res$V > 1E-9
     else include_idx = rep(T, nrow(res$alpha))
@@ -189,7 +189,7 @@ susie_get_cs = function(res,
 #' @return a vector of posterior inclusion probability.
 #' @export
 susie_get_pip = function(res, prune_by_cs = FALSE, prior_tol = 1E-9) {
-  if (class(res) == "susie") {
+  if (inherits(res,"susie")) {
     # drop null weight columns
     if (res$null_index > 0) res$alpha = res$alpha[,-res$null_index]
     # drop the single effect with estimated prior zero
@@ -249,7 +249,7 @@ univariate_regression = function(X, y, Z=NULL, center=TRUE, scale=FALSE,
                          return(c(coef(g)[2], calc_stderr(cbind(1, X[,i]), g$residuals)[2]))
                        })),
                silent = TRUE)
-  if (class(output) == 'try-error') {
+  if (inherits(output,'try-error')) {
     # Exception occurs, fall back to a safer but slower calculation
     output = matrix(0,ncol(X),2)
     for (i in 1:ncol(X)) {
@@ -304,7 +304,7 @@ calc_z = function(X,Y,center=FALSE,scale=FALSE){
 #'
 #' @export
 susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,add_legend=FALSE,...){
-  is_susie = (class(model) == "susie")
+  is_susie = inherits(model,"susie")
   ylab = y
   color <- c(
     "dodgerblue2",
@@ -437,7 +437,7 @@ susie_plot_iteration = function(model, L, file_prefix, pos=NULL) {
     if (file.exists(paste0(file_prefix, '.gif')))
       file.remove(paste0(file_prefix, '.gif'))
     output = try(system(cmd))
-    if (class(output) == 'try-error') {
+    if (inherits(output,'try-error')) {
       cat("Cannot create GIF animation because `convert` command failed.\n")
     } else {
       format = '.gif'
