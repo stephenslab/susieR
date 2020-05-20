@@ -100,6 +100,7 @@ susie_rss = function(z, R, maf=NULL, maf_thresh=0, z_ld_weight=0,
   # modification of R
   if(z_ld_weight > 0){
     R = muffled_cov2cor((1-z_ld_weight)* R + z_ld_weight * tcrossprod(z))
+    R = (R + t(R))/2
     check_z = FALSE
   }
 
