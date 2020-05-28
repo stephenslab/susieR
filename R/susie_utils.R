@@ -89,7 +89,6 @@ muffled_cov2cor = function(x)
 
 #' @title check for symmetric matrix
 #' @keywords internal
-
 is_symmetric_matrix = function(x) {
     res = isSymmetric(x)
     if (res == FALSE) res = isSymmetric(unname(x))
@@ -191,7 +190,7 @@ susie_get_cs = function(res,
 susie_get_pip = function(res, prune_by_cs = FALSE, prior_tol = 1E-9) {
   if (inherits(res,"susie")) {
     # drop null weight columns
-    if (res$null_index > 0) res$alpha = res$alpha[,-res$null_index]
+    if (res$null_index > 0) res$alpha = res$alpha[,-res$null_index,drop=FALSE]
     # drop the single effect with estimated prior zero
     if (is.numeric(res$V)) include_idx = which(res$V > prior_tol)
     else include_idx = 1:nrow(res$alpha)
