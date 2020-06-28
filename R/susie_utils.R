@@ -290,7 +290,7 @@ calc_z = function(X,Y,center=FALSE,scale=FALSE){
 #' @param y a string indicating what to plot: z (for z-score), PIP, log10PIP
 #' or a random label to plot input data as is.
 #' @param add_bar add horizontal bar to signals in credible interval.
-#' @param pos coordinates of variables to plot, default to all variables
+#' @param pos index of variables to plot, default to all variables
 #' @param b for simulated data, specify b = true effects (highlights in red).
 #' @param max_cs the biggest CS to display, based on purity (set max_cs in between 0 and 1) or size (>1).
 #' @param add_legend if TRUE, add a legend to annotate the size and purity of each CS discovered.
@@ -343,7 +343,7 @@ susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,add_legen
   if(is.null(b)){b = rep(0,length(p))}
   if(is.null(pos)){pos = 1:length(p)}
   legend_text = list(col = vector(), purity = vector(), size = vector())
-  plot(pos,p,ylab=ylab, pch=16, ...)
+  plot(pos,p[pos],ylab=ylab, pch=16, ...)
   if (is_susie && !is.null(model$sets$cs)) {
     for(i in rev(1:nrow(model$alpha))){
       if (!is.null(model$sets$cs_index) && !(i %in% model$sets$cs_index)) {
@@ -351,11 +351,11 @@ susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,add_legen
       }
       purity = model$sets$purity[which(model$sets$cs_index==i),1]
       if (!is.null(model$sets$purity) && max_cs < 1 && purity >= max_cs) {
-        x0 = pos[model$sets$cs[[which(model$sets$cs_index==i)]]]
-        y1 = p[model$sets$cs[[which(model$sets$cs_index==i)]]]
+        x0 = intersect(pos, model$sets$cs[[which(model$sets$cs_index==i)]])
+        y1 = p[x0]
       } else if (n_in_CS(model, model$sets$coverage)[i]<max_cs) {
-        x0 = pos[which(in_CS(model, model$sets$coverage)[i,]>0)]
-        y1 = p[which(in_CS(model, model$sets$coverage)[i,]>0)]
+        x0 = intersect(pos, which(in_CS(model, model$sets$coverage)[i,]>0))
+        y1 = p[x0]
       } else {
         x0 = NULL
         y1 = NULL
@@ -394,7 +394,7 @@ susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,add_legen
 #' Multiple plots will be made for all iterations if `track_fit` was set to `TRUE` when running SuSiE.
 #' @param L an integer, number of CS to plot
 #' @param file_prefix prefix to path of output plot file
-#' @param pos position of variables to display, default to all variables
+#' @param pos index of variables to plot, default to all variables
 #' @importFrom grDevices pdf
 #' @importFrom grDevices dev.off
 #' @export

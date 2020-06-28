@@ -14,7 +14,7 @@ Multiple plots will be made for all iterations if `track_fit` was set to `TRUE` 
 
 \item{file_prefix}{prefix to path of output plot file}
 
-\item{pos}{position of variables to display, default to all variables}
+\item{pos}{index of variables to plot, default to all variables}
 }
 \description{
 Diagnostic plot for SuSiE iterations
