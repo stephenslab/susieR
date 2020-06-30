@@ -1,7 +1,5 @@
 to do
 =====
 
-+ Fix LICENSE.
-
 + Improve Description in DESCRIPTION.
 
