@@ -1,8 +1,9 @@
 ^docs$
 ^.gitignore$
+^TODO\.txt$
 ^appveyor\.yml$
 ^_pkgdown\.yml$
-^susieR.Rproj$
+^susieR\.Rproj$
 ^\.Rproj\.user$
 ^\.travis\.yml$
 ^.*\.Rproj$
