@@ -253,7 +253,6 @@ susie <- function(X,Y,L = min(10,ncol(X)),scaled_prior_variance = 0.2,
   elbo[1] = -Inf;
   tracking = list()
 
-
   for(i in 1:max_iter){
     #s = add_null_effect(s,0)
     if (track_fit)

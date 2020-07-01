@@ -1,5 +1,11 @@
 to do
 =====
 
-+ Improve Description in DESCRIPTION.
++ Update (and shorten) description in README.
+
++ Fill out roxygen2 docs for N2finemapping data set.
+
++ Fill out roxygen2 docs for N3finemapping data set.
+
++ Update pkgdown site.
 

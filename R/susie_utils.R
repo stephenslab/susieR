@@ -294,6 +294,8 @@ calc_z = function(X,Y,center=FALSE,scale=FALSE){
 #' @param b for simulated data, specify b = true effects (highlights in red).
 #' @param max_cs the biggest CS to display, based on purity (set max_cs in between 0 and 1) or size (>1).
 #' @param add_legend if TRUE, add a legend to annotate the size and purity of each CS discovered.
+#'
+#' @importFrom utils head
 #' @importFrom stats pnorm
 #' @importFrom graphics plot
 #' @importFrom graphics segments

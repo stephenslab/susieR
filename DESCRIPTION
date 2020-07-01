@@ -15,7 +15,7 @@ Description: Implements methods for variable selection in linear
     and fast, allowing the SuSiE model be fit to large data sets
     (thousands of samples and hundreds of thousands of variables).
 Date: 2020-06-30
-Version: 0.9.5
+Version: 0.9.6
 Authors@R: c(person("Gao","Wang",role="aut",email="wang.gao@columbia.edu"),
              person("Yuxin","Zou",role="aut"),
              person("Kaiqian","Zhang",role="aut"),
@@ -40,7 +40,8 @@ Suggests:
     microbenchmark,
     knitr,
     rmarkdown,
-    L0Learn
+    L0Learn,
+    genlasso
 LazyData: true
 NeedsCompilation: no
 RoxygenNote: 7.1.0
