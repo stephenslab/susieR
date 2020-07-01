@@ -48,10 +48,12 @@ set_X_attributes = function(X, center = TRUE, scale = TRUE) {
 }
 
 # @title computes column standard deviations for any type of matrix
-# @details Replace matrixStats::colSds since this function only takes
-#   a dense matrix.
+# @details This should give the same result as matrixStats::colSds(X),
+#   but allows for sparse matrices as well as dense ones.
 # @param X an n by p matrix of any type, e.g. sparse, dense.
 # @return a p vector of column standard deviations.
+#
+#' @importFrom Matrix colSums
 compute_colSds = function(X){
   n = nrow(X)
   return(sqrt((colSums(X^2)/n - (colSums(X)/n)^2)*(n/(n-1))))
