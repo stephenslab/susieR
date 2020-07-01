@@ -1,8 +1,9 @@
-#' @title sets the attributes for the R matrix
-#' @param R a p by p LD matrix
-#' @param r_tol tolerance level for eigen value check of positive semidefinite matrix of R
-#' @return R with attribute e.g.
-#'         attr(R, 'eigenR') is the eigen decomposition of R.
+# @title sets the attributes for the R matrix
+# @param R a p by p LD matrix
+# @param r_tol tolerance level for eigen value check of positive
+#   semidefinite matrix of R.
+# @return R with attribute e.g., attr(R, 'eigenR') is the eigen
+#   decomposition of R.
 set_R_attributes = function(R, r_tol){
   if(is.null(attr(R, 'eigen')))
     eigenR = eigen(R, symmetric = TRUE)
