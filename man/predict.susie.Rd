@@ -2,17 +2,24 @@
 % Please edit documentation in R/predict.susie.R
 \name{predict.susie}
 \alias{predict.susie}
-\title{predict future observations or extract coefficients from susie fit}
+\title{Predict outcomes or extract coefficients from susie fit.}
 \usage{
 \method{predict}{susie}(object, newx = NULL, type = c("response", "coefficients"), ...)
 }
 \arguments{
-\item{object}{a susie fit}
+\item{object}{A susie fit.}
 
-\item{newx}{a new value for X at which to do predictions}
+\item{newx}{A new value for X at which to do predictions.}
 
-\item{type}{if this is coefficients, then calls coef.susie}
+\item{type}{The type of output. For \code{type = "response"},
+predicted or fitted outcomes are returned; for \code{type =
+"coefficients"}, the estimated coefficients are returned.}
+}
+\value{
+For \code{type = "response"}, predicted or fitted outcomes
+  are returned; for \code{type = "coefficients"}, the estimated
+  coefficients are returned.
 }
 \description{
-predict future observations or extract coefficients from susie fit
+Predict outcomes or extract coefficients from susie fit.
 }

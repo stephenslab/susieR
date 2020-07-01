@@ -2,16 +2,19 @@
 % Please edit documentation in R/predict.susie.R
 \name{coef.susie}
 \alias{coef.susie}
-\title{extract regression coefficients from susie fit}
+\title{Extract regression coefficients from susie fit}
 \usage{
 \method{coef}{susie}(object, ...)
 }
 \arguments{
-\item{object}{a susie fit}
+\item{object}{A susie fit.}
+
+\item{\dots}{Additional arguments passed to the default S3 method.}
 }
 \value{
-a p+1 vector, the first element being an intercept, and the remaining p elements being estimated regression coefficients
+A p+1 vector, the first element being an intercept, and the
+  remaining p elements being estimated regression coefficients.
 }
 \description{
-extract regression coefficients from susie fit
+Extract regression coefficients from susie fit
 }
