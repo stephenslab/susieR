@@ -2,20 +2,24 @@
 % Please edit documentation in R/initialize.R
 \name{susie_init_coef}
 \alias{susie_init_coef}
-\title{initialize a susie object using regression coefficients}
+\title{Initialize a susie object using regression coefficients}
 \usage{
 susie_init_coef(coef_index, coef_value, p)
 }
 \arguments{
-\item{coef_index}{a L-vector for indices of nonzero effects}
+\item{coef_index}{An L-vector for indices of nonzero effects.}
 
-\item{coef_value}{a L-vector for initial estimated beta values}
+\item{coef_value}{An L-vector for initial estimated beta values.}
 
-\item{p}{a scalar the number of variables in the data}
+\item{p}{A scalar the number of variables in the data.}
 }
 \value{
-a list of (alpha, mu, mu2), to be used by `susie(s_init = ...)`
+A list (alpha, mu, mu2) to be used by \code{susie}.
 }
 \description{
-initialize a susie object using regression coefficients
+Initialize a susie object using regression coefficients
+}
+\examples{
+# Add example(s) here.
+
 }

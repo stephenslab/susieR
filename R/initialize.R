@@ -1,9 +1,18 @@
-#' @title initialize a susie object using regression coefficients
-#' @param coef_index a L-vector for indices of nonzero effects
-#' @param coef_value a L-vector for initial estimated beta values
-#' @param p a scalar the number of variables in the data
-#' @return a list of (alpha, mu, mu2), to be used by `susie(s_init = ...)`
+#' @title Initialize a susie object using regression coefficients
+#'
+#' @param coef_index An L-vector for indices of nonzero effects.
+#' 
+#' @param coef_value An L-vector for initial estimated beta values.
+#' 
+#' @param p A scalar the number of variables in the data.
+#' 
+#' @return A list (alpha, mu, mu2) to be used by \code{susie}.
+#'
+#' @examples
+#' # Add example(s) here.
+#' 
 #' @export
+#' 
 susie_init_coef = function(coef_index, coef_value, p) {
   L = length(coef_index)
   if (L <= 0)
@@ -23,12 +32,14 @@ susie_init_coef = function(coef_index, coef_value, p) {
   return(list(alpha=alpha, mu=mu, mu2=mu*mu))
 }
 
-# @title Set default susie initialization
-init_setup = function(n, p, L, scaled_prior_variance, residual_variance, prior_weights, null_weight, varY, standardize) {
+# Set default susie initialization.
+init_setup = function(n, p, L, scaled_prior_variance, residual_variance,
+                      prior_weights, null_weight, varY, standardize) {
   if (!is.numeric(scaled_prior_variance) || scaled_prior_variance < 0)
     stop("Scaled prior variance should be positive number.")
   if (scaled_prior_variance > 1 && standardize == TRUE)
-    stop("Scaled prior variance should be no greater than 1 when standardize = TRUE.")
+    stop("Scaled prior variance should be no greater than 1 when ",
+         "standardize = TRUE.")
   if(is.null(residual_variance))
     residual_variance = varY
   if(is.null(prior_weights))
@@ -52,7 +63,7 @@ init_setup = function(n, p, L, scaled_prior_variance, residual_variance, prior_w
   return(s)
 }
 
-# @title Update a susie fit object in order to initialize susie model.
+# Update a susie fit object in order to initialize susie model.
 init_finalize = function(s, X=NULL, Xr=NULL) {
   if(length(s$V) == 1)
     s$V = rep(s$V, nrow(s$alpha))
@@ -75,7 +86,8 @@ init_finalize = function(s, X=NULL, Xr=NULL) {
   if (!all(dim(s$mu) == dim(s$alpha)))
     stop("dimension of mu and alpha in input object do not match")
   if (nrow(s$alpha) != length(s$V))
-    stop("Input prior variance V must have length of nrow of alpha in input object")
+    stop("Input prior variance V must have length of nrow of alpha in ",
+         "input object")
   ## update Xr
   if (!missing(Xr))
     s$Xr = Xr

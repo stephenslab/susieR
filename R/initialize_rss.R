@@ -1,8 +1,10 @@
-# @title Set default susie initialization
-init_setup_rss = function(p, L, prior_variance, residual_variance, prior_weights, null_weight) {
+# Set default susie initialization.
+init_setup_rss = function(p, L, prior_variance, residual_variance,
+                          prior_weights, null_weight) {
   if (!is.numeric(prior_variance) || prior_variance < 0)
     stop("Prior variance should be positive number.")
-  if(!is.null(residual_variance) && (residual_variance>1 | residual_variance<0)){
+  if(!is.null(residual_variance) &&
+     (residual_variance>1 | residual_variance<0)){
     stop('Residual variance should be a scaler between 0 and 1.')
   }
   if(is.null(residual_variance))
@@ -26,7 +28,7 @@ init_setup_rss = function(p, L, prior_variance, residual_variance, prior_weights
   return(s)
 }
 
-# @title Update a susie fit object in order to initialize susie model.
+# Update a susie fit object in order to initialize susie model.
 init_finalize_rss = function(s, R=NULL, Rz=NULL) {
   if(length(s$V) == 1)
     s$V = rep(s$V, nrow(s$alpha))
@@ -49,7 +51,8 @@ init_finalize_rss = function(s, R=NULL, Rz=NULL) {
   if (!all(dim(s$mu) == dim(s$alpha)))
     stop("dimension of mu and alpha in input object do not match")
   if (nrow(s$alpha) != length(s$V))
-    stop("Input prior variance V must have length of nrow of alpha in input object")
+    stop("Input prior variance V must have length of nrow of alpha in ",
+         "input object")
   ## update Rz
   if (!missing(Rz))
     s$Rz = Rz
