@@ -4,7 +4,7 @@
 #'   susie fitted value and shaded rectangles showing credible sets for
 #'   changepoint locations
 #' 
-#' @param y An n vector of observations that are ordered in time or
+#' @param y An n-vector of observations that are ordered in time or
 #'   space (assumed equally-spaced).
 #' 
 #' @param s A susie fit obtained by applying
@@ -17,7 +17,7 @@
 #' @param cs_col Color for the shaded rectangles showing credible
 #'   sets.
 #' 
-#' @return A ggplot2 object for plotting.
+#' @return A ggplot2 plot object.
 #' 
 #' @examples
 #' set.seed(1)
@@ -37,19 +37,17 @@
 #' 
 #' @export
 #' 
-susie_plot_changepoint <-
-  function(s,y, line_col="blue", line_size=1.5, cs_col="red"){
-  df = data.frame(x = 1:length(y),y = y, mu = predict.susie(s))
+susie_plot_changepoint <- function (s, y, line_col = "blue", line_size = 1.5,
+                                    cs_col = "red") {
+  df = data.frame(x = 1:length(y),y = y,mu = predict.susie(s))
   CS = susie_get_cs(s)$cs
-
   p = ggplot(df) +
-    geom_point(data = df, aes_string(x="x", y="y")) +
-    geom_line(color=line_col,data = df,
-              aes_string(x = "x",y = "mu"), size=line_size)
-  for(i in 1:length(CS)){
-    p = p + annotate("rect", fill = cs_col, alpha = 0.5,
-                     xmin = min(CS[[i]])-0.5, xmax = max(CS[[i]])+0.5,
-                     ymin = -Inf, ymax = Inf)
-  }
+    geom_point(data = df,aes_string(x = "x",y = "y")) +
+    geom_line(color = line_col,data = df,aes_string(x = "x",y = "mu"),
+              size = line_size)
+  for(i in 1:length(CS)) 
+    p = p + annotate("rect",fill = cs_col,alpha = 0.5,
+                     xmin = min(CS[[i]]) - 0.5,xmax = max(CS[[i]]) + 0.5,
+                     ymin = -Inf,ymax = Inf)
   return(p)
 }

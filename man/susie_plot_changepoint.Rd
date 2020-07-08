@@ -16,7 +16,7 @@ susie_plot_changepoint(
 \item{s}{A susie fit obtained by applying
 \code{susie_trendfilter(y,order = 0)} to y.}
 
-\item{y}{An n vector of observations that are ordered in time or
+\item{y}{An n-vector of observations that are ordered in time or
 space (assumed equally-spaced).}
 
 \item{line_col}{Color for the line showing fitted values.}
@@ -27,7 +27,7 @@ space (assumed equally-spaced).}
 sets.}
 }
 \value{
-A ggplot2 object for plotting.
+A ggplot2 plot object.
 }
 \description{
 Plots original data, y, overlaid with line showing
