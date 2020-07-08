@@ -1,16 +1,28 @@
-#' @title An attempt to automate reliable running of susie even on hard problems
+#' @title An attempt to automate reliable running of susie even on
+#'   hard problems
+#' 
 #' @param X an n by p matrix of covariates
+#' 
 #' @param Y an n vector
+#' 
 #' @param L_init the initial value of L to consider
+#' 
 #' @param L_max the maximum value of L to consider
+#' 
 #' @param init_tol the tolerance to pass to susie during early runs (set big to run faster)
-#' @param standardize logical flag for whether to standardize columns of X to unit variance prior to fitting.
-#' Note that `prior_variance` specifies the prior on the coefficients of X after standardization (if performed).
-#' If you do not standardize you may need
-#' to think carefully about specifying
-#' `prior_variance`. Whatever the value of standardize, the coefficients (returned from `coef`) are for X on the original input scale.
-#' Any column of X that has zero variance is not standardized, but left as is.
-#' @param intercept Should intercept be fitted (default=TRUE) or set to zero (FALSE)
+#' 
+#' @param standardize logical flag for whether to standardize columns
+#' of X to unit variance prior to fitting.  Note that `prior_variance`
+#' specifies the prior on the coefficients of X after standardization
+#' (if performed).  If you do not standardize you may need to think
+#' carefully about specifying `prior_variance`. Whatever the value of
+#' standardize, the coefficients (returned from `coef`) are for X on
+#' the original input scale.  Any column of X that has zero variance
+#' is not standardized, but left as is.
+#' 
+#' @param intercept Should intercept be fitted (default=TRUE) or set
+#' to zero (FALSE)
+#' 
 #' @param max_iter maximum number of iterations to perform
 #' @param tol convergence tolerance
 #' @param verbose if true outputs some progress messages

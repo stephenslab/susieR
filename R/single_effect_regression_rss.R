@@ -42,7 +42,7 @@ single_effect_regression_rss = function(z,Sigma,V=1,prior_weights=NULL,optimize_
   })
   #log(bf) on each SNP
 
-  lbf[shat2==Inf] = 0 # deal with special case of infinite shat2 (eg happens if X does not vary)
+  lbf[is.infinite(shat2)] = 0 # deal with special case of infinite shat2 (eg happens if X does not vary)
 
   maxlbf = max(lbf)
   w = exp(lbf-maxlbf) # w is proportional to BF, but subtract max for numerical stability
@@ -73,7 +73,7 @@ loglik_rss = function(V,z,Sigma,prior_weights) {
   })
   #log(bf) on each SNP
 
-  lbf[shat2==Inf] = 0 # deal with special case of infinite shat2 (eg happens if X does not vary)
+  lbf[is.infinite(shat2)] = 0 # deal with special case of infinite shat2 (eg happens if X does not vary)
 
   maxlbf = max(lbf)
   w = exp(lbf-maxlbf) # w =BF/BFmax
