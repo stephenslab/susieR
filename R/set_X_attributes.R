@@ -14,35 +14,42 @@
 #' @importFrom Matrix rowSums
 #' @importFrom Matrix colMeans
 set_X_attributes = function(X, center = TRUE, scale = TRUE) {
+    
   # if X is a trend filtering matrix
-  if (!is.null(attr(X, "matrix.type"))) {
+  if (!is.null(attr(X,"matrix.type"))) {
     order <- attr(X,"order")
     n <- ncol(X)
-    # set three attributes for X
+    
+    # Set three attributes for X.
     attr(X, "scaled:center") <- compute_tf_cm(order, n)
     attr(X, "scaled:scale") <- compute_tf_csd(order, n)
-    attr(X, "d") <- compute_tf_d(order,n,attr(X, "scaled:center"),attr(X, "scaled:scale"),scale,center)
+    attr(X, "d") <- compute_tf_d(order,n,attr(X,"scaled:center"),
+                                 attr(X,"scaled:scale"),scale,center)
     if (!center)
       attr(X, "scaled:center") <- rep(0, n)
     if (!scale)
       attr(X, "scaled:scale") <- rep(1, n)
   } else {
-    # if X is either a dense or sparse ordinary matrix
-    # get column means
+      
+    # If X is either a dense or sparse ordinary matrix.
+    # Get column means.
     cm = colMeans(X, na.rm = TRUE)
-    # get column standard deviations
+    
+    # Get column standard deviations.
     csd = compute_colSds(X)
-    # set sd = 1 when the column has variance 0
+    
+    # Set sd = 1 when the column has variance 0.
     csd[csd == 0] = 1
     if (!center)
-      cm = rep(0, length = length(cm))
+      cm = rep(0,length = length(cm))
     if (!scale) 
-      csd = rep(1, length = length(cm))
-    X.std = (t(X) - cm) / csd
-    # set three attributes for X
-    attr(X, "d") <- rowSums(X.std * X.std)
-    attr(X, "scaled:center") <- cm
-    attr(X, "scaled:scale") <- csd
+      csd = rep(1,length = length(cm))
+    X.std = (t(X) - cm)/csd
+    
+    # Set three attributes for X.
+    attr(X,"d") <- rowSums(X.std * X.std)
+    attr(X,"scaled:center") <- cm
+    attr(X,"scaled:scale") <- csd
   }
   return(X)
 }

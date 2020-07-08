@@ -9,7 +9,8 @@
 \arguments{
 \item{object}{A susie fit.}
 
-\item{\dots}{Additional arguments passed to the default S3 method.}
+\item{\dots}{Additional arguments passed to the default \code{coef}
+method.}
 }
 \value{
 A p+1 vector, the first element being an intercept, and the

@@ -2,20 +2,21 @@
 #' 
 #' @param object A susie fit.
 #'
-#' @param \dots Additional arguments passed to the default S3 method.
+#' @param \dots Additional arguments passed to the default \code{coef}
+#'   method.
 #' 
 #' @return A p+1 vector, the first element being an intercept, and the
 #'   remaining p elements being estimated regression coefficients.
 #'
 #' @importFrom stats coef
-#' 
+#'
+#' @method coef susie
 #' @export coef.susie
-#' 
 #' @export
 #' 
-coef.susie = function(object, ...) {
+coef.susie = function (object, ...) {
   s <- object
-  c(s$intercept,colSums(s$alpha*s$mu)/s$X_column_scale_factors)
+  return(c(s$intercept,colSums(s$alpha*s$mu)/s$X_column_scale_factors))
 }
 
 #' @title Predict outcomes or extract coefficients from susie fit.
@@ -33,21 +34,21 @@ coef.susie = function(object, ...) {
 #'   coefficients are returned.
 #' 
 #' @importFrom stats coef
-#' 
+#'
+#' @method predict susie
 #' @export predict.susie
-#' 
 #' @export
 #' 
-predict.susie = function(object,newx = NULL,
-                         type = c("response","coefficients"),...) {
-  s    <- object
+predict.susie = function (object, newx = NULL,
+                          type = c("response","coefficients"), ...) {
+  s <- object
   type <- match.arg(type)
-  if (type=="coefficients"){
-    if(!missing(newx))
+  if (type == "coefficients") {
+    if (!missing(newx))
       stop("Do not supply newx when predicting coefficients")
     return(coef(s))
   }
-  if(missing(newx))
+  if (missing(newx))
     return(s$fitted)
   return(drop(s$intercept + newx %*% coef(s)[-1]))
 }
