@@ -95,12 +95,12 @@ muffled_cov2cor = function(x)
                           invokeRestart("muffleWarning")
                       } )
 
-#' @title check for symmetric matrix
-#' @keywords internal
+# Check for symmetric matrix.
 is_symmetric_matrix = function(x) {
-    res = isSymmetric(x)
-    if (res == FALSE) res = isSymmetric(unname(x))
-    return(res)
+  res = isSymmetric(x)
+  if (!res)
+    res = isSymmetric(unname(x))
+  return(res)
 }
 
 #' @title Extract credible sets from SuSiE fit
@@ -185,7 +185,7 @@ susie_get_cs = function(res,
       row_names = paste0("L", which(include_idx)[is_pure])
       names(cs) = row_names
       rownames(purity) = row_names
-      ## re-order CS list and purity rows based on purity
+      # re-order CS list and purity rows based on purity
       ordering = order(purity[,1], decreasing=T)
       return(list(cs = cs[ordering], purity = purity[ordering,], cs_index = which(include_idx)[is_pure[ordering]],coverage=coverage))
     } else {
