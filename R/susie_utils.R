@@ -1,69 +1,77 @@
-#' @title Local false sign rate (lfsr) for susie credible sets
-#' @details This computes the average lfsr across SNPs for each l, weighted by the
-#' posterior inclusion probability alpha
-#' @param res a susie fit, the output of `susieR::susie()`
-#' @return an l vector of lfsr for credible sets
+#' @title Local false sign rate (lfsr) for susie credible sets.
+#' 
+#' @description Computes the average lfsr across SNPs for each single l,
+#'   weighted by the posterior inclusion probability, alpha.
+#' 
+#' @param res A susie fit, an output from \code{\link{susie}}.
+#' 
+#' @return An l-vector of lfsr for credible sets.
+#' 
 #' @importFrom stats pnorm
+#' 
 #' @export
-susie_get_lfsr = function(res){
-  pos_prob = pnorm(0,mean=t(res$mu),sd=sqrt(res$mu2-res$mu^2))
-  neg_prob = 1-pos_prob
-  1-rowSums(res$alpha*t(pmax(pos_prob,neg_prob)))
+#' 
+susie_get_lfsr = function (res) {
+  pos_prob = pnorm(0,mean = t(res$mu),sd = sqrt(res$mu2 - res$mu^2))
+  neg_prob = 1 - pos_prob
+  return(1 - rowSums(res$alpha * t(pmax(pos_prob,neg_prob))))
 }
 
-#find how many variables in the CS
-# x is a probability vector
-n_in_CS_x = function(x, coverage = 0.9){
-  sum(cumsum(sort(x,decreasing = TRUE))<coverage)+1
-}
+# Find how many variables in the CS.
+# x is a probability vector.
+n_in_CS_x = function (x, coverage = 0.9)
+  sum(cumsum(sort(x,decreasing = TRUE)) < coverage) + 1
 
-# return binary vector indicating if each point is in CS
-# x is a probability vector
-in_CS_x = function(x, coverage = 0.9){
-  n = n_in_CS_x(x, coverage)
-  o = order(x,decreasing=TRUE)
+# Return binary vector indicating if each point is in CS.
+# x is a probability vector.
+in_CS_x = function (x, coverage = 0.9) {
+  n = n_in_CS_x(x,coverage)
+  o = order(x,decreasing = TRUE)
   result = rep(0,length(x))
   result[o[1:n]] = 1
   return(result)
 }
 
-# returns an l by p binary matrix
-# indicating which variables are in susie credible sets
-in_CS = function(res, coverage = 0.9){
+# Returns an l-by-p binary matrix indicating which variables are in
+# susie credible sets.
+in_CS = function (res, coverage = 0.9) {
   if (inherits(res,"susie"))
     res = res$alpha
-  t(apply(res,1,function(x) in_CS_x(x, coverage)))
+  return(t(apply(res,1,function(x) in_CS_x(x,coverage))))
 }
 
-n_in_CS = function(res, coverage = 0.9){
+n_in_CS = function(res, coverage = 0.9) {
   if (inherits(res,"susie"))
     res = res$alpha
-  apply(res,1,function(x) n_in_CS_x(x, coverage))
+  return(apply(res,1,function(x) n_in_CS_x(x,coverage)))
 }
 
-# subsample and compute min, mean, median and max abs corr
+# Subsample and compute min, mean, median and max abs corr
 #
 #' @importFrom stats median
 get_purity = function(pos, X, Xcorr, squared = FALSE, n = 100) {
-  if (length(pos) == 1) {
+  if (length(pos) == 1)
     c(1,1,1)
-  } else {
-    if (length(pos) > n) pos = sample(pos, n)
+  else {
+    if (length(pos) > n)
+      pos = sample(pos, n)
     if (is.null(Xcorr)) {
       X_sub = X[,pos]
       if (length(pos) > n) {
-        # remove identical columns
+          
+        # Remove identical columns.
         pos_rm = sapply(1:ncol(X_sub), function(i) all( abs(X_sub[,i] - mean(X_sub[,i])) < .Machine$double.eps ^ 0.5 ))
-        if (length(pos_rm)) {
+        if (length(pos_rm))
           X_sub = X_sub[,-pos_rm]
-        }
       }
       value = abs(muffled_corr(as.matrix(X_sub)))
-    } else {
+    } else
       value = abs(Xcorr[pos, pos])
-    }
-    if (squared) value = value ^ 2
-    c(min(value,na.rm=T), mean(value,na.rm=T), median(value,na.rm=T))
+    if (squared)
+      value = value^2
+    return(c(min(value,na.rm = TRUE),
+             mean(value,na.rm = TRUE),
+             median(value,na.rm = TRUE)))
   }
 }
 
@@ -134,21 +142,27 @@ susie_get_cs = function(res,
   }
   if (inherits(res,"susie")) {
     null_index = res$null_index
-    if (is.numeric(res$V)) include_idx = res$V > 1E-9
-    else include_idx = rep(T, nrow(res$alpha))
-  } else {
+    if (is.numeric(res$V))
+      include_idx = res$V > 1E-9
+    else
+      include_idx = rep(TRUE,nrow(res$alpha))
+  } else
     null_index = 0
-  }
-  # L by P binary matrix
+
+  # L x P binary matrix.
   status = in_CS(res$alpha, coverage)
-  # an L list of CS positions
+  
+  # L-list of CS positions.
   cs = lapply(1:nrow(status), function(i) which(status[i,]!=0))
   include_idx = include_idx * (lapply(cs, length) > 0)
+  
   # FIXME: see issue 21
   # https://github.com/stephenslab/susieR/issues/21
-  if (dedup) include_idx = include_idx * (!duplicated(cs))
+  if (dedup)
+    include_idx = include_idx * (!duplicated(cs))
   include_idx = as.logical(include_idx)
-  if (sum(include_idx) == 0) return(list(cs = NULL,coverage=coverage))
+  if (sum(include_idx) == 0)
+    return(list(cs = NULL,coverage=coverage))
   cs = cs[include_idx]
 
   # compute and filter by "purity"
@@ -397,8 +411,12 @@ susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,add_legen
 #' @param L an integer, number of CS to plot
 #' @param file_prefix prefix to path of output plot file
 #' @param pos index of variables to plot, default to all variables
+#' 
 #' @importFrom grDevices pdf
 #' @importFrom grDevices dev.off
+#' @importFrom reshape melt
+#' @importFrom ggplot2 ggplot
+#' 
 #' @export
 susie_plot_iteration = function(model, L, file_prefix, pos=NULL) {
   if(!requireNamespace("ggplot2",quietly = TRUE))
@@ -406,7 +424,7 @@ susie_plot_iteration = function(model, L, file_prefix, pos=NULL) {
   if(!requireNamespace("reshape",quietly = TRUE))
     stop("Required package reshape not found")
   get_layer = function(obj, k, idx, vars) {
-    alpha = reshape::melt(obj$alpha[1:k,vars,drop=F])
+    alpha = melt(obj$alpha[1:k,vars,drop=F])
     colnames(alpha) = c("L","variables","alpha")
     alpha$L = as.factor(alpha$L)
     ggplot2::ggplot(alpha,ggplot2::aes_string("variables","alpha",group="L")) +
@@ -450,9 +468,8 @@ susie_plot_iteration = function(model, L, file_prefix, pos=NULL) {
 # return residuals from Y after removing susie fit
 #
 #' @importFrom stats coef
-get_R = function(X,Y,s){
-  Y- X %*% coef(s)
-}
+get_R = function (X,Y,s)
+  Y - X %*% coef(s)
 
 #' @title Get updated prior variance
 #' @param res a susie fit, the output of `susieR::susie()`.

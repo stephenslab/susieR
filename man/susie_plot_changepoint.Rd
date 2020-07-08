@@ -13,30 +13,35 @@ susie_plot_changepoint(
 )
 }
 \arguments{
-\item{s}{a susie fit obtained by applying susie_trendfilter(y,order=0) to y}
+\item{s}{A susie fit obtained by applying
+\code{susie_trendfilter(y,order = 0)} to y.}
 
-\item{y}{an n vector of observations that are ordered in time or space (assumed equally-spaced)}
+\item{y}{An n vector of observations that are ordered in time or
+space (assumed equally-spaced).}
 
-\item{line_col}{color for the line showing fitted values}
+\item{line_col}{Color for the line showing fitted values.}
 
-\item{line_size}{a size for the line}
+\item{line_size}{A size for the line.}
 
-\item{cs_col}{color for the shaded rectangles showing credible sets}
+\item{cs_col}{Color for the shaded rectangles showing credible
+sets.}
 }
 \value{
-a ggplot2 object for plotting
+A ggplot2 object for plotting.
 }
 \description{
-Plot changepoint data and susie fit using ggplot2
-}
-\details{
-Plots original data, y, overlaid with line showing susie fitted value and shaded rectangles showing credible sets for changepoint locations
+Plots original data, y, overlaid with line showing
+  susie fitted value and shaded rectangles showing credible sets for
+  changepoint locations
 }
 \examples{
 set.seed(1)
 mu = c(rep(0,50),rep(1,50),rep(3,50),rep(-2,50),rep(0,300))
 y = mu + rnorm(500)
 s = susie_trendfilter(y)
-susie_plot_changepoint(s,y) # produces ggplot with credible sets for changepoints on top of plot
+
+# Produces ggplot with credible sets for changepoints on top of
+# plot.
+susie_plot_changepoint(s,y) 
 
 }

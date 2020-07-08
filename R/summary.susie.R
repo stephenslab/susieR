@@ -26,7 +26,7 @@ summary.susie = function (object, ...) {
         cs$cs_min_r2[i] = object$sets$purity$min.abs.corr[i]^2
         cs$variable[i] = paste(object$sets$cs[[i]], collapse=',')
       }
-      variables = variables[order(variables$variable_prob, decreasing = T),]
+      variables = variables[order(variables$variable_prob, decreasing = TRUE),]
   } else {
       cs = NULL
   }

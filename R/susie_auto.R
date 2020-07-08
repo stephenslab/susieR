@@ -22,6 +22,7 @@
 #' @importFrom stats sd
 #'
 #' @export
+#' 
 susie_auto = function(X,Y,L_init=1,L_max=512,verbose=FALSE,init_tol=1,
                       standardize=TRUE,intercept=TRUE,max_iter=100,tol=1e-2,...){
   L=L_init

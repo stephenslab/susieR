@@ -125,8 +125,8 @@ susie_rss = function(z, R, maf=NULL, maf_thresh=0, z_ld_weight=0,
     residual_variance = 1
   }
   p = ncol(R)
-  ## eigen decomposition for R, fileter on eigenvalues
-  attr(R, 'eigen') = eigen(R, symmetric = T)
+  ## eigen decomposition for R, filter on eigenvalues
+  attr(R, 'eigen') = eigen(R, symmetric = TRUE)
   if (check_R && any(attr(R, 'eigen')$values < -r_tol)) {
     stop(paste0('The correlation matrix (', nrow(R), ' by ', ncol(R), 'is not a positive semidefinite matrix.
                 You can bypass this by "check_R = FALSE" which instead sets negative eigenvalues to 0 to allow for continued computations.'))
@@ -280,7 +280,7 @@ susie_rss_lambda = function(z, R, maf=NULL, maf_thresh=0,
 
   p = ncol(R)
   ## eigen decomposition for R, fileter on eigenvalues
-  attr(R, 'eigen') = eigen(R, symmetric = T)
+  attr(R, 'eigen') = eigen(R, symmetric = TRUE)
   if (check_R && any(attr(R, 'eigen')$values < -r_tol)) {
     stop(paste0('The correlation matrix (', nrow(R), ' by ', ncol(R), 'is not a positive semidefinite matrix.
                 You can bypass this by "check_R = FALSE" which instead sets negative eigenvalues to 0 to allow for continued computations.'))
