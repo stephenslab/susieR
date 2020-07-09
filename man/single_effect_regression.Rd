@@ -25,8 +25,7 @@ single_effect_regression(
 
 \item{prior_weights}{A p vector of prior weights.}
 
-\item{optimize_V}{Boolean indicating whether to optimize V (by
-maximum likelihood).}
+\item{optimize_V}{Specifies the method to optimize.}
 
 \item{check_null_threshold}{Scalar specifying threshold on the
 log-scale to compare likelihood between current estimate and zero
@@ -37,7 +36,7 @@ A list with the following elements:
 
 \item{alpha}{Vector of posterior inclusion probabilities;
   \code{alpha[i]} is posterior probability that that the ith
-  coefficient is non-zero}
+  coefficient is non-zero.}
 
 \item{mu}{Vector of posterior means (conditional on inclusion).}
 
@@ -48,7 +47,8 @@ A list with the following elements:
 
 \item{lbf_model}{Log-Bayes factor for the single effect regression.}
 
-\item{V}{Prior variance (after optimization if \code{optimize_V = TRUE}).}
+\item{V}{Prior variance (after optimization if \code{optimize_V !=
+  "none"}).}
 
 \item{loglik}{The logarithm of the likelihood, \eqn{p(y | X, V)}.}
 }
