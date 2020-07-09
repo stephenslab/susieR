@@ -10,10 +10,10 @@
 #   compare likelihood between current estimate and zero the null
 # 
 #' @importFrom Matrix diag
-update_each_effect_ss <- function (XtX, Xty, s_init,
-                                   estimate_prior_variance = FALSE,
-                                   estimate_prior_method = "optim",
-                                   check_null_threshold = 0) {
+update_each_effect_ss = function (XtX, Xty, s_init,
+                                  estimate_prior_variance = FALSE,
+                                  estimate_prior_method = "optim",
+                                  check_null_threshold = 0) {
   if (!estimate_prior_variance)
     estimate_prior_method = "none"
   
@@ -32,16 +32,16 @@ update_each_effect_ss <- function (XtX, Xty, s_init,
               s$sigma2,s$pi,estimate_prior_method,check_null_threshold)
       
       # Update the variational estimate of the posterior mean.
-      s$mu[l,]    <- res$mu
-      s$alpha[l,] <- res$alpha
-      s$mu2[l,]   <- res$mu2
-      s$V[l]      <- res$V
-      s$lbf[l]    <- res$lbf_model
-      s$KL[l]     <- -res$lbf_model +
+      s$mu[l,]    = res$mu
+      s$alpha[l,] = res$alpha
+      s$mu2[l,]   = res$mu2
+      s$V[l]      = res$V
+      s$lbf[l]    = res$lbf_model
+      s$KL[l]     = -res$lbf_model +
         SER_posterior_e_loglik_ss(attr(XtX,"d"),XtR,s$sigma2,
                                   res$alpha * res$mu,res$alpha * res$mu2)
 
-      s$XtXr <- s$XtXr + XtX %*% (s$alpha[l,] * s$mu[l,])
+      s$XtXr = s$XtXr + XtX %*% (s$alpha[l,] * s$mu[l,])
     }
   }
   s$XtXr = unname(as.matrix(s$XtXr))

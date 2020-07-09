@@ -25,8 +25,7 @@
 #' y = mu + rnorm(500)
 #' s = susie_trendfilter(y)
 #'
-#' # Produces ggplot with credible sets for changepoints on top of
-#' # plot.
+#' # Produces ggplot with credible sets for changepoints.
 #' susie_plot_changepoint(s,y) 
 #'
 #' @importFrom ggplot2 ggplot

@@ -17,18 +17,18 @@ set_X_attributes = function(X, center = TRUE, scale = TRUE) {
     
   # if X is a trend filtering matrix
   if (!is.null(attr(X,"matrix.type"))) {
-    order <- attr(X,"order")
-    n <- ncol(X)
+    order = attr(X,"order")
+    n = ncol(X)
     
     # Set three attributes for X.
-    attr(X, "scaled:center") <- compute_tf_cm(order, n)
-    attr(X, "scaled:scale") <- compute_tf_csd(order, n)
-    attr(X, "d") <- compute_tf_d(order,n,attr(X,"scaled:center"),
+    attr(X, "scaled:center") = compute_tf_cm(order, n)
+    attr(X, "scaled:scale") = compute_tf_csd(order, n)
+    attr(X, "d") = compute_tf_d(order,n,attr(X,"scaled:center"),
                                  attr(X,"scaled:scale"),scale,center)
     if (!center)
-      attr(X, "scaled:center") <- rep(0, n)
+      attr(X, "scaled:center") = rep(0, n)
     if (!scale)
-      attr(X, "scaled:scale") <- rep(1, n)
+      attr(X, "scaled:scale") = rep(1, n)
   } else {
       
     # If X is either a dense or sparse ordinary matrix.
@@ -47,9 +47,9 @@ set_X_attributes = function(X, center = TRUE, scale = TRUE) {
     X.std = (t(X) - cm)/csd
     
     # Set three attributes for X.
-    attr(X,"d") <- rowSums(X.std * X.std)
-    attr(X,"scaled:center") <- cm
-    attr(X,"scaled:scale") <- csd
+    attr(X,"d") = rowSums(X.std * X.std)
+    attr(X,"scaled:center") = cm
+    attr(X,"scaled:scale") = csd
   }
   return(X)
 }

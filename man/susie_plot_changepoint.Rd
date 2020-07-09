@@ -40,8 +40,7 @@ mu = c(rep(0,50),rep(1,50),rep(3,50),rep(-2,50),rep(0,300))
 y = mu + rnorm(500)
 s = susie_trendfilter(y)
 
-# Produces ggplot with credible sets for changepoints on top of
-# plot.
+# Produces ggplot with credible sets for changepoints.
 susie_plot_changepoint(s,y) 
 
 }

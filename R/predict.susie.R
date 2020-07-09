@@ -15,7 +15,7 @@
 #' @export
 #' 
 coef.susie = function (object, ...) {
-  s <- object
+  s = object
   return(c(s$intercept,colSums(s$alpha*s$mu)/s$X_column_scale_factors))
 }
 
@@ -41,8 +41,8 @@ coef.susie = function (object, ...) {
 #' 
 predict.susie = function (object, newx = NULL,
                           type = c("response","coefficients"), ...) {
-  s <- object
-  type <- match.arg(type)
+  s = object
+  type = match.arg(type)
   if (type == "coefficients") {
     if (!missing(newx))
       stop("Do not supply newx when predicting coefficients")

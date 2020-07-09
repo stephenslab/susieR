@@ -1,6 +1,8 @@
 to do
 =====
 
++ Add CITATION.
+
 + Update (and shorten) description of susieR in README.
 
 + Fill out @examples for susie_init_coef.
