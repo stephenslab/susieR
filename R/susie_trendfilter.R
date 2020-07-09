@@ -9,13 +9,14 @@
 #'   elements equal to zero, and the remaining elements equal to 1, so
 #'   that \eqn{b_j} corresponds to the change in the mean of y between
 #'   indices j and j+1. For background on trend filtering, see
-#'   Tibshirani (2014).
+#'   Tibshirani (2014). See also the "Trend filtering" vignette,
+#'   \code{vignette("trend_filtering")}.
 #'
 #' @details The implementation exploits the special structure of X,
 #'   which means that the matrix-vector product \eqn{X^Ty} is fast to
 #'   compute in \eqn{O(n)} computation rather than \eqn{O(n^2)} if X
-#'   were formed explicitly. For implementation details, view the "Trend
-#'   filtering" vignette by running
+#'   were formed explicitly. For implementation details, view the
+#'   "Implementation of SuSiE trend filtering" vignette by running
 #'   \code{vignette("trendfiltering_derivations")}.
 #'
 #' @param y An n-vector of observations ordered in time or space
