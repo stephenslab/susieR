@@ -1,4 +1,4 @@
-#' @title Bayesian single-effect linear regression of y on X
+#' @title Bayesian single-effect linear regression of y on X using summary data
 #' 
 #' @description Performs single-effect linear regression of y on X, in
 #'   which only the summary statistcs \eqn{X^T y} and diagonal elements
@@ -49,6 +49,8 @@
 #' @importFrom stats uniroot
 #' @importFrom stats optim
 #'
+#' @keywords internal
+#' 
 single_effect_regression_ss =
   function (Xty, dXtX, V = 1, residual_variance = 1, prior_weights = NULL,
             optimize_V = c("none", "optim", "uniroot", "EM", "simple"),

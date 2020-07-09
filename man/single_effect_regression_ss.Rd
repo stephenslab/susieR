@@ -2,7 +2,7 @@
 % Please edit documentation in R/single_effect_regression_ss.R
 \name{single_effect_regression_ss}
 \alias{single_effect_regression_ss}
-\title{Bayesian single-effect linear regression of y on X}
+\title{Bayesian single-effect linear regression of y on X using summary data}
 \usage{
 single_effect_regression_ss(
   Xty,
@@ -63,3 +63,4 @@ Performs single-effect linear regression of y on X, in
   element, with all elements equally likely to be non-zero. The prior
   on the non-zero element is \eqn{N(0,V)}.
 }
+\keyword{internal}
