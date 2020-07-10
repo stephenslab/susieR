@@ -512,16 +512,23 @@ susie_get_posterior_mean = function(res){
   colSums(res$alpha*res$mu)/res$X_column_scale_factors
 }
 
-#' @title Get posterior standard deviation for coefficients from fitted SuSiE model
+#' @title Get posterior standard deviation for coefficients from
+#' fitted susie model
+#' 
 #' @param res a susie fit
+#' 
 #' @export
-susie_get_posterior_sd = function(res){
-  sqrt(colSums(res$alpha * res$mu2 - (res$alpha*res$mu)^2))/(res$X_column_scale_factors)
-}
+#' 
+susie_get_posterior_sd = function (res)
+  sqrt(colSums(res$alpha * res$mu2 -
+               (res$alpha*res$mu)^2))/(res$X_column_scale_factors)
 
-#' @title Get number of iterations from fitted SuSiE model
+#' @title Get number of iterations from fitted susie model
+#' 
 #' @param res a susie fit
+#' 
 #' @export
-susie_get_niter = function(res) {
-  return(res$niter)
-}
+#' 
+susie_get_niter = function (res)
+  res$niter
+

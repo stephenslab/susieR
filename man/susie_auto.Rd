@@ -30,7 +30,8 @@ susie_auto(
 
 \item{verbose}{if true outputs some progress messages}
 
-\item{init_tol}{the tolerance to pass to susie during early runs (set big to run faster)}
+\item{init_tol}{the tolerance to pass to susie during early runs
+(set big to run faster)}
 
 \item{standardize}{logical flag for whether to standardize columns
 of X to unit variance prior to fitting.  Note that `prior_variance`
@@ -47,14 +48,14 @@ to zero (FALSE)}
 \item{max_iter}{maximum number of iterations to perform}
 
 \item{tol}{convergence tolerance}
+
+\item{\dots}{Additional arguments passed to \code{\link{susie}}.}
 }
 \description{
-An attempt to automate reliable running of susie even on
-  hard problems
-}
-\details{
-Currently runs a 3-stage strategy for each L: first fit susie with very small residual error,
-then estimate residual error, then estimate prior variance. If the last step estimates
-some prior variances to be 0 then stop. Otherwise double L and repeat.
-Initial runs are done with lax tolerance (init_tol); final run done with default tolerance.
+Currently runs a 3-stage strategy for each L: first fit
+susie with very small residual error, then estimate residual error,
+then estimate prior variance. If the last step estimates some prior
+variances to be 0 then stop. Otherwise double L and repeat.
+Initial runs are done with lax tolerance (init_tol); final run done
+with default tolerance.
 }
