@@ -1,43 +1,40 @@
 #' @title An attempt to automate reliable running of susie even on
 #'   hard problems
 #' 
-#' @description Currently runs a 3-stage strategy for each L: first fit
-#' susie with very small residual error, then estimate residual error,
-#' then estimate prior variance. If the last step estimates some prior
-#' variances to be 0 then stop. Otherwise double L and repeat.
-#' Initial runs are done with lax tolerance (init_tol); final run done
-#' with default tolerance.
+#' @description Implements a three-stage strategy for each L: first
+#'   fit susie with very small residual error; next, estimate residual
+#'   error; finally, estimate the prior variance. If the last step
+#'   estimates some prior variances to be zero, stop. Otherwise, double
+#'   L, and repeat.  Initial runs are performed with relaxed tolerance;
+#'   the final run is performed using the default susie tolerance.
 #'
-#' @param X an n by p matrix of covariates
+#' @param X An n by p matrix of covariates.
 #' 
-#' @param Y an n vector
+#' @param Y An n vector.
 #' 
-#' @param L_init the initial value of L to consider
+#' @param L_init The initial value of L.
 #' 
-#' @param L_max the maximum value of L to consider
+#' @param L_max The maximum value of L to consider.
 #' 
-#' @param verbose if true outputs some progress messages
+#' @param verbose If \code{TRUE}, some progress messages are outputted.
 #' 
-#' @param init_tol the tolerance to pass to susie during early runs
-#' (set big to run faster)
+#' @param init_tol The tolerance to passed to susie during early runs
+#'   (set large to shorten the initial runs).
 #' 
-#' @param standardize logical flag for whether to standardize columns
-#' of X to unit variance prior to fitting.  Note that `prior_variance`
-#' specifies the prior on the coefficients of X after standardization
-#' (if performed).  If you do not standardize you may need to think
-#' carefully about specifying `prior_variance`. Whatever the value of
-#' standardize, the coefficients (returned from `coef`) are for X on
-#' the original input scale.  Any column of X that has zero variance
-#' is not standardized, but left as is.
+#' @param standardize Logical; whether or not to standardize columns
+#'   of X to unit variance prior to fitting. See \code{\link{susie}} for
+#'   details.
 #' 
-#' @param intercept Should intercept be fitted (default=TRUE) or set
-#' to zero (FALSE)
+#' @param intercept Logical; should intercept be fitted (\code{TRUE})
+#'   or fixed to zero (\code{FALSE}).
 #' 
-#' @param max_iter maximum number of iterations to perform
+#' @param max_iter Maximum number of iterations to perform.
 #' 
-#' @param tol convergence tolerance
+#' @param tol Convergence tolerance.
 #'
 #' @param \dots Additional arguments passed to \code{\link{susie}}.
+#'
+#' @seealso \code{\link{susie}}
 #' 
 #' @importFrom stats sd
 #'

@@ -20,42 +20,40 @@ susie_auto(
 )
 }
 \arguments{
-\item{X}{an n by p matrix of covariates}
+\item{X}{An n by p matrix of covariates.}
 
-\item{Y}{an n vector}
+\item{Y}{An n vector.}
 
-\item{L_init}{the initial value of L to consider}
+\item{L_init}{The initial value of L.}
 
-\item{L_max}{the maximum value of L to consider}
+\item{L_max}{The maximum value of L to consider.}
 
-\item{verbose}{if true outputs some progress messages}
+\item{verbose}{If \code{TRUE}, some progress messages are outputted.}
 
-\item{init_tol}{the tolerance to pass to susie during early runs
-(set big to run faster)}
+\item{init_tol}{The tolerance to passed to susie during early runs
+(set large to shorten the initial runs).}
 
-\item{standardize}{logical flag for whether to standardize columns
-of X to unit variance prior to fitting.  Note that `prior_variance`
-specifies the prior on the coefficients of X after standardization
-(if performed).  If you do not standardize you may need to think
-carefully about specifying `prior_variance`. Whatever the value of
-standardize, the coefficients (returned from `coef`) are for X on
-the original input scale.  Any column of X that has zero variance
-is not standardized, but left as is.}
+\item{standardize}{Logical; whether or not to standardize columns
+of X to unit variance prior to fitting. See \code{\link{susie}} for
+details.}
 
-\item{intercept}{Should intercept be fitted (default=TRUE) or set
-to zero (FALSE)}
+\item{intercept}{Logical; should intercept be fitted (\code{TRUE})
+or fixed to zero (\code{FALSE}).}
 
-\item{max_iter}{maximum number of iterations to perform}
+\item{max_iter}{Maximum number of iterations to perform.}
 
-\item{tol}{convergence tolerance}
+\item{tol}{Convergence tolerance.}
 
 \item{\dots}{Additional arguments passed to \code{\link{susie}}.}
 }
 \description{
-Currently runs a 3-stage strategy for each L: first fit
-susie with very small residual error, then estimate residual error,
-then estimate prior variance. If the last step estimates some prior
-variances to be 0 then stop. Otherwise double L and repeat.
-Initial runs are done with lax tolerance (init_tol); final run done
-with default tolerance.
+Implements a three-stage strategy for each L: first
+  fit susie with very small residual error; next, estimate residual
+  error; finally, estimate the prior variance. If the last step
+  estimates some prior variances to be zero, stop. Otherwise, double
+  L, and repeat.  Initial runs are performed with relaxed tolerance;
+  the final run is performed using the default susie tolerance.
+}
+\seealso{
+\code{\link{susie}}
 }
