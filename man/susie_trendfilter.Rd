@@ -2,8 +2,8 @@
 % Please edit documentation in R/susie_trendfilter.R
 \name{susie_trendfilter}
 \alias{susie_trendfilter}
-\title{Apply susie to trend filtering (especially
-  changepoint problems), a type of non-parametric regression.}
+\title{Apply susie to trend filtering (especially changepoint
+  problems), a type of non-parametric regression.}
 \usage{
 susie_trendfilter(y, order = 0, standardize = FALSE, use_mad = TRUE, ...)
 }

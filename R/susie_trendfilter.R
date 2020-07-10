@@ -1,5 +1,5 @@
-#' @title Apply susie to trend filtering (especially
-#'   changepoint problems), a type of non-parametric regression.
+#' @title Apply susie to trend filtering (especially changepoint
+#'   problems), a type of non-parametric regression.
 #'
 #' @description Fits the non-parametric Gaussian regression model
 #'   \eqn{y = mu + e}, where the mean \eqn{mu} is modelled as \eqn{mu =
