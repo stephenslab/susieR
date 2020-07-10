@@ -7,7 +7,7 @@
 susie_get_prior_variance(res)
 }
 \arguments{
-\item{res}{a susie fit, the output of `susieR::susie()`.}
+\item{res}{A susie fit, such as the output from \code{\link{susie}}.}
 }
 \description{
 Get updated prior variance
