@@ -305,7 +305,9 @@ calc_z = function(X,Y,center=FALSE,scale=FALSE){
 #' @param y a string indicating what to plot: z (for z-score), PIP, log10PIP
 #' or a random label to plot input data as is.
 #' @param add_bar add horizontal bar to signals in credible interval.
-#' @param pos index of variables to plot, default to all variables
+#' @param pos can be either 1) numeric vector of indices of variables to plot, default to all variables, or
+#' 2) a list of \code{list(attr = , start = , end = )} where \code{attr} is a character string of the name of 
+#' index variable in \code{model} object, \code{start} and \code{end} are boundaries of indices to plot.
 #' @param b for simulated data, specify b = true effects (highlights in red).
 #' @param max_cs the biggest CS to display, based on purity (set max_cs in between 0 and 1) or size (>1).
 #' @param add_legend if TRUE, add a legend to annotate the size and purity of each CS discovered.
@@ -358,7 +360,34 @@ susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,add_legen
     p = model
   }
   if(is.null(b)){b = rep(0,length(p))}
-  if(is.null(pos)){pos = 1:length(p)}
+  if(is.null(pos)){
+    pos = 1:length(p)
+  }
+  if (inherits(pos, 'list')) {
+    # check input
+    if (is.null(pos$attr) || is.null(pos$start) || is.null(pos$end)) {
+      stop("pos argument should be a list of list(attr=,start=,end=)")
+    }
+    if (!(pos$attr %in% names(model))) stop(paste("Cannot find attribute", pos$attr, "in input model object"))
+    if (pos$start>=pos$end) stop("Position start should be smaller than end")
+    if (pos$start > min(model[[pos$attr]]) || pos$end < max(model[[pos$attr]])) stop(paste("The range (start:end) must cover all indices in", pos$attr))
+    # add zeros to alpha and p
+    alpha = matrix(0, nrow(model$alpha), pos$end - pos$start + 1)
+    new_p = rep(min(p), pos$end - pos$start + 1)
+    pos_with_value = model[[pos$attr]] - pos$start + 1
+    new_p[pos_with_value] = p
+    alpha[,pos_with_value] = model$alpha
+    p = new_p
+    model$alpha = alpha
+    # adjust model$cs
+    if (!is.null(model$sets$cs)) {
+      for (i in 1:length(model$sets$cs)) {
+        model$sets$cs[[i]] = pos_with_value[model$sets$cs[[i]]]
+      }
+    }
+    # change pos object to be indices 
+    pos = 1:length(p)
+  }
   legend_text = list(col = vector(), purity = vector(), size = vector())
   plot(pos,p[pos],ylab=ylab, pch=16, ...)
   if (is_susie && !is.null(model$sets$cs)) {
