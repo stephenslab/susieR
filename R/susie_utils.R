@@ -370,11 +370,12 @@ susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,add_legen
     }
     if (!(pos$attr %in% names(model))) stop(paste("Cannot find attribute", pos$attr, "in input model object"))
     if (pos$start>=pos$end) stop("Position start should be smaller than end")
-    if (pos$start > min(model[[pos$attr]]) || pos$end < max(model[[pos$attr]])) stop(paste("The range (start:end) must cover all indices in", pos$attr))
+    start = min(min(model[[pos$attr]]), pos$start)
+    end = max(max(model[[pos$attr]]), pos$end)
     # add zeros to alpha and p
-    alpha = matrix(0, nrow(model$alpha), pos$end - pos$start + 1)
-    new_p = rep(min(p), pos$end - pos$start + 1)
-    pos_with_value = model[[pos$attr]] - pos$start + 1
+    alpha = matrix(0, nrow(model$alpha), end - start + 1)
+    new_p = rep(min(p), end - start + 1)
+    pos_with_value = model[[pos$attr]] - start + 1
     new_p[pos_with_value] = p
     alpha[,pos_with_value] = model$alpha
     p = new_p
@@ -386,9 +387,12 @@ susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,add_legen
       }
     }
     # change pos object to be indices 
-    pos = 1:length(p)
+    start_adj = -min(min(model[[pos$attr]]) - pos$start, 0)
+    end_adj = max(max(model[[pos$attr]]) - pos$end, 0)
+    pos = (1 + start_adj):(length(p) - end_adj)
   }
   legend_text = list(col = vector(), purity = vector(), size = vector())
+  options(scipen=10)
   plot(pos,p[pos],ylab=ylab, pch=16, ...)
   if (is_susie && !is.null(model$sets$cs)) {
     for(i in rev(1:nrow(model$alpha))){
