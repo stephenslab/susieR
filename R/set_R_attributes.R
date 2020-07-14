@@ -13,8 +13,11 @@ set_R_attributes = function (R, r_tol) {
   # drop small eigenvalues
   eigenR$values[abs(eigenR$values) < r_tol] = 0
   if(any(eigenR$values < 0)) {
+    min_lambda = min(eigenR$values)
     eigenR$values[eigenR$values < 0] = 0
-    warning("Negative eigenvalues are set to 0")
+    warning(paste0("The input correlation matrix has negative eigenvalues (smallest one is ", min_lambda, "). 
+    The correlation matrix is adjusted such that these negative eigenvalues are now zeros. 
+    You can ignore this message, only if you believe the negative eigenvalue is result of numerical rounding errors."))
   }
   res = eigenR$vectors %*% (t(eigenR$vectors) * eigenR$values)
 
