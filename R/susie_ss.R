@@ -77,8 +77,8 @@
 #' X        <- matrix(rnorm(n*p),nrow=n,ncol=p)
 #' y        <- c(X %*% beta + rnorm(n))
 #' input_ss <- compute_ss(X,y,standardize = TRUE)
-#' ss = susieR:::univariate_regression(X, y)
-#' R = with(input_ss, cov2cor(XtX))
+#' ss <- susieR:::univariate_regression(X, y)
+#' R <- with(input_ss, cov2cor(XtX))
 #' res1      <- with(input_ss,susie_suff_stat(XtX = XtX,Xty = Xty, yty = yty,n=n))
 #' coef(res1)
 #' res2      <- with(ss,susie_suff_stat(bhat = betahat, shat = sebetahat, R = R, n=n, var_y = var(y)))
@@ -108,9 +108,9 @@ susie_suff_stat = function(bhat, shat, R, n, var_y = 1,
   }
 
   # Check sufficient stat input
-  ## check bhat, shat
+  # check bhat, shat
   missing_bhat = c(missing(bhat), missing(shat), missing(R))
-  ## check XtX, Xty
+  # check XtX, Xty
   missing_XtX = c(missing(XtX), missing(Xty), missing(yty))
 
   if(all(missing_bhat) & all(missing_XtX)){
@@ -203,16 +203,17 @@ susie_suff_stat = function(bhat, shat, R, n, var_y = 1,
   if(check_input){
     # Check whether XtX is positive semidefinite
     semi_pd = check_semi_pd(XtX, r_tol)
-    if(semi_pd$status == FALSE){
-      stop('XtX is not a positive semidefinite matrix.')
-    }
+    if(!semi_pd$status) 
+      stop("XtX is not a positive semidefinite matrix")
+
     # Check whether Xty in space spanned by the non-zero eigenvectors of XtX
     proj = check_projection(semi_pd$matrix, Xty)
-    if(proj$status == FALSE)
-      warning('Xty does not lie in the space of non-zero eigenvectors of XtX')
+    if(!proj$status)
+      warning("Xty does not lie in the space of non-zero eigenvectors of XtX")
   }
 
-  if (is.numeric(null_weight) && null_weight == 0) null_weight = NULL
+  if (is.numeric(null_weight) && null_weight == 0)
+    null_weight = NULL
   if (!is.null(null_weight)) {
     if (!is.numeric(null_weight))
       stop("Null weight must be numeric")
@@ -255,7 +256,7 @@ susie_suff_stat = function(bhat, shat, R, n, var_y = 1,
   }
 
   # intialize elbo to NA
-  elbo = rep(NA,max_iter+1)
+  elbo = rep(as.numeric(NA),max_iter + 1)
   elbo[1] = -Inf;
   tracking = list()
 
@@ -307,7 +308,7 @@ susie_suff_stat = function(bhat, shat, R, n, var_y = 1,
   if (track_fit)
     s$trace = tracking
 
-  ## SuSiE CS and PIP
+  # SuSiE CS and PIP
   if (!is.null(coverage) && !is.null(min_abs_corr)) {
     R = muffled_cov2cor(XtX)
     s$sets = susie_get_cs(s, coverage=coverage, Xcorr=R, min_abs_corr=min_abs_corr)
@@ -352,8 +353,8 @@ check_projection <- function(A, b){
   B = attr(A, 'eigen')$vectors[,attr(A, 'eigen')$values > -sqrt(.Machine$double.eps)]
   msg = all.equal(as.vector(B %*% crossprod(B, b)), b, check.names=FALSE)
 
-  if (length(msg)==1 && msg == TRUE)
-    return(list(status=T, msg=NA))
+  if (length(msg)==1 && msg)
+    return(list(status = TRUE,msg = NA))
   else
-    return(list(status=F, msg=msg))
+    return(list(status = FALSE,msg = msg))
 }

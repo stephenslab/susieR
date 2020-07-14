@@ -2,7 +2,7 @@
 % Please edit documentation in R/single_effect_regression_rss.R
 \name{single_effect_regression_rss}
 \alias{single_effect_regression_rss}
-\title{Bayesian single-effect linear regression using z scores.}
+\title{Bayesian single-effect linear regression using z scores}
 \usage{
 single_effect_regression_rss(
   z,
@@ -14,42 +14,52 @@ single_effect_regression_rss(
 )
 }
 \arguments{
-\item{z}{a p vector}
+\item{z}{A p vector.}
 
-\item{Sigma}{residual_var * R + lambda I}
+\item{Sigma}{\code{residual_var*R + lambda*I}}
 
-\item{V}{the prior variance}
+\item{V}{The prior variance.}
 
-\item{prior_weights}{a p vector of prior weights}
+\item{prior_weights}{A p vector of prior weights.}
 
-\item{optimize_V}{boolean indicating whether to optimize V (by maximum likelihood)}
+\item{optimize_V}{Boolean indicating whether to optimize V (by
+maximum likelihood).}
 
-\item{check_null_threshold}{float a threshold on the log scale to compare likelihood between current estimate and zero the null}
+\item{check_null_threshold}{A scalar threshold on the log-scale to
+compare likelihood between current estimate and zero (the null).}
 }
 \value{
-a list with elements: \cr
-\item{alpha}{vector of posterior inclusion probabilities. ie alpha[i] is posterior probability that
- that b[i] is non-zero}
-\item{mu}{vector of posterior means (conditional on inclusion)}
-\item{mu2}{vector of posterior second moments (conditional on inclusion)}
-\item{lbf}{vector of log Bayes factors for each variable}
-\item{V}{the prior variance (after optimization, if optimize_V is TRUE)}
-\item{lbf_model}{(scalar) the loglikelihood for the total model minus the log-likelihood for the null model}
+A list with the following elements:
+
+\item{alpha}{Vector of posterior inclusion probabilities. i.e.,
+  \code{alpha[i]} is posterior probability that that the ith
+  coefficient is non-zero.}
+
+\item{mu}{Vector of posterior means (conditional on inclusion).}
+
+\item{mu2}{Vector of posterior second moments (conditional on
+  inclusion).}
+
+\item{lbf}{Vector of log-Bayes factors for each variable.}
+
+\item{V}{The prior variance (after optimization if \code{optimize_V
+  != "none"}).}
+
+\item{lbf_model}{The log-likelihood for the total model minus the
+  log-likelihood for the null model.}
 }
 \description{
-Bayesian single-effect linear regression using z scores.
+Performs single-effect linear regression with z
+  scores. That is, this function fits the regression model \eqn{z =
+  Rb + e}, where e is \eqn{N(0,Sigma)}, \eqn{Sigma = residual_var*R +
+  lambda*I}, and the b is a p-vector of effects to be estimated. The
+  assumption is that b has exactly one non-zero element, with all
+  elements equally likely to be non-zero. The prior on the non-zero
+  element is \eqn{N(0,V)}.
 }
 \details{
-Performs single-effect linear regression with z scores. That is, this function
-fits the regression model z = Rb + e, where e is N(0,Sigma), Sigma = residual_var * R + lambda I, and the
-b is a p vector of effects to be estimated.
-The assumption is that b has exactly one non-zero element, with all elements
-equally likely to be non-zero. The prior on the non-zero element is N(0,var=V).
-
-Performs sum of single-effect (susie) linear regression with z scores.
-The summary data required are the p by p correlation matrix R, the p vector z. The summary stats should come from the same individuals.
-This function fits the regression model z = sum_l Rb_l + e, where e is N(0,Sigma) and the
-sum_l b_l is a p vector of effects to be estimated.
-The assumption is that each b_l has exactly one non-zero element, with all elements
-equally likely to be non-zero. The prior on the non-zero element is N(0,var=prior_variance).
+The summary data required are the p by p correlation
+  matrix R, the p vector z. The summary stats should come from the
+  same individuals.
 }
+\keyword{internal}

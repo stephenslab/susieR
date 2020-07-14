@@ -1,28 +1,30 @@
 Encoding: UTF-8
 Type: Package
 Package: susieR
-Title: Fit Sum of Single Effects Linear Regression Model
-Description: The package implements a simple new way to perform
-    variable selection in multiple regression ($y=Xb+e$), using
-    computationally efficient variational Bayes approach. The methods
-    implemented here are particularly well-suited to settings where
-    some of the X variables are highly correlated, and the true
-    effects are highly sparse (e.g. <20 non-zero effects in the vector
-    $b$), although it is also useful to more general applications.
-Date: 2020-03-27
-Version: 0.9.1.0
-Authors@R: c(person("Gao","Wang",role=c("aut","cre"),
-                    email="gaow@uchicago.edu"),
+Title: Sum of Single Effects Linear Regression
+Description: Implements methods for variable selection in linear
+    regression based on the "Sum of Single Effects" (SuSiE) model, as
+    described in Wang et al (2020) <DOI:10.1101/501114>. These methods
+    provide simple summaries, called "Credible Sets", for accurately
+    quantifying uncertainty in which variables should be selected.
+    The methods are motivated by genetic fine-mapping applications,
+    and are particularly well-suited to settings where variables are
+    highly correlated and detectable effects are sparse. The fitting
+    algorithm, a Bayesian analogue of stepwise selection methods
+    called "Iterative Bayesian Stepwise Selection" (IBSS), is simple
+    and fast, allowing the SuSiE model be fit to large data sets
+    (thousands of samples and hundreds of thousands of variables).
+Date: 2020-07-10
+Version: 0.9.26
+Authors@R: c(person("Gao","Wang",role="aut",email="wang.gao@columbia.edu"),
              person("Yuxin","Zou",role="aut"),
              person("Kaiqian","Zhang",role="aut"),
-             person("Peter","Carbonetto",role="aut"),
+             person("Peter","Carbonetto",role=c("aut","cre"),
+                    email="peter.carbonetto@gmail.com"),
 	     person("Matthew","Stephens",role="aut"))
 URL: https://github.com/stephenslab/susieR
 BugReports: https://github.com/stephenslab/susieR/issues
 License: MIT + file LICENSE
-LazyData: true
-NeedsCompilation: no
-RoxygenNote: 7.1.0
 Depends: R (>= 3.0.0)
 Imports:
     methods,
@@ -30,15 +32,16 @@ Imports:
     grDevices,
     stats,
     Matrix,
-    matrixStats,
-    expm
-Suggests:
     reshape,
     ggplot2,
-    cowplot,
+Suggests:
     testthat,
     microbenchmark,
     knitr,
     rmarkdown,
-    L0Learn
+    L0Learn,
+    genlasso
+LazyData: true
+NeedsCompilation: no
+RoxygenNote: 7.1.0
 VignetteBuilder: knitr

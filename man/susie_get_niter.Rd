@@ -2,7 +2,7 @@
 % Please edit documentation in R/susie_utils.R
 \name{susie_get_niter}
 \alias{susie_get_niter}
-\title{Get number of iterations from fitted SuSiE model}
+\title{Get number of iterations from fitted susie model}
 \usage{
 susie_get_niter(res)
 }
@@ -10,5 +10,5 @@ susie_get_niter(res)
 \item{res}{a susie fit}
 }
 \description{
-Get number of iterations from fitted SuSiE model
+Get number of iterations from fitted susie model
 }

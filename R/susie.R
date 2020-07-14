@@ -249,10 +249,9 @@ susie <- function(X,Y,L = min(10,ncol(X)),scaled_prior_variance = 0.2,
   }
 
   #initialize elbo to NA
-  elbo = rep(NA,max_iter+1)
+  elbo = rep(as.numeric(NA),max_iter + 1)
   elbo[1] = -Inf;
   tracking = list()
-
 
   for(i in 1:max_iter){
     #s = add_null_effect(s,0)
@@ -302,19 +301,19 @@ susie <- function(X,Y,L = min(10,ncol(X)),scaled_prior_variance = 0.2,
   if (track_fit)
     s$trace = tracking
 
-  ## SuSiE CS and PIP
+  # SuSiE CS and PIP
   if (!is.null(coverage) && !is.null(min_abs_corr)) {
     s$sets = susie_get_cs(s, coverage=coverage, X=X, min_abs_corr=min_abs_corr)
     s$pip = susie_get_pip(s, prune_by_cs = FALSE, prior_tol = prior_tol)
   }
-  ## report z-scores from univariate regression
+  # report z-scores from univariate regression
   if (compute_univariate_zscore) {
     if (!is.null(null_weight) && null_weight != 0) {
       X = X[,1:(ncol(X)-1)]
     }
     s$z = calc_z(X,Y,center=intercept,scale=standardize)
   }
-  ## for prediction
+  # for prediction
   s$X_column_scale_factors = attr(X,"scaled:scale")
   return(s)
 }

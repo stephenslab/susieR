@@ -2,16 +2,19 @@
 % Please edit documentation in R/summary.susie.R
 \name{summary.susie}
 \alias{summary.susie}
-\title{summarize susie fit}
+\title{Summarize susie fit.}
 \usage{
 \method{summary}{susie}(object, ...)
 }
 \arguments{
-\item{object}{a susie fit}
+\item{object}{A susie fit.}
+
+\item{\dots}{Additional arguments passed to the generic \code{summary}
+method.}
 }
 \value{
-a data.frame of variables and a data.frame of credible sets
+A data frame of variables and a data frame of credible sets.
 }
 \description{
-summarize susie fit
+Summarize susie fit.
 }

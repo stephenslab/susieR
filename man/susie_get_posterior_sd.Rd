@@ -2,7 +2,8 @@
 % Please edit documentation in R/susie_utils.R
 \name{susie_get_posterior_sd}
 \alias{susie_get_posterior_sd}
-\title{Get posterior standard deviation for coefficients from fitted SuSiE model}
+\title{Get posterior standard deviation for coefficients from
+fitted susie model}
 \usage{
 susie_get_posterior_sd(res)
 }
@@ -10,5 +11,6 @@ susie_get_posterior_sd(res)
 \item{res}{a susie fit}
 }
 \description{
-Get posterior standard deviation for coefficients from fitted SuSiE model
+Get posterior standard deviation for coefficients from
+fitted susie model
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/single_effect_regression.R
 \name{single_effect_regression}
 \alias{single_effect_regression}
-\title{Bayesian single-effect linear regression of Y on X}
+\title{Bayesian single-effect linear regression of y on X}
 \usage{
 single_effect_regression(
   Y,
@@ -15,38 +15,50 @@ single_effect_regression(
 )
 }
 \arguments{
-\item{Y}{an n vector}
+\item{Y}{An n vector.}
 
-\item{X}{an n by p matrix of covariates}
+\item{X}{An n by p matrix of covariates.}
 
-\item{V}{the prior variance}
+\item{V}{The prior variance.}
 
-\item{residual_variance}{the residual variance}
+\item{residual_variance}{The residual variance.}
 
-\item{prior_weights}{a p vector of prior weights}
+\item{prior_weights}{A p vector of prior weights.}
 
-\item{optimize_V}{boolean indicating whether to optimize V (by maximum likelihood)}
+\item{optimize_V}{Specifies the method to optimize.}
 
-\item{check_null_threshold}{float a threshold on the log scale to compare likelihood between current estimate and zero the null}
+\item{check_null_threshold}{Scalar specifying threshold on the
+log-scale to compare likelihood between current estimate and zero
+the null.}
 }
 \value{
-a list with elements: \cr
-\item{alpha}{vector of posterior inclusion probabilities. ie alpha[i] is posterior probability that
- that b[i] is non-zero}
-\item{mu}{vector of posterior means (conditional on inclusion)}
-\item{mu2}{vector of posterior second moments (conditional on inclusion)}
-\item{lbf}{vector of log Bayes factors for each variable}
-\item{lbf_model}{log Bayes factor for the single effect regression}
-\item{V}{the prior variance (after optimization, if optimize_V is TRUE)}
-\item{loglik}{The log-likelihood p(Y|X,V)}
+A list with the following elements:
+
+\item{alpha}{Vector of posterior inclusion probabilities;
+  \code{alpha[i]} is posterior probability that that the ith
+  coefficient is non-zero.}
+
+\item{mu}{Vector of posterior means (conditional on inclusion).}
+
+\item{mu2}{Vector of posterior second moments (conditional on
+  inclusion).}
+
+\item{lbf}{Vector of log-Bayes factors for each variable.}
+
+\item{lbf_model}{Log-Bayes factor for the single effect regression.}
+
+\item{V}{Prior variance (after optimization if \code{optimize_V !=
+  "none"}).}
+
+\item{loglik}{The logarithm of the likelihood, \eqn{p(y | X, V)}.}
 }
 \description{
-Bayesian single-effect linear regression of Y on X
+Performs single-effect linear regression of y on
+  X. That is, this function fits the regression model \eqn{y = Xb +
+  e}, where elements of e are i.i.d. \eqn{N(0,s2)}, and b is a
+  p-vector of effects to be estimated. The assumption is that b has
+  exactly one non-zero element, with all elements equally likely to
+  be non-zero. The prior on the coefficient of the non-zero element
+  is \eqn{N(0,V)}.
 }
-\details{
-Performs single-effect linear regression of Y on X. That is, this function
-fits the regression model Y= Xb + e, where elements of e are iid N(0,s2) and the
-b is a p vector of effects to be estimated.
-The assumption is that b has exactly one non-zero element, with all elements
-equally likely to be non-zero. The prior on the non-zero element is N(0,var=V).
-}
+\keyword{internal}

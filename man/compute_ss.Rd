@@ -2,20 +2,21 @@
 % Please edit documentation in R/compute_ss.R
 \name{compute_ss}
 \alias{compute_ss}
-\title{Compute sufficient statistics from input data}
+\title{Compute sufficient statistics for susie.}
 \usage{
 compute_ss(X, y, standardize = TRUE)
 }
 \arguments{
-\item{X}{an n by p matrix of covariates}
+\item{X}{An n by p matrix of covariates.}
 
-\item{y}{an n vector}
+\item{y}{An n vector.}
 
-\item{standardize}{logical flag (default=TRUE) for whether to standardize columns of X to unit variance prior to fitting.}
+\item{standardize}{Logical flag indicating whether to standardize
+columns of X to unit variance prior to fitting.}
 }
 \value{
-a list of sufficient statistics
+A list of sufficient statistics.
 }
 \description{
-Compute sufficient statistics from input data
+Compute sufficient statistics for susie.
 }

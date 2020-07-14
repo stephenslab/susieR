@@ -22,7 +22,6 @@ library(susieR)
 library(Matrix)
 library(microbenchmark)
 library(ggplot2)
-library(cowplot)
 set.seed(1)
 ```
 

@@ -2,13 +2,13 @@
 % Please edit documentation in R/susie_utils.R
 \name{susie_get_posterior_mean}
 \alias{susie_get_posterior_mean}
-\title{Get posterior mean for coefficients from fitted SuSiE model}
+\title{Get posterior mean for coefficients from fitted susie model}
 \usage{
 susie_get_posterior_mean(res)
 }
 \arguments{
-\item{res}{a susie fit}
+\item{res}{A susie fit.}
 }
 \description{
-Get posterior mean for coefficients from fitted SuSiE model
+Get posterior mean for coefficients from fitted susie model
 }

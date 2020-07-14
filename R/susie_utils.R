@@ -1,69 +1,77 @@
-#' @title Local false sign rate (lfsr) for susie credible sets
-#' @details This computes the average lfsr across SNPs for each l, weighted by the
-#' posterior inclusion probability alpha
-#' @param res a susie fit, the output of `susieR::susie()`
-#' @return an l vector of lfsr for credible sets
+#' @title Local false sign rate (lfsr) for susie credible sets.
+#' 
+#' @description Computes the average lfsr across SNPs for each single l,
+#'   weighted by the posterior inclusion probability, alpha.
+#' 
+#' @param res A susie fit, an output from \code{\link{susie}}.
+#' 
+#' @return An l-vector of lfsr for credible sets.
+#' 
 #' @importFrom stats pnorm
+#' 
 #' @export
-susie_get_lfsr = function(res){
-  pos_prob = pnorm(0,mean=t(res$mu),sd=sqrt(res$mu2-res$mu^2))
-  neg_prob = 1-pos_prob
-  1-rowSums(res$alpha*t(pmax(pos_prob,neg_prob)))
+#' 
+susie_get_lfsr = function (res) {
+  pos_prob = pnorm(0,mean = t(res$mu),sd = sqrt(res$mu2 - res$mu^2))
+  neg_prob = 1 - pos_prob
+  return(1 - rowSums(res$alpha * t(pmax(pos_prob,neg_prob))))
 }
 
-#find how many variables in the CS
-# x is a probability vector
-n_in_CS_x = function(x, coverage = 0.9){
-  sum(cumsum(sort(x,decreasing = TRUE))<coverage)+1
-}
+# Find how many variables in the CS.
+# x is a probability vector.
+n_in_CS_x = function (x, coverage = 0.9)
+  sum(cumsum(sort(x,decreasing = TRUE)) < coverage) + 1
 
-# return binary vector indicating if each point is in CS
-# x is a probability vector
-in_CS_x = function(x, coverage = 0.9){
-  n = n_in_CS_x(x, coverage)
-  o = order(x,decreasing=TRUE)
+# Return binary vector indicating if each point is in CS.
+# x is a probability vector.
+in_CS_x = function (x, coverage = 0.9) {
+  n = n_in_CS_x(x,coverage)
+  o = order(x,decreasing = TRUE)
   result = rep(0,length(x))
   result[o[1:n]] = 1
   return(result)
 }
 
-# returns an l by p binary matrix
-# indicating which variables are in susie credible sets
-in_CS = function(res, coverage = 0.9){
+# Returns an l-by-p binary matrix indicating which variables are in
+# susie credible sets.
+in_CS = function (res, coverage = 0.9) {
   if (inherits(res,"susie"))
     res = res$alpha
-  t(apply(res,1,function(x) in_CS_x(x, coverage)))
+  return(t(apply(res,1,function(x) in_CS_x(x,coverage))))
 }
 
-n_in_CS = function(res, coverage = 0.9){
+n_in_CS = function(res, coverage = 0.9) {
   if (inherits(res,"susie"))
     res = res$alpha
-  apply(res,1,function(x) n_in_CS_x(x, coverage))
+  return(apply(res,1,function(x) n_in_CS_x(x,coverage)))
 }
 
-# subsample and compute min, mean, median and max abs corr
+# Subsample and compute min, mean, median and max abs corr.
 #
 #' @importFrom stats median
 get_purity = function(pos, X, Xcorr, squared = FALSE, n = 100) {
-  if (length(pos) == 1) {
+  if (length(pos) == 1)
     c(1,1,1)
-  } else {
-    if (length(pos) > n) pos = sample(pos, n)
+  else {
+    if (length(pos) > n)
+      pos = sample(pos, n)
     if (is.null(Xcorr)) {
       X_sub = X[,pos]
       if (length(pos) > n) {
-        # remove identical columns
-        pos_rm = sapply(1:ncol(X_sub), function(i) all( abs(X_sub[,i] - mean(X_sub[,i])) < .Machine$double.eps ^ 0.5 ))
-        if (length(pos_rm)) {
+          
+        # Remove identical columns.
+        pos_rm = sapply(1:ncol(X_sub), function(i) all(abs(X_sub[,i] - mean(X_sub[,i])) < .Machine$double.eps^0.5))
+        if (length(pos_rm))
           X_sub = X_sub[,-pos_rm]
-        }
       }
       value = abs(muffled_corr(as.matrix(X_sub)))
-    } else {
+    } else
       value = abs(Xcorr[pos, pos])
-    }
-    if (squared) value = value ^ 2
-    c(min(value,na.rm=T), mean(value,na.rm=T), median(value,na.rm=T))
+    if (squared)
+      value = value^2
+    return(c(min(value,na.rm = TRUE),
+             mean(value,na.rm = TRUE),
+             median(value,na.rm = TRUE)))
   }
 }
 
@@ -87,12 +95,12 @@ muffled_cov2cor = function(x)
                           invokeRestart("muffleWarning")
                       } )
 
-#' @title check for symmetric matrix
-#' @keywords internal
+# Check for symmetric matrix.
 is_symmetric_matrix = function(x) {
-    res = isSymmetric(x)
-    if (res == FALSE) res = isSymmetric(unname(x))
-    return(res)
+  res = isSymmetric(x)
+  if (!res)
+    res = isSymmetric(unname(x))
+  return(res)
 }
 
 #' @title Extract credible sets from SuSiE fit
@@ -134,21 +142,27 @@ susie_get_cs = function(res,
   }
   if (inherits(res,"susie")) {
     null_index = res$null_index
-    if (is.numeric(res$V)) include_idx = res$V > 1E-9
-    else include_idx = rep(T, nrow(res$alpha))
-  } else {
+    if (is.numeric(res$V))
+      include_idx = res$V > 1e-9
+    else
+      include_idx = rep(TRUE,nrow(res$alpha))
+  } else
     null_index = 0
-  }
-  # L by P binary matrix
+
+  # L x P binary matrix.
   status = in_CS(res$alpha, coverage)
-  # an L list of CS positions
+  
+  # L-list of CS positions.
   cs = lapply(1:nrow(status), function(i) which(status[i,]!=0))
   include_idx = include_idx * (lapply(cs, length) > 0)
+  
   # FIXME: see issue 21
   # https://github.com/stephenslab/susieR/issues/21
-  if (dedup) include_idx = include_idx * (!duplicated(cs))
+  if (dedup)
+    include_idx = include_idx * (!duplicated(cs))
   include_idx = as.logical(include_idx)
-  if (sum(include_idx) == 0) return(list(cs = NULL,coverage=coverage))
+  if (sum(include_idx) == 0)
+    return(list(cs = NULL,coverage=coverage))
   cs = cs[include_idx]
 
   # compute and filter by "purity"
@@ -161,8 +175,9 @@ susie_get_cs = function(res,
                 if (null_index > 0 && null_index %in% cs[[i]]) c(-9,-9,-9)
                 else get_purity(cs[[i]], X, Xcorr, squared)
             })))
-    if (squared) colnames(purity) = c('min.sq.corr', 'mean.sq.corr', 'median.sq.corr')
-    else colnames(purity) = c('min.abs.corr', 'mean.abs.corr', 'median.abs.corr')
+    if (squared) colnames(purity) = c("min.sq.corr", "mean.sq.corr", "median.sq.corr")
+    else
+      colnames(purity) = c("min.abs.corr", "mean.abs.corr", "median.abs.corr")
     threshold = ifelse(squared, min_abs_corr^2, min_abs_corr)
     is_pure = which(purity[,1] >= threshold)
     if (length(is_pure) > 0) {
@@ -171,7 +186,7 @@ susie_get_cs = function(res,
       row_names = paste0("L", which(include_idx)[is_pure])
       names(cs) = row_names
       rownames(purity) = row_names
-      ## re-order CS list and purity rows based on purity
+      # re-order CS list and purity rows based on purity
       ordering = order(purity[,1], decreasing=T)
       return(list(cs = cs[ordering], purity = purity[ordering,], cs_index = which(include_idx)[is_pure[ordering]],coverage=coverage))
     } else {
@@ -187,7 +202,7 @@ susie_get_cs = function(res,
 #' @param prior_tol Filter out effects having estimated prior variance smaller than this threshold
 #' @return a vector of posterior inclusion probability.
 #' @export
-susie_get_pip = function(res, prune_by_cs = FALSE, prior_tol = 1E-9) {
+susie_get_pip = function(res, prune_by_cs = FALSE, prior_tol = 1e-9) {
   if (inherits(res,"susie")) {
     # drop null weight columns
     if (res$null_index > 0) res$alpha = res$alpha[,-res$null_index,drop=FALSE]
@@ -237,7 +252,7 @@ univariate_regression = function(X, y, Z=NULL, center=TRUE, scale=FALSE,
   } else {
     X = scale(X, center=FALSE, scale = scale)
   }
-  X[is.nan(X)] <- 0
+  X[is.nan(X)] = 0
   if (!is.null(Z)) {
     if (center) Z = scale(Z, center=TRUE, scale=FALSE)
     y = .lm.fit(Z, y)$residuals
@@ -248,7 +263,7 @@ univariate_regression = function(X, y, Z=NULL, center=TRUE, scale=FALSE,
                          return(c(coef(g)[2], calc_stderr(cbind(1, X[,i]), g$residuals)[2]))
                        })),
                silent = TRUE)
-  if (inherits(output,'try-error')) {
+  if (inherits(output,"try-error")) {
     # Exception occurs, fall back to a safer but slower calculation
     output = matrix(0,ncol(X),2)
     for (i in 1:ncol(X)) {
@@ -290,10 +305,14 @@ calc_z = function(X,Y,center=FALSE,scale=FALSE){
 #' @param y a string indicating what to plot: z (for z-score), PIP, log10PIP
 #' or a random label to plot input data as is.
 #' @param add_bar add horizontal bar to signals in credible interval.
-#' @param pos index of variables to plot, default to all variables
+#' @param pos can be either 1) numeric vector of indices of variables to plot, default to all variables, or
+#' 2) a list of \code{list(attr = , start = , end = )} where \code{attr} is a character string of the name of 
+#' index variable in \code{model} object, \code{start} and \code{end} are boundaries of indices to plot.
 #' @param b for simulated data, specify b = true effects (highlights in red).
 #' @param max_cs the biggest CS to display, based on purity (set max_cs in between 0 and 1) or size (>1).
 #' @param add_legend if TRUE, add a legend to annotate the size and purity of each CS discovered.
+#'
+#' @importFrom utils head
 #' @importFrom stats pnorm
 #' @importFrom graphics plot
 #' @importFrom graphics segments
@@ -305,7 +324,7 @@ calc_z = function(X,Y,center=FALSE,scale=FALSE){
 susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,add_legend=FALSE,...){
   is_susie = inherits(model,"susie")
   ylab = y
-  color <- c(
+  color = c(
     "dodgerblue2",
     "green4",
     "#6A3D9A", # purple
@@ -320,29 +339,60 @@ susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,add_legen
     "darkturquoise", "green1", "yellow4", "yellow3",
     "darkorange4", "brown"
   )
-  if (y=='z') {
+  if (y=="z") {
     if (is_susie) {
       if (is.null(model$z))
-        stop('z-score not available from SuSiE fit. Please set `compute_univariate_zscore=TRUE` in `susie()` function call.')
+        stop("z-score not available from SuSiE fit. Please set `compute_univariate_zscore=TRUE` in `susie()` function call.")
       zneg = -abs(model$z)
     }
     else zneg = -abs(model)
     p = -log10(pnorm(zneg))
     ylab = "-log10(p)"
-  } else if (y=='PIP') {
+  } else if (y=="PIP") {
     if (is_susie) p = model$pip
     else p = model
-  } else if (y=='log10PIP') {
+  } else if (y=="log10PIP") {
     if (is_susie) p = log10(model$pip)
     else p = log10(model)
     ylab = "log10(PIP)"
   } else {
-    if (is_susie) stop('Need to specify z or PIP or log10PIP for SuSiE fits.')
+    if (is_susie) stop("Need to specify z or PIP or log10PIP for SuSiE fits")
     p = model
   }
   if(is.null(b)){b = rep(0,length(p))}
-  if(is.null(pos)){pos = 1:length(p)}
+  if(is.null(pos)){
+    pos = 1:length(p)
+  }
+  if (inherits(pos, 'list')) {
+    # check input
+    if (is.null(pos$attr) || is.null(pos$start) || is.null(pos$end)) {
+      stop("pos argument should be a list of list(attr=,start=,end=)")
+    }
+    if (!(pos$attr %in% names(model))) stop(paste("Cannot find attribute", pos$attr, "in input model object"))
+    if (pos$start>=pos$end) stop("Position start should be smaller than end")
+    start = min(min(model[[pos$attr]]), pos$start)
+    end = max(max(model[[pos$attr]]), pos$end)
+    # add zeros to alpha and p
+    alpha = matrix(0, nrow(model$alpha), end - start + 1)
+    new_p = rep(min(p), end - start + 1)
+    pos_with_value = model[[pos$attr]] - start + 1
+    new_p[pos_with_value] = p
+    alpha[,pos_with_value] = model$alpha
+    p = new_p
+    model$alpha = alpha
+    # adjust model$cs
+    if (!is.null(model$sets$cs)) {
+      for (i in 1:length(model$sets$cs)) {
+        model$sets$cs[[i]] = pos_with_value[model$sets$cs[[i]]]
+      }
+    }
+    # change pos object to be indices 
+    start_adj = -min(min(model[[pos$attr]]) - pos$start, 0)
+    end_adj = max(max(model[[pos$attr]]) - pos$end, 0)
+    pos = (1 + start_adj):(length(p) - end_adj)
+  }
   legend_text = list(col = vector(), purity = vector(), size = vector())
+  options(scipen=10)
   plot(pos,p[pos],ylab=ylab, pch=16, ...)
   if (is_susie && !is.null(model$sets$cs)) {
     for(i in rev(1:nrow(model$alpha))){
@@ -366,7 +416,7 @@ susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,add_legen
       if (add_bar) {
         y0 = rep(0, length(x0))
         x1 = x0
-        segments(x0,y0,x1,y1,lwd=1.5,col='gray')
+        segments(x0,y0,x1,y1,lwd=1.5,col="gray")
       }
       points(x0, y1,col=head(color, 1),cex=1.5,lwd=2.5)
       legend_text$col = append(legend_text$col, head(color, 1))
@@ -395,8 +445,12 @@ susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,add_legen
 #' @param L an integer, number of CS to plot
 #' @param file_prefix prefix to path of output plot file
 #' @param pos index of variables to plot, default to all variables
+#' 
 #' @importFrom grDevices pdf
 #' @importFrom grDevices dev.off
+#' @importFrom reshape melt
+#' @importFrom ggplot2 ggplot
+#' 
 #' @export
 susie_plot_iteration = function(model, L, file_prefix, pos=NULL) {
   if(!requireNamespace("ggplot2",quietly = TRUE))
@@ -404,7 +458,7 @@ susie_plot_iteration = function(model, L, file_prefix, pos=NULL) {
   if(!requireNamespace("reshape",quietly = TRUE))
     stop("Required package reshape not found")
   get_layer = function(obj, k, idx, vars) {
-    alpha = reshape::melt(obj$alpha[1:k,vars,drop=F])
+    alpha = melt(obj$alpha[1:k,vars,drop=F])
     colnames(alpha) = c("L","variables","alpha")
     alpha$L = as.factor(alpha$L)
     ggplot2::ggplot(alpha,ggplot2::aes_string("variables","alpha",group="L")) +
@@ -426,83 +480,100 @@ susie_plot_iteration = function(model, L, file_prefix, pos=NULL) {
     }
   }
   dev.off()
-  format = '.pdf'
+  format = ".pdf"
   if (!is.null(model$trace)) {
     cmd = paste("convert -delay 30 -loop 0 -density 300 -dispose previous",
-                paste0(file_prefix, '.pdf'),
+                paste0(file_prefix,".pdf"),
                 "\\( -clone 0 -set delay 300 \\) -swap 0 +delete \\( +clone -set delay 300 \\) +swap +delete -coalesce -layers optimize",
-                paste0(file_prefix, '.gif'))
+                paste0(file_prefix, ".gif"))
     cat("Creating GIF animation ...\n")
-    if (file.exists(paste0(file_prefix, '.gif')))
-      file.remove(paste0(file_prefix, '.gif'))
+    if (file.exists(paste0(file_prefix,".gif")))
+      file.remove(paste0(file_prefix,".gif"))
     output = try(system(cmd))
-    if (inherits(output,'try-error')) {
+    if (inherits(output,"try-error")) {
       cat("Cannot create GIF animation because `convert` command failed.\n")
     } else {
-      format = '.gif'
+      format = ".gif"
     }
   }
-  cat(paste0('Iterplot saved to ', file_prefix, format, '\n'))
+  cat(paste0("Iterplot saved to ", file_prefix, format, "\n"))
 }
 
 # return residuals from Y after removing susie fit
 #
 #' @importFrom stats coef
-get_R = function(X,Y,s){
-  Y- X %*% coef(s)
-}
+get_R = function (X,Y,s)
+  Y - X %*% coef(s)
 
 #' @title Get updated prior variance
-#' @param res a susie fit, the output of `susieR::susie()`.
+#' 
+#' @param res A susie fit, such as the output from \code{\link{susie}}.
+#' 
 #' @export
-susie_get_prior_variance <- function(res) {
-  return(res$V)
-}
+#' 
+susie_get_prior_variance = function (res)
+  res$V
 
 #' @title Get updated residual variance
+#' 
 #' @param res a susie fit, the output of `susieR::susie()`.
+#' 
 #' @export
-susie_get_residual_variance <- function(res) {
-  return(res$sigma2)
+#' 
+susie_get_residual_variance = function (res)
+  res$sigma2
+
+#' @title Get evidence lower bound (ELBO) from fitted susie model
+#' 
+#' @param res A susie fit, e.g., the output of \code{\link{susie}}.
+#' 
+#' @param last_only whether or not to get ELBO from all iterations.
+#' 
+#' @param warning_tol warn if ELBO is non-decreasing by this tolerance
+#'   level.
+#' 
+#' @export
+#' 
+susie_get_objective = function (res, last_only = TRUE, warning_tol = 1e-6) {
+  if (!all(diff(res$elbo) >= (-1*warning_tol)))
+    warning("Objective is not non-decreasing")
+  if (last_only)
+    return(res$elbo[length(res$elbo)])
+  else
+    return(res$elbo)
 }
 
-#' @title Get evidence lower bound (ELBO) from fitted SuSiE model
-#' @param res a susie fit, the output of `susieR::susie()`.
-#' @param all whether or not to get ELBO from all iterations
-#' @param warning_tol warn if ELBO is non-decreasing by this tolerance level (default set to 1E-6)
-#' @export
-susie_get_objective <- function(res, all = FALSE, warning_tol = 1E-6) {
-  if (!all(diff(res$elbo) >= (-1 * warning_tol))) {
-    warning('Objective is not non-decreasing')
-  }
-  if (all) return(res$elbo)
-  else return(res$elbo[length(res$elbo)])
-}
+# @title Slim the result of fitted susie model
+# @param res a susie fit.
+susie_slim = function (res)
+  list(alpha = res$alpha,niter = res$niter,V = res$V,sigma2 = res$sigma2)
 
-#' @title Slim the result of fitted SuSiE model
-#' @param res a susie fit, the output of `susieR::susie()`
-#' @keywords internal
-susie_slim = function(res){
-  list(alpha = res$alpha, niter = res$niter, V = res$V, sigma2 = res$sigma2)
-}
-
-#' @title Get posterior mean for coefficients from fitted SuSiE model
-#' @param res a susie fit
+#' @title Get posterior mean for coefficients from fitted susie model
+#' 
+#' @param res A susie fit.
+#' 
 #' @export
-susie_get_posterior_mean = function(res){
+#' 
+susie_get_posterior_mean = function (res)
   colSums(res$alpha*res$mu)/res$X_column_scale_factors
-}
 
-#' @title Get posterior standard deviation for coefficients from fitted SuSiE model
+#' @title Get posterior standard deviation for coefficients from
+#' fitted susie model
+#' 
 #' @param res a susie fit
+#' 
 #' @export
-susie_get_posterior_sd = function(res){
-  sqrt(colSums(res$alpha * res$mu2 - (res$alpha*res$mu)^2))/(res$X_column_scale_factors)
-}
+#' 
+susie_get_posterior_sd = function (res)
+  sqrt(colSums(res$alpha * res$mu2 -
+               (res$alpha*res$mu)^2))/(res$X_column_scale_factors)
 
-#' @title Get number of iterations from fitted SuSiE model
+#' @title Get number of iterations from fitted susie model
+#' 
 #' @param res a susie fit
+#' 
 #' @export
-susie_get_niter = function(res) {
-  return(res$niter)
-}
+#' 
+susie_get_niter = function (res)
+  res$niter
+

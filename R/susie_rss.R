@@ -125,17 +125,17 @@ susie_rss = function(z, R, maf=NULL, maf_thresh=0, z_ld_weight=0,
     residual_variance = 1
   }
   p = ncol(R)
-  ## eigen decomposition for R, fileter on eigenvalues
-  attr(R, 'eigen') = eigen(R, symmetric = T)
+  # eigen decomposition for R, filter on eigenvalues
+  attr(R, 'eigen') = eigen(R, symmetric = TRUE)
   if (check_R && any(attr(R, 'eigen')$values < -r_tol)) {
-    stop(paste0('The correlation matrix (', nrow(R), ' by ', ncol(R), 'is not a positive semidefinite matrix.
-                You can bypass this by "check_R = FALSE" which instead sets negative eigenvalues to 0 to allow for continued computations.'))
+    stop(paste0('The correlation matrix (', nrow(R), ' by ', ncol(R), 'is not a positive semidefinite matrix. The smallest eigen value is ', 
+                min((attr(R, 'eigen')$values), '. You can bypass this by "check_R = FALSE" which instead sets negative eigenvalues to 0 to allow for continued computations.')))
   }
 
-  ## check whether z in space spanned by the non-zero eigenvectors of R
+  # check whether z in space spanned by the non-zero eigenvectors of R
   if(check_z) {
     proj = check_projection(R, z)
-    if(proj$status == FALSE) {
+    if(!proj$status) {
       warning('Input z does not lie in the space of non-zero eigenvectors of R. The result is thus not reliable.
               Please refer to https://github.com/stephenslab/susieR/issues/91 for a possible solution.')
     } else {
@@ -145,7 +145,7 @@ susie_rss = function(z, R, maf=NULL, maf_thresh=0, z_ld_weight=0,
   }
   R = set_R_attributes(R, r_tol)
 
-  ## transform data
+  # transform data
   X = t(attr(R, 'eigen')$vectors[, attr(R, 'eigen')$values!=0]) * attr(R, 'eigen')$values[attr(R, 'eigen')$values!=0]^(0.5)
   Y = (t(attr(R, 'eigen')$vectors[, attr(R, 'eigen')$values!=0]) * attr(R, 'eigen')$values[attr(R, 'eigen')$values!=0]^(-0.5)) %*% z
 
@@ -279,17 +279,17 @@ susie_rss_lambda = function(z, R, maf=NULL, maf_thresh=0,
   }
 
   p = ncol(R)
-  ## eigen decomposition for R, fileter on eigenvalues
-  attr(R, 'eigen') = eigen(R, symmetric = T)
+  # eigen decomposition for R, fileter on eigenvalues
+  attr(R, 'eigen') = eigen(R, symmetric = TRUE)
   if (check_R && any(attr(R, 'eigen')$values < -r_tol)) {
-    stop(paste0('The correlation matrix (', nrow(R), ' by ', ncol(R), 'is not a positive semidefinite matrix.
-                You can bypass this by "check_R = FALSE" which instead sets negative eigenvalues to 0 to allow for continued computations.'))
+    stop(paste0('The correlation matrix (', nrow(R), ' by ', ncol(R), 'is not a positive semidefinite matrix. The smallest eigen value is ', 
+                min((attr(R, 'eigen')$values), '. You can bypass this by "check_R = FALSE" which instead sets negative eigenvalues to 0 to allow for continued computations.')))
   }
 
-  ## check whether z in space spanned by the non-zero eigenvectors of R
-  if(check_z) {
+  # check whether z in space spanned by the non-zero eigenvectors of R
+  if (check_z) {
     proj = check_projection(R, z)
-    if(proj$status == FALSE) {
+    if (!proj$status) {
       warning('Input z does not lie in the space of non-zero eigenvectors of R. The result is thus not reliable.
               Please refer to https://github.com/stephenslab/susieR/issues/91 for a possible solution.')
     } else {
@@ -380,7 +380,7 @@ susie_rss_lambda = function(z, R, maf=NULL, maf_thresh=0,
   if (track_fit)
     s$trace = tracking
 
-  ## SuSiE CS and PIP
+  # SuSiE CS and PIP
   if (!is.null(coverage) && !is.null(min_abs_corr)) {
     R = muffled_cov2cor(R)
     s$sets = susie_get_cs(s, coverage=coverage, Xcorr=R, min_abs_corr=min_abs_corr)
