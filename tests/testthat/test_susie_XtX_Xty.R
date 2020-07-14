@@ -43,7 +43,7 @@ test_that("Results from sufficient stat vs original data: estimate residual vari
   expect_equal(coef(res)[-1], coef(res2)[-1])
 
   cm = colMeans(X, na.rm = TRUE)
-  csd = matrixStats::colSds(X, center = cm)
+  csd = compute_colSds(X)
   csd[csd==0] = 1
   X.cs = t( (t(X) - cm) / csd )
   expect_equal(crossprod(X.cs, res$fitted), res2$Xtfitted)
