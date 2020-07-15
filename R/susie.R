@@ -1,3 +1,5 @@
+#' @rdname susie
+#'
 #' @title Sum of Single Effects (SuSiE) Regression
 #'
 #' @description Performs Bayesian multiple linear regression of Y on

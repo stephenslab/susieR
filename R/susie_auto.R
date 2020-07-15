@@ -1,34 +1,20 @@
-#' @title An attempt to automate reliable running of susie even on
-#'   hard problems
+#' @rdname susie
 #' 
-#' @description Implements a three-stage strategy for each L: first
-#'   fit susie with very small residual error; next, estimate residual
-#'   error; finally, estimate the prior variance. If the last step
-#'   estimates some prior variances to be zero, stop. Otherwise, double
-#'   L, and repeat.  Initial runs are performed with relaxed tolerance;
-#'   the final run is performed using the default susie tolerance.
+#' @details susie_auto is an attempt to automate reliable running of
+#' susie even on hard problems. Implements a three-stage strategy for
+#' each L: first fit susie with very small residual error; next,
+#' estimate residual error; finally, estimate the prior variance. If
+#' the last step estimates some prior variances to be zero,
+#' stop. Otherwise, double L, and repeat.  Initial runs are performed
+#' with relaxed tolerance; the final run is performed using the
+#' default susie tolerance.
 #'
-#' @param X An n by p matrix of covariates.
-#' 
-#' @param Y An n vector.
-#' 
 #' @param L_init The initial value of L.
 #' 
 #' @param L_max The maximum value of L to consider.
 #' 
-#' @param verbose If \code{TRUE}, some progress messages are outputted.
-#' 
 #' @param init_tol The tolerance to passed to susie during early runs
 #'   (set large to shorten the initial runs).
-#' 
-#' @param standardize Logical; whether or not to standardize columns
-#'   of X to unit variance prior to fitting. See \code{\link{susie}} for
-#'   details.
-#' 
-#' @param intercept Logical; should intercept be fitted (\code{TRUE})
-#'   or fixed to zero (\code{FALSE}).
-#' 
-#' @param max_iter Maximum number of iterations to perform.
 #' 
 #' @param tol Convergence tolerance.
 #'
