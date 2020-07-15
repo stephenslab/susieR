@@ -42,9 +42,9 @@
 #'   0 and 1, and cannot be exactly 1).
 #'
 #' @param standardize If \code{standardize = TRUE}, standardize the
-#'   columns of X to unit variance prior to fitting. Note that
-#'   \code{scaled_prior_variance} specifies the prior on the
-#'   coefficients of X \emph{after} standardization (if it is
+#'   columns of X (or XtX and Xty) to unit variance prior to
+#'   fitting. Note that \code{scaled_prior_variance} specifies the prior
+#'   on the coefficients of X \emph{after} standardization (if it is
 #'   performed). If you do not standardize, you may need to think more
 #'   carefully about specifying \code{scaled_prior_variance}. Whatever
 #'   your choice, the coefficients returned by \code{coef} are given for

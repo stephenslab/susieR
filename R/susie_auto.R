@@ -16,12 +16,8 @@
 #' @param init_tol The tolerance to passed to susie during early runs
 #'   (set large to shorten the initial runs).
 #' 
-#' @param tol Convergence tolerance.
-#'
 #' @param \dots Additional arguments passed to \code{\link{susie}}.
 #'
-#' @seealso \code{\link{susie}}
-#' 
 #' @importFrom stats sd
 #'
 #' @export

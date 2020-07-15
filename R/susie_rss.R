@@ -30,41 +30,27 @@
 #' @param prior_variance the prior variance (vector of length L, or
 #' scalar. In latter case gets repeated L times )
 #' 
-#' @param r_tol tolerance level for eigen value check of positive semidefinite matrix of R.
-#' 
-#' @param prior_weights a p vector of prior probability that each
-#' element is non-zero
-#' 
-#' @param check_null_threshold when prior variance is estimated,
-#' compare the estimate with the null and set prior variance to null
-#' (zero) unless the log-likelihood using the estimate is larger than
-#' that of null by this threshold. For example, you can set it to 0.1
-#' to nudge the estimate towards zero. Default is 0. Notice that
-#' setting it to non-zero may lead to decreasing ELBO in some cases.
-#' 
-#' @param prior_tol when prior variance is estimated, compare the estimated value to this tol at the end of
-#' the analysis and exclude a single effect from PIP computation if the estimated prior variance is smaller than it.
+#' @param r_tol Tolerance level for eigenvalue check of positive
+#' semidefinite matrix of R.
 #' 
 #' @param intercept_value a value to assign to the intercept (since
-#' the intercept cannot be estimated from centered summary data). This
-#' value will be used by coef.susie() to assign an intercept value,
-#' for consistency with the non-summary-statistic version of this
-#' function \code{susie}.  Set to NULL if you want coef.susie() not to
-#' include an intercept term (and so only return a p vector).
-#' 
-#' @param tol convergence tolerance based on elbo
+#'   the intercept cannot be estimated from centered summary data). This
+#'   value will be used by coef.susie() to assign an intercept value,
+#'   for consistency with the non-summary-statistic version of this
+#'   function \code{susie}.  Set to NULL if you want coef.susie() not to
+#'   include an intercept term (and so only return a p vector).
 #' 
 #' @param check_R check whether R is positive semidefinite
 #' 
 #' @param check_z check whether z in space spanned by the non-zero
-#' eigenvectors of R
+#'   eigenvectors of R.
 #'
-#' @return a susie fit, which is a list with some or all of the following elements\cr
-#' \item{alpha}{an L by p matrix of posterior inclusion probabilites}
-#' \item{mu}{an L by p matrix of posterior means (conditional on inclusion)}
-#' \item{mu2}{an L by p matrix of posterior second moments (conditional on inclusion)}
-#' \item{Rr}{an p vector of t(X) times fitted values, the fitted values equal to X times colSums(alpha*mu))}
-#' \item{sigma2}{residual variance}
+#' @return a susie fit, which is a list with some or all of the
+#' following elements
+#' 
+#' \item{Rr}{an p vector of t(X) times fitted values, the fitted
+#'   values equal to X times colSums(alpha*mu))}
+#' 
 #' \item{V}{prior variance}
 #'
 #' @export
@@ -184,51 +170,15 @@ susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
   return(s)
 }
 
-#' @rdname susie
-#' 
-#' @details Performs sum of single-effect (SuSiE) linear regression with z scores.
-#' The summary data required are the p by p correlation matrix R, the p vector z.
-#' The summary stats should come from the same individuals.
-#' This function fits the regression model z = sum_l Rb_l + e, where e is N(0,residual_variance * R + lambda I) and the
-#' sum_l b_l is a p vector of effects to be estimated.
-#' The assumption is that each b_l has exactly one non-zero element, with all elements
-#' equally likely to be non-zero. The prior on the non-zero element is N(0,var=prior_variance).
-#' 
-#' @param z a p vector of z scores.
-#' 
-#' @param R a p by p symmetric and positive semidefinite correlation
-#' matrix.
-#' 
-#' @param lambda fudge factor
-#' 
-#' @param r_tol tolerance level for eigen value check of positive
-#' semidefinite matrix of R.
-#' 
-#' @param prior_weights a p vector of prior probability that each
-#' element is non-zero
-#' 
-#' @param check_null_threshold when prior variance is estimated,
-#' compare the estimate with the null and set prior variance to null
-#' (zero) unless the log-likelihood using the estimate is larger than
-#' that of null by this threshold. For example, you can set it to 0.1
-#' to nudge the estimate towards zero. Default is 0. Notice that
-#' setting it to non-zero may lead to decreasing ELBO in some cases.
-#' 
-#' @param prior_tol when prior variance is estimated, compare the
-#' estimated value to this tol at the end of the analysis and exclude
-#' a single effect from PIP computation if the estimated prior
-#' variance is smaller than it
-#' 
-#' @param tol convergence tolerance based on elbo
-#' 
-#' @return a susie fit, which is a list with some or all of the following elements\cr
-#' \item{alpha}{an L by p matrix of posterior inclusion probabilites}
-#' \item{mu}{an L by p matrix of posterior means (conditional on inclusion)}
-#' \item{mu2}{an L by p matrix of posterior second moments (conditional on inclusion)}
-#' \item{Rr}{an p vector of t(X) times fitted values, the fitted values equal to X times colSums(alpha*mu))}
-#' \item{sigma2}{residual variance}
-#' \item{V}{prior variance}
-#'
+# Performs sum of single-effect (SuSiE) linear regression with z
+# scores (with lambda). The summary data required are the p by p
+# correlation matrix R, the p vector z. The summary stats should come
+# from the same individuals. This function fits the regression model z
+# = sum_l Rb_l + e, where e is N(0,residual_variance * R + lambda I)
+# and the sum_l b_l is a p vector of effects to be estimated. The
+# assumption is that each b_l has exactly one non-zero element, with
+# all elements equally likely to be non-zero. The prior on the
+# non-zero element is N(0,var = prior_variance).
 susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
                             L = 10, lambda = 0,
                             prior_variance = 50, residual_variance = NULL,
@@ -242,6 +192,7 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
                             coverage = 0.95, min_abs_corr = 0.5,
                             tol = 1e-3, verbose = FALSE, track_fit = FALSE,
                             check_R = TRUE, check_z = TRUE) {
+    
   # Check input R.
   if(nrow(R) != length(z)) {
     stop(paste0('The dimension of correlation matrix (', nrow(R), ' by ', ncol(R), ') does not agree with expected (', length(z), ' by ', length(z), ')'))

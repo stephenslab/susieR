@@ -5,7 +5,6 @@
 \alias{susie}
 \alias{susie_auto}
 \alias{susie_rss}
-\alias{susie_rss_lambda}
 \alias{susie_suff_stat}
 \title{Sum of Single Effects (SuSiE) Regression}
 \usage{
@@ -79,35 +78,6 @@ susie_rss(
   check_z = TRUE
 )
 
-susie_rss_lambda(
-  z,
-  R,
-  maf = NULL,
-  maf_thresh = 0,
-  L = 10,
-  lambda = 0,
-  prior_variance = 50,
-  residual_variance = NULL,
-  r_tol = 1e-08,
-  prior_weights = NULL,
-  null_weight = NULL,
-  estimate_residual_variance = TRUE,
-  estimate_prior_variance = TRUE,
-  estimate_prior_method = c("optim", "EM", "simple"),
-  check_null_threshold = 0,
-  prior_tol = 1e-09,
-  max_iter = 100,
-  s_init = NULL,
-  intercept_value = 0,
-  coverage = 0.95,
-  min_abs_corr = 0.5,
-  tol = 0.001,
-  verbose = FALSE,
-  track_fit = FALSE,
-  check_R = TRUE,
-  check_z = TRUE
-)
-
 susie_suff_stat(
   bhat,
   shat,
@@ -162,16 +132,22 @@ this provides initial estimates of the prior variances.}
 initial estimate of the residual variance. By default, it is
 \code{var(Y)}.}
 
-\item{prior_weights}{a p vector of prior probability that each element is non-zero}
+\item{prior_weights}{A vector of length p, in which each entry
+gives the prior probability that corresponding column of X has a
+nonzero effect on the outcome, Y.}
 
 \item{null_weight}{Prior probability of no effect (a number between
 0 and 1, and cannot be exactly 1).}
 
-\item{standardize}{logical flag (default=TRUE) for whether to adjust XtX and Xty such that they are computed from column standardized X, prior to fitting.
-Note that `scaled_prior_variance` specifies the prior on the coefficients of X *after* standardization (if performed).
-If you do not standardize you may need
-to think more carefully about specifying
-`scaled_prior_variance`. Whatever the value of standardize, the coefficients (returned from `coef`) are for X on the original input scale.}
+\item{standardize}{If \code{standardize = TRUE}, standardize the
+columns of X (or XtX and Xty) to unit variance prior to
+fitting. Note that \code{scaled_prior_variance} specifies the prior
+on the coefficients of X \emph{after} standardization (if it is
+performed). If you do not standardize, you may need to think more
+carefully about specifying \code{scaled_prior_variance}. Whatever
+your choice, the coefficients returned by \code{coef} are given for
+\code{X} on the original input scale. Any column of \code{X} that
+has zero variance is not standardized, but left as is.}
 
 \item{intercept}{If \code{intercept = TRUE}, the intercept is
 fitted; otherwise, it is set to zero. Setting \code{intercept =
@@ -196,14 +172,18 @@ variance. \code{estimate_prior_method = "simple"} only compares the
 likelihood between using specified prior variance and using
 zero, and chose the one that gives larger likelihood.}
 
-\item{check_null_threshold}{when prior variance is estimated, compare the
-estimate with the null and set prior variance to null (zero) unless the log-likelihood
-using the estimate is larger than that of null by this threshold. For example,
-you can set it to 0.1 to nudge the estimate towards zero. Default is 0. Notice that setting it to non-zero
-may lead to decreasing ELBO in some cases.}
+\item{check_null_threshold}{When prior variance is estimated,
+compare the estimate with the null and set prior variance to null
+(zero) unless the likelihood using the estimate is larger than that
+of null by this threshold. For example, you can set it to 0.1 to
+nudge the estimate towards zero. Default is 0. A note of caution
+that setting this to non-zero may lead to decreasing ELBO in some
+cases.}
 
-\item{prior_tol}{when prior variance is estimated, compare the estimated value to this tol at the end of
-the analysis and exclude a single effect from PIP computation if the estimated prior variance is smaller than it.}
+\item{prior_tol}{When the prior variance is estimated, compare the
+estimated value to \code{prior_tol} at the end of the computation,
+and exclude a single effect from PIP computation if the estimated
+prior variance is smaller than this tolerance value.}
 
 \item{residual_variance_upperbound}{Upper limit on the estimated
 residual variance. It is only relevant when
@@ -227,7 +207,11 @@ variable.}
 
 \item{max_iter}{Maximum number of IBSS iterations to perform.}
 
-\item{tol}{convergence tolerance based on alpha}
+\item{tol}{A small, non-negative number specifying the convergence
+tolerance for the IBSS fitting procedure. The fitting procedure
+will halt when the difference in the variational lower bound, or
+"ELBO" (this is the objective function to be maximized), is less
+than \code{tol}.}
 
 \item{verbose}{If \code{verbose = TRUE}, the algorithm's progress,
 and a summary of the optimization settings, are printed to the
@@ -248,7 +232,7 @@ estimates at each iteration of the IBSS fitting procedure.}
 
 \item{z}{a p vector of z scores.}
 
-\item{R}{a p by p symmetric and positive semidefinite matrix. It
+\item{R}{A p by p symmetric and positive semidefinite matrix. It
 can be X'X, covariance matrix (X'X/(n-1)) or correlation matrix.
 It should from the same samples used to compute `bhat` and
 `shat`. Using out of sample matrix may produce unreliable results.}
@@ -267,7 +251,8 @@ panel.}
 \item{prior_variance}{the prior variance (vector of length L, or
 scalar. In latter case gets repeated L times )}
 
-\item{r_tol}{tolerance level for eigen value check of positive semidefinite matrix of R.}
+\item{r_tol}{Tolerance level for eigenvalue check of positive
+semidefinite matrix of R.}
 
 \item{intercept_value}{a value to assign to the intercept (since
 the intercept cannot be estimated from centered summary data). This
@@ -279,9 +264,7 @@ include an intercept term (and so only return a p vector).}
 \item{check_R}{check whether R is positive semidefinite}
 
 \item{check_z}{check whether z in space spanned by the non-zero
-eigenvectors of R}
-
-\item{lambda}{fudge factor}
+eigenvectors of R.}
 
 \item{bhat}{a p vector of estimated effects.}
 
@@ -348,28 +331,20 @@ A \code{"susie"} object with some or all of the following
   the IBSS converged to a solution within the chosen tolerance
   level.}
 
-a susie fit, which is a list with some or all of the following elements\cr
-\item{alpha}{an L by p matrix of posterior inclusion probabilites}
-\item{mu}{an L by p matrix of posterior means (conditional on inclusion)}
-\item{mu2}{an L by p matrix of posterior second moments (conditional on inclusion)}
-\item{Rr}{an p vector of t(X) times fitted values, the fitted values equal to X times colSums(alpha*mu))}
-\item{sigma2}{residual variance}
+a susie fit, which is a list with some or all of the
+following elements
+
+\item{Rr}{an p vector of t(X) times fitted values, the fitted
+  values equal to X times colSums(alpha*mu))}
+
 \item{V}{prior variance}
 
-a susie fit, which is a list with some or all of the following elements\cr
-\item{alpha}{an L by p matrix of posterior inclusion probabilites}
-\item{mu}{an L by p matrix of posterior means (conditional on inclusion)}
-\item{mu2}{an L by p matrix of posterior second moments (conditional on inclusion)}
-\item{Rr}{an p vector of t(X) times fitted values, the fitted values equal to X times colSums(alpha*mu))}
-\item{sigma2}{residual variance}
-\item{V}{prior variance}
+a susie fit, which is a list with some or all of the
+following elements
 
-a susie fit, which is a list with some or all of the following elements\cr
-\item{alpha}{an L by p matrix of posterior inclusion probabilites}
-\item{mu}{an L by p matrix of posterior means (conditional on inclusion)}
-\item{mu2}{an L by p matrix of posterior second moments (conditional on inclusion)}
-\item{XtXr}{an p vector of t(X) times fitted values, the fitted values equal to X times colSums(alpha*mu))}
-\item{sigma2}{residual variance}
+\item{XtXr}{an p vector of t(X) times fitted values, the fitted
+  values equal to X times colSums(alpha*mu))}
+
 \item{V}{prior variance}
 }
 \description{
@@ -406,28 +381,20 @@ is that each b_l has exactly one non-zero element, with all
 elements equally likely to be non-zero. The prior on the non-zero
 element is N(0,var=prior_variance).
 
-Performs sum of single-effect (SuSiE) linear regression with z scores.
-The summary data required are the p by p correlation matrix R, the p vector z.
-The summary stats should come from the same individuals.
-This function fits the regression model z = sum_l Rb_l + e, where e is N(0,residual_variance * R + lambda I) and the
-sum_l b_l is a p vector of effects to be estimated.
-The assumption is that each b_l has exactly one non-zero element, with all elements
-equally likely to be non-zero. The prior on the non-zero element is N(0,var=prior_variance).
-
 Performs sum of single-effect (susie) linear regression of
-y on X when only sufficient summary statistics are available. The
-sufficient summary data required are EITHER the p vector bhat, the
-p vector shat, the p by p symmetric and positive semidefinite
-correlation (or covariance) matrix R, the sample size n, the
-variance of y; OR the p by p matrix X'X, the p vector X'y, the sum
-of squares of y (y'y) and the sample size.  The sufficient summary
-stats should come from the same individuals.  Both the columns of X
-and the vector y should be centered to have mean 0 before computing
-these summary statistics; you may also want to scale each column of
-X and y to have variance 1 (see examples).  This function fits the
-regression model y = sum_l Xb_l + e, where elements of e are iid
+y on X with summary statistics. The sufficient summary data
+required are EITHER the p vector bhat, the p vector shat, the p by
+p symmetric and positive semidefinite correlation (or covariance)
+matrix R, the sample size n, the variance of y; OR the p by p
+matrix X'X, the p vector X'y, the sum of squares of y (y'y) and the
+sample size.  The sufficient summary stats should come from the
+same individuals.  Both the columns of X and the vector y should be
+centered to have mean 0 before computing these summary statistics;
+you may also want to scale each column of X and y to have variance
+1 (see examples). This function fits the regression model y =
+sum_l Xb_l + e, where elements of e are iid
 N(0,var=residual_variance) and the sum_l b_l is a p vector of
-effects to be estimated.  The assumption is that each b_l has
+effects to be estimated. The assumption is that each b_l has
 exactly one non-zero element, with all elements equally likely to
 be non-zero. The prior on the non-zero element is
 N(0,var=scaled_prior_variance*y'y/(n-1)).
@@ -465,7 +432,4 @@ G. Wang, A. Sarkar, P. Carbonetto and M. Stephens (2020). A simple
 new approach to variable selection in regression, with application
 to genetic fine-mapping. \emph{bioRxiv}
 \url{https://doi.org/10.1101/501114}.
-}
-\seealso{
-\code{\link{susie}}
 }

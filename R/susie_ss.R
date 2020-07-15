@@ -1,19 +1,19 @@
 #' @rdname susie
 
 #' @details Performs sum of single-effect (susie) linear regression of
-#' y on X when only sufficient summary statistics are available. The
-#' sufficient summary data required are EITHER the p vector bhat, the
-#' p vector shat, the p by p symmetric and positive semidefinite
-#' correlation (or covariance) matrix R, the sample size n, the
-#' variance of y; OR the p by p matrix X'X, the p vector X'y, the sum
-#' of squares of y (y'y) and the sample size.  The sufficient summary
-#' stats should come from the same individuals.  Both the columns of X
-#' and the vector y should be centered to have mean 0 before computing
-#' these summary statistics; you may also want to scale each column of
-#' X and y to have variance 1 (see examples).  This function fits the
-#' regression model y = sum_l Xb_l + e, where elements of e are iid
+#' y on X with summary statistics. The sufficient summary data
+#' required are EITHER the p vector bhat, the p vector shat, the p by
+#' p symmetric and positive semidefinite correlation (or covariance)
+#' matrix R, the sample size n, the variance of y; OR the p by p
+#' matrix X'X, the p vector X'y, the sum of squares of y (y'y) and the
+#' sample size.  The sufficient summary stats should come from the
+#' same individuals.  Both the columns of X and the vector y should be
+#' centered to have mean 0 before computing these summary statistics;
+#' you may also want to scale each column of X and y to have variance
+#' 1 (see examples). This function fits the regression model y =
+#' sum_l Xb_l + e, where elements of e are iid
 #' N(0,var=residual_variance) and the sum_l b_l is a p vector of
-#' effects to be estimated.  The assumption is that each b_l has
+#' effects to be estimated. The assumption is that each b_l has
 #' exactly one non-zero element, with all elements equally likely to
 #' be non-zero. The prior on the non-zero element is
 #' N(0,var=scaled_prior_variance*y'y/(n-1)).
@@ -22,7 +22,7 @@
 #' 
 #' @param shat a p vector of corresponding standard errors.
 #' 
-#' @param R a p by p symmetric and positive semidefinite matrix. It
+#' @param R A p by p symmetric and positive semidefinite matrix. It
 #' can be X'X, covariance matrix (X'X/(n-1)) or correlation matrix.
 #' It should from the same samples used to compute `bhat` and
 #' `shat`. Using out of sample matrix may produce unreliable results.
@@ -30,48 +30,27 @@
 #' @param n sample size.
 #' 
 #' @param var_y the (sample) variance of y, defined as y'y/(n-1) . If
-#' it is unknown, the coefficients (returned from `coef`) are on the
-#' standardized X, y scale.
+#'   it is unknown, the coefficients (returned from `coef`) are on the
+#'   standardized X, y scale.
 #' 
 #' @param XtX a p by p matrix, X'X, where columns of X are centered to
-#' have mean 0
+#'   have mean 0
 #' 
 #' @param Xty a p vector, X'y, where columns of X are centered and y
-#' is centered to have mean 0
+#'   is centered to have mean 0
 #' 
 #' @param yty a scaler, y'y, where y is centered to have mean 0
 #' 
-#' @param check_null_threshold when prior variance is estimated, compare the
-#' estimate with the null and set prior variance to null (zero) unless the log-likelihood
-#' using the estimate is larger than that of null by this threshold. For example,
-#' you can set it to 0.1 to nudge the estimate towards zero. Default is 0. Notice that setting it to non-zero
-#' may lead to decreasing ELBO in some cases.
-#' 
-#' @param prior_tol when prior variance is estimated, compare the estimated value to this tol at the end of
-#' the analysis and exclude a single effect from PIP computation if the estimated prior variance is smaller than it.
-#' 
-#' @param r_tol tolerance level for eigen value check of positive semidefinite matrix of R.
-#' 
-#' @param prior_weights a p vector of prior probability that each element is non-zero
-#' 
-#' @param standardize logical flag (default=TRUE) for whether to adjust XtX and Xty such that they are computed from column standardized X, prior to fitting.
-#' Note that `scaled_prior_variance` specifies the prior on the coefficients of X *after* standardization (if performed).
-#' If you do not standardize you may need
-#' to think more carefully about specifying
-#' `scaled_prior_variance`. Whatever the value of standardize, the coefficients (returned from `coef`) are for X on the original input scale.
-#' 
-#' @param tol convergence tolerance based on alpha
-#' 
 #' @param check_input whether to perform checks on XtX and Xty, the
-#' checks are: 1. Check whether XtX is positive semidefinite 2. Check
-#' whether Xty in space spanned by the non-zero eigenvectors of XtX
+#'   checks are: 1. Check whether XtX is positive semidefinite 2. Check
+#'   whether Xty in space spanned by the non-zero eigenvectors of XtX
 #'
-#' @return a susie fit, which is a list with some or all of the following elements\cr
-#' \item{alpha}{an L by p matrix of posterior inclusion probabilites}
-#' \item{mu}{an L by p matrix of posterior means (conditional on inclusion)}
-#' \item{mu2}{an L by p matrix of posterior second moments (conditional on inclusion)}
-#' \item{XtXr}{an p vector of t(X) times fitted values, the fitted values equal to X times colSums(alpha*mu))}
-#' \item{sigma2}{residual variance}
+#' @return a susie fit, which is a list with some or all of the
+#' following elements
+#'
+#' \item{XtXr}{an p vector of t(X) times fitted values, the fitted
+#'   values equal to X times colSums(alpha*mu))}
+#' 
 #' \item{V}{prior variance}
 #'
 #' @examples
