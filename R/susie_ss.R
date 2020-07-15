@@ -318,42 +318,37 @@ susie_suff_stat = function(bhat, shat, R, n, var_y = 1,
   return(s)
 }
 
-#' @title Check whether A is positive semidefinite
-#' @param A a symmetric matrix
-#' @return a list of result: \cr
-#' \item{matrix}{The matrix with eigen decomposition}
-#' \item{status}{whether A is positive semidefinite}
-#' \item{eigenvalues}{eigenvalues of A truncated by r_tol}
-#' @export
-check_semi_pd <- function(A, tol){
-  attr(A, 'eigen') = eigen(A, symmetric = TRUE)
-
-  eigenvalues = attr(A, 'eigen')$values
+# @title Check whether A is positive semidefinite
+# @param A a symmetric matrix
+# @return a list of result:
+# \item{matrix}{The matrix with eigen decomposition}
+# \item{status}{whether A is positive semidefinite}
+# \item{eigenvalues}{eigenvalues of A truncated by r_tol}
+check_semi_pd <- function (A, tol) {
+  attr(A,"eigen") = eigen(A,symmetric = TRUE)
+  eigenvalues = attr(A,"eigen")$values
   eigenvalues[abs(eigenvalues) < tol] <- 0
-
-  # E <- tryCatch(suppressWarnings(chol(R, pivot = TRUE, tol=r_tol)),error = function(e) FALSE)
-  # if (is.logical(E)) {
-  #   stop('R is not a positive semidefinite matrix.')
-  # }
-
-  return(list(matrix = A, status = !any(eigenvalues < 0), eigenvalues = eigenvalues))
+  return(list(matrix = A,
+              status = !any(eigenvalues < 0),
+              eigenvalues = eigenvalues))
 }
 
-#' @title Check whether b in space spanned by the non-zero eigenvectors of A
-#' @param A a p by p matrix
-#' @param b a length p vector
-#' @return a list of result: \cr
-#' \item{status}{whether b in space spanned by the non-zero eigenvectors of A}
-#' \item{msg}{msg gives the difference between the projected b and b if status is FALSE}
-#' @export
+# @title Check whether b in space spanned by the non-zero eigenvectors
+#   of A
+# @param A a p by p matrix
+# @param b a length p vector
+# @return a list of result:
+# \item{status}{whether b in space spanned by the non-zero
+#  eigenvectors of A}
+# \item{msg}{msg gives the difference between the projected b and b if
+#   status is FALSE}
 check_projection <- function(A, b){
-  if(is.null(attr(A, 'eigen')))
-    attr(A, 'eigen') = eigen(A, symmetric = TRUE)
-
-  B = attr(A, 'eigen')$vectors[,attr(A, 'eigen')$values > -sqrt(.Machine$double.eps)]
-  msg = all.equal(as.vector(B %*% crossprod(B, b)), b, check.names=FALSE)
-
-  if (length(msg)==1 && msg)
+  if(is.null(attr(A,"eigen")))
+    attr(A,"eigen") = eigen(A,symmetric = TRUE)
+  B = attr(A,"eigen")$vectors[,attr(A,"eigen")$values >
+        -sqrt(.Machine$double.eps)]
+  msg = all.equal(as.vector(B %*% crossprod(B,b)),b,check.names = FALSE)
+  if (length(msg) == 1 && msg)
     return(list(status = TRUE,msg = NA))
   else
     return(list(status = FALSE,msg = msg))

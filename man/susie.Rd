@@ -2,7 +2,7 @@
 % Please edit documentation in R/susie.R
 \name{susie}
 \alias{susie}
-\title{SUm of Single Effects (SuSiE) Regression}
+\title{Sum of Single Effects (SuSiE) Regression}
 \usage{
 susie(
   X,
@@ -74,34 +74,40 @@ fitted; otherwise, it is set to zero. Setting \code{intercept =
 FALSE} is generally not recommended.}
 
 \item{estimate_residual_variance}{If
-\code{estimate_residual_variance = TRUE}, the residual variance
-is estimated (using \code{residual_variance} as an initial value).
-If \code{estimate_residual_variance = FALSE}
-then the residual variance is fixed to the value supplied by \code{residual_variance}.}
+\code{estimate_residual_variance = TRUE}, the residual variance is
+estimated (using \code{residual_variance} as an initial value).  If
+\code{estimate_residual_variance = FALSE} then the residual
+variance is fixed to the value supplied by
+\code{residual_variance}.}
 
 \item{estimate_prior_variance}{If \code{estimate_prior_variance =
-TRUE}, the prior variance is estimated (a separate parameter for each of the \code{L}
-effects). If provided, \code{scaled_prior_variance} is then used as an initial
-point for the optimization. If \code{estimate_prior_variance = FALSE}
-then the prior variance (for each of the \code{L} effects) is determined by the value
-supplied to \code{scaled_prior_variance}.}
+TRUE}, the prior variance is estimated (a separate parameter for
+each of the \code{L} effects). If provided,
+\code{scaled_prior_variance} is then used as an initial point for
+the optimization. If \code{estimate_prior_variance = FALSE} then
+the prior variance (for each of the \code{L} effects) is determined
+by the value supplied to \code{scaled_prior_variance}.}
 
 \item{estimate_prior_method}{The method used for estimating prior
 variance. "simple" method only compares the loglikelihood between
-using specified prior variance and using zero, and chose the one that
-gives larger loglikelihood.}
+using specified prior variance and using zero, and chose the one
+that gives larger loglikelihood.}
 
-\item{check_null_threshold}{when prior variance is estimated, compare the
-estimate with the null and set prior variance to null (zero) unless the log-likelihood
-using the estimate is larger than that of null by this threshold. For example,
-you can set it to 0.1 to nudge the estimate towards zero. Default is 0. Notice that setting it to non-zero
-may lead to decreasing ELBO in some cases}
+\item{check_null_threshold}{when prior variance is estimated,
+compare the estimate with the null and set prior variance to null
+(zero) unless the log-likelihood using the estimate is larger than
+that of null by this threshold. For example, you can set it to 0.1
+to nudge the estimate towards zero. Default is 0. Notice that
+setting it to non-zero may lead to decreasing ELBO in some cases}
 
-\item{prior_tol}{when prior variance is estimated, compare the estimated value to this tol at the end of
-the analysis and exclude a single effect from PIP computation if the estimated prior variance is smaller than it.}
+\item{prior_tol}{when prior variance is estimated, compare the
+estimated value to this tol at the end of the analysis and exclude
+a single effect from PIP computation if the estimated prior
+variance is smaller than it.}
 
-\item{residual_variance_upperbound}{Upper bound for estiamted residual variance.
-It is used when \code{estimate_residual_variance = TRUE}.}
+\item{residual_variance_upperbound}{Upper bound for estiamted
+residual variance.  It is used when
+\code{estimate_residual_variance = TRUE}.}
 
 \item{s_init}{A previous susie fit with which to initialize.}
 
@@ -117,7 +123,8 @@ genotype data in genetics studies.}
 = TRUE}, the univariate regression z-scores are outputted for each
 variable.}
 
-\item{na.rm}{Drop missing samples in y from both y and X inputs. Default set to FALSE.}
+\item{na.rm}{Drop missing samples in y from both y and X
+inputs. Default set to FALSE.}
 
 \item{max_iter}{Maximum number of iterations of the IBSS fitting
 procedure.}
@@ -148,10 +155,10 @@ A \code{"susie"} object with some or all of the following
 \item{mu2}{An L by p matrix of posterior second moments,
   conditional on inclusion.}
 
-\item{Xr}{An vector of length n, equal to \code{X \%*\% colSums(alpha
+\item{Xr}{A vector of length n, equal to \code{X \%*\% colSums(alpha
   * mu)}.}
 
-\item{intercept}{The intercept (fixed or estimated).}
+\item{intercept}{Intercept (fixed or estimated).}
 
 \item{sigma2}{Residual variance (fixed or estimated).}
 
@@ -192,18 +199,18 @@ Performs Bayesian multiple linear regression of Y on
   The model is fitted using the "Iterative Bayesian Stepwise
   Selection" (IBSS) algorithm.
 
-  See also \code{susie_trendfilter} for applying susie to non-parametric regression, particularly changepoint problems
+  See also \code{susie_trendfilter} for applying susie to
+  non-parametric regression, particularly changepoint problems.
 }
 \examples{
-
 set.seed(1)
 n = 1000
 p = 1000
 beta = rep(0,p)
 beta[1:4] = 1
-X = matrix(rnorm(n*p),nrow=n,ncol=p)
+X = matrix(rnorm(n*p),nrow = n,ncol = p)
 y = X \%*\% beta + rnorm(n)
-res = susie(X,y,L=10)
+res = susie(X,y,L = 10)
 coef(res)
 plot(y,predict(res))
 

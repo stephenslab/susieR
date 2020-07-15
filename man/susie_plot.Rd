@@ -26,7 +26,9 @@ or a random label to plot input data as is.}
 
 \item{add_bar}{add horizontal bar to signals in credible interval.}
 
-\item{pos}{index of variables to plot, default to all variables}
+\item{pos}{can be either 1) numeric vector of indices of variables to plot, default to all variables, or
+2) a list of \code{list(attr = , start = , end = )} where \code{attr} is a character string of the name of 
+index variable in \code{model} object, \code{start} and \code{end} are boundaries of indices to plot.}
 
 \item{b}{for simulated data, specify b = true effects (highlights in red).}
 

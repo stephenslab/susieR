@@ -3,7 +3,7 @@
 #' @description Computes the average lfsr across SNPs for each single l,
 #'   weighted by the posterior inclusion probability, alpha.
 #' 
-#' @param res A susie fit, an output from \code{\link{susie}}.
+#' @param res A susie fit, typically an output from \code{\link{susie}}.
 #' 
 #' @return An l-vector of lfsr for credible sets.
 #' 
@@ -60,13 +60,15 @@ get_purity = function(pos, X, Xcorr, squared = FALSE, n = 100) {
       if (length(pos) > n) {
           
         # Remove identical columns.
-        pos_rm = sapply(1:ncol(X_sub), function(i) all(abs(X_sub[,i] - mean(X_sub[,i])) < .Machine$double.eps^0.5))
+        pos_rm = sapply(1:ncol(X_sub),
+                       function(i) all(abs(X_sub[,i] - mean(X_sub[,i])) <
+                                       .Machine$double.eps^0.5))
         if (length(pos_rm))
           X_sub = X_sub[,-pos_rm]
       }
       value = abs(muffled_corr(as.matrix(X_sub)))
     } else
-      value = abs(Xcorr[pos, pos])
+      value = abs(Xcorr[pos,pos])
     if (squared)
       value = value^2
     return(c(min(value,na.rm = TRUE),
@@ -75,25 +77,26 @@ get_purity = function(pos, X, Xcorr, squared = FALSE, n = 100) {
   }
 }
 
-#' @title `cor` function with specified warning muffled
-#' @keywords internal
+# @title cor function with specified warning muffled
+#
 #' @importFrom stats cor
-muffled_corr = function(x)
+muffled_corr = function (x)
   withCallingHandlers(cor(x),
-                    warning = function(w) {
-                      if (grepl("the standard deviation is zero", w$message))
-                        invokeRestart("muffleWarning")
-                    } )
+                      warning = function(w) {
+                        if (grepl("the standard deviation is zero",w$message))
+                          invokeRestart("muffleWarning")
+                      })
 
-#' @title `cov2cor` function with specified warning muffled
-#' @keywords internal
+# @title cov2cor function with specified warning muffled
+# 
 #' @importFrom stats cov2cor
 muffled_cov2cor = function(x)
   withCallingHandlers(cov2cor(x),
-                      warning = function(w) {
-                        if (grepl("had 0 or NA entries; non-finite result is doubtful", w$message))
-                          invokeRestart("muffleWarning")
-                      } )
+    warning = function(w) {
+      if (grepl("had 0 or NA entries; non-finite result is doubtful",
+                w$message))
+          invokeRestart("muffleWarning")
+      })
 
 # Check for symmetric matrix.
 is_symmetric_matrix = function(x) {
@@ -134,12 +137,10 @@ susie_get_cs = function(res,
                         coverage = 0.95,
                         min_abs_corr = 0.5,
                         dedup = TRUE, squared = FALSE) {
-  if (!is.null(X) && !is.null(Xcorr)) {
+  if (!is.null(X) && !is.null(Xcorr))
     stop("Only one of X or Xcorr should be specified")
-  }
-  if (!is.null(Xcorr) && !is_symmetric_matrix(Xcorr)) {
+  if (!is.null(Xcorr) && !is_symmetric_matrix(Xcorr))
     stop("Xcorr matrix must be symmetric")
-  }
   if (inherits(res,"susie")) {
     null_index = res$null_index
     if (is.numeric(res$V))
@@ -150,10 +151,10 @@ susie_get_cs = function(res,
     null_index = 0
 
   # L x P binary matrix.
-  status = in_CS(res$alpha, coverage)
+  status = in_CS(res$alpha,coverage)
   
   # L-list of CS positions.
-  cs = lapply(1:nrow(status), function(i) which(status[i,]!=0))
+  cs = lapply(1:nrow(status),function(i) which(status[i,]!=0))
   include_idx = include_idx * (lapply(cs, length) > 0)
   
   # FIXME: see issue 21
@@ -186,9 +187,11 @@ susie_get_cs = function(res,
       row_names = paste0("L", which(include_idx)[is_pure])
       names(cs) = row_names
       rownames(purity) = row_names
-      # re-order CS list and purity rows based on purity
-      ordering = order(purity[,1], decreasing=T)
-      return(list(cs = cs[ordering], purity = purity[ordering,], cs_index = which(include_idx)[is_pure[ordering]],coverage=coverage))
+      
+      # Re-order CS list and purity rows based on purity.
+      ordering = order(purity[,1], decreasing = TRUE)
+      return(list(cs = cs[ordering],
+                  purity = purity[ordering,], cs_index = which(include_idx)[is_pure[ordering]],coverage=coverage))
     } else {
       return(list(cs = NULL,coverage=coverage))
     }
@@ -227,8 +230,8 @@ susie_get_pip = function(res, prune_by_cs = FALSE, prior_tol = 1e-9) {
 }
 
 # compute standard error for regression coef
+# S = (X'X)^-1 \Sigma
 calc_stderr = function(X, residuals) {
-    # S = (X'X)^-1 \Sigma
     sqrt(diag(sum(residuals^2) / (nrow(X) - 2) * chol2inv(chol(t(X) %*% X))))
   }
 
@@ -458,7 +461,7 @@ susie_plot_iteration = function(model, L, file_prefix, pos=NULL) {
   if(!requireNamespace("reshape",quietly = TRUE))
     stop("Required package reshape not found")
   get_layer = function(obj, k, idx, vars) {
-    alpha = melt(obj$alpha[1:k,vars,drop=F])
+    alpha = melt(obj$alpha[1:k,vars,drop=FALSE])
     colnames(alpha) = c("L","variables","alpha")
     alpha$L = as.factor(alpha$L)
     ggplot2::ggplot(alpha,ggplot2::aes_string("variables","alpha",group="L")) +
@@ -508,7 +511,7 @@ get_R = function (X,Y,s)
 #' @title Get updated prior variance
 #' 
 #' @param res A susie fit, such as the output from \code{\link{susie}}.
-#' 
+#'
 #' @export
 #' 
 susie_get_prior_variance = function (res)
@@ -517,7 +520,7 @@ susie_get_prior_variance = function (res)
 #' @title Get updated residual variance
 #' 
 #' @param res a susie fit, the output of `susieR::susie()`.
-#' 
+#'
 #' @export
 #' 
 susie_get_residual_variance = function (res)

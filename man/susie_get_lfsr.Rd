@@ -7,7 +7,7 @@
 susie_get_lfsr(res)
 }
 \arguments{
-\item{res}{A susie fit, an output from \code{\link{susie}}.}
+\item{res}{A susie fit, typically an output from \code{\link{susie}}.}
 }
 \value{
 An l-vector of lfsr for credible sets.
