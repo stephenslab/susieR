@@ -34,22 +34,21 @@ susie(
 \arguments{
 \item{X}{An n by p matrix of covariates.}
 
-\item{Y}{A vector of length n.}
+\item{Y}{The observed responses, a vector of length n.}
 
 \item{L}{Number of components (nonzero elements) in the SuSiE
-regression model. If \code{L} is larger than the number of
-covariate (p), \code{L} is set to p.}
+regression model. If L is larger than the number of covariates (p),
+L is set to p.}
 
 \item{scaled_prior_variance}{The scaled prior variance. This is
- either a scalar, or a vector of length \code{L}. The prior variance
-of each non-zero element of b is set to
-\code{var(Y)*scaled_prior_variance}. If
-\code{estimate_prior_variance = TRUE}, this input simply provides
-initial estimates of the prior variances.}
+either a scalar, or a vector of length \code{L}. The prior variance
+of each non-zero element of b is set to \code{var(Y) *
+scaled_prior_variance}. If \code{estimate_prior_variance = TRUE},
+this provides initial estimates of the prior variances.}
 
-\item{residual_variance}{The variance of the residual. If
-\code{estimate_residual_variance = TRUE}, this value simply provides the
-initial estimate of the residual variance. By default, it is set to
+\item{residual_variance}{Variance of the residual. If
+\code{estimate_residual_variance = TRUE}, this value provides the
+initial estimate of the residual variance. By default, it is
 \code{var(Y)}.}
 
 \item{prior_weights}{A vector of length p, in which each entry
@@ -61,13 +60,13 @@ nonzero effect on the outcome, Y.}
 
 \item{standardize}{If \code{standardize = TRUE}, standardize the
 columns of X to unit variance prior to fitting. Note that
-`scaled_prior_variance` specifies the prior on the coefficients of
-X \emph{after} standardization (if it is performed). If you do not
-standardize, you may need to think more carefully about specifying
-\code{scaled_prior_variance}. Whatever your choice, the
-coefficients returned by \code{coef} are given for \code{X} on the
-original input scale. Any column of \code{X} that has zero variance is
-not standardized, but left as is.}
+\code{scaled_prior_variance} specifies the prior on the
+coefficients of X \emph{after} standardization (if it is
+performed). If you do not standardize, you may need to think more
+carefully about specifying \code{scaled_prior_variance}. Whatever
+your choice, the coefficients returned by \code{coef} are given for
+\code{X} on the original input scale. Any column of \code{X} that
+has zero variance is not standardized, but left as is.}
 
 \item{intercept}{If \code{intercept = TRUE}, the intercept is
 fitted; otherwise, it is set to zero. Setting \code{intercept =
@@ -76,58 +75,56 @@ FALSE} is generally not recommended.}
 \item{estimate_residual_variance}{If
 \code{estimate_residual_variance = TRUE}, the residual variance is
 estimated (using \code{residual_variance} as an initial value).  If
-\code{estimate_residual_variance = FALSE} then the residual
-variance is fixed to the value supplied by
-\code{residual_variance}.}
+\code{estimate_residual_variance = FALSE}, the residual variance is
+fixed to the value supplied by \code{residual_variance}.}
 
 \item{estimate_prior_variance}{If \code{estimate_prior_variance =
 TRUE}, the prior variance is estimated (a separate parameter for
-each of the \code{L} effects). If provided,
-\code{scaled_prior_variance} is then used as an initial point for
-the optimization. If \code{estimate_prior_variance = FALSE} then
-the prior variance (for each of the \code{L} effects) is determined
-by the value supplied to \code{scaled_prior_variance}.}
+each of the L effects). If provided, \code{scaled_prior_variance}
+is then used as an initial value for the optimization. If
+\code{estimate_prior_variance = FALSE}, the prior variance (for
+each of the L effects) is determined by the value supplied to
+\code{scaled_prior_variance}.}
 
 \item{estimate_prior_method}{The method used for estimating prior
-variance. "simple" method only compares the loglikelihood between
-using specified prior variance and using zero, and chose the one
-that gives larger loglikelihood.}
+variance. \code{estimate_prior_method = "simple"} only compares the
+likelihood between using specified prior variance and using
+zero, and chose the one that gives larger likelihood.}
 
-\item{check_null_threshold}{when prior variance is estimated,
+\item{check_null_threshold}{When prior variance is estimated,
 compare the estimate with the null and set prior variance to null
-(zero) unless the log-likelihood using the estimate is larger than
-that of null by this threshold. For example, you can set it to 0.1
-to nudge the estimate towards zero. Default is 0. Notice that
-setting it to non-zero may lead to decreasing ELBO in some cases}
+(zero) unless the likelihood using the estimate is larger than that
+of null by this threshold. For example, you can set it to 0.1 to
+nudge the estimate towards zero. Default is 0. A note of caution
+that setting this to non-zero may lead to decreasing ELBO in some
+cases.}
 
-\item{prior_tol}{when prior variance is estimated, compare the
-estimated value to this tol at the end of the analysis and exclude
-a single effect from PIP computation if the estimated prior
-variance is smaller than it.}
+\item{prior_tol}{When the prior variance is estimated, compare the
+estimated value to \code{prior_tol} at the end of the computation,
+and exclude a single effect from PIP computation if the estimated
+prior variance is smaller than this tolerance value.}
 
-\item{residual_variance_upperbound}{Upper bound for estiamted
-residual variance.  It is used when
+\item{residual_variance_upperbound}{Upper limit on the estimated
+residual variance. It is only relevant when
 \code{estimate_residual_variance = TRUE}.}
 
 \item{s_init}{A previous susie fit with which to initialize.}
 
-\item{coverage}{A number between 0 and 1 specifying the coverage of
+\item{coverage}{A number between 0 and 1 specifying the "coverage" of
 the estimated confidence sets.}
 
-\item{min_abs_corr}{Minimum of absolute value of correlation
-allowed in a credible set. The default, 0.5, corresponds to squared
+\item{min_abs_corr}{Minimum absolute correlation allowed in a
+credible set. The default, 0.5, corresponds to a squared
 correlation of 0.25, which is a commonly used threshold for
-genotype data in genetics studies.}
+genotype data in genetic studies.}
 
 \item{compute_univariate_zscore}{If \code{compute_univariate_zscore
 = TRUE}, the univariate regression z-scores are outputted for each
 variable.}
 
-\item{na.rm}{Drop missing samples in y from both y and X
-inputs. Default set to FALSE.}
+\item{na.rm}{Drop any missing values in Y from both X and Y.}
 
-\item{max_iter}{Maximum number of iterations of the IBSS fitting
-procedure.}
+\item{max_iter}{Maximum number of IBSS iterations to perform.}
 
 \item{tol}{A small, non-negative number specifying the convergence
 tolerance for the IBSS fitting procedure. The fitting procedure
@@ -135,11 +132,11 @@ will halt when the difference in the variational lower bound, or
 "ELBO" (this is the objective function to be maximized), is less
 than \code{tol}.}
 
-\item{verbose}{If \code{verbose = TRUE}, the algorithm's
-progress and a summary of the optimization settings are printed to
-the console.}
+\item{verbose}{If \code{verbose = TRUE}, the algorithm's progress,
+and a summary of the optimization settings, are printed to the
+console.}
 
-\item{track_fit}{If \code{track_fit = TRUE}, an object \code{trace}
+\item{track_fit}{If \code{track_fit = TRUE}, \code{trace}
 is also returned containing detailed information about the
 estimates at each iteration of the IBSS fitting procedure.}
 }
@@ -180,26 +177,24 @@ A \code{"susie"} object with some or all of the following
 
 \item{z}{A vector of univariate z-scores.}
 
-\item{niter}{Number of IBSS iterations that were run.}
+\item{niter}{Number of IBSS iterations that were performed.}
 
-\item{converged}{\code{TRUE} or \code{FALSE}, indicating whether
+\item{converged}{\code{TRUE} or \code{FALSE} indicating whether
   the IBSS converged to a solution within the chosen tolerance
   level.}
 }
 \description{
 Performs Bayesian multiple linear regression of Y on
-  X; that is, this function fits the regression model \eqn{Y = sum_l
-  Xb_l + e}, where elements of e are \emph{i.i.d.} normal with zero
-  mean and variance \code{residual_variance}, and \eqn{sum_l b_l} is
-  a vector of length p representing the effects to be estimated. The
-  SuSiE assumption is that each b_l has exactly one non-zero
-  element. The prior on the non-zero element is normal with zero mean
-  and variance \code{var(Y)*scaled_prior_variance}.
-
-  The model is fitted using the "Iterative Bayesian Stepwise
-  Selection" (IBSS) algorithm.
-
-  See also \code{susie_trendfilter} for applying susie to
+  X; that is, this function fits the regression model \eqn{Y = \sum_l
+  X b_{l=1}^L + e}, where elements of e are \emph{i.i.d.} normal with
+  zero mean and variance \code{residual_variance}, and
+  \eqn{\sum_{l=1}^L b_l} is a vector of length p representing the
+  effects to be estimated. The SuSiE assumption is that each
+  \eqn{b_l} has exactly one non-zero element. The prior on the
+  non-zero element is normal with zero mean and variance \code{var(Y)
+  * scaled_prior_variance}.  The model is fitted using the "Iterative
+  Bayesian Stepwise Selection" (IBSS) algorithm.  See also
+  \code{\link{susie_trendfilter}} for applying susie to
   non-parametric regression, particularly changepoint problems.
 }
 \examples{
@@ -216,7 +211,7 @@ plot(y,predict(res))
 
 }
 \references{
-G. Wang, A. Sarkar, P. Carbonetto and M. Stephens (2018). A simple
+G. Wang, A. Sarkar, P. Carbonetto and M. Stephens (2020). A simple
 new approach to variable selection in regression, with application
 to genetic fine-mapping. \emph{bioRxiv}
 \url{https://doi.org/10.1101/501114}.
