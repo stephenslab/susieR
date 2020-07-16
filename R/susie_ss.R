@@ -16,7 +16,7 @@
 #' effects to be estimated. The assumption is that each b_l has
 #' exactly one non-zero element, with all elements equally likely to
 #' be non-zero. The prior on the non-zero element is
-#' N(0,var=scaled_prior_variance*y'y/(n-1)).
+#' N(0,scaled_prior_variance*y'y/(n-1)).
 #' 
 #' @param bhat a p vector of estimated effects.
 #' 

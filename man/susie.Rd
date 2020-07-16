@@ -397,7 +397,7 @@ N(0,var=residual_variance) and the sum_l b_l is a p vector of
 effects to be estimated. The assumption is that each b_l has
 exactly one non-zero element, with all elements equally likely to
 be non-zero. The prior on the non-zero element is
-N(0,var=scaled_prior_variance*y'y/(n-1)).
+N(0,scaled_prior_variance*y'y/(n-1)).
 }
 \examples{
 set.seed(1)
