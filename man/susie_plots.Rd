@@ -20,10 +20,11 @@ susie_plot_iteration(model, L, file_prefix, pos = NULL)
 }
 \arguments{
 \item{model}{a susie fit, the output of `susieR::susie()`.
-Multiple plots will be made for all iterations if `track_fit` was set to `TRUE` when running SuSiE.}
+Multiple plots will be made for all iterations if `track_fit` was
+set to `TRUE` when running SuSiE.}
 
-\item{y}{a string indicating what to plot: z (for z-score), PIP, log10PIP
-or a random label to plot input data as is.}
+\item{y}{a string indicating what to plot: z (for z-score), PIP,
+log10PIP or a random label to plot input data as is.}
 
 \item{add_bar}{add horizontal bar to signals in credible interval.}
 
@@ -31,9 +32,11 @@ or a random label to plot input data as is.}
 
 \item{b}{for simulated data, specify b = true effects (highlights in red).}
 
-\item{max_cs}{the biggest CS to display, based on purity (set max_cs in between 0 and 1) or size (>1).}
+\item{max_cs}{the biggest CS to display, based on purity (set
+max_cs in between 0 and 1) or size (>1).}
 
-\item{add_legend}{if TRUE, add a legend to annotate the size and purity of each CS discovered.}
+\item{add_legend}{if TRUE, add a legend to annotate the size and
+purity of each CS discovered.}
 
 \item{L}{an integer, number of CS to plot}
 
