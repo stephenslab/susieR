@@ -3,17 +3,17 @@
 #' @title Sum of Single Effects (SuSiE) Regression
 #'
 #' @description Performs Bayesian multiple linear regression of Y on
-#'   X; that is, this function fits the regression model \eqn{Y = \sum_l
-#'   X b_{l=1}^L + e}, where elements of e are \emph{i.i.d.} normal with
-#'   zero mean and variance \code{residual_variance}, and
-#'   \eqn{\sum_{l=1}^L b_l} is a vector of length p representing the
-#'   effects to be estimated. The SuSiE assumption is that each
-#'   \eqn{b_l} has exactly one non-zero element. The prior on the
-#'   non-zero element is normal with zero mean and variance \code{var(Y)
-#'   * scaled_prior_variance}.  The model is fitted using the "Iterative
-#'   Bayesian Stepwise Selection" (IBSS) algorithm.  See also
-#'   \code{\link{susie_trendfilter}} for applying susie to
-#'   non-parametric regression, particularly changepoint problems.
+#' X; that is, this function fits the regression model \eqn{Y = \sum_l
+#' X b_{l=1}^L + e}, where elements of e are \emph{i.i.d.} normal with
+#' zero mean and variance \code{residual_variance}, and
+#' \eqn{\sum_{l=1}^L b_l} is a vector of length p representing the
+#' effects to be estimated. The SuSiE assumption is that each
+#' \eqn{b_l} has exactly one non-zero element. The prior on the
+#' non-zero element is normal with zero mean and variance \code{var(Y)
+#' * scaled_prior_variance}.  The model is fitted using the
+#' \dQuote{Iterative Bayesian Stepwise Selection} (IBSS) algorithm.
+#' See also \code{\link{susie_trendfilter}} for applying susie to
+#' non-parametric regression, particularly changepoint problems.
 #'
 #' @param X An n by p matrix of covariates.
 #'
@@ -93,8 +93,8 @@
 #'
 #' @param s_init A previous susie fit with which to initialize.
 #'
-#' @param coverage A number between 0 and 1 specifying the "coverage" of
-#'   the estimated confidence sets.
+#' @param coverage A number between 0 and 1 specifying the
+#'   \dQuote{coverage} of the estimated confidence sets.
 #'
 #' @param min_abs_corr Minimum absolute correlation allowed in a
 #'   credible set. The default, 0.5, corresponds to a squared
@@ -112,8 +112,8 @@
 #' @param tol A small, non-negative number specifying the convergence
 #'   tolerance for the IBSS fitting procedure. The fitting procedure
 #'   will halt when the difference in the variational lower bound, or
-#'   "ELBO" (this is the objective function to be maximized), is less
-#'   than \code{tol}.
+#'   \dQuote{ELBO} (this is the objective function to be maximized), is
+#'   less than \code{tol}.
 #'
 #' @param verbose If \code{verbose = TRUE}, the algorithm's progress,
 #'   and a summary of the optimization settings, are printed to the
@@ -144,11 +144,11 @@
 #' \item{V}{Prior variance of the non-zero elements of b, equal to
 #'   \code{scaled_prior_variance * var(Y)}.}
 #'
-#' \item{elbo}{The value of the variational lower bound, or "ELBO"
-#'   (the objective function to be maximized), achieved at each
-#'   iteration of the IBSS fitting procedure.}
+#' \item{elbo}{The value of the variational lower bound, or
+#'   \dQuote{ELBO} (the objective function to be maximized), achieved at
+#'   each iteration of the IBSS fitting procedure.}
 #'
-#' \item{fitted}{Vector of length n containing the "fitted" values of
+#' \item{fitted}{Vector of length n containing the fitted values of
 #'   the outcome.}
 #'
 #' \item{sets}{Credible sets estimated from model fit; see

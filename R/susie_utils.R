@@ -1,13 +1,14 @@
 #' @rdname susie_get_methods
 #'
-#' @title Add Title Here.
+#' @title Inferences From Fitted SuSiE Model
 #' 
-#' @description Give overview here.
+#' @description These functions access basic properties or draw
+#'   inferences from a fitted susie model.
 #' 
 #' @param res A susie fit, typically an output from
-#' \code{\link{susie}} or one of its variants. For
-#' \code{susie_get_pip}, this may instead be the posterior inclusion
-#' probability matrix, \code{alpha}.
+#'   \code{\link{susie}} or one of its variants. For
+#'   \code{susie_get_pip} and \code{susie_get_cs}, this may instead be
+#'   the posterior inclusion probability matrix, \code{alpha}.
 #' 
 #' @param last_only Whether or not to get ELBO from all iterations.
 #' 
@@ -16,7 +17,7 @@
 #' 
 #' @return \code{susie_get_objective} returns the evidence lower bound
 #' (ELBO) achieved by the fitted susie model.
-#' \code{susie_get_residual_variance} reeturns the (estimated or
+#' \code{susie_get_residual_variance} returns the (estimated or
 #' fixed) residual variance parameter. \code{susie_get_prior_variance}
 #' returns the (estimated or fixed) prior variance parameters.
 #' \code{susie_get_posterior_mean} returns the posterior mean for the
@@ -29,6 +30,25 @@
 #' variables. \code{susie_get_lfsr} returns a vector containing the
 #' average lfsr across variables for each single-effect, weighted by
 #' the posterior inclusion probability (alpha).
+#'
+#' \code{susie_get_cs} returns credible sets (CSs) from a susie fit,
+#' as well as summaries of correlation among the variables included in
+#' each CS. If desired, one can filter out CSs that do not meet a
+#' specified purity threshold; to do this, either \code{X} or
+#' \code{Xcorr} must be supplied. It returns a list with the following
+#' elements:
+#'
+#' \item{cs}{A list in which each list element is a vector containing
+#'   the indices of the variables in the CS.}
+#' 
+#' \item{coverage}{The nominal coverage specified for each CS.}
+#' 
+#' \item{purity}{If \code{X} or \code{Xcorr} iis provided), the
+#'   purity of each CS.}
+#' 
+#' \item{cs_index}{If \code{X} or \code{Xcorr} is provided) the index
+#'   (number between 1 and L) of each reported CS in the supplied susie
+#'   fit.}
 #' 
 #' @export
 #' 
@@ -91,31 +111,20 @@ susie_get_lfsr = function (res) {
 
 #' @rdname susie_get_methods
 #' 
-#' @title Extract credible sets from SuSiE fit
-#' 
-#' @details Reports indices of variables in each credible set (CS)
-#'   identified, as well as summaries of correlation among the variables
-#'   included in each CS.  If desired, one can filter out CSs that do
-#'   not meet a specified purity threshold (min_abs_corr); to do this
-#'   either `X` or `Xcorr` must be supplied.
-#' 
-#' @param res a susie fit, the output of `susieR::susie()`, or simply
-#' the posterior inclusion probability matrix alpha.
-#' 
-#' @param X n by p matrix of values of the P variables (covariates) in
-#' n samples.  When provided, correlation between variables will be
-#' computed and used to remove CSs whose minimum correlation among
-#' variables is smaller than `min_abs_corr` (see below).
+#' @param X n by p matrix of values of the p variables (covariates) in
+#'   n samples. When provided, correlation between variables will be
+#'   computed and used to remove CSs whose minimum correlation among
+#'   variables is smaller than \code{min_abs_corr}.
 #' 
 #' @param Xcorr p by p matrix of correlations between variables
-#' (covariates). When provided, it will be used to remove CSs whose
-#' minimum correlation among variables is smaller than
-#' \code{min_abs_corr}.
+#'   (covariates). When provided, it will be used to remove CSs whose
+#'   minimum correlation among variables is smaller than
+#'   \code{min_abs_corr}.
 #' 
-#' @param coverage A number between 0 and 1] specifying desired
+#' @param coverage A number between 0 and 1 specifying desired
 #'   coverage of each CS.
 #' 
-#' @param min_abs_corr a "purity" threshold for the CS. Any CS that
+#' @param min_abs_corr A "purity" threshold for the CS. Any CS that
 #'   contains a pair of variables with correlation less than this
 #'   threshold will be filtered out and not reported.
 #' 
@@ -123,17 +132,6 @@ susie_get_lfsr = function (res) {
 #' 
 #' @param squared If \code{squared = TRUE}, report min, mean and
 #' median of squared correlation instead of the absolute correlation.
-#' 
-#' @return A list with the following elements:
-#'
-#' \item{cs}{a list, each element corresponds to a CS, and is a vector containing the indices of the variables in the CS.}
-#' 
-#' \item{coverage}{the nominal coverage specified for each CS.}
-#' 
-#' \item{purity}{(If `X` or `Xcorr` are provided), the purity of each CS.}
-#' 
-#' \item{cs_index}{(If `X` or `Xcorr` are provided) the index (in
-#'   1,...,L) of each reported CS in the supplied susie fit.}
 #' 
 #' @export
 #' 
