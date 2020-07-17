@@ -9,7 +9,7 @@
 \arguments{
 \item{object}{A susie fit.}
 
-\item{\dots}{Additional arguments passed to the default \code{coef}
+\item{\dots}{Additional arguments passed to the generic \code{coef}
 method.}
 }
 \value{

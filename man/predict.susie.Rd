@@ -14,6 +14,9 @@
 \item{type}{The type of output. For \code{type = "response"},
 predicted or fitted outcomes are returned; for \code{type =
 "coefficients"}, the estimated coefficients are returned.}
+
+\item{\dots}{Other arguments used by generic predict function. These
+extra arguments are not used here.}
 }
 \value{
 For \code{type = "response"}, predicted or fitted outcomes
