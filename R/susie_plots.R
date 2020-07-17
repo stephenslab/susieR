@@ -139,6 +139,8 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
     pos = (1 + start_adj):(length(p) - end_adj)
   }
   legend_text = list(col = vector(),purity = vector(),size = vector())
+  scipen0 <- options()$scipen
+  options(scipen = 10)
   plot(pos,p[pos],ylab = ylab,pch = 16,...)
   if (is_susie && !is.null(model$sets$cs)) {
     for(i in rev(1:nrow(model$alpha))){
@@ -187,6 +189,7 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
     }
   }
   points(pos[b != 0],p[b != 0],col = 2,pch = 16)
+  options(scipen = scipen0)
   return(NULL)
 }
 
