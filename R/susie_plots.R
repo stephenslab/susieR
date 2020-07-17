@@ -2,32 +2,50 @@
 #' 
 #' @title SuSiE Plots.
 #'
-#' @details Plot per variable summary in SuSiE CSs.
+#' @description \code{susie_plot} produces a per-variable summary of
+#'   the SuSiE credible sets. \code{susie_plot_iteration} produces a
+#'   diagnostic plot for the susie model fitting.  For
+#'   \code{susie_plot_iteration}, several plots will be created if
+#'   \code{track_fit = TRUE} when calling \code{susie}.
 #' 
-#' @param model a susie fit, the output of `susieR::susie()`.
-#' It has to contain `z`, `PIP` and optionally `sets`.
-#' It is also possible to take in a vector of z-score or PIP,
-#' in order to plot data from other software program.
+#' @param model A susie fit, typically an output from
+#'   \code{\link{susie}} or one of its variants.  For \code{suse_plot},
+#'   the susie fit must have \code{model$z}, \code{model$PIP}, and may
+#'   include \code{model$sets}. \code{model} may also be a vector of
+#'   z-scores or PIPs.
 #' 
-#' @param y a string indicating what to plot: z (for z-score), PIP,
-#' log10PIP or a random label to plot input data as is.
+#' @param y A string indicating what to plot: either \code{"z"} for
+#'   z-scores, \code{"PIP"}, \code{"log10PIP"}, or a random label to
+#'   plot input data as is.
 #' 
-#' @param add_bar add horizontal bar to signals in credible interval.
+#' @param add_bar If \code{add_bar = TRUE}, add horizontal bar to
+#'   signals in credible interval.
 #' 
-#' @param pos can be either 1) numeric vector of indices of variables
-#' to plot, default to all variables, or 2) a list of \code{list(attr
-#' = , start = , end = )} where \code{attr} is a character string of
-#' the name of index variable in \code{model} object, \code{start} and
-#' \code{end} are boundaries of indices to plot.
+#' @param pos This can be either be: (1) a numeric vector of indices
+#'   of variables to plot, or (2) a list with list elements
+#'   \code{pos$attr}, \code{pos$start} and \code{pos$end}, where
+#'   \code{pos$attr} is a character string of the name of index variable
+#'   in \code{model} object, and \code{pos$start} and \code{pos$end} are
+#'   boundaries of indices to plot.
 #' 
-#' @param b for simulated data, specify b = true effects (highlights in red).
+#' @param b For simulated data, set \code{b = TRUE} to highlight
+#'   "true" effects (highlights in red).
 #' 
-#' @param max_cs the biggest CS to display, based on purity (set
-#' max_cs in between 0 and 1) or size (>1).
+#' @param max_cs The largest credible set to display, either based on
+#'   purity (set \code{max_cs} between 0 and 1), or based on size (set
+#'   \code{max_cs > 1}).
 #' 
-#' @param add_legend if TRUE, add a legend to annotate the size and
-#' purity of each CS discovered.
+#' @param add_legend If \code{add_legend = TRUE}, add a legend to
+#'   annotate the size and purity of each CS discovered.
 #'
+#' @param \dots Additional arguments passed to
+#'   \code{\link[graphics]{plot}}.
+#' 
+#' @seealso \code{\link{susie_plot_changepoint}}
+#'
+#' @examples
+#' # Add example(s) here.
+#' 
 #' @importFrom utils head
 #' @importFrom stats pnorm
 #' @importFrom graphics plot
@@ -37,7 +55,9 @@
 #' @importFrom graphics par
 #'
 #' @export
-susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,add_legend=FALSE,...){
+#' 
+susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
+                       max_cs = 400, add_legend = FALSE, ...) {
   is_susie = inherits(model,"susie")
   ylab = y
   color = c(
@@ -58,117 +78,126 @@ susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,add_legen
   if (y == "z") {
     if (is_susie) {
       if (is.null(model$z))
-        stop("z-score not available from SuSiE fit. Please set `compute_univariate_zscore=TRUE` in `susie()` function call.")
+        stop("z-scores are available from SuSiE fit; please set ",
+             "compute_univariate_zscore = TRUE in susie() call")
       zneg = -abs(model$z)
     }
-    else zneg = -abs(model)
+    else
+      zneg = -abs(model)
     p = -log10(pnorm(zneg))
     ylab = "-log10(p)"
-  } else if (y=="PIP") {
-    if (is_susie) p = model$pip
-    else p = model
+  } else if (y == "PIP") {
+    if (is_susie)
+      p = model$pip
+    else
+      p = model
   } else if (y=="log10PIP") {
-    if (is_susie) p = log10(model$pip)
-    else p = log10(model)
+    if (is_susie)
+      p = log10(model$pip)
+    else
+     p = log10(model)
     ylab = "log10(PIP)"
   } else {
-    if (is_susie) stop("Need to specify z or PIP or log10PIP for SuSiE fits")
+    if (is_susie)
+      stop("Need to specify z or PIP or log10PIP for SuSiE fits")
     p = model
   }
-  if(is.null(b)){b = rep(0,length(p))}
-  if(is.null(pos)){
+  if(is.null(b))
+    b = rep(0,length(p))
+  if(is.null(pos))
     pos = 1:length(p)
-  }
-  if (inherits(pos, 'list')) {
-    # check input
-    if (is.null(pos$attr) || is.null(pos$start) || is.null(pos$end)) {
+  if (inherits(pos,"list")) {
+      
+    # Check input.
+    if (is.null(pos$attr) || is.null(pos$start) || is.null(pos$end))
       stop("pos argument should be a list of list(attr=,start=,end=)")
-    }
-    if (!(pos$attr %in% names(model))) stop(paste("Cannot find attribute", pos$attr, "in input model object"))
-    if (pos$start>=pos$end) stop("Position start should be smaller than end")
-    start = min(min(model[[pos$attr]]), pos$start)
-    end = max(max(model[[pos$attr]]), pos$end)
+    if (!(pos$attr %in% names(model)))
+      stop(paste("Cannot find attribute",pos$attr,"in input model object"))
+    if (pos$start >= pos$end)
+      stop("Position start should be smaller than end")
+    start = min(min(model[[pos$attr]]),pos$start)
+    end = max(max(model[[pos$attr]]),pos$end)
     
-    # add zeros to alpha and p
-    alpha = matrix(0, nrow(model$alpha), end - start + 1)
-    new_p = rep(min(p), end - start + 1)
+    # Add zeros to alpha and p.
+    alpha = matrix(0,nrow(model$alpha),end - start + 1)
+    new_p = rep(min(p),end - start + 1)
     pos_with_value = model[[pos$attr]] - start + 1
     new_p[pos_with_value] = p
     alpha[,pos_with_value] = model$alpha
     p = new_p
     model$alpha = alpha
-    # adjust model$cs
+    
+    # Adjust model$cs.
     if (!is.null(model$sets$cs)) {
-      for (i in 1:length(model$sets$cs)) {
+      for (i in 1:length(model$sets$cs)) 
         model$sets$cs[[i]] = pos_with_value[model$sets$cs[[i]]]
-      }
     }
-    # change pos object to be indices 
-    start_adj = -min(min(model[[pos$attr]]) - pos$start, 0)
-    end_adj = max(max(model[[pos$attr]]) - pos$end, 0)
+    
+    # Change "pos" object to be indices .
+    start_adj = -min(min(model[[pos$attr]]) - pos$start,0)
+    end_adj = max(max(model[[pos$attr]]) - pos$end,0)
     pos = (1 + start_adj):(length(p) - end_adj)
   }
-  legend_text = list(col = vector(), purity = vector(), size = vector())
-  options(scipen=10)
-  plot(pos,p[pos],ylab=ylab, pch=16, ...)
+  legend_text = list(col = vector(),purity = vector(),size = vector())
+  plot(pos,p[pos],ylab = ylab,pch = 16,...)
   if (is_susie && !is.null(model$sets$cs)) {
     for(i in rev(1:nrow(model$alpha))){
-      if (!is.null(model$sets$cs_index) && !(i %in% model$sets$cs_index)) {
+      if (!is.null(model$sets$cs_index) && !(i %in% model$sets$cs_index)) 
         next
-      }
-      purity = model$sets$purity[which(model$sets$cs_index==i),1]
+      purity = model$sets$purity[which(model$sets$cs_index == i),1]
       if (!is.null(model$sets$purity) && max_cs < 1 && purity >= max_cs) {
-        x0 = intersect(pos, model$sets$cs[[which(model$sets$cs_index==i)]])
+        x0 = intersect(pos,model$sets$cs[[which(model$sets$cs_index == i)]])
         y1 = p[x0]
-      } else if (n_in_CS(model, model$sets$coverage)[i]<max_cs) {
-        x0 = intersect(pos, which(in_CS(model, model$sets$coverage)[i,]>0))
+      } else if (n_in_CS(model, model$sets$coverage)[i] < max_cs) {
+        x0 = intersect(pos,which(in_CS(model,model$sets$coverage)[i,] > 0))
         y1 = p[x0]
       } else {
         x0 = NULL
         y1 = NULL
       }
-      if (is.null(x0)) {
+      if (is.null(x0))
         next
-      }
       if (add_bar) {
-        y0 = rep(0, length(x0))
+        y0 = rep(0,length(x0))
         x1 = x0
-        segments(x0,y0,x1,y1,lwd=1.5,col="gray")
+        segments(x0,y0,x1,y1,lwd = 1.5,col = "gray")
       }
-      points(x0, y1,col=head(color, 1),cex=1.5,lwd=2.5)
-      legend_text$col = append(legend_text$col, head(color, 1))
-      # rotate color
+      points(x0,y1,col = head(color,1),cex = 1.5,lwd = 2.5)
+      legend_text$col = append(legend_text$col,head(color,1))
+      
+      # Rotate color.
       color = c(color[-1], color[1])
-      legend_text$purity = append(round(purity,4), legend_text$purity)
-      legend_text$size = append(length(x0), legend_text$size)
+      legend_text$purity = append(round(purity,4),legend_text$purity)
+      legend_text$size = append(length(x0),legend_text$size)
     }
     if (length(legend_text$col) > 0 && add_legend) {
-      # plot legend
+        
+      # Plot legend.
       text = vector()
       for (i in 1:length(legend_text$col)) {
-        if (legend_text$size[i] == 1) text[i] = paste0("L", i, ": C=1")
-        else text[i] = paste0("L", i, ": C=", legend_text$size[i], "/R=", legend_text$purity[i])
+        if (legend_text$size[i] == 1)
+          text[i] = paste0("L",i,": C=1")
+        else
+          text[i] = paste0("L",i,": C=",legend_text$size[i],"/R=",
+                           legend_text$purity[i])
       }
-      legend(par("xaxp")[1], 1.1 * par("yaxp")[2], text,
-        xpd = TRUE, horiz = TRUE, inset = c(0, 0), bty = "n", pch = 15, col = legend_text$col, cex = 0.75)
+      legend(par("xaxp")[1],1.1*par("yaxp")[2],text,xpd = TRUE,horiz = TRUE,
+             inset = c(0,0),bty = "n",pch = 15,col = legend_text$col,
+             cex = 0.75)
     }
   }
-  points(pos[b!=0],p[b!=0],col=2,pch=16)
+  points(pos[b != 0],p[b != 0],col = 2,pch = 16)
+  return(NULL)
 }
 
 #' @rdname susie_plots
 #' 
-#' @details Diagnostic plot for SuSiE iterations
+#' @param L An integer specifying the number of credible sets to plot.
 #' 
-#' @param model a susie fit, the output of `susieR::susie()`.
-#' Multiple plots will be made for all iterations if `track_fit` was
-#' set to `TRUE` when running SuSiE.
+#' @param file_prefix Prefix to path of output plot file.
 #' 
-#' @param L an integer, number of CS to plot
-#' 
-#' @param file_prefix prefix to path of output plot file
-#' 
-#' @param pos index of variables to plot, default to all variables
+#' @param pos Indices of variables to plot. If \code{pos = NULL} all
+#'   variables are plotted.
 #' 
 #' @importFrom grDevices pdf
 #' @importFrom grDevices dev.off
@@ -183,7 +212,7 @@ susie_plot = function(model,y,add_bar=FALSE,pos=NULL,b=NULL,max_cs=400,add_legen
 #' 
 susie_plot_iteration = function (model, L, file_prefix, pos = NULL) {
   get_layer = function (obj, k, idx, vars) {
-    alpha = melt(obj$alpha[1:k,vars,drop=FALSE])
+    alpha = melt(obj$alpha[1:k,vars,drop = FALSE])
     colnames(alpha) = c("L","variables","alpha")
     alpha$L = as.factor(alpha$L)
     ggplot(alpha,aes_string("variables","alpha",group = "L")) +
@@ -198,7 +227,7 @@ susie_plot_iteration = function (model, L, file_prefix, pos = NULL) {
     vars = pos
   pdf(paste0(file_prefix,".pdf"),8,3)
   if (is.null(model$trace))
-    print(get_layer(model, k, model$niter, vars))
+    print(get_layer(model,k,model$niter,vars))
   else {
     for (i in 2:length(model$trace))
       print(get_layer(model$trace[[i]],k,i-1,vars))
@@ -221,4 +250,5 @@ susie_plot_iteration = function (model, L, file_prefix, pos = NULL) {
       format = ".gif"
   }
   cat(paste0("Iterplot saved to ",file_prefix,format,"\n"))
+  return(NULL)
 }

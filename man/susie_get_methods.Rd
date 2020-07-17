@@ -117,3 +117,7 @@ elements:
 These functions access basic properties or draw
   inferences from a fitted susie model.
 }
+\examples{
+# Add example(s) here.
+
+}

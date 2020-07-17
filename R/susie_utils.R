@@ -49,6 +49,9 @@
 #' \item{cs_index}{If \code{X} or \code{Xcorr} is provided) the index
 #'   (number between 1 and L) of each reported CS in the supplied susie
 #'   fit.}
+#'
+#' @examples
+#' # Add example(s) here.
 #' 
 #' @export
 #' 

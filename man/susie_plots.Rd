@@ -19,34 +19,50 @@ susie_plot(
 susie_plot_iteration(model, L, file_prefix, pos = NULL)
 }
 \arguments{
-\item{model}{a susie fit, the output of `susieR::susie()`.
-Multiple plots will be made for all iterations if `track_fit` was
-set to `TRUE` when running SuSiE.}
+\item{model}{A susie fit, typically an output from
+\code{\link{susie}} or one of its variants.  For \code{suse_plot},
+the susie fit must have \code{model$z}, \code{model$PIP}, and may
+include \code{model$sets}. \code{model} may also be a vector of
+z-scores or PIPs.}
 
-\item{y}{a string indicating what to plot: z (for z-score), PIP,
-log10PIP or a random label to plot input data as is.}
+\item{y}{A string indicating what to plot: either \code{"z"} for
+z-scores, \code{"PIP"}, \code{"log10PIP"}, or a random label to
+plot input data as is.}
 
-\item{add_bar}{add horizontal bar to signals in credible interval.}
+\item{add_bar}{If \code{add_bar = TRUE}, add horizontal bar to
+signals in credible interval.}
 
-\item{pos}{index of variables to plot, default to all variables}
+\item{pos}{Indices of variables to plot. If \code{pos = NULL} all
+variables are plotted.}
 
-\item{b}{for simulated data, specify b = true effects (highlights in red).}
+\item{b}{For simulated data, set \code{b = TRUE} to highlight
+"true" effects (highlights in red).}
 
-\item{max_cs}{the biggest CS to display, based on purity (set
-max_cs in between 0 and 1) or size (>1).}
+\item{max_cs}{The largest credible set to display, either based on
+purity (set \code{max_cs} between 0 and 1), or based on size (set
+\code{max_cs > 1}).}
 
-\item{add_legend}{if TRUE, add a legend to annotate the size and
-purity of each CS discovered.}
+\item{add_legend}{If \code{add_legend = TRUE}, add a legend to
+annotate the size and purity of each CS discovered.}
 
-\item{L}{an integer, number of CS to plot}
+\item{\dots}{Additional arguments passed to
+\code{\link[graphics]{plot}}.}
 
-\item{file_prefix}{prefix to path of output plot file}
+\item{L}{An integer specifying the number of credible sets to plot.}
+
+\item{file_prefix}{Prefix to path of output plot file.}
 }
 \description{
-SuSiE Plots.
+\code{susie_plot} produces a per-variable summary of
+  the SuSiE credible sets. \code{susie_plot_iteration} produces a
+  diagnostic plot for the susie model fitting.  For
+  \code{susie_plot_iteration}, several plots will be created if
+  \code{track_fit = TRUE} when calling \code{susie}.
 }
-\details{
-Plot per variable summary in SuSiE CSs.
+\examples{
+# Add example(s) here.
 
-Diagnostic plot for SuSiE iterations
+}
+\seealso{
+\code{\link{susie_plot_changepoint}}
 }
