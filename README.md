@@ -45,7 +45,7 @@ To automatically retrieve and install `susieR` from this repository,
 with the vignettes included, run:
 
 ```R
-devtools::install_github("stephenslab/susieR@0.9.0")
+devtools::install_github("stephenslab/susieR")
 ```
 
 See [here](https://stephenslab.github.io/susieR/articles/mwe.html) for
