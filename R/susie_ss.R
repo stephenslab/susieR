@@ -13,8 +13,9 @@
 #' @param n The sample size.
 #' 
 #' @param var_y The sample variance of y, defined as \eqn{y'y/(n-1)}.
-#' If unknown, the coefficients (returned from \code{coef}) are on the
-#' standardized X, y scale.
+#'   Note that when the sample variance cannot be provided, the
+#'   coefficients (returned from \code{coef}) are computed on the
+#'   "standardized" X, y scale.
 #' 
 #' @param XtX A p by p matrix \eqn{X'X} in which the columns of X
 #'   are centered to have mean zero.
@@ -33,7 +34,7 @@
 #'
 #' @export
 #' 
-susie_suff_stat = function (bhat, shat, R, n, var_y = 1, XtX, Xty, yty,
+susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
                             maf = NULL, maf_thresh = 0, L = 10,
                             scaled_prior_variance = 0.2,
                             residual_variance = NULL,

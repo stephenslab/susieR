@@ -69,7 +69,7 @@ susie_suff_stat(
   shat,
   R,
   n,
-  var_y = 1,
+  var_y,
   XtX,
   Xty,
   yty,
@@ -265,8 +265,9 @@ eigenvectors of R.}
 \item{n}{The sample size.}
 
 \item{var_y}{The sample variance of y, defined as \eqn{y'y/(n-1)}.
-If unknown, the coefficients (returned from \code{coef}) are on the
-standardized X, y scale.}
+Note that when the sample variance cannot be provided, the
+coefficients (returned from \code{coef}) are computed on the
+"standardized" X, y scale.}
 
 \item{XtX}{A p by p matrix \eqn{X'X} in which the columns of X
 are centered to have mean zero.}
