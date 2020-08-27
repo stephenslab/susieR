@@ -15,6 +15,33 @@
 #' See also \code{\link{susie_trendfilter}} for applying susie to
 #' non-parametric regression, particularly changepoint problems.
 #'
+#' susie_suff_stat Performs sum of single-effect (susie) linear
+#' regression of y on X with summary statistics. The sufficient
+#' summary data required are EITHER the p vector bhat, the p vector
+#' shat, the p by p symmetric and positive semidefinite correlation
+#' (or covariance) matrix R, the sample size n, the variance of y; OR
+#' the p by p matrix X'X, the p vector X'y, the sum of squares of y
+#' (y'y) and the sample size.  The sufficient summary stats should
+#' come from the same individuals.  Both the columns of X and the
+#' vector y should be centered to have mean 0 before computing these
+#' summary statistics; you may also want to scale each column of X and
+#' y to have variance 1 (see examples). This function fits the
+#' regression model y = sum_l Xb_l + e, where elements of e are iid
+#' N(0,var=residual_variance) and the sum_l b_l is a p vector of
+#' effects to be estimated. The assumption is that each b_l has
+#' exactly one non-zero element, with all elements equally likely to
+#' be non-zero. The prior on the non-zero element is
+#' N(0,scaled_prior_variance*y'y/(n-1)).
+#' 
+#' susie_auto is an attempt to automate reliable running of susie even
+#' on hard problems. Implements a three-stage strategy for each L:
+#' first fit susie with very small residual error; next, estimate
+#' residual error; finally, estimate the prior variance. If the last
+#' step estimates some prior variances to be zero, stop. Otherwise,
+#' double L, and repeat.  Initial runs are performed with relaxed
+#' tolerance; the final run is performed using the default susie
+#' tolerance.
+#'
 #' @param X An n by p matrix of covariates.
 #'
 #' @param Y The observed responses, a vector of length n.
@@ -165,12 +192,20 @@
 #'   the IBSS converged to a solution within the chosen tolerance
 #'   level.}
 #'
+#' susie_suff_stat return value: a susie fit, which is a list with
+#' some or all of the following elements
+#'
+#' \item{XtXr}{an p vector of t(X) times fitted values, the fitted
+#'   values equal to X times colSums(alpha*mu))}
+#' 
+#' \item{V}{prior variance}
+#' 
 #' @references
 #'
 #' G. Wang, A. Sarkar, P. Carbonetto and M. Stephens (2020). A simple
-#' new approach to variable selection in regression, with application
-#' to genetic fine-mapping. \emph{bioRxiv}
-#' \url{https://doi.org/10.1101/501114}.
+#'   new approach to variable selection in regression, with application
+#'   to genetic fine-mapping. \emph{bioRxiv}
+#'   \url{https://doi.org/10.1101/501114}.
 #'
 #' @examples
 #' set.seed(1)
@@ -184,6 +219,22 @@
 #' coef(res)
 #' plot(y,predict(res))
 #'
+#' # From susie_suff_stat:
+#' set.seed(1)
+#' n    <- 1000
+#' p    <- 1000
+#' beta <- rep(0,p)
+#' beta[1:4] <- 1
+#' X        <- matrix(rnorm(n*p),nrow=n,ncol=p)
+#' y        <- c(X %*% beta + rnorm(n))
+#' input_ss <- compute_ss(X,y,standardize = TRUE)
+#' ss <- susieR:::univariate_regression(X, y)
+#' R <- with(input_ss, cov2cor(XtX))
+#' res1      <- with(input_ss,susie_suff_stat(XtX = XtX,Xty = Xty, yty = yty,n=n))
+#' coef(res1)
+#' res2      <- with(ss,susie_suff_stat(bhat = betahat, shat = sebetahat, R = R, n=n, var_y = var(y)))
+#' coef(res2)
+#' 
 #' @importFrom stats var
 #' @importFrom utils modifyList
 #'

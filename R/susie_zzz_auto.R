@@ -1,14 +1,5 @@
 #' @rdname susie
 #' 
-#' @details susie_auto is an attempt to automate reliable running of
-#' susie even on hard problems. Implements a three-stage strategy for
-#' each L: first fit susie with very small residual error; next,
-#' estimate residual error; finally, estimate the prior variance. If
-#' the last step estimates some prior variances to be zero,
-#' stop. Otherwise, double L, and repeat.  Initial runs are performed
-#' with relaxed tolerance; the final run is performed using the
-#' default susie tolerance.
-#'
 #' @param L_init The initial value of L.
 #' 
 #' @param L_max The maximum value of L to consider.
@@ -24,7 +15,7 @@
 #' 
 susie_auto = function (X, Y, L_init = 1, L_max = 512, verbose = FALSE,
                        init_tol = 1, standardize = TRUE, intercept = TRUE,
-                       max_iter = 100,tol = 1e-2,...) {
+                       max_iter = 100,tol = 1e-2, ...) {
   L = L_init
   if(verbose)
     message(paste0("Trying L=",L))

@@ -68,67 +68,68 @@ susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
                       check_R = TRUE, check_z = TRUE) {
     
   # Check input R.
-  if(nrow(R) != length(z)) {
-    stop(paste0('The dimension of correlation matrix (', nrow(R), ' by ', ncol(R), ') does not agree with expected (', length(z), ' by ', length(z), ')'))
-  }
-  if(!is_symmetric_matrix(R)){
-    stop('R is not a symmetric matrix.')
-  }
+  if(nrow(R) != length(z))
+    stop(paste0("The dimension of correlation matrix (", nrow(R)," by ",
+                ncol(R),") does not agree with expected (",length(z)," by ",
+                length(z),")"))
+  if (!is_symmetric_matrix(R))
+    stop("R is not a symmetric matrix")
   if (!(is.double(R) & is.matrix(R)) & !inherits(R,"CsparseMatrix"))
-    stop("Input R must be a double-precision matrix, or a sparse matrix.")
+    stop("Input R must be a double-precision matrix, or a sparse matrix")
 
-  # MAF filter
+  # MAF filter.
   if(!is.null(maf)){
-    if(length(maf) != length(z)){
-      stop(paste0('The length of maf does not agree with expected ', length(z)))
-    }
+    if(length(maf) != length(z))
+      stop(paste0("The length of maf does not agree with expected ",length(z)))
     id = which(maf > maf_thresh)
     R = R[id, id]
     z = z[id]
   }
 
-  if(any(is.infinite(z))){
-    stop('z contains infinite value.')
-  }
+  if(any(is.infinite(z)))
+    stop("z contains infinite value")
+
   # Check NA in R
-  if(any(is.na(R))){
-    stop('R matrix contains missing values.')
-  }
-  # replace NA in z with 0
-  if (any(is.na(z))){
-    warning('NA values in z-scores are replaced with 0.')
+  if (any(is.na(R)))
+    stop("R matrix contains missing values")
+
+  # Replace NAs in z with zeros.
+  if (any(is.na(z))) {
+    warning('NA values in z-scores are replaced with 0')
     z[is.na(z)] = 0
   }
 
-  # modification of R
+  # Modification of R.
   if(z_ld_weight > 0){
     R = muffled_cov2cor((1-z_ld_weight)* R + z_ld_weight * tcrossprod(z))
     R = (R + t(R))/2
     check_z = FALSE
   }
 
-  if (is.numeric(null_weight) && null_weight == 0) null_weight = NULL
+  if (is.numeric(null_weight) && null_weight == 0)
+    null_weight = NULL
   if (!is.null(null_weight)) {
     if (!is.numeric(null_weight))
       stop("Null weight must be numeric")
-    if (null_weight<0 || null_weight>=1)
-      stop('Null weight must be between 0 and 1')
+    if (null_weight < 0 || null_weight >= 1)
+      stop("Null weight must be between 0 and 1")
     if (missing(prior_weights))
-      prior_weights = c(rep(1/ncol(R)*(1-null_weight), ncol(R)), null_weight)
+      prior_weights = c(rep(1/ncol(R) * (1 - null_weight),ncol(R)),null_weight)
     else
-      prior_weights = c(prior_weights * (1-null_weight), null_weight)
-    R = cbind(rbind(R, 0),0)
-    z = c(z, 0)
+      prior_weights = c(prior_weights * (1 - null_weight),null_weight)
+    R = cbind(rbind(R,0),0)
+    z = c(z,0)
   }
 
-  if(!is.null(residual_variance) && (residual_variance>1 | residual_variance<0)){
-    stop('Residual variance should be a scaler between 0 and 1.')
+  if(!is.null(residual_variance) &&
+     (residual_variance > 1 | residual_variance < 0)){
+    stop("Residual variance should be a scaler between 0 and 1")
   }
-  if(is.null(residual_variance)){
+  if(is.null(residual_variance))
     residual_variance = 1
-  }
   p = ncol(R)
-  # eigen decomposition for R, filter on eigenvalues
+  
+  # Eigen decomposition for R, filter on eigenvalues.
   attr(R, 'eigen') = eigen(R, symmetric = TRUE)
   if (check_R && any(attr(R, 'eigen')$values < -r_tol)) {
     stop(paste0('The correlation matrix (', nrow(R), ' by ', ncol(R), 'is not a positive semidefinite matrix. The smallest eigen value is ', 
@@ -268,7 +269,7 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
     s = init_finalize_rss(s)
   }
 
-  estimate_prior_method <- match.arg(estimate_prior_method)
+  estimate_prior_method = match.arg(estimate_prior_method)
   # intialize elbo to NA
   elbo = rep(NA,max_iter+1)
   elbo[1] = -Inf;
@@ -318,18 +319,18 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
 
       s$sigma2 = est_sigma2
 
-      if(verbose){
-        print(paste0("after estimate sigma2 objective:", get_objective_rss(R, z, s)))
-      }
-      Sigma = update_Sigma(R, s$sigma2, z)
+      if (verbose)
+        print(paste0("after estimate sigma2 objective:",
+                     get_objective_rss(R,z,s)))
+      Sigma = update_Sigma(R,s$sigma2,z)
     }
   }
   elbo = elbo[2:(i+1)] # Remove first (infinite) entry, and trailing NAs.
-  s$elbo <- elbo
-  s$niter <- i
+  s$elbo = elbo
+  s$niter = i
 
   if (is.null(s$converged)) {
-    warning(paste("IBSS algorithm did not converge in", max_iter, "iterations!"))
+    warning(paste("IBSS algorithm did not converge in",max_iter,"iterations!"))
     s$converged = FALSE
   }
 
@@ -344,30 +345,33 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
   # SuSiE CS and PIP
   if (!is.null(coverage) && !is.null(min_abs_corr)) {
     R = muffled_cov2cor(R)
-    s$sets = susie_get_cs(s, coverage=coverage, Xcorr=R, min_abs_corr=min_abs_corr)
-    s$pip = susie_get_pip(s, prune_by_cs = FALSE, prior_tol = prior_tol)
+    s$sets = susie_get_cs(s,coverage = coverage,Xcorr = R,
+        min_abs_corr = min_abs_corr)
+    s$pip = susie_get_pip(s,prune_by_cs = FALSE,prior_tol = prior_tol)
   }
 
   return(s)
 }
 
-update_Sigma = function(R, sigma2, z){
-  Sigma = sigma2*R + attr(R, 'lambda') *diag(length(z))
-  eigenS = attr(R, 'eigen')
-  eigenS$values = sigma2*eigenS$values + attr(R, 'lambda')
+update_Sigma = function (R, sigma2, z) {
+  Sigma = sigma2*R + attr(R,"lambda") * diag(length(z))
+  eigenS = attr(R,"eigen")
+  eigenS$values = sigma2*eigenS$values + attr(R,"lambda")
 
   Dinv = 1/(eigenS$values)
   Dinv[is.infinite(Dinv)] = 0
-  attr(Sigma, 'eigenS') = eigenS
+  attr(Sigma,"eigenS") = eigenS
 
   # Sigma^(-1) R_j = U (sigma2 D + lambda)^(-1) D U^T e_j
-  attr(Sigma, 'SinvRj') = eigenS$vectors %*% (Dinv*attr(R, 'eigen')$values * t(eigenS$vectors))
+  attr(Sigma,"SinvRj") = eigenS$vectors %*% (Dinv * attr(R,"eigen")$values *
+                           t(eigenS$vectors))
 
-  if(attr(R, 'lambda')==0){
-    attr(Sigma, 'RjSinvRj') = attr(R, 'd')/sigma2
-  }else{
+  if(attr(R,"lambda") == 0)
+    attr(Sigma,"RjSinvRj") = attr(R,"d")/sigma2
+  else {
     tmp = t(eigenS$vectors)
-    attr(Sigma, 'RjSinvRj') = colSums(tmp * (Dinv*(attr(R, 'eigen')$values^2) * tmp))
+    attr(Sigma,"RjSinvRj") =
+      colSums(tmp * (Dinv*(attr(R,"eigen")$values^2) * tmp))
   }
 
   return(Sigma)

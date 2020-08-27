@@ -1,73 +1,36 @@
 #' @rdname susie
-
-#' @details Performs sum of single-effect (susie) linear regression of
-#' y on X with summary statistics. The sufficient summary data
-#' required are EITHER the p vector bhat, the p vector shat, the p by
-#' p symmetric and positive semidefinite correlation (or covariance)
-#' matrix R, the sample size n, the variance of y; OR the p by p
-#' matrix X'X, the p vector X'y, the sum of squares of y (y'y) and the
-#' sample size.  The sufficient summary stats should come from the
-#' same individuals.  Both the columns of X and the vector y should be
-#' centered to have mean 0 before computing these summary statistics;
-#' you may also want to scale each column of X and y to have variance
-#' 1 (see examples). This function fits the regression model y =
-#' sum_l Xb_l + e, where elements of e are iid
-#' N(0,var=residual_variance) and the sum_l b_l is a p vector of
-#' effects to be estimated. The assumption is that each b_l has
-#' exactly one non-zero element, with all elements equally likely to
-#' be non-zero. The prior on the non-zero element is
-#' N(0,scaled_prior_variance*y'y/(n-1)).
+#'
+#' @param bhat A p-vector of estimated effects.
 #' 
-#' @param bhat a p vector of estimated effects.
-#' 
-#' @param shat a p vector of corresponding standard errors.
+#' @param shat A p-vector of corresponding standard errors.
 #' 
 #' @param R A p by p symmetric and positive semidefinite matrix. It
-#' can be X'X, covariance matrix (X'X/(n-1)) or correlation matrix.
-#' It should from the same samples used to compute `bhat` and
-#' `shat`. Using out of sample matrix may produce unreliable results.
+#'   can be \eqn{X'X}, the covariance matrix \eqn{X'X/(n-1)}, or a
+#'   correlation matrix.  It should be estimated from the same samples
+#'   used to compute \code{bhat} and \code{shat}. Using an out-of-sample
+#'   matrix may produce unreliable results.
 #' 
-#' @param n sample size.
+#' @param n The sample size.
 #' 
-#' @param var_y the (sample) variance of y, defined as y'y/(n-1) . If
-#'   it is unknown, the coefficients (returned from `coef`) are on the
+#' @param var_y The (sample) variance of y, defined as \eqn{y'y/(n-1)} . If
+#'   unknown, the coefficients (returned from `coef`) are on the
 #'   standardized X, y scale.
 #' 
-#' @param XtX a p by p matrix, X'X, where columns of X are centered to
-#'   have mean 0
+#' @param XtX A p by p matrix \eqn{X'X} in which the columns of X
+#'   are centered to have mean zero.
 #' 
-#' @param Xty a p vector, X'y, where columns of X are centered and y
-#'   is centered to have mean 0
+#' @param Xty A p-vector \code{X'y} in which y and the columns of X are
+#'   centered to have mean zero.
 #' 
-#' @param yty a scaler, y'y, where y is centered to have mean 0
+#' @param yty A scalar \code{y'y} in which y is centered to have mean
+#'   zero.
 #' 
-#' @param check_input whether to perform checks on XtX and Xty, the
-#'   checks are: 1. Check whether XtX is positive semidefinite 2. Check
-#'   whether Xty in space spanned by the non-zero eigenvectors of XtX
-#'
-#' @return a susie fit, which is a list with some or all of the
-#' following elements
-#'
-#' \item{XtXr}{an p vector of t(X) times fitted values, the fitted
-#'   values equal to X times colSums(alpha*mu))}
-#' 
-#' \item{V}{prior variance}
+#' @param check_input If \code{check_input = TRUE}, performs checks on
+#'   \code{XtX} and \code{Xty}, the checks are: 1. Check whether XtX is
+#'   positive semidefinite 2. Check whether Xty in space spanned by the
+#'   non-zero eigenvectors of XtX
 #'
 #' @examples
-#' set.seed(1)
-#' n    <- 1000
-#' p    <- 1000
-#' beta <- rep(0,p)
-#' beta[1:4] <- 1
-#' X        <- matrix(rnorm(n*p),nrow=n,ncol=p)
-#' y        <- c(X %*% beta + rnorm(n))
-#' input_ss <- compute_ss(X,y,standardize = TRUE)
-#' ss <- susieR:::univariate_regression(X, y)
-#' R <- with(input_ss, cov2cor(XtX))
-#' res1      <- with(input_ss,susie_suff_stat(XtX = XtX,Xty = Xty, yty = yty,n=n))
-#' coef(res1)
-#' res2      <- with(ss,susie_suff_stat(bhat = betahat, shat = sebetahat, R = R, n=n, var_y = var(y)))
-#' coef(res2)
 #'
 #' @export
 #' 
@@ -87,7 +50,7 @@ susie_suff_stat = function (bhat, shat, R, n, var_y = 1, XtX, Xty, yty,
                             track_fit = FALSE, check_input = FALSE) {
     
   # Process input estimate_prior_method.
-  estimate_prior_method <- match.arg(estimate_prior_method)
+  estimate_prior_method = match.arg(estimate_prior_method)
 
   if(missing(n)) {
     stop('n must be provided')
@@ -224,8 +187,8 @@ susie_suff_stat = function (bhat, shat, R, n, var_y = 1, XtX, Xty, yty,
   }else{
     csd = rep(1, length = p)
   }
-  attr(XtX, "d") <- diag(XtX)
-  attr(XtX, "scaled:scale") <- csd
+  attr(XtX,"d") = diag(XtX)
+  attr(XtX,"scaled:scale") = csd
 
   # initialize susie fit
   s = init_setup(0,p,L,scaled_prior_variance,residual_variance,
@@ -250,18 +213,16 @@ susie_suff_stat = function (bhat, shat, R, n, var_y = 1, XtX, Xty, yty,
   for(i in 1:max_iter){
     if (track_fit)
       tracking[[i]] = susie_slim(s)
-    # alpha_old = alpha_new
     s = update_each_effect_ss(XtX, Xty, s, estimate_prior_variance,estimate_prior_method,check_null_threshold)
-    # alpha_new = s$alpha
 
     if(verbose){
       print(paste0("objective:",get_objective_ss(XtX, Xty, s, yty, n)))
-    }
+  }
+    
     # compute objective before updating residual variance
     # because part of the objective s$kl has already been computed
     # under the residual variance before the update
     elbo[i+1] = get_objective_ss(XtX, Xty, s, yty, n)
-    # if(max(abs(alpha_new - alpha_old)) < tol) break;
     if((elbo[i+1]-elbo[i])<tol) {
       s$converged = TRUE
       break;
@@ -269,7 +230,7 @@ susie_suff_stat = function (bhat, shat, R, n, var_y = 1, XtX, Xty, yty,
     if(estimate_residual_variance){
       est_sigma2 = estimate_residual_variance_ss(XtX,Xty,s,yty,n)
       if(est_sigma2 < 0){
-        stop('Estimating residual variance failed: the estimated value is negative')
+        stop("Estimating residual variance failed: the estimated value is negative")
       }
       s$sigma2 = est_sigma2
       if(verbose){
@@ -278,8 +239,8 @@ susie_suff_stat = function (bhat, shat, R, n, var_y = 1, XtX, Xty, yty,
     }
   }
   elbo = elbo[2:(i+1)] # Remove first (infinite) entry, and trailing NAs.
-  s$elbo <- elbo
-  s$niter <- i
+  s$elbo = elbo
+  s$niter = i
 
   if (is.null(s$converged)) {
     warning(paste("IBSS algorithm did not converge in", max_iter, "iterations!"))
@@ -310,10 +271,10 @@ susie_suff_stat = function (bhat, shat, R, n, var_y = 1, XtX, Xty, yty,
 # \item{matrix}{The matrix with eigen decomposition}
 # \item{status}{whether A is positive semidefinite}
 # \item{eigenvalues}{eigenvalues of A truncated by r_tol}
-check_semi_pd <- function (A, tol) {
+check_semi_pd = function (A, tol) {
   attr(A,"eigen") = eigen(A,symmetric = TRUE)
   eigenvalues = attr(A,"eigen")$values
-  eigenvalues[abs(eigenvalues) < tol] <- 0
+  eigenvalues[abs(eigenvalues) < tol] = 0
   return(list(matrix = A,
               status = !any(eigenvalues < 0),
               eigenvalues = eigenvalues))
@@ -328,7 +289,7 @@ check_semi_pd <- function (A, tol) {
 #  eigenvectors of A}
 # \item{msg}{msg gives the difference between the projected b and b if
 #   status is FALSE}
-check_projection <- function(A, b){
+check_projection = function (A, b) {
   if(is.null(attr(A,"eigen")))
     attr(A,"eigen") = eigen(A,symmetric = TRUE)
   B = attr(A,"eigen")$vectors[,attr(A,"eigen")$values >
