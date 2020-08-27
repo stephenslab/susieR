@@ -334,16 +334,16 @@ A \code{"susie"} object with some or all of the following
   the IBSS converged to a solution within the chosen tolerance
   level.}
 
-susie_suff_stat return value: a susie fit, which is a list with
-some or all of the following elements
+susie_suff_stat returns a susie fit, which is a list with some or
+all of the following elements
 
 \item{XtXr}{an p vector of t(X) times fitted values, the fitted
   values equal to X times colSums(alpha*mu))}
 
 \item{V}{prior variance}
 
-a susie fit, which is a list with some or all of the
-following elements
+susie_rss returns a susie fit, which is a list with some or all of the
+following elements:
 
 \item{Rr}{an p vector of t(X) times fitted values, the fitted
   values equal to X times colSums(alpha*mu))}
@@ -363,7 +363,8 @@ non-zero element is normal with zero mean and variance \code{var(Y)
 \dQuote{Iterative Bayesian Stepwise Selection} (IBSS) algorithm.
 See also \code{\link{susie_trendfilter}} for applying susie to
 non-parametric regression, particularly changepoint problems.
-
+}
+\details{
 susie_suff_stat Performs sum of single-effect (susie) linear
 regression of y on X with summary statistics. The sufficient
 summary data required are EITHER the p vector bhat, the p vector
@@ -382,17 +383,7 @@ exactly one non-zero element, with all elements equally likely to
 be non-zero. The prior on the non-zero element is
 N(0,scaled_prior_variance*y'y/(n-1)).
 
-susie_auto is an attempt to automate reliable running of susie even
-on hard problems. Implements a three-stage strategy for each L:
-first fit susie with very small residual error; next, estimate
-residual error; finally, estimate the prior variance. If the last
-step estimates some prior variances to be zero, stop. Otherwise,
-double L, and repeat.  Initial runs are performed with relaxed
-tolerance; the final run is performed using the default susie
-tolerance.
-}
-\details{
-Performs sum of single-effect (SuSiE) linear regression
+susie_rss performs sum of single-effect (SuSiE) linear regression
 with z scores. The summary data required are the p by p
 correlation matrix R, the p vector z. The summary stats should come
 from the same individuals.  This function fits the regression model
@@ -401,6 +392,15 @@ sum_l b_l is a p vector of effects to be estimated.  The assumption
 is that each b_l has exactly one non-zero element, with all
 elements equally likely to be non-zero. The prior on the non-zero
 element is N(0,var=prior_variance).
+
+susie_auto is an attempt to automate reliable running of susie even
+on hard problems. Implements a three-stage strategy for each L:
+first fit susie with very small residual error; next, estimate
+residual error; finally, estimate the prior variance. If the last
+step estimates some prior variances to be zero, stop. Otherwise,
+double L, and repeat.  Initial runs are performed with relaxed
+tolerance; the final run is performed using the default susie
+tolerance.
 }
 \examples{
 set.seed(1)
@@ -429,7 +429,6 @@ res1      <- with(input_ss,susie_suff_stat(XtX = XtX,Xty = Xty, yty = yty,n=n))
 coef(res1)
 res2      <- with(ss,susie_suff_stat(bhat = betahat, shat = sebetahat, R = R, n=n, var_y = var(y)))
 coef(res2)
-
 
 }
 \references{

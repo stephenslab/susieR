@@ -15,7 +15,7 @@
 #' See also \code{\link{susie_trendfilter}} for applying susie to
 #' non-parametric regression, particularly changepoint problems.
 #'
-#' susie_suff_stat Performs sum of single-effect (susie) linear
+#' @details susie_suff_stat Performs sum of single-effect (susie) linear
 #' regression of y on X with summary statistics. The sufficient
 #' summary data required are EITHER the p vector bhat, the p vector
 #' shat, the p by p symmetric and positive semidefinite correlation
@@ -32,6 +32,16 @@
 #' exactly one non-zero element, with all elements equally likely to
 #' be non-zero. The prior on the non-zero element is
 #' N(0,scaled_prior_variance*y'y/(n-1)).
+#' 
+#' susie_rss performs sum of single-effect (SuSiE) linear regression
+#' with z scores. The summary data required are the p by p
+#' correlation matrix R, the p vector z. The summary stats should come
+#' from the same individuals.  This function fits the regression model
+#' z = sum_l Rb_l + e, where e is N(0,residual_variance * R) and the
+#' sum_l b_l is a p vector of effects to be estimated.  The assumption
+#' is that each b_l has exactly one non-zero element, with all
+#' elements equally likely to be non-zero. The prior on the non-zero
+#' element is N(0,var=prior_variance).
 #' 
 #' susie_auto is an attempt to automate reliable running of susie even
 #' on hard problems. Implements a three-stage strategy for each L:
@@ -192,14 +202,22 @@
 #'   the IBSS converged to a solution within the chosen tolerance
 #'   level.}
 #'
-#' susie_suff_stat return value: a susie fit, which is a list with
-#' some or all of the following elements
+#' susie_suff_stat returns a susie fit, which is a list with some or
+#' all of the following elements
 #'
 #' \item{XtXr}{an p vector of t(X) times fitted values, the fitted
 #'   values equal to X times colSums(alpha*mu))}
 #' 
 #' \item{V}{prior variance}
 #' 
+#' susie_rss returns a susie fit, which is a list with some or all of the
+#' following elements:
+#' 
+#' \item{Rr}{an p vector of t(X) times fitted values, the fitted
+#'   values equal to X times colSums(alpha*mu))}
+#' 
+#' \item{V}{prior variance}
+#'
 #' @references
 #'
 #' G. Wang, A. Sarkar, P. Carbonetto and M. Stephens (2020). A simple

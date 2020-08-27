@@ -30,17 +30,15 @@
 #'   positive semidefinite 2. Check whether Xty in space spanned by the
 #'   non-zero eigenvectors of XtX
 #'
-#' @examples
-#'
 #' @export
 #' 
 susie_suff_stat = function (bhat, shat, R, n, var_y = 1, XtX, Xty, yty,
-                            maf=NULL, maf_thresh = 0, L = 10,
+                            maf = NULL, maf_thresh = 0, L = 10,
                             scaled_prior_variance = 0.2,
                             residual_variance = NULL,
                             estimate_residual_variance = TRUE,
                             estimate_prior_variance = TRUE,
-                            estimate_prior_method = c("optim", "EM", "simple"),
+                            estimate_prior_method = c("optim","EM","simple"),
                             check_null_threshold = 0, prior_tol = 1e-9,
                             r_tol = 1e-08, prior_weights = NULL,
                             null_weight = NULL, standardize = TRUE,

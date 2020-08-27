@@ -1,15 +1,5 @@
 #' @rdname susie
 #'
-#' @details Performs sum of single-effect (SuSiE) linear regression
-#' with z scores. The summary data required are the p by p
-#' correlation matrix R, the p vector z. The summary stats should come
-#' from the same individuals.  This function fits the regression model
-#' z = sum_l Rb_l + e, where e is N(0,residual_variance * R) and the
-#' sum_l b_l is a p vector of effects to be estimated.  The assumption
-#' is that each b_l has exactly one non-zero element, with all
-#' elements equally likely to be non-zero. The prior on the non-zero
-#' element is N(0,var=prior_variance).
-#' 
 #' @param z a p vector of z scores.
 #' 
 #' @param R a p by p symmetric and positive semidefinite correlation
@@ -44,14 +34,6 @@
 #' 
 #' @param check_z check whether z in space spanned by the non-zero
 #'   eigenvectors of R.
-#'
-#' @return a susie fit, which is a list with some or all of the
-#' following elements
-#' 
-#' \item{Rr}{an p vector of t(X) times fitted values, the fitted
-#'   values equal to X times colSums(alpha*mu))}
-#' 
-#' \item{V}{prior variance}
 #'
 #' @export
 #' 
@@ -248,7 +230,7 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
                 min((attr(R, 'eigen')$values), '. You can bypass this by "check_R = FALSE" which instead sets negative eigenvalues to 0 to allow for continued computations.')))
   }
 
-  # check whether z in space spanned by the non-zero eigenvectors of R
+  # Check whether z in space spanned by the non-zero eigenvectors of R.
   if (check_z) {
     proj = check_projection(R, z)
     if (!proj$status) {
@@ -260,17 +242,18 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
     }
   }
   R = set_R_attributes(R, r_tol)
-  # initialize susie fit
+  
+  # Initialize susie fit.
   s = init_setup_rss(p,L,prior_variance,residual_variance,prior_weights,null_weight)
   if (!missing(s_init)) {
     s = modifyList(s, s_init)
     s = init_finalize_rss(s, R=R)
-  } else {
+  } else
     s = init_finalize_rss(s)
-  }
 
   estimate_prior_method = match.arg(estimate_prior_method)
-  # intialize elbo to NA
+  
+  # Intialize elbo to NA.
   elbo = rep(NA,max_iter+1)
   elbo[1] = -Inf;
   tracking = list()
@@ -325,7 +308,9 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
       Sigma = update_Sigma(R,s$sigma2,z)
     }
   }
-  elbo = elbo[2:(i+1)] # Remove first (infinite) entry, and trailing NAs.
+  
+  # Remove first (infinite) entry, and trailing NAs.
+  elbo = elbo[2:(i+1)] 
   s$elbo = elbo
   s$niter = i
 
@@ -356,7 +341,7 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
 update_Sigma = function (R, sigma2, z) {
   Sigma = sigma2*R + attr(R,"lambda") * diag(length(z))
   eigenS = attr(R,"eigen")
-  eigenS$values = sigma2*eigenS$values + attr(R,"lambda")
+  eigenS$values = sigma2 * eigenS$values + attr(R,"lambda")
 
   Dinv = 1/(eigenS$values)
   Dinv[is.infinite(Dinv)] = 0
