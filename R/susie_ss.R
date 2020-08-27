@@ -102,6 +102,7 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
     if (missing(var_y)) {
       XtX = (n-1)*R
       Xty = sqrt(sigma2) * sqrt(n-1) * that
+      var_y = 1
     } else {
       XtXdiag = var_y * sigma2/(shat^2)
       Xty = that * var_y * sigma2/shat
