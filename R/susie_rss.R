@@ -1,6 +1,6 @@
 #' @rdname susie
 #'
-#' @param z a p vector of z scores.
+#' @param z A p-vector of z scores.
 #' 
 #' @param R a p by p symmetric and positive semidefinite correlation
 #' matrix. If it is from a reference panel, we recommend a

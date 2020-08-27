@@ -117,7 +117,7 @@ susie_auto(
 
 \item{Y}{The observed responses, a vector of length n.}
 
-\item{L}{Number of components (nonzero elements) in the SuSiE
+\item{L}{Number of components (nonzero elements) in the susie
 regression model. If L is larger than the number of covariates (p),
 L is set to p.}
 
@@ -221,11 +221,11 @@ console.}
 is also returned containing detailed information about the
 estimates at each iteration of the IBSS fitting procedure.}
 
-\item{z}{a p vector of z scores.}
+\item{z}{A p-vector of z scores.}
 
 \item{R}{A p by p symmetric and positive semidefinite matrix. It
 can be \eqn{X'X}, the covariance matrix \eqn{X'X/(n-1)}, or a
-correlation matrix.  It should be estimated from the same samples
+correlation matrix. It should be estimated from the same samples
 used to compute \code{bhat} and \code{shat}. Using an out-of-sample
 matrix may produce unreliable results.}
 
@@ -264,30 +264,31 @@ eigenvectors of R.}
 
 \item{n}{The sample size.}
 
-\item{var_y}{The (sample) variance of y, defined as \eqn{y'y/(n-1)} . If
-unknown, the coefficients (returned from `coef`) are on the
+\item{var_y}{The sample variance of y, defined as \eqn{y'y/(n-1)}.
+If unknown, the coefficients (returned from \code{coef}) are on the
 standardized X, y scale.}
 
 \item{XtX}{A p by p matrix \eqn{X'X} in which the columns of X
 are centered to have mean zero.}
 
-\item{Xty}{A p-vector \code{X'y} in which y and the columns of X are
+\item{Xty}{A p-vector \eqn{X'y} in which y and the columns of X are
 centered to have mean zero.}
 
-\item{yty}{A scalar \code{y'y} in which y is centered to have mean
+\item{yty}{A scalar \eqn{y'y} in which y is centered to have mean
 zero.}
 
-\item{check_input}{If \code{check_input = TRUE}, performs checks on
-\code{XtX} and \code{Xty}, the checks are: 1. Check whether XtX is
-positive semidefinite 2. Check whether Xty in space spanned by the
-non-zero eigenvectors of XtX}
+\item{check_input}{If \code{check_input = TRUE},
+\code{susie_suff_stat} performs additional checks on \code{XtX} and
+\code{Xty}. The checks are: (1) check whether \code{XtX} is
+positive semidefinite; (2) Check whether \code{Xty} is in the space
+spanned by the non-zero eigenvectors of \code{XtX}.}
 
 \item{L_init}{The initial value of L.}
 
-\item{L_max}{The maximum value of L to consider.}
+\item{L_max}{The largest value of L to consider.}
 
-\item{init_tol}{The tolerance to passed to susie during early runs
-(set large to shorten the initial runs).}
+\item{init_tol}{The tolerance to passed to \code{susie} during
+early runs (set large to shorten the initial runs).}
 
 \item{\dots}{Additional arguments passed to \code{\link{susie}}.}
 }
@@ -352,36 +353,35 @@ following elements:
 }
 \description{
 Performs Bayesian multiple linear regression of Y on
-X; that is, this function fits the regression model \eqn{Y = \sum_l
-X b_{l=1}^L + e}, where elements of e are \emph{i.i.d.} normal with
-zero mean and variance \code{residual_variance}, and
-\eqn{\sum_{l=1}^L b_l} is a vector of length p representing the
-effects to be estimated. The SuSiE assumption is that each
-\eqn{b_l} has exactly one non-zero element. The prior on the
-non-zero element is normal with zero mean and variance \code{var(Y)
-* scaled_prior_variance}.  The model is fitted using the
-\dQuote{Iterative Bayesian Stepwise Selection} (IBSS) algorithm.
-See also \code{\link{susie_trendfilter}} for applying susie to
-non-parametric regression, particularly changepoint problems.
+  X; that is, this function fits the regression model \eqn{Y = \sum_l
+  X b_{l=1}^L + e}, where elements of e are \emph{i.i.d.} normal with
+  zero mean and variance \code{residual_variance}, and
+  \eqn{\sum_{l=1}^L b_l} is a vector of length p representing the
+  effects to be estimated. The susie assumption is that each
+  \eqn{b_l} has exactly one non-zero element. The prior on the
+  non-zero element is normal with zero mean and variance \code{var(Y)
+  * scaled_prior_variance}. The model is fitted using the
+  \dQuote{Iterative Bayesian Stepwise Selection} (IBSS) algorithm.
+  See also \code{\link{susie_trendfilter}} for applying susie to
+  non-parametric regression, particularly changepoint problems.
 }
 \details{
-susie_suff_stat Performs sum of single-effect (susie) linear
-regression of y on X with summary statistics. The sufficient
-summary data required are EITHER the p vector bhat, the p vector
-shat, the p by p symmetric and positive semidefinite correlation
-(or covariance) matrix R, the sample size n, the variance of y; OR
-the p by p matrix X'X, the p vector X'y, the sum of squares of y
-(y'y) and the sample size.  The sufficient summary stats should
-come from the same individuals.  Both the columns of X and the
-vector y should be centered to have mean 0 before computing these
-summary statistics; you may also want to scale each column of X and
-y to have variance 1 (see examples). This function fits the
-regression model y = sum_l Xb_l + e, where elements of e are iid
-N(0,var=residual_variance) and the sum_l b_l is a p vector of
-effects to be estimated. The assumption is that each b_l has
-exactly one non-zero element, with all elements equally likely to
-be non-zero. The prior on the non-zero element is
-N(0,scaled_prior_variance*y'y/(n-1)).
+\code{susie_suff_stat} performs sum of single-effect
+linear regression with summary statistics. The required summary
+data are either: \code{bhat}, \code{shat}, the p by p symmetric and
+positive semidefinite correlation (or covariance) matrix R, the
+sample size n, the variance of y; OR the p by p matrix X'X, the p
+vector X'y, the sum of squares of y (y'y) and the sample size.  The
+sufficient summary stats should come from the same individuals.
+Both the columns of X and the vector y should be centered to have
+mean 0 before computing these summary statistics; you may also want
+to scale each column of X and y to have variance 1 (see
+examples). This function fits the regression model y = sum_l Xb_l +
+e, where elements of e are iid N(0,var=residual_variance) and the
+sum_l b_l is a p vector of effects to be estimated. The assumption
+is that each b_l has exactly one non-zero element, with all
+elements equally likely to be non-zero. The prior on the non-zero
+element is N(0,scaled_prior_variance*y'y/(n-1)).
 
 susie_rss performs sum of single-effect (SuSiE) linear regression
 with z scores. The summary data required are the p by p

@@ -3,35 +3,34 @@
 #' @title Sum of Single Effects (SuSiE) Regression
 #'
 #' @description Performs Bayesian multiple linear regression of Y on
-#' X; that is, this function fits the regression model \eqn{Y = \sum_l
-#' X b_{l=1}^L + e}, where elements of e are \emph{i.i.d.} normal with
-#' zero mean and variance \code{residual_variance}, and
-#' \eqn{\sum_{l=1}^L b_l} is a vector of length p representing the
-#' effects to be estimated. The SuSiE assumption is that each
-#' \eqn{b_l} has exactly one non-zero element. The prior on the
-#' non-zero element is normal with zero mean and variance \code{var(Y)
-#' * scaled_prior_variance}.  The model is fitted using the
-#' \dQuote{Iterative Bayesian Stepwise Selection} (IBSS) algorithm.
-#' See also \code{\link{susie_trendfilter}} for applying susie to
-#' non-parametric regression, particularly changepoint problems.
+#'   X; that is, this function fits the regression model \eqn{Y = \sum_l
+#'   X b_{l=1}^L + e}, where elements of e are \emph{i.i.d.} normal with
+#'   zero mean and variance \code{residual_variance}, and
+#'   \eqn{\sum_{l=1}^L b_l} is a vector of length p representing the
+#'   effects to be estimated. The susie assumption is that each
+#'   \eqn{b_l} has exactly one non-zero element. The prior on the
+#'   non-zero element is normal with zero mean and variance \code{var(Y)
+#'   * scaled_prior_variance}. The model is fitted using the
+#'   \dQuote{Iterative Bayesian Stepwise Selection} (IBSS) algorithm.
+#'   See also \code{\link{susie_trendfilter}} for applying susie to
+#'   non-parametric regression, particularly changepoint problems.
 #'
-#' @details susie_suff_stat Performs sum of single-effect (susie) linear
-#' regression of y on X with summary statistics. The sufficient
-#' summary data required are EITHER the p vector bhat, the p vector
-#' shat, the p by p symmetric and positive semidefinite correlation
-#' (or covariance) matrix R, the sample size n, the variance of y; OR
-#' the p by p matrix X'X, the p vector X'y, the sum of squares of y
-#' (y'y) and the sample size.  The sufficient summary stats should
-#' come from the same individuals.  Both the columns of X and the
-#' vector y should be centered to have mean 0 before computing these
-#' summary statistics; you may also want to scale each column of X and
-#' y to have variance 1 (see examples). This function fits the
-#' regression model y = sum_l Xb_l + e, where elements of e are iid
-#' N(0,var=residual_variance) and the sum_l b_l is a p vector of
-#' effects to be estimated. The assumption is that each b_l has
-#' exactly one non-zero element, with all elements equally likely to
-#' be non-zero. The prior on the non-zero element is
-#' N(0,scaled_prior_variance*y'y/(n-1)).
+#' @details \code{susie_suff_stat} performs sum of single-effect
+#' linear regression with summary statistics. The required summary
+#' data are either: \code{bhat}, \code{shat}, the p by p symmetric and
+#' positive semidefinite correlation (or covariance) matrix R, the
+#' sample size n, the variance of y; OR the p by p matrix X'X, the p
+#' vector X'y, the sum of squares of y (y'y) and the sample size.  The
+#' sufficient summary stats should come from the same individuals.
+#' Both the columns of X and the vector y should be centered to have
+#' mean 0 before computing these summary statistics; you may also want
+#' to scale each column of X and y to have variance 1 (see
+#' examples). This function fits the regression model y = sum_l Xb_l +
+#' e, where elements of e are iid N(0,var=residual_variance) and the
+#' sum_l b_l is a p vector of effects to be estimated. The assumption
+#' is that each b_l has exactly one non-zero element, with all
+#' elements equally likely to be non-zero. The prior on the non-zero
+#' element is N(0,scaled_prior_variance*y'y/(n-1)).
 #' 
 #' susie_rss performs sum of single-effect (SuSiE) linear regression
 #' with z scores. The summary data required are the p by p
@@ -56,7 +55,7 @@
 #'
 #' @param Y The observed responses, a vector of length n.
 #'
-#' @param L Number of components (nonzero elements) in the SuSiE
+#' @param L Number of components (nonzero elements) in the susie
 #'   regression model. If L is larger than the number of covariates (p),
 #'   L is set to p.
 #'

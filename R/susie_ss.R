@@ -6,29 +6,30 @@
 #' 
 #' @param R A p by p symmetric and positive semidefinite matrix. It
 #'   can be \eqn{X'X}, the covariance matrix \eqn{X'X/(n-1)}, or a
-#'   correlation matrix.  It should be estimated from the same samples
+#'   correlation matrix. It should be estimated from the same samples
 #'   used to compute \code{bhat} and \code{shat}. Using an out-of-sample
 #'   matrix may produce unreliable results.
 #' 
 #' @param n The sample size.
 #' 
-#' @param var_y The (sample) variance of y, defined as \eqn{y'y/(n-1)} . If
-#'   unknown, the coefficients (returned from `coef`) are on the
-#'   standardized X, y scale.
+#' @param var_y The sample variance of y, defined as \eqn{y'y/(n-1)}.
+#' If unknown, the coefficients (returned from \code{coef}) are on the
+#' standardized X, y scale.
 #' 
 #' @param XtX A p by p matrix \eqn{X'X} in which the columns of X
 #'   are centered to have mean zero.
 #' 
-#' @param Xty A p-vector \code{X'y} in which y and the columns of X are
+#' @param Xty A p-vector \eqn{X'y} in which y and the columns of X are
 #'   centered to have mean zero.
 #' 
-#' @param yty A scalar \code{y'y} in which y is centered to have mean
+#' @param yty A scalar \eqn{y'y} in which y is centered to have mean
 #'   zero.
 #' 
-#' @param check_input If \code{check_input = TRUE}, performs checks on
-#'   \code{XtX} and \code{Xty}, the checks are: 1. Check whether XtX is
-#'   positive semidefinite 2. Check whether Xty in space spanned by the
-#'   non-zero eigenvectors of XtX
+#' @param check_input If \code{check_input = TRUE},
+#'   \code{susie_suff_stat} performs additional checks on \code{XtX} and
+#'   \code{Xty}. The checks are: (1) check whether \code{XtX} is
+#'   positive semidefinite; (2) Check whether \code{Xty} is in the space
+#'   spanned by the non-zero eigenvectors of \code{XtX}.
 #'
 #' @export
 #' 
@@ -50,113 +51,100 @@ susie_suff_stat = function (bhat, shat, R, n, var_y = 1, XtX, Xty, yty,
   # Process input estimate_prior_method.
   estimate_prior_method = match.arg(estimate_prior_method)
 
-  if(missing(n)) {
-    stop('n must be provided')
-  }
+  if(missing(n))
+    stop("n must be provided")
 
-  # Check sufficient stat input
-  # check bhat, shat
+  # Check sufficient statistics.
   missing_bhat = c(missing(bhat), missing(shat), missing(R))
-  # check XtX, Xty
   missing_XtX = c(missing(XtX), missing(Xty), missing(yty))
 
-  if(all(missing_bhat) & all(missing_XtX)){
-    stop('Please provide EITHER "bhat, shat, R, n, var(y)" OR "XtX, Xty, yty, n".')
-  }
-  if(any(missing_bhat) & any(missing_XtX)){
-    stop('Please provide EITHER "bhat, shat, R, n, var(y)" OR "XtX, Xty, yty, n".')
-  }
-  if(all(missing_bhat) & any(missing_XtX)){
-    stop('Please provide all "XtX, Xty, yty, n"')
-  }
-  if(all(missing_XtX) & any(missing_bhat)){
-    stop('Please provide all "bhat, shat, R, n, var(y)"')
-  }
-  if((!any(missing_XtX)) & (!all(missing_bhat))){
-    warning('Only use information from "XtX, Xty, yty, n"')
-  }
-  if((!any(missing_bhat))){
-    if(!all(missing_XtX)){
-      warning('Only use information from "bhat, shat, R, n, var(y)"')
-    }
+  if (all(missing_bhat) & all(missing_XtX))
+    stop("Please provide either all of bhat, shat, R, n, var_y or all of ",
+         "XtX, Xty, yty, n")
+  if (any(missing_bhat) & any(missing_XtX))
+    stop("Please provide either all of bhat, shat, R, n, var_y or all of ",
+         "XtX, Xty, yty, n")
+  if (all(missing_bhat) & any(missing_XtX))
+    stop("Please provide all of XtX, Xty, yty, n")
+  if (all(missing_XtX) & any(missing_bhat))
+    stop("Please provide all of bhat, shat, R, n, var_y")
+  if ((!any(missing_XtX)) & (!all(missing_bhat)))
+    warning("Only using information from XtX, Xty, yty, n")
+  if (!any(missing_bhat)) {
+    if (!all(missing_XtX))
+      warning("Only using information from bhat, shat, R, n, var_y")
 
-    # Compute XtX, Xty, yty from bhat, shat, R, n, var(y)
-    if(length(shat) == 1) {
-      shat = rep(shat, length(bhat))
-    }
-    if(length(bhat) != length(shat)) {
-      stop('The length of bhat does not agree with length of shat.')
-    }
+    # Compute XtX, Xty, yty from bhat, shat, R, n, var_y.
+    if(length(shat) == 1)
+      shat = rep(shat,length(bhat))
+    if(length(bhat) != length(shat))
+      stop("The length of bhat does not agree with length of shat")
+    if (anyNA(bhat) || anyNA(shat))
+      stop("The input summary statistics have missing values")
+    if (any(shat == 0))
+      stop("shat contains one or more zeros")
 
-    if(anyNA(bhat) || anyNA(shat)){
-      stop('The input summary statistics have missing value.')
-    }
-    if(any(shat==0)){
-      stop('shat contains zero.')
-    }
-    #
     that = bhat/shat
     that[is.na(that)] = 0
     R2 = that^2/(that^2 + n-2)
     sigma2 = (n-1)*(1-R2)/(n-2)
 
-    # convert any input R to correlation matrix
-    # if R has 0 colums and rows, cov2cor produces NaN and warning
+    # Convert any input R to correlation matrix.
+    # If R has 0 colums and rows, cov2cor produces NaN and warning.
     X0 = diag(R) == 0
     R = muffled_cov2cor(R)
-    # change the columns and rows with NaN to 0
-    if(sum(X0) > 0){
-      R[X0, ] = R[,X0] = 0
-    }
+    
+    # Change the columns and rows with NaN to 0.
+    if (sum(X0) > 0)
+      R[X0,] = R[,X0] = 0
 
-    #
-    if(missing(var_y)) {
+    if (missing(var_y)) {
       XtX = (n-1)*R
       Xty = sqrt(sigma2) * sqrt(n-1) * that
-    }else{
-      XtXdiag = var_y*sigma2/(shat^2)
-      Xty = that * var_y* sigma2/shat
+    } else {
+      XtXdiag = var_y * sigma2/(shat^2)
+      Xty = that * var_y * sigma2/shat
       XtX = t(R * sqrt(XtXdiag)) * sqrt(XtXdiag)
     }
     yty = var_y * (n-1)
   }
 
-
   # Check input XtX.
-  if(ncol(XtX) != length(Xty)) {
-    stop(paste0('The dimension of XtX (', nrow(XtX), ' by ', ncol(XtX), ') does not agree with expected (', length(Xty), ' by ', length(Xty), ')'))
-  }
-  if(!is_symmetric_matrix(XtX)){
-    stop('XtX is not a symmetric matrix.')
-  }
-  # MAF filter
-  if(!is.null(maf)){
-    if(length(maf) != length(Xty)){
-      stop(paste0('The length of maf does not agree with expected ', length(Xty)))
-    }
+  if (ncol(XtX) != length(Xty))
+    stop(paste0("The dimension of XtX (",nrow(XtX)," by ",ncol(XtX),
+                ") does not agree with expected (",length(Xty)," by ",
+                length(Xty),")"))
+  if (!is_symmetric_matrix(XtX))
+    stop("XtX is not a symmetric matrix")
+  
+  # MAF filter.
+  if (!is.null(maf)) {
+    if (length(maf) != length(Xty)) 
+      stop(paste("The length of maf does not agree with expected",length(Xty)))
     id = which(maf > maf_thresh)
-    XtX = XtX[id, id]
+    XtX = XtX[id,id]
     Xty = Xty[id]
   }
 
-  if(any(is.infinite(Xty))){
-    stop('Xty contains infinite value.')
-  }
+  if (any(is.infinite(Xty)))
+    stop("Xty contains infinite values")
   if (!(is.double(XtX) & is.matrix(XtX)) & !inherits(XtX,"CsparseMatrix"))
-    stop("Input X must be a double-precision matrix, or a sparse matrix.")
-  if(any(is.na(XtX)))
-    stop('XtX matrix contains NA.')
+    stop("Input X must be a double-precision matrix, or a sparse matrix")
+  if (any(is.na(XtX)))
+    stop("XtX matrix contains NAs")
 
-  if(check_input){
-    # Check whether XtX is positive semidefinite
-    semi_pd = check_semi_pd(XtX, r_tol)
-    if(!semi_pd$status) 
+  if (check_input) {
+      
+    # Check whether XtX is positive semidefinite.
+    semi_pd = check_semi_pd(XtX,r_tol)
+    if (!semi_pd$status) 
       stop("XtX is not a positive semidefinite matrix")
 
     # Check whether Xty in space spanned by the non-zero eigenvectors of XtX
-    proj = check_projection(semi_pd$matrix, Xty)
-    if(!proj$status)
-      warning("Xty does not lie in the space of non-zero eigenvectors of XtX")
+    proj = check_projection(semi_pd$matrix,Xty)
+    if (!proj$status)
+      warning("Xty does not lie in the space of the non-zero eigenvectors ",
+              "of XtX")
   }
 
   if (is.numeric(null_weight) && null_weight == 0)
@@ -164,76 +152,73 @@ susie_suff_stat = function (bhat, shat, R, n, var_y = 1, XtX, Xty, yty,
   if (!is.null(null_weight)) {
     if (!is.numeric(null_weight))
       stop("Null weight must be numeric")
-    if (null_weight<0 || null_weight>=1)
-      stop('Null weight must be between 0 and 1')
+    if (null_weight < 0 || null_weight >= 1)
+      stop("Null weight must be between 0 and 1")
     if (is.null(prior_weights))
-      prior_weights = c(rep(1/ncol(XtX)*(1-null_weight), ncol(XtX)), null_weight)
+      prior_weights = c(rep(1/ncol(XtX)*(1-null_weight),ncol(XtX)),null_weight)
     else
-      prior_weights = c(prior_weights * (1-null_weight), null_weight)
-    XtX = cbind(rbind(XtX, 0),0)
-    Xty = c(Xty, 0)
+      prior_weights = c(prior_weights*(1 - null_weight),null_weight)
+    XtX = cbind(rbind(XtX,0),0)
+    Xty = c(Xty,0)
   }
 
   p = ncol(XtX)
 
-  if(standardize){
+  if (standardize) {
     dXtX = diag(XtX)
     csd = sqrt(dXtX/(n-1))
     csd[csd == 0] = 1
     XtX = (1/csd) * t((1/csd) * XtX)
     Xty = (1/csd) * Xty
-  }else{
+  } else
     csd = rep(1, length = p)
-  }
   attr(XtX,"d") = diag(XtX)
   attr(XtX,"scaled:scale") = csd
 
-  # initialize susie fit
-  s = init_setup(0,p,L,scaled_prior_variance,residual_variance,
-                 prior_weights,null_weight,yty/(n-1))
-  s$Xr = NULL; s$XtXr = rep(0,p)
+  # Initialize susie fit.
+  s = init_setup(0,p,L,scaled_prior_variance,residual_variance,prior_weights,
+                 null_weight,yty/(n-1))
+  s$Xr = NULL
+  s$XtXr = rep(0,p)
 
   if (!missing(s_init)) {
-    s = modifyList(s, s_init)
-    s = init_finalize(s, X=XtX)
+    s = modifyList(s,s_init)
+    s = init_finalize(s,X = XtX)
     s$XtXr = s$Xr
     s$Xr = NULL
-  } else {
+  } else
     s = init_finalize(s)
-  }
 
-  # intialize elbo to NA
+  # Initialize elbo to NA.
   elbo = rep(as.numeric(NA),max_iter + 1)
   elbo[1] = -Inf;
   tracking = list()
 
-  # alpha_new = s$alpha
-  for(i in 1:max_iter){
+  for (i in 1:max_iter) {
     if (track_fit)
       tracking[[i]] = susie_slim(s)
-    s = update_each_effect_ss(XtX, Xty, s, estimate_prior_variance,estimate_prior_method,check_null_threshold)
+    s = update_each_effect_ss(XtX,Xty,s,estimate_prior_variance,
+                              estimate_prior_method,check_null_threshold)
 
-    if(verbose){
-      print(paste0("objective:",get_objective_ss(XtX, Xty, s, yty, n)))
-  }
+    if (verbose)
+      print(paste0("objective:",get_objective_ss(XtX,Xty,s,yty,n)))
     
-    # compute objective before updating residual variance
-    # because part of the objective s$kl has already been computed
-    # under the residual variance before the update
-    elbo[i+1] = get_objective_ss(XtX, Xty, s, yty, n)
-    if((elbo[i+1]-elbo[i])<tol) {
+    # Compute objective before updating residual variance because part
+    # of the objective s$kl has already been computed under the
+    # residual variance before the update.
+    elbo[i+1] = get_objective_ss(XtX,Xty,s,yty,n)
+    if((elbo[i+1] - elbo[i]) < tol) {
       s$converged = TRUE
-      break;
+      break
     }
-    if(estimate_residual_variance){
+    if (estimate_residual_variance) {
       est_sigma2 = estimate_residual_variance_ss(XtX,Xty,s,yty,n)
-      if(est_sigma2 < 0){
-        stop("Estimating residual variance failed: the estimated value is negative")
-      }
+      if (est_sigma2 < 0)
+        stop("Estimating residual variance failed: the estimated value ",
+             "is negative")
       s$sigma2 = est_sigma2
-      if(verbose){
-        print(paste0("objective:",get_objective_ss(XtX, Xty, s, yty, n)))
-      }
+      if (verbose)
+        print(paste0("objective:",get_objective_ss(XtX,Xty,s,yty,n)))
     }
   }
   elbo = elbo[2:(i+1)] # Remove first (infinite) entry, and trailing NAs.
@@ -241,7 +226,7 @@ susie_suff_stat = function (bhat, shat, R, n, var_y = 1, XtX, Xty, yty,
   s$niter = i
 
   if (is.null(s$converged)) {
-    warning(paste("IBSS algorithm did not converge in", max_iter, "iterations!"))
+    warning(paste("IBSS algorithm did not converge in",max_iter,"iterations!"))
     s$converged = FALSE
   }
 
@@ -253,11 +238,12 @@ susie_suff_stat = function (bhat, shat, R, n, var_y = 1, XtX, Xty, yty,
   if (track_fit)
     s$trace = tracking
 
-  # SuSiE CS and PIP
+  # SuSiE CS and PIP.
   if (!is.null(coverage) && !is.null(min_abs_corr)) {
     R = muffled_cov2cor(XtX)
-    s$sets = susie_get_cs(s, coverage=coverage, Xcorr=R, min_abs_corr=min_abs_corr)
-    s$pip = susie_get_pip(s, prune_by_cs = FALSE, prior_tol = prior_tol)
+    s$sets = susie_get_cs(s,coverage = coverage,Xcorr = R,
+                          min_abs_corr = min_abs_corr)
+    s$pip = susie_get_pip(s,prune_by_cs = FALSE,prior_tol = prior_tol)
   }
 
   return(s)
@@ -278,7 +264,7 @@ check_semi_pd = function (A, tol) {
               eigenvalues = eigenvalues))
 }
 
-# @title Check whether b in space spanned by the non-zero eigenvectors
+# @title Check whether b is in space spanned by the non-zero eigenvectors
 #   of A
 # @param A a p by p matrix
 # @param b a length p vector
@@ -288,7 +274,7 @@ check_semi_pd = function (A, tol) {
 # \item{msg}{msg gives the difference between the projected b and b if
 #   status is FALSE}
 check_projection = function (A, b) {
-  if(is.null(attr(A,"eigen")))
+  if (is.null(attr(A,"eigen")))
     attr(A,"eigen") = eigen(A,symmetric = TRUE)
   B = attr(A,"eigen")$vectors[,attr(A,"eigen")$values >
         -sqrt(.Machine$double.eps)]
