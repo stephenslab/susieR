@@ -85,7 +85,7 @@
 #' coef(res2)
 #'
 #' @export
-susie_suff_stat = function(bhat, shat, R, n, var_y = 1,
+susie_suff_stat = function(bhat, shat, R, n, var_y,
                            XtX, Xty, yty, maf=NULL, maf_thresh=0,
                            L=10,
                            scaled_prior_variance=0.2,
@@ -166,6 +166,7 @@ susie_suff_stat = function(bhat, shat, R, n, var_y = 1,
     if(missing(var_y)) {
       XtX = (n-1)*R
       Xty = sqrt(sigma2) * sqrt(n-1) * that
+      var_y = 1
     }else{
       XtXdiag = var_y*sigma2/(shat^2)
       Xty = that * var_y* sigma2/shat
@@ -203,7 +204,7 @@ susie_suff_stat = function(bhat, shat, R, n, var_y = 1,
   if(check_input){
     # Check whether XtX is positive semidefinite
     semi_pd = check_semi_pd(XtX, r_tol)
-    if(!semi_pd$status) 
+    if(!semi_pd$status)
       stop("XtX is not a positive semidefinite matrix")
 
     # Check whether Xty in space spanned by the non-zero eigenvectors of XtX
