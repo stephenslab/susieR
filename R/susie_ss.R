@@ -2,9 +2,9 @@
 #'
 #' @param bhat A p-vector of estimated effects.
 #' 
-#' @param shat A p-vector of corresponding standard errors.
+#' @param shat A p-vector of standard errors.
 #' 
-#' @param R A p by p symmetric and positive semidefinite matrix. It
+#' @param R A p by p symmetric, positive semidefinite matrix. It
 #'   can be \eqn{X'X}, the covariance matrix \eqn{X'X/(n-1)}, or a
 #'   correlation matrix. It should be estimated from the same samples
 #'   used to compute \code{bhat} and \code{shat}. Using an out-of-sample
@@ -13,9 +13,9 @@
 #' @param n The sample size.
 #' 
 #' @param var_y The sample variance of y, defined as \eqn{y'y/(n-1)}.
-#'   Note that when the sample variance cannot be provided, the
-#'   coefficients (returned from \code{coef}) are computed on the
-#'   "standardized" X, y scale.
+#'   When the sample variance cannot be provided, the coefficients
+#'   (returned from \code{coef}) are computed on the "standardized" X, y
+#'   scale.
 #' 
 #' @param XtX A p by p matrix \eqn{X'X} in which the columns of X
 #'   are centered to have mean zero.
@@ -28,9 +28,9 @@
 #' 
 #' @param check_input If \code{check_input = TRUE},
 #'   \code{susie_suff_stat} performs additional checks on \code{XtX} and
-#'   \code{Xty}. The checks are: (1) check whether \code{XtX} is
-#'   positive semidefinite; (2) Check whether \code{Xty} is in the space
-#'   spanned by the non-zero eigenvectors of \code{XtX}.
+#'   \code{Xty}. The checks are: (1) check that \code{XtX} is positive
+#'   semidefinite; (2) check that \code{Xty} is in the space spanned by
+#'   the non-zero eigenvectors of \code{XtX}.
 #'
 #' @export
 #' 

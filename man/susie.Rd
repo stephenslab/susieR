@@ -226,7 +226,7 @@ estimates at each iteration of the IBSS fitting procedure.}
 
 \item{z}{A p-vector of z scores.}
 
-\item{R}{A p by p symmetric and positive semidefinite matrix. It
+\item{R}{A p by p symmetric, positive semidefinite matrix. It
 can be \eqn{X'X}, the covariance matrix \eqn{X'X/(n-1)}, or a
 correlation matrix. It should be estimated from the same samples
 used to compute \code{bhat} and \code{shat}. Using an out-of-sample
@@ -263,14 +263,14 @@ eigenvectors of R.}
 
 \item{bhat}{A p-vector of estimated effects.}
 
-\item{shat}{A p-vector of corresponding standard errors.}
+\item{shat}{A p-vector of standard errors.}
 
 \item{n}{The sample size.}
 
 \item{var_y}{The sample variance of y, defined as \eqn{y'y/(n-1)}.
-Note that when the sample variance cannot be provided, the
-coefficients (returned from \code{coef}) are computed on the
-"standardized" X, y scale.}
+When the sample variance cannot be provided, the coefficients
+(returned from \code{coef}) are computed on the "standardized" X, y
+scale.}
 
 \item{XtX}{A p by p matrix \eqn{X'X} in which the columns of X
 are centered to have mean zero.}
@@ -283,9 +283,9 @@ zero.}
 
 \item{check_input}{If \code{check_input = TRUE},
 \code{susie_suff_stat} performs additional checks on \code{XtX} and
-\code{Xty}. The checks are: (1) check whether \code{XtX} is
-positive semidefinite; (2) Check whether \code{Xty} is in the space
-spanned by the non-zero eigenvectors of \code{XtX}.}
+\code{Xty}. The checks are: (1) check that \code{XtX} is positive
+semidefinite; (2) check that \code{Xty} is in the space spanned by
+the non-zero eigenvectors of \code{XtX}.}
 
 \item{L_init}{The initial value of L.}
 
@@ -407,6 +407,8 @@ tolerance; the final run is performed using the default susie
 tolerance.
 }
 \examples{
+
+# susie example
 set.seed(1)
 n = 1000
 p = 1000
@@ -414,25 +416,15 @@ beta = rep(0,p)
 beta[1:4] = 1
 X = matrix(rnorm(n*p),nrow = n,ncol = p)
 y = X \%*\% beta + rnorm(n)
-res = susie(X,y,L = 10)
-plot(c(0,beta),coef(res))
-plot(y,predict(res))
+res1 = susie(X,y,L = 10)
+plot(c(0,beta),coef(res1))
+plot(y,predict(res1))
 
-# From susie_suff_stat:
-set.seed(1)
-n    <- 1000
-p    <- 1000
-beta <- rep(0,p)
-beta[1:4] <- 1
-X        <- matrix(rnorm(n*p),nrow=n,ncol=p)
-y        <- c(X \%*\% beta + rnorm(n))
+# susie_suff_stat example
 input_ss <- compute_ss(X,y,standardize = TRUE)
-ss <- susieR:::univariate_regression(X, y)
-R <- with(input_ss, cov2cor(XtX))
-res1      <- with(input_ss,susie_suff_stat(XtX = XtX,Xty = Xty, yty = yty,n=n))
-coef(res1)
-res2      <- with(ss,susie_suff_stat(bhat = betahat, shat = sebetahat, R = R, n=n, var_y = var(y)))
-coef(res2)
+res2 <- with(input_ss,
+             susie_suff_stat(XtX = XtX,Xty = Xty,yty = yty,n = n))
+plot(c(0,beta),coef(res2))
 
 }
 \references{

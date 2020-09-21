@@ -228,6 +228,8 @@
 #'   \url{https://doi.org/10.1101/501114}.
 #'
 #' @examples
+#'
+#' # susie example
 #' set.seed(1)
 #' n = 1000
 #' p = 1000
@@ -235,25 +237,15 @@
 #' beta[1:4] = 1
 #' X = matrix(rnorm(n*p),nrow = n,ncol = p)
 #' y = X %*% beta + rnorm(n)
-#' res = susie(X,y,L = 10)
-#' plot(c(0,beta),coef(res))
-#' plot(y,predict(res))
+#' res1 = susie(X,y,L = 10)
+#' plot(c(0,beta),coef(res1))
+#' plot(y,predict(res1))
 #'
-#' # From susie_suff_stat:
-#' set.seed(1)
-#' n    <- 1000
-#' p    <- 1000
-#' beta <- rep(0,p)
-#' beta[1:4] <- 1
-#' X        <- matrix(rnorm(n*p),nrow=n,ncol=p)
-#' y        <- c(X %*% beta + rnorm(n))
+#' # susie_suff_stat example
 #' input_ss <- compute_ss(X,y,standardize = TRUE)
-#' ss <- susieR:::univariate_regression(X, y)
-#' R <- with(input_ss, cov2cor(XtX))
-#' res1      <- with(input_ss,susie_suff_stat(XtX = XtX,Xty = Xty, yty = yty,n=n))
-#' coef(res1)
-#' res2      <- with(ss,susie_suff_stat(bhat = betahat, shat = sebetahat, R = R, n=n, var_y = var(y)))
-#' coef(res2)
+#' res2 <- with(input_ss,
+#'              susie_suff_stat(XtX = XtX,Xty = Xty,yty = yty,n = n))
+#' plot(c(0,beta),coef(res2))
 #' 
 #' @importFrom stats var
 #' @importFrom utils modifyList
