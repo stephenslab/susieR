@@ -17,30 +17,20 @@
 #'
 #' @details \code{susie_suff_stat} performs sum of single-effect
 #' linear regression with summary statistics. The required summary
-#' data are either: \code{bhat}, \code{shat}, the p by p symmetric and
-#' positive semidefinite correlation (or covariance) matrix R, the
-#' sample size n, the variance of y; OR the p by p matrix X'X, the p
-#' vector X'y, the sum of squares of y (y'y) and the sample size.  The
-#' sufficient summary stats should come from the same individuals.
-#' Both the columns of X and the vector y should be centered to have
-#' mean 0 before computing these summary statistics; you may also want
-#' to scale each column of X and y to have variance 1 (see
-#' examples). This function fits the regression model y = sum_l Xb_l +
-#' e, where elements of e are iid N(0,var=residual_variance) and the
-#' sum_l b_l is a p vector of effects to be estimated. The assumption
-#' is that each b_l has exactly one non-zero element, with all
-#' elements equally likely to be non-zero. The prior on the non-zero
-#' element is N(0,scaled_prior_variance*y'y/(n-1)).
+#' data are either: \code{bhat}, \code{shat}, the p by p symmetric,
+#' positive semidefinite correlation (or covariance) matrix \code{R},
+#' the sample size \code{n}, and the variance of y; or the p by p
+#' matrix \eqn{X'X}, the p-vector \eqn{X'y}, the sum of squares
+#' \eqn{y'y}, and the sample size \code{n}. The summary statistics
+#' should come from the same individuals. Both the columns of X and
+#' the vector y should be centered to have mean zero before computing
+#' these summary statistics; you may also want to scale each column of
+#' X and y to have variance 1 (see examples).
 #' 
-#' susie_rss performs sum of single-effect (SuSiE) linear regression
-#' with z scores. The summary data required are the p by p
-#' correlation matrix R, the p vector z. The summary stats should come
-#' from the same individuals.  This function fits the regression model
-#' z = sum_l Rb_l + e, where e is N(0,residual_variance * R) and the
-#' sum_l b_l is a p vector of effects to be estimated.  The assumption
-#' is that each b_l has exactly one non-zero element, with all
-#' elements equally likely to be non-zero. The prior on the non-zero
-#' element is N(0,var=prior_variance).
+#' \code{susie_rss} performs sum of single-effect linear regression
+#' with z scores. The required summary data are the p by p correlation
+#' matrix, \code{R}, and the p-vector \code{z}. The summary stats
+#' should come from the same individuals (samples).
 #' 
 #' susie_auto is an attempt to automate reliable running of susie even
 #' on hard problems. Implements a three-stage strategy for each L:
@@ -204,21 +194,15 @@
 #'   the IBSS converged to a solution within the chosen tolerance
 #'   level.}
 #'
-#' susie_suff_stat returns a susie fit, which is a list with some or
-#' all of the following elements
+#' \code{susie_suff_stat} returns also outputs:
 #'
-#' \item{XtXr}{an p vector of t(X) times fitted values, the fitted
-#'   values equal to X times colSums(alpha*mu))}
+#' \item{XtXr}{A p-vector of \code{t(X)} times the fitted values,
+#'   \code{X \%*\% colSums(alpha*mu)}.}
 #' 
-#' \item{V}{prior variance}
+#' \code{susie_rss} also outputs:
 #' 
-#' susie_rss returns a susie fit, which is a list with some or all of the
-#' following elements:
-#' 
-#' \item{Rr}{an p vector of t(X) times fitted values, the fitted
-#'   values equal to X times colSums(alpha*mu))}
-#' 
-#' \item{V}{prior variance}
+#' \item{Rr}{An p-vector of \code{t(X)} times fitted values, \code{X
+#'   \%*\% colSums(alpha*mu)}.}
 #'
 #' @references
 #'
@@ -229,23 +213,25 @@
 #'
 #' @examples
 #'
-#' # susie example
+#' # susie example.
 #' set.seed(1)
 #' n = 1000
 #' p = 1000
 #' beta = rep(0,p)
 #' beta[1:4] = 1
 #' X = matrix(rnorm(n*p),nrow = n,ncol = p)
-#' y = X %*% beta + rnorm(n)
+#' y = drop(X %*% beta + rnorm(n))
 #' res1 = susie(X,y,L = 10)
 #' plot(c(0,beta),coef(res1))
 #' plot(y,predict(res1))
 #'
-#' # susie_suff_stat example
-#' input_ss <- compute_ss(X,y,standardize = TRUE)
-#' res2 <- with(input_ss,
+#' # susie_suff_stat example.
+#' input_ss = compute_ss(X,y,standardize = TRUE)
+#' res2 = with(input_ss,
 #'              susie_suff_stat(XtX = XtX,Xty = Xty,yty = yty,n = n))
 #' plot(c(0,beta),coef(res2))
+#'
+#' # susie_rss example.
 #' 
 #' @importFrom stats var
 #' @importFrom utils modifyList
@@ -350,9 +336,9 @@ susie <- function (X,Y,L = min(10,ncol(X)),
     }
     if (estimate_residual_variance) {
       s$sigma2 = estimate_residual_variance(X,Y,s)
-      if(s$sigma2 > residual_variance_upperbound)
+      if (s$sigma2 > residual_variance_upperbound)
         s$sigma2 = residual_variance_upperbound
-      if(verbose)
+      if (verbose)
         print(paste0("objective:",get_objective(X,Y,s)))
     }
   }

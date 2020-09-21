@@ -52,7 +52,7 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
   # Process input estimate_prior_method.
   estimate_prior_method = match.arg(estimate_prior_method)
 
-  if(missing(n))
+  if (missing(n))
     stop("n must be provided")
 
   # Check sufficient statistics.
@@ -76,9 +76,9 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
       warning("Only using information from bhat, shat, R, n, var_y")
 
     # Compute XtX, Xty, yty from bhat, shat, R, n, var_y.
-    if(length(shat) == 1)
+    if (length(shat) == 1)
       shat = rep(shat,length(bhat))
-    if(length(bhat) != length(shat))
+    if (length(bhat) != length(shat))
       stop("The length of bhat does not agree with length of shat")
     if (anyNA(bhat) || anyNA(shat))
       stop("The input summary statistics have missing values")
@@ -209,7 +209,7 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
     # of the objective s$kl has already been computed under the
     # residual variance before the update.
     elbo[i+1] = get_objective_ss(XtX,Xty,s,yty,n)
-    if((elbo[i+1] - elbo[i]) < tol) {
+    if ((elbo[i+1] - elbo[i]) < tol) {
       s$converged = TRUE
       break
     }

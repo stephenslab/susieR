@@ -232,34 +232,35 @@ correlation matrix. It should be estimated from the same samples
 used to compute \code{bhat} and \code{shat}. Using an out-of-sample
 matrix may produce unreliable results.}
 
-\item{maf}{minor allele frequency; to be used along with
-`maf_thresh` to filter input summary statistics}
+\item{maf}{Minor allele frequency; to be used along with
+\code{maf_thresh} to filter input summary statistics.}
 
-\item{maf_thresh}{variants having MAF smaller than this threshold
-will be filtered out}
+\item{maf_thresh}{Variants having a minor allele frequency smaller
+than this threshold are not used.}
 
-\item{z_ld_weight}{the weight assigned to the z in the ld matrix,
-the ld matrix used in model is cov2cor((1-w) R + w zz').  We
-recomment setting `z_ld_weight` as 1/number of samples in reference
-panel.}
+\item{z_ld_weight}{The weights assigned to the z scores in the LD
+matrix. The LD matrix used in the model is \code{cov2cor((1-w)*R +
+w*tcrossprod(z))}, where \code{w = z_ld_weight}. We recommend
+setting \code{z_ld_weight} as 1/n, where n is the number of
+samples.}
 
-\item{prior_variance}{the prior variance (vector of length L, or
-scalar. In latter case gets repeated L times )}
+\item{prior_variance}{The prior variance. It is either a scalar or
+a vector of length L.}
 
 \item{r_tol}{Tolerance level for eigenvalue check of positive
 semidefinite matrix of R.}
 
-\item{intercept_value}{a value to assign to the intercept (since
-the intercept cannot be estimated from centered summary data). This
-value will be used by coef.susie() to assign an intercept value,
-for consistency with the non-summary-statistic version of this
-function \code{susie}.  Set to NULL if you want coef.susie() not to
-include an intercept term (and so only return a p vector).}
+\item{intercept_value}{The intercept. (The intercept cannot be
+estimated from centered summary data.) This setting will be used by
+\code{coef} to assign an intercept value, mainly for consistency
+with \code{susie}. Set to \code{NULL} if you want \code{coef} not
+to include an intercept term (and so only a p-vector is returned).}
 
-\item{check_R}{check whether R is positive semidefinite}
+\item{check_R}{If \code{check_R = TRUE}, check that \code{R} is
+positive semidefinite.}
 
-\item{check_z}{check whether z in space spanned by the non-zero
-eigenvectors of R.}
+\item{check_z}{If \code{check_z = TRUE}, check that \code{z} is in
+space spanned by the non-zero eigenvectors of \code{R}.}
 
 \item{bhat}{A p-vector of estimated effects.}
 
@@ -339,21 +340,15 @@ A \code{"susie"} object with some or all of the following
   the IBSS converged to a solution within the chosen tolerance
   level.}
 
-susie_suff_stat returns a susie fit, which is a list with some or
-all of the following elements
+\code{susie_suff_stat} returns also outputs:
 
-\item{XtXr}{an p vector of t(X) times fitted values, the fitted
-  values equal to X times colSums(alpha*mu))}
+\item{XtXr}{A p-vector of \code{t(X)} times the fitted values,
+  \code{X \%*\% colSums(alpha*mu)}.}
 
-\item{V}{prior variance}
+\code{susie_rss} also outputs:
 
-susie_rss returns a susie fit, which is a list with some or all of the
-following elements:
-
-\item{Rr}{an p vector of t(X) times fitted values, the fitted
-  values equal to X times colSums(alpha*mu))}
-
-\item{V}{prior variance}
+\item{Rr}{An p-vector of \code{t(X)} times fitted values, \code{X
+  \%*\% colSums(alpha*mu)}.}
 }
 \description{
 Performs Bayesian multiple linear regression of Y on
@@ -372,30 +367,20 @@ Performs Bayesian multiple linear regression of Y on
 \details{
 \code{susie_suff_stat} performs sum of single-effect
 linear regression with summary statistics. The required summary
-data are either: \code{bhat}, \code{shat}, the p by p symmetric and
-positive semidefinite correlation (or covariance) matrix R, the
-sample size n, the variance of y; OR the p by p matrix X'X, the p
-vector X'y, the sum of squares of y (y'y) and the sample size.  The
-sufficient summary stats should come from the same individuals.
-Both the columns of X and the vector y should be centered to have
-mean 0 before computing these summary statistics; you may also want
-to scale each column of X and y to have variance 1 (see
-examples). This function fits the regression model y = sum_l Xb_l +
-e, where elements of e are iid N(0,var=residual_variance) and the
-sum_l b_l is a p vector of effects to be estimated. The assumption
-is that each b_l has exactly one non-zero element, with all
-elements equally likely to be non-zero. The prior on the non-zero
-element is N(0,scaled_prior_variance*y'y/(n-1)).
+data are either: \code{bhat}, \code{shat}, the p by p symmetric,
+positive semidefinite correlation (or covariance) matrix \code{R},
+the sample size \code{n}, and the variance of y; or the p by p
+matrix \eqn{X'X}, the p-vector \eqn{X'y}, the sum of squares
+\eqn{y'y}, and the sample size \code{n}. The summary statistics
+should come from the same individuals. Both the columns of X and
+the vector y should be centered to have mean zero before computing
+these summary statistics; you may also want to scale each column of
+X and y to have variance 1 (see examples).
 
-susie_rss performs sum of single-effect (SuSiE) linear regression
-with z scores. The summary data required are the p by p
-correlation matrix R, the p vector z. The summary stats should come
-from the same individuals.  This function fits the regression model
-z = sum_l Rb_l + e, where e is N(0,residual_variance * R) and the
-sum_l b_l is a p vector of effects to be estimated.  The assumption
-is that each b_l has exactly one non-zero element, with all
-elements equally likely to be non-zero. The prior on the non-zero
-element is N(0,var=prior_variance).
+\code{susie_rss} performs sum of single-effect linear regression
+with z scores. The required summary data are the p by p correlation
+matrix, \code{R}, and the p-vector \code{z}. The summary stats
+should come from the same individuals (samples).
 
 susie_auto is an attempt to automate reliable running of susie even
 on hard problems. Implements a three-stage strategy for each L:
@@ -408,23 +393,25 @@ tolerance.
 }
 \examples{
 
-# susie example
+# susie example.
 set.seed(1)
 n = 1000
 p = 1000
 beta = rep(0,p)
 beta[1:4] = 1
 X = matrix(rnorm(n*p),nrow = n,ncol = p)
-y = X \%*\% beta + rnorm(n)
+y = drop(X \%*\% beta + rnorm(n))
 res1 = susie(X,y,L = 10)
 plot(c(0,beta),coef(res1))
 plot(y,predict(res1))
 
-# susie_suff_stat example
-input_ss <- compute_ss(X,y,standardize = TRUE)
-res2 <- with(input_ss,
+# susie_suff_stat example.
+input_ss = compute_ss(X,y,standardize = TRUE)
+res2 = with(input_ss,
              susie_suff_stat(XtX = XtX,Xty = Xty,yty = yty,n = n))
 plot(c(0,beta),coef(res2))
+
+# susie_rss example.
 
 }
 \references{
