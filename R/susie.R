@@ -7,7 +7,7 @@
 #'   X b_{l=1}^L + e}, where elements of e are \emph{i.i.d.} normal with
 #'   zero mean and variance \code{residual_variance}, and
 #'   \eqn{\sum_{l=1}^L b_l} is a vector of length p representing the
-#'   effects to be estimated. The susie assumption is that each
+#'   effects to be estimated. The \dQuote{susie assumption} is that each
 #'   \eqn{b_l} has exactly one non-zero element. The prior on the
 #'   non-zero element is normal with zero mean and variance \code{var(Y)
 #'   * scaled_prior_variance}. The model is fitted using the
@@ -55,12 +55,12 @@
 #'
 #' @param Y The observed responses, a vector of length n.
 #'
-#' @param L Number of components (nonzero elements) in the susie
-#'   regression model. If L is larger than the number of covariates (p),
+#' @param L Number of components (nonzero coefficients) in the susie
+#'   regression model. If L is larger than the number of covariates, p,
 #'   L is set to p.
 #'
 #' @param scaled_prior_variance The scaled prior variance. This is
-#'   either a scalar, or a vector of length \code{L}. The prior variance
+#'   either a scalar or a vector of length \code{L}. The prior variance
 #'   of each non-zero element of b is set to \code{var(Y) *
 #'   scaled_prior_variance}. If \code{estimate_prior_variance = TRUE},
 #'   this provides initial estimates of the prior variances.
@@ -85,38 +85,41 @@
 #'   carefully about specifying \code{scaled_prior_variance}. Whatever
 #'   your choice, the coefficients returned by \code{coef} are given for
 #'   \code{X} on the original input scale. Any column of \code{X} that
-#'   has zero variance is not standardized, but left as is.
+#'   has zero variance is not standardized.
 #'
 #' @param intercept If \code{intercept = TRUE}, the intercept is
-#'   fitted; otherwise, it is set to zero. Setting \code{intercept =
-#'   FALSE} is generally not recommended.
+#'   fitted; it \code{intercept = FALSE}, the intercept is set to
+#'   zero. Setting \code{intercept = FALSE} is generally not
+#'   recommended.
 #'
 #' @param estimate_residual_variance If
 #'   \code{estimate_residual_variance = TRUE}, the residual variance is
-#'   estimated (using \code{residual_variance} as an initial value).  If
+#'   estimated, using \code{residual_variance} as an initial value. If
 #'   \code{estimate_residual_variance = FALSE}, the residual variance is
 #'   fixed to the value supplied by \code{residual_variance}.
 #'
 #' @param estimate_prior_variance If \code{estimate_prior_variance =
-#'   TRUE}, the prior variance is estimated (a separate parameter for
-#'   each of the L effects). If provided, \code{scaled_prior_variance}
-#'   is then used as an initial value for the optimization. If
-#'   \code{estimate_prior_variance = FALSE}, the prior variance (for
-#'   each of the L effects) is determined by the value supplied to
-#'   \code{scaled_prior_variance}.
+#'   TRUE}, the prior variance is estimated (this is a separate
+#'   parameter for each of the L effects). If provided,
+#'   \code{scaled_prior_variance} is then used as an initial value for
+#'   the optimization. When \code{estimate_prior_variance = FALSE}, the
+#'   prior variance for each of the L effects is determined by the
+#'   value supplied to \code{scaled_prior_variance}.
 #'
 #' @param estimate_prior_method The method used for estimating prior
-#'   variance. \code{estimate_prior_method = "simple"} only compares the
-#'   likelihood between using specified prior variance and using
-#'   zero, and chose the one that gives larger likelihood.
+#'   variance. When \code{estimate_prior_method = "simple"} is used, the
+#'   likelihood at the specified prior variance is compared to the
+#'   likelihood at a variance of zero, and the setting with the larger
+#'   likelihood is retained.
 #'
-#' @param check_null_threshold When prior variance is estimated,
-#'   compare the estimate with the null and set prior variance to null
-#'   (zero) unless the likelihood using the estimate is larger than that
-#'   of null by this threshold. For example, you can set it to 0.1 to
-#'   nudge the estimate towards zero. Default is 0. A note of caution
-#'   that setting this to non-zero may lead to decreasing ELBO in some
-#'   cases.
+#' @param check_null_threshold When the prior variance is estimated,
+#'   compare the estimate with the null, and set the prior variance to
+#'   zero unless the log-likelihood using the estimate is larger by this
+#'   threshold amount. For example, if you set
+#'   \code{check_null_threshold = 0.1}, this will "nudge" the estimate
+#'   towards zero when the difference in log-likelihoods is small. A
+#'   note of caution that setting this to a value greater than zero may
+#'   lead the IBSS fitting procedure to occasionally decrease the ELBO.
 #'
 #' @param prior_tol When the prior variance is estimated, compare the
 #'   estimated value to \code{prior_tol} at the end of the computation,
@@ -148,7 +151,7 @@
 #' @param tol A small, non-negative number specifying the convergence
 #'   tolerance for the IBSS fitting procedure. The fitting procedure
 #'   will halt when the difference in the variational lower bound, or
-#'   \dQuote{ELBO} (this is the objective function to be maximized), is
+#'   \dQuote{ELBO} (the objective function to be maximized), is
 #'   less than \code{tol}.
 #'
 #' @param verbose If \code{verbose = TRUE}, the algorithm's progress,
@@ -181,7 +184,7 @@
 #'   \code{scaled_prior_variance * var(Y)}.}
 #'
 #' \item{elbo}{The value of the variational lower bound, or
-#'   \dQuote{ELBO} (the objective function to be maximized), achieved at
+#'   \dQuote{ELBO} (objective function to be maximized), achieved at
 #'   each iteration of the IBSS fitting procedure.}
 #'
 #' \item{fitted}{Vector of length n containing the fitted values of
@@ -233,7 +236,7 @@
 #' X = matrix(rnorm(n*p),nrow = n,ncol = p)
 #' y = X %*% beta + rnorm(n)
 #' res = susie(X,y,L = 10)
-#' coef(res)
+#' plot(c(0,beta),coef(res))
 #' plot(y,predict(res))
 #'
 #' # From susie_suff_stat:
