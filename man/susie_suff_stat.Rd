@@ -9,7 +9,7 @@ susie_suff_stat(
   shat,
   R,
   n,
-  var_y = 1,
+  var_y,
   XtX,
   Xty,
   yty,

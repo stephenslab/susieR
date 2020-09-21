@@ -118,3 +118,18 @@ sum_l b_l is a p vector of effects to be estimated.
 The assumption is that each b_l has exactly one non-zero element, with all elements
 equally likely to be non-zero. The prior on the non-zero element is N(0,var=prior_variance).
 }
+\examples{
+set.seed(1)
+n    <- 1000
+p    <- 1000
+beta <- rep(0,p)
+beta[1:4] <- 1
+X        <- matrix(rnorm(n*p),nrow=n,ncol=p)
+y        <- c(X \%*\% beta + rnorm(n))
+input_ss <- compute_ss(X,y,standardize = TRUE)
+ss <- susieR:::univariate_regression(X, y)
+R <- with(input_ss, cov2cor(XtX))
+zhat <- with(ss, betahat/sebetahat)
+res <- susie_rss(zhat, R)
+
+}

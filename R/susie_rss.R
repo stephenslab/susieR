@@ -52,6 +52,20 @@
 #' \item{sigma2}{residual variance}
 #' \item{V}{prior variance}
 #'
+#' @examples
+#' set.seed(1)
+#' n    <- 1000
+#' p    <- 1000
+#' beta <- rep(0,p)
+#' beta[1:4] <- 1
+#' X        <- matrix(rnorm(n*p),nrow=n,ncol=p)
+#' y        <- c(X %*% beta + rnorm(n))
+#' input_ss <- compute_ss(X,y,standardize = TRUE)
+#' ss <- susieR:::univariate_regression(X, y)
+#' R <- with(input_ss, cov2cor(XtX))
+#' zhat <- with(ss, betahat/sebetahat)
+#' res <- susie_rss(zhat, R)
+#'
 #' @export
 susie_rss = function(z, R, maf=NULL, maf_thresh=0, z_ld_weight=0,
                      L=10, prior_variance=50, residual_variance=NULL,
@@ -128,7 +142,7 @@ susie_rss = function(z, R, maf=NULL, maf_thresh=0, z_ld_weight=0,
   # eigen decomposition for R, filter on eigenvalues
   attr(R, 'eigen') = eigen(R, symmetric = TRUE)
   if (check_R && any(attr(R, 'eigen')$values < -r_tol)) {
-    stop(paste0('The correlation matrix (', nrow(R), ' by ', ncol(R), 'is not a positive semidefinite matrix. The smallest eigen value is ', 
+    stop(paste0('The correlation matrix (', nrow(R), ' by ', ncol(R), 'is not a positive semidefinite matrix. The smallest eigen value is ',
                 min((attr(R, 'eigen')$values), '. You can bypass this by "check_R = FALSE" which instead sets negative eigenvalues to 0 to allow for continued computations.')))
   }
 
@@ -282,7 +296,7 @@ susie_rss_lambda = function(z, R, maf=NULL, maf_thresh=0,
   # eigen decomposition for R, fileter on eigenvalues
   attr(R, 'eigen') = eigen(R, symmetric = TRUE)
   if (check_R && any(attr(R, 'eigen')$values < -r_tol)) {
-    stop(paste0('The correlation matrix (', nrow(R), ' by ', ncol(R), 'is not a positive semidefinite matrix. The smallest eigen value is ', 
+    stop(paste0('The correlation matrix (', nrow(R), ' by ', ncol(R), 'is not a positive semidefinite matrix. The smallest eigen value is ',
                 min((attr(R, 'eigen')$values), '. You can bypass this by "check_R = FALSE" which instead sets negative eigenvalues to 0 to allow for continued computations.')))
   }
 
