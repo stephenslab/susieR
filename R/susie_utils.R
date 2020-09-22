@@ -145,7 +145,7 @@ susie_get_lfsr = function (res) {
 #' 
 #' @param dedup If \code{dedup = TRUE}, remove duplicate CSs.
 #' 
-v#' @param squared If \code{squared = TRUE}, report min, mean and
+#' @param squared If \code{squared = TRUE}, report min, mean and
 #' median of squared correlation instead of the absolute correlation.
 #' 
 #' @export

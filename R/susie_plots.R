@@ -4,25 +4,27 @@
 #'
 #' @description \code{susie_plot} produces a per-variable summary of
 #'   the SuSiE credible sets. \code{susie_plot_iteration} produces a
-#'   diagnostic plot for the susie model fitting.  For
+#'   diagnostic plot for the susie model fitting. For
 #'   \code{susie_plot_iteration}, several plots will be created if
 #'   \code{track_fit = TRUE} when calling \code{susie}.
 #' 
 #' @param model A susie fit, typically an output from
-#'   \code{\link{susie}} or one of its variants.  For \code{suse_plot},
+#'   \code{\link{susie}} or one of its variants. For \code{suse_plot},
 #'   the susie fit must have \code{model$z}, \code{model$PIP}, and may
 #'   include \code{model$sets}. \code{model} may also be a vector of
 #'   z-scores or PIPs.
 #' 
 #' @param y A string indicating what to plot: either \code{"z"} for
-#'   z-scores, \code{"PIP"}, \code{"log10PIP"}, or a random label to
-#'   plot input data as is.
+#'   z-scores, \code{"PIP"} for posterior inclusion probabilities,
+#'   \code{"log10PIP"} for posterior inclusion probabiliities on the
+#'   (base-10) log-scale. For any other setting, the data are plotted as
+#'   is.
 #' 
 #' @param add_bar If \code{add_bar = TRUE}, add horizontal bar to
 #'   signals in credible interval.
 #' 
-#' @param pos This can be either be: (1) a numeric vector of indices
-#'   of variables to plot, or (2) a list with list elements
+#' @param pos This can be either be (1) a numeric vector of indices of
+#'   variables to plot, or (2) a list with the following list elements:
 #'   \code{pos$attr}, \code{pos$start} and \code{pos$end}, where
 #'   \code{pos$attr} is a character string of the name of index variable
 #'   in \code{model} object, and \code{pos$start} and \code{pos$end} are
@@ -78,7 +80,7 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
   if (y == "z") {
     if (is_susie) {
       if (is.null(model$z))
-        stop("z-scores are available from SuSiE fit; please set ",
+        stop("z-scores are not available from SuSiE fit; please set ",
              "compute_univariate_zscore = TRUE in susie() call")
       zneg = -abs(model$z)
     }
@@ -91,7 +93,7 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
       p = model$pip
     else
       p = model
-  } else if (y=="log10PIP") {
+  } else if (y == "log10PIP") {
     if (is_susie)
       p = log10(model$pip)
     else
@@ -133,13 +135,13 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
         model$sets$cs[[i]] = pos_with_value[model$sets$cs[[i]]]
     }
     
-    # Change "pos" object to be indices .
+    # Change "pos" object to be indices.
     start_adj = -min(min(model[[pos$attr]]) - pos$start,0)
     end_adj = max(max(model[[pos$attr]]) - pos$end,0)
     pos = (1 + start_adj):(length(p) - end_adj)
   }
   legend_text = list(col = vector(),purity = vector(),size = vector())
-  scipen0 <- options()$scipen
+  scipen0 = options()$scipen
   options(scipen = 10)
   plot(pos,p[pos],ylab = ylab,pch = 16,...)
   if (is_susie && !is.null(model$sets$cs)) {
@@ -168,7 +170,7 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
       legend_text$col = append(legend_text$col,head(color,1))
       
       # Rotate color.
-      color = c(color[-1], color[1])
+      color = c(color[-1],color[1])
       legend_text$purity = append(round(purity,4),legend_text$purity)
       legend_text$size = append(length(x0),legend_text$size)
     }
@@ -190,7 +192,7 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
   }
   points(pos[b != 0],p[b != 0],col = 2,pch = 16)
   options(scipen = scipen0)
-  return(NULL)
+  return(invisible())
 }
 
 #' @rdname susie_plots
@@ -253,5 +255,5 @@ susie_plot_iteration = function (model, L, file_prefix, pos = NULL) {
       format = ".gif"
   }
   cat(paste0("Iterplot saved to ",file_prefix,format,"\n"))
-  return(NULL)
+  return(invisible())
 }
