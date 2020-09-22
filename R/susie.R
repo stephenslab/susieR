@@ -28,10 +28,15 @@
 #' X and y to have variance 1 (see examples).
 #' 
 #' \code{susie_rss} performs sum of single-effect linear regression
-#' with z scores; all posterior calculations are for z-scores. The
-#' required summary data are the p by p correlation matrix, \code{R},
-#' and the p-vector \code{z}. The summary stats should come from the
-#' same individuals (samples).
+#' with z scores; all posterior calculations are for z-scores. This
+#' function fits the regression model \eqn{z = \sum_l R*b_l + e},
+#' where e is \eqn{N(0,residual_var*R)} and \sum_l b_l is a p-vector
+#' of effects to be estimated. The required summary data are the p by
+#' p correlation matrix, \code{R}, and the p-vector \code{z}. The
+#' summary stats should come from the same individuals (samples).
+#' 
+#' 
+#' 
 #' 
 #' susie_auto is an attempt to automate reliable running of susie even
 #' on hard problems. It implements a three-stage strategy for each L:

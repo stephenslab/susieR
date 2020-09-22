@@ -1,50 +1,9 @@
-#' @title Bayesian single-effect linear regression using z scores
+#' @rdname single_effect_regression
 #' 
-#' @description Performs single-effect linear regression with z
-#'   scores. That is, this function fits the regression model \eqn{z =
-#'   Rb + e}, where e is \eqn{N(0,Sigma)}, \eqn{Sigma = residual_var*R +
-#'   lambda*I}, and the b is a p-vector of effects to be estimated. The
-#'   assumption is that b has exactly one non-zero element, with all
-#'   elements equally likely to be non-zero. The prior on the non-zero
-#'   element is \eqn{N(0,V)}.
-#' 
-#' @details The summary data required are the p by p correlation
-#'   matrix R, the p vector z. The summary stats should come from the
-#'   same individuals.
-#' 
-#' @param z A p vector.
+#' @param z A p-vector of z scores.
 #' 
 #' @param Sigma \code{residual_var*R + lambda*I}
 #' 
-#' @param V The prior variance.
-#' 
-#' @param prior_weights A p vector of prior weights.
-#' 
-#' @param optimize_V Boolean indicating whether to optimize V (by
-#'   maximum likelihood).
-#' 
-#' @param check_null_threshold A scalar threshold on the log-scale to
-#'   compare likelihood between current estimate and zero (the null).
-#' 
-#' @return A list with the following elements:
-#' 
-#' \item{alpha}{Vector of posterior inclusion probabilities. i.e.,
-#'   \code{alpha[i]} is posterior probability that that the ith
-#'   coefficient is non-zero.}
-#' 
-#' \item{mu}{Vector of posterior means (conditional on inclusion).}
-#' 
-#' \item{mu2}{Vector of posterior second moments (conditional on
-#'   inclusion).}
-#' 
-#' \item{lbf}{Vector of log-Bayes factors for each variable.}
-#' 
-#' \item{V}{The prior variance (after optimization if \code{optimize_V
-#'   != "none"}).}
-#' 
-#' \item{lbf_model}{The log-likelihood for the total model minus the
-#'   log-likelihood for the null model.}
-#'
 #' @keywords internal
 #' 
 single_effect_regression_rss =
