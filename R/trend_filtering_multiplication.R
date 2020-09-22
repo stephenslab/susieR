@@ -3,8 +3,8 @@
 # @param order is the order of trend filtering
 # @param b an n=p vector
 # @return an n vector
-compute_tf_Xb = function(order,b){
-  for (i in 1:(order + 1))
+compute_tf_Xb = function(order,b) {
+  for (i in 1:(order+1))
     b = rev(-1*cumsum(rev(b)))
   return(b)
 }
@@ -15,7 +15,7 @@ compute_tf_Xb = function(order,b){
 # @param y an n vector
 # @return an n vector
 compute_tf_Xty = function(order, y) {
-  for (i in 1:(order + 1))
+  for (i in 1:(order+1))
     y = -1*cumsum(y)
   return(y)
 }
@@ -38,8 +38,8 @@ compute_tf_d = function (order, n, cm, csd, standardize = FALSE,
     if (order == 0)
       d[n] = 0
 
-    # When standardize = FALSE, intercept = TRUE: d = [n-1, n-1, ...]
-    # * (csd^2)
+    # When standardize = FALSE, intercept = TRUE:
+    # d = [n-1, n-1, ...] * (csd^2)
     if (!standardize)
       d = d*csd^2
     return(d)
@@ -55,7 +55,7 @@ compute_tf_d = function (order, n, cm, csd, standardize = FALSE,
       d = cumsum(base^2) 
     }
 
-    # when standardize = TRUE, intercept = TRUE:
+    # When standardize = TRUE, intercept = TRUE:
     # d = colSums(X^2) / (csd^2)
     if (standardize)
       d = d/csd^2
@@ -80,7 +80,7 @@ compute_tf_cm = function (order, n) {
 # @param n is the length of y
 # @return an n vector
 compute_tf_csd = function (order, n) {
-  cm = compute_tf_cm(order, n)
+  cm = compute_tf_cm(order,n)
   csd = sqrt((compute_tf_d(order,n)/n - cm^2)*n/(n-1))
   csd[which(csd == 0)] = 1
   return(csd)

@@ -1,12 +1,15 @@
 #' @title Initialize a susie object using regression coefficients
 #'
-#' @param coef_index An L-vector for indices of nonzero effects.
+#' @param coef_index An L-vector containing the the indices of the
+#'   nonzero coefficients.
 #' 
-#' @param coef_value An L-vector for initial estimated beta values.
+#' @param coef_value An L-vector containing initial coefficient
+#' estimates.
 #' 
-#' @param p A scalar the number of variables in the data.
+#' @param p A scalar giving the number of variables.
 #' 
-#' @return A list (alpha, mu, mu2) to be used by \code{susie}.
+#' @return A list with elements \code{alpha}, \code{mu} and \code{mu2}
+#'   to be used by \code{susie}.
 #'
 #' @examples
 #' # Add example(s) here.

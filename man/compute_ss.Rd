@@ -20,3 +20,7 @@ A list of sufficient statistics.
 \description{
 Compute sufficient statistics for susie.
 }
+\examples{
+# Add example(s) here.
+
+}

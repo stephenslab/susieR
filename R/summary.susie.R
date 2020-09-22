@@ -5,7 +5,8 @@
 #' @param \dots Additional arguments passed to the generic \code{summary}
 #'   method.
 #' 
-#' @return A data frame of variables and a data frame of credible sets.
+#' @return A list containing a data frame of variables and a data
+#'   frame of credible sets.
 #' 
 #' @method summary susie
 #' @export summary.susie

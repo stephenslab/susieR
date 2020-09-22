@@ -26,7 +26,7 @@ update_each_effect_rss = function (R, z, s_init, Sigma,
       # Remove lth effect from fitted values.
       s$Rz = s$Rz - R %*% (s$alpha[l,] * s$mu[l,])
 
-      #compute residuals
+      # Compute residuals.
       r = z - s$Rz
       res = single_effect_regression_rss(as.vector(r),Sigma,s$V[l],s$pi,
               estimate_prior_method,check_null_threshold)

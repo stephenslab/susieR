@@ -44,10 +44,12 @@ susie_get_pip(res, prune_by_cs = FALSE, prior_tol = 1e-09)
 \code{susie_get_pip} and \code{susie_get_cs}, this may instead be
 the posterior inclusion probability matrix, \code{alpha}.}
 
-\item{last_only}{Whether or not to get ELBO from all iterations.}
+\item{last_only}{If \code{last_only = FALSE}, return the ELBO from
+all iterations; otherwise return the ELBO from the last iteration
+only.}
 
-\item{warning_tol}{Warn if ELBO is non-decreasing by this tolerance
-level.}
+\item{warning_tol}{Warn if ELBO is decreasing by this
+tolerance level.}
 
 \item{X}{n by p matrix of values of the p variables (covariates) in
 n samples. When provided, correlation between variables will be
@@ -79,25 +81,35 @@ smaller than this threshold.}
 }
 \value{
 \code{susie_get_objective} returns the evidence lower bound
-(ELBO) achieved by the fitted susie model.
+(ELBO) achieved by the fitted susie model and, optionally, at each
+iteration of the IBSS fitting procedure.
+
 \code{susie_get_residual_variance} returns the (estimated or
-fixed) residual variance parameter. \code{susie_get_prior_variance}
-returns the (estimated or fixed) prior variance parameters.
+fixed) residual variance parameter.
+
+\code{susie_get_prior_variance} returns the (estimated or fixed)
+prior variance parameters.
+
 \code{susie_get_posterior_mean} returns the posterior mean for the
 regression coefficients of the fitted susie model.
+
 \code{susie_get_posterior_sd} returns the posterior standard
 deviation for coefficients of the fitted susie model.
+
 \code{susie_get_niter} returns the number of model fitting
-iterations performed. \code{susie_get_pip} returns a vector
-containing the posterior inclusion probabilities (PIPs) for all
-variables. \code{susie_get_lfsr} returns a vector containing the
-average lfsr across variables for each single-effect, weighted by
-the posterior inclusion probability (alpha).
+iterations performed.
+
+\code{susie_get_pip} returns a vector containing the posterior
+inclusion probabilities (PIPs) for all variables.
+
+\code{susie_get_lfsr} returns a vector containing the average lfsr
+across variables for each single-effect, weighted by the posterior
+inclusion probability (alpha).
 
 \code{susie_get_cs} returns credible sets (CSs) from a susie fit,
 as well as summaries of correlation among the variables included in
 each CS. If desired, one can filter out CSs that do not meet a
-specified purity threshold; to do this, either \code{X} or
+specified \dQuote{purity} threshold; to do this, either \code{X} or
 \code{Xcorr} must be supplied. It returns a list with the following
 elements:
 
@@ -118,6 +130,6 @@ These functions access basic properties or draw
   inferences from a fitted susie model.
 }
 \examples{
-# Add example(s) here.
+# Add examples here.
 
 }

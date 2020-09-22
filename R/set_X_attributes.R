@@ -21,19 +21,19 @@ set_X_attributes = function(X, center = TRUE, scale = TRUE) {
     n = ncol(X)
     
     # Set three attributes for X.
-    attr(X, "scaled:center") = compute_tf_cm(order, n)
-    attr(X, "scaled:scale") = compute_tf_csd(order, n)
-    attr(X, "d") = compute_tf_d(order,n,attr(X,"scaled:center"),
-                                 attr(X,"scaled:scale"),scale,center)
+    attr(X,"scaled:center") = compute_tf_cm(order,n)
+    attr(X,"scaled:scale") = compute_tf_csd(order,n)
+    attr(X,"d") = compute_tf_d(order,n,attr(X,"scaled:center"),
+                               attr(X,"scaled:scale"),scale,center)
     if (!center)
-      attr(X, "scaled:center") = rep(0, n)
+      attr(X,"scaled:center") = rep(0,n)
     if (!scale)
-      attr(X, "scaled:scale") = rep(1, n)
+      attr(X,"scaled:scale") = rep(1,n)
   } else {
       
     # If X is either a dense or sparse ordinary matrix.
     # Get column means.
-    cm = colMeans(X, na.rm = TRUE)
+    cm = colMeans(X,na.rm = TRUE)
     
     # Get column standard deviations.
     csd = compute_colSds(X)
@@ -61,7 +61,7 @@ set_X_attributes = function(X, center = TRUE, scale = TRUE) {
 # @return a p vector of column standard deviations.
 #
 #' @importFrom Matrix colSums
-compute_colSds = function(X){
+compute_colSds = function(X) {
   n = nrow(X)
   return(sqrt((colSums(X^2)/n - (colSums(X)/n)^2)*(n/(n-1))))
 }

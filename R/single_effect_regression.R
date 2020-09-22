@@ -166,9 +166,8 @@ loglik = function (V, betahat, shat2, prior_weights) {
   return(log(weighted_sum_w) + maxlbf)
 }
 
-neg.loglik.logscale = function(lV,betahat,shat2,prior_weights){
-  return(-loglik(exp(lV),betahat,shat2,prior_weights))
-}
+neg.loglik.logscale = function(lV,betahat,shat2,prior_weights)
+  -loglik(exp(lV),betahat,shat2,prior_weights)
 
 #' @importFrom Matrix colSums
 #' @importFrom stats dnorm

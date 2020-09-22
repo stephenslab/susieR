@@ -10,6 +10,9 @@
 #' @return A list of sufficient statistics.
 #' 
 #' @importFrom methods as
+#'
+#' @examples
+#' # Add example(s) here.
 #' 
 #' @export
 #' 

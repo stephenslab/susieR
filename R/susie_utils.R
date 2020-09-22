@@ -10,31 +10,43 @@
 #'   \code{susie_get_pip} and \code{susie_get_cs}, this may instead be
 #'   the posterior inclusion probability matrix, \code{alpha}.
 #' 
-#' @param last_only Whether or not to get ELBO from all iterations.
+#' @param last_only If \code{last_only = FALSE}, return the ELBO from
+#'   all iterations; otherwise return the ELBO from the last iteration
+#'   only.
 #' 
-#' @param warning_tol Warn if ELBO is non-decreasing by this tolerance
-#'   level.
+#' @param warning_tol Warn if ELBO is decreasing by this
+#'   tolerance level.
 #' 
 #' @return \code{susie_get_objective} returns the evidence lower bound
-#' (ELBO) achieved by the fitted susie model.
+#' (ELBO) achieved by the fitted susie model and, optionally, at each
+#' iteration of the IBSS fitting procedure.
+#' 
 #' \code{susie_get_residual_variance} returns the (estimated or
-#' fixed) residual variance parameter. \code{susie_get_prior_variance}
-#' returns the (estimated or fixed) prior variance parameters.
+#' fixed) residual variance parameter.
+#'
+#' \code{susie_get_prior_variance} returns the (estimated or fixed)
+#' prior variance parameters.
+#'
 #' \code{susie_get_posterior_mean} returns the posterior mean for the
 #' regression coefficients of the fitted susie model.
+#' 
 #' \code{susie_get_posterior_sd} returns the posterior standard
 #' deviation for coefficients of the fitted susie model.
+#' 
 #' \code{susie_get_niter} returns the number of model fitting
-#' iterations performed. \code{susie_get_pip} returns a vector
-#' containing the posterior inclusion probabilities (PIPs) for all
-#' variables. \code{susie_get_lfsr} returns a vector containing the
-#' average lfsr across variables for each single-effect, weighted by
-#' the posterior inclusion probability (alpha).
+#' iterations performed.
+#'
+#' \code{susie_get_pip} returns a vector containing the posterior
+#' inclusion probabilities (PIPs) for all variables.
+#'
+#' \code{susie_get_lfsr} returns a vector containing the average lfsr
+#' across variables for each single-effect, weighted by the posterior
+#' inclusion probability (alpha).
 #'
 #' \code{susie_get_cs} returns credible sets (CSs) from a susie fit,
 #' as well as summaries of correlation among the variables included in
 #' each CS. If desired, one can filter out CSs that do not meet a
-#' specified purity threshold; to do this, either \code{X} or
+#' specified \dQuote{purity} threshold; to do this, either \code{X} or
 #' \code{Xcorr} must be supplied. It returns a list with the following
 #' elements:
 #'
@@ -51,13 +63,13 @@
 #'   fit.}
 #'
 #' @examples
-#' # Add example(s) here.
+#' # Add example here.
 #' 
 #' @export
 #' 
 susie_get_objective = function (res, last_only = TRUE, warning_tol = 1e-6) {
   if (!all(diff(res$elbo) >= (-1*warning_tol)))
-    warning("Objective is not non-decreasing")
+    warning("Objective is decreasing")
   if (last_only)
     return(res$elbo[length(res$elbo)])
   else
@@ -133,7 +145,7 @@ susie_get_lfsr = function (res) {
 #' 
 #' @param dedup If \code{dedup = TRUE}, remove duplicate CSs.
 #' 
-#' @param squared If \code{squared = TRUE}, report min, mean and
+v#' @param squared If \code{squared = TRUE}, report min, mean and
 #' median of squared correlation instead of the absolute correlation.
 #' 
 #' @export
@@ -307,7 +319,7 @@ get_purity = function(pos, X, Xcorr, squared = FALSE, n = 100) {
   }
 }
 
-# @title cor function with specified warning muffled
+# Correlation function with specified warning muffled.
 #
 #' @importFrom stats cor
 muffled_corr = function (x)
@@ -317,7 +329,7 @@ muffled_corr = function (x)
                           invokeRestart("muffleWarning")
                       })
 
-# @title cov2cor function with specified warning muffled
+# cov2cor function with specified warning muffled.
 # 
 #' @importFrom stats cov2cor
 muffled_cov2cor = function (x)
@@ -336,77 +348,10 @@ is_symmetric_matrix = function (x) {
   return(res)
 }
 
-# compute standard error for regression coef
+# Compute standard error for regression coef.
 # S = (X'X)^-1 \Sigma
 calc_stderr = function (X, residuals)
   sqrt(diag(sum(residuals^2)/(nrow(X) - 2) * chol2inv(chol(t(X) %*% X))))
-
-# Perform univariate regression between each column of X and y.
-# Remove covariates if Z is not NULL.
-#
-#' @importFrom stats lm
-#' @importFrom stats .lm.fit
-#' @importFrom stats coef
-#' @importFrom stats summary.lm
-univariate_regression = function (X, y, Z = NULL, center = TRUE,
-                                  scale = FALSE, return_residuals = FALSE) {
-  y_na = which(is.na(y))
-  if (length(y_na)) {
-    X = X[-y_na,]
-    y = y[-y_na]
-  }
-  if (center) {
-    y = y - mean(y)
-    X = scale(X,center = TRUE,scale = scale)
-  } else {
-    X = scale(X,center = FALSE,scale = scale)
-  }
-  X[is.nan(X)] = 0
-  if (!is.null(Z)) {
-    if (center)
-      Z = scale(Z,center = TRUE,scale = FALSE)
-    y = .lm.fit(Z,y)$residuals
-  }
-  output = try(do.call(rbind,
-                       lapply(1:ncol(X), function (i) {
-                         g = .lm.fit(cbind(1,X[,i]),y)
-                         return(c(coef(g)[2],calc_stderr(cbind(1,X[,i]),
-                                                         g$residuals)[2]))
-                       })),
-               silent = TRUE)
-  
-  # Exception occurs, fall back to a safer but slower calculation.
-  if (inherits(output,"try-error")) {
-    output = matrix(0,ncol(X),2)
-    for (i in 1:ncol(X)) {
-      fit = summary(lm(y ~ X[,i]))$coef
-      if (nrow(fit) == 2)
-        output[i,] = as.vector(summary(lm(y ~ X[,i]))$coef[2,1:2])
-      else
-        output[i,] = c(0,0)
-    }
-  }
-  if (return_residuals) 
-    return(list(betahat = output[,1],sebetahat = output[,2],residuals = y))
-  else
-    return(list(betahat = output[,1],sebetahat = output[,2]))
-}
-
-# Computes the z-scores (t-statistics) for association between Y and
-# each column of X.
-calc_z = function (X, Y, center = FALSE, scale = FALSE) {
-  univariate_z = function(X,Y,center,scale) {
-    out = univariate_regression(X,Y,center = center,scale = scale)
-    return(out$betahat/out$sebetahat)
-  }
-  if (is.null(dim(Y)))
-    return(univariate_z(X,Y,center,scale))
-  else
-    return(do.call(cbind,lapply(1:ncol(Y),
-                                function(i) univariate_z(X,Y[,i],
-                                                         center = center,
-                                                         scale = scale))))
-}
 
 # Return residuals of Y after removing the linear effects of the susie
 # model.
@@ -415,6 +360,6 @@ calc_z = function (X, Y, center = FALSE, scale = FALSE) {
 get_R = function (X, Y, s)
   Y - X %*% coef(s)
 
-# Slim the result of fitted susie model
+# Slim the result of fitted susie model.
 susie_slim = function (res)
   list(alpha = res$alpha,niter = res$niter,V = res$V,sigma2 = res$sigma2)
