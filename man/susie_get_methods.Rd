@@ -130,6 +130,6 @@ These functions access basic properties or draw
   inferences from a fitted susie model.
 }
 \examples{
-# Add examples here.
+# Add example here.
 
 }

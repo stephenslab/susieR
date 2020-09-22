@@ -58,7 +58,7 @@
 #' s = susie_trendfilter(y)
 #' plot(y)
 #' lines(mu,col = 1,lwd = 3)
-#' lines(predict(s),col=2,lwd=2)
+#' lines(predict(s),col = 2,lwd = 2)
 #'
 #' # Calculate credible sets (indices of y that occur just before
 #' # changepoints).
@@ -90,7 +90,7 @@ susie_trendfilter = function (y, order = 0, standardize = FALSE,
 }
 
 # @title estimate residual variance using MAD estimator
-# @param y an n vector
+# @param y an n-vector
 # @return a scalar of estimated residual variance
 estimate_mad_residual_variance = function (y)
   0.5*(median(abs(diff(y))/0.6745)^2)

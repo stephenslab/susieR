@@ -2,7 +2,7 @@
 % Please edit documentation in R/single_effect_regression.R
 \name{single_effect_regression}
 \alias{single_effect_regression}
-\title{Bayesian single-effect linear regression of y on X}
+\title{Bayesian single-effect linear regression}
 \usage{
 single_effect_regression(
   Y,
@@ -15,11 +15,11 @@ single_effect_regression(
 )
 }
 \arguments{
-\item{Y}{An n vector.}
+\item{Y}{An n-vector.}
 
 \item{X}{An n by p matrix of covariates.}
 
-\item{V}{The prior variance.}
+\item{V}{A scalar giving the prior variance.}
 
 \item{residual_variance}{The residual variance.}
 
@@ -53,12 +53,11 @@ A list with the following elements:
 \item{loglik}{The logarithm of the likelihood, \eqn{p(y | X, V)}.}
 }
 \description{
-Performs single-effect linear regression of y on
-  X. That is, this function fits the regression model \eqn{y = Xb +
-  e}, where elements of e are i.i.d. \eqn{N(0,s2)}, and b is a
-  p-vector of effects to be estimated. The assumption is that b has
-  exactly one non-zero element, with all elements equally likely to
-  be non-zero. The prior on the coefficient of the non-zero element
-  is \eqn{N(0,V)}.
+Fits the regression model \eqn{y = Xb + e}, where
+elements of e are i.i.d. \eqn{N(0,s2)}, and b is a p-vector of
+effects to be estimated. The assumption is that b has exactly one
+non-zero element, with all elements equally likely to be
+non-zero. The prior on the coefficient of the non-zero element is
+\eqn{N(0,V)}.
 }
 \keyword{internal}

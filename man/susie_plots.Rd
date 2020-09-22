@@ -20,14 +20,16 @@ susie_plot_iteration(model, L, file_prefix, pos = NULL)
 }
 \arguments{
 \item{model}{A susie fit, typically an output from
-\code{\link{susie}} or one of its variants.  For \code{suse_plot},
+\code{\link{susie}} or one of its variants. For \code{suse_plot},
 the susie fit must have \code{model$z}, \code{model$PIP}, and may
 include \code{model$sets}. \code{model} may also be a vector of
 z-scores or PIPs.}
 
 \item{y}{A string indicating what to plot: either \code{"z"} for
-z-scores, \code{"PIP"}, \code{"log10PIP"}, or a random label to
-plot input data as is.}
+z-scores, \code{"PIP"} for posterior inclusion probabilities,
+\code{"log10PIP"} for posterior inclusion probabiliities on the
+(base-10) log-scale. For any other setting, the data are plotted as
+is.}
 
 \item{add_bar}{If \code{add_bar = TRUE}, add horizontal bar to
 signals in credible interval.}
@@ -55,7 +57,7 @@ annotate the size and purity of each CS discovered.}
 \description{
 \code{susie_plot} produces a per-variable summary of
   the SuSiE credible sets. \code{susie_plot_iteration} produces a
-  diagnostic plot for the susie model fitting.  For
+  diagnostic plot for the susie model fitting. For
   \code{susie_plot_iteration}, several plots will be created if
   \code{track_fit = TRUE} when calling \code{susie}.
 }
