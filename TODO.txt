@@ -4,9 +4,3 @@ to do
 + Revise README.
 
 + Update pkgdown site.
-
-+ Fill out roxygen2 docs for N2finemapping data set.
-
-+ Fill out roxygen2 docs for N3finemapping data set.
-
-
