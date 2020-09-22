@@ -375,7 +375,7 @@ univariate_regression = function (X, y, Z = NULL, center = TRUE,
                        })),
                silent = TRUE)
   
-  # Exception occurs, fall back to a safer but slower calculation
+  # Exception occurs, fall back to a safer but slower calculation.
   if (inherits(output,"try-error")) {
     output = matrix(0,ncol(X),2)
     for (i in 1:ncol(X)) {

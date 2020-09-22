@@ -28,16 +28,17 @@
 #' X and y to have variance 1 (see examples).
 #' 
 #' \code{susie_rss} performs sum of single-effect linear regression
-#' with z scores. The required summary data are the p by p correlation
-#' matrix, \code{R}, and the p-vector \code{z}. The summary stats
-#' should come from the same individuals (samples).
+#' with z scores; all posterior calculations are for z-scores. The
+#' required summary data are the p by p correlation matrix, \code{R},
+#' and the p-vector \code{z}. The summary stats should come from the
+#' same individuals (samples).
 #' 
 #' susie_auto is an attempt to automate reliable running of susie even
-#' on hard problems. Implements a three-stage strategy for each L:
-#' first fit susie with very small residual error; next, estimate
+#' on hard problems. It implements a three-stage strategy for each L:
+#' first, fit susie with very small residual error; next, estimate
 #' residual error; finally, estimate the prior variance. If the last
 #' step estimates some prior variances to be zero, stop. Otherwise,
-#' double L, and repeat.  Initial runs are performed with relaxed
+#' double L, and repeat. Initial runs are performed with relaxed
 #' tolerance; the final run is performed using the default susie
 #' tolerance.
 #'
@@ -220,18 +221,30 @@
 #' beta = rep(0,p)
 #' beta[1:4] = 1
 #' X = matrix(rnorm(n*p),nrow = n,ncol = p)
+#' X = scale(X,center = TRUE,scale = TRUE)
 #' y = drop(X %*% beta + rnorm(n))
 #' res1 = susie(X,y,L = 10)
-#' plot(c(0,beta),coef(res1))
+#' plot(beta,coef(res1)[-1])
+#' abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
 #' plot(y,predict(res1))
+#' abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
 #'
 #' # susie_suff_stat example.
 #' input_ss = compute_ss(X,y,standardize = TRUE)
 #' res2 = with(input_ss,
-#'              susie_suff_stat(XtX = XtX,Xty = Xty,yty = yty,n = n))
-#' plot(c(0,beta),coef(res2))
+#'             susie_suff_stat(XtX = XtX,Xty = Xty,yty = yty,n = n,L = 10))
+#' plot(coef(res1)[-1],coef(res2)[-1])
+#' abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
 #'
 #' # susie_rss example.
+#' ss   <- susieR:::univariate_regression(X,y)
+#' R    <- with(input_ss,cov2cor(XtX))
+#' zhat <- with(ss,betahat/sebetahat)
+#' res3 <- susie_rss(zhat,R,L = 10)
+#' plot(coef(res1)[-1]/ss$sebetahat,coef(res3)[-1])
+#' abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
+#'
+#' # susie_auto example.
 #' 
 #' @importFrom stats var
 #' @importFrom utils modifyList
