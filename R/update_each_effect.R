@@ -33,6 +33,7 @@ update_each_effect = function (X, Y, s, estimate_prior_variance = FALSE,
       s$mu2[l,]   = res$mu2
       s$V[l]      = res$V
       s$lbf[l]    = res$lbf_model
+      s$lbf_snp[,l] = res$lbf
       s$KL[l]     = -res$loglik +
         SER_posterior_e_loglik(X,R,s$sigma2,res$alpha * res$mu,
                                res$alpha * res$mu2)
