@@ -46,5 +46,3 @@ update_each_effect_rss = function (R, z, s_init, Sigma,
   s$Rz = unname(as.matrix(s$Rz))
   return(s)
 }
-
-

@@ -46,7 +46,20 @@
 #' @seealso \code{\link{susie_plot_changepoint}}
 #'
 #' @examples
-#' # Add example(s) here.
+#' set.seed(1)
+#' n = 1000
+#' p = 1000
+#' beta = rep(0,p)
+#' beta[sample(1:1000,4)] = 1
+#' X = matrix(rnorm(n*p),nrow = n,ncol = p)
+#' X = scale(X,center = TRUE,scale = TRUE)
+#' y = drop(X %*% beta + rnorm(n))
+#' res = susie(X,y,L = 10)
+#' susie_plot(res,'PIP')
+#' susie_plot(res1,'PIP',add_bar=T)
+#' susie_plot(res1,'PIP',add_legend=T)
+#' # Color true effects in red
+#' susie_plot(res1,'PIP',b=beta,add_legend=T)
 #' 
 #' @importFrom utils head
 #' @importFrom stats pnorm
@@ -204,6 +217,17 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
 #' @param pos Indices of variables to plot. If \code{pos = NULL} all
 #'   variables are plotted.
 #' 
+#' @examples
+#' set.seed(1)
+#' n = 1000
+#' p = 1000
+#' beta = rep(0,p)
+#' beta[sample(1:1000,4)] = 1
+#' X = matrix(rnorm(n*p),nrow = n,ncol = p)
+#' X = scale(X,center = TRUE,scale = TRUE)
+#' y = drop(X %*% beta + rnorm(n))
+#' res = susie(X,y,L = 10)
+#' susie_plot_iteration(res, L=10, file_prefix="plot_demo")
 #' @importFrom grDevices pdf
 #' @importFrom grDevices dev.off
 #' @importFrom reshape melt
