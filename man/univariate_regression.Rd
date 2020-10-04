@@ -2,8 +2,7 @@
 % Please edit documentation in R/univariate_regression.R
 \name{univariate_regression}
 \alias{univariate_regression}
-\title{Perform univariate regression between each column of X and y.
-  Remove covariates if Z is not NULL.}
+\title{Univariate regression between each column of X and y.}
 \usage{
 univariate_regression(
   X,
@@ -14,7 +13,22 @@ univariate_regression(
   return_residuals = FALSE
 )
 }
+\arguments{
+\item{X}{N by P matrix of regressors.}
+
+\item{y}{N vector of response variables.}
+
+\item{Z}{and optional N by K matrix of covariates. If Z is not null, it will be regressed out 
+from y first and the resulting residual will be used for regression analysis with X.}
+
+\item{center}{Whether or not to center X, y and Z.}
+
+\item{scale}{Whether or not to scale X, y and Z.}
+
+\item{return_residuals}{Whether or not to report residuals from the analysis if Z is not null.}
+}
 \description{
-Perform univariate regression between each column of X and y.
-  Remove covariates if Z is not NULL.
+This function performs univariate regression between each column of X and y.
+It applies regression analysis efficiently for each column of X using `.lm.fit()`.
+The estimated effect size and stardard error for each variable are reported.
 }

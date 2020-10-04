@@ -1,6 +1,14 @@
-#' @title Perform univariate regression between each column of X and y.
-#'   Remove covariates if Z is not NULL.
-#'
+#' @title Univariate regression between each column of X and y.
+#' @description This function performs univariate regression between each column of X and y.
+#' It applies regression analysis efficiently for each column of X using `.lm.fit()`.
+#' The estimated effect size and stardard error for each variable are reported.
+#' @param X N by P matrix of regressors.
+#' @param y N vector of response variables.
+#' @param Z and optional N by K matrix of covariates. If Z is not null, it will be regressed out 
+#' from y first and the resulting residual will be used for regression analysis with X.
+#' @param center Whether or not to center X, y and Z.
+#' @param scale Whether or not to scale X, y and Z.
+#' @param return_residuals Whether or not to report residuals from the analysis if Z is not null.
 #' @importFrom stats lm
 #' @importFrom stats .lm.fit
 #' @importFrom stats coef
@@ -23,7 +31,7 @@ univariate_regression = function (X, y, Z = NULL, center = TRUE,
   X[is.nan(X)] = 0
   if (!is.null(Z)) {
     if (center)
-      Z = scale(Z,center = TRUE,scale = FALSE)
+      Z = scale(Z,center = TRUE,scale = scale)
     y = .lm.fit(Z,y)$residuals
   }
   output = try(do.call(rbind,
@@ -45,7 +53,7 @@ univariate_regression = function (X, y, Z = NULL, center = TRUE,
         output[i,] = c(0,0)
     }
   }
-  if (return_residuals) 
+  if (return_residuals && !is.null(Z)) 
     return(list(betahat = output[,1],sebetahat = output[,2],residuals = y))
   else
     return(list(betahat = output[,1],sebetahat = output[,2]))
