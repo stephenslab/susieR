@@ -312,6 +312,10 @@ A \code{"susie"} object with some or all of the following
 \item{Xr}{A vector of length n, equal to \code{X \%*\% colSums(alpha
   * mu)}.}
 
+\item{lbf}{log Bays Factor for each single effect.}
+
+\item{lbf_variable}{log Bays Factor per variable for each single effect.}
+
 \item{intercept}{Intercept (fixed or estimated).}
 
 \item{sigma2}{Residual variance (fixed or estimated).}

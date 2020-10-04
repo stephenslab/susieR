@@ -3,31 +3,40 @@
 \docType{data}
 \name{N3finemapping}
 \alias{N3finemapping}
-\title{Add Title Here.}
+\title{Simulated fine-mapping data with 3 effect variables.}
 \format{
 \code{N3finemapping} is a list with the following elements:
 
 \describe{
-  \item{data$X}{Describe "X" here.}
+  \item{X}{N by P variable matrix of centered and scaled genotype data.}
 
-  \item{data$chrom}{Describe "chrom" here.}
+  \item{chrom}{Chromomsome of the original data, in hg38 coordinate.}
 
-  \item{data$pos}{Describe "pos" here.}
+  \item{pos}{Chromomosomal positoin of the original data, in hg38 coordinate. The information can be 
+     used to compare impact of using other genotype references of the same variables in susie_rss application.}
 
-  \item{data$true_coef}{Describe "true_coef" here.}
+  \item{true_coef}{The simulated effect sizes.}
 
-  \item{data$residual_variance}{Describe "residual_variance" here.}
+  \item{residual_variance}{The simulated residual covariance matrix.}
 
-  \item{Y}{Describe "Y" here.}
+  \item{Y}{The simulated response variables.}
 
-  \item{data$allele_freq}{Describe "allele_freq" here.}
+  \item{allele_freq}{Allele frequency of the original genotype data.}
 
-  \item{data$V}{Describe "V" here.}
-
-  \item{sumstats}{Describe "sumstats" here.}
+  \item{V}{Prior covariance matrix for effect size of the three non-zero effect variables.}
 }
 }
 \description{
-Briefly describe the data set here.
+The data-set contains a matrix of about 600 individuals and 1,000 variables. 
+These variables are real-world genotypes centered and scaled, and therefore retains the correlation
+structure of variables in the original genotype data. 3 out of the variables have non-zero effects.
+The response data is generated under a multivariate linear regression model. 
+See Wang et al (2020) for more details.
+}
+\references{
+Wang, G., Sarkar, A., Carbonetto, P., & Stephens, M. (2020). 
+A simple new approach to variable selection in regression, 
+with application to genetic fine mapping. 
+Journal of the Royal Statistical Society: Series B (Statistical Methodology).
 }
 \keyword{data}
