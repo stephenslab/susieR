@@ -12,7 +12,17 @@
 #'   to be used by \code{susie}.
 #'
 #' @examples
-#' # Add example(s) here.
+#' set.seed(1)
+#' n = 1000
+#' p = 1000
+#' beta = rep(0,p)
+#' beta[sample(1:1000,4)] = 1
+#' X = matrix(rnorm(n*p),nrow = n,ncol = p)
+#' X = scale(X,center = TRUE,scale = TRUE)
+#' y = drop(X %*% beta + rnorm(n))
+#' # As an example we use true coefficient to initialize SuSiE
+#' s = susie_init_coef(which(beta!=0), beta[which(beta!=0)], length(beta))
+#' res = susie(X,y,L = 10,s_init=s)
 #' 
 #' @export
 #' 
