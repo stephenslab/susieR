@@ -1,6 +1,6 @@
 to do
 =====
 
-+ Revise README.
++ Update README.
 
 + Update pkgdown site.

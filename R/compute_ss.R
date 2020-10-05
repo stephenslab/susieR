@@ -14,7 +14,7 @@
 #' @examples
 #' data(N2finemapping)
 #' ss = compute_ss(N2finemapping$X, N2finemapping$Y[,1])
-#' names(ss) 
+#' 
 #' @export
 #' 
 compute_ss = function(X, y, standardize = TRUE) {

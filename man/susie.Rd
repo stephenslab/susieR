@@ -312,9 +312,9 @@ A \code{"susie"} object with some or all of the following
 \item{Xr}{A vector of length n, equal to \code{X \%*\% colSums(alpha
   * mu)}.}
 
-\item{lbf}{log Bays Factor for each single effect.}
+\item{lbf}{log-Bayes Factor for each single effect.}
 
-\item{lbf_variable}{log Bays Factor per variable for each single effect.}
+\item{lbf_variable}{log-Bayes Factor for each variable and single effect.}
 
 \item{intercept}{Intercept (fixed or estimated).}
 
@@ -384,10 +384,11 @@ X and y to have variance 1 (see examples).
 \code{susie_rss} performs sum of single-effect linear regression
 with z scores; all posterior calculations are for z-scores. This
 function fits the regression model \eqn{z = \sum_l R*b_l + e},
-where e is \eqn{N(0,residual_var*R)} and \sum_l b_l is a p-vector
-of effects to be estimated. The required summary data are the p by
-p correlation matrix, \code{R}, and the p-vector \code{z}. The
-summary stats should come from the same individuals (samples).
+where e is \eqn{N(0,residual_var*R)} and \eqn{\sum_l b_l} is a
+p-vector of effects to be estimated. The required summary data are
+the p by p correlation matrix, \code{R}, and the p-vector
+\code{z}. The summary stats should come from the same individuals
+(samples).
 
 
 
@@ -439,6 +440,6 @@ abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
 \references{
 G. Wang, A. Sarkar, P. Carbonetto and M. Stephens (2020). A simple
   new approach to variable selection in regression, with application
-  to genetic fine-mapping. \emph{bioRxiv}
-  \url{https://doi.org/10.1101/501114}.
+  to genetic fine-mapping. \emph{Journal of the Royal Statistical
+  Society, Series B} \url{https://doi.org/10.1101/501114}.
 }

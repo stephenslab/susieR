@@ -20,8 +20,9 @@
 #' X = matrix(rnorm(n*p),nrow = n,ncol = p)
 #' X = scale(X,center = TRUE,scale = TRUE)
 #' y = drop(X %*% beta + rnorm(n))
-#' # As an example we use true coefficient to initialize SuSiE
-#' s = susie_init_coef(which(beta!=0), beta[which(beta!=0)], length(beta))
+#' 
+#' # Initialize susie to ground-truth coefficients.
+#' s = susie_init_coef(which(beta != 0),beta[beta != 0],length(beta))
 #' res = susie(X,y,L = 10,s_init=s)
 #' 
 #' @export
@@ -69,7 +70,7 @@ init_setup = function (n, p, L, scaled_prior_variance, residual_variance,
            Xr     = rep(0,n),
            KL     = rep(as.numeric(NA),L),
            lbf    = rep(as.numeric(NA),L),
-           lbf_variable = matrix(NA,L,p),
+           lbf_variable = matrix(as.numeric(NA),L,p),
            sigma2 = residual_variance,
            V      = scaled_prior_variance*varY,
            pi     = prior_weights)

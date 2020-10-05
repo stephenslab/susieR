@@ -72,10 +72,10 @@ X = scale(X,center = TRUE,scale = TRUE)
 y = drop(X \%*\% beta + rnorm(n))
 res = susie(X,y,L = 10)
 susie_plot(res,'PIP')
-susie_plot(res1,'PIP',add_bar=T)
-susie_plot(res1,'PIP',add_legend=T)
-# Color true effects in red
-susie_plot(res1,'PIP',b=beta,add_legend=T)
+susie_plot(res,'PIP',add_bar = TRUE)
+susie_plot(res,'PIP',add_legend = TRUE)
+# True effects are shown in red.
+susie_plot(res,'PIP',b = beta,add_legend = TRUE)
 
 set.seed(1)
 n = 1000
