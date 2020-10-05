@@ -88,6 +88,7 @@ X = scale(X,center = TRUE,scale = TRUE)
 y = drop(X \%*\% beta + rnorm(n))
 res = susie(X,y,L = 10)
 susie_plot_iteration(res, L=10, file_prefix="plot_demo")
+
 }
 \seealso{
 \code{\link{susie_plot_changepoint}}

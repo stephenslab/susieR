@@ -199,9 +199,8 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
           text[i] = paste0("L",i,": C=",legend_text$size[i],"/R=",
                            legend_text$purity[i])
       }
-      legend(par("xaxp")[1],1.1*par("yaxp")[2],text,xpd = TRUE,horiz = TRUE,
-             inset = c(0,0),bty = "n",pch = 15,col = legend_text$col,
-             cex = 0.75)
+      legend("topright",text,bty = "n",col = legend_text$col,cex = 0.65,
+             pch = 15)
     }
   }
   points(pos[b != 0],p[b != 0],col = 2,pch = 16)
@@ -229,6 +228,7 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
 #' y = drop(X %*% beta + rnorm(n))
 #' res = susie(X,y,L = 10)
 #' susie_plot_iteration(res, L=10, file_prefix="plot_demo")
+#' 
 #' @importFrom grDevices pdf
 #' @importFrom grDevices dev.off
 #' @importFrom reshape melt
