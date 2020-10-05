@@ -1,14 +1,32 @@
-#' @title Univariate regression between each column of X and y.
-#' @description This function performs univariate regression between each column of X and y.
-#' It applies regression analysis efficiently for each column of X using `.lm.fit()`.
-#' The estimated effect size and stardard error for each variable are reported.
-#' @param X N by P matrix of regressors.
-#' @param y N vector of response variables.
-#' @param Z and optional N by K matrix of covariates. If Z is not null, it will be regressed out 
-#' from y first and the resulting residual will be used for regression analysis with X.
-#' @param center Whether or not to center X, y and Z.
-#' @param scale Whether or not to scale X, y and Z.
-#' @param return_residuals Whether or not to report residuals from the analysis if Z is not null.
+#' @title Perform Univariate Linear Regression Separately for Columns of X
+#' 
+#' @description This function performs the univariate linear
+#' regression y ~ x separately for each column x of X. Each regression
+#' is implemented using \code{.lm.fit()}. The estimated effect size
+#' and stardard error for each variable are outputted.
+#' 
+#' @param X n by p matrix of regressors.
+#' 
+#' @param y n-vector of response variables.
+#' 
+#' @param Z Optional n by k matrix of covariates to be included in all
+#'   regresions. If Z is not \code{NULL}, the linear effects of
+#'   covariates are removed from y first, and the resulting residuals
+#'   are used in place of y.
+#' 
+#' @param center If \code{center = TRUE}, center X, y and Z.
+#' 
+#' @param scale If \code{scale = TRUE}, scale X, y and Z.
+#' 
+#' @param return_residuals Whether or not to output the residuals if Z
+#' is not \code{NULL}.
+#'
+#' @return A list with two vectors containing the least-squares
+#'   estimates of the coefficients (\code{betahat}) and their standard
+#'   errors (\code{sebetahat}). Optionally, and only when a matrix of
+#'   covariates \code{Z} is provided, a third vector \code{residuals}
+#'   containing the residuals is returned.
+#' 
 #' @importFrom stats lm
 #' @importFrom stats .lm.fit
 #' @importFrom stats coef

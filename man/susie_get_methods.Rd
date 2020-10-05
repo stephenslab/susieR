@@ -130,7 +130,6 @@ These functions access basic properties or draw
   inferences from a fitted susie model.
 }
 \examples{
-# susie example.
 set.seed(1)
 n = 1000
 p = 1000
@@ -149,4 +148,5 @@ susie_get_posterior_sd(s)
 susie_get_niter(s)
 susie_get_pip(s)
 susie_get_lfsr(s)
+
 }

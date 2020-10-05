@@ -63,7 +63,6 @@
 #'   fit.}
 #'
 #' @examples
-#' # susie example.
 #' set.seed(1)
 #' n = 1000
 #' p = 1000
@@ -82,6 +81,7 @@
 #' susie_get_niter(s)
 #' susie_get_pip(s)
 #' susie_get_lfsr(s)
+#' 
 #' @export
 #' 
 susie_get_objective = function (res, last_only = TRUE, warning_tol = 1e-6) {

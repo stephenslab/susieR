@@ -110,7 +110,7 @@ lines(predict(s),col=2,lwd=2)
 lines(y.tf$fit[,which(y.tf$lambda==y.tf.cv$lambda.min)],col=4,lwd=2)
 ```
 
-The two fits seem similar in accuracy. We can check this mumerically:
+The two fits seem similar in accuracy. We can check this numerically:
 ```{r}
 sqrt(mean((mu-y.tf$fit[,which(y.tf$lambda==y.tf.cv$lambda.min)])^2))
 sqrt(mean((mu-predict(s))^2))
