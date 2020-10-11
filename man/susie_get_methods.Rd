@@ -8,15 +8,16 @@
 \alias{susie_get_prior_variance}
 \alias{susie_get_residual_variance}
 \alias{susie_get_lfsr}
+\alias{susie_get_posterior_samples}
 \alias{susie_get_cs}
 \alias{susie_get_pip}
 \title{Inferences From Fitted SuSiE Model}
 \usage{
 susie_get_objective(res, last_only = TRUE, warning_tol = 1e-06)
 
-susie_get_posterior_mean(res)
+susie_get_posterior_mean(res, prior_tol = 1e-09)
 
-susie_get_posterior_sd(res)
+susie_get_posterior_sd(res, prior_tol = 1e-09)
 
 susie_get_niter(res)
 
@@ -25,6 +26,8 @@ susie_get_prior_variance(res)
 susie_get_residual_variance(res)
 
 susie_get_lfsr(res)
+
+susie_get_posterior_samples(susie_fit, num_samples)
 
 susie_get_cs(
   res,
@@ -51,6 +54,13 @@ only.}
 \item{warning_tol}{Warn if ELBO is decreasing by this
 tolerance level.}
 
+\item{prior_tol}{Filter out effects having estimated prior variance
+smaller than this threshold.}
+
+\item{susie_fit}{A susie fit, the output form `susieR::susie()`}
+
+\item{num_samples}{the number of samples to be drawn from the posterior distribution}
+
 \item{X}{n by p matrix of values of the p variables (covariates) in
 n samples. When provided, correlation between variables will be
 computed and used to remove CSs whose minimum correlation among
@@ -75,9 +85,6 @@ median of squared correlation instead of the absolute correlation.}
 
 \item{prune_by_cs}{Whether or not to ignore single effects not in
 a reported CS when calculating PIP.}
-
-\item{prior_tol}{Filter out effects having estimated prior variance
-smaller than this threshold.}
 }
 \value{
 \code{susie_get_objective} returns the evidence lower bound
@@ -124,6 +131,13 @@ elements:
 \item{cs_index}{If \code{X} or \code{Xcorr} is provided) the index
   (number between 1 and L) of each reported CS in the supplied susie
   fit.}
+
+The return value is a list containing the effect sizes samples and causal status samples
+   components:
+
+   \item{b}{ num_variables x num_samples matrix of effect sizes draw}
+
+   \item{gamma}{ num_variables  x num_samples matrix of causal status draw}
 }
 \description{
 These functions access basic properties or draw
