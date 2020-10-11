@@ -1,26 +1,26 @@
 #' @rdname susie_get_methods
 #'
 #' @title Inferences From Fitted SuSiE Model
-#' 
+#'
 #' @description These functions access basic properties or draw
 #'   inferences from a fitted susie model.
-#' 
+#'
 #' @param res A susie fit, typically an output from
 #'   \code{\link{susie}} or one of its variants. For
 #'   \code{susie_get_pip} and \code{susie_get_cs}, this may instead be
 #'   the posterior inclusion probability matrix, \code{alpha}.
-#' 
+#'
 #' @param last_only If \code{last_only = FALSE}, return the ELBO from
 #'   all iterations; otherwise return the ELBO from the last iteration
 #'   only.
-#' 
+#'
 #' @param warning_tol Warn if ELBO is decreasing by this
 #'   tolerance level.
-#' 
+#'
 #' @return \code{susie_get_objective} returns the evidence lower bound
 #' (ELBO) achieved by the fitted susie model and, optionally, at each
 #' iteration of the IBSS fitting procedure.
-#' 
+#'
 #' \code{susie_get_residual_variance} returns the (estimated or
 #' fixed) residual variance parameter.
 #'
@@ -29,10 +29,10 @@
 #'
 #' \code{susie_get_posterior_mean} returns the posterior mean for the
 #' regression coefficients of the fitted susie model.
-#' 
+#'
 #' \code{susie_get_posterior_sd} returns the posterior standard
 #' deviation for coefficients of the fitted susie model.
-#' 
+#'
 #' \code{susie_get_niter} returns the number of model fitting
 #' iterations performed.
 #'
@@ -52,12 +52,12 @@
 #'
 #' \item{cs}{A list in which each list element is a vector containing
 #'   the indices of the variables in the CS.}
-#' 
+#'
 #' \item{coverage}{The nominal coverage specified for each CS.}
-#' 
+#'
 #' \item{purity}{If \code{X} or \code{Xcorr} iis provided), the
 #'   purity of each CS.}
-#' 
+#'
 #' \item{cs_index}{If \code{X} or \code{Xcorr} is provided) the index
 #'   (number between 1 and L) of each reported CS in the supplied susie
 #'   fit.}
@@ -81,9 +81,9 @@
 #' susie_get_niter(s)
 #' susie_get_pip(s)
 #' susie_get_lfsr(s)
-#' 
+#'
 #' @export
-#' 
+#'
 susie_get_objective = function (res, last_only = TRUE, warning_tol = 1e-6) {
   if (!all(diff(res$elbo) >= (-1*warning_tol)))
     warning("Objective is decreasing")
@@ -94,47 +94,69 @@ susie_get_objective = function (res, last_only = TRUE, warning_tol = 1e-6) {
 }
 
 #' @rdname susie_get_methods
-#' 
+#'
 #' @export
-#' 
-susie_get_posterior_mean = function (res)
-  colSums(res$alpha*res$mu)/res$X_column_scale_factors
+#'
+susie_get_posterior_mean = function (res, prior_tol = 1e-9){
+  # Drop the single-effects with estimated prior of zero.
+  if (is.numeric(res$V))
+    include_idx = which(res$V > prior_tol)
+  else
+    include_idx = 1:nrow(res$alpha)
+
+  # now extract relevant rows from alpha matrix
+  if (length(include_idx) > 0)
+    return(colSums((res$alpha*res$mu)[include_idx,])/res$X_column_scale_factors)
+  else
+    return(numeric(ncol(res$mu)))
+}
 
 #' @rdname susie_get_methods
-#' 
+#'
 #' @export
-#' 
-susie_get_posterior_sd = function (res)
-  sqrt(colSums(res$alpha * res$mu2 -
-               (res$alpha*res$mu)^2))/(res$X_column_scale_factors)
+#'
+susie_get_posterior_sd = function (res, prior_tol = 1e-9){
+  # Drop the single-effects with estimated prior of zero.
+  if (is.numeric(res$V))
+    include_idx = which(res$V > prior_tol)
+  else
+    include_idx = 1:nrow(res$alpha)
+
+  # now extract relevant rows from alpha matrix
+  if (length(include_idx) > 0)
+    return(sqrt(colSums((res$alpha * res$mu2 -
+                          (res$alpha*res$mu)^2)[include_idx,]))/(res$X_column_scale_factors))
+  else
+    return(numeric(ncol(res$mu)))
+}
 
 #' @rdname susie_get_methods
-#' 
+#'
 #' @export
-#' 
+#'
 susie_get_niter = function (res)
   res$niter
 
 #' @rdname susie_get_methods
-#' 
+#'
 #' @export
-#' 
+#'
 susie_get_prior_variance = function (res)
   res$V
 
 #' @rdname susie_get_methods
-#' 
+#'
 #' @export
-#' 
+#'
 susie_get_residual_variance = function (res)
   res$sigma2
 
 #' @rdname susie_get_methods
-#' 
+#'
 #' @importFrom stats pnorm
-#' 
+#'
 #' @export
-#' 
+#'
 susie_get_lfsr = function (res) {
   pos_prob = pnorm(0,mean = t(res$mu),sd = sqrt(res$mu2 - res$mu^2))
   neg_prob = 1 - pos_prob
@@ -142,31 +164,83 @@ susie_get_lfsr = function (res) {
 }
 
 #' @rdname susie_get_methods
-#' 
+#'
+#' @param susie_fit A susie fit, the output form `susieR::susie()`
+#'
+#' @param num_samples the number of samples to be drawn from the posterior distribution
+#'
+#' @return The return value is a list containing the effect sizes samples and causal status samples
+#'    components:
+#'
+#'    \item{b}{ num_variables x num_samples matrix of effect sizes draw}
+#'
+#'    \item{gamma}{ num_variables  x num_samples matrix of causal status draw}
+#'
+#' @export
+#'
+
+susie_get_posterior_samples <- function(susie_fit, num_samples){
+  # removed effects having estimated prior variance equals zero
+  if (is.numeric(susie_fit$V)) {
+    include_idx = which(susie_fit$V > 1E-9)
+  }
+  else {
+    include_idx = 1:nrow(susie_fit$alpha)
+  }
+
+  posterior_mean <- sweep(susie_fit$mu, 2, susie_fit$X_column_scale_factors, "/")
+  posterior_sd <- sweep(sqrt(susie_fit$mu2 - (susie_fit$mu)^2), 2, susie_fit$X_column_scale_factors, "/")
+
+  pip <- susie_fit$alpha
+  L = nrow(pip)
+  num_snps <- ncol(pip)
+  b_samples <- matrix(NA, num_snps, num_samples)
+  gamma_samples <- matrix(NA, num_snps, num_samples)
+  for (sample_i in 1 : num_samples){
+    b <- 0
+    if(length(include_idx)>0){
+      for (l in include_idx){
+        gamma_l <- rmultinom(1, 1, pip[l, ])
+        effect_size <- rnorm(1, mean=posterior_mean[l, which(gamma_l != 0)],
+                             sd=posterior_sd[l, which(gamma_l != 0)])
+        b_l <- gamma_l * effect_size
+        b <- b + b_l
+      }
+    }
+    b_samples[, sample_i] <- b
+    gamma_samples[, sample_i] <- as.numeric(b != 0)
+  }
+  return(list(b=b_samples,
+              gamma=gamma_samples))
+}
+
+
+#' @rdname susie_get_methods
+#'
 #' @param X n by p matrix of values of the p variables (covariates) in
 #'   n samples. When provided, correlation between variables will be
 #'   computed and used to remove CSs whose minimum correlation among
 #'   variables is smaller than \code{min_abs_corr}.
-#' 
+#'
 #' @param Xcorr p by p matrix of correlations between variables
 #'   (covariates). When provided, it will be used to remove CSs whose
 #'   minimum correlation among variables is smaller than
 #'   \code{min_abs_corr}.
-#' 
+#'
 #' @param coverage A number between 0 and 1 specifying desired
 #'   coverage of each CS.
-#' 
+#'
 #' @param min_abs_corr A "purity" threshold for the CS. Any CS that
 #'   contains a pair of variables with correlation less than this
 #'   threshold will be filtered out and not reported.
-#' 
+#'
 #' @param dedup If \code{dedup = TRUE}, remove duplicate CSs.
-#' 
+#'
 #' @param squared If \code{squared = TRUE}, report min, mean and
 #' median of squared correlation instead of the absolute correlation.
-#' 
+#'
 #' @export
-#' 
+#'
 susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
                          min_abs_corr = 0.5, dedup = TRUE, squared = FALSE) {
   if (!is.null(X) && !is.null(Xcorr))
@@ -184,11 +258,11 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
 
   # L x P binary matrix.
   status = in_CS(res$alpha,coverage)
-  
+
   # L-list of CS positions.
   cs = lapply(1:nrow(status),function(i) which(status[i,]!=0))
   include_idx = include_idx * (lapply(cs,length) > 0)
-  
+
   # FIXME: see issue 21
   # https://github.com/stephenslab/susieR/issues/21
   if (dedup)
@@ -221,7 +295,7 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
       row_names = paste0("L",which(include_idx)[is_pure])
       names(cs) = row_names
       rownames(purity) = row_names
-      
+
       # Re-order CS list and purity rows based on purity.
       ordering = order(purity[,1],decreasing = TRUE)
       return(list(cs       = cs[ordering],
@@ -237,26 +311,26 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
 #'
 #' @param prune_by_cs Whether or not to ignore single effects not in
 #'   a reported CS when calculating PIP.
-#' 
+#'
 #' @param prior_tol Filter out effects having estimated prior variance
 #'   smaller than this threshold.
-#' 
+#'
 #' @export
-#' 
+#'
 susie_get_pip = function (res, prune_by_cs = FALSE, prior_tol = 1e-9) {
-    
+
   if (inherits(res,"susie")) {
-      
+
     # Drop null weight columns.
     if (res$null_index > 0)
       res$alpha = res$alpha[,-res$null_index,drop=FALSE]
-    
+
     # Drop the single-effects with estimated prior of zero.
     if (is.numeric(res$V))
       include_idx = which(res$V > prior_tol)
     else
       include_idx = 1:nrow(res$alpha)
-    
+
     # Only consider variables in reported CS.
     # This is not what we do in the SuSiE paper.
     # So by default prune_by_cs = FALSE means we do not run the
@@ -265,14 +339,14 @@ susie_get_pip = function (res, prune_by_cs = FALSE, prior_tol = 1e-9) {
       include_idx = intersect(include_idx,res$sets$cs_index)
     if (is.null(res$sets$cs_index) && prune_by_cs)
       include_idx = numeric(0)
-    
+
     # now extract relevant rows from alpha matrix
     if (length(include_idx) > 0)
       res = res$alpha[include_idx,,drop = FALSE]
-    else 
+    else
       res = matrix(0,1,ncol(res$alpha))
   }
-  
+
   return(as.vector(1 - apply(1 - res,2,prod)))
 }
 
@@ -317,7 +391,7 @@ get_purity = function(pos, X, Xcorr, squared = FALSE, n = 100) {
     if (is.null(Xcorr)) {
       X_sub = X[,pos]
       if (length(pos) > n) {
-          
+
         # Remove identical columns.
         pos_rm = sapply(1:ncol(X_sub),
                        function(i) all(abs(X_sub[,i] - mean(X_sub[,i])) <
@@ -347,7 +421,7 @@ muffled_corr = function (x)
                       })
 
 # cov2cor function with specified warning muffled.
-# 
+#
 #' @importFrom stats cov2cor
 muffled_cov2cor = function (x)
   withCallingHandlers(cov2cor(x),
