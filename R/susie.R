@@ -398,6 +398,13 @@ susie <- function (X,Y,L = min(10,ncol(X)),
     s$pip = susie_get_pip(s,prune_by_cs = FALSE,prior_tol = prior_tol)
   }
   
+  if (!is.null(colnames(X))) {
+    variable_names = colnames(X)
+    if (!is.null(null_weight)) variable_names = c('null', variable_names)
+    colnames(s$alpha) = variable_names
+    colnames(s$mu) = variable_names
+    colnames(s$mu2) = variable_names
+  }
   # report z-scores from univariate regression.
   if (compute_univariate_zscore) {
     if (!is.null(null_weight) && null_weight != 0) 

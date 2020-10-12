@@ -141,6 +141,7 @@ susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
         attr(R,"eigen")$values[attr(R,"eigen")$values != 0]^0.5
   Y = (t(attr(R,"eigen")$vectors[,attr(R,"eigen")$values != 0]) *
        attr(R,"eigen")$values[attr(R,"eigen")$values != 0]^(-0.5)) %*% z
+  if (!is.null(names(z))) colnames(x) = names(z)
 
   s = susie(X,Y,L = L,
             scaled_prior_variance = prior_variance/var(Y),
@@ -351,6 +352,13 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
     s$sets = susie_get_cs(s,coverage = coverage,Xcorr = R,
                           min_abs_corr = min_abs_corr)
     s$pip = susie_get_pip(s,prune_by_cs = FALSE,prior_tol = prior_tol)
+  }
+  if (!is.null(names(z))) {
+    variable_names = names(z)
+    if (!is.null(null_weight)) variable_names = c('null', variable_names)
+    colnames(s$alpha) = variable_names
+    colnames(s$mu) = variable_names
+    colnames(s$mu2) = variable_names
   }
 
   return(s)
