@@ -435,6 +435,11 @@ plot(coef(res1)[-1]/ss$sebetahat,coef(res3)[-1])
 abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
 
 # susie_auto example.
+res4 <- susie_auto(X,y)
+plot(beta,coef(res4)[-1])
+abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
+plot(y,predict(res4))
+abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
 
 }
 \references{

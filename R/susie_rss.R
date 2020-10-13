@@ -271,14 +271,10 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
     }
     if (max(s_init$alpha) > 1 || min(s_init$alpha) < 0) 
       stop('s_init$alpha has invalid values outside range [0,1]. Please check your input.')
-    if (L < nrow(s_init$alpha)) {
-      warning(paste('Specified number of effects L =', L, 'does not match the number of effects', nrow(s_init$alpha), 'in s_init. s_init will pruned to have', L, 'effects.'))
-      s_init = susie_prune_single_effects(s_init, L)
-    } else {
-      if (L > nrow(s_init$alpha)) {
-        stop(paste('Specified number of effects L =', L, 'does not match the number of effects', nrow(s_init$alpha), 'in s_init.'))
-      }
-    }
+    # First, remove effects with s_init$V = 0
+    s_init = susie_prune_single_effects(s_init, verbose=FALSE)
+    # Then prune or expand
+    s_init = susie_prune_single_effects(s_init, L, s$V, verbose)
     s = modifyList(s,s_init)
     s = init_finalize_rss(s,R = R)
   } else { 

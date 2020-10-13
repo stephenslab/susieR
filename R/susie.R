@@ -255,6 +255,11 @@
 #' abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
 #'
 #' # susie_auto example.
+#' res4 <- susie_auto(X,y)
+#' plot(beta,coef(res4)[-1])
+#' abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
+#' plot(y,predict(res4))
+#' abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
 #' 
 #' @importFrom stats var
 #' @importFrom utils modifyList
@@ -336,14 +341,10 @@ susie <- function (X,Y,L = min(10,ncol(X)),
     }
     if (max(s_init$alpha) > 1 || min(s_init$alpha) < 0) 
       stop('s_init$alpha has invalid values outside range [0,1]. Please check your input.')
-    if (L < nrow(s_init$alpha)) {
-      warning(paste('Specified number of effects L =', L, 'does not match the number of effects', nrow(s_init$alpha), 'in s_init. s_init will pruned to have', L, 'effects.'))
-      s_init = susie_prune_single_effects(s_init, L)
-    } else {
-      if (L > nrow(s_init$alpha)) {
-        stop(paste('Specified number of effects L =', L, 'does not match the number of effects', nrow(s_init$alpha), 'in s_init.'))
-      }
-    }
+    # First, remove effects with s_init$V = 0
+    s_init = susie_prune_single_effects(s_init, verbose=FALSE)
+    # Then prune or expand
+    s_init = susie_prune_single_effects(s_init, L, s$V, verbose)
     s = modifyList(s,s_init)
     s = init_finalize(s,X = X)
   } else { 

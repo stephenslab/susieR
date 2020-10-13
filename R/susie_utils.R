@@ -468,15 +468,36 @@ susie_slim = function (res)
 
 # Prune single effects to given number L in susie model object.
 #' @keywords internal
-susie_prune_single_effects = function(s, L) {
-  # this is an internal function so it assumes s is susie object and has number of single effects bigger than L.
-  if (!is.null(s$sets$cs_index)) {
-    effects_rank = c(s$sets$cs_index, setdiff(1:nrow(s$alpha), s$sets$cs_index))
-  } else {
-    effects_rank = 1:nrow(s$alpha)
+susie_prune_single_effects = function(s, L=0, V=NULL, verbose=F) {
+  if (L == 0) {
+    # filtering will be based on non-zero elements in s$V
+    L = length(which(s$V > 0))
   }
-  for (n in c('alpha', 'mu', 'mu2', 'lbf_variable')) s[[n]] = s[[n]][effects_rank,][1:L,] 
-  for (n in c('KL', 'lbf', 'V')) s[[n]] = s[[n]][effects_rank][1:L]
+  num_effects = nrow(s$alpha)
+  if (L == num_effects) {
+    s$sets = NULL
+    return (s)
+  }
+  if (!is.null(s$sets$cs_index)) {
+    effects_rank = c(s$sets$cs_index, setdiff(1:num_effects, s$sets$cs_index))
+  } else {
+    effects_rank = 1:num_effects
+  }
+  if (verbose) 
+    warning(paste('Specified number of effects L =', L, 'does not match the number of effects', num_effects, 'in input SuSiE model. It will be', ifelse(L<num_effects, 'pruned', 'expanded'), 'to have', L, 'effects.'))
+  if (L < num_effects) {
+    for (n in c('alpha', 'mu', 'mu2', 'lbf_variable')) s[[n]] = s[[n]][effects_rank,][1:L,] 
+    for (n in c('KL', 'lbf', 'V')) s[[n]] = s[[n]][effects_rank][1:L]
+  } else {
+    s$alpha = rbind(s$alpha[effects_rank,], matrix(1/ncol(s$alpha), L-num_effects, ncol(s$alpha)))
+    for (n in c('mu', 'mu2', 'lbf_variable')) s[[n]] = rbind(s[[n]][effects_rank,], matrix(0, L-num_effects, ncol(s[[n]])))
+    for (n in c('KL', 'lbf')) s[[n]] = c(s[[n]][effects_rank], rep(NA, L-num_effects))
+    if (!is.null(V)) {
+      if (length(V)>1) V[1:num_effects] = s$V[effects_rank]
+      else V = rep(V, L)
+    }
+    s$V = V
+  }
   s$sets = NULL
   return(s)
 }
