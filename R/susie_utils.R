@@ -261,6 +261,7 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
 
   # L-list of CS positions.
   cs = lapply(1:nrow(status),function(i) which(status[i,]!=0))
+  claimed_coverage = sapply(1:length(cs), function(i) sum(res$alpha[i,][cs[[i]]])) 
   include_idx = include_idx * (lapply(cs,length) > 0)
 
   # FIXME: see issue 21
@@ -269,13 +270,13 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
     include_idx = include_idx * (!duplicated(cs))
   include_idx = as.logical(include_idx)
   if (sum(include_idx) == 0)
-    return(list(cs = NULL,coverage = coverage))
+    return(list(cs = NULL,coverage = NULL, requested_coverage=coverage))
   cs = cs[include_idx]
-
+  claimed_coverage = claimed_coverage[include_idx]
   # Compute and filter by "purity".
   if (is.null(Xcorr) && is.null(X)) {
     names(cs) = paste0("L",which(include_idx))
-    return(list(cs = cs,coverage = coverage))
+    return(list(cs = cs,coverage = claimed_coverage, requested_coverage=coverage))
   } else {
     purity = data.frame(do.call(rbind,lapply(1:length(cs),function (i) {
               if (null_index > 0 && null_index %in% cs[[i]])
@@ -301,9 +302,10 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
       return(list(cs       = cs[ordering],
                   purity   = purity[ordering,],
                   cs_index = which(include_idx)[is_pure[ordering]],
-                  coverage = coverage))
+                  coverage = claimed_coverage[ordering],
+                  requested_coverage=coverage))
     } else
-      return(list(cs = NULL,coverage = coverage))
+      return(list(cs = NULL,coverage = NULL, requested_coverage = coverage))
   }
 }
 
