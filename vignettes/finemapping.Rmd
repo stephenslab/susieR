@@ -176,6 +176,35 @@ fitted = susie(data$X, data$Y[,1],
 susie_plot(fitted, y='PIP', b=b)
 ```
 
+### A note on covariate adjustment
+
+To include covariate `Z` in SuSiE, one approach is to regress it out from both `y`
+and `X`, and then run SuSiE on the residuals. The code below illustrates the procedure:
+
+```{r}
+remove.covariate.effects <- function (X, Z, y) {
+  # include the intercept term
+  if (any(Z[,1]!=1)) Z = cbind(1, Z)
+  A   <- forceSymmetric(crossprod(Z))
+  SZy <- as.vector(solve(A,c(y %*% Z)))
+  SZX <- as.matrix(solve(A,t(Z) %*% X))
+  y <- y - c(Z %*% SZy)
+  X <- X - Z %*% SZX
+  return(list(X = X,y = y,SZy = SZy,SZX = SZX))
+}
+
+out = remove.covariate.effects(data$X, Z,  data$Y[,1])
+fitted_adjusted = susie(out$X, out$y,
+               L = 10,
+               estimate_residual_variance = TRUE)
+```
+
+Note that the covariates `Z` should have a column of ones as the first column. If not, the above function `remove.covariate.effects`
+will add such a column to `Z` before regressing it out. 
+Data will be centered as a result. Also the scale of data is changed after regressing out `Z`. 
+This introduces some subtleties in terms of interpreting the results.
+For this reason, we provide covariate adjustment procedure as a tip in the documentation
+and not part of `susieR::susie()` function. Cautions should be taken when applying this procedure and interpreting the result from it.
 
 ## Session information
 
