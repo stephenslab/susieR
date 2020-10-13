@@ -43,3 +43,15 @@ regression y ~ x separately for each column x of X. Each regression
 is implemented using \code{.lm.fit()}. The estimated effect size
 and stardard error for each variable are outputted.
 }
+\examples{
+set.seed(1)
+n = 1000
+p = 1000
+beta = rep(0,p)
+beta[1:4] = 1
+X = matrix(rnorm(n*p),nrow = n,ncol = p)
+X = scale(X,center = TRUE,scale = TRUE)
+y = drop(X \%*\% beta + rnorm(n))
+res = univariate_regression(X,y)
+plot(res$betahat/res$sebetahat)
+}

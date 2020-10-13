@@ -6,23 +6,31 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>SUm of Single Effects (SuSiE) Regression — susie • susieR</title>
+<title>Sum of Single Effects (SuSiE) Regression — susie • susieR</title>
+
 
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous" />
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
-<!-- sticky kit -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sticky-kit/1.1.3/sticky-kit.min.js" integrity="sha256-c4Rlo1ZozqTPE2RLuvbusY3+SU1pQaJC0TjuhygMipw=" crossorigin="anonymous"></script>
+<!-- headroom.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -30,20 +38,21 @@
 
 
 
-<meta property="og:title" content="SUm of Single Effects (SuSiE) Regression — susie" />
 
+<meta property="og:title" content="Sum of Single Effects (SuSiE) Regression — susie" />
 <meta property="og:description" content="Performs Bayesian multiple linear regression of Y on
-  X; that is, this function fits the regression model \(Y = sum_l
-  Xb_l + e\), where elements of e are i.i.d. normal with zero
-  mean and variance residual_variance, and \(sum_l b_l\) is
-  a vector of length p representing the effects to be estimated. The
-  SuSiE assumption is that each b_l has exactly one non-zero
-  element. The prior on the non-zero element is normal with zero mean
-  and variance var(Y)*scaled_prior_variance.
-The model is fitted using the &quot;Iterative Bayesian Stepwise
-  Selection&quot; (IBSS) algorithm.
-See also susie_trendfilter for applying susie to non-parametric regression, particularly changepoint problems" />
-<meta name="twitter:card" content="summary" />
+  X; that is, this function fits the regression model \(Y = \sum_l
+  X b_{l=1}^L + e\), where elements of e are i.i.d. normal with
+  zero mean and variance residual_variance, and
+  \(\sum_{l=1}^L b_l\) is a vector of length p representing the
+  effects to be estimated. The &amp;#8220;susie assumption&amp;#8221; is that each
+  \(b_l\) has exactly one non-zero element. The prior on the
+  non-zero element is normal with zero mean and variance var(Y)
+  * scaled_prior_variance. The model is fitted using the
+  &amp;#8220;Iterative Bayesian Stepwise Selection&amp;#8221; (IBSS) algorithm.
+  See also susie_trendfilter for applying susie to
+  non-parametric regression, particularly changepoint problems." />
+
 
 
 
@@ -57,9 +66,10 @@ See also susie_trendfilter for applying susie to non-parametric regression, part
 <![endif]-->
 
 
+
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -73,7 +83,7 @@ See also susie_trendfilter for applying susie to non-parametric regression, part
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.9.0.581</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.9.52</span>
       </span>
     </div>
 
@@ -89,7 +99,6 @@ See also susie_trendfilter for applying susie to non-parametric regression, part
   <a href="../reference/index.html">Functions</a>
 </li>
       </ul>
-      
       <ul class="nav navbar-nav navbar-right">
         <li>
   <a href="https://github.com/stephenslab/susieR">Source</a>
@@ -101,36 +110,36 @@ See also susie_trendfilter for applying susie to non-parametric regression, part
 </div><!--/.navbar -->
 
       
+
       </header>
 
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>SUm of Single Effects (SuSiE) Regression</h1>
-    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/susie.R'><code>R/susie.R</code></a></small>
+    <h1>Sum of Single Effects (SuSiE) Regression</h1>
+    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/susie.R'><code>R/susie.R</code></a>, <a href='https://github.com/stephenslab/susieR/blob/master/R/susie_rss.R'><code>R/susie_rss.R</code></a>, <a href='https://github.com/stephenslab/susieR/blob/master/R/susie_ss.R'><code>R/susie_ss.R</code></a>, and 1 more</small>
     <div class="hidden name"><code>susie.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    
     <p>Performs Bayesian multiple linear regression of Y on
-  X; that is, this function fits the regression model \(Y = sum_l
-  Xb_l + e\), where elements of e are <em>i.i.d.</em> normal with zero
-  mean and variance <code>residual_variance</code>, and \(sum_l b_l\) is
-  a vector of length p representing the effects to be estimated. The
-  SuSiE assumption is that each b_l has exactly one non-zero
-  element. The prior on the non-zero element is normal with zero mean
-  and variance <code>var(Y)*scaled_prior_variance</code>.</p>
-<p>The model is fitted using the "Iterative Bayesian Stepwise
-  Selection" (IBSS) algorithm.</p>
-<p>See also <code>susie_trendfilter</code> for applying susie to non-parametric regression, particularly changepoint problems</p>
-    
+  X; that is, this function fits the regression model \(Y = \sum_l
+  X b_{l=1}^L + e\), where elements of e are <em>i.i.d.</em> normal with
+  zero mean and variance <code>residual_variance</code>, and
+  \(\sum_{l=1}^L b_l\) is a vector of length p representing the
+  effects to be estimated. The &#8220;susie assumption&#8221; is that each
+  \(b_l\) has exactly one non-zero element. The prior on the
+  non-zero element is normal with zero mean and variance <code>var(Y)
+  * scaled_prior_variance</code>. The model is fitted using the
+  &#8220;Iterative Bayesian Stepwise Selection&#8221; (IBSS) algorithm.
+  See also <code><a href='susie_trendfilter.html'>susie_trendfilter</a></code> for applying susie to
+  non-parametric regression, particularly changepoint problems.</p>
     </div>
 
     <pre class="usage"><span class='fu'>susie</span>(
   <span class='no'>X</span>,
   <span class='no'>Y</span>,
-  <span class='kw'>L</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/Extremes'>min</a></span>(<span class='fl'>10</span>, <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/nrow'>ncol</a></span>(<span class='no'>X</span>)),
+  <span class='kw'>L</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Extremes.html'>min</a></span>(<span class='fl'>10</span>, <span class='fu'><a href='https://rdrr.io/r/base/nrow.html'>ncol</a></span>(<span class='no'>X</span>)),
   <span class='kw'>scaled_prior_variance</span> <span class='kw'>=</span> <span class='fl'>0.2</span>,
   <span class='kw'>residual_variance</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>prior_weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
@@ -139,7 +148,9 @@ See also susie_trendfilter for applying susie to non-parametric regression, part
   <span class='kw'>intercept</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
   <span class='kw'>estimate_residual_variance</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
   <span class='kw'>estimate_prior_variance</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>estimate_prior_method</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='st'>"optim"</span>, <span class='st'>"EM"</span>, <span class='st'>"simple"</span>),
+  <span class='kw'>estimate_prior_method</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"optim"</span>, <span class='st'>"EM"</span>, <span class='st'>"simple"</span>),
+  <span class='kw'>check_null_threshold</span> <span class='kw'>=</span> <span class='fl'>0</span>,
+  <span class='kw'>prior_tol</span> <span class='kw'>=</span> <span class='fl'>1e-09</span>,
   <span class='kw'>residual_variance_upperbound</span> <span class='kw'>=</span> <span class='fl'>Inf</span>,
   <span class='kw'>s_init</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>coverage</span> <span class='kw'>=</span> <span class='fl'>0.95</span>,
@@ -150,8 +161,85 @@ See also susie_trendfilter for applying susie to non-parametric regression, part
   <span class='kw'>tol</span> <span class='kw'>=</span> <span class='fl'>0.001</span>,
   <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
   <span class='kw'>track_fit</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>
+)
+
+<span class='fu'>susie_rss</span>(
+  <span class='no'>z</span>,
+  <span class='no'>R</span>,
+  <span class='kw'>maf</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>maf_thresh</span> <span class='kw'>=</span> <span class='fl'>0</span>,
+  <span class='kw'>z_ld_weight</span> <span class='kw'>=</span> <span class='fl'>0</span>,
+  <span class='kw'>L</span> <span class='kw'>=</span> <span class='fl'>10</span>,
+  <span class='kw'>prior_variance</span> <span class='kw'>=</span> <span class='fl'>50</span>,
+  <span class='kw'>residual_variance</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>r_tol</span> <span class='kw'>=</span> <span class='fl'>1e-08</span>,
+  <span class='kw'>prior_weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>null_weight</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>estimate_residual_variance</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>estimate_prior_variance</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>estimate_prior_method</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"optim"</span>, <span class='st'>"EM"</span>, <span class='st'>"simple"</span>),
+  <span class='kw'>check_null_threshold</span> <span class='kw'>=</span> <span class='fl'>0</span>,
+  <span class='kw'>prior_tol</span> <span class='kw'>=</span> <span class='fl'>1e-09</span>,
+  <span class='kw'>max_iter</span> <span class='kw'>=</span> <span class='fl'>100</span>,
+  <span class='kw'>s_init</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>intercept_value</span> <span class='kw'>=</span> <span class='fl'>0</span>,
+  <span class='kw'>coverage</span> <span class='kw'>=</span> <span class='fl'>0.95</span>,
+  <span class='kw'>min_abs_corr</span> <span class='kw'>=</span> <span class='fl'>0.5</span>,
+  <span class='kw'>tol</span> <span class='kw'>=</span> <span class='fl'>0.001</span>,
+  <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>track_fit</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>check_R</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>check_z</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>
+)
+
+<span class='fu'>susie_suff_stat</span>(
+  <span class='no'>bhat</span>,
+  <span class='no'>shat</span>,
+  <span class='no'>R</span>,
+  <span class='no'>n</span>,
+  <span class='no'>var_y</span>,
+  <span class='no'>XtX</span>,
+  <span class='no'>Xty</span>,
+  <span class='no'>yty</span>,
+  <span class='kw'>maf</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>maf_thresh</span> <span class='kw'>=</span> <span class='fl'>0</span>,
+  <span class='kw'>L</span> <span class='kw'>=</span> <span class='fl'>10</span>,
+  <span class='kw'>scaled_prior_variance</span> <span class='kw'>=</span> <span class='fl'>0.2</span>,
+  <span class='kw'>residual_variance</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>estimate_residual_variance</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>estimate_prior_variance</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>estimate_prior_method</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"optim"</span>, <span class='st'>"EM"</span>, <span class='st'>"simple"</span>),
+  <span class='kw'>check_null_threshold</span> <span class='kw'>=</span> <span class='fl'>0</span>,
+  <span class='kw'>prior_tol</span> <span class='kw'>=</span> <span class='fl'>1e-09</span>,
+  <span class='kw'>r_tol</span> <span class='kw'>=</span> <span class='fl'>1e-08</span>,
+  <span class='kw'>prior_weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>null_weight</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>standardize</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>max_iter</span> <span class='kw'>=</span> <span class='fl'>100</span>,
+  <span class='kw'>s_init</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>intercept_value</span> <span class='kw'>=</span> <span class='fl'>0</span>,
+  <span class='kw'>coverage</span> <span class='kw'>=</span> <span class='fl'>0.95</span>,
+  <span class='kw'>min_abs_corr</span> <span class='kw'>=</span> <span class='fl'>0.5</span>,
+  <span class='kw'>tol</span> <span class='kw'>=</span> <span class='fl'>0.001</span>,
+  <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>track_fit</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>check_input</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>
+)
+
+<span class='fu'>susie_auto</span>(
+  <span class='no'>X</span>,
+  <span class='no'>Y</span>,
+  <span class='kw'>L_init</span> <span class='kw'>=</span> <span class='fl'>1</span>,
+  <span class='kw'>L_max</span> <span class='kw'>=</span> <span class='fl'>512</span>,
+  <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>init_tol</span> <span class='kw'>=</span> <span class='fl'>1</span>,
+  <span class='kw'>standardize</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>intercept</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>max_iter</span> <span class='kw'>=</span> <span class='fl'>100</span>,
+  <span class='kw'>tol</span> <span class='kw'>=</span> <span class='fl'>0.01</span>,
+  <span class='no'>...</span>
 )</pre>
-    
+
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
@@ -161,29 +249,28 @@ See also susie_trendfilter for applying susie to non-parametric regression, part
     </tr>
     <tr>
       <th>Y</th>
-      <td><p>A vector of length n.</p></td>
+      <td><p>The observed responses, a vector of length n.</p></td>
     </tr>
     <tr>
       <th>L</th>
-      <td><p>Number of components (nonzero elements) in the SuSiE
-regression model. If <code>L</code> is larger than the number of
-covariate (p), <code>L</code> is set to p.</p></td>
+      <td><p>Number of components (nonzero coefficients) in the susie
+regression model. If L is larger than the number of covariates, p,
+L is set to p.</p></td>
     </tr>
     <tr>
       <th>scaled_prior_variance</th>
       <td><p>The scaled prior variance. This is
- either a scalar, or a vector of length <code>L</code>. The prior variance
-of each non-zero element of b is set to
-<code>var(Y)*scaled_prior_variance</code>. If
-<code>estimate_prior_variance = TRUE</code>, this input simply provides
-initial estimates of the prior variances.</p></td>
+either a scalar or a vector of length <code>L</code>. The prior variance
+of each non-zero element of b is set to <code>var(Y) *
+scaled_prior_variance</code>. If <code>estimate_prior_variance = TRUE</code>,
+this provides initial estimates of the prior variances.</p></td>
     </tr>
     <tr>
       <th>residual_variance</th>
-      <td><p>The variance of the residual. If
-<code>estimate_residual_variance = TRUE</code>, this value simply provides the
-initial estimate of the residual variance. By default, it is set to
-<code><a href='https://www.rdocumentation.org/packages/stats/topics/cor'>var(Y)</a></code>.</p></td>
+      <td><p>Variance of the residual. If
+<code>estimate_residual_variance = TRUE</code>, this value provides the
+initial estimate of the residual variance. By default, it is
+<code><a href='https://rdrr.io/r/stats/cor.html'>var(Y)</a></code>.</p></td>
     </tr>
     <tr>
       <th>prior_weights</th>
@@ -199,49 +286,71 @@ nonzero effect on the outcome, Y.</p></td>
     <tr>
       <th>standardize</th>
       <td><p>If <code>standardize = TRUE</code>, standardize the
-columns of X to unit variance prior to fitting. Note that
-`scaled_prior_variance` specifies the prior on the coefficients of
-X <em>after</em> standardization (if it is performed). If you do not
-standardize, you may need to think more carefully about specifying
-<code>scaled_prior_variance</code>. Whatever your choice, the
-coefficients returned by <code>coef</code> are given for <code>X</code> on the
-original input scale. Any column of <code>X</code> that has zero variance is
-not standardized, but left as is.</p></td>
+columns of X (or XtX and Xty) to unit variance prior to
+fitting. Note that <code>scaled_prior_variance</code> specifies the prior
+on the coefficients of X <em>after</em> standardization (if it is
+performed). If you do not standardize, you may need to think more
+carefully about specifying <code>scaled_prior_variance</code>. Whatever
+your choice, the coefficients returned by <code>coef</code> are given for
+<code>X</code> on the original input scale. Any column of <code>X</code> that
+has zero variance is not standardized.</p></td>
     </tr>
     <tr>
       <th>intercept</th>
       <td><p>If <code>intercept = TRUE</code>, the intercept is
-fitted; otherwise, it is set to zero. Setting <code>intercept =
-FALSE</code> is generally not recommended.</p></td>
+fitted; it <code>intercept = FALSE</code>, the intercept is set to
+zero. Setting <code>intercept = FALSE</code> is generally not
+recommended.</p></td>
     </tr>
     <tr>
       <th>estimate_residual_variance</th>
       <td><p>If
-<code>estimate_residual_variance = TRUE</code>, the residual variance
-is estimated (using <code>residual_variance</code> as an initial value).
-If <code>estimate_residual_variance = FALSE</code>
-then the residual variance is fixed to the value supplied by <code>residual_variance</code>.</p></td>
+<code>estimate_residual_variance = TRUE</code>, the residual variance is
+estimated, using <code>residual_variance</code> as an initial value. If
+<code>estimate_residual_variance = FALSE</code>, the residual variance is
+fixed to the value supplied by <code>residual_variance</code>.</p></td>
     </tr>
     <tr>
       <th>estimate_prior_variance</th>
       <td><p>If <code>estimate_prior_variance =
-TRUE</code>, the prior variance is estimated (a separate parameter for each of the <code>L</code>
-effects). If provided, <code>scaled_prior_variance</code> is then used as an initial
-point for the optimization. If <code>estimate_prior_variance = FALSE</code>
-then the prior variance (for each of the <code>L</code> effects) is determined by the value
-supplied to <code>scaled_prior_variance</code>.</p></td>
+TRUE</code>, the prior variance is estimated (this is a separate
+parameter for each of the L effects). If provided,
+<code>scaled_prior_variance</code> is then used as an initial value for
+the optimization. When <code>estimate_prior_variance = FALSE</code>, the
+prior variance for each of the L effects is determined by the
+value supplied to <code>scaled_prior_variance</code>.</p></td>
     </tr>
     <tr>
       <th>estimate_prior_method</th>
       <td><p>The method used for estimating prior
-variance. "simple" method only compares the loglikelihood between
-using specified prior variance and using zero, and chose the one that
-gives larger loglikelihood.</p></td>
+variance. When <code>estimate_prior_method = "simple"</code> is used, the
+likelihood at the specified prior variance is compared to the
+likelihood at a variance of zero, and the setting with the larger
+likelihood is retained.</p></td>
+    </tr>
+    <tr>
+      <th>check_null_threshold</th>
+      <td><p>When the prior variance is estimated,
+compare the estimate with the null, and set the prior variance to
+zero unless the log-likelihood using the estimate is larger by this
+threshold amount. For example, if you set
+<code>check_null_threshold = 0.1</code>, this will "nudge" the estimate
+towards zero when the difference in log-likelihoods is small. A
+note of caution that setting this to a value greater than zero may
+lead the IBSS fitting procedure to occasionally decrease the ELBO.</p></td>
+    </tr>
+    <tr>
+      <th>prior_tol</th>
+      <td><p>When the prior variance is estimated, compare the
+estimated value to <code>prior_tol</code> at the end of the computation,
+and exclude a single effect from PIP computation if the estimated
+prior variance is smaller than this tolerance value.</p></td>
     </tr>
     <tr>
       <th>residual_variance_upperbound</th>
-      <td><p>Upper bound for estiamted residual variance.
-It is used when <code>estimate_residual_variance = TRUE</code>.</p></td>
+      <td><p>Upper limit on the estimated
+residual variance. It is only relevant when
+<code>estimate_residual_variance = TRUE</code>.</p></td>
     </tr>
     <tr>
       <th>s_init</th>
@@ -249,15 +358,15 @@ It is used when <code>estimate_residual_variance = TRUE</code>.</p></td>
     </tr>
     <tr>
       <th>coverage</th>
-      <td><p>A number between 0 and 1 specifying the coverage of
-the estimated confidence sets.</p></td>
+      <td><p>A number between 0 and 1 specifying the
+&#8220;coverage&#8221; of the estimated confidence sets.</p></td>
     </tr>
     <tr>
       <th>min_abs_corr</th>
-      <td><p>Minimum of absolute value of correlation
-allowed in a credible set. The default, 0.5, corresponds to squared
+      <td><p>Minimum absolute correlation allowed in a
+credible set. The default, 0.5, corresponds to a squared
 correlation of 0.25, which is a commonly used threshold for
-genotype data in genetics studies.</p></td>
+genotype data in genetic studies.</p></td>
     </tr>
     <tr>
       <th>compute_univariate_zscore</th>
@@ -267,35 +376,151 @@ variable.</p></td>
     </tr>
     <tr>
       <th>na.rm</th>
-      <td><p>Drop missing samples in y from both y and X inputs. Default set to FALSE.</p></td>
+      <td><p>Drop any missing values in Y from both X and Y.</p></td>
     </tr>
     <tr>
       <th>max_iter</th>
-      <td><p>Maximum number of iterations of the IBSS fitting
-procedure.</p></td>
+      <td><p>Maximum number of IBSS iterations to perform.</p></td>
     </tr>
     <tr>
       <th>tol</th>
       <td><p>A small, non-negative number specifying the convergence
 tolerance for the IBSS fitting procedure. The fitting procedure
 will halt when the difference in the variational lower bound, or
-"ELBO" (this is the objective function to be maximized), is less
-than <code>tol</code>.</p></td>
+&#8220;ELBO&#8221; (the objective function to be maximized), is
+less than <code>tol</code>.</p></td>
     </tr>
     <tr>
       <th>verbose</th>
-      <td><p>If <code>verbose = TRUE</code>, the algorithm's
-progress and a summary of the optimization settings are printed to
-the console.</p></td>
+      <td><p>If <code>verbose = TRUE</code>, the algorithm's progress,
+and a summary of the optimization settings, are printed to the
+console.</p></td>
     </tr>
     <tr>
       <th>track_fit</th>
-      <td><p>If <code>track_fit = TRUE</code>, an object <code>trace</code>
+      <td><p>If <code>track_fit = TRUE</code>, <code>trace</code>
 is also returned containing detailed information about the
 estimates at each iteration of the IBSS fitting procedure.</p></td>
     </tr>
+    <tr>
+      <th>z</th>
+      <td><p>A p-vector of z scores.</p></td>
+    </tr>
+    <tr>
+      <th>R</th>
+      <td><p>A p by p symmetric, positive semidefinite matrix. It
+can be \(X'X\), the covariance matrix \(X'X/(n-1)\), or a
+correlation matrix. It should be estimated from the same samples
+used to compute <code>bhat</code> and <code>shat</code>. Using an out-of-sample
+matrix may produce unreliable results.</p></td>
+    </tr>
+    <tr>
+      <th>maf</th>
+      <td><p>Minor allele frequency; to be used along with
+<code>maf_thresh</code> to filter input summary statistics.</p></td>
+    </tr>
+    <tr>
+      <th>maf_thresh</th>
+      <td><p>Variants having a minor allele frequency smaller
+than this threshold are not used.</p></td>
+    </tr>
+    <tr>
+      <th>z_ld_weight</th>
+      <td><p>The weights assigned to the z scores in the LD
+matrix. The LD matrix used in the model is <code><a href='https://rdrr.io/r/stats/cor.html'>cov2cor((1-w)*R +
+w*tcrossprod(z))</a></code>, where <code>w = z_ld_weight</code>. We recommend
+setting <code>z_ld_weight</code> as 1/n, where n is the number of
+samples.</p></td>
+    </tr>
+    <tr>
+      <th>prior_variance</th>
+      <td><p>The prior variance. It is either a scalar or
+a vector of length L.</p></td>
+    </tr>
+    <tr>
+      <th>r_tol</th>
+      <td><p>Tolerance level for eigenvalue check of positive
+semidefinite matrix of R.</p></td>
+    </tr>
+    <tr>
+      <th>intercept_value</th>
+      <td><p>The intercept. (The intercept cannot be
+estimated from centered summary data.) This setting will be used by
+<code>coef</code> to assign an intercept value, mainly for consistency
+with <code>susie</code>. Set to <code>NULL</code> if you want <code>coef</code> not
+to include an intercept term (and so only a p-vector is returned).</p></td>
+    </tr>
+    <tr>
+      <th>check_R</th>
+      <td><p>If <code>check_R = TRUE</code>, check that <code>R</code> is
+positive semidefinite.</p></td>
+    </tr>
+    <tr>
+      <th>check_z</th>
+      <td><p>If <code>check_z = TRUE</code>, check that <code>z</code> is in
+space spanned by the non-zero eigenvectors of <code>R</code>.</p></td>
+    </tr>
+    <tr>
+      <th>bhat</th>
+      <td><p>A p-vector of estimated effects.</p></td>
+    </tr>
+    <tr>
+      <th>shat</th>
+      <td><p>A p-vector of standard errors.</p></td>
+    </tr>
+    <tr>
+      <th>n</th>
+      <td><p>The sample size.</p></td>
+    </tr>
+    <tr>
+      <th>var_y</th>
+      <td><p>The sample variance of y, defined as \(y'y/(n-1)\).
+When the sample variance cannot be provided, the coefficients
+(returned from <code>coef</code>) are computed on the "standardized" X, y
+scale.</p></td>
+    </tr>
+    <tr>
+      <th>XtX</th>
+      <td><p>A p by p matrix \(X'X\) in which the columns of X
+are centered to have mean zero.</p></td>
+    </tr>
+    <tr>
+      <th>Xty</th>
+      <td><p>A p-vector \(X'y\) in which y and the columns of X are
+centered to have mean zero.</p></td>
+    </tr>
+    <tr>
+      <th>yty</th>
+      <td><p>A scalar \(y'y\) in which y is centered to have mean
+zero.</p></td>
+    </tr>
+    <tr>
+      <th>check_input</th>
+      <td><p>If <code>check_input = TRUE</code>,
+<code>susie_suff_stat</code> performs additional checks on <code>XtX</code> and
+<code>Xty</code>. The checks are: (1) check that <code>XtX</code> is positive
+semidefinite; (2) check that <code>Xty</code> is in the space spanned by
+the non-zero eigenvectors of <code>XtX</code>.</p></td>
+    </tr>
+    <tr>
+      <th>L_init</th>
+      <td><p>The initial value of L.</p></td>
+    </tr>
+    <tr>
+      <th>L_max</th>
+      <td><p>The largest value of L to consider.</p></td>
+    </tr>
+    <tr>
+      <th>init_tol</th>
+      <td><p>The tolerance to passed to <code>susie</code> during
+early runs (set large to shorten the initial runs).</p></td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td><p>Additional arguments passed to <code>susie</code>.</p></td>
+    </tr>
     </table>
-    
+
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
     <p>A <code>"susie"</code> object with some or all of the following
@@ -308,323 +533,125 @@ estimates at each iteration of the IBSS fitting procedure.</p></td>
 <dt>mu2</dt><dd><p>An L by p matrix of posterior second moments,
   conditional on inclusion.</p></dd>
 
-<dt>Xr</dt><dd><p>An vector of length n, equal to <code>X %*% colSums(alpha
+<dt>Xr</dt><dd><p>A vector of length n, equal to <code>X %*% colSums(alpha
   * mu)</code>.</p></dd>
 
-<dt>intercept</dt><dd><p>The intercept (fixed or estimated).</p></dd>
+<dt>lbf</dt><dd><p>log-Bayes Factor for each single effect.</p></dd>
+
+<dt>lbf_variable</dt><dd><p>log-Bayes Factor for each variable and single effect.</p></dd>
+
+<dt>intercept</dt><dd><p>Intercept (fixed or estimated).</p></dd>
 
 <dt>sigma2</dt><dd><p>Residual variance (fixed or estimated).</p></dd>
 
 <dt>V</dt><dd><p>Prior variance of the non-zero elements of b, equal to
   <code>scaled_prior_variance * var(Y)</code>.</p></dd>
 
-<dt>elbo</dt><dd><p>The value of the variational lower bound, or "ELBO"
-  (the objective function to be maximized), achieved at each
-  iteration of the IBSS fitting procedure.</p></dd>
+<dt>elbo</dt><dd><p>The value of the variational lower bound, or
+  &#8220;ELBO&#8221; (objective function to be maximized), achieved at
+  each iteration of the IBSS fitting procedure.</p></dd>
 
-<dt>fitted</dt><dd><p>Vector of length n containing the "fitted" values of
+<dt>fitted</dt><dd><p>Vector of length n containing the fitted values of
   the outcome.</p></dd>
 
 <dt>sets</dt><dd><p>Credible sets estimated from model fit; see
-  <code><a href='susie_get_cs.html'>susie_get_cs</a></code> for details.</p></dd>
+  <code><a href='susie_get_methods.html'>susie_get_cs</a></code> for details.</p></dd>
 
 <dt>pip</dt><dd><p>A vector of length p giving the (marginal) posterior
   inclusion probabilities for all p covariates.</p></dd>
 
 <dt>z</dt><dd><p>A vector of univariate z-scores.</p></dd>
 
-<dt>niter</dt><dd><p>Number of IBSS iterations that were run.</p></dd>
+<dt>niter</dt><dd><p>Number of IBSS iterations that were performed.</p></dd>
 
-<dt>converged</dt><dd><p><code>TRUE</code> or <code>FALSE</code>, indicating whether
+<dt>converged</dt><dd><p><code>TRUE</code> or <code>FALSE</code> indicating whether
   the IBSS converged to a solution within the chosen tolerance
   level.</p></dd>
 
-    
+susie_suff_stat returns also outputs:
+
+<dt>XtXr</dt><dd><p>A p-vector of <code><a href='https://rdrr.io/r/base/t.html'>t(X)</a></code> times the fitted values,
+  <code>X %*% colSums(alpha*mu)</code>.</p></dd>
+
+susie_rss also outputs:
+
+<dt>Rr</dt><dd><p>An p-vector of <code><a href='https://rdrr.io/r/base/t.html'>t(X)</a></code> times fitted values, <code>X
+  %*% colSums(alpha*mu)</code>.</p></dd>
+
+    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
+
+    <p><code>susie_suff_stat</code> performs sum of single-effect
+linear regression with summary statistics. The required summary
+data are either: <code>bhat</code>, <code>shat</code>, the p by p symmetric,
+positive semidefinite correlation (or covariance) matrix <code>R</code>,
+the sample size <code>n</code>, and the variance of y; or the p by p
+matrix \(X'X\), the p-vector \(X'y\), the sum of squares
+\(y'y\), and the sample size <code>n</code>. The summary statistics
+should come from the same individuals. Both the columns of X and
+the vector y should be centered to have mean zero before computing
+these summary statistics; you may also want to scale each column of
+X and y to have variance 1 (see examples).</p>
+<p><code>susie_rss</code> performs sum of single-effect linear regression
+with z scores; all posterior calculations are for z-scores. This
+function fits the regression model \(z = \sum_l R*b_l + e\),
+where e is \(N(0,residual_var*R)\) and \(\sum_l b_l\) is a
+p-vector of effects to be estimated. The required summary data are
+the p by p correlation matrix, <code>R</code>, and the p-vector
+<code>z</code>. The summary stats should come from the same individuals
+(samples).</p>
+
+
+
+<p>susie_auto is an attempt to automate reliable running of susie even
+on hard problems. It implements a three-stage strategy for each L:
+first, fit susie with very small residual error; next, estimate
+residual error; finally, estimate the prior variance. If the last
+step estimates some prior variances to be zero, stop. Otherwise,
+double L, and repeat. Initial runs are performed with relaxed
+tolerance; the final run is performed using the default susie
+tolerance.</p>
     <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
 
-    <p>G. Wang, A. Sarkar, P. Carbonetto and M. Stephens (2018). A simple
-new approach to variable selection in regression, with application
-to genetic fine-mapping. <em>bioRxiv</em>
-<a href='https://doi.org/10.1101/501114'>https://doi.org/10.1101/501114</a>.</p>
-    
+    <p>G. Wang, A. Sarkar, P. Carbonetto and M. Stephens (2020). A simple
+  new approach to variable selection in regression, with application
+  to genetic fine-mapping. <em>Journal of the Royal Statistical
+  Society, Series B</em> <a href='https://doi.org/10.1101/501114'>https://doi.org/10.1101/501114</a>.</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'>
-<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/Random'>set.seed</a></span>(<span class='fl'>1</span>)
+<span class='co'># susie example.</span>
+<span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span>(<span class='fl'>1</span>)
 <span class='no'>n</span> <span class='kw'>=</span> <span class='fl'>1000</span>
 <span class='no'>p</span> <span class='kw'>=</span> <span class='fl'>1000</span>
-<span class='no'>beta</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/rep'>rep</a></span>(<span class='fl'>0</span>,<span class='no'>p</span>)
+<span class='no'>beta</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>0</span>,<span class='no'>p</span>)
 <span class='no'>beta</span>[<span class='fl'>1</span>:<span class='fl'>4</span>] <span class='kw'>=</span> <span class='fl'>1</span>
-<span class='no'>X</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/matrix'>matrix</a></span>(<span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/Normal'>rnorm</a></span>(<span class='no'>n</span>*<span class='no'>p</span>),<span class='kw'>nrow</span><span class='kw'>=</span><span class='no'>n</span>,<span class='kw'>ncol</span><span class='kw'>=</span><span class='no'>p</span>)
-<span class='no'>y</span> <span class='kw'>=</span> <span class='no'>X</span> <span class='kw'>%*%</span> <span class='no'>beta</span> + <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/Normal'>rnorm</a></span>(<span class='no'>n</span>)
-<span class='no'>res</span> <span class='kw'>=</span> <span class='fu'>susie</span>(<span class='no'>X</span>,<span class='no'>y</span>,<span class='kw'>L</span><span class='kw'>=</span><span class='fl'>10</span>)
-<span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/coef'>coef</a></span>(<span class='no'>res</span>)</div><div class='output co'>#&gt;    [1]  -1.029571e-02   1.061698e+00   1.023098e+00   1.004091e+00
-#&gt;    [5]   9.891083e-01 -7.784212e-234 -1.761841e-230  9.977581e-232
-#&gt;    [9]  4.036125e-233  1.419073e-233 -4.118528e-234  1.834910e-233
-#&gt;   [13]  4.586685e-233  9.731063e-234  2.256264e-233 -1.041226e-233
-#&gt;   [17]  3.521439e-235  9.605938e-233  2.633381e-232  2.389300e-233
-#&gt;   [21] -3.047348e-233 -4.659701e-232 -1.568859e-232  2.216254e-232
-#&gt;   [25] -3.883943e-233  4.299221e-233 -1.199494e-233  8.675356e-234
-#&gt;   [29]  1.572896e-234  4.353059e-234 -1.025333e-233 -1.937613e-234
-#&gt;   [33]  8.827846e-231  6.316873e-234 -5.520345e-234 -3.807140e-234
-#&gt;   [37]  1.492908e-229  3.186259e-234 -3.282107e-233 -1.347556e-233
-#&gt;   [41]  4.008097e-233  4.333559e-234  6.700667e-235 -7.722895e-234
-#&gt;   [45] -7.684456e-233 -4.189512e-233  1.625134e-230 -6.517148e-232
-#&gt;   [49]  1.830235e-233 -2.083339e-234  3.497915e-232 -1.309959e-232
-#&gt;   [53] -2.443138e-234  5.364333e-235 -8.672071e-234  1.192368e-233
-#&gt;   [57]  4.460670e-233  5.770806e-234 -4.751142e-234 -5.755388e-233
-#&gt;   [61]  1.148279e-232  5.609641e-234 -2.989581e-232  3.156000e-234
-#&gt;   [65] -5.286838e-234 -2.401684e-234  4.803886e-234  1.121453e-232
-#&gt;   [69]  1.816221e-233 -1.266846e-229  4.532927e-234  6.975123e-233
-#&gt;   [73]  1.778311e-231  2.281354e-234 -5.938679e-232 -3.090638e-233
-#&gt;   [77] -3.352356e-234  9.516435e-234  1.320660e-232  4.184418e-231
-#&gt;   [81] -1.943731e-232 -6.591258e-234  5.513515e-234  4.309801e-233
-#&gt;   [85] -1.092085e-234  3.125828e-233 -3.132561e-233 -4.554984e-235
-#&gt;   [89]  5.947471e-234 -2.771614e-233  2.116596e-233 -3.453009e-233
-#&gt;   [93] -6.542737e-232  5.342119e-234  1.528111e-233 -3.300945e-234
-#&gt;   [97]  6.332020e-234 -5.669709e-234  1.278235e-232 -6.741072e-233
-#&gt;  [101] -1.103262e-233  9.494403e-235  7.100625e-233 -1.966818e-231
-#&gt;  [105] -1.726735e-233  3.134710e-233  3.529717e-231 -1.576304e-233
-#&gt;  [109] -5.092026e-233  5.527054e-234  1.813597e-233  3.377802e-234
-#&gt;  [113]  2.118444e-232 -5.401874e-233  1.741360e-235  4.860250e-233
-#&gt;  [117]  1.183318e-233 -2.216566e-234  1.052142e-233 -8.652039e-234
-#&gt;  [121]  6.231379e-233  3.830989e-234 -1.195317e-233  7.101319e-234
-#&gt;  [125] -1.387745e-232  7.057347e-234 -6.715374e-234 -9.986420e-233
-#&gt;  [129]  3.313643e-233  4.865494e-234  2.801283e-232  2.339200e-232
-#&gt;  [133]  4.578015e-234 -3.521447e-234 -3.253012e-231  2.682412e-234
-#&gt;  [137]  3.322879e-234  4.860001e-235 -2.605231e-233  4.896684e-233
-#&gt;  [141]  5.172440e-234 -4.678190e-234  8.610755e-234  2.927585e-234
-#&gt;  [145] -4.425314e-234 -8.775174e-234 -1.311007e-232  1.356928e-231
-#&gt;  [149]  9.628684e-234  3.812874e-233 -4.956342e-233  3.050213e-234
-#&gt;  [153]  1.551638e-233  2.319946e-233  4.983849e-234  1.831653e-234
-#&gt;  [157] -1.847673e-232 -1.140504e-233 -1.931587e-233 -1.092240e-232
-#&gt;  [161] -1.312559e-233 -8.632974e-234 -1.040154e-231 -1.584083e-231
-#&gt;  [165]  2.873440e-234 -3.035816e-233  7.413556e-232 -6.041539e-234
-#&gt;  [169]  1.098205e-234  3.926899e-233  1.738529e-231  1.737964e-233
-#&gt;  [173]  5.738618e-234 -2.909433e-233 -2.124178e-233 -4.906229e-231
-#&gt;  [177] -6.852831e-234 -1.900137e-233  2.164834e-232 -2.765999e-233
-#&gt;  [181]  6.991978e-232  1.116591e-234 -7.547990e-233 -1.622348e-233
-#&gt;  [185]  1.841419e-233  1.293102e-232  2.477267e-234 -3.677488e-232
-#&gt;  [189] -7.842463e-235 -1.422271e-233 -1.987584e-232 -3.310976e-234
-#&gt;  [193] -1.013991e-233  6.592946e-233  1.849319e-234  3.046770e-234
-#&gt;  [197] -1.476331e-233 -8.290498e-234 -2.659168e-233 -9.030297e-234
-#&gt;  [201]  1.095561e-233  5.056067e-233 -2.236355e-231  8.174684e-234
-#&gt;  [205] -3.837447e-232  3.677482e-232 -6.567644e-234  3.191643e-233
-#&gt;  [209]  1.111691e-232 -9.734911e-235 -2.118431e-232 -6.667210e-234
-#&gt;  [213]  7.336086e-235 -8.175774e-234 -1.570093e-230 -4.112885e-233
-#&gt;  [217] -1.544443e-234 -1.830718e-231 -4.299235e-233  1.313201e-232
-#&gt;  [221] -1.437005e-234 -7.193281e-234 -7.115130e-234 -6.599219e-234
-#&gt;  [225]  5.838623e-234 -5.865453e-233  1.069085e-233  2.487340e-233
-#&gt;  [229] -1.493477e-232 -6.351686e-233 -5.590831e-230  3.516094e-233
-#&gt;  [233] -9.104066e-234  2.067720e-233  7.514766e-233  1.813112e-232
-#&gt;  [237] -3.125821e-233  1.693595e-234 -9.295030e-233  4.595188e-233
-#&gt;  [241] -1.792329e-232  5.717357e-234 -8.072397e-235  7.840329e-233
-#&gt;  [245]  3.951925e-233  6.697473e-234  3.579403e-232  3.636037e-234
-#&gt;  [249] -1.071123e-233  6.510293e-235  1.550329e-233 -4.526795e-234
-#&gt;  [253]  9.711759e-235 -1.073895e-233 -1.122623e-233 -4.713020e-234
-#&gt;  [257]  1.844246e-233  3.735848e-234 -6.814603e-234  4.025176e-234
-#&gt;  [261]  3.110023e-234 -9.016557e-234 -2.649380e-234 -5.114751e-234
-#&gt;  [265] -4.813100e-233  1.920452e-232  2.266718e-234 -5.010077e-233
-#&gt;  [269] -1.725825e-233  2.702518e-233  1.762438e-233 -1.359627e-233
-#&gt;  [273] -8.936492e-235 -1.684837e-229 -2.366813e-234  2.354186e-230
-#&gt;  [277] -1.259502e-233  1.119647e-233  1.002141e-235 -2.737898e-233
-#&gt;  [281]  2.199827e-233 -1.904572e-232 -8.193953e-233  7.976417e-234
-#&gt;  [285] -2.509897e-233  1.009058e-235 -4.789224e-235 -1.601282e-233
-#&gt;  [289]  2.007598e-234 -7.043501e-235  7.544329e-234 -6.301873e-235
-#&gt;  [293]  1.495086e-231 -3.653899e-234  2.458277e-234 -2.323961e-233
-#&gt;  [297]  4.296998e-233 -4.594748e-232 -8.010144e-233  4.173914e-234
-#&gt;  [301]  3.794636e-233 -1.369367e-235 -7.878802e-234  9.413531e-230
-#&gt;  [305] -9.293579e-234  5.990513e-234 -3.476266e-233  7.108339e-233
-#&gt;  [309] -2.288333e-233 -2.412656e-232  1.642675e-233  6.078194e-234
-#&gt;  [313] -6.815715e-236  8.687280e-234  9.863586e-234  3.806781e-233
-#&gt;  [317]  1.486057e-232 -3.718020e-233  3.056211e-233  3.159952e-229
-#&gt;  [321] -1.065627e-233  4.106290e-234 -8.811022e-233  2.196648e-235
-#&gt;  [325]  5.753034e-233 -5.412095e-234  2.689182e-232 -1.806522e-233
-#&gt;  [329]  5.306094e-234 -1.146140e-232 -1.313416e-233  1.689730e-234
-#&gt;  [333]  1.492795e-232  4.974065e-233  6.205539e-235  1.365842e-234
-#&gt;  [337]  5.595775e-232 -6.654305e-233  3.859684e-233  1.078670e-234
-#&gt;  [341] -9.369085e-234  4.470505e-233 -2.157038e-234  2.872088e-233
-#&gt;  [345] -5.627705e-233  7.312753e-234  1.308860e-231  4.058671e-233
-#&gt;  [349] -1.344001e-233  1.473956e-234  7.200072e-233  2.836847e-233
-#&gt;  [353] -3.273720e-233  5.807097e-233 -3.901368e-232  1.303795e-232
-#&gt;  [357] -4.784240e-234 -9.777496e-232 -9.141687e-234 -7.408474e-231
-#&gt;  [361] -9.260175e-235 -3.139546e-232  1.549934e-232  5.167518e-235
-#&gt;  [365] -2.187000e-231 -9.212430e-232 -2.499554e-233 -1.044271e-233
-#&gt;  [369]  1.137444e-233  3.208446e-232  4.153223e-234 -6.567914e-233
-#&gt;  [373] -6.262805e-235  6.960097e-234 -3.815166e-232  1.062505e-233
-#&gt;  [377]  5.255794e-236 -4.187352e-233  4.493734e-233 -2.359848e-233
-#&gt;  [381]  7.269668e-233 -4.797665e-234 -1.393664e-233  8.764488e-231
-#&gt;  [385]  2.538397e-234 -1.448903e-231  2.501798e-234 -9.111989e-234
-#&gt;  [389] -1.696052e-233 -8.202316e-235  3.604865e-234  1.073775e-231
-#&gt;  [393]  1.190989e-233 -6.579710e-234 -4.758608e-234  6.104339e-234
-#&gt;  [397] -4.641535e-233 -1.653365e-230  4.547989e-234  9.000719e-235
-#&gt;  [401]  1.455586e-232  1.434205e-233 -1.850212e-233  2.448368e-233
-#&gt;  [405] -1.335710e-232  2.839275e-234 -1.544156e-233 -3.074300e-233
-#&gt;  [409] -5.282581e-234 -5.372330e-232 -2.843312e-233 -3.123780e-233
-#&gt;  [413]  1.090113e-233  3.607949e-233  3.640557e-234 -8.047677e-232
-#&gt;  [417] -1.403010e-233 -3.173987e-233  1.236385e-232 -1.647054e-233
-#&gt;  [421] -7.841483e-231  5.989268e-233  2.435490e-233  2.475259e-233
-#&gt;  [425] -3.683002e-234 -3.157886e-233 -5.262971e-233  3.977659e-234
-#&gt;  [429] -1.543278e-232  3.584409e-233 -1.612150e-233 -3.185603e-234
-#&gt;  [433]  3.321776e-234  1.591996e-231  1.800769e-233  2.230896e-233
-#&gt;  [437] -1.623740e-233  1.890101e-233  8.659631e-234  4.876865e-234
-#&gt;  [441] -1.780617e-233  1.816876e-233  3.407773e-234 -1.694601e-233
-#&gt;  [445] -3.239333e-233 -8.561218e-233 -3.303367e-234 -2.182530e-234
-#&gt;  [449] -8.624070e-233  2.232362e-234  8.810629e-234 -4.185731e-231
-#&gt;  [453] -2.478347e-233  3.603149e-233  9.629158e-234  8.316868e-233
-#&gt;  [457]  1.587076e-233  4.098614e-232 -2.552032e-233  3.239855e-232
-#&gt;  [461] -3.135554e-233  8.859511e-233  6.128507e-233 -2.720515e-233
-#&gt;  [465]  1.360443e-233 -2.132415e-234  6.147172e-234 -4.263897e-234
-#&gt;  [469]  4.703698e-233  1.420221e-232  1.784672e-232 -6.315773e-233
-#&gt;  [473]  1.121406e-233 -2.357357e-233  5.146494e-235  3.524421e-233
-#&gt;  [477] -1.226646e-233 -3.385474e-233  1.420733e-232 -7.916012e-234
-#&gt;  [481]  1.513662e-233 -1.099046e-232 -4.423134e-232  9.917622e-233
-#&gt;  [485] -4.781999e-234  1.604545e-234 -1.544074e-230 -1.432806e-233
-#&gt;  [489] -6.316906e-234 -5.070384e-233 -2.982381e-232 -7.522275e-234
-#&gt;  [493] -4.485460e-234  1.470673e-234 -5.137277e-233  4.377406e-235
-#&gt;  [497] -1.119098e-233  1.121021e-233  7.467966e-234 -6.032170e-234
-#&gt;  [501]  9.529951e-233  2.530224e-234 -4.415953e-232  2.099981e-232
-#&gt;  [505]  3.211498e-234  3.925803e-234 -7.349693e-234 -1.289919e-234
-#&gt;  [509]  1.743279e-233 -4.023030e-233  3.590916e-233 -1.443499e-232
-#&gt;  [513] -5.128129e-232  1.706377e-233  9.533068e-235 -1.131784e-231
-#&gt;  [517] -1.714720e-232  2.548588e-233  1.396486e-233 -1.245804e-231
-#&gt;  [521] -6.525551e-234 -5.437903e-236 -3.352819e-233 -4.000014e-235
-#&gt;  [525]  3.578219e-235  9.275070e-234  1.947182e-231  3.518522e-234
-#&gt;  [529] -5.806798e-234  3.082339e-232 -2.209189e-233  6.100521e-233
-#&gt;  [533]  3.483631e-233 -4.887082e-231 -1.721389e-233  4.516221e-234
-#&gt;  [537]  1.146151e-233 -4.089911e-233  8.691996e-234 -3.294729e-233
-#&gt;  [541] -3.911538e-234 -1.372464e-235  1.987645e-233  3.233292e-235
-#&gt;  [545] -4.492453e-233  2.110313e-233 -9.568578e-234 -7.908299e-234
-#&gt;  [549]  4.987632e-233  1.499115e-230  1.493965e-233  1.075207e-233
-#&gt;  [553] -5.013382e-234 -7.953032e-234 -1.246424e-231 -2.042621e-228
-#&gt;  [557]  6.136657e-234  1.787282e-234  2.617942e-233  1.159884e-233
-#&gt;  [561]  3.350417e-233  6.222872e-234 -3.896693e-233  3.687018e-234
-#&gt;  [565]  6.240448e-234  3.654743e-231 -3.516334e-234 -4.008831e-233
-#&gt;  [569] -3.744694e-232  5.463984e-233  2.417335e-234 -2.411183e-232
-#&gt;  [573] -6.224383e-233 -7.521710e-234 -6.693167e-234  2.539623e-233
-#&gt;  [577]  3.205053e-234  3.550667e-233  1.882472e-233  2.152542e-233
-#&gt;  [581] -1.127095e-234  2.236513e-233  3.380999e-233 -1.898530e-233
-#&gt;  [585]  3.487985e-233 -1.958459e-233 -1.216031e-232 -2.093050e-234
-#&gt;  [589]  8.484678e-234  2.503475e-234  5.686413e-233  5.328359e-233
-#&gt;  [593] -3.332200e-233  3.311312e-233  4.847643e-231 -1.264543e-233
-#&gt;  [597] -2.841748e-233  1.837026e-233  1.237230e-234  1.235126e-233
-#&gt;  [601]  1.705888e-232 -1.021264e-234  8.275200e-234  1.901746e-232
-#&gt;  [605]  3.244725e-234  6.626403e-233  9.836351e-234  1.083894e-234
-#&gt;  [609] -1.384107e-232  3.155688e-234  1.457250e-232  2.381059e-234
-#&gt;  [613]  4.069981e-228 -4.214845e-234 -4.667536e-233 -8.105346e-235
-#&gt;  [617] -1.285707e-233 -5.391525e-234  2.366586e-232 -1.092896e-232
-#&gt;  [621]  3.643436e-234  9.090510e-233  7.464752e-234 -3.510394e-234
-#&gt;  [625] -1.170594e-231 -2.777365e-232 -1.709352e-232 -1.502809e-233
-#&gt;  [629]  5.163380e-233 -1.244076e-233 -9.150560e-235 -1.581772e-232
-#&gt;  [633]  4.274056e-234 -3.879986e-233 -5.342090e-234  1.079854e-233
-#&gt;  [637] -6.345185e-232  4.302551e-233 -9.768777e-234  2.192225e-234
-#&gt;  [641] -9.805495e-233  5.064797e-232  8.654221e-235 -5.823763e-230
-#&gt;  [645] -5.281337e-233  1.837126e-234 -4.216165e-234 -2.662248e-234
-#&gt;  [649] -1.227146e-233  2.350366e-233 -1.430152e-233  4.341746e-234
-#&gt;  [653]  3.596100e-234  2.168922e-233 -6.362224e-235  5.534591e-233
-#&gt;  [657] -7.439412e-234 -8.830422e-234  5.405848e-233 -1.731827e-234
-#&gt;  [661]  5.607448e-234  9.561757e-233  2.042030e-234 -7.183595e-232
-#&gt;  [665]  9.993668e-234  1.200098e-233  5.634165e-234 -2.656416e-233
-#&gt;  [669] -6.224433e-234 -7.476802e-234  1.042266e-233  1.171458e-232
-#&gt;  [673] -1.761848e-235  1.541056e-233 -2.433709e-234  2.712696e-234
-#&gt;  [677]  6.104578e-234  1.222324e-234 -9.601534e-234 -9.605643e-235
-#&gt;  [681]  5.727658e-233  5.405468e-234  5.774798e-233 -2.607100e-233
-#&gt;  [685] -6.118535e-234 -1.892703e-233 -2.133658e-230 -1.159292e-233
-#&gt;  [689] -1.464129e-235  1.584811e-230  1.316033e-233  2.646454e-232
-#&gt;  [693]  3.078953e-233  2.200757e-234  1.013307e-233 -3.702094e-234
-#&gt;  [697] -7.348982e-234 -5.059414e-235  1.775595e-234  2.504606e-233
-#&gt;  [701] -7.968486e-234 -1.413281e-232 -1.121623e-232 -1.592027e-233
-#&gt;  [705]  8.290923e-234  1.183092e-233  9.303039e-233  8.141905e-233
-#&gt;  [709]  7.330953e-234 -2.503105e-233 -3.072087e-232  6.083712e-232
-#&gt;  [713]  9.198211e-232  6.769238e-234 -3.206887e-233  1.500897e-233
-#&gt;  [717] -4.572827e-232  3.353404e-233 -1.295247e-233 -7.373773e-234
-#&gt;  [721] -6.359884e-233  4.415930e-234  9.397177e-234 -5.581658e-234
-#&gt;  [725]  6.129851e-232 -1.829906e-233  2.110539e-234 -8.767028e-232
-#&gt;  [729] -1.106531e-230  1.852708e-235  1.376915e-233 -1.579115e-233
-#&gt;  [733]  2.671736e-230 -1.232507e-233 -5.694552e-233 -5.844860e-233
-#&gt;  [737] -6.575243e-234 -3.096256e-233  6.329999e-233 -2.254020e-233
-#&gt;  [741]  1.267078e-233 -5.780490e-233 -4.575986e-234  3.338939e-234
-#&gt;  [745]  5.051152e-235  1.241348e-232 -2.859173e-232 -9.096202e-234
-#&gt;  [749] -4.155656e-233 -1.824978e-232  7.296423e-234  2.723517e-233
-#&gt;  [753] -5.149027e-233  4.730114e-234 -4.520574e-234 -2.453343e-234
-#&gt;  [757] -3.623706e-233 -2.734030e-232  2.874600e-231 -5.560454e-235
-#&gt;  [761]  1.837669e-232  1.586651e-234  1.060747e-233 -5.262322e-232
-#&gt;  [765]  1.721020e-233 -1.343502e-232  3.062493e-231  1.281179e-233
-#&gt;  [769]  4.558084e-233 -1.249473e-233  6.532514e-234  1.087762e-232
-#&gt;  [773]  2.322377e-233 -1.340565e-233  1.259610e-230 -2.386197e-234
-#&gt;  [777]  1.804782e-235  1.318444e-233 -2.204101e-233 -2.638072e-233
-#&gt;  [781]  2.054878e-233  5.630488e-234  9.833318e-234  2.472687e-233
-#&gt;  [785]  1.344712e-233 -1.951739e-232 -2.514044e-234  2.064889e-233
-#&gt;  [789]  4.688543e-234 -9.784807e-233  5.305986e-235 -2.170758e-233
-#&gt;  [793]  3.416885e-233 -4.366604e-231  7.719210e-235  9.420796e-233
-#&gt;  [797] -4.991277e-234 -6.032208e-233 -3.154090e-232 -9.007009e-232
-#&gt;  [801] -3.996145e-233  4.388721e-234  8.319093e-232 -1.089016e-233
-#&gt;  [805]  1.902948e-233 -2.365662e-234 -7.242335e-234  6.269447e-234
-#&gt;  [809]  3.405658e-234 -9.992145e-233  4.259931e-232  8.979834e-234
-#&gt;  [813]  1.117904e-232  5.514559e-233  1.363129e-233 -2.698575e-233
-#&gt;  [817] -2.540046e-234 -1.804669e-233  1.766075e-231  3.638197e-234
-#&gt;  [821] -2.988091e-232 -7.145475e-233 -1.024582e-232 -3.110737e-234
-#&gt;  [825] -3.470555e-233 -3.371518e-233 -3.212399e-233 -8.910009e-235
-#&gt;  [829] -4.906369e-234  7.920659e-235  4.571855e-234  5.344933e-233
-#&gt;  [833] -5.935453e-233  2.522057e-232  1.644564e-233  1.022688e-234
-#&gt;  [837]  3.114985e-234 -8.474213e-234 -8.213996e-234  5.045189e-233
-#&gt;  [841]  1.512233e-233 -2.069553e-233  2.310448e-233  2.023409e-233
-#&gt;  [845]  1.257670e-233  4.931485e-233  1.585174e-233 -2.246596e-234
-#&gt;  [849] -2.135844e-233  2.253114e-233  1.256507e-234  3.718080e-234
-#&gt;  [853]  3.138628e-232  1.533768e-234  2.014741e-233  4.595313e-234
-#&gt;  [857] -2.209902e-232  1.399670e-234  5.622696e-234  2.099851e-233
-#&gt;  [861] -7.697573e-233 -2.665030e-233 -1.971928e-234  2.998055e-232
-#&gt;  [865] -2.008669e-234  1.933087e-233  4.459110e-233 -1.142318e-232
-#&gt;  [869]  4.469615e-234 -1.579381e-233  4.702264e-233 -2.738116e-234
-#&gt;  [873] -2.449981e-233 -1.031003e-232 -1.935567e-233  1.098577e-233
-#&gt;  [877]  6.443507e-234  7.470824e-233  9.038691e-232  2.423643e-234
-#&gt;  [881] -1.531266e-234  3.837753e-233 -1.511308e-233  1.157349e-232
-#&gt;  [885]  3.695803e-234 -3.574844e-233 -1.209586e-234 -2.177080e-233
-#&gt;  [889] -1.060589e-234  3.268720e-234  6.538199e-234 -1.819186e-232
-#&gt;  [893]  5.791350e-234 -1.310157e-233 -1.803298e-234 -1.052049e-234
-#&gt;  [897]  1.621126e-233  5.500994e-232 -5.215000e-232 -3.363229e-233
-#&gt;  [901] -7.070960e-234  9.846193e-232  1.069728e-233  9.887106e-233
-#&gt;  [905]  4.714880e-233 -1.219970e-232 -6.420227e-232 -2.995163e-233
-#&gt;  [909]  4.793432e-233 -9.998080e-234  1.236714e-233 -4.128535e-234
-#&gt;  [913] -1.680407e-233 -1.302932e-233  9.111918e-233  1.022526e-229
-#&gt;  [917]  1.219242e-235 -3.354235e-234 -3.127361e-235 -9.073061e-234
-#&gt;  [921] -1.899673e-233 -1.991295e-233 -1.358382e-233  7.168817e-233
-#&gt;  [925]  2.701837e-234 -2.964705e-234  1.561136e-234 -7.589847e-235
-#&gt;  [929] -1.528326e-234 -3.496230e-234 -2.832907e-232  1.913902e-233
-#&gt;  [933] -3.844030e-233  5.197206e-233 -2.466558e-230  1.392169e-233
-#&gt;  [937]  9.430448e-236 -1.782378e-233 -1.398322e-233  2.286184e-233
-#&gt;  [941] -4.872862e-233 -3.244625e-234  4.940243e-233 -1.919637e-234
-#&gt;  [945]  1.097881e-233 -2.517569e-231 -3.785280e-233  3.919005e-232
-#&gt;  [949]  5.854514e-234  2.231942e-235  2.097293e-233 -4.238844e-234
-#&gt;  [953] -3.765614e-233  6.937094e-234 -1.013375e-233  9.387650e-234
-#&gt;  [957] -2.211942e-234 -6.836298e-234  2.699611e-235 -3.360839e-232
-#&gt;  [961] -4.223337e-233  1.496284e-232  1.939069e-233  1.830519e-233
-#&gt;  [965] -5.210969e-233 -3.957936e-232  9.099571e-235 -8.108476e-230
-#&gt;  [969]  1.459099e-234 -3.259143e-234 -3.422796e-234  3.936342e-234
-#&gt;  [973] -3.898357e-234  2.040354e-234 -3.709338e-232 -7.061670e-233
-#&gt;  [977] -1.541460e-233 -8.997651e-231  1.228201e-234  1.083683e-233
-#&gt;  [981]  1.522343e-232  5.700257e-234 -7.158562e-233  4.449674e-234
-#&gt;  [985] -1.505875e-232 -5.621287e-234  1.486357e-234 -8.918971e-234
-#&gt;  [989] -5.972011e-234 -1.677798e-233 -7.059245e-233 -1.092667e-233
-#&gt;  [993]  1.391815e-233 -3.686532e-231 -1.575360e-232  7.594913e-235
-#&gt;  [997]  9.309126e-231 -6.094262e-234  2.231241e-233 -1.008467e-233
-#&gt; [1001]  1.125563e-231</div><div class='input'><span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>y</span>,<span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/predict'>predict</a></span>(<span class='no'>res</span>))</div><div class='img'><img src='susie-1.png' alt='' width='700' height='433' /></div><div class='input'>
+<span class='no'>X</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>matrix</a></span>(<span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span>(<span class='no'>n</span>*<span class='no'>p</span>),<span class='kw'>nrow</span> <span class='kw'>=</span> <span class='no'>n</span>,<span class='kw'>ncol</span> <span class='kw'>=</span> <span class='no'>p</span>)
+<span class='no'>X</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/scale.html'>scale</a></span>(<span class='no'>X</span>,<span class='kw'>center</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,<span class='kw'>scale</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+<span class='no'>y</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/drop.html'>drop</a></span>(<span class='no'>X</span> <span class='kw'>%*%</span> <span class='no'>beta</span> + <span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span>(<span class='no'>n</span>))
+<span class='no'>res1</span> <span class='kw'>=</span> <span class='fu'>susie</span>(<span class='no'>X</span>,<span class='no'>y</span>,<span class='kw'>L</span> <span class='kw'>=</span> <span class='fl'>10</span>)
+<span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>beta</span>,<span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span>(<span class='no'>res1</span>)[-<span class='fl'>1</span>])</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/abline.html'>abline</a></span>(<span class='kw'>a</span> <span class='kw'>=</span> <span class='fl'>0</span>,<span class='kw'>b</span> <span class='kw'>=</span> <span class='fl'>1</span>,<span class='kw'>col</span> <span class='kw'>=</span> <span class='st'>"skyblue"</span>,<span class='kw'>lty</span> <span class='kw'>=</span> <span class='st'>"dashed"</span>)</div><div class='img'><img src='susie-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>y</span>,<span class='fu'><a href='https://rdrr.io/r/stats/predict.html'>predict</a></span>(<span class='no'>res1</span>))</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/abline.html'>abline</a></span>(<span class='kw'>a</span> <span class='kw'>=</span> <span class='fl'>0</span>,<span class='kw'>b</span> <span class='kw'>=</span> <span class='fl'>1</span>,<span class='kw'>col</span> <span class='kw'>=</span> <span class='st'>"skyblue"</span>,<span class='kw'>lty</span> <span class='kw'>=</span> <span class='st'>"dashed"</span>)</div><div class='img'><img src='susie-2.png' alt='' width='700' height='433' /></div><div class='input'>
+<span class='co'># susie_suff_stat example.</span>
+<span class='no'>input_ss</span> <span class='kw'>=</span> <span class='fu'><a href='compute_ss.html'>compute_ss</a></span>(<span class='no'>X</span>,<span class='no'>y</span>,<span class='kw'>standardize</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+<span class='no'>res2</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/with.html'>with</a></span>(<span class='no'>input_ss</span>,
+            <span class='fu'>susie_suff_stat</span>(<span class='kw'>XtX</span> <span class='kw'>=</span> <span class='no'>XtX</span>,<span class='kw'>Xty</span> <span class='kw'>=</span> <span class='no'>Xty</span>,<span class='kw'>yty</span> <span class='kw'>=</span> <span class='no'>yty</span>,<span class='kw'>n</span> <span class='kw'>=</span> <span class='no'>n</span>,<span class='kw'>L</span> <span class='kw'>=</span> <span class='fl'>10</span>))
+<span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span>(<span class='no'>res1</span>)[-<span class='fl'>1</span>],<span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span>(<span class='no'>res2</span>)[-<span class='fl'>1</span>])</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/abline.html'>abline</a></span>(<span class='kw'>a</span> <span class='kw'>=</span> <span class='fl'>0</span>,<span class='kw'>b</span> <span class='kw'>=</span> <span class='fl'>1</span>,<span class='kw'>col</span> <span class='kw'>=</span> <span class='st'>"skyblue"</span>,<span class='kw'>lty</span> <span class='kw'>=</span> <span class='st'>"dashed"</span>)</div><div class='img'><img src='susie-3.png' alt='' width='700' height='433' /></div><div class='input'>
+<span class='co'># susie_rss example.</span>
+<span class='no'>ss</span>   <span class='kw'>&lt;-</span> <span class='kw pkg'>susieR</span><span class='kw ns'>:::</span><span class='fu'><a href='univariate_regression.html'>univariate_regression</a></span>(<span class='no'>X</span>,<span class='no'>y</span>)
+<span class='no'>R</span>    <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/with.html'>with</a></span>(<span class='no'>input_ss</span>,<span class='fu'><a href='https://rdrr.io/r/stats/cor.html'>cov2cor</a></span>(<span class='no'>XtX</span>))
+<span class='no'>zhat</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/with.html'>with</a></span>(<span class='no'>ss</span>,<span class='no'>betahat</span>/<span class='no'>sebetahat</span>)
+<span class='no'>res3</span> <span class='kw'>&lt;-</span> <span class='fu'>susie_rss</span>(<span class='no'>zhat</span>,<span class='no'>R</span>,<span class='kw'>L</span> <span class='kw'>=</span> <span class='fl'>10</span>)</div><div class='output co'>#&gt; <span class='message'>Input z is in space spanned by the non-zero eigenvectors of R. You can safely set "check_z = FALSE" when you rerun the analysis, to save computation.</span></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span>(<span class='no'>res1</span>)[-<span class='fl'>1</span>]/<span class='no'>ss</span>$<span class='no'>sebetahat</span>,<span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span>(<span class='no'>res3</span>)[-<span class='fl'>1</span>])</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/abline.html'>abline</a></span>(<span class='kw'>a</span> <span class='kw'>=</span> <span class='fl'>0</span>,<span class='kw'>b</span> <span class='kw'>=</span> <span class='fl'>1</span>,<span class='kw'>col</span> <span class='kw'>=</span> <span class='st'>"skyblue"</span>,<span class='kw'>lty</span> <span class='kw'>=</span> <span class='st'>"dashed"</span>)</div><div class='img'><img src='susie-4.png' alt='' width='700' height='433' /></div><div class='input'>
+<span class='co'># susie_auto example.</span>
+<span class='no'>res4</span> <span class='kw'>&lt;-</span> <span class='fu'>susie_auto</span>(<span class='no'>X</span>,<span class='no'>y</span>)
+<span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>beta</span>,<span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span>(<span class='no'>res4</span>)[-<span class='fl'>1</span>])</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/abline.html'>abline</a></span>(<span class='kw'>a</span> <span class='kw'>=</span> <span class='fl'>0</span>,<span class='kw'>b</span> <span class='kw'>=</span> <span class='fl'>1</span>,<span class='kw'>col</span> <span class='kw'>=</span> <span class='st'>"skyblue"</span>,<span class='kw'>lty</span> <span class='kw'>=</span> <span class='st'>"dashed"</span>)</div><div class='img'><img src='susie-5.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>y</span>,<span class='fu'><a href='https://rdrr.io/r/stats/predict.html'>predict</a></span>(<span class='no'>res4</span>))</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/abline.html'>abline</a></span>(<span class='kw'>a</span> <span class='kw'>=</span> <span class='fl'>0</span>,<span class='kw'>b</span> <span class='kw'>=</span> <span class='fl'>1</span>,<span class='kw'>col</span> <span class='kw'>=</span> <span class='st'>"skyblue"</span>,<span class='kw'>lty</span> <span class='kw'>=</span> <span class='st'>"dashed"</span>)</div><div class='img'><img src='susie-6.png' alt='' width='700' height='433' /></div><div class='input'>
 </div></pre>
   </div>
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
-      
-      <li><a href="#value">Value</a></li>
-
-      <li><a href="#references">References</a></li>
-      
-      <li><a href="#examples">Examples</a></li>
-    </ul>
-
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
+
 
       <footer>
       <div class="copyright">
@@ -632,13 +659,16 @@ to genetic fine-mapping. <em>bioRxiv</em>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.3.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
+
       </footer>
    </div>
 
   
 
+
   </body>
 </html>
+
 

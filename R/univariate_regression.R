@@ -26,7 +26,17 @@
 #'   errors (\code{sebetahat}). Optionally, and only when a matrix of
 #'   covariates \code{Z} is provided, a third vector \code{residuals}
 #'   containing the residuals is returned.
-#' 
+#' @examples
+#' set.seed(1)
+#' n = 1000
+#' p = 1000
+#' beta = rep(0,p)
+#' beta[1:4] = 1
+#' X = matrix(rnorm(n*p),nrow = n,ncol = p)
+#' X = scale(X,center = TRUE,scale = TRUE)
+#' y = drop(X %*% beta + rnorm(n))
+#' res = univariate_regression(X,y)
+#' plot(res$betahat/res$sebetahat)
 #' @importFrom stats lm
 #' @importFrom stats .lm.fit
 #' @importFrom stats coef

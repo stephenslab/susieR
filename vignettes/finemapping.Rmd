@@ -38,25 +38,21 @@ data(N3finemapping)
 attach(N3finemapping)
 ```
 
-`data` contains regression data-set $X$ and $y$, along with some other
+The loaded dataset contains regression data $X$ and $y$, along with some other
 relevant properties in the context of genetic studies. It also
 contains the "true" regression coefficent the data is simulated from.
-
-```{r}
-names(data)
-```
 
 Notice that we've simulated 2 sets of $Y$ as 2 simulation
 replicates. Here we'll focus on the first data-set.
 
 ```{r}
-dim(data$Y)
+dim(Y)
 ```
 
 Here are the 3 "true" signals in the first data-set:
 
 ```{r}
-b <- data$true_coef[,1]
+b <- true_coef[,1]
 plot(b, pch=16, ylab='effect size')
 ```
 
@@ -68,14 +64,14 @@ So the underlying causal variables are 403, 653 and 773.
 
 ## Simple regression summary statistics
 
-The data-set additionally provides summary statistics for fitting
-univariate simple regression variable by variable. The results are
-$\hat{\beta}$ and $SE(\hat{\beta})$ from which z-scores can be
+`univariate_regression` function can be used to compute 
+summary statistics by fitting univariate simple regression variable by variable.
+The results are $\hat{\beta}$ and $SE(\hat{\beta})$ from which z-scores can be
 derived. Again we focus only on results from the first data-set:
 
 ```{r}
-z_scores <- sumstats[1,,] / sumstats[2,,]
-z_scores <- z_scores[,1]
+sumstats <- univariate_regression(X, Y[,1])
+z_scores <- sumstats$betahat / sumstats$sebetahat
 susie_plot(z_scores, y = "z", b=b)
 ```
 
@@ -92,7 +88,7 @@ the variational algorithm that fits SuSiE model. The `susieR` function
 call is:
 
 ```{r}
-fitted <- susie(data$X, data$Y[,1],
+fitted <- susie(X, Y[,1],
                 L = 10,
                 estimate_residual_variance = TRUE, 
                 estimate_prior_variance = FALSE,
@@ -118,7 +114,7 @@ of the CS is also a bit smaller.
 
 ```{r}
 sets <- susie_get_cs(fitted,
-                     X = data$X,
+                     X = X,
 	  	     coverage = 0.9,
                      min_abs_corr = 0.1)
 ```
@@ -158,7 +154,7 @@ set scaled prior variance (percentage of variance explained) to 0.2,
 and compare with previous results:
 
 ```{r}
-fitted = susie(data$X, data$Y[,1],
+fitted = susie(X, Y[,1],
                L = 10,
                estimate_residual_variance = TRUE, 
                estimate_prior_variance = FALSE, 
@@ -170,7 +166,7 @@ which largely remains unchanged. We also illustrate below analysis using
 default prior estimated from data,
 
 ```{r}
-fitted = susie(data$X, data$Y[,1],
+fitted = susie(X, Y[,1],
                L = 10,
                estimate_residual_variance = TRUE)
 susie_plot(fitted, y='PIP', b=b)
@@ -181,7 +177,7 @@ susie_plot(fitted, y='PIP', b=b)
 To include covariate `Z` in SuSiE, one approach is to regress it out from both `y`
 and `X`, and then run SuSiE on the residuals. The code below illustrates the procedure:
 
-```{r}
+```{r, eval=FALSE}
 remove.covariate.effects <- function (X, Z, y) {
   # include the intercept term
   if (any(Z[,1]!=1)) Z = cbind(1, Z)
@@ -193,7 +189,7 @@ remove.covariate.effects <- function (X, Z, y) {
   return(list(X = X,y = y,SZy = SZy,SZX = SZX))
 }
 
-out = remove.covariate.effects(data$X, Z,  data$Y[,1])
+out = remove.covariate.effects(X, Z, Y[,1])
 fitted_adjusted = susie(out$X, out$y,
                L = 10,
                estimate_residual_variance = TRUE)
