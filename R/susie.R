@@ -330,12 +330,23 @@ susie <- function (X,Y,L = min(10,ncol(X)),
   # Initialize susie fit.
   s = init_setup(n,p,L,scaled_prior_variance,residual_variance,prior_weights,
                  null_weight,as.numeric(var(Y)),standardize)
-  if (!missing(s_init)) {
+  if (!missing(s_init) && !is.null(s_init)) {
+    if (!inherits(s_init,"susie")) {
+      stop('s_init should be a susie object')
+    }
+    if (L < nrow(s_init$alpha)) {
+      warning(paste('Specified number of effects L =', L, 'does not match the number of effects', nrow(s_init$alpha), 'in s_init. s_init will pruned to have', L, 'effects.'))
+      s_init = susie_prune_single_effects(s_init, L)
+    } else {
+      if (L > nrow(s_init$alpha)) {
+        stop(paste('Specified number of effects L =', L, 'does not match the number of effects', nrow(s_init$alpha), 'in s_init.'))
+      }
+    }
     s = modifyList(s,s_init)
     s = init_finalize(s,X = X)
-  } else 
+  } else { 
     s = init_finalize(s)
-
+  }
   # Initialize elbo to NA.
   elbo = rep(as.numeric(NA),max_iter + 1)
   elbo[1] = -Inf;
@@ -404,6 +415,7 @@ susie <- function (X,Y,L = min(10,ncol(X)),
     colnames(s$alpha) = variable_names
     colnames(s$mu) = variable_names
     colnames(s$mu2) = variable_names
+    colnames(s$lbf_variable) = variable_names
   }
   # report z-scores from univariate regression.
   if (compute_univariate_zscore) {

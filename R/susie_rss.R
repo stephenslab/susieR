@@ -45,7 +45,7 @@ susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
                       estimate_prior_variance = TRUE,
                       estimate_prior_method = c("optim", "EM", "simple"),
                       check_null_threshold = 0, prior_tol = 1e-9,
-                      max_iter = 100, s_init = list(), intercept_value = 0,
+                      max_iter = 100, s_init = NULL, intercept_value = 0,
                       coverage = 0.95, min_abs_corr = 0.5,
                       tol = 1e-03, verbose = FALSE, track_fit = FALSE,
                       check_R = TRUE, check_z = TRUE) {
@@ -265,11 +265,23 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
   # Initialize susie fit.
   s = init_setup_rss(p,L,prior_variance,residual_variance,prior_weights,
                      null_weight)
-  if (!missing(s_init)) {
+  if (!missing(s_init) && !is.null(s_init)) {
+    if (!inherits(s_init,"susie")) {
+      stop('s_init should be a susie object')
+    }
+    if (L < nrow(s_init$alpha)) {
+      warning(paste('Specified number of effects L =', L, 'does not match the number of effects', nrow(s_init$alpha), 'in s_init. s_init will pruned to have', L, 'effects.'))
+      s_init = susie_prune_single_effects(s_init, L)
+    } else {
+      if (L > nrow(s_init$alpha)) {
+        stop(paste('Specified number of effects L =', L, 'does not match the number of effects', nrow(s_init$alpha), 'in s_init.'))
+      }
+    }
     s = modifyList(s,s_init)
     s = init_finalize_rss(s,R = R)
-  } else
+  } else { 
     s = init_finalize_rss(s)
+  }
 
   estimate_prior_method = match.arg(estimate_prior_method)
   
@@ -359,6 +371,7 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
     colnames(s$alpha) = variable_names
     colnames(s$mu) = variable_names
     colnames(s$mu2) = variable_names
+    colnames(s$lbf_variable) = variable_names
   }
 
   return(s)

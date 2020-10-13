@@ -352,11 +352,13 @@ susie_get_pip = function (res, prune_by_cs = FALSE, prior_tol = 1e-9) {
 
 # Find how many variables in the CS.
 # x is a probability vector.
+#' @keywords internal
 n_in_CS_x = function (x, coverage = 0.9)
   sum(cumsum(sort(x,decreasing = TRUE)) < coverage) + 1
 
 # Return binary vector indicating if each point is in CS.
 # x is a probability vector.
+#' @keywords internal
 in_CS_x = function (x, coverage = 0.9) {
   n = n_in_CS_x(x,coverage)
   o = order(x,decreasing = TRUE)
@@ -367,12 +369,14 @@ in_CS_x = function (x, coverage = 0.9) {
 
 # Returns an l-by-p binary matrix indicating which variables are in
 # susie credible sets.
+#' @keywords internal
 in_CS = function (res, coverage = 0.9) {
   if (inherits(res,"susie"))
     res = res$alpha
   return(t(apply(res,1,function(x) in_CS_x(x,coverage))))
 }
 
+#' @keywords internal
 n_in_CS = function(res, coverage = 0.9) {
   if (inherits(res,"susie"))
     res = res$alpha
@@ -423,6 +427,7 @@ muffled_corr = function (x)
 # cov2cor function with specified warning muffled.
 #
 #' @importFrom stats cov2cor
+#' @keywords internal
 muffled_cov2cor = function (x)
   withCallingHandlers(cov2cor(x),
     warning = function(w) {
@@ -432,6 +437,7 @@ muffled_cov2cor = function (x)
       })
 
 # Check for symmetric matrix.
+#' @keywords internal
 is_symmetric_matrix = function (x) {
   res = isSymmetric(x)
   if (!res)
@@ -441,6 +447,7 @@ is_symmetric_matrix = function (x) {
 
 # Compute standard error for regression coef.
 # S = (X'X)^-1 \Sigma
+#' @keywords internal
 calc_stderr = function (X, residuals)
   sqrt(diag(sum(residuals^2)/(nrow(X) - 2) * chol2inv(chol(t(X) %*% X))))
 
@@ -448,9 +455,26 @@ calc_stderr = function (X, residuals)
 # model.
 #
 #' @importFrom stats coef
+#' @keywords internal
 get_R = function (X, Y, s)
   Y - X %*% coef(s)
 
 # Slim the result of fitted susie model.
+#' @keywords internal
 susie_slim = function (res)
   list(alpha = res$alpha,niter = res$niter,V = res$V,sigma2 = res$sigma2)
+
+# Prune single effects to given number L in susie model object.
+#' @keywords internal
+susie_prune_single_effects = function(s, L) {
+  # this is an internal function so it assumes s is susie object and has number of single effects bigger than L.
+  if (!is.null(s$sets$cs_index)) {
+    effects_rank = c(s$sets$cs_index, setdiff(1:nrow(s$alpha), s$sets$cs_index))
+  } else {
+    effects_rank = 1:nrow(s$alpha)
+  }
+  for (n in c('alpha', 'mu', 'mu2', 'lbf_variable')) s[[n]] = s[[n]][effects_rank,][1:L,] 
+  for (n in c('KL', 'lbf', 'V')) s[[n]] = s[[n]][effects_rank][1:L]
+  s$sets = NULL
+  return(s)
+}

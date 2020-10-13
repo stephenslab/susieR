@@ -53,7 +53,7 @@ susie_rss(
   check_null_threshold = 0,
   prior_tol = 1e-09,
   max_iter = 100,
-  s_init = list(),
+  s_init = NULL,
   intercept_value = 0,
   coverage = 0.95,
   min_abs_corr = 0.5,
