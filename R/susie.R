@@ -334,6 +334,8 @@ susie <- function (X,Y,L = min(10,ncol(X)),
     if (!inherits(s_init,"susie")) {
       stop('s_init should be a susie object')
     }
+    if (max(s_init$alpha) > 1 || min(s_init$alpha) < 0) 
+      stop('s_init$alpha has invalid values outside range [0,1]. Please check your input.')
     if (L < nrow(s_init$alpha)) {
       warning(paste('Specified number of effects L =', L, 'does not match the number of effects', nrow(s_init$alpha), 'in s_init. s_init will pruned to have', L, 'effects.'))
       s_init = susie_prune_single_effects(s_init, L)
