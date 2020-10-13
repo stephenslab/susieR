@@ -36,5 +36,28 @@ summary.susie = function (object, ...) {
       variables = variables[order(variables$variable_prob,decreasing = TRUE),]
   } else
     cs = NULL
-  return(list(vars = variables,cs = cs))
+  out = list(vars = variables,cs = cs)
+  class(out) <- c("summary.susie","list")
+  return(out)
+}
+
+#' @title Print summary(susie) result.
+#' 
+#' @param object A susie summary.
+#'
+#' @param \dots Additional arguments passed to the generic \code{print}
+#'   method.
+#' 
+#' @return standard output stream containing only variables in CS.
+#' 
+#' @method print summary.susie
+#' @export print.summary.susie
+#' @export
+print.summary.susie <- function (object, ...) {
+  if (!is(object,"summary.susie"))
+    stop("Input must be an instance of class \"summary.susie\".")
+  cat('\nVariables in credible sets:\n\n')
+  print.data.frame(object$vars[which(object$vars$cs>0),], row.names=F)
+  cat('\nCredible sets summary:\n\n')
+  print.data.frame(object$cs, row.names=F)
 }

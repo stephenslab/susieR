@@ -2,10 +2,12 @@
 
 S3method(coef,susie)
 S3method(predict,susie)
+S3method(print,summary.susie)
 S3method(summary,susie)
 export(coef.susie)
 export(compute_ss)
 export(predict.susie)
+export(print.summary.susie)
 export(summary.susie)
 export(susie)
 export(susie_auto)
