@@ -1,5 +1,5 @@
-pandoc: 1.19.2.1
-pkgdown: 1.3.0
+pandoc: '2.5'
+pkgdown: 1.5.1
 pkgdown_sha: ~
 articles:
   finemapping: finemapping.html
@@ -9,4 +9,5 @@ articles:
   sparse_matrix_strategy: sparse_matrix_strategy.html
   sparse_susie_eval: sparse_susie_eval.html
   trend_filtering: trend_filtering.html
+last_built: 2020-10-13T18:15Z
 

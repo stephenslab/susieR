@@ -1,24 +1,42 @@
-#' @title Bayesian single-effect linear regression of y on X
+#' @rdname single_effect_regression
+#'
+#' @title Bayesian single-effect linear regression
 #' 
-#' @description Performs single-effect linear regression of y on
-#'   X. That is, this function fits the regression model \eqn{y = Xb +
-#'   e}, where elements of e are i.i.d. \eqn{N(0,s2)}, and b is a
-#'   p-vector of effects to be estimated. The assumption is that b has
+#' @description These methods fit the regression model \eqn{y = Xb +
+#'   e}, where elements of e are \emph{i.i.d.}  \eqn{N(0,s^2)}, and b is
+#'   a p-vector of effects to be estimated. The assumption is that b has
 #'   exactly one non-zero element, with all elements equally likely to
 #'   be non-zero. The prior on the coefficient of the non-zero element
 #'   is \eqn{N(0,V)}.
+#'
+#' @details \code{single_effect_regression_ss} performs single-effect
+#' linear regression with summary data, in which only the statistcs
+#' \eqn{X^Ty} and diagonal elements of \eqn{X^TX} are provided to the
+#' method.
 #' 
-#' @param Y An n vector.
+#' \code{single_effect_regression_rss} performs single-effect linear
+#' regression with z scores. That is, this function fits the
+#' regression model \eqn{z = R*b + e}, where e is \eqn{N(0,Sigma)},
+#' \eqn{Sigma = residual_var*R + lambda*I}, and the b is a p-vector of
+#' effects to be estimated. The assumption is that b has exactly one
+#' non-zero element, with all elements equally likely to be non-zero.
+#' The prior on the non-zero element is \eqn{N(0,V)}. The required
+#' summary data are the p-vector \code{z} and the p by p matrix
+#' \code{Sigma}. The summary statistics should come from the same
+#' individuals.
+#' 
+#' @param Y An n-vector.
 #' 
 #' @param X An n by p matrix of covariates.
 #' 
-#' @param V The prior variance.
+#' @param V A scalar giving the (initial) prior variance
 #' 
 #' @param residual_variance The residual variance.
 #' 
-#' @param prior_weights A p vector of prior weights.
+#' @param prior_weights A p-vector of prior weights.
 #' 
-#' @param optimize_V Specifies the method to optimize.
+#' @param optimize_V The optimization method to use for fitting the
+#'   prior variance.
 #' 
 #' @param check_null_threshold Scalar specifying threshold on the
 #'   log-scale to compare likelihood between current estimate and zero
@@ -27,8 +45,8 @@
 #' @return A list with the following elements:
 #' 
 #' \item{alpha}{Vector of posterior inclusion probabilities;
-#'   \code{alpha[i]} is posterior probability that that the ith
-#'   coefficient is non-zero.}
+#'   \code{alpha[i]} is posterior probability that the ith coefficient
+#'   is non-zero.}
 #' 
 #' \item{mu}{Vector of posterior means (conditional on inclusion).}
 #' 
@@ -38,11 +56,14 @@
 #' \item{lbf}{Vector of log-Bayes factors for each variable.}
 #' 
 #' \item{lbf_model}{Log-Bayes factor for the single effect regression.}
+#'
+#' \code{single_effect_regression} and \code{single_effect_regression_ss}
+#' additionally output:
 #' 
 #' \item{V}{Prior variance (after optimization if \code{optimize_V !=
 #'   "none"}).}
 #' 
-#' \item{loglik}{The logarithm of the likelihood, \eqn{p(y | X, V)}.}
+#' \item{loglik}{The log-likelihood, \eqn{\log p(y | X, V)}.}
 #'
 #' @importFrom stats uniroot
 #' @importFrom stats optim
@@ -166,9 +187,8 @@ loglik = function (V, betahat, shat2, prior_weights) {
   return(log(weighted_sum_w) + maxlbf)
 }
 
-neg.loglik.logscale = function(lV,betahat,shat2,prior_weights){
-  return(-loglik(exp(lV),betahat,shat2,prior_weights))
-}
+neg.loglik.logscale = function(lV,betahat,shat2,prior_weights)
+  -loglik(exp(lV),betahat,shat2,prior_weights)
 
 #' @importFrom Matrix colSums
 #' @importFrom stats dnorm

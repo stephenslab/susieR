@@ -28,7 +28,8 @@ simulate = function(n=100, p=200, sparse=F) {
            mu2=matrix(3,nrow=L,ncol=p),
            Xr=rep(5,n), KL=rep(1.2,L),
            sigma2=residual_variance,
-      V=scaled_prior_variance * as.numeric(var(y)))
+      V=scaled_prior_variance * as.numeric(var(y)),
+      lbf_variable = matrix(0,L,p))
   return(list(X=X, X.sparse=X.sparse, s=s, y=y, n=n, p=p, b=beta))
 }
 

@@ -34,13 +34,13 @@ attach(N3finemapping)
 Notice that we've simulated 2 sets of $Y$ as 2 simulation replicates. Here we'll focus on the first data-set.
 
 ```{r}
-dim(data$Y)
+dim(Y)
 ```
 
 Here are the 3 "true" signals in the first data-set:
 
 ```{r}
-b <- data$true_coef[,1]
+b <- true_coef[,1]
 plot(b, pch=16, ylab='effect size')
 ```
 
@@ -58,21 +58,23 @@ The correlation matrix in genetics is typically referred to as LD matrix (LD for
 One may use external reference panels to estimate it when this matrix cannot be obtained from samples directly. There is a potential problem using LD from reference panel, and we demonstrated it in the next section.
 Caution that LD matrix here has to be correlation matrix $r$, not $r^2$ or $abs(r)$.
 
-Our example data-set additionally provides summary statistics for fitting per-variable univariate simple regression.
-The results are $\hat{\beta}$ and $SE(\hat{\beta})$ from which z-scores can be derived.
+`univariate_regression` function can be used to compute 
+summary statistics by fitting univariate simple regression variable by variable.
+The results are $\hat{\beta}$ and $SE(\hat{\beta})$ from which z-scores can be derived. 
 Alternatively you can obtain z-scores from $\hat{\beta}$ and p-values if you are provided with those information.
 Again we focus only on results from the first data-set:
 
+
 ```{r}
-z_scores <- sumstats[1,,] / sumstats[2,,]
-z_scores <- z_scores[,1]
+sumstats <- univariate_regression(X, Y[,1])
+z_scores <- sumstats$betahat / sumstats$sebetahat
 susie_plot(z_scores, y = "z", b=b)
 ```
 
 For this example the correlation matrix can be computed directly from data provide,
 
 ```{r}
-R <- cor(data$X)
+R <- cor(X)
 ```
 
 ## Fine-mapping with `susieR` using summary statistics
@@ -111,7 +113,7 @@ The result should be very similar to using the individual level data for this ex
 come from the same genotype data-set.
 
 ```{r, fig.width=6,fig.height=6}
-fitted = susie(data$X, data$Y[,1], L = 10,
+fitted = susie(X, Y[,1], L = 10,
                 estimate_residual_variance = TRUE, 
                 estimate_prior_variance = TRUE)
 plot(fitted$pip, fitted_rss$pip, ylim=c(0,1))

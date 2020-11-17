@@ -2,7 +2,7 @@
 #' 
 #' @param object A susie fit.
 #'
-#' @param \dots Additional arguments passed to the default \code{coef}
+#' @param \dots Additional arguments passed to the generic \code{coef}
 #'   method.
 #' 
 #' @return A p+1 vector, the first element being an intercept, and the
@@ -29,6 +29,9 @@ coef.susie = function (object, ...) {
 #'   predicted or fitted outcomes are returned; for \code{type =
 #'   "coefficients"}, the estimated coefficients are returned.
 #'
+#' @param \dots Other arguments used by generic predict function. These
+#'   extra arguments are not used here.
+#' 
 #' @return For \code{type = "response"}, predicted or fitted outcomes
 #'   are returned; for \code{type = "coefficients"}, the estimated
 #'   coefficients are returned.

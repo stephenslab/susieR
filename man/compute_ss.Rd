@@ -20,3 +20,8 @@ A list of sufficient statistics.
 \description{
 Compute sufficient statistics for susie.
 }
+\examples{
+data(N2finemapping)
+ss = compute_ss(N2finemapping$X, N2finemapping$Y[,1])
+
+}

@@ -6,24 +6,32 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Applies susie to perform trend filtering (especially
-  changepoint problems), a type of non-parametric regression. — susie_trendfilter • susieR</title>
+<title>Apply susie to trend filtering (especially changepoint
+  problems), a type of non-parametric regression. — susie_trendfilter • susieR</title>
+
 
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous" />
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
-<!-- sticky kit -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sticky-kit/1.1.3/sticky-kit.min.js" integrity="sha256-c4Rlo1ZozqTPE2RLuvbusY3+SU1pQaJC0TjuhygMipw=" crossorigin="anonymous"></script>
+<!-- headroom.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -31,12 +39,20 @@
 
 
 
-<meta property="og:title" content="Applies susie to perform trend filtering (especially
-  changepoint problems), a type of non-parametric regression. — susie_trendfilter" />
 
-<meta property="og:description" content="Applies susie to perform trend filtering (especially
-  changepoint problems), a type of non-parametric regression." />
-<meta name="twitter:card" content="summary" />
+<meta property="og:title" content="Apply susie to trend filtering (especially changepoint
+  problems), a type of non-parametric regression. — susie_trendfilter" />
+<meta property="og:description" content="Fits the non-parametric Gaussian regression model
+  \(y = mu + e\), where the mean \(mu\) is modelled as \(mu =
+  Xb\), X is a matrix with columns containing an appropriate basis,
+  and b is vector with a (sparse) SuSiE prior. In particular, when
+  order = 0, the jth column of X is a vector with the first j
+  elements equal to zero, and the remaining elements equal to 1, so
+  that \(b_j\) corresponds to the change in the mean of y between
+  indices j and j+1. For background on trend filtering, see
+  Tibshirani (2014). See also the &quot;Trend filtering&quot; vignette,
+  vignette(&quot;trend_filtering&quot;)." />
+
 
 
 
@@ -50,9 +66,10 @@
 <![endif]-->
 
 
+
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -66,7 +83,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.9.0.581</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.9.52</span>
       </span>
     </div>
 
@@ -82,7 +99,6 @@
   <a href="../reference/index.html">Functions</a>
 </li>
       </ul>
-      
       <ul class="nav navbar-nav navbar-right">
         <li>
   <a href="https://github.com/stephenslab/susieR">Source</a>
@@ -94,119 +110,130 @@
 </div><!--/.navbar -->
 
       
+
       </header>
 
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Applies susie to perform trend filtering (especially
-  changepoint problems), a type of non-parametric regression.</h1>
+    <h1>Apply susie to trend filtering (especially changepoint
+  problems), a type of non-parametric regression.</h1>
     <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/susie_trendfilter.R'><code>R/susie_trendfilter.R</code></a></small>
     <div class="hidden name"><code>susie_trendfilter.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    
-    <p>Applies susie to perform trend filtering (especially
-  changepoint problems), a type of non-parametric regression.</p>
-    
+    <p>Fits the non-parametric Gaussian regression model
+  \(y = mu + e\), where the mean \(mu\) is modelled as \(mu =
+  Xb\), X is a matrix with columns containing an appropriate basis,
+  and b is vector with a (sparse) SuSiE prior. In particular, when
+  <code>order = 0</code>, the jth column of X is a vector with the first j
+  elements equal to zero, and the remaining elements equal to 1, so
+  that \(b_j\) corresponds to the change in the mean of y between
+  indices j and j+1. For background on trend filtering, see
+  Tibshirani (2014). See also the "Trend filtering" vignette,
+  <code><a href='../articles/trend_filtering.html'>vignette("trend_filtering")</a></code>.</p>
     </div>
 
     <pre class="usage"><span class='fu'>susie_trendfilter</span>(<span class='no'>y</span>, <span class='kw'>order</span> <span class='kw'>=</span> <span class='fl'>0</span>, <span class='kw'>standardize</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>use_mad</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='no'>...</span>)</pre>
-    
+
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>y</th>
-      <td><p>an n vector of observations that are ordered in time or
-space (assumed equally-spaced)</p></td>
+      <td><p>An n-vector of observations ordered in time or space
+(assumed to be equally spaced).</p></td>
     </tr>
     <tr>
       <th>order</th>
-      <td><p>an integer specifying the order of trend filtering. Default order=0, which corresponds
-to "changepoint" problems (i.e. piecewise constant mu). Although order &gt; 0 is implemented, we do not recommend using it since we
-find there are often problems with convergence of the algorithm to poor local optima, producing unreliable inferences.</p></td>
+      <td><p>An integer specifying the order of trend filtering.
+The default, <code>order = 0</code>, corresponds to "changepoint"
+problems (<em>i.e.</em>, piecewise constant \(mu\)). Although
+<code>order &gt; 0</code> is implemented, we do not recommend its use; in
+practice, we have found problems with convergence of the algorithm
+to poor local optima, producing unreliable inferences.</p></td>
     </tr>
     <tr>
       <th>standardize</th>
-      <td><p>boolean indicating whether to standardize X variables (basis functions); defaults to FALSE as these basis functions already have a natural scale</p></td>
+      <td><p>Logical indicating whether to standardize the X
+variables ("basis functions"); <code>standardize = FALSE</code> is
+recommended as these basis functions already have a natural scale.</p></td>
     </tr>
     <tr>
       <th>use_mad</th>
-      <td><p>boolean indicating whether to use ``median absolute deviation" (MAD) method to estimate residual variance.
-If TRUE then susie is run twice,
-first by fixing the residual variance to the MAD value and then a second time, initializing from the first fit,
-but with residual variance estimated the usual way (maximizing the ELBO). We have found this strategy
-typically improves reliability of results by reducing a tendency to converge to poor local optima of the ELBO.</p></td>
+      <td><p>Logical indicating whether to use the "median
+absolute deviation" (MAD) method to the estimate residual
+variance. If <code>use_mad = TRUE</code>, susie is run twice, first by
+fixing the residual variance to the MAD value, then a second time,
+initialized to the first fit, but with residual variance estimated
+the usual way (by maximizing the ELBO). We have found this strategy
+typically improves reliability of the results by reducing a
+tendency to converge to poor local optima of the ELBO.</p></td>
     </tr>
     <tr>
       <th>...</th>
-      <td><p>other parameters to pass to susie</p></td>
+      <td><p>Other arguments passed to <code><a href='susie.html'>susie</a></code>.</p></td>
     </tr>
     </table>
-    
+
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>a "susie" object; see ?susie for details</p>
-    
+    <p>A "susie" fit; see <code><a href='susie.html'>susie</a></code> for details.</p>
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p>Fits the non-parametric Gaussian regression model $y=mu
-+e$, where the mean $mu$ is modelled as $mu=Xb$ where $X$ is a
-matrix with columns containing an appropriate basis and b is vector
-with a (sparse) SuSiE prior. In particular, when order=0, the $j$th
-column of $X$ is a vector with first $j$ elements equal to 0 and
-remaining elements equal to 1, so b_j corresponds to the change in
-the mean of y between indices $j$ and $j+1$.  For background on
-trend filtering see [Adaptive piecewise polynomial estimation via
-trend
-filtering](https://projecteuclid.org/euclid.aos/1395234979)(Ryan
-J. Tibshirani, 2014) The implementation here exploits the special
-structure of $X$ whiuch means that the matrix-vector product $X'y$
-is fast to compute in O(n) computation rather than $O(n^2)$ if $X$
-were formed explicitly. For implementation details, view the
-"trendfiltering derivations" vignette by running
-<code>vignette("trendfiltering_derivations")</code>.</p>
-    
+    <p>This implementation exploits the special structure of X,
+  which means that the matrix-vector product \(X^Ty\) is fast to
+  compute; in particular, the computation time is \(O(n)\) rather
+  than \(O(n^2)\) if <code>X</code> were formed explicitly. For
+  implementation details, see the "Implementation of SuSiE trend
+  filtering" vignette by running
+  <code>vignette("trendfiltering_derivations")</code>.</p>
+    <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
+
+    <p>R. J. Tibshirani (2014). Adaptive piecewise polynomial
+  estimation via trend filtering. <em>Annals of Statistics</em>
+  <b>42</b>, 285-323. <a href='https://doi.org/10.1214/13-AOS1189'>https://doi.org/10.1214/13-AOS1189</a></p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/Random'>set.seed</a></span>(<span class='fl'>1</span>)
-<span class='no'>mu</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/rep'>rep</a></span>(<span class='fl'>0</span>,<span class='fl'>50</span>),<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/rep'>rep</a></span>(<span class='fl'>1</span>,<span class='fl'>50</span>),<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/rep'>rep</a></span>(<span class='fl'>3</span>,<span class='fl'>50</span>),<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/rep'>rep</a></span>(-<span class='fl'>2</span>,<span class='fl'>50</span>),<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/rep'>rep</a></span>(<span class='fl'>0</span>,<span class='fl'>300</span>))
-<span class='no'>y</span> <span class='kw'>=</span> <span class='no'>mu</span> + <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/Normal'>rnorm</a></span>(<span class='fl'>500</span>)
+    <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span>(<span class='fl'>1</span>)
+<span class='no'>mu</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>0</span>,<span class='fl'>50</span>),<span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>1</span>,<span class='fl'>50</span>),<span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>3</span>,<span class='fl'>50</span>),<span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(-<span class='fl'>2</span>,<span class='fl'>50</span>),<span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>0</span>,<span class='fl'>300</span>))
+<span class='no'>y</span> <span class='kw'>=</span> <span class='no'>mu</span> + <span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span>(<span class='fl'>500</span>)
 <span class='no'>s</span> <span class='kw'>=</span> <span class='fu'>susie_trendfilter</span>(<span class='no'>y</span>)
-<span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>y</span>)</div><div class='input'><span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/lines'>lines</a></span>(<span class='no'>mu</span>,<span class='kw'>col</span><span class='kw'>=</span><span class='fl'>1</span>,<span class='kw'>lwd</span><span class='kw'>=</span><span class='fl'>3</span>)</div><div class='input'><span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/lines'>lines</a></span>(<span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/predict'>predict</a></span>(<span class='no'>s</span>),<span class='kw'>col</span><span class='kw'>=</span><span class='fl'>2</span>,<span class='kw'>lwd</span><span class='kw'>=</span><span class='fl'>2</span>)</div><div class='img'><img src='susie_trendfilter-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='susie_get_cs.html'>susie_get_cs</a></span>(<span class='no'>s</span>) <span class='co'># returns credible sets (for indices of y that occur just before changepoints)</span></div><div class='output co'>#&gt; $cs
+<span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>y</span>)</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/lines.html'>lines</a></span>(<span class='no'>mu</span>,<span class='kw'>col</span> <span class='kw'>=</span> <span class='fl'>1</span>,<span class='kw'>lwd</span> <span class='kw'>=</span> <span class='fl'>3</span>)</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/lines.html'>lines</a></span>(<span class='fu'><a href='https://rdrr.io/r/stats/predict.html'>predict</a></span>(<span class='no'>s</span>),<span class='kw'>col</span> <span class='kw'>=</span> <span class='fl'>2</span>,<span class='kw'>lwd</span> <span class='kw'>=</span> <span class='fl'>2</span>)</div><div class='img'><img src='susie_trendfilter-1.png' alt='' width='700' height='433' /></div><div class='input'>
+<span class='co'># Calculate credible sets (indices of y that occur just before</span>
+<span class='co'># changepoints).</span>
+<span class='fu'><a href='susie_get_methods.html'>susie_get_cs</a></span>(<span class='no'>s</span>)</div><div class='output co'>#&gt; $cs
 #&gt; $cs$L1
 #&gt; [1] 150
 #&gt; 
 #&gt; $cs$L2
 #&gt;  [1] 42 45 46 47 48 49 50 51 52 53 54 55
 #&gt; 
-#&gt; $cs$L4
+#&gt; $cs$L3
 #&gt; [1] 199 200 201
 #&gt; 
-#&gt; $cs$L6
+#&gt; $cs$L5
 #&gt; [1]  99 100 101 102 103
 #&gt; 
 #&gt; 
 #&gt; $coverage
+#&gt; [1] 0.9835996 0.9570577 0.9796633 0.9889395
+#&gt; 
+#&gt; $requested_coverage
 #&gt; [1] 0.95
-#&gt; </div><div class='input'><span class='fu'><a href='susie_plot_changepoint.html'>susie_plot_changepoint</a></span>(<span class='no'>s</span>,<span class='no'>y</span>) <span class='co'># produces ggplot with credible sets for changepoints on top of plot</span></div><div class='img'><img src='susie_trendfilter-2.png' alt='' width='700' height='433' /></div></pre>
+#&gt; </div><div class='input'>
+<span class='co'># Plot with credible sets for changepoints.</span>
+<span class='fu'><a href='susie_plot_changepoint.html'>susie_plot_changepoint</a></span>(<span class='no'>s</span>,<span class='no'>y</span>)</div><div class='img'><img src='susie_trendfilter-2.png' alt='' width='700' height='433' /></div><div class='input'>
+</div></pre>
   </div>
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
-      
-      <li><a href="#value">Value</a></li>
-
-      <li><a href="#details">Details</a></li>
-      
-      <li><a href="#examples">Examples</a></li>
-    </ul>
-
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
+
 
       <footer>
       <div class="copyright">
@@ -214,13 +241,16 @@ were formed explicitly. For implementation details, view the
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.3.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
+
       </footer>
    </div>
 
   
 
+
   </body>
 </html>
+
 

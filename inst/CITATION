@@ -1,0 +1,20 @@
+citHeader("To cite the susieR package, please use:")
+
+citEntry(entry = "Article",
+         title = paste("A simple new approach to variable selection in",
+                       "regression, with application to genetic fine",
+                       "mapping"),
+         author = personList(as.person("Gao Wang"),
+                             as.person("Abhishek Sarkar"),
+                             as.person("Peter Carbonetto"),             
+                             as.person("Matthew Stephens")),
+         journal = "Journal of the Royal Statistical Society, Series B",
+         year    = "2020",
+         pages   = "forthcoming",
+         url     = "https://doi.org/10.1101/501114",
+         textVersion = 
+           paste("Gao Wang, Abhishek Sarkar, Peter Carbonetto and Matthew",
+                 "Stephens (2020). A simple new approach to variable",
+                 "selection in regression, with application to genetic",
+                 "fine mapping. Journal of the Royal Statistical Society,",
+                 "forthcoming"))

@@ -37,6 +37,7 @@ update_each_effect_ss = function (XtX, Xty, s_init,
       s$mu2[l,]   = res$mu2
       s$V[l]      = res$V
       s$lbf[l]    = res$lbf_model
+      s$lbf_variable[l,] = res$lbf
       s$KL[l]     = -res$lbf_model +
         SER_posterior_e_loglik_ss(attr(XtX,"d"),XtR,s$sigma2,
                                   res$alpha * res$mu,res$alpha * res$mu2)

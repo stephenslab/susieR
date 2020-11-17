@@ -13,7 +13,8 @@
 method.}
 }
 \value{
-A data frame of variables and a data frame of credible sets.
+A list containing a data frame of variables and a data
+  frame of credible sets.
 }
 \description{
 Summarize susie fit.

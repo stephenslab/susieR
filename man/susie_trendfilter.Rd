@@ -19,15 +19,15 @@ practice, we have found problems with convergence of the algorithm
 to poor local optima, producing unreliable inferences.}
 
 \item{standardize}{Logical indicating whether to standardize the X
-variables ("basis functions"); defaults to \code{standardize = FALSE}
-as these basis functions already have a natural scale.}
+variables ("basis functions"); \code{standardize = FALSE} is
+recommended as these basis functions already have a natural scale.}
 
 \item{use_mad}{Logical indicating whether to use the "median
 absolute deviation" (MAD) method to the estimate residual
 variance. If \code{use_mad = TRUE}, susie is run twice, first by
 fixing the residual variance to the MAD value, then a second time,
 initialized to the first fit, but with residual variance estimated
-the usual way (maximizing the ELBO). We have found this strategy
+the usual way (by maximizing the ELBO). We have found this strategy
 typically improves reliability of the results by reducing a
 tendency to converge to poor local optima of the ELBO.}
 
@@ -49,11 +49,12 @@ Fits the non-parametric Gaussian regression model
   \code{vignette("trend_filtering")}.
 }
 \details{
-The implementation exploits the special structure of X,
+This implementation exploits the special structure of X,
   which means that the matrix-vector product \eqn{X^Ty} is fast to
-  compute in \eqn{O(n)} computation rather than \eqn{O(n^2)} if X
-  were formed explicitly. For implementation details, view the
-  "Implementation of SuSiE trend filtering" vignette by running
+  compute; in particular, the computation time is \eqn{O(n)} rather
+  than \eqn{O(n^2)} if \code{X} were formed explicitly. For
+  implementation details, see the "Implementation of SuSiE trend
+  filtering" vignette by running
   \code{vignette("trendfiltering_derivations")}.
 }
 \examples{
@@ -62,19 +63,19 @@ mu = c(rep(0,50),rep(1,50),rep(3,50),rep(-2,50),rep(0,300))
 y = mu + rnorm(500)
 s = susie_trendfilter(y)
 plot(y)
-lines(mu,col=1,lwd=3)
-lines(predict(s),col=2,lwd=2)
+lines(mu,col = 1,lwd = 3)
+lines(predict(s),col = 2,lwd = 2)
 
-# Returns credible sets (indices of y that occur just before
+# Calculate credible sets (indices of y that occur just before
 # changepoints).
 susie_get_cs(s)
 
-# Produces plot with credible sets for changepoints.
+# Plot with credible sets for changepoints.
 susie_plot_changepoint(s,y) 
 
 }
 \references{
 R. J. Tibshirani (2014). Adaptive piecewise polynomial
-estimation via trend filtering. \emph{Annals of Statistics}
-\bold{42}, 285-323. \url{https://doi.org/10.1214/13-AOS1189}
+  estimation via trend filtering. \emph{Annals of Statistics}
+  \bold{42}, 285-323. \url{https://doi.org/10.1214/13-AOS1189}
 }

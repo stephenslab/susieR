@@ -7,19 +7,33 @@
 susie_init_coef(coef_index, coef_value, p)
 }
 \arguments{
-\item{coef_index}{An L-vector for indices of nonzero effects.}
+\item{coef_index}{An L-vector containing the the indices of the
+nonzero coefficients.}
 
-\item{coef_value}{An L-vector for initial estimated beta values.}
+\item{coef_value}{An L-vector containing initial coefficient
+estimates.}
 
-\item{p}{A scalar the number of variables in the data.}
+\item{p}{A scalar giving the number of variables.}
 }
 \value{
-A list (alpha, mu, mu2) to be used by \code{susie}.
+A list with elements \code{alpha}, \code{mu} and \code{mu2}
+  to be used by \code{susie}.
 }
 \description{
 Initialize a susie object using regression coefficients
 }
 \examples{
-# Add example(s) here.
+set.seed(1)
+n = 1000
+p = 1000
+beta = rep(0,p)
+beta[sample(1:1000,4)] = 1
+X = matrix(rnorm(n*p),nrow = n,ncol = p)
+X = scale(X,center = TRUE,scale = TRUE)
+y = drop(X \%*\% beta + rnorm(n))
+
+# Initialize susie to ground-truth coefficients.
+s = susie_init_coef(which(beta != 0),beta[beta != 0],length(beta))
+res = susie(X,y,L = 10,s_init=s)
 
 }

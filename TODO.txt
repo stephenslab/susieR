@@ -1,15 +1,6 @@
 to do
 =====
 
-+ Add CITATION.
-
-+ Update (and shorten) description of susieR in README.
-
-+ Fill out @examples for susie_init_coef.
-
-+ Fill out roxygen2 docs for N2finemapping data set.
-
-+ Fill out roxygen2 docs for N3finemapping data set.
++ Update README.
 
 + Update pkgdown site.
-

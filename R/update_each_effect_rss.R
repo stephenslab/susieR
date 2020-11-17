@@ -26,7 +26,7 @@ update_each_effect_rss = function (R, z, s_init, Sigma,
       # Remove lth effect from fitted values.
       s$Rz = s$Rz - R %*% (s$alpha[l,] * s$mu[l,])
 
-      #compute residuals
+      # Compute residuals.
       r = z - s$Rz
       res = single_effect_regression_rss(as.vector(r),Sigma,s$V[l],s$pi,
               estimate_prior_method,check_null_threshold)
@@ -37,6 +37,7 @@ update_each_effect_rss = function (R, z, s_init, Sigma,
       s$mu2[l,]   = res$mu2
       s$V[l]      = res$V
       s$lbf[l]    = res$lbf_model
+      s$lbf_variable[l,] = res$lbf
       s$KL[l]     = -res$lbf_model +
         SER_posterior_e_loglik_rss(R,Sigma,r,res$alpha * res$mu,
                                    res$alpha * res$mu2)
@@ -45,5 +46,3 @@ update_each_effect_rss = function (R, z, s_init, Sigma,
   s$Rz = unname(as.matrix(s$Rz))
   return(s)
 }
-
-
