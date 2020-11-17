@@ -281,7 +281,7 @@ check_projection = function (A, b) {
   B = attr(A,"eigen")$vectors[,attr(A,"eigen")$values >
         -sqrt(.Machine$double.eps)]
   msg = all.equal(as.vector(B %*% crossprod(B,b)),b,check.names = FALSE)
-  if (length(msg) == 1 && msg)
+  if (!is.character(msg))
     return(list(status = TRUE,msg = NA))
   else
     return(list(status = FALSE,msg = msg))
