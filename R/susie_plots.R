@@ -166,8 +166,8 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
       if (!is.null(model$sets$purity) && max_cs < 1 && purity >= max_cs) {
         x0 = intersect(pos,model$sets$cs[[which(model$sets$cs_index == i)]])
         y1 = p[x0]
-      } else if (n_in_CS(model, model$sets$coverage)[i] < max_cs) {
-        x0 = intersect(pos,which(in_CS(model,model$sets$coverage)[i,] > 0))
+      } else if (n_in_CS(model, model$sets$requested_coverage)[i] < max_cs) {
+        x0 = intersect(pos,which(in_CS(model,model$sets$requested_coverage)[i,] > 0))
         y1 = p[x0]
       } else {
         x0 = NULL

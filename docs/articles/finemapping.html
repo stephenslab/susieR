@@ -31,7 +31,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.9.52</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.9.53</span>
       </span>
     </div>
 
@@ -67,7 +67,7 @@
       <h1 data-toc-skip>Fine-mapping examples</h1>
                         <h4 class="author">Gao Wang</h4>
             
-            <h4 class="date">2020-10-13</h4>
+            <h4 class="date">2020-11-16</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/master/vignettes/finemapping.Rmd"><code>vignettes/finemapping.Rmd</code></a></small>
       <div class="hidden name"><code>finemapping.Rmd</code></div>
@@ -214,186 +214,7 @@
 <h3 class="hasAnchor">
 <a href="#posterior-inclusion-probabilities" class="anchor"></a>Posterior inclusion probabilities</h3>
 <p>Previously we’ve determined that summing over 3 single effect regression models is approperate for our application. Here we summarize the variable selection results by posterior inclusion probability (PIP):</p>
-<div class="sourceCode" id="cb11"><html><body><pre class="r"><span class="fu"><a href="../reference/susie_plots.html">susie_plot</a></span>(<span class="no">fitted</span>, <span class="kw">y</span><span class="kw">=</span><span class="st">"PIP"</span>, <span class="kw">b</span><span class="kw">=</span><span class="no">b</span>)
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span></pre></body></html></div>
+<div class="sourceCode" id="cb11"><html><body><pre class="r"><span class="fu"><a href="../reference/susie_plots.html">susie_plot</a></span>(<span class="no">fitted</span>, <span class="kw">y</span><span class="kw">=</span><span class="st">"PIP"</span>, <span class="kw">b</span><span class="kw">=</span><span class="no">b</span>)</pre></body></html></div>
 <div class="figure" style="text-align: center">
 <img src="finemapping_files/figure-html/unnamed-chunk-11-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
  
@@ -441,186 +262,7 @@
                <span class="kw">estimate_residual_variance</span> <span class="kw">=</span> <span class="fl">TRUE</span>,
                <span class="kw">estimate_prior_variance</span> <span class="kw">=</span> <span class="fl">FALSE</span>,
                <span class="kw">scaled_prior_variance</span> <span class="kw">=</span> <span class="fl">0.2</span>)
-<span class="fu"><a href="../reference/susie_plots.html">susie_plot</a></span>(<span class="no">fitted</span>, <span class="kw">y</span><span class="kw">=</span><span class="st">'PIP'</span>, <span class="kw">b</span><span class="kw">=</span><span class="no">b</span>)
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span></pre></body></html></div>
+<span class="fu"><a href="../reference/susie_plots.html">susie_plot</a></span>(<span class="no">fitted</span>, <span class="kw">y</span><span class="kw">=</span><span class="st">'PIP'</span>, <span class="kw">b</span><span class="kw">=</span><span class="no">b</span>)</pre></body></html></div>
 <div class="figure" style="text-align: center">
 <img src="finemapping_files/figure-html/unnamed-chunk-13-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
  
@@ -630,186 +272,7 @@
 <div class="sourceCode" id="cb14"><html><body><pre class="r"><span class="no">fitted</span> <span class="kw">=</span> <span class="fu"><a href="../reference/susie.html">susie</a></span>(<span class="no">X</span>, <span class="no">Y</span>[,<span class="fl">1</span>],
                <span class="kw">L</span> <span class="kw">=</span> <span class="fl">10</span>,
                <span class="kw">estimate_residual_variance</span> <span class="kw">=</span> <span class="fl">TRUE</span>)
-<span class="fu"><a href="../reference/susie_plots.html">susie_plot</a></span>(<span class="no">fitted</span>, <span class="kw">y</span><span class="kw">=</span><span class="st">'PIP'</span>, <span class="kw">b</span><span class="kw">=</span><span class="no">b</span>)
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span>
-
-<span class="co"># Warning in cumsum(sort(x, decreasing = TRUE)) &lt; coverage: longer object length</span>
-<span class="co"># is not a multiple of shorter object length</span></pre></body></html></div>
+<span class="fu"><a href="../reference/susie_plots.html">susie_plot</a></span>(<span class="no">fitted</span>, <span class="kw">y</span><span class="kw">=</span><span class="st">'PIP'</span>, <span class="kw">b</span><span class="kw">=</span><span class="no">b</span>)</pre></body></html></div>
 <div class="figure" style="text-align: center">
 <img src="finemapping_files/figure-html/unnamed-chunk-14-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
  
@@ -863,21 +326,21 @@
 <span class="co"># [1] stats     graphics  grDevices utils     datasets  methods   base     </span>
 <span class="co"># </span>
 <span class="co"># other attached packages:</span>
-<span class="co"># [1] susieR_0.9.52</span>
+<span class="co"># [1] susieR_0.9.53</span>
 <span class="co"># </span>
 <span class="co"># loaded via a namespace (and not attached):</span>
 <span class="co">#  [1] Rcpp_1.0.5       highr_0.8        plyr_1.8.6       compiler_3.6.3  </span>
-<span class="co">#  [5] pillar_1.4.6     tools_3.6.3      digest_0.6.25    evaluate_0.14   </span>
-<span class="co">#  [9] memoise_1.1.0    lifecycle_0.2.0  tibble_3.0.3     gtable_0.3.0    </span>
-<span class="co"># [13] lattice_0.20-40  pkgconfig_2.0.3  rlang_0.4.7      Matrix_1.2-18   </span>
+<span class="co">#  [5] pillar_1.4.6     tools_3.6.3      digest_0.6.27    evaluate_0.14   </span>
+<span class="co">#  [9] memoise_1.1.0    lifecycle_0.2.0  tibble_3.0.4     gtable_0.3.0    </span>
+<span class="co"># [13] lattice_0.20-40  pkgconfig_2.0.3  rlang_0.4.8      Matrix_1.2-18   </span>
 <span class="co"># [17] yaml_2.2.1       pkgdown_1.5.1    xfun_0.13        stringr_1.4.0   </span>
-<span class="co"># [21] dplyr_1.0.1      knitr_1.28       desc_1.2.0       generics_0.0.2  </span>
-<span class="co"># [25] fs_1.3.2         vctrs_0.3.2      tidyselect_1.1.0 rprojroot_1.3-2 </span>
-<span class="co"># [29] grid_3.6.3       reshape_0.8.8    glue_1.4.1       R6_2.4.1        </span>
+<span class="co"># [21] dplyr_1.0.2      knitr_1.28       desc_1.2.0       generics_0.0.2  </span>
+<span class="co"># [25] fs_1.3.2         vctrs_0.3.4      tidyselect_1.1.0 rprojroot_2.0.2 </span>
+<span class="co"># [29] grid_3.6.3       reshape_0.8.8    glue_1.4.2       R6_2.4.1.9000   </span>
 <span class="co"># [33] rmarkdown_2.3    purrr_0.3.4      ggplot2_3.3.2    magrittr_1.5    </span>
-<span class="co"># [37] backports_1.1.9  scales_1.1.1     htmltools_0.4.0  ellipsis_0.3.1  </span>
-<span class="co"># [41] MASS_7.3-51.5    assertthat_0.2.1 colorspace_1.4-1 stringi_1.4.6   </span>
-<span class="co"># [45] munsell_0.5.0    crayon_1.3.4</span></pre></body></html></div>
+<span class="co"># [37] scales_1.1.1     htmltools_0.4.0  ellipsis_0.3.1   MASS_7.3-51.5   </span>
+<span class="co"># [41] assertthat_0.2.1 colorspace_2.0-0 stringi_1.4.6    munsell_0.5.0   </span>
+<span class="co"># [45] crayon_1.3.4</span></pre></body></html></div>
 </div>
   </div>
 
