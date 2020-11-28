@@ -54,4 +54,5 @@ X = scale(X,center = TRUE,scale = TRUE)
 y = drop(X \%*\% beta + rnorm(n))
 res = univariate_regression(X,y)
 plot(res$betahat/res$sebetahat)
+
 }

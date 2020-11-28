@@ -1,15 +1,19 @@
-#' @title Summarize susie fit.
+#' @title Summarize Susie Fit.
+#' 
+#' @description \code{summary} method for the \dQuote{susie} class.
 #' 
 #' @param object A susie fit.
 #'
 #' @param \dots Additional arguments passed to the generic \code{summary}
-#'   method.
+#'   or \code{print.summary} method.
 #' 
-#' @return A list containing a data frame of variables and a data
-#'   frame of credible sets.
+#' @return \code{summary.susie} returns a list containing a data frame
+#'   of variables and a data frame of credible sets.
 #' 
 #' @method summary susie
+#' 
 #' @export summary.susie
+#' 
 #' @export
 #' 
 summary.susie = function (object, ...) {
@@ -41,23 +45,19 @@ summary.susie = function (object, ...) {
   return(out)
 }
 
-#' @title Print summary(susie) result.
+#' @rdname summary.susie
 #' 
-#' @param object A susie summary.
+#' @param x A susie summary.
 #'
-#' @param \dots Additional arguments passed to the generic \code{print}
-#'   method.
-#' 
-#' @return standard output stream containing only variables in CS.
-#' 
 #' @method print summary.susie
+#' 
 #' @export print.summary.susie
+#' 
 #' @export
-print.summary.susie <- function (object, ...) {
-  if (!is(object,"summary.susie"))
-    stop("Input must be an instance of class \"summary.susie\".")
+#' 
+print.summary.susie <- function (x, ...) {
   cat('\nVariables in credible sets:\n\n')
-  print.data.frame(object$vars[which(object$vars$cs>0),], row.names=F)
+  print.data.frame(x$vars[which(x$vars$cs > 0),], row.names = FALSE)
   cat('\nCredible sets summary:\n\n')
-  print.data.frame(object$cs, row.names=F)
+  print.data.frame(x$cs, row.names = FALSE)
 }

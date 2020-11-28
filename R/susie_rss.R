@@ -141,7 +141,8 @@ susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
         attr(R,"eigen")$values[attr(R,"eigen")$values != 0]^0.5
   Y = (t(attr(R,"eigen")$vectors[,attr(R,"eigen")$values != 0]) *
        attr(R,"eigen")$values[attr(R,"eigen")$values != 0]^(-0.5)) %*% z
-  if (!is.null(names(z))) colnames(x) = names(z)
+  if (!is.null(names(z)))
+    colnames(x) = names(z)
 
   s = susie(X,Y,L = L,
             scaled_prior_variance = prior_variance/var(Y),
@@ -266,20 +267,19 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
   s = init_setup_rss(p,L,prior_variance,residual_variance,prior_weights,
                      null_weight)
   if (!missing(s_init) && !is.null(s_init)) {
-    if (!inherits(s_init,"susie")) {
-      stop('s_init should be a susie object')
-    }
+    if (!inherits(s_init,"susie"))
+      stop("s_init should be a susie object")
     if (max(s_init$alpha) > 1 || min(s_init$alpha) < 0) 
-      stop('s_init$alpha has invalid values outside range [0,1]. Please check your input.')
+      stop("s_init$alpha has invalid values outside range [0,1]; please ",
+           "check your input")
     # First, remove effects with s_init$V = 0
     s_init = susie_prune_single_effects(s_init, verbose=FALSE)
     # Then prune or expand
     s_init = susie_prune_single_effects(s_init, L, s$V, verbose)
     s = modifyList(s,s_init)
     s = init_finalize_rss(s,R = R)
-  } else { 
+  } else 
     s = init_finalize_rss(s)
-  }
 
   estimate_prior_method = match.arg(estimate_prior_method)
   
@@ -365,7 +365,8 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
   }
   if (!is.null(names(z))) {
     variable_names = names(z)
-    if (!is.null(null_weight)) variable_names = c('null', variable_names)
+    if (!is.null(null_weight))
+      variable_names = c("null",variable_names)
     colnames(s$alpha) = variable_names
     colnames(s$mu) = variable_names
     colnames(s$mu2) = variable_names

@@ -43,6 +43,12 @@
 #' across variables for each single-effect, weighted by the posterior
 #' inclusion probability (alpha).
 #'
+#' \code{susie_get_posterior_samples} returns a list containing the
+#' effect sizes samples and causal status with two components: \code{b},
+#' an \code{num_variables} x \code{num_samples} matrix of effect
+#' sizes; \code{gamma}, an \code{num_variables} x \code{num_samples}
+#' matrix of causal status random draws.
+#'
 #' \code{susie_get_cs} returns credible sets (CSs) from a susie fit,
 #' as well as summaries of correlation among the variables included in
 #' each CS. If desired, one can filter out CSs that do not meet a
@@ -97,16 +103,18 @@ susie_get_objective = function (res, last_only = TRUE, warning_tol = 1e-6) {
 #'
 #' @export
 #'
-susie_get_posterior_mean = function (res, prior_tol = 1e-9){
+susie_get_posterior_mean = function (res, prior_tol = 1e-9) {
+    
   # Drop the single-effects with estimated prior of zero.
   if (is.numeric(res$V))
     include_idx = which(res$V > prior_tol)
   else
     include_idx = 1:nrow(res$alpha)
 
-  # now extract relevant rows from alpha matrix
+  # Now extract relevant rows from alpha matrix.
   if (length(include_idx) > 0)
-    return(colSums((res$alpha*res$mu)[include_idx,])/res$X_column_scale_factors)
+    return(colSums((res$alpha*res$mu)[include_idx,])/
+           res$X_column_scale_factors)
   else
     return(numeric(ncol(res$mu)))
 }
@@ -115,17 +123,19 @@ susie_get_posterior_mean = function (res, prior_tol = 1e-9){
 #'
 #' @export
 #'
-susie_get_posterior_sd = function (res, prior_tol = 1e-9){
+susie_get_posterior_sd = function (res, prior_tol = 1e-9) {
+    
   # Drop the single-effects with estimated prior of zero.
   if (is.numeric(res$V))
     include_idx = which(res$V > prior_tol)
   else
     include_idx = 1:nrow(res$alpha)
 
-  # now extract relevant rows from alpha matrix
+  # Now extract relevant rows from alpha matrix.
   if (length(include_idx) > 0)
     return(sqrt(colSums((res$alpha * res$mu2 -
-                          (res$alpha*res$mu)^2)[include_idx,]))/(res$X_column_scale_factors))
+                         (res$alpha*res$mu)^2)[include_idx,]))/
+           (res$X_column_scale_factors))
   else
     return(numeric(ncol(res$mu)))
 }
@@ -165,55 +175,49 @@ susie_get_lfsr = function (res) {
 
 #' @rdname susie_get_methods
 #'
-#' @param susie_fit A susie fit, the output form `susieR::susie()`
+#' @param susie_fit A susie fit, an output from \code{\link{susie}}.
 #'
-#' @param num_samples the number of samples to be drawn from the posterior distribution
+#' @param num_samples The number of draws from the posterior
+#'   distribution.
 #'
-#' @return The return value is a list containing the effect sizes samples and causal status samples
-#'    components:
-#'
-#'    \item{b}{ num_variables x num_samples matrix of effect sizes draw}
-#'
-#'    \item{gamma}{ num_variables  x num_samples matrix of causal status draw}
-#'
+#' @importFrom stats rmultinom
+#' @importFrom stats rnorm
+#' 
 #' @export
 #'
-
-susie_get_posterior_samples <- function(susie_fit, num_samples){
-  # removed effects having estimated prior variance equals zero
-  if (is.numeric(susie_fit$V)) {
-    include_idx = which(susie_fit$V > 1E-9)
-  }
-  else {
+susie_get_posterior_samples <- function (susie_fit, num_samples) {
+    
+  # Remove effects having estimated prior variance equals zero.
+  if (is.numeric(susie_fit$V))
+    include_idx = which(susie_fit$V > 1e-9)
+  else
     include_idx = 1:nrow(susie_fit$alpha)
-  }
+  
+  posterior_mean = sweep(susie_fit$mu,2,susie_fit$X_column_scale_factors,"/")
+  posterior_sd = sweep(sqrt(susie_fit$mu2 - (susie_fit$mu)^2),2,
+                       susie_fit$X_column_scale_factors,"/")
 
-  posterior_mean <- sweep(susie_fit$mu, 2, susie_fit$X_column_scale_factors, "/")
-  posterior_sd <- sweep(sqrt(susie_fit$mu2 - (susie_fit$mu)^2), 2, susie_fit$X_column_scale_factors, "/")
-
-  pip <- susie_fit$alpha
+  pip = susie_fit$alpha
   L = nrow(pip)
-  num_snps <- ncol(pip)
-  b_samples <- matrix(NA, num_snps, num_samples)
-  gamma_samples <- matrix(NA, num_snps, num_samples)
-  for (sample_i in 1 : num_samples){
-    b <- 0
-    if(length(include_idx)>0){
-      for (l in include_idx){
-        gamma_l <- rmultinom(1, 1, pip[l, ])
-        effect_size <- rnorm(1, mean=posterior_mean[l, which(gamma_l != 0)],
-                             sd=posterior_sd[l, which(gamma_l != 0)])
-        b_l <- gamma_l * effect_size
-        b <- b + b_l
+  num_snps = ncol(pip)
+  b_samples = matrix(as.numeric(NA),num_snps,num_samples)
+  gamma_samples = matrix(as.numeric(NA),num_snps,num_samples)
+  for (sample_i in 1:num_samples) {
+    b = 0
+    if (length(include_idx) > 0) {
+      for (l in include_idx) {
+        gamma_l = rmultinom(1,1,pip[l,])
+        effect_size = rnorm(1,mean = posterior_mean[l,which(gamma_l != 0)],
+                            sd = posterior_sd[l,which(gamma_l != 0)])
+        b_l = gamma_l * effect_size
+        b = b + b_l
       }
     }
-    b_samples[, sample_i] <- b
-    gamma_samples[, sample_i] <- as.numeric(b != 0)
+    b_samples[, sample_i] = b
+    gamma_samples[, sample_i] = as.numeric(b != 0)
   }
-  return(list(b=b_samples,
-              gamma=gamma_samples))
+  return(list(b = b_samples,gamma = gamma_samples))
 }
-
 
 #' @rdname susie_get_methods
 #'
@@ -261,7 +265,8 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
 
   # L-list of CS positions.
   cs = lapply(1:nrow(status),function(i) which(status[i,]!=0))
-  claimed_coverage = sapply(1:length(cs), function(i) sum(res$alpha[i,][cs[[i]]])) 
+  claimed_coverage = sapply(1:length(cs),
+                            function (i) sum(res$alpha[i,][cs[[i]]])) 
   include_idx = include_idx * (lapply(cs,length) > 0)
 
   # FIXME: see issue 21
@@ -270,13 +275,18 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
     include_idx = include_idx * (!duplicated(cs))
   include_idx = as.logical(include_idx)
   if (sum(include_idx) == 0)
-    return(list(cs = NULL,coverage = NULL, requested_coverage=coverage))
+    return(list(cs = NULL,
+                coverage = NULL,
+                requested_coverage = coverage))
   cs = cs[include_idx]
   claimed_coverage = claimed_coverage[include_idx]
+  
   # Compute and filter by "purity".
   if (is.null(Xcorr) && is.null(X)) {
     names(cs) = paste0("L",which(include_idx))
-    return(list(cs = cs,coverage = claimed_coverage, requested_coverage=coverage))
+    return(list(cs = cs,
+                coverage = claimed_coverage,
+                requested_coverage = coverage))
   } else {
     purity = data.frame(do.call(rbind,lapply(1:length(cs),function (i) {
               if (null_index > 0 && null_index %in% cs[[i]])
@@ -468,42 +478,51 @@ susie_slim = function (res)
 
 # Prune single effects to given number L in susie model object.
 #' @keywords internal
-susie_prune_single_effects = function(s, L=0, V=NULL, verbose=F) {
+susie_prune_single_effects = function (s,L = 0,V = NULL,verbose = FALSE) {
   num_effects = nrow(s$alpha)
   if (L == 0) {
-    # filtering will be based on non-zero elements in s$V
-    if (!is.null(s$V)) L = length(which(s$V > 0))
-    else L = num_effects
+      
+    # Filtering will be based on non-zero elements in s$V.
+    if (!is.null(s$V))
+      L = length(which(s$V > 0))
+    else
+      L = num_effects
   }
   if (L == num_effects) {
     s$sets = NULL
-    return (s)
+    return(s)
   }
-  if (!is.null(s$sets$cs_index)) {
-    effects_rank = c(s$sets$cs_index, setdiff(1:num_effects, s$sets$cs_index))
-  } else {
+  if (!is.null(s$sets$cs_index))
+    effects_rank = c(s$sets$cs_index,setdiff(1:num_effects,s$sets$cs_index))
+  else
     effects_rank = 1:num_effects
-  }
   if (verbose) 
-    warning(paste('Specified number of effects L =', L, 'does not match the number of effects', num_effects, 'in input SuSiE model. It will be', ifelse(L<num_effects, 'pruned', 'expanded'), 'to have', L, 'effects.'))
+    warning(paste("Specified number of effects L =",L,
+                  "does not match the number of effects",num_effects,
+                  "in input SuSiE model. It will be",
+                  ifelse(L < num_effects,"pruned","expanded"),"to have",L,
+                  "effects."))
   if (L < num_effects) {
-    for (n in c('alpha', 'mu', 'mu2', 'lbf_variable')) {
-      if (!is.null(s[[n]])) s[[n]] = s[[n]][effects_rank,][1:L,]
-    }
-    for (n in c('KL', 'lbf', 'V')) {
-      if (!is.null(s[[n]])) s[[n]] = s[[n]][effects_rank][1:L]
-    }
+    for (n in c("alpha","mu","mu2","lbf_variable"))
+      if (!is.null(s[[n]]))
+        s[[n]] = s[[n]][effects_rank,][1:L,]
+    for (n in c("KL","lbf","V"))
+      if (!is.null(s[[n]]))
+        s[[n]] = s[[n]][effects_rank][1:L]
   } else {
-    s$alpha = rbind(s$alpha[effects_rank,], matrix(1/ncol(s$alpha), L-num_effects, ncol(s$alpha)))
-    for (n in c('mu', 'mu2', 'lbf_variable')) {
-      if (!is.null(s[[n]])) s[[n]] = rbind(s[[n]][effects_rank,], matrix(0, L-num_effects, ncol(s[[n]])))
-    }
-    for (n in c('KL', 'lbf')) {
-      if (!is.null(s[[n]])) s[[n]] = c(s[[n]][effects_rank], rep(NA, L-num_effects))
-    }
+    s$alpha = rbind(s$alpha[effects_rank,],
+                    matrix(1/ncol(s$alpha),L - num_effects,ncol(s$alpha)))
+    for (n in c("mu","mu2","lbf_variable"))
+      if (!is.null(s[[n]]))
+        s[[n]] = rbind(s[[n]][effects_rank,],
+                       matrix(0,L - num_effects,ncol(s[[n]])))
+    for (n in c("KL", "lbf"))
+      if (!is.null(s[[n]]))
+        s[[n]] = c(s[[n]][effects_rank],rep(NA, L-num_effects))
     if (!is.null(V)) {
-      if (length(V)>1) V[1:num_effects] = s$V[effects_rank]
-      else V = rep(V, L)
+      if (length(V) > 1)
+        V[1:num_effects] = s$V[effects_rank]
+      else V = rep(V,L)
     }
     s$V = V
   }

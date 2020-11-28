@@ -37,6 +37,7 @@
 #' y = drop(X %*% beta + rnorm(n))
 #' res = univariate_regression(X,y)
 #' plot(res$betahat/res$sebetahat)
+#' 
 #' @importFrom stats lm
 #' @importFrom stats .lm.fit
 #' @importFrom stats coef

@@ -336,11 +336,11 @@ susie <- function (X,Y,L = min(10,ncol(X)),
   s = init_setup(n,p,L,scaled_prior_variance,residual_variance,prior_weights,
                  null_weight,as.numeric(var(Y)),standardize)
   if (!missing(s_init) && !is.null(s_init)) {
-    if (!inherits(s_init,"susie")) {
-      stop('s_init should be a susie object')
-    }
+    if (!inherits(s_init,"susie"))
+      stop("s_init should be a susie object")
     if (max(s_init$alpha) > 1 || min(s_init$alpha) < 0) 
-      stop('s_init$alpha has invalid values outside range [0,1]. Please check your input.')
+      stop("s_init$alpha has invalid values outside range [0,1]; please ",
+           "check your input")
     # First, remove effects with s_init$V = 0
     s_init = susie_prune_single_effects(s_init, verbose=FALSE)
     # Then prune or expand
@@ -414,7 +414,8 @@ susie <- function (X,Y,L = min(10,ncol(X)),
   
   if (!is.null(colnames(X))) {
     variable_names = colnames(X)
-    if (!is.null(null_weight)) variable_names = c('null', variable_names)
+    if (!is.null(null_weight))
+      variable_names = c("null", variable_names)
     colnames(s$alpha) = variable_names
     colnames(s$mu) = variable_names
     colnames(s$mu2) = variable_names
