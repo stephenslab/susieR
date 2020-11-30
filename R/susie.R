@@ -159,6 +159,10 @@
 #'   is also returned containing detailed information about the
 #'   estimates at each iteration of the IBSS fitting procedure.
 #'
+#' @param residual_variance_lowerbound Lower limit on the estimated
+#'   residual variance. It is only relevant when
+#'   \code{estimate_residual_variance = TRUE}.
+#' 
 #' @return A \code{"susie"} object with some or all of the following
 #'   elements:
 #'
@@ -287,7 +291,8 @@ susie <- function (X,Y,L = min(10,ncol(X)),
                    max_iter = 100,
                    tol = 1e-3,
                    verbose = FALSE,
-                   track_fit = FALSE) {
+                   track_fit = FALSE,
+                   residual_variance_lowerbound = 1e-15) {
 
   # Process input estimate_prior_method.
   estimate_prior_method = match.arg(estimate_prior_method)
@@ -372,7 +377,8 @@ susie <- function (X,Y,L = min(10,ncol(X)),
       break
     }
     if (estimate_residual_variance) {
-      s$sigma2 = estimate_residual_variance(X,Y,s)
+      s$sigma2 = pmax(residual_variance_lowerbound,
+                      estimate_residual_variance(X,Y,s))
       if (s$sigma2 > residual_variance_upperbound)
         s$sigma2 = residual_variance_upperbound
       if (verbose)

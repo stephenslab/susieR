@@ -32,7 +32,8 @@ susie(
   max_iter = 100,
   tol = 0.001,
   verbose = FALSE,
-  track_fit = FALSE
+  track_fit = FALSE,
+  residual_variance_lowerbound = 1e-15
 )
 
 susie_rss(
@@ -223,6 +224,10 @@ console.}
 \item{track_fit}{If \code{track_fit = TRUE}, \code{trace}
 is also returned containing detailed information about the
 estimates at each iteration of the IBSS fitting procedure.}
+
+\item{residual_variance_lowerbound}{Lower limit on the estimated
+residual variance. It is only relevant when
+\code{estimate_residual_variance = TRUE}.}
 
 \item{z}{A p-vector of z scores.}
 
