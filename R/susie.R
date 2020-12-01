@@ -292,7 +292,7 @@ susie <- function (X,Y,L = min(10,ncol(X)),
                    tol = 1e-3,
                    verbose = FALSE,
                    track_fit = FALSE,
-                   residual_variance_lowerbound = 1e-15) {
+                   residual_variance_lowerbound = var(drop(Y))/1e4) {
 
   # Process input estimate_prior_method.
   estimate_prior_method = match.arg(estimate_prior_method)

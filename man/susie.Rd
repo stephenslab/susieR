@@ -33,7 +33,7 @@ susie(
   tol = 0.001,
   verbose = FALSE,
   track_fit = FALSE,
-  residual_variance_lowerbound = 1e-15
+  residual_variance_lowerbound = var(drop(Y))/10000
 )
 
 susie_rss(
