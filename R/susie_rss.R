@@ -142,7 +142,7 @@ susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
   Y = (t(attr(R,"eigen")$vectors[,attr(R,"eigen")$values != 0]) *
        attr(R,"eigen")$values[attr(R,"eigen")$values != 0]^(-0.5)) %*% z
   if (!is.null(names(z)))
-    colnames(x) = names(z)
+    colnames(X) = names(z)
 
   s = susie(X,Y,L = L,
             scaled_prior_variance = prior_variance/var(Y),
