@@ -1,31 +1,31 @@
 #' @rdname susie
 #'
 #' @param bhat A p-vector of estimated effects.
-#' 
+#'
 #' @param shat A p-vector of standard errors.
-#' 
+#'
 #' @param R A p by p symmetric, positive semidefinite matrix. It
 #'   can be \eqn{X'X}, the covariance matrix \eqn{X'X/(n-1)}, or a
 #'   correlation matrix. It should be estimated from the same samples
 #'   used to compute \code{bhat} and \code{shat}. Using an out-of-sample
 #'   matrix may produce unreliable results.
-#' 
+#'
 #' @param n The sample size.
-#' 
+#'
 #' @param var_y The sample variance of y, defined as \eqn{y'y/(n-1)}.
 #'   When the sample variance cannot be provided, the coefficients
 #'   (returned from \code{coef}) are computed on the "standardized" X, y
 #'   scale.
-#' 
+#'
 #' @param XtX A p by p matrix \eqn{X'X} in which the columns of X
 #'   are centered to have mean zero.
-#' 
+#'
 #' @param Xty A p-vector \eqn{X'y} in which y and the columns of X are
 #'   centered to have mean zero.
-#' 
+#'
 #' @param yty A scalar \eqn{y'y} in which y is centered to have mean
 #'   zero.
-#' 
+#'
 #' @param check_input If \code{check_input = TRUE},
 #'   \code{susie_suff_stat} performs additional checks on \code{XtX} and
 #'   \code{Xty}. The checks are: (1) check that \code{XtX} is positive
@@ -33,7 +33,7 @@
 #'   the non-zero eigenvectors of \code{XtX}.
 #'
 #' @export
-#' 
+#'
 susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
                             maf = NULL, maf_thresh = 0, L = 10,
                             scaled_prior_variance = 0.2,
@@ -48,7 +48,7 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
                             intercept_value = 0, coverage = 0.95,
                             min_abs_corr = 0.5, tol = 1e-3, verbose = FALSE,
                             track_fit = FALSE, check_input = FALSE) {
-    
+
   # Process input estimate_prior_method.
   estimate_prior_method = match.arg(estimate_prior_method)
 
@@ -94,7 +94,7 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
     # If R has 0 colums and rows, cov2cor produces NaN and warning.
     X0 = diag(R) == 0
     R = muffled_cov2cor(R)
-    
+
     # Change the columns and rows with NaN to 0.
     if (sum(X0) > 0)
       R[X0,] = R[,X0] = 0
@@ -118,10 +118,10 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
                 length(Xty),")"))
   if (!is_symmetric_matrix(XtX))
     stop("XtX is not a symmetric matrix")
-  
+
   # MAF filter.
   if (!is.null(maf)) {
-    if (length(maf) != length(Xty)) 
+    if (length(maf) != length(Xty))
       stop(paste("The length of maf does not agree with expected",length(Xty)))
     id = which(maf > maf_thresh)
     XtX = XtX[id,id]
@@ -136,10 +136,10 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
     stop("XtX matrix contains NAs")
 
   if (check_input) {
-      
+
     # Check whether XtX is positive semidefinite.
     semi_pd = check_semi_pd(XtX,r_tol)
-    if (!semi_pd$status) 
+    if (!semi_pd$status)
       stop("XtX is not a positive semidefinite matrix")
 
     # Check whether Xty in space spanned by the non-zero eigenvectors of XtX
@@ -204,7 +204,7 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
 
     if (verbose)
       print(paste0("objective:",get_objective_ss(XtX,Xty,s,yty,n)))
-    
+
     # Compute objective before updating residual variance because part
     # of the objective s$kl has already been computed under the
     # residual variance before the update.
@@ -280,7 +280,7 @@ check_projection = function (A, b) {
     attr(A,"eigen") = eigen(A,symmetric = TRUE)
   B = attr(A,"eigen")$vectors[,attr(A,"eigen")$values >
         -sqrt(.Machine$double.eps)]
-  msg = all.equal(as.vector(B %*% crossprod(B,b)),b,check.names = FALSE)
+  msg = all.equal(as.vector(B %*% crossprod(B,b)),as.vector(b),check.names = FALSE)
   if (!is.character(msg))
     return(list(status = TRUE,msg = NA))
   else
