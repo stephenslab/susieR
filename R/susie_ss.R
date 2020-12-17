@@ -278,8 +278,7 @@ check_semi_pd = function (A, tol) {
 check_projection = function (A, b) {
   if (is.null(attr(A,"eigen")))
     attr(A,"eigen") = eigen(A,symmetric = TRUE)
-  B = attr(A,"eigen")$vectors[,attr(A,"eigen")$values >
-        -sqrt(.Machine$double.eps)]
+  B = attr(A,"eigen")$vectors[,attr(A,"eigen")$values > .Machine$double.eps]
   msg = all.equal(as.vector(B %*% crossprod(B,b)),as.vector(b),check.names = FALSE)
   if (!is.character(msg))
     return(list(status = TRUE,msg = NA))

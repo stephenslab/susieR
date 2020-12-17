@@ -1,43 +1,43 @@
 #' @rdname susie
 #'
 #' @param z A p-vector of z scores.
-#' 
+#'
 #' @param R A p by p symmetric, positive semidefinite correlation
 #' matrix. If it is from a reference panel, we recommend modifying the
 #' correlation matrix with parameter \code{z_ld_weight}.
-#' 
+#'
 #' @param maf Minor allele frequency; to be used along with
 #'   \code{maf_thresh} to filter input summary statistics.
-#' 
+#'
 #' @param maf_thresh Variants having a minor allele frequency smaller
 #'   than this threshold are not used.
-#' 
+#'
 #' @param z_ld_weight The weights assigned to the z scores in the LD
 #'   matrix. The LD matrix used in the model is \code{cov2cor((1-w)*R +
 #'   w*tcrossprod(z))}, where \code{w = z_ld_weight}. We recommend
 #'   setting \code{z_ld_weight} as 1/n, where n is the number of
 #'   samples.
-#' 
+#'
 #' @param prior_variance The prior variance. It is either a scalar or
 #'   a vector of length L.
-#' 
+#'
 #' @param r_tol Tolerance level for eigenvalue check of positive
 #'   semidefinite matrix of R.
-#' 
+#'
 #' @param intercept_value The intercept. (The intercept cannot be
 #'   estimated from centered summary data.) This setting will be used by
 #'   \code{coef} to assign an intercept value, mainly for consistency
 #'   with \code{susie}. Set to \code{NULL} if you want \code{coef} not
 #'   to include an intercept term (and so only a p-vector is returned).
-#' 
+#'
 #' @param check_R If \code{check_R = TRUE}, check that \code{R} is
 #'   positive semidefinite.
-#' 
+#'
 #' @param check_z If \code{check_z = TRUE}, check that \code{z} is in
 #'   space spanned by the non-zero eigenvectors of \code{R}.
 #'
 #' @export
-#' 
+#'
 susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
                       L = 10, prior_variance = 50, residual_variance = NULL,
                       r_tol = 1e-08, prior_weights = NULL, null_weight = NULL,
@@ -48,8 +48,8 @@ susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
                       max_iter = 100, s_init = NULL, intercept_value = 0,
                       coverage = 0.95, min_abs_corr = 0.5,
                       tol = 1e-03, verbose = FALSE, track_fit = FALSE,
-                      check_R = TRUE, check_z = TRUE) {
-    
+                      check_R = TRUE, check_z = FALSE) {
+
   # Check input R.
   if (nrow(R) != length(z))
     stop(paste0("The dimension of correlation matrix (", nrow(R)," by ",
@@ -82,7 +82,7 @@ susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
     z[is.na(z)] = 0
   }
 
-  # Modify R as ndeed.
+  # Modify R as needed.
   if (z_ld_weight > 0) {
     R = muffled_cov2cor((1-z_ld_weight)*R + z_ld_weight * tcrossprod(z))
     R = (R + t(R))/2
@@ -110,7 +110,7 @@ susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
   if (is.null(residual_variance))
     residual_variance = 1
   p = ncol(R)
-  
+
   # Eigen decomposition for R, filter on eigenvalues.
   attr(R,"eigen") = eigen(R,symmetric = TRUE)
   if (check_R && any(attr(R,"eigen")$values < -r_tol))
@@ -124,7 +124,7 @@ susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
   # Check whether z in space spanned by the non-zero eigenvectors of R.
   if (check_z) {
     proj = check_projection(R,z)
-    if (!proj$status) 
+    if (!proj$status)
       warning("Input z does not lie in the space of non-zero eigenvectors ",
               "of R. The result is thus not reliable. Please refer to ",
               "https://github.com/stephenslab/susieR/issues/91 for a ",
@@ -190,7 +190,7 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
                             coverage = 0.95, min_abs_corr = 0.5,
                             tol = 1e-3, verbose = FALSE, track_fit = FALSE,
                             check_R = TRUE, check_z = TRUE) {
-    
+
   # Check input R.
   if (nrow(R) != length(z))
     stop(paste0("The dimension of correlation matrix (",nrow(R)," by ",
@@ -212,11 +212,11 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
 
   if (any(is.infinite(z)))
     stop("z contains infinite values")
-  
+
   # Check for NAs in R.
   if (any(is.na(R)))
     stop("R matrix contains missing values")
-  
+
   # Replace NAs in z with zero.
   if (any(is.na(z))) {
     warning("NA values in z-scores are replaced with 0")
@@ -256,20 +256,20 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
               "of R. The result is thus not reliable. Please refer to ",
               "https://github.com/stephenslab/susieR/issues/91 for a ",
               "possible solution.")
-    else 
+    else
       message("Input z is in space spanned by the non-zero eigenvectors of ",
               "R. You can safely set \"check_z = FALSE\" when you rerun the ",
               "analysis, to save computation.")
   }
   R = set_R_attributes(R,r_tol)
-  
+
   # Initialize susie fit.
   s = init_setup_rss(p,L,prior_variance,residual_variance,prior_weights,
                      null_weight)
   if (!missing(s_init) && !is.null(s_init)) {
     if (!inherits(s_init,"susie"))
       stop("s_init should be a susie object")
-    if (max(s_init$alpha) > 1 || min(s_init$alpha) < 0) 
+    if (max(s_init$alpha) > 1 || min(s_init$alpha) < 0)
       stop("s_init$alpha has invalid values outside range [0,1]; please ",
            "check your input")
     # First, remove effects with s_init$V = 0
@@ -278,11 +278,11 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
     s_init = susie_prune_single_effects(s_init, L, s$V, verbose)
     s = modifyList(s,s_init)
     s = init_finalize_rss(s,R = R)
-  } else 
+  } else
     s = init_finalize_rss(s)
 
   estimate_prior_method = match.arg(estimate_prior_method)
-  
+
   # Intialize elbo to NA.
   elbo = rep(NA,max_iter+1)
   elbo[1] = -Inf;
@@ -299,7 +299,7 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
     if (verbose)
       print(paste0("before estimate sigma2 objective:",
                    get_objective_rss(R,z,s)))
-    
+
     # Compute objective before updating residual variance because part
     # of the objective s$kl has already been computed under the
     # residual variance, before the update.
@@ -337,9 +337,9 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
       Sigma = update_Sigma(R,s$sigma2,z)
     }
   }
-  
+
   # Remove first (infinite) entry, and trailing NAs.
-  elbo = elbo[2:(i+1)] 
+  elbo = elbo[2:(i+1)]
   s$elbo = elbo
   s$niter = i
 

@@ -31,7 +31,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.9.53</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.9.57</span>
       </span>
     </div>
 
@@ -61,13 +61,14 @@
 
       
 
-      </header><div class="row">
+      </header><script src="finemapping_files/accessible-code-block-0.0.1/empty-anchor.js"></script><link href="finemapping_files/anchor-sections-1.0/anchor-sections.css" rel="stylesheet">
+<script src="finemapping_files/anchor-sections-1.0/anchor-sections.js"></script><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>Fine-mapping examples</h1>
                         <h4 class="author">Gao Wang</h4>
             
-            <h4 class="date">2020-11-16</h4>
+            <h4 class="date">2020-12-16</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/master/vignettes/finemapping.Rmd"><code>vignettes/finemapping.Rmd</code></a></small>
       <div class="hidden name"><code>finemapping.Rmd</code></div>
@@ -78,36 +79,42 @@
     
 <p>This vignette demonstrates <code>susieR</code> in the context of genetic fine-mapping. We use simulated data of expression level of a gene (<span class="math inline">\(y\)</span>) in <span class="math inline">\(N \approx 600\)</span> individuals. We want to identify with the genotype matrix <span class="math inline">\(X_{N\times P}\)</span> (<span class="math inline">\(P=1000\)</span>) the genetic variables that causes changes in expression level.</p>
 <p>The simulated data-set is <a href="https://github.com/stephenslab/susieR/blob/master/inst/datafiles/N3finemapping.rds">available here</a>, as part of the <code>susieR</code> package. It is simulated to have exactly 3 non-zero effects.</p>
-<div class="sourceCode" id="cb1"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">susieR</span>)
-<span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span>(<span class="fl">1</span>)</pre></body></html></div>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/stephenslab/susieR">susieR</a></span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></code></pre></div>
 <div id="the-data-set" class="section level2">
 <h2 class="hasAnchor">
 <a href="#the-data-set" class="anchor"></a>The data-set</h2>
-<div class="sourceCode" id="cb2"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span>(<span class="no">N3finemapping</span>)
-<span class="fu"><a href="https://rdrr.io/r/base/attach.html">attach</a></span>(<span class="no">N3finemapping</span>)</pre></body></html></div>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span><span class="op">(</span><span class="va">N3finemapping</span><span class="op">)</span>
+<span class="kw"><a href="https://rdrr.io/r/base/attach.html">attach</a></span><span class="op">(</span><span class="va">N3finemapping</span><span class="op">)</span></code></pre></div>
 <p>The loaded dataset contains regression data <span class="math inline">\(X\)</span> and <span class="math inline">\(y\)</span>, along with some other relevant properties in the context of genetic studies. It also contains the “true” regression coefficent the data is simulated from.</p>
 <p>Notice that we’ve simulated 2 sets of <span class="math inline">\(Y\)</span> as 2 simulation replicates. Here we’ll focus on the first data-set.</p>
-<div class="sourceCode" id="cb3"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/dim.html">dim</a></span>(<span class="no">Y</span>)
-<span class="co"># [1] 574   2</span></pre></body></html></div>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/dim.html">dim</a></span><span class="op">(</span><span class="va">Y</span><span class="op">)</span>
+<span class="co"># [1] 574   2</span></code></pre></div>
 <p>Here are the 3 “true” signals in the first data-set:</p>
-<div class="sourceCode" id="cb4"><html><body><pre class="r"><span class="no">b</span> <span class="kw">&lt;-</span> <span class="no">true_coef</span>[,<span class="fl">1</span>]
-<span class="fu"><a href="https://rdrr.io/r/graphics/plot.html">plot</a></span>(<span class="no">b</span>, <span class="kw">pch</span><span class="kw">=</span><span class="fl">16</span>, <span class="kw">ylab</span><span class="kw">=</span><span class="st">'effect size'</span>)</pre></body></html></div>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">b</span> <span class="op">&lt;-</span> <span class="va">true_coef</span><span class="op">[</span>,<span class="fl">1</span><span class="op">]</span>
+<span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html">plot</a></span><span class="op">(</span><span class="va">b</span>, pch<span class="op">=</span><span class="fl">16</span>, ylab<span class="op">=</span><span class="st">'effect size'</span><span class="op">)</span></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="finemapping_files/figure-html/unnamed-chunk-4-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
  
 </p>
 </div>
-<div class="sourceCode" id="cb5"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/which.html">which</a></span>(<span class="no">b</span> <span class="kw">!=</span> <span class="fl">0</span>)
-<span class="co"># [1] 403 653 773</span></pre></body></html></div>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/which.html">which</a></span><span class="op">(</span><span class="va">b</span> <span class="op">!=</span> <span class="fl">0</span><span class="op">)</span>
+<span class="co"># [1] 403 653 773</span></code></pre></div>
 <p>So the underlying causal variables are 403, 653 and 773.</p>
 </div>
 <div id="simple-regression-summary-statistics" class="section level2">
 <h2 class="hasAnchor">
 <a href="#simple-regression-summary-statistics" class="anchor"></a>Simple regression summary statistics</h2>
 <p><code>univariate_regression</code> function can be used to compute summary statistics by fitting univariate simple regression variable by variable. The results are <span class="math inline">\(\hat{\beta}\)</span> and <span class="math inline">\(SE(\hat{\beta})\)</span> from which z-scores can be derived. Again we focus only on results from the first data-set:</p>
-<div class="sourceCode" id="cb6"><html><body><pre class="r"><span class="no">sumstats</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/univariate_regression.html">univariate_regression</a></span>(<span class="no">X</span>, <span class="no">Y</span>[,<span class="fl">1</span>])
-<span class="no">z_scores</span> <span class="kw">&lt;-</span> <span class="no">sumstats</span>$<span class="no">betahat</span> / <span class="no">sumstats</span>$<span class="no">sebetahat</span>
-<span class="fu"><a href="../reference/susie_plots.html">susie_plot</a></span>(<span class="no">z_scores</span>, <span class="kw">y</span> <span class="kw">=</span> <span class="st">"z"</span>, <span class="kw">b</span><span class="kw">=</span><span class="no">b</span>)</pre></body></html></div>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">sumstats</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/univariate_regression.html">univariate_regression</a></span><span class="op">(</span><span class="va">X</span>, <span class="va">Y</span><span class="op">[</span>,<span class="fl">1</span><span class="op">]</span><span class="op">)</span>
+<span class="va">z_scores</span> <span class="op">&lt;-</span> <span class="va">sumstats</span><span class="op">$</span><span class="va">betahat</span> <span class="op">/</span> <span class="va">sumstats</span><span class="op">$</span><span class="va">sebetahat</span>
+<span class="fu"><a href="../reference/susie_plot.html">susie_plot</a></span><span class="op">(</span><span class="va">z_scores</span>, y <span class="op">=</span> <span class="st">"z"</span>, b<span class="op">=</span><span class="va">b</span><span class="op">)</span></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="finemapping_files/figure-html/unnamed-chunk-6-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
  
@@ -120,12 +127,13 @@
 </h2>
 <p>For starters, we assume there are at most 10 causal variables, i.e., set <code>L = 10</code>, although SuSiE is robust to the choice of <code>L</code>.</p>
 <p>Notice that by default SuSiE estimates prior effect size from data. For fine-mapping applications, however, we often have some knowledge of SuSiE prior effect size since it is parameterized as percentage of variance explained. Here for this eQTL fine-mapping application we set SuSiE prior variance to 0.1, and update residual variance in the variational algorithm that fits SuSiE model. The <code>susieR</code> function call is:</p>
-<div class="sourceCode" id="cb7"><html><body><pre class="r"><span class="no">fitted</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/susie.html">susie</a></span>(<span class="no">X</span>, <span class="no">Y</span>[,<span class="fl">1</span>],
-                <span class="kw">L</span> <span class="kw">=</span> <span class="fl">10</span>,
-                <span class="kw">estimate_residual_variance</span> <span class="kw">=</span> <span class="fl">TRUE</span>,
-                <span class="kw">estimate_prior_variance</span> <span class="kw">=</span> <span class="fl">FALSE</span>,
-                <span class="kw">scaled_prior_variance</span> <span class="kw">=</span> <span class="fl">0.1</span>,
-                <span class="kw">verbose</span> <span class="kw">=</span> <span class="fl">TRUE</span>)
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">fitted</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/susie.html">susie</a></span><span class="op">(</span><span class="va">X</span>, <span class="va">Y</span><span class="op">[</span>,<span class="fl">1</span><span class="op">]</span>,
+                L <span class="op">=</span> <span class="fl">10</span>,
+                estimate_residual_variance <span class="op">=</span> <span class="cn">TRUE</span>, 
+                estimate_prior_variance <span class="op">=</span> <span class="cn">FALSE</span>,
+                scaled_prior_variance <span class="op">=</span> <span class="fl">0.1</span>,
+                verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
 <span class="co"># [1] "objective:-1392.42460921237"</span>
 <span class="co"># [1] "objective:-1388.98662572569"</span>
 <span class="co"># [1] "objective:-1387.87893344487"</span>
@@ -134,22 +142,23 @@
 <span class="co"># [1] "objective:-1387.73099852765"</span>
 <span class="co"># [1] "objective:-1387.67616609041"</span>
 <span class="co"># [1] "objective:-1387.67615783404"</span>
-<span class="co"># [1] "objective:-1386.37718431741"</span>
-<span class="co"># [1] "objective:-1386.36402706417"</span>
-<span class="co"># [1] "objective:-1381.99570801785"</span>
-<span class="co"># [1] "objective:-1381.86807518099"</span>
-<span class="co"># [1] "objective:-1381.18590761063"</span>
+<span class="co"># [1] "objective:-1386.3771843175"</span>
+<span class="co"># [1] "objective:-1386.36402706426"</span>
+<span class="co"># [1] "objective:-1381.99570801789"</span>
+<span class="co"># [1] "objective:-1381.86807518103"</span>
+<span class="co"># [1] "objective:-1381.18590761064"</span>
 <span class="co"># [1] "objective:-1381.18342754332"</span>
-<span class="co"># [1] "objective:-1381.13344267982"</span>
+<span class="co"># [1] "objective:-1381.13344267981"</span>
 <span class="co"># [1] "objective:-1381.13343270768"</span>
 <span class="co"># [1] "objective:-1381.13113705137"</span>
 <span class="co"># [1] "objective:-1381.1311369139"</span>
-<span class="co"># [1] "objective:-1381.13106293456"</span></pre></body></html></div>
+<span class="co"># [1] "objective:-1381.13106293455"</span></code></pre></div>
 <div id="credible-sets" class="section level3">
 <h3 class="hasAnchor">
 <a href="#credible-sets" class="anchor"></a>Credible sets</h3>
 <p>By default, we output 95% credible set:</p>
-<div class="sourceCode" id="cb8"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/print.html">print</a></span>(<span class="no">fitted</span>$<span class="no">sets</span>)
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/print.html">print</a></span><span class="op">(</span><span class="va">fitted</span><span class="op">$</span><span class="va">sets</span><span class="op">)</span>
 <span class="co"># $cs</span>
 <span class="co"># $cs$L3</span>
 <span class="co"># [1] 653</span>
@@ -175,14 +184,16 @@
 <span class="co"># [1] 0.9998995 0.9992271 0.9506579</span>
 <span class="co"># </span>
 <span class="co"># $requested_coverage</span>
-<span class="co"># [1] 0.95</span></pre></body></html></div>
+<span class="co"># [1] 0.95</span></code></pre></div>
 <p>The 3 causal signals have been captured by the 3 CS reported here. The 3rd CS contains many variables, including the true causal variable <code>403</code>. The minimum absolute correlation is 0.86.</p>
 <p>If we use the default 90% coverage for credible sets, we still capture the 3 signals, but “purity” of the 3rd CS is now 0.91 and size of the CS is also a bit smaller.</p>
-<div class="sourceCode" id="cb9"><html><body><pre class="r"><span class="no">sets</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/susie_get_methods.html">susie_get_cs</a></span>(<span class="no">fitted</span>,
-                     <span class="kw">X</span> <span class="kw">=</span> <span class="no">X</span>,
-             <span class="kw">coverage</span> <span class="kw">=</span> <span class="fl">0.9</span>,
-                     <span class="kw">min_abs_corr</span> <span class="kw">=</span> <span class="fl">0.1</span>)</pre></body></html></div>
-<div class="sourceCode" id="cb10"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/print.html">print</a></span>(<span class="no">sets</span>)
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">sets</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/susie_get_objective.html">susie_get_cs</a></span><span class="op">(</span><span class="va">fitted</span>,
+                     X <span class="op">=</span> <span class="va">X</span>,
+             coverage <span class="op">=</span> <span class="fl">0.9</span>,
+                     min_abs_corr <span class="op">=</span> <span class="fl">0.1</span><span class="op">)</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/print.html">print</a></span><span class="op">(</span><span class="va">sets</span><span class="op">)</span>
 <span class="co"># $cs</span>
 <span class="co"># $cs$L3</span>
 <span class="co"># [1] 653</span>
@@ -208,23 +219,25 @@
 <span class="co"># [1] 0.9998995 0.9992271 0.9046596</span>
 <span class="co"># </span>
 <span class="co"># $requested_coverage</span>
-<span class="co"># [1] 0.9</span></pre></body></html></div>
+<span class="co"># [1] 0.9</span></code></pre></div>
 </div>
 <div id="posterior-inclusion-probabilities" class="section level3">
 <h3 class="hasAnchor">
 <a href="#posterior-inclusion-probabilities" class="anchor"></a>Posterior inclusion probabilities</h3>
 <p>Previously we’ve determined that summing over 3 single effect regression models is approperate for our application. Here we summarize the variable selection results by posterior inclusion probability (PIP):</p>
-<div class="sourceCode" id="cb11"><html><body><pre class="r"><span class="fu"><a href="../reference/susie_plots.html">susie_plot</a></span>(<span class="no">fitted</span>, <span class="kw">y</span><span class="kw">=</span><span class="st">"PIP"</span>, <span class="kw">b</span><span class="kw">=</span><span class="no">b</span>)</pre></body></html></div>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="../reference/susie_plot.html">susie_plot</a></span><span class="op">(</span><span class="va">fitted</span>, y<span class="op">=</span><span class="st">"PIP"</span>, b<span class="op">=</span><span class="va">b</span><span class="op">)</span></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="finemapping_files/figure-html/unnamed-chunk-11-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
  
 </p>
 </div>
 <p>The true causal variables are colored red. The 95% CS identified are circled in different colors. Of interest is the cluster around position 400. The true signal is 403 but apparently it does not have the highest PIP. To compare ranking of PIP and original z-score in that CS:</p>
-<div class="sourceCode" id="cb12"><html><body><pre class="r"><span class="no">i</span>  <span class="kw">&lt;-</span> <span class="no">fitted</span>$<span class="no">sets</span>$<span class="no">cs</span><span class="kw">[[</span><span class="fl">3</span>]]
-<span class="no">z3</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html">cbind</a></span>(<span class="no">i</span>,<span class="no">z_scores</span>[<span class="no">i</span>],<span class="no">fitted</span>$<span class="no">pip</span>[<span class="no">i</span>])
-<span class="fu"><a href="https://rdrr.io/r/base/colnames.html">colnames</a></span>(<span class="no">z3</span>) <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">'position'</span>, <span class="st">'z-score'</span>, <span class="st">'PIP'</span>)
-<span class="no">z3</span>[<span class="fu"><a href="https://rdrr.io/r/base/order.html">order</a></span>(<span class="no">z3</span>[,<span class="fl">2</span>], <span class="kw">decreasing</span> <span class="kw">=</span> <span class="fl">TRUE</span>),]
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">i</span>  <span class="op">&lt;-</span> <span class="va">fitted</span><span class="op">$</span><span class="va">sets</span><span class="op">$</span><span class="va">cs</span><span class="op">[[</span><span class="fl">3</span><span class="op">]</span><span class="op">]</span>
+<span class="va">z3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html">cbind</a></span><span class="op">(</span><span class="va">i</span>,<span class="va">z_scores</span><span class="op">[</span><span class="va">i</span><span class="op">]</span>,<span class="va">fitted</span><span class="op">$</span><span class="va">pip</span><span class="op">[</span><span class="va">i</span><span class="op">]</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/base/colnames.html">colnames</a></span><span class="op">(</span><span class="va">z3</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">'position'</span>, <span class="st">'z-score'</span>, <span class="st">'PIP'</span><span class="op">)</span>
+<span class="va">z3</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/order.html">order</a></span><span class="op">(</span><span class="va">z3</span><span class="op">[</span>,<span class="fl">2</span><span class="op">]</span>, decreasing <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,<span class="op">]</span>
 <span class="co">#       position  z-score        PIP</span>
 <span class="co">#  [1,]      396 5.189811 0.06026797</span>
 <span class="co">#  [2,]      381 5.164794 0.08444210</span>
@@ -251,28 +264,30 @@
 <span class="co"># [23,]      401 4.723184 0.02014360</span>
 <span class="co"># [24,]      397 4.716886 0.01240547</span>
 <span class="co"># [25,]      415 4.663208 0.01437857</span>
-<span class="co"># [26,]      372 4.581560 0.01032276</span></pre></body></html></div>
+<span class="co"># [26,]      372 4.581560 0.01032276</span></code></pre></div>
 </div>
 <div id="choice-of-priors" class="section level3">
 <h3 class="hasAnchor">
 <a href="#choice-of-priors" class="anchor"></a>Choice of priors</h3>
 <p>We found that SuSiE is generally robust to choice of priors. Here we set scaled prior variance (percentage of variance explained) to 0.2, and compare with previous results:</p>
-<div class="sourceCode" id="cb13"><html><body><pre class="r"><span class="no">fitted</span> <span class="kw">=</span> <span class="fu"><a href="../reference/susie.html">susie</a></span>(<span class="no">X</span>, <span class="no">Y</span>[,<span class="fl">1</span>],
-               <span class="kw">L</span> <span class="kw">=</span> <span class="fl">10</span>,
-               <span class="kw">estimate_residual_variance</span> <span class="kw">=</span> <span class="fl">TRUE</span>,
-               <span class="kw">estimate_prior_variance</span> <span class="kw">=</span> <span class="fl">FALSE</span>,
-               <span class="kw">scaled_prior_variance</span> <span class="kw">=</span> <span class="fl">0.2</span>)
-<span class="fu"><a href="../reference/susie_plots.html">susie_plot</a></span>(<span class="no">fitted</span>, <span class="kw">y</span><span class="kw">=</span><span class="st">'PIP'</span>, <span class="kw">b</span><span class="kw">=</span><span class="no">b</span>)</pre></body></html></div>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">fitted</span> <span class="op">=</span> <span class="fu"><a href="../reference/susie.html">susie</a></span><span class="op">(</span><span class="va">X</span>, <span class="va">Y</span><span class="op">[</span>,<span class="fl">1</span><span class="op">]</span>,
+               L <span class="op">=</span> <span class="fl">10</span>,
+               estimate_residual_variance <span class="op">=</span> <span class="cn">TRUE</span>, 
+               estimate_prior_variance <span class="op">=</span> <span class="cn">FALSE</span>, 
+               scaled_prior_variance <span class="op">=</span> <span class="fl">0.2</span><span class="op">)</span>
+<span class="fu"><a href="../reference/susie_plot.html">susie_plot</a></span><span class="op">(</span><span class="va">fitted</span>, y<span class="op">=</span><span class="st">'PIP'</span>, b<span class="op">=</span><span class="va">b</span><span class="op">)</span></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="finemapping_files/figure-html/unnamed-chunk-13-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
  
 </p>
 </div>
 <p>which largely remains unchanged. We also illustrate below analysis using default prior estimated from data,</p>
-<div class="sourceCode" id="cb14"><html><body><pre class="r"><span class="no">fitted</span> <span class="kw">=</span> <span class="fu"><a href="../reference/susie.html">susie</a></span>(<span class="no">X</span>, <span class="no">Y</span>[,<span class="fl">1</span>],
-               <span class="kw">L</span> <span class="kw">=</span> <span class="fl">10</span>,
-               <span class="kw">estimate_residual_variance</span> <span class="kw">=</span> <span class="fl">TRUE</span>)
-<span class="fu"><a href="../reference/susie_plots.html">susie_plot</a></span>(<span class="no">fitted</span>, <span class="kw">y</span><span class="kw">=</span><span class="st">'PIP'</span>, <span class="kw">b</span><span class="kw">=</span><span class="no">b</span>)</pre></body></html></div>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">fitted</span> <span class="op">=</span> <span class="fu"><a href="../reference/susie.html">susie</a></span><span class="op">(</span><span class="va">X</span>, <span class="va">Y</span><span class="op">[</span>,<span class="fl">1</span><span class="op">]</span>,
+               L <span class="op">=</span> <span class="fl">10</span>,
+               estimate_residual_variance <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
+<span class="fu"><a href="../reference/susie_plot.html">susie_plot</a></span><span class="op">(</span><span class="va">fitted</span>, y<span class="op">=</span><span class="st">'PIP'</span>, b<span class="op">=</span><span class="va">b</span><span class="op">)</span></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="finemapping_files/figure-html/unnamed-chunk-14-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
  
@@ -283,21 +298,22 @@
 <h3 class="hasAnchor">
 <a href="#a-note-on-covariate-adjustment" class="anchor"></a>A note on covariate adjustment</h3>
 <p>To include covariate <code>Z</code> in SuSiE, one approach is to regress it out from both <code>y</code> and <code>X</code>, and then run SuSiE on the residuals. The code below illustrates the procedure:</p>
-<div class="sourceCode" id="cb15"><html><body><pre class="r"><span class="no">remove.covariate.effects</span> <span class="kw">&lt;-</span> <span class="kw">function</span> (<span class="no">X</span>, <span class="no">Z</span>, <span class="no">y</span>) {
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">remove.covariate.effects</span> <span class="op">&lt;-</span> <span class="kw">function</span> <span class="op">(</span><span class="va">X</span>, <span class="va">Z</span>, <span class="va">y</span><span class="op">)</span> <span class="op">{</span>
   <span class="co"># include the intercept term</span>
-  <span class="kw">if</span> (<span class="fu"><a href="https://rdrr.io/r/base/any.html">any</a></span>(<span class="no">Z</span>[,<span class="fl">1</span>]<span class="kw">!=</span><span class="fl">1</span>)) <span class="no">Z</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html">cbind</a></span>(<span class="fl">1</span>, <span class="no">Z</span>)
-  <span class="no">A</span>   <span class="kw">&lt;-</span> <span class="fu">forceSymmetric</span>(<span class="fu"><a href="https://rdrr.io/r/base/crossprod.html">crossprod</a></span>(<span class="no">Z</span>))
-  <span class="no">SZy</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/vector.html">as.vector</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/solve.html">solve</a></span>(<span class="no">A</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="no">y</span> <span class="kw">%*%</span> <span class="no">Z</span>)))
-  <span class="no">SZX</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html">as.matrix</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/solve.html">solve</a></span>(<span class="no">A</span>,<span class="fu"><a href="https://rdrr.io/r/base/t.html">t</a></span>(<span class="no">Z</span>) <span class="kw">%*%</span> <span class="no">X</span>))
-  <span class="no">y</span> <span class="kw">&lt;-</span> <span class="no">y</span> - <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="no">Z</span> <span class="kw">%*%</span> <span class="no">SZy</span>)
-  <span class="no">X</span> <span class="kw">&lt;-</span> <span class="no">X</span> - <span class="no">Z</span> <span class="kw">%*%</span> <span class="no">SZX</span>
-  <span class="fu"><a href="https://rdrr.io/r/base/function.html">return</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span>(<span class="kw">X</span> <span class="kw">=</span> <span class="no">X</span>,<span class="kw">y</span> <span class="kw">=</span> <span class="no">y</span>,<span class="kw">SZy</span> <span class="kw">=</span> <span class="no">SZy</span>,<span class="kw">SZX</span> <span class="kw">=</span> <span class="no">SZX</span>))
-}
+  <span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/any.html">any</a></span><span class="op">(</span><span class="va">Z</span><span class="op">[</span>,<span class="fl">1</span><span class="op">]</span><span class="op">!=</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span> <span class="va">Z</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html">cbind</a></span><span class="op">(</span><span class="fl">1</span>, <span class="va">Z</span><span class="op">)</span>
+  <span class="va">A</span>   <span class="op">&lt;-</span> <span class="fu">forceSymmetric</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/crossprod.html">crossprod</a></span><span class="op">(</span><span class="va">Z</span><span class="op">)</span><span class="op">)</span>
+  <span class="va">SZy</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/vector.html">as.vector</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/solve.html">solve</a></span><span class="op">(</span><span class="va">A</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="va">y</span> <span class="op">%*%</span> <span class="va">Z</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>
+  <span class="va">SZX</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html">as.matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/solve.html">solve</a></span><span class="op">(</span><span class="va">A</span>,<span class="fu"><a href="https://rdrr.io/r/base/t.html">t</a></span><span class="op">(</span><span class="va">Z</span><span class="op">)</span> <span class="op">%*%</span> <span class="va">X</span><span class="op">)</span><span class="op">)</span>
+  <span class="va">y</span> <span class="op">&lt;-</span> <span class="va">y</span> <span class="op">-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="va">Z</span> <span class="op">%*%</span> <span class="va">SZy</span><span class="op">)</span>
+  <span class="va">X</span> <span class="op">&lt;-</span> <span class="va">X</span> <span class="op">-</span> <span class="va">Z</span> <span class="op">%*%</span> <span class="va">SZX</span>
+  <span class="kw"><a href="https://rdrr.io/r/base/function.html">return</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span>X <span class="op">=</span> <span class="va">X</span>,y <span class="op">=</span> <span class="va">y</span>,SZy <span class="op">=</span> <span class="va">SZy</span>,SZX <span class="op">=</span> <span class="va">SZX</span><span class="op">)</span><span class="op">)</span>
+<span class="op">}</span>
 
-<span class="no">out</span> <span class="kw">=</span> <span class="fu">remove.covariate.effects</span>(<span class="no">X</span>, <span class="no">Z</span>, <span class="no">Y</span>[,<span class="fl">1</span>])
-<span class="no">fitted_adjusted</span> <span class="kw">=</span> <span class="fu"><a href="../reference/susie.html">susie</a></span>(<span class="no">out</span>$<span class="no">X</span>, <span class="no">out</span>$<span class="no">y</span>,
-               <span class="kw">L</span> <span class="kw">=</span> <span class="fl">10</span>,
-               <span class="kw">estimate_residual_variance</span> <span class="kw">=</span> <span class="fl">TRUE</span>)</pre></body></html></div>
+<span class="va">out</span> <span class="op">=</span> <span class="fu">remove.covariate.effects</span><span class="op">(</span><span class="va">X</span>, <span class="va">Z</span>, <span class="va">Y</span><span class="op">[</span>,<span class="fl">1</span><span class="op">]</span><span class="op">)</span>
+<span class="va">fitted_adjusted</span> <span class="op">=</span> <span class="fu"><a href="../reference/susie.html">susie</a></span><span class="op">(</span><span class="va">out</span><span class="op">$</span><span class="va">X</span>, <span class="va">out</span><span class="op">$</span><span class="va">y</span>,
+               L <span class="op">=</span> <span class="fl">10</span>,
+               estimate_residual_variance <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></code></pre></div>
 <p>Note that the covariates <code>Z</code> should have a column of ones as the first column. If not, the above function <code>remove.covariate.effects</code> will add such a column to <code>Z</code> before regressing it out. Data will be centered as a result. Also the scale of data is changed after regressing out <code>Z</code>. This introduces some subtleties in terms of interpreting the results. For this reason, we provide covariate adjustment procedure as a tip in the documentation and not part of <code><a href="../reference/susie.html">susieR::susie()</a></code> function. Cautions should be taken when applying this procedure and interpreting the result from it.</p>
 </div>
 </div>
@@ -305,42 +321,38 @@
 <h2 class="hasAnchor">
 <a href="#session-information" class="anchor"></a>Session information</h2>
 <p>Here are some details about the computing environment, including the versions of R, and the R packages, used to generate these results.</p>
-<div class="sourceCode" id="cb16"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html">sessionInfo</a></span>()
-<span class="co"># R version 3.6.3 (2020-02-29)</span>
-<span class="co"># Platform: x86_64-pc-linux-gnu (64-bit)</span>
-<span class="co"># Running under: Linux Mint 20</span>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html">sessionInfo</a></span><span class="op">(</span><span class="op">)</span>
+<span class="co"># R version 4.0.3 (2020-10-10)</span>
+<span class="co"># Platform: x86_64-apple-darwin17.0 (64-bit)</span>
+<span class="co"># Running under: macOS Big Sur 10.16</span>
 <span class="co"># </span>
 <span class="co"># Matrix products: default</span>
-<span class="co"># BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3</span>
-<span class="co"># LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/liblapack.so.3</span>
+<span class="co"># BLAS:   /Library/Frameworks/R.framework/Versions/4.0/Resources/lib/libRblas.dylib</span>
+<span class="co"># LAPACK: /Library/Frameworks/R.framework/Versions/4.0/Resources/lib/libRlapack.dylib</span>
 <span class="co"># </span>
 <span class="co"># locale:</span>
-<span class="co">#  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              </span>
-<span class="co">#  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    </span>
-<span class="co">#  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   </span>
-<span class="co">#  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 </span>
-<span class="co">#  [9] LC_ADDRESS=C               LC_TELEPHONE=C            </span>
-<span class="co"># [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       </span>
+<span class="co"># [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8</span>
 <span class="co"># </span>
 <span class="co"># attached base packages:</span>
 <span class="co"># [1] stats     graphics  grDevices utils     datasets  methods   base     </span>
 <span class="co"># </span>
 <span class="co"># other attached packages:</span>
-<span class="co"># [1] susieR_0.9.53</span>
+<span class="co"># [1] susieR_0.9.57</span>
 <span class="co"># </span>
 <span class="co"># loaded via a namespace (and not attached):</span>
-<span class="co">#  [1] Rcpp_1.0.5       highr_0.8        plyr_1.8.6       compiler_3.6.3  </span>
-<span class="co">#  [5] pillar_1.4.6     tools_3.6.3      digest_0.6.27    evaluate_0.14   </span>
-<span class="co">#  [9] memoise_1.1.0    lifecycle_0.2.0  tibble_3.0.4     gtable_0.3.0    </span>
-<span class="co"># [13] lattice_0.20-40  pkgconfig_2.0.3  rlang_0.4.8      Matrix_1.2-18   </span>
-<span class="co"># [17] yaml_2.2.1       pkgdown_1.5.1    xfun_0.13        stringr_1.4.0   </span>
-<span class="co"># [21] dplyr_1.0.2      knitr_1.28       desc_1.2.0       generics_0.0.2  </span>
-<span class="co"># [25] fs_1.3.2         vctrs_0.3.4      tidyselect_1.1.0 rprojroot_2.0.2 </span>
-<span class="co"># [29] grid_3.6.3       reshape_0.8.8    glue_1.4.2       R6_2.4.1.9000   </span>
-<span class="co"># [33] rmarkdown_2.3    purrr_0.3.4      ggplot2_3.3.2    magrittr_1.5    </span>
-<span class="co"># [37] scales_1.1.1     htmltools_0.4.0  ellipsis_0.3.1   MASS_7.3-51.5   </span>
-<span class="co"># [41] assertthat_0.2.1 colorspace_2.0-0 stringi_1.4.6    munsell_0.5.0   </span>
-<span class="co"># [45] crayon_1.3.4</span></pre></body></html></div>
+<span class="co">#  [1] Rcpp_1.0.5        highr_0.8         plyr_1.8.6        compiler_4.0.3   </span>
+<span class="co">#  [5] pillar_1.4.7      tools_4.0.3       digest_0.6.27     evaluate_0.14    </span>
+<span class="co">#  [9] memoise_1.1.0     lifecycle_0.2.0   tibble_3.0.4      gtable_0.3.0     </span>
+<span class="co"># [13] lattice_0.20-41   pkgconfig_2.0.3   rlang_0.4.9       Matrix_1.2-18    </span>
+<span class="co"># [17] rstudioapi_0.13   yaml_2.2.1        pkgdown_1.6.1     xfun_0.19        </span>
+<span class="co"># [21] stringr_1.4.0     dplyr_1.0.2       knitr_1.30        generics_0.1.0   </span>
+<span class="co"># [25] desc_1.2.0        fs_1.5.0          vctrs_0.3.5       systemfonts_0.3.2</span>
+<span class="co"># [29] tidyselect_1.1.0  rprojroot_2.0.2   grid_4.0.3        reshape_0.8.8    </span>
+<span class="co"># [33] glue_1.4.2        R6_2.5.0          textshaping_0.2.1 rmarkdown_2.5    </span>
+<span class="co"># [37] purrr_0.3.4       ggplot2_3.3.2     magrittr_2.0.1    scales_1.1.1     </span>
+<span class="co"># [41] htmltools_0.5.0   ellipsis_0.3.1    assertthat_0.2.1  colorspace_2.0-0 </span>
+<span class="co"># [45] ragg_0.4.0        stringi_1.5.3     munsell_0.5.0     crayon_1.3.4</span></code></pre></div>
 </div>
   </div>
 
@@ -359,7 +371,7 @@
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>

@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Summarize susie fit. — summary.susie • susieR</title>
+<title>Summarize Susie Fit. — summary.susie • susieR</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,8 @@
 
 
 
-<meta property="og:title" content="Summarize susie fit. — summary.susie" />
-<meta property="og:description" content="Summarize susie fit." />
+<meta property="og:title" content="Summarize Susie Fit. — summary.susie" />
+<meta property="og:description" content="summary method for the &amp;#8220;susie&amp;#8221; class." />
 
 
 
@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.9.53</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.9.57</span>
       </span>
     </div>
 
@@ -105,17 +105,20 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Summarize susie fit.</h1>
+    <h1>Summarize Susie Fit.</h1>
     <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/summary.susie.R'><code>R/summary.susie.R</code></a></small>
     <div class="hidden name"><code>summary.susie.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Summarize susie fit.</p>
+    <p><code>summary</code> method for the &#8220;susie&#8221; class.</p>
     </div>
 
     <pre class="usage"><span class='co'># S3 method for susie</span>
-<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='no'>object</span>, <span class='no'>...</span>)</pre>
+<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span><span class='op'>(</span><span class='va'>object</span>, <span class='va'>...</span><span class='op'>)</span>
+
+<span class='co'># S3 method for summary.susie</span>
+<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>...</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -127,14 +130,18 @@
     <tr>
       <th>...</th>
       <td><p>Additional arguments passed to the generic <code>summary</code>
-method.</p></td>
+or <code>print.summary</code> method.</p></td>
+    </tr>
+    <tr>
+      <th>x</th>
+      <td><p>A susie summary.</p></td>
     </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>A list containing a data frame of variables and a data
-  frame of credible sets.</p>
+    <p><code>summary.susie</code> returns a list containing a data frame
+  of variables and a data frame of credible sets.</p>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
@@ -151,7 +158,7 @@ method.</p></td>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>

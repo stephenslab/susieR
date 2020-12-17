@@ -62,7 +62,7 @@ susie_rss(
   verbose = FALSE,
   track_fit = FALSE,
   check_R = TRUE,
-  check_z = TRUE
+  check_z = FALSE
 )
 
 susie_suff_stat(

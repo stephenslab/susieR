@@ -137,7 +137,7 @@ Using susie_rss function with LD from reference panel, the model identifies 10 C
 ```{r}
 fitted_rss_ref <- susie_rss(z_scores, R_ref, L = 10,
                             estimate_residual_variance = TRUE, 
-                            estimate_prior_variance = TRUE, check_z = F)
+                            estimate_prior_variance = TRUE)
 ```
 
 ```{r}
@@ -156,14 +156,14 @@ where `X_ref` is column-standardized. This modification is implemented in `susie
 ```{r}
 fitted_rss_ref_cor <- susie_rss(z_scores, R_ref, z_ld_weight = 1/500, L = 10,
                                 estimate_residual_variance = TRUE, 
-                                estimate_prior_variance = TRUE, check_z = F)
+                                estimate_prior_variance = TRUE)
 ```
 
 ```{r}
 summary(fitted_rss_ref_cor)$cs
 ```
 
-The model identifies 2 CSes with 2 true signals. It misses 1 true signal, but it is a better fit than using the correlation matrix from the reference pancel directly.
+The model identifies 2 CSes with 2 true signals. It misses 1 true signal, but it is a better fit than using the correlation matrix from the reference panel directly.
 
 ```{r}
 susie_plot(fitted_rss_ref_cor, y="PIP", b=b)
