@@ -122,6 +122,7 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
     b = rep(0,length(p))
   if(is.null(pos))
     pos = 1:length(p)
+  start = 0
   if (inherits(pos,"list")) {
       
     # Check input.
@@ -157,7 +158,7 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
   legend_text = list(col = vector(),purity = vector(),size = vector())
   scipen0 = options()$scipen
   options(scipen = 10)
-  plot(pos,p[pos],ylab = ylab,pch = 16,...)
+  plot(pos + start,p[pos],ylab = ylab,xlab='variable',pch = 16,...)
   if (is_susie && !is.null(model$sets$cs)) {
     for(i in rev(1:nrow(model$alpha))){
       if (!is.null(model$sets$cs_index) && !(i %in% model$sets$cs_index)) 
@@ -178,9 +179,9 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
       if (add_bar) {
         y0 = rep(0,length(x0))
         x1 = x0
-        segments(x0,y0,x1,y1,lwd = 1.5,col = "gray")
+        segments(x0+start,y0,x1+start,y1,lwd = 1.5,col = "gray")
       }
-      points(x0,y1,col = head(color,1),cex = 1.5,lwd = 2.5)
+      points(x0+start,y1,col = head(color,1),cex = 1.5,lwd = 2.5)
       legend_text$col = append(legend_text$col,head(color,1))
       
       # Rotate color.
@@ -203,7 +204,7 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
              pch = 15)
     }
   }
-  points(pos[b != 0],p[b != 0],col = 2,pch = 16)
+  points(pos[b != 0] + start,p[b != 0] + start,col = 2,pch = 16)
   options(scipen = scipen0)
   return(invisible())
 }
