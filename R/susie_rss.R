@@ -126,13 +126,10 @@ susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
     proj = check_projection(R,z)
     if (!proj$status)
       warning("Input z does not lie in the space of non-zero eigenvectors ",
-              "of R. The result is thus not reliable. Please refer to ",
-              "https://github.com/stephenslab/susieR/issues/91 for a ",
-              "possible solution.")
+              "of R.")
     else
       message("Input z is in space spanned by the non-zero eigenvectors ",
-              "of R. You can safely set \"check_z = FALSE\" when you ",
-              "rerun the analysis, to save computation.")
+              "of R.")
   }
   R = set_R_attributes(R,r_tol)
 
@@ -189,7 +186,7 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
                             max_iter = 100, s_init = NULL, intercept_value = 0,
                             coverage = 0.95, min_abs_corr = 0.5,
                             tol = 1e-3, verbose = FALSE, track_fit = FALSE,
-                            check_R = TRUE, check_z = TRUE) {
+                            check_R = TRUE, check_z = FASE) {
 
   # Check input R.
   if (nrow(R) != length(z))
@@ -253,13 +250,10 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
     proj = check_projection(R,z)
     if (!proj$status)
       warning("Input z does not lie in the space of non-zero eigenvectors ",
-              "of R. The result is thus not reliable. Please refer to ",
-              "https://github.com/stephenslab/susieR/issues/91 for a ",
-              "possible solution.")
+              "of R.")
     else
       message("Input z is in space spanned by the non-zero eigenvectors of ",
-              "R. You can safely set \"check_z = FALSE\" when you rerun the ",
-              "analysis, to save computation.")
+              "R.")
   }
   R = set_R_attributes(R,r_tol)
 
