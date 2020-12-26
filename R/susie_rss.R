@@ -186,7 +186,7 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
                             max_iter = 100, s_init = NULL, intercept_value = 0,
                             coverage = 0.95, min_abs_corr = 0.5,
                             tol = 1e-3, verbose = FALSE, track_fit = FALSE,
-                            check_R = TRUE, check_z = FASE) {
+                            check_R = TRUE, check_z = FALSE) {
 
   # Check input R.
   if (nrow(R) != length(z))
