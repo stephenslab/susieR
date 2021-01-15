@@ -314,6 +314,43 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
   }
 }
 
+#' @title Get correlations between CS, using variable with maximum PIP from each CS
+#'
+#' @param X n by p matrix of values of the p variables (covariates) in
+#'   n samples. When provided, correlation between variables will be
+#'   computed and used to remove CSs whose minimum correlation among
+#'   variables is smaller than \code{min_abs_corr}.
+#'
+#' @param Xcorr p by p matrix of correlations between variables
+#'   (covariates). When provided, it will be used to remove CSs whose
+#'   minimum correlation among variables is smaller than
+#'   \code{min_abs_corr}.
+#'
+#' @keywords internal
+#'
+get_cs_correlation = function (res, X = NULL, Xcorr = NULL, max = TRUE) {
+  if (is.null(res$sets$cs)) return(NULL)
+  if (!is.null(X) && !is.null(Xcorr))
+    stop("Only one of X or Xcorr should be specified")
+  if (is.null(Xcorr) && is.null(X)) 
+    stop("One of X or Xcorr must be specified")
+  if (!is.null(Xcorr) && !is_symmetric_matrix(Xcorr))
+    stop("Xcorr matrix must be symmetric")
+  # Get index for the best PIP per CS
+  max_pip_idx = sapply(res$sets$cs, function(cs) cs[which.max(res$pip[cs])])
+  if (is.null(Xcorr)) {
+    X_sub = X[,max_pip_idx]
+    cs_corr = muffled_corr(as.matrix(X_sub))
+  } else {
+    cs_corr = Xcorr[max_pip_idx, max_pip_idx]
+  }
+  if (max) {
+    diag(cs_corr) = 0
+    cs_corr = max(abs(cs_corr))
+  }
+  return(cs_corr)
+}
+
 #' @rdname susie_get_methods
 #'
 #' @param prune_by_cs Whether or not to ignore single effects not in
