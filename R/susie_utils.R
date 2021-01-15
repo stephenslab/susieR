@@ -328,7 +328,7 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
 #'
 #' @keywords internal
 #'
-get_cs_correlation = function (res, X = NULL, Xcorr = NULL, max = TRUE) {
+get_cs_correlation = function (res, X = NULL, Xcorr = NULL, max = FALSE) {
   if (is.null(res$sets$cs)) return(NULL)
   if (!is.null(X) && !is.null(Xcorr))
     stop("Only one of X or Xcorr should be specified")
@@ -345,8 +345,7 @@ get_cs_correlation = function (res, X = NULL, Xcorr = NULL, max = TRUE) {
     cs_corr = Xcorr[max_pip_idx, max_pip_idx]
   }
   if (max) {
-    diag(cs_corr) = 0
-    cs_corr = max(abs(cs_corr))
+    cs_corr = max(abs(cs_corr[upper.tri(cs_corr)]))
   }
   return(cs_corr)
 }
