@@ -251,15 +251,10 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
     stop("Only one of X or Xcorr should be specified")
   if (!is.null(Xcorr) && !is_symmetric_matrix(Xcorr))
     stop("Xcorr matrix must be symmetric")
-  if (inherits(res,"susie")) {
-    null_index = res$null_index
-    if (is.numeric(res$V))
-      include_idx = res$V > 1e-9
-    else
-      include_idx = rep(TRUE,nrow(res$alpha))
-  } else
-    null_index = 0
-
+  null_index = 0
+  include_idx = rep(TRUE,nrow(res$alpha))
+  if (!is.null(res$null_index)) null_index = res$null_index
+  if (is.numeric(res$V)) include_idx = res$V > 1e-9
   # L x P binary matrix.
   status = in_CS(res$alpha,coverage)
 
