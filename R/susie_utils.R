@@ -329,7 +329,7 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
 #' @keywords internal
 #'
 get_cs_correlation = function (res, X = NULL, Xcorr = NULL, max = FALSE) {
-  if (is.null(res$sets$cs) || length(res$sets$cs) == 1) return(NULL)
+  if (is.null(res$sets$cs) || length(res$sets$cs) == 1) return(NA)
   if (!is.null(X) && !is.null(Xcorr))
     stop("Only one of X or Xcorr should be specified")
   if (is.null(Xcorr) && is.null(X)) 
