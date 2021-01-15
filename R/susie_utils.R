@@ -334,7 +334,7 @@ susie_get_pip = function (res, prune_by_cs = FALSE, prior_tol = 1e-9) {
   if (inherits(res,"susie")) {
 
     # Drop null weight columns.
-    if (res$null_index > 0)
+    if (!is.null(res$null_index) && res$null_index > 0)
       res$alpha = res$alpha[,-res$null_index,drop=FALSE]
 
     # Drop the single-effects with estimated prior of zero.
