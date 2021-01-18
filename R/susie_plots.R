@@ -158,7 +158,13 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
   legend_text = list(col = vector(),purity = vector(),size = vector())
   scipen0 = options()$scipen
   options(scipen = 10)
-  plot(pos + start,p[pos],ylab = ylab,xlab='variable',pch = 16,...)
+  args = list(...)
+  if (!exists("xlab", args)) args$xlab = 'variable'
+  if (!exists("ylab", args)) args$ylab = ylab
+  if (!exists("pch", args)) args$pch = 16
+  args$x = pos + start
+  args$y = p[pos]
+  do.call(plot, args)
   if (is_susie && !is.null(model$sets$cs)) {
     for(i in rev(1:nrow(model$alpha))){
       if (!is.null(model$sets$cs_index) && !(i %in% model$sets$cs_index)) 
