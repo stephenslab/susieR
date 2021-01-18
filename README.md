@@ -33,7 +33,7 @@ Kaiqian Zhang, and Matthew Stephens from the
 [Stephens Lab](http://stephenslab.uchicago.edu) at the University of
 Chicago.
 
-This is very much work in progress. Please
+Please
 [post issues](https://github.com/stephenslab/susieR/issues) to ask
 questions, get our support or provide us feedback; please
 [send pull requests](https://github.com/stephenslab/susieR/pulls) if
