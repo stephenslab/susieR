@@ -16,7 +16,7 @@
 #'   matrix. The LD matrix used in the model is \code{cov2cor((1-w)*R +
 #'   w*tcrossprod(z))}, where \code{w = z_ld_weight}. We recommend
 #'   setting \code{z_ld_weight} as 1/n, where n is the number of
-#'   samples in the reference panel.
+#'   samples in the reference panel used to compute R.
 #'
 #' @param prior_variance The prior variance. It is either a scalar or
 #'   a vector of length L.
