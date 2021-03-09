@@ -183,7 +183,16 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
   s$Xr = NULL
   s$XtXr = rep(0,p)
 
-  if (!missing(s_init)) {
+  if (!missing(s_init)&& !is.null(s_init)) {
+    if (!inherits(s_init,"susie"))
+      stop("s_init should be a susie object")
+    if (max(s_init$alpha) > 1 || min(s_init$alpha) < 0)
+      stop("s_init$alpha has invalid values outside range [0,1]; please ",
+           "check your input")
+    # First, remove effects with s_init$V = 0
+    s_init = susie_prune_single_effects(s_init, verbose=FALSE)
+    # Then prune or expand
+    s_init = susie_prune_single_effects(s_init, L, s$V, verbose)
     s = modifyList(s,s_init)
     s = init_finalize(s,X = XtX)
     s$XtXr = s$Xr
