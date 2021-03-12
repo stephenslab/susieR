@@ -179,7 +179,7 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
 
   # Initialize susie fit.
   s = init_setup(0,p,L,scaled_prior_variance,residual_variance,prior_weights,
-                 null_weight,yty/(n-1))
+                 null_weight,yty/(n-1),standardize)
   s$Xr = NULL
   s$XtXr = rep(0,p)
 
