@@ -136,6 +136,12 @@ optimize_prior_variance = function (optimize_V, betahat, shat2, prior_weights,
           fn = neg.loglik.logscale,betahat = betahat,shat2 = shat2,
           prior_weights = prior_weights,method = "Brent",lower = -30,
           upper = 15)$par
+      ## if the estimated one is worse than current one, don't change it.
+      if(neg.loglik.logscale(lV, betahat = betahat,shat2 = shat2,prior_weights = prior_weights) > 
+         neg.loglik.logscale(log(V), betahat = betahat,
+                             shat2 = shat2,prior_weights = prior_weights)){
+        lV = log(V)
+      }
       V = exp(lV)
     } else if (optimize_V == "uniroot")
       V = est_V_uniroot(betahat,shat2,prior_weights)

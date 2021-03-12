@@ -88,6 +88,11 @@ optimize_prior_variance_rss = function (optimize_V, z, Sigma, prior_weights,
                  fn = neg.loglik_z.logscale_rss,z = z,Sigma = Sigma,
                  prior_weights = prior_weights,method = "Brent",
                  lower = -30,upper = 15)$par
+      ## if the estimated one is worse than current one, don't change it.
+      if(neg.loglik_z.logscale_rss(lV, z = z,Sigma = Sigma,prior_weights = prior_weights) > 
+         neg.loglik_z.logscale_rss(log(V), z = z,Sigma = Sigma,prior_weights = prior_weights)){
+        lV = log(V)
+      }
       V = exp(lV)
     } else if (optimize_V == "EM")
       V = sum(alpha * post_mean2)
