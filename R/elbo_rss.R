@@ -3,22 +3,22 @@
 # @param z length p vector
 # @param s a susie fit object
 get_objective_rss = function (R, z, s) 
-  Eloglik_rss(R,z,s) - sum(s$KL)
+  Eloglik_rss(s$sigma2, R,z,s) - sum(s$KL)
 
 # @title expected loglikelihood for a susie fit
-Eloglik_rss = function (R, z, s) {
-  d = s$sigma2 * attr(R,"eigen")$values + attr(R,"lambda")
+Eloglik_rss = function (sigma2, R, z, s) {
+  d = sigma2 * attr(R,"eigen")$values + attr(R,"lambda")
   if(attr(R,"lambda") == 0)
-    result = -(sum(d != 0)/2) * log(2*pi*s$sigma2) - 0.5*get_ER2_rss(R,z,s)
+    result = -(sum(d != 0)/2) * log(2*pi*sigma2) - 0.5*get_ER2_rss(sigma2, R,z,s)
   else
-    result = -(length(z)/2)*log(2*pi) - 0.5*sum(log(d)) - 0.5*get_ER2_rss(R,z,s)
+    result = -(length(z)/2)*log(2*pi) - 0.5*sum(log(d)) - 0.5*get_ER2_rss(sigma2, R,z,s)
   return(result)
 }
 
 # @title expected squared residuals
 # @importFrom Matrix diag
-get_ER2_rss = function (R, z, s) {
-  d = s$sigma2 * attr(R,"eigen")$values + attr(R,"lambda")
+get_ER2_rss = function (sigma2, R, z, s) {
+  d = sigma2 * attr(R,"eigen")$values + attr(R,"lambda")
   Dinv = 1/d
   Dinv[is.infinite(Dinv)] = 0
   SinvR = attr(R,"eigen")$vectors %*%
@@ -28,7 +28,7 @@ get_ER2_rss = function (R, z, s) {
 
   Z = s$alpha * s$mu
   if(attr(R,"lambda") == 0)
-    RSinvR = R/s$sigma2
+    RSinvR = R/sigma2
   else
     RSinvR = R %*% SinvR
   RZ2 = sum((Z%*%RSinvR) * Z)

@@ -9,7 +9,7 @@ test_that("get_ER2_rss (lambda = 0) agrees with previous version", with(simulate
   R = set_R_attributes(R, 1e-08)
   attr(R, 'lambda') = 0
 
-  res = get_ER2_rss(R, z, s)
+  res = get_ER2_rss(s$sigma2, R, z, s)
 
   expect_equal(res, original.res, tol=1E-4)
 }))
@@ -23,7 +23,7 @@ test_that("get_ER2_rss (lambda = 1) agrees with previous version", with(simulate
   R = set_R_attributes(R, 1e-08)
   attr(R, 'lambda') = 1
 
-  res = get_ER2_rss(R, z, s)
+  res = get_ER2_rss(s$sigma2, R, z, s)
 
   expect_equal(res, original.res, tol=1E-4)
 }))

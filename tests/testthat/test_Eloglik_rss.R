@@ -9,7 +9,7 @@ test_that("Eloglik_rss (lambda = 0) agrees with previous version", with(simulate
   R = set_R_attributes(R, 1e-08)
   attr(R, 'lambda') = 0
 
-  res  = Eloglik_rss(R, z, s)
+  res  = Eloglik_rss(s$sigma2, R, z, s)
 
   expect_equal(res, original.res, tol=1E-4)
 }))
@@ -23,7 +23,7 @@ test_that("Eloglik_rss (lambda = 1) agrees with previous version", with(simulate
   R = set_R_attributes(R, 1e-08)
   attr(R, 'lambda') = 1
 
-  res  = Eloglik_rss(R, z, s)
+  res  = Eloglik_rss(s$sigma2, R, z, s)
 
   expect_equal(res, original.res, tol=1E-4)
 }))

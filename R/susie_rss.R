@@ -175,7 +175,7 @@ susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
 # all elements equally likely to be non-zero. The prior on the
 # non-zero element is N(0,var = prior_variance).
 susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
-                            L = 10, lambda = 0,
+                            L = 10, lambda = 0, 
                             prior_variance = 50, residual_variance = NULL,
                             r_tol = 1e-08, prior_weights = NULL,
                             null_weight = NULL,
@@ -219,6 +219,7 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
     warning("NA values in z-scores are replaced with 0")
     z[is.na(z)] = 0
   }
+  
   if (is.numeric(null_weight) && null_weight == 0)
     null_weight = NULL
   if (!is.null(null_weight)) {
@@ -244,7 +245,7 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
                 ". You can bypass this by \"check_R = FALSE\" which instead ",
                 "sets negative eigenvalues to 0 to allow for continued ",
                 "computations."))
-
+  
   # Check whether z in space spanned by the non-zero eigenvectors of R.
   if (check_z) {
     proj = check_projection(R,z)
@@ -257,6 +258,16 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
   }
   R = set_R_attributes(R,r_tol)
 
+  if (lambda == 'estimate'){
+    colspace = which(attr(R,"eigen")$values > 0)
+    if(length(colspace) == length(z)){
+      lambda = 0
+    }else{
+      znull = crossprod(attr(R,"eigen")$vectors[,-colspace], z) # U2^T z
+      lambda = sum(znull^2)/length(znull)
+    }
+  }
+  
   # Initialize susie fit.
   s = init_setup_rss(p,L,prior_variance,residual_variance,prior_weights,
                      null_weight)
@@ -275,6 +286,7 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
   } else
     s = init_finalize_rss(s)
 
+  s$sigma2 = s$sigma2 - lambda
   estimate_prior_method = match.arg(estimate_prior_method)
 
   # Intialize elbo to NA.
@@ -304,25 +316,18 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
     }
     if (estimate_residual_variance) {
       if (lambda == 0) {
-        tmp = s
-        tmp$sigma2 = 1
-        est_sigma2 = (1/sum(attr(R,"eigen")$values != 0))*get_ER2_rss(R,z,tmp)
+        est_sigma2 = (1/sum(attr(R,"eigen")$values != 0))*get_ER2_rss(1,R,z,s)
         if (est_sigma2 < 0)
           stop("Estimating residual variance failed: the estimated value ",
                "is negative")
         if (est_sigma2 > 1)
           est_sigma2 = 1
       } else {
-        sigma2 = seq(0.1,1,by = 0.1)
-        tmp = s
-        obj = numeric(length(sigma2))
-        for(j in 1:length(sigma2)){
-          tmp$sigma2 = sigma2[j]
-          obj[j] = Eloglik_rss(R,z,tmp)
+        est_sigma2 = optimize(Eloglik_rss, interval = c(1e-4, 1-lambda), R = R, z = z, s = s, maximum = TRUE)$maximum
+        if(Eloglik_rss(est_sigma2, R, z, s) < Eloglik_rss(1-lambda, R, z, s)){
+          est_sigma2 = 1-lambda
         }
-        est_sigma2 = sigma2[which.max(obj)]
       }
-
       s$sigma2 = est_sigma2
 
       if (verbose)
@@ -336,6 +341,7 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
   elbo = elbo[2:(i+1)]
   s$elbo = elbo
   s$niter = i
+  s$lambda = lambda
 
   if (is.null(s$converged)) {
     warning(paste("IBSS algorithm did not converge in",max_iter,"iterations!"))
