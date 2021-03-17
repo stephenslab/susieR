@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Summarize Susie Fit. — summary.susie • susieR</title>
+<title>Get correlations between CS, using variable with maximum PIP from each CS — get_cs_correlation • susieR</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,8 @@
 
 
 
-<meta property="og:title" content="Summarize Susie Fit. — summary.susie" />
-<meta property="og:description" content="summary method for the &amp;#8220;susie&amp;#8221; class." />
+<meta property="og:title" content="Get correlations between CS, using variable with maximum PIP from each CS — get_cs_correlation" />
+<meta property="og:description" content="Get correlations between CS, using variable with maximum PIP from each CS" />
 
 
 
@@ -105,43 +105,36 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Summarize Susie Fit.</h1>
-    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/summary.susie.R'><code>R/summary.susie.R</code></a></small>
-    <div class="hidden name"><code>summary.susie.Rd</code></div>
+    <h1>Get correlations between CS, using variable with maximum PIP from each CS</h1>
+    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/susie_utils.R'><code>R/susie_utils.R</code></a></small>
+    <div class="hidden name"><code>get_cs_correlation.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p><code>summary</code> method for the &#8220;susie&#8221; class.</p>
+    <p>Get correlations between CS, using variable with maximum PIP from each CS</p>
     </div>
 
-    <pre class="usage"><span class='co'># S3 method for susie</span>
-<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span><span class='op'>(</span><span class='va'>object</span>, <span class='va'>...</span><span class='op'>)</span>
-
-<span class='co'># S3 method for summary.susie</span>
-<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>...</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>get_cs_correlation</span><span class='op'>(</span><span class='va'>res</span>, X <span class='op'>=</span> <span class='cn'>NULL</span>, Xcorr <span class='op'>=</span> <span class='cn'>NULL</span>, max <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>object</th>
-      <td><p>A susie fit.</p></td>
+      <th>X</th>
+      <td><p>n by p matrix of values of the p variables (covariates) in
+n samples. When provided, correlation between variables will be
+computed and used to remove CSs whose minimum correlation among
+variables is smaller than <code>min_abs_corr</code>.</p></td>
     </tr>
     <tr>
-      <th>...</th>
-      <td><p>Additional arguments passed to the generic <code>summary</code>
-or <code>print.summary</code> method.</p></td>
-    </tr>
-    <tr>
-      <th>x</th>
-      <td><p>A susie summary.</p></td>
+      <th>Xcorr</th>
+      <td><p>p by p matrix of correlations between variables
+(covariates). When provided, it will be used to remove CSs whose
+minimum correlation among variables is smaller than
+<code>min_abs_corr</code>.</p></td>
     </tr>
     </table>
 
-    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
-
-    <p><code>summary.susie</code> returns a list containing a data frame
-  of variables and a data frame of credible sets.</p>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

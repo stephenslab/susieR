@@ -83,7 +83,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.9.57</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.10.1</span>
       </span>
     </div>
 
@@ -176,7 +176,7 @@
   r_tol <span class='op'>=</span> <span class='fl'>1e-08</span>,
   prior_weights <span class='op'>=</span> <span class='cn'>NULL</span>,
   null_weight <span class='op'>=</span> <span class='cn'>NULL</span>,
-  estimate_residual_variance <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  estimate_residual_variance <span class='op'>=</span> <span class='cn'>FALSE</span>,
   estimate_prior_variance <span class='op'>=</span> <span class='cn'>TRUE</span>,
   estimate_prior_method <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"optim"</span>, <span class='st'>"EM"</span>, <span class='st'>"simple"</span><span class='op'>)</span>,
   check_null_threshold <span class='op'>=</span> <span class='fl'>0</span>,
@@ -189,8 +189,7 @@
   tol <span class='op'>=</span> <span class='fl'>0.001</span>,
   verbose <span class='op'>=</span> <span class='cn'>FALSE</span>,
   track_fit <span class='op'>=</span> <span class='cn'>FALSE</span>,
-  check_R <span class='op'>=</span> <span class='cn'>TRUE</span>,
-  check_z <span class='op'>=</span> <span class='cn'>FALSE</span>
+  check_R <span class='op'>=</span> <span class='cn'>FALSE</span>
 <span class='op'>)</span>
 
 <span class='fu'>susie_suff_stat</span><span class='op'>(</span>
@@ -434,10 +433,11 @@ than this threshold are not used.</p></td>
     <tr>
       <th>z_ld_weight</th>
       <td><p>The weights assigned to the z scores in the LD
-matrix. The LD matrix used in the model is <code><a href='https://rdrr.io/r/stats/cor.html'>cov2cor((1-w)*R +
-w*tcrossprod(z))</a></code>, where <code>w = z_ld_weight</code>. We recommend
+matrix. This feature is still under development.
+The LD matrix used in the model is <code><a href='https://rdrr.io/r/stats/cor.html'>cov2cor((1-w)*R +
+w*tcrossprod(z))</a></code>, where <code>w = z_ld_weight</code>. One way
 setting <code>z_ld_weight</code> as 1/n, where n is the number of
-samples.</p></td>
+samples in the reference panel used to compute R.</p></td>
     </tr>
     <tr>
       <th>prior_variance</th>
@@ -461,11 +461,6 @@ to include an intercept term (and so only a p-vector is returned).</p></td>
       <th>check_R</th>
       <td><p>If <code>check_R = TRUE</code>, check that <code>R</code> is
 positive semidefinite.</p></td>
-    </tr>
-    <tr>
-      <th>check_z</th>
-      <td><p>If <code>check_z = TRUE</code>, check that <code>z</code> is in
-space spanned by the non-zero eigenvectors of <code>R</code>.</p></td>
     </tr>
     <tr>
       <th>bhat</th>
@@ -601,7 +596,7 @@ X and y to have variance 1 (see examples).</p>
 <p><code>susie_rss</code> performs sum of single-effect linear regression
 with z scores; all posterior calculations are for z-scores. This
 function fits the regression model \(z = \sum_l R*b_l + e\),
-where e is \(N(0,residual_var*R)\) and \(\sum_l b_l\) is a
+where e is \(N(0,R)\) and \(\sum_l b_l\) is a
 p-vector of effects to be estimated. The required summary data are
 the p by p correlation matrix, <code>R</code>, and the p-vector
 <code>z</code>. The summary stats should come from the same individuals

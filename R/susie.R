@@ -26,19 +26,19 @@
 #' the vector y should be centered to have mean zero before computing
 #' these summary statistics; you may also want to scale each column of
 #' X and y to have variance 1 (see examples).
-#' 
+#'
 #' \code{susie_rss} performs sum of single-effect linear regression
 #' with z scores; all posterior calculations are for z-scores. This
 #' function fits the regression model \eqn{z = \sum_l R*b_l + e},
-#' where e is \eqn{N(0,residual_var*R)} and \eqn{\sum_l b_l} is a
+#' where e is \eqn{N(0,R)} and \eqn{\sum_l b_l} is a
 #' p-vector of effects to be estimated. The required summary data are
 #' the p by p correlation matrix, \code{R}, and the p-vector
 #' \code{z}. The summary stats should come from the same individuals
 #' (samples).
-#' 
-#' 
-#' 
-#' 
+#'
+#'
+#'
+#'
 #' susie_auto is an attempt to automate reliable running of susie even
 #' on hard problems. It implements a three-stage strategy for each L:
 #' first, fit susie with very small residual error; next, estimate
@@ -162,7 +162,7 @@
 #' @param residual_variance_lowerbound Lower limit on the estimated
 #'   residual variance. It is only relevant when
 #'   \code{estimate_residual_variance = TRUE}.
-#' 
+#'
 #' @return A \code{"susie"} object with some or all of the following
 #'   elements:
 #'
@@ -178,9 +178,9 @@
 #'   * mu)}.}
 #'
 #' \item{lbf}{log-Bayes Factor for each single effect.}
-#' 
+#'
 #' \item{lbf_variable}{log-Bayes Factor for each variable and single effect.}
-#' 
+#'
 #' \item{intercept}{Intercept (fixed or estimated).}
 #'
 #' \item{sigma2}{Residual variance (fixed or estimated).}
@@ -213,9 +213,9 @@
 #'
 #' \item{XtXr}{A p-vector of \code{t(X)} times the fitted values,
 #'   \code{X \%*\% colSums(alpha*mu)}.}
-#' 
+#'
 #' \code{susie_rss} also outputs:
-#' 
+#'
 #' \item{Rr}{An p-vector of \code{t(X)} times fitted values, \code{X
 #'   \%*\% colSums(alpha*mu)}.}
 #'
@@ -264,7 +264,7 @@
 #' abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
 #' plot(y,predict(res4))
 #' abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
-#' 
+#'
 #' @importFrom stats var
 #' @importFrom utils modifyList
 #'
@@ -323,10 +323,10 @@ susie <- function (X,Y,L = min(10,ncol(X)),
       samples_kept = which(!is.na(Y))
       Y = Y[samples_kept]
       X = X[samples_kept,]
-    } else 
+    } else
       stop("Input Y must not contain missing values")
   }
-  
+
   # Check input Y.
   p = ncol(X)
   n = nrow(X)
@@ -336,14 +336,14 @@ susie <- function (X,Y,L = min(10,ncol(X)),
   if (intercept)
     Y = Y - mean_y
   X = set_X_attributes(X,center = intercept,scale = standardize)
-  
+
   # Initialize susie fit.
   s = init_setup(n,p,L,scaled_prior_variance,residual_variance,prior_weights,
                  null_weight,as.numeric(var(Y)),standardize)
   if (!missing(s_init) && !is.null(s_init)) {
     if (!inherits(s_init,"susie"))
       stop("s_init should be a susie object")
-    if (max(s_init$alpha) > 1 || min(s_init$alpha) < 0) 
+    if (max(s_init$alpha) > 1 || min(s_init$alpha) < 0)
       stop("s_init$alpha has invalid values outside range [0,1]; please ",
            "check your input")
     # First, remove effects with s_init$V = 0
@@ -352,7 +352,7 @@ susie <- function (X,Y,L = min(10,ncol(X)),
     s_init = susie_prune_single_effects(s_init, L, s$V, verbose)
     s = modifyList(s,s_init)
     s = init_finalize(s,X = X)
-  } else { 
+  } else {
     s = init_finalize(s)
   }
   # Initialize elbo to NA.
@@ -367,7 +367,7 @@ susie <- function (X,Y,L = min(10,ncol(X)),
                            check_null_threshold)
     if (verbose)
       print(paste0("objective:",get_objective(X,Y,s)))
-    
+
     # Compute objective before updating residual variance because part
     # of the objective s$kl has already been computed under the
     # residual variance before the update.
@@ -387,7 +387,7 @@ susie <- function (X,Y,L = min(10,ncol(X)),
   }
 
   # Remove first (infinite) entry, and trailing NAs.
-  elbo = elbo[2:(i+1)] 
+  elbo = elbo[2:(i+1)]
   s$elbo = elbo
   s$niter = i
 
@@ -400,7 +400,7 @@ susie <- function (X,Y,L = min(10,ncol(X)),
 
     # Estimate unshrunk intercept.
     s$intercept = mean_y - sum(attr(X,"scaled:center") *
-      (colSums(s$alpha * s$mu)/attr(X,"scaled:scale"))) 
+      (colSums(s$alpha * s$mu)/attr(X,"scaled:scale")))
     s$fitted = s$Xr + mean_y
   } else {
     s$intercept = 0
@@ -417,7 +417,7 @@ susie <- function (X,Y,L = min(10,ncol(X)),
                           min_abs_corr = min_abs_corr)
     s$pip = susie_get_pip(s,prune_by_cs = FALSE,prior_tol = prior_tol)
   }
-  
+
   if (!is.null(colnames(X))) {
     variable_names = colnames(X)
     if (!is.null(null_weight))
@@ -429,11 +429,11 @@ susie <- function (X,Y,L = min(10,ncol(X)),
   }
   # report z-scores from univariate regression.
   if (compute_univariate_zscore) {
-    if (!is.null(null_weight) && null_weight != 0) 
+    if (!is.null(null_weight) && null_weight != 0)
       X = X[,1:(ncol(X) - 1)]
     s$z = calc_z(X,Y,center = intercept,scale = standardize)
   }
-  
+
   # For prediction.
   s$X_column_scale_factors = attr(X,"scaled:scale")
   return(s)

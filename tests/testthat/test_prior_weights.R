@@ -29,8 +29,8 @@ test_that("RSS: prior weights specification agrees with default", with(simulate(
   ss = univariate_regression(X, y)
   R = cor(X)
   set.seed(1) # otherwise it might fail because the two results will be slighly different
-  res1 = susie_rss(z = ss$betahat/ss$sebetahat, R = R, estimate_prior_variance = TRUE, check_z = FALSE)
-  res2 = susie_rss(z = ss$betahat/ss$sebetahat, R = R, estimate_prior_variance = TRUE, check_z = FALSE,
+  res1 = susie_rss(z = ss$betahat/ss$sebetahat, R = R, estimate_prior_variance = TRUE)
+  res2 = susie_rss(z = ss$betahat/ss$sebetahat, R = R, estimate_prior_variance = TRUE,
                    prior_weights = rep(1/ncol(R), ncol(R)))
   expect_equal_susie_suff_stat(res1,res2)
 }))

@@ -48,7 +48,7 @@ susie_rss(
   r_tol = 1e-08,
   prior_weights = NULL,
   null_weight = NULL,
-  estimate_residual_variance = TRUE,
+  estimate_residual_variance = FALSE,
   estimate_prior_variance = TRUE,
   estimate_prior_method = c("optim", "EM", "simple"),
   check_null_threshold = 0,
@@ -61,8 +61,7 @@ susie_rss(
   tol = 0.001,
   verbose = FALSE,
   track_fit = FALSE,
-  check_R = TRUE,
-  check_z = FALSE
+  check_R = FALSE
 )
 
 susie_suff_stat(
@@ -244,10 +243,11 @@ matrix may produce unreliable results.}
 than this threshold are not used.}
 
 \item{z_ld_weight}{The weights assigned to the z scores in the LD
-matrix. The LD matrix used in the model is \code{cov2cor((1-w)*R +
-w*tcrossprod(z))}, where \code{w = z_ld_weight}. We recommend
+matrix. This feature is still under development.
+The LD matrix used in the model is \code{cov2cor((1-w)*R +
+w*tcrossprod(z))}, where \code{w = z_ld_weight}. One way
 setting \code{z_ld_weight} as 1/n, where n is the number of
-samples.}
+samples in the reference panel used to compute R.}
 
 \item{prior_variance}{The prior variance. It is either a scalar or
 a vector of length L.}
@@ -263,9 +263,6 @@ to include an intercept term (and so only a p-vector is returned).}
 
 \item{check_R}{If \code{check_R = TRUE}, check that \code{R} is
 positive semidefinite.}
-
-\item{check_z}{If \code{check_z = TRUE}, check that \code{z} is in
-space spanned by the non-zero eigenvectors of \code{R}.}
 
 \item{bhat}{A p-vector of estimated effects.}
 
@@ -389,7 +386,7 @@ X and y to have variance 1 (see examples).
 \code{susie_rss} performs sum of single-effect linear regression
 with z scores; all posterior calculations are for z-scores. This
 function fits the regression model \eqn{z = \sum_l R*b_l + e},
-where e is \eqn{N(0,residual_var*R)} and \eqn{\sum_l b_l} is a
+where e is \eqn{N(0,R)} and \eqn{\sum_l b_l} is a
 p-vector of effects to be estimated. The required summary data are
 the p by p correlation matrix, \code{R}, and the p-vector
 \code{z}. The summary stats should come from the same individuals

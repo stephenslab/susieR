@@ -13,8 +13,9 @@
 #'   than this threshold are not used.
 #'
 #' @param z_ld_weight The weights assigned to the z scores in the LD
-#'   matrix. The LD matrix used in the model is \code{cov2cor((1-w)*R +
-#'   w*tcrossprod(z))}, where \code{w = z_ld_weight}. We recommend
+#'   matrix. This feature is still under development.
+#'   The LD matrix used in the model is \code{cov2cor((1-w)*R +
+#'   w*tcrossprod(z))}, where \code{w = z_ld_weight}. One way
 #'   setting \code{z_ld_weight} as 1/n, where n is the number of
 #'   samples in the reference panel used to compute R.
 #'
@@ -33,22 +34,19 @@
 #' @param check_R If \code{check_R = TRUE}, check that \code{R} is
 #'   positive semidefinite.
 #'
-#' @param check_z If \code{check_z = TRUE}, check that \code{z} is in
-#'   space spanned by the non-zero eigenvectors of \code{R}.
-#'
 #' @export
 #'
 susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
                       L = 10, prior_variance = 50, residual_variance = NULL,
                       r_tol = 1e-08, prior_weights = NULL, null_weight = NULL,
-                      estimate_residual_variance = TRUE,
+                      estimate_residual_variance = FALSE,
                       estimate_prior_variance = TRUE,
                       estimate_prior_method = c("optim", "EM", "simple"),
                       check_null_threshold = 0, prior_tol = 1e-9,
                       max_iter = 100, s_init = NULL, intercept_value = 0,
                       coverage = 0.95, min_abs_corr = 0.5,
                       tol = 1e-03, verbose = FALSE, track_fit = FALSE,
-                      check_R = TRUE, check_z = FALSE) {
+                      check_R = FALSE) {
 
   # Check input R.
   if (nrow(R) != length(z))
@@ -82,11 +80,20 @@ susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
     z[is.na(z)] = 0
   }
 
+  if (check_R && any(attr(R,"eigen")$values < -r_tol)){
+    semi_pd = check_semi_pd(R,r_tol)
+    if (!semi_pd$status){
+      stop(paste0("The correlation matrix (",nrow(R)," by ",ncol(R),
+                  ") is not a positive semidefinite matrix. The smallest ",
+                  "eigenvalue is ",min(semi_pd$eigenvalues),"."))
+    }
+  }
+
   # Modify R as needed.
   if (z_ld_weight > 0) {
+    warning('The z_ld_weight > 0 feature is under development.')
     R = muffled_cov2cor((1-z_ld_weight)*R + z_ld_weight * tcrossprod(z))
     R = (R + t(R))/2
-    check_z = FALSE
   }
 
   if (is.numeric(null_weight) && null_weight == 0)
@@ -104,64 +111,32 @@ susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
     z = c(z,0)
   }
 
+  if(estimate_residual_variance){
+    warning("SuSiE-RSS no longer estimates residual variance, since we found it didn't help.")
+    estimate_residual_variance = FALSE
+  }
+
   if (!is.null(residual_variance) &&
-     (residual_variance > 1 | residual_variance < 0))
+      (residual_variance > 1 | residual_variance < 0))
     stop("Residual variance should be a scalar between 0 and 1")
   if (is.null(residual_variance))
     residual_variance = 1
-  p = ncol(R)
 
-  # Eigen decomposition for R, filter on eigenvalues.
-  attr(R,"eigen") = eigen(R,symmetric = TRUE)
-  if (check_R && any(attr(R,"eigen")$values < -r_tol))
-    stop(paste0("The correlation matrix (",nrow(R)," by ",ncol(R),
-                ") is not a positive semidefinite matrix. The smallest ",
-                "eigenvalue is ",min(attr(R,"eigen")$values),
-                ". You can bypass this by \"check_R = FALSE\" which ",
-                "instead sets negative eigenvalues to 0 to allow for ",
-                "continued computations."))
-
-  # Check whether z in space spanned by the non-zero eigenvectors of R.
-  if (check_z) {
-    proj = check_projection(R,z)
-    if (!proj$status)
-      warning("Input z does not lie in the space of non-zero eigenvectors ",
-              "of R.")
-    else
-      message("Input z is in space spanned by the non-zero eigenvectors ",
-              "of R.")
-  }
-  R = set_R_attributes(R,r_tol)
-
-  # Transform data.
-  X = t(attr(R,"eigen")$vectors[,attr(R,"eigen")$values != 0]) *
-        attr(R,"eigen")$values[attr(R,"eigen")$values != 0]^0.5
-  Y = (t(attr(R,"eigen")$vectors[,attr(R,"eigen")$values != 0]) *
-       attr(R,"eigen")$values[attr(R,"eigen")$values != 0]^(-0.5)) %*% z
-  if (!is.null(names(z)))
-    colnames(X) = names(z)
-
-  s = susie(X,Y,L = L,
-            scaled_prior_variance = prior_variance/var(Y),
-            residual_variance = residual_variance,
-            prior_weights = prior_weights,
-            null_weight = NULL,
-            standardize = FALSE,
-            intercept = FALSE,
-            estimate_residual_variance = estimate_residual_variance,
-            estimate_prior_variance = estimate_prior_variance,
-            estimate_prior_method = estimate_prior_method,
-            check_null_threshold = check_null_threshold,
-            prior_tol = prior_tol,
-            residual_variance_upperbound = 1,
-            s_init = s_init,
-            coverage = coverage,
-            min_abs_corr = min_abs_corr,
-            compute_univariate_zscore = FALSE,
-            na.rm = FALSE,max_iter = max_iter,tol = tol,
-            verbose = verbose,track_fit = track_fit)
-  s$Rz = crossprod(X,s$Xr)
-  s$fitted = s$Rz
+  s = susie_suff_stat(XtX = R, Xty = z, n = length(z), yty = length(z)-1,
+                      L = L, scaled_prior_variance = prior_variance,
+                      residual_variance = residual_variance,
+                      estimate_residual_variance = FALSE,
+                      estimate_prior_variance = estimate_prior_variance,
+                      estimate_prior_method = estimate_prior_method,
+                      check_null_threshold = check_null_threshold, prior_tol = prior_tol,
+                      r_tol = r_tol, prior_weights = prior_weights,
+                      null_weight = NULL, standardize = FALSE,
+                      max_iter = max_iter, s_init = s_init, intercept_value = intercept_value,
+                      coverage = coverage, min_abs_corr = min_abs_corr,
+                      tol = tol, verbose = verbose, track_fit = track_fit, check_input = FALSE)
+  s$fitted = s$Xtfitted
+  s$Rr = s$XtXr
+  s$Xtfitted = s$XtXr = NULL
   return(s)
 }
 
@@ -175,7 +150,7 @@ susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
 # all elements equally likely to be non-zero. The prior on the
 # non-zero element is N(0,var = prior_variance).
 susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
-                            L = 10, lambda = 0, 
+                            L = 10, lambda = 0,
                             prior_variance = 50, residual_variance = NULL,
                             r_tol = 1e-08, prior_weights = NULL,
                             null_weight = NULL,
@@ -219,7 +194,7 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
     warning("NA values in z-scores are replaced with 0")
     z[is.na(z)] = 0
   }
-  
+
   if (is.numeric(null_weight) && null_weight == 0)
     null_weight = NULL
   if (!is.null(null_weight)) {
@@ -245,7 +220,7 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
                 ". You can bypass this by \"check_R = FALSE\" which instead ",
                 "sets negative eigenvalues to 0 to allow for continued ",
                 "computations."))
-  
+
   # Check whether z in space spanned by the non-zero eigenvectors of R.
   if (check_z) {
     proj = check_projection(R,z)
@@ -267,7 +242,7 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
       lambda = sum(znull^2)/length(znull)
     }
   }
-  
+
   # Initialize susie fit.
   s = init_setup_rss(p,L,prior_variance,residual_variance,prior_weights,
                      null_weight)
