@@ -33,7 +33,8 @@ susie(
   tol = 0.001,
   verbose = FALSE,
   track_fit = FALSE,
-  residual_variance_lowerbound = var(drop(Y))/10000
+  residual_variance_lowerbound = var(drop(Y))/10000,
+  refine = FALSE
 )
 
 susie_rss(
@@ -61,7 +62,8 @@ susie_rss(
   tol = 0.001,
   verbose = FALSE,
   track_fit = FALSE,
-  check_R = FALSE
+  check_R = FALSE,
+  refine = FALSE
 )
 
 susie_suff_stat(
@@ -95,7 +97,8 @@ susie_suff_stat(
   tol = 0.001,
   verbose = FALSE,
   track_fit = FALSE,
-  check_input = FALSE
+  check_input = FALSE,
+  refine = FALSE
 )
 
 susie_auto(
@@ -227,6 +230,9 @@ estimates at each iteration of the IBSS fitting procedure.}
 \item{residual_variance_lowerbound}{Lower limit on the estimated
 residual variance. It is only relevant when
 \code{estimate_residual_variance = TRUE}.}
+
+\item{refine}{If \code{refine = TRUE}, we use a procedure to help
+SuSiE get out of local optimum.}
 
 \item{z}{A p-vector of z scores.}
 

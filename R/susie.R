@@ -163,6 +163,9 @@
 #'   residual variance. It is only relevant when
 #'   \code{estimate_residual_variance = TRUE}.
 #'
+#' @param refine If \code{refine = TRUE}, we use a procedure to help
+#'   SuSiE get out of local optimum.
+#'
 #' @return A \code{"susie"} object with some or all of the following
 #'   elements:
 #'
@@ -292,7 +295,8 @@ susie <- function (X,Y,L = min(10,ncol(X)),
                    tol = 1e-3,
                    verbose = FALSE,
                    track_fit = FALSE,
-                   residual_variance_lowerbound = var(drop(Y))/1e4) {
+                   residual_variance_lowerbound = var(drop(Y))/1e4,
+                   refine = FALSE) {
 
   # Process input estimate_prior_method.
   estimate_prior_method = match.arg(estimate_prior_method)
@@ -436,5 +440,61 @@ susie <- function (X,Y,L = min(10,ncol(X)),
 
   # For prediction.
   s$X_column_scale_factors = attr(X,"scaled:scale")
+
+  if(refine){
+    if(!is.null(null_weight) && null_weight!=0 && !compute_univariate_zscore){
+      ## if null_weight is specified, and the extra 0 column is not removed from compute_univariate_zscore,
+      ## we remove it here
+      X = X[,1:(ncol(X) - 1)]
+    }
+    conti = TRUE
+    while(conti){
+      m = list()
+      for(cs in 1:length(s$sets$cs)){
+        if(!missing(s_init) && !is.null(s_init)){
+          warning('The given s_init is not used in refinement.')
+        }
+        pw = rep(1, ncol(X))
+        pw[s$sets$cs[[cs]]] = 0
+        s2 = susie(X,Y,L = L,
+                   scaled_prior_variance = scaled_prior_variance,residual_variance = residual_variance,
+                   prior_weights = pw,s_init = NULL,
+                   null_weight = null_weight,standardize = standardize,intercept = intercept,
+                   estimate_residual_variance = estimate_residual_variance,
+                   estimate_prior_variance = estimate_prior_variance,
+                   estimate_prior_method = estimate_prior_method,
+                   check_null_threshold = check_null_threshold,
+                   prior_tol = prior_tol,coverage = coverage,
+                   residual_variance_upperbound = residual_variance_upperbound,
+                   min_abs_corr = min_abs_corr,compute_univariate_zscore = FALSE,
+                   na.rm = na.rm,max_iter = max_iter,tol = tol,
+                   verbose = FALSE,track_fit = FALSE,residual_variance_lowerbound = var(drop(Y))/1e4,
+                   refine = FALSE)
+        sinit2 = s2[c('alpha', 'mu', 'mu2')]
+        class(sinit2) = 'susie'
+        s3 = susie(X,Y,L = L,
+                   scaled_prior_variance = scaled_prior_variance,residual_variance = residual_variance,
+                   prior_weights = NULL, s_init = sinit2,
+                   null_weight = null_weight,standardize = standardize,intercept = intercept,
+                   estimate_residual_variance = estimate_residual_variance,
+                   estimate_prior_variance = estimate_prior_variance,
+                   estimate_prior_method = estimate_prior_method,
+                   check_null_threshold = check_null_threshold,
+                   prior_tol = prior_tol,coverage = coverage,
+                   residual_variance_upperbound = residual_variance_upperbound,
+                   min_abs_corr = min_abs_corr,compute_univariate_zscore = FALSE,
+                   na.rm = na.rm,max_iter = max_iter,tol = tol,
+                   verbose = FALSE,track_fit = FALSE,residual_variance_lowerbound = var(drop(Y))/1e4,
+                   refine = FALSE)
+        m = c(m, list(s3))
+      }
+      elbo = sapply(m, function(x) susie_get_objective(x))
+      if((max(elbo) - susie_get_objective(s)) <= 0){
+        conti=FALSE
+      }else{
+        s = m[[which.max(elbo)]]
+      }
+    }
+  }
   return(s)
 }

@@ -46,7 +46,7 @@ susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
                       max_iter = 100, s_init = NULL, intercept_value = 0,
                       coverage = 0.95, min_abs_corr = 0.5,
                       tol = 1e-03, verbose = FALSE, track_fit = FALSE,
-                      check_R = FALSE) {
+                      check_R = FALSE, refine = FALSE) {
 
   # Check input R.
   if (nrow(R) != length(z))
@@ -133,7 +133,8 @@ susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
                       null_weight = NULL, standardize = FALSE,
                       max_iter = max_iter, s_init = s_init, intercept_value = intercept_value,
                       coverage = coverage, min_abs_corr = min_abs_corr,
-                      tol = tol, verbose = verbose, track_fit = track_fit, check_input = FALSE)
+                      tol = tol, verbose = verbose, track_fit = track_fit, check_input = FALSE,
+                      refine = refine)
   s$fitted = s$Xtfitted
   s$Rr = s$XtXr
   s$Xtfitted = s$XtXr = NULL
