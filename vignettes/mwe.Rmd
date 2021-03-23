@@ -32,7 +32,7 @@ beta[c(1,2,300,400)] <- 1
 X   <- matrix(rnorm(n*p),nrow=n,ncol=p)
 y   <- X %*% beta + rnorm(n)
 res <- susie(X,y,L=10)
-plot(coef(res),pch = 20)
+plot(coef(res)[-1],pch = 20)
 ```
 
 Plot the ground-truth outcomes vs. the predicted outcomes:
