@@ -17,7 +17,7 @@ knitr::opts_chunk$set(collapse = TRUE,comment = "#",fig.width = 5,
 
 This vignette demonstrates how to use `susieR` with "summary statistics" in the context of genetic fine-mapping. 
 We use the same simulated data as in [fine mapping vignette](finemapping.html). The simulated data is expression level of a gene ($y$) in $N \approx 600$ individuals. 
-We want to identify with the genotype matrix $X_{N\times P}$ ($P=1000$) the genetic variables that causes changes in expression level. The data-set is shipped with `susieR`. It is simulated to have exactly 3 non-zero effects.
+We want to identify with the genotype matrix $X_{N\times P}$ ($P=1001$) the genetic variables that causes changes in expression level. The data-set is shipped with `susieR`. It is simulated to have exactly 3 non-zero effects.
 
 ```{r}
 library(susieR)

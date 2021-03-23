@@ -56,8 +56,8 @@ NULL
 #'
 #' @docType data
 #'  
-#' @description The data-set contains a matrix of about 600
-#' individuals and 1,000 variables. These variables are real-world
+#' @description The data-set contains a matrix of 574
+#' individuals and 1,001 variables. These variables are real-world
 #' genotypes centered and scaled, and therefore retains the
 #' correlation structure of variables in the original genotype data. 3
 #' out of the variables have non-zero effects.  The response data is

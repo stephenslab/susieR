@@ -18,7 +18,7 @@ knitr::opts_chunk$set(collapse = TRUE,comment = "#",fig.width = 5,
 This vignette demonstrates `susieR` in the context of genetic
 fine-mapping.  We use simulated data of expression level of a gene
 ($y$) in $N \approx 600$ individuals.  We want to identify with the
-genotype matrix $X_{N\times P}$ ($P=1000$) the genetic variables that
+genotype matrix $X_{N\times P}$ ($P=1001$) the genetic variables that
 causes changes in expression level.
 
 The simulated data-set is [available
