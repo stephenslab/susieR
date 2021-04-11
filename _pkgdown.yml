@@ -24,3 +24,4 @@ articles:
     - trend_filtering
     - sparse_matrix_strategy
     - sparse_susie_eval
+    - susie_refine

@@ -1,0 +1,69 @@
+---
+title: "Refine SuSiE model"
+author: "Yuxin Zou"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Refine SuSiE model}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE,comment = "#",fig.width = 5,
+                      fig.height = 3,fig.align = "center",
+                      fig.cap = "&nbsp;",dpi = 120)
+```
+
+In this vignette, we demonstrate a procedure that helps SuSiE get out of local optimum.
+
+We simulate phenotype using UK Biobank genotypes from 50,000 individuals. There are 1001 SNPs.
+It is simulated to have exactly 2 non-zero effects at 234, 287.
+
+```{r}
+library(susieR)
+data(FinemappingConvergence)
+b = dat$true_coef
+susie_plot(dat$z, y = "z", b=b)
+```
+
+The strongest marginal association is a non-effect SNP. 
+
+Since the sample size is large, we use sufficient statistics ($X^\intercal X, X^\intercal y, y^\intercal y$ and sample size $n$) to fit susie model. It identifies 2 Credible Sets, one of them is false positive. This is because `susieR` get stuck around a local minimum. 
+
+```{r}
+fitted <- susie_suff_stat(XtX = dat$XtX, Xty = dat$Xty, yty = dat$yty, n = dat$n)
+susie_plot(fitted, y="PIP", b=b, main=paste0('ELBO = ', round(susie_get_objective(fitted),2)))
+```
+
+Our refine procedure to get out of local optimum is
+
+1. fit a susie model, $s$ (suppose it has $K$ CSs).
+
+2. for CS in $s$, set SNPs in CS to have prior weight 0, fit susie model --> we have K susie models: $t_1, \cdots, t_K$.
+
+3. for each $k = 1, \cdots, K$, fit susie with initialization at $t_k$ ($\alpha, \mu, \mu^2$) --> $s_k$
+
+4. if $\max_k \text{elbo}(s_k) > \text{elbo}(s)$, set $s = s_{kmax}$ where $kmax = \arg_k \max \text{elbo}(s_k)$ and go to step 2; if no, break.
+
+We fit susie model with above procedure by setting `refine = TRUE`.
+
+```{r}
+fitted_refine <- susie_suff_stat(XtX = dat$XtX, Xty = dat$Xty, yty = dat$yty, n = dat$n, refine=TRUE)
+susie_plot(fitted_refine, y="PIP", b=b, main=paste0('ELBO = ', round(susie_get_objective(fitted_refine),2)))
+```
+
+With the refine procedure, it identifies 2 CSs with the true signals, and the achieved evidence lower bound (ELBO) is higher.
+
+## Session information
+
+Here are some details about the computing environment, including the
+versions of R, and the R packages, used to generate these results.
+
+```{r}
+sessionInfo()
+```
+
+
+
+

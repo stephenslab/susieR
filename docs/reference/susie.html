@@ -83,7 +83,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.10.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.0</span>
       </span>
     </div>
 
@@ -161,7 +161,8 @@
   tol <span class='op'>=</span> <span class='fl'>0.001</span>,
   verbose <span class='op'>=</span> <span class='cn'>FALSE</span>,
   track_fit <span class='op'>=</span> <span class='cn'>FALSE</span>,
-  residual_variance_lowerbound <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/cor.html'>var</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/drop.html'>drop</a></span><span class='op'>(</span><span class='va'>Y</span><span class='op'>)</span><span class='op'>)</span><span class='op'>/</span><span class='fl'>10000</span>
+  residual_variance_lowerbound <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/cor.html'>var</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/drop.html'>drop</a></span><span class='op'>(</span><span class='va'>Y</span><span class='op'>)</span><span class='op'>)</span><span class='op'>/</span><span class='fl'>10000</span>,
+  refine <span class='op'>=</span> <span class='cn'>FALSE</span>
 <span class='op'>)</span>
 
 <span class='fu'>susie_rss</span><span class='op'>(</span>
@@ -189,7 +190,8 @@
   tol <span class='op'>=</span> <span class='fl'>0.001</span>,
   verbose <span class='op'>=</span> <span class='cn'>FALSE</span>,
   track_fit <span class='op'>=</span> <span class='cn'>FALSE</span>,
-  check_R <span class='op'>=</span> <span class='cn'>FALSE</span>
+  check_R <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  refine <span class='op'>=</span> <span class='cn'>FALSE</span>
 <span class='op'>)</span>
 
 <span class='fu'>susie_suff_stat</span><span class='op'>(</span>
@@ -223,7 +225,8 @@
   tol <span class='op'>=</span> <span class='fl'>0.001</span>,
   verbose <span class='op'>=</span> <span class='cn'>FALSE</span>,
   track_fit <span class='op'>=</span> <span class='cn'>FALSE</span>,
-  check_input <span class='op'>=</span> <span class='cn'>FALSE</span>
+  check_input <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  refine <span class='op'>=</span> <span class='cn'>FALSE</span>
 <span class='op'>)</span>
 
 <span class='fu'>susie_auto</span><span class='op'>(</span>
@@ -407,6 +410,11 @@ estimates at each iteration of the IBSS fitting procedure.</p></td>
       <td><p>Lower limit on the estimated
 residual variance. It is only relevant when
 <code>estimate_residual_variance = TRUE</code>.</p></td>
+    </tr>
+    <tr>
+      <th>refine</th>
+      <td><p>If <code>refine = TRUE</code>, we use a procedure to help
+SuSiE get out of local optimum.</p></td>
     </tr>
     <tr>
       <th>z</th>

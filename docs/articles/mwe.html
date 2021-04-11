@@ -31,7 +31,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.10.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.0</span>
       </span>
     </div>
 
@@ -61,14 +61,13 @@
 
       
 
-      </header><script src="mwe_files/accessible-code-block-0.0.1/empty-anchor.js"></script><link href="mwe_files/anchor-sections-1.0/anchor-sections.css" rel="stylesheet">
-<script src="mwe_files/anchor-sections-1.0/anchor-sections.js"></script><div class="row">
+      </header><script src="mwe_files/accessible-code-block-0.0.1/empty-anchor.js"></script><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>A minimal example</h1>
                         <h4 class="author">Matthew Stephens</h4>
             
-            <h4 class="date">2021-03-16</h4>
+            <h4 class="date">2021-04-10</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/master/vignettes/mwe.Rmd"><code>vignettes/mwe.Rmd</code></a></small>
       <div class="hidden name"><code>mwe.Rmd</code></div>
@@ -89,7 +88,7 @@
 <span class="va">X</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">*</span><span class="va">p</span><span class="op">)</span>,nrow<span class="op">=</span><span class="va">n</span>,ncol<span class="op">=</span><span class="va">p</span><span class="op">)</span>
 <span class="va">y</span>   <span class="op">&lt;-</span> <span class="va">X</span> <span class="op">%*%</span> <span class="va">beta</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span>
 <span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/susie.html">susie</a></span><span class="op">(</span><span class="va">X</span>,<span class="va">y</span>,L<span class="op">=</span><span class="fl">10</span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html">plot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html">coef</a></span><span class="op">(</span><span class="va">res</span><span class="op">)</span>,pch <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></code></pre></div>
+<span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html">plot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html">coef</a></span><span class="op">(</span><span class="va">res</span><span class="op">)</span><span class="op">[</span><span class="op">-</span><span class="fl">1</span><span class="op">]</span>,pch <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="mwe_files/figure-html/unnamed-chunk-1-1.png" alt="&amp;nbsp;" width="540"><p class="caption">
  
@@ -124,22 +123,22 @@
 <span class="co"># [1] stats     graphics  grDevices utils     datasets  methods   base     </span>
 <span class="co"># </span>
 <span class="co"># other attached packages:</span>
-<span class="co"># [1] susieR_0.10.1</span>
+<span class="co"># [1] susieR_0.11.0</span>
 <span class="co"># </span>
 <span class="co"># loaded via a namespace (and not attached):</span>
 <span class="co">#  [1] Rcpp_1.0.6        highr_0.8         plyr_1.8.6        compiler_4.0.3   </span>
 <span class="co">#  [5] pillar_1.5.1      tools_4.0.3       digest_0.6.27     evaluate_0.14    </span>
-<span class="co">#  [9] memoise_1.1.0     lifecycle_1.0.0   tibble_3.1.0      gtable_0.3.0     </span>
-<span class="co"># [13] lattice_0.20-41   pkgconfig_2.0.3   rlang_0.4.10      Matrix_1.2-18    </span>
-<span class="co"># [17] yaml_2.2.1        pkgdown_1.6.1     xfun_0.19         stringr_1.4.0    </span>
-<span class="co"># [21] dplyr_1.0.2       knitr_1.30        generics_0.1.0    desc_1.2.0       </span>
-<span class="co"># [25] fs_1.5.0          vctrs_0.3.6       systemfonts_0.3.2 tidyselect_1.1.0 </span>
-<span class="co"># [29] rprojroot_2.0.2   grid_4.0.3        reshape_0.8.8     glue_1.4.2       </span>
-<span class="co"># [33] R6_2.5.0          textshaping_0.2.1 fansi_0.4.2       rmarkdown_2.5    </span>
-<span class="co"># [37] purrr_0.3.4       ggplot2_3.3.3     magrittr_2.0.1    scales_1.1.1     </span>
-<span class="co"># [41] htmltools_0.5.0   ellipsis_0.3.1    assertthat_0.2.1  colorspace_2.0-0 </span>
-<span class="co"># [45] ragg_0.4.0        utf8_1.2.1        stringi_1.5.3     munsell_0.5.0    </span>
-<span class="co"># [49] crayon_1.4.1</span></code></pre></div>
+<span class="co">#  [9] memoise_2.0.0     lifecycle_1.0.0   tibble_3.1.0      gtable_0.3.0     </span>
+<span class="co"># [13] lattice_0.20-41   pkgconfig_2.0.3   rlang_0.4.10      Matrix_1.3-2     </span>
+<span class="co"># [17] DBI_1.1.1         yaml_2.2.1        pkgdown_1.6.1     xfun_0.22        </span>
+<span class="co"># [21] fastmap_1.1.0     dplyr_1.0.5       stringr_1.4.0     knitr_1.31       </span>
+<span class="co"># [25] generics_0.1.0    vctrs_0.3.7       desc_1.3.0        fs_1.5.0         </span>
+<span class="co"># [29] systemfonts_1.0.1 tidyselect_1.1.0  rprojroot_2.0.2   grid_4.0.3       </span>
+<span class="co"># [33] reshape_0.8.8     glue_1.4.2        R6_2.5.0          textshaping_0.3.3</span>
+<span class="co"># [37] fansi_0.4.2       rmarkdown_2.7     purrr_0.3.4       ggplot2_3.3.3    </span>
+<span class="co"># [41] magrittr_2.0.1    scales_1.1.1      htmltools_0.5.1.1 ellipsis_0.3.1   </span>
+<span class="co"># [45] assertthat_0.2.1  colorspace_2.0-0  ragg_1.1.2        utf8_1.2.1       </span>
+<span class="co"># [49] stringi_1.5.3     munsell_0.5.0     cachem_1.0.4      crayon_1.4.1</span></code></pre></div>
 </div>
   </div>
 
