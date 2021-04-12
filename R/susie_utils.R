@@ -113,7 +113,7 @@ susie_get_posterior_mean = function (res, prior_tol = 1e-9) {
 
   # Now extract relevant rows from alpha matrix.
   if (length(include_idx) > 0)
-    return(colSums((res$alpha*res$mu)[include_idx,])/
+    return(colSums((res$alpha*res$mu)[include_idx,,drop=FALSE])/
            res$X_column_scale_factors)
   else
     return(numeric(ncol(res$mu)))
