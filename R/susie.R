@@ -411,6 +411,7 @@ susie <- function (X,Y,L = min(10,ncol(X)),
     s$fitted = s$Xr
   }
   s$fitted = drop(s$fitted)
+  names(s$fitted) = `if`(is.null(names(Y)), rownames(X), names(Y)) 
 
   if (track_fit)
     s$trace = tracking
@@ -430,6 +431,7 @@ susie <- function (X,Y,L = min(10,ncol(X)),
     colnames(s$mu) = variable_names
     colnames(s$mu2) = variable_names
     colnames(s$lbf_variable) = variable_names
+    names(s$pip) = variable_names
   }
   # report z-scores from univariate regression.
   if (compute_univariate_zscore) {

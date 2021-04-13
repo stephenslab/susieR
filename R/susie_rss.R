@@ -347,6 +347,7 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
     colnames(s$mu) = variable_names
     colnames(s$mu2) = variable_names
     colnames(s$lbf_variable) = variable_names
+    names(s$pip) = variable_names
   }
 
   return(s)

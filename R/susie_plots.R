@@ -188,7 +188,7 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
         segments(x0+start,y0,x1+start,y1,lwd = 1.5,col = "gray")
       }
       points(x0+start,y1,col = head(color,1),cex = 1.5,lwd = 2.5)
-      legend_text$col = append(legend_text$col,head(color,1))
+      legend_text$col = append(head(color,1), legend_text$col)
       
       # Rotate color.
       color = c(color[-1],color[1])
