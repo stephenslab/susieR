@@ -134,7 +134,7 @@ susie_get_posterior_sd = function (res, prior_tol = 1e-9) {
   # Now extract relevant rows from alpha matrix.
   if (length(include_idx) > 0)
     return(sqrt(colSums((res$alpha * res$mu2 -
-                         (res$alpha*res$mu)^2)[include_idx,]))/
+                         (res$alpha*res$mu)^2)[include_idx,,drop=FALSE]))/
            (res$X_column_scale_factors))
   else
     return(numeric(ncol(res$mu)))
