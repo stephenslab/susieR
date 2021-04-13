@@ -3,27 +3,33 @@
 \docType{data}
 \name{FinemappingConvergence}
 \alias{FinemappingConvergence}
-\title{Add Title Here}
+\title{Simulated Fine-mapping Data with Convergence Problem.}
 \format{
 \code{FinemappingConvergence} is a list with the following
 elements:
 
 \describe{
 
-  \item{XtX}{Describe XtX here.}
+  \item{XtX}{XtX is computed using centered and scaled genotype
+data.}
 
-  \item{Xty}{Describe Xty here.}
+  \item{Xty}{XtX is computed using centered and scaled genotype
+data and centered simulated response.}
 
-  \item{yty}{Describe yty here.}
+  \item{yty}{yty is computed using centered simulated response.}
 
-  \item{n}{Describe n here.}
+  \item{n}{Sample size.}
 
-  \item{true_coef}{Describe true_coef here.}
+  \item{true_coef}{The simulated effect sizes.}
 
-  \item{z}{Describe z here.}}
+  \item{z}{Marginal z scores from simple linear regression.}}
 }
 \description{
-Add description here.
+The data is simulated using real genotypes
+from 50000 individuals and 1001 SNPs. Two of the variables have
+non-zero effects on the multivariate response. The response data
+are generated under a linear regression model.
+The genotypes and simulated response are column centered.
 }
 \examples{
 data(FinemappingConvergence)

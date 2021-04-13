@@ -31,7 +31,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.3</span>
       </span>
     </div>
 
@@ -67,7 +67,7 @@
       <h1 data-toc-skip>Refine SuSiE model</h1>
                         <h4 class="author">Yuxin Zou</h4>
             
-            <h4 class="date">2021-04-10</h4>
+            <h4 class="date">2021-04-13</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/master/vignettes/susie_refine.Rmd"><code>vignettes/susie_refine.Rmd</code></a></small>
       <div class="hidden name"><code>susie_refine.Rmd</code></div>
@@ -81,8 +81,8 @@
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/stephenslab/susieR">susieR</a></span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span><span class="op">(</span><span class="va">FinemappingConvergence</span><span class="op">)</span>
-<span class="va">b</span> <span class="op">=</span> <span class="va">dat</span><span class="op">$</span><span class="va">true_coef</span>
-<span class="fu"><a href="../reference/susie_plot.html">susie_plot</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">z</span>, y <span class="op">=</span> <span class="st">"z"</span>, b<span class="op">=</span><span class="va">b</span><span class="op">)</span></code></pre></div>
+<span class="va">b</span> <span class="op">=</span> <span class="va">FinemappingConvergence</span><span class="op">$</span><span class="va">true_coef</span>
+<span class="fu"><a href="../reference/susie_plot.html">susie_plot</a></span><span class="op">(</span><span class="va">FinemappingConvergence</span><span class="op">$</span><span class="va">z</span>, y <span class="op">=</span> <span class="st">"z"</span>, b<span class="op">=</span><span class="va">b</span><span class="op">)</span></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="susie_refine_files/figure-html/unnamed-chunk-1-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
  
@@ -91,8 +91,9 @@
 <p>The strongest marginal association is a non-effect SNP.</p>
 <p>Since the sample size is large, we use sufficient statistics (<span class="math inline">\(X^\intercal X, X^\intercal y, y^\intercal y\)</span> and sample size <span class="math inline">\(n\)</span>) to fit susie model. It identifies 2 Credible Sets, one of them is false positive. This is because <code>susieR</code> get stuck around a local minimum.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">fitted</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/susie.html">susie_suff_stat</a></span><span class="op">(</span>XtX <span class="op">=</span> <span class="va">dat</span><span class="op">$</span><span class="va">XtX</span>, Xty <span class="op">=</span> <span class="va">dat</span><span class="op">$</span><span class="va">Xty</span>, yty <span class="op">=</span> <span class="va">dat</span><span class="op">$</span><span class="va">yty</span>, n <span class="op">=</span> <span class="va">dat</span><span class="op">$</span><span class="va">n</span><span class="op">)</span>
-<span class="fu"><a href="../reference/susie_plot.html">susie_plot</a></span><span class="op">(</span><span class="va">fitted</span>, y<span class="op">=</span><span class="st">"PIP"</span>, b<span class="op">=</span><span class="va">b</span>, main<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste0</a></span><span class="op">(</span><span class="st">'ELBO = '</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html">round</a></span><span class="op">(</span><span class="fu"><a href="../reference/susie_get_objective.html">susie_get_objective</a></span><span class="op">(</span><span class="va">fitted</span><span class="op">)</span>,<span class="fl">2</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span class="va">fitted</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/with.html">with</a></span><span class="op">(</span><span class="va">FinemappingConvergence</span>,
+               <span class="fu"><a href="../reference/susie.html">susie_suff_stat</a></span><span class="op">(</span>XtX <span class="op">=</span> <span class="va">XtX</span>, Xty <span class="op">=</span> <span class="va">Xty</span>, yty <span class="op">=</span> <span class="va">yty</span>, n <span class="op">=</span> <span class="va">n</span><span class="op">)</span><span class="op">)</span>
+<span class="fu"><a href="../reference/susie_plot.html">susie_plot</a></span><span class="op">(</span><span class="va">fitted</span>, y<span class="op">=</span><span class="st">"PIP"</span>, b<span class="op">=</span><span class="va">b</span>, main<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste0</a></span><span class="op">(</span><span class="st">"ELBO = "</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html">round</a></span><span class="op">(</span><span class="fu"><a href="../reference/susie_get_objective.html">susie_get_objective</a></span><span class="op">(</span><span class="va">fitted</span><span class="op">)</span>,<span class="fl">2</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="susie_refine_files/figure-html/unnamed-chunk-2-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
  
@@ -107,8 +108,10 @@
 </ol>
 <p>We fit susie model with above procedure by setting <code>refine = TRUE</code>.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">fitted_refine</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/susie.html">susie_suff_stat</a></span><span class="op">(</span>XtX <span class="op">=</span> <span class="va">dat</span><span class="op">$</span><span class="va">XtX</span>, Xty <span class="op">=</span> <span class="va">dat</span><span class="op">$</span><span class="va">Xty</span>, yty <span class="op">=</span> <span class="va">dat</span><span class="op">$</span><span class="va">yty</span>, n <span class="op">=</span> <span class="va">dat</span><span class="op">$</span><span class="va">n</span>, refine<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span>
-<span class="fu"><a href="../reference/susie_plot.html">susie_plot</a></span><span class="op">(</span><span class="va">fitted_refine</span>, y<span class="op">=</span><span class="st">"PIP"</span>, b<span class="op">=</span><span class="va">b</span>, main<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste0</a></span><span class="op">(</span><span class="st">'ELBO = '</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html">round</a></span><span class="op">(</span><span class="fu"><a href="../reference/susie_get_objective.html">susie_get_objective</a></span><span class="op">(</span><span class="va">fitted_refine</span><span class="op">)</span>,<span class="fl">2</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span class="va">fitted_refine</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/with.html">with</a></span><span class="op">(</span><span class="va">FinemappingConvergence</span>,
+                      <span class="fu"><a href="../reference/susie.html">susie_suff_stat</a></span><span class="op">(</span>XtX <span class="op">=</span> <span class="va">XtX</span>, Xty <span class="op">=</span> <span class="va">Xty</span>, yty <span class="op">=</span> <span class="va">yty</span>,
+                                      n <span class="op">=</span> <span class="va">n</span>, refine<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span>
+<span class="fu"><a href="../reference/susie_plot.html">susie_plot</a></span><span class="op">(</span><span class="va">fitted_refine</span>, y<span class="op">=</span><span class="st">"PIP"</span>, b<span class="op">=</span><span class="va">b</span>, main<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste0</a></span><span class="op">(</span><span class="st">"ELBO = "</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html">round</a></span><span class="op">(</span><span class="fu"><a href="../reference/susie_get_objective.html">susie_get_objective</a></span><span class="op">(</span><span class="va">fitted_refine</span><span class="op">)</span>,<span class="fl">2</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="susie_refine_files/figure-html/unnamed-chunk-3-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
  
@@ -136,16 +139,16 @@
 <span class="co"># [1] stats     graphics  grDevices utils     datasets  methods   base     </span>
 <span class="co"># </span>
 <span class="co"># other attached packages:</span>
-<span class="co"># [1] susieR_0.11.0</span>
+<span class="co"># [1] susieR_0.11.3</span>
 <span class="co"># </span>
 <span class="co"># loaded via a namespace (and not attached):</span>
 <span class="co">#  [1] Rcpp_1.0.6        highr_0.8         plyr_1.8.6        compiler_4.0.3   </span>
-<span class="co">#  [5] pillar_1.5.1      tools_4.0.3       digest_0.6.27     evaluate_0.14    </span>
+<span class="co">#  [5] pillar_1.6.0      tools_4.0.3       digest_0.6.27     evaluate_0.14    </span>
 <span class="co">#  [9] memoise_2.0.0     lifecycle_1.0.0   tibble_3.1.0      gtable_0.3.0     </span>
 <span class="co"># [13] lattice_0.20-41   pkgconfig_2.0.3   rlang_0.4.10      Matrix_1.3-2     </span>
 <span class="co"># [17] DBI_1.1.1         yaml_2.2.1        pkgdown_1.6.1     xfun_0.22        </span>
 <span class="co"># [21] fastmap_1.1.0     dplyr_1.0.5       stringr_1.4.0     knitr_1.31       </span>
-<span class="co"># [25] generics_0.1.0    vctrs_0.3.7       desc_1.3.0        fs_1.5.0         </span>
+<span class="co"># [25] generics_0.1.0    desc_1.3.0        fs_1.5.0          vctrs_0.3.7      </span>
 <span class="co"># [29] systemfonts_1.0.1 tidyselect_1.1.0  rprojroot_2.0.2   grid_4.0.3       </span>
 <span class="co"># [33] reshape_0.8.8     glue_1.4.2        R6_2.5.0          textshaping_0.3.3</span>
 <span class="co"># [37] fansi_0.4.2       rmarkdown_2.7     purrr_0.3.4       ggplot2_3.3.3    </span>

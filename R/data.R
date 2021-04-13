@@ -3,7 +3,7 @@
 #' @title Simulated Fine-mapping Data with Two Effect Variables
 #'
 #' @docType data
-#' 
+#'
 #' @description This data set contains a genotype matrix for 574
 #'   individuals and 1,002 variables. The variables are genotypes after
 #'   centering and scaling, and therefore retain the correlation
@@ -11,15 +11,15 @@
 #'   non-zero effects on the multivariate response. The response data
 #'   are generated under a multivariate linear regression model. See
 #'   Wang \emph{et al} (2020) for details.
-#' 
+#'
 #' @format \code{N2finemapping} is a list with the following elements:
-#' 
+#'
 #' \describe{
-#' 
+#'
 #'   \item{X}{Centered and scaled genotype data.}
-#' 
+#'
 #'   \item{chrom}{Chromomsome of the original data, in hg38 coordinates.}
-#' 
+#'
 #'   \item{pos}{Chromomosomal position of the original data, in hg38
 #'     coordinates. The information can be used to compare impact of using
 #'     other genotype references of the same variables in \code{susie_rss}
@@ -37,7 +37,7 @@
 #'   \item{V}{Suggested prior covariance matrix for effect sizes of
 #'      the two non-zero effect variables.}
 #' }
-#' 
+#'
 #' @keywords data
 #'
 #' @references
@@ -55,7 +55,7 @@ NULL
 #' @title Simulated Fine-mapping Data with Three Effect Variables.
 #'
 #' @docType data
-#'  
+#'
 #' @description The data-set contains a matrix of 574
 #' individuals and 1,001 variables. These variables are real-world
 #' genotypes centered and scaled, and therefore retains the
@@ -63,16 +63,16 @@ NULL
 #' out of the variables have non-zero effects.  The response data is
 #' generated under a multivariate linear regression model.  See Wang
 #' \emph{et al} (2020) for more details.
-#' 
+#'
 #' @format \code{N3finemapping} is a list with the following elements:
-#' 
+#'
 #' \describe{
-#' 
+#'
 #'   \item{X}{N by P variable matrix of centered and scaled genotype
 #' data.}
-#' 
+#'
 #'   \item{chrom}{Chromomsome of the original data, in hg38 coordinate.}
-#' 
+#'
 #'   \item{pos}{Chromomosomal positoin of the original data, in hg38
 #' coordinate. The information can be used to compare impact of using
 #' other genotype references of the same variables in susie_rss
@@ -88,9 +88,9 @@ NULL
 #'
 #'   \item{V}{Prior covariance matrix for effect size of the three
 #' non-zero effect variables.}  }
-#' 
+#'
 #' @keywords data
-#' 
+#'
 #' @references
 #' G. Wang, A. Sarkar, P. Carbonetto and M. Stephens (2020). A simple
 #'   new approach to variable selection in regression, with application
@@ -103,31 +103,37 @@ NULL
 
 #' @name FinemappingConvergence
 #'
-#' @title Add Title Here
+#' @title Simulated Fine-mapping Data with Convergence Problem.
 #'
-#' @description Add description here.
-#' 
+#' @description The data is simulated using real genotypes
+#' from 50000 individuals and 1001 SNPs. Two of the variables have
+#' non-zero effects on the multivariate response. The response data
+#' are generated under a linear regression model.
+#' The genotypes and simulated response are column centered.
+#'
 #' @format \code{FinemappingConvergence} is a list with the following
 #' elements:
-#' 
+#'
 #' \describe{
-#' 
-#'   \item{XtX}{Describe XtX here.}
-#' 
-#'   \item{Xty}{Describe Xty here.}
 #'
-#'   \item{yty}{Describe yty here.}
+#'   \item{XtX}{XtX is computed using centered and scaled genotype
+#' data.}
 #'
-#'   \item{n}{Describe n here.}
-#' 
-#'   \item{true_coef}{Describe true_coef here.}
-#' 
-#'   \item{z}{Describe z here.}}
-#' 
+#'   \item{Xty}{XtX is computed using centered and scaled genotype
+#' data and centered simulated response.}
+#'
+#'   \item{yty}{yty is computed using centered simulated response.}
+#'
+#'   \item{n}{Sample size.}
+#'
+#'   \item{true_coef}{The simulated effect sizes.}
+#'
+#'   \item{z}{Marginal z scores from simple linear regression.}}
+#'
 #' @docType data
-#' 
+#'
 #' @keywords data
-#' 
+#'
 #' @examples
 #' data(FinemappingConvergence)
 NULL

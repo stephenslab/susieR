@@ -31,7 +31,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.3</span>
       </span>
     </div>
 
@@ -67,7 +67,7 @@
       <h1 data-toc-skip>Fine-mapping with summary statistics</h1>
                         <h4 class="author">Yuxin Zou and Gao Wang</h4>
             
-            <h4 class="date">2021-04-10</h4>
+            <h4 class="date">2021-04-13</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/master/vignettes/finemapping_summary_statistics.Rmd"><code>vignettes/finemapping_summary_statistics.Rmd</code></a></small>
       <div class="hidden name"><code>finemapping_summary_statistics.Rmd</code></div>
@@ -128,8 +128,7 @@
 <p>For starters, we assume there are at most 10 causal variables, i.e. set <code>L = 10</code>, although SuSiE is generally robust to the choice of <code>L</code>.</p>
 <p>SuSiE regression with summary statistics is implemented as <code>susie_rss</code> function,</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">fitted_rss</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/susie.html">susie_rss</a></span><span class="op">(</span><span class="va">z_scores</span>, <span class="va">R</span>, L <span class="op">=</span> <span class="fl">10</span>,
-                        estimate_prior_variance <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span class="va">fitted_rss</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/susie_rss.html">susie_rss</a></span><span class="op">(</span><span class="va">z_scores</span>, <span class="va">R</span>, L <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></code></pre></div>
 <p>Using <code>summary</code> function, we can examine the posterior inclusion probability (PIP) for each variable, and the 95% credible sets.</p>
 <p>Here, we are the 95% credible sets.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
@@ -185,16 +184,16 @@
 <span class="co"># [1] stats     graphics  grDevices utils     datasets  methods   base     </span>
 <span class="co"># </span>
 <span class="co"># other attached packages:</span>
-<span class="co"># [1] susieR_0.11.0</span>
+<span class="co"># [1] susieR_0.11.3</span>
 <span class="co"># </span>
 <span class="co"># loaded via a namespace (and not attached):</span>
 <span class="co">#  [1] Rcpp_1.0.6        highr_0.8         plyr_1.8.6        compiler_4.0.3   </span>
-<span class="co">#  [5] pillar_1.5.1      tools_4.0.3       digest_0.6.27     evaluate_0.14    </span>
+<span class="co">#  [5] pillar_1.6.0      tools_4.0.3       digest_0.6.27     evaluate_0.14    </span>
 <span class="co">#  [9] memoise_2.0.0     lifecycle_1.0.0   tibble_3.1.0      gtable_0.3.0     </span>
 <span class="co"># [13] lattice_0.20-41   pkgconfig_2.0.3   rlang_0.4.10      Matrix_1.3-2     </span>
 <span class="co"># [17] DBI_1.1.1         yaml_2.2.1        pkgdown_1.6.1     xfun_0.22        </span>
 <span class="co"># [21] fastmap_1.1.0     dplyr_1.0.5       stringr_1.4.0     knitr_1.31       </span>
-<span class="co"># [25] generics_0.1.0    vctrs_0.3.7       desc_1.3.0        fs_1.5.0         </span>
+<span class="co"># [25] generics_0.1.0    desc_1.3.0        fs_1.5.0          vctrs_0.3.7      </span>
 <span class="co"># [29] systemfonts_1.0.1 tidyselect_1.1.0  rprojroot_2.0.2   grid_4.0.3       </span>
 <span class="co"># [33] reshape_0.8.8     glue_1.4.2        R6_2.5.0          textshaping_0.3.3</span>
 <span class="co"># [37] fansi_0.4.2       rmarkdown_2.7     purrr_0.3.4       ggplot2_3.3.3    </span>

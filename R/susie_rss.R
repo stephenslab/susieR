@@ -1,10 +1,17 @@
-#' @rdname susie
+#' @title Sum of Single Effects (SuSiE) Regression using summary statistics
+#'
+#' @details \code{susie_rss} performs sum of single-effect linear regression
+#' with z scores; all posterior calculations are for z-scores. This
+#' function fits the regression model \eqn{z = \sum_l R*b_l + e},
+#' where e is \eqn{N(0,R)} and \eqn{\sum_l b_l} is a
+#' p-vector of effects to be estimated. The required summary data are
+#' the p by p correlation matrix, \code{R}, and the p-vector
+#' \code{z}.
 #'
 #' @param z A p-vector of z scores.
 #'
 #' @param R A p by p symmetric, positive semidefinite correlation
-#' matrix. If it is from a reference panel, we recommend modifying the
-#' correlation matrix with parameter \code{z_ld_weight}.
+#' matrix.
 #'
 #' @param maf Minor allele frequency; to be used along with
 #'   \code{maf_thresh} to filter input summary statistics.
@@ -12,18 +19,62 @@
 #' @param maf_thresh Variants having a minor allele frequency smaller
 #'   than this threshold are not used.
 #'
-#' @param z_ld_weight The weights assigned to the z scores in the LD
-#'   matrix. This feature is still under development.
-#'   The LD matrix used in the model is \code{cov2cor((1-w)*R +
-#'   w*tcrossprod(z))}, where \code{w = z_ld_weight}. One way
-#'   setting \code{z_ld_weight} as 1/n, where n is the number of
-#'   samples in the reference panel used to compute R.
+#' @param z_ld_weight This feature is not recommended.
+#'   The weights assigned to the z scores in the LD matrix.
+#'   If z_ld_weight > 0, the LD matrix used in the model is \code{cov2cor((1-w)*R +
+#'   w*tcrossprod(z))}, where \code{w = z_ld_weight}.
+#'
+#' @param L Number of components (nonzero coefficients) in the susie
+#'   regression model. If L is larger than the number of covariates, p,
+#'   L is set to p.
 #'
 #' @param prior_variance The prior variance. It is either a scalar or
 #'   a vector of length L.
 #'
-#' @param r_tol Tolerance level for eigenvalue check of positive
-#'   semidefinite matrix of R.
+#' @param residual_variance Variance of the residual.
+#'   If it is not specified, we set it to 1.
+#'
+#' @param prior_weights A vector of length p, in which each entry
+#'   gives the prior probability that SNP j has non-zero effect.
+#'
+#' @param null_weight Prior probability of no effect (a number between
+#'   0 and 1, and cannot be exactly 1).
+#'
+#' @param estimate_residual_variance The residual variance is
+#'   fixed to the value supplied by \code{residual_variance}. We don't
+#'   estimate residual variance in susie_rss.
+#'
+#' @param estimate_prior_variance If \code{estimate_prior_variance =
+#'   TRUE}, the prior variance is estimated (this is a separate
+#'   parameter for each of the L effects). If provided,
+#'   \code{prior_variance} is then used as an initial value for
+#'   the optimization. When \code{estimate_prior_variance = FALSE}, the
+#'   prior variance for each of the L effects is determined by the
+#'   value supplied to \code{prior_variance}.
+#'
+#' @param estimate_prior_method The method used for estimating prior
+#'   variance. When \code{estimate_prior_method = "simple"} is used, the
+#'   likelihood at the specified prior variance is compared to the
+#'   likelihood at a variance of zero, and the setting with the larger
+#'   likelihood is retained.
+#'
+#' @param check_null_threshold When the prior variance is estimated,
+#'   compare the estimate with the null, and set the prior variance to
+#'   zero unless the log-likelihood using the estimate is larger by this
+#'   threshold amount. For example, if you set
+#'   \code{check_null_threshold = 0.1}, this will "nudge" the estimate
+#'   towards zero when the difference in log-likelihoods is small. A
+#'   note of caution that setting this to a value greater than zero may
+#'   lead the IBSS fitting procedure to occasionally decrease the ELBO.
+#'
+#' @param prior_tol When the prior variance is estimated, compare the
+#'   estimated value to \code{prior_tol} at the end of the computation,
+#'   and exclude a single effect from PIP computation if the estimated
+#'   prior variance is smaller than this tolerance value.
+#'
+#' @param max_iter Maximum number of IBSS iterations to perform.
+#'
+#' @param s_init A previous susie fit with which to initialize.
 #'
 #' @param intercept_value The intercept. (The intercept cannot be
 #'   estimated from centered summary data.) This setting will be used by
@@ -31,14 +82,103 @@
 #'   with \code{susie}. Set to \code{NULL} if you want \code{coef} not
 #'   to include an intercept term (and so only a p-vector is returned).
 #'
+#' @param coverage A number between 0 and 1 specifying the
+#'   \dQuote{coverage} of the estimated confidence sets.
+#'
+#' @param min_abs_corr Minimum absolute correlation allowed in a
+#'   credible set. The default, 0.5, corresponds to a squared
+#'   correlation of 0.25, which is a commonly used threshold for
+#'   genotype data in genetic studies.
+#'
+#' @param tol A small, non-negative number specifying the convergence
+#'   tolerance for the IBSS fitting procedure. The fitting procedure
+#'   will halt when the difference in the variational lower bound, or
+#'   \dQuote{ELBO} (the objective function to be maximized), is
+#'   less than \code{tol}.
+#'
+#' @param verbose If \code{verbose = TRUE}, the algorithm's progress,
+#'   and a summary of the optimization settings, are printed to the
+#'   console.
+#'
+#' @param track_fit If \code{track_fit = TRUE}, \code{trace}
+#'   is also returned containing detailed information about the
+#'   estimates at each iteration of the IBSS fitting procedure.
+#'
 #' @param check_R If \code{check_R = TRUE}, check that \code{R} is
 #'   positive semidefinite.
+#'
+#' @param r_tol Tolerance level for eigenvalue check of positive
+#'   semidefinite matrix of R.
+#'
+#' @param refine If \code{refine = TRUE}, we use a procedure to help
+#'   SuSiE get out of local optimum.
+#'
+#' @return A \code{"susie"} object with some or all of the following
+#'   elements:
+#'
+#' \item{alpha}{An L by p matrix of posterior inclusion probabilites.}
+#'
+#' \item{mu}{An L by p matrix of posterior means, conditional on
+#'   inclusion.}
+#'
+#' \item{mu2}{An L by p matrix of posterior second moments,
+#'   conditional on inclusion.}
+#'
+#' \item{lbf}{log-Bayes Factor for each single effect.}
+#'
+#' \item{lbf_variable}{log-Bayes Factor for each variable and single effect.}
+#'
+#' \item{intercept}{Fixed Intercept.}
+#'
+#' \item{sigma2}{Fixed Residual variance.}
+#'
+#' \item{V}{Prior variance of the non-zero elements of b, equal to
+#'   \code{scaled_prior_variance * var(Y)}.}
+#'
+#' \item{elbo}{The value of the variational lower bound, or
+#'   \dQuote{ELBO} (objective function to be maximized), achieved at
+#'   each iteration of the IBSS fitting procedure.}
+#'
+#' \item{fitted}{Vector of length n containing the fitted values of
+#'   the outcome.}
+#'
+#' \item{sets}{Credible sets estimated from model fit; see
+#'   \code{\link{susie_get_cs}} for details.}
+#'
+#' \item{pip}{A vector of length p giving the (marginal) posterior
+#'   inclusion probabilities for all p covariates.}
+#'
+#' \item{niter}{Number of IBSS iterations that were performed.}
+#'
+#' \item{converged}{\code{TRUE} or \code{FALSE} indicating whether
+#'   the IBSS converged to a solution within the chosen tolerance
+#'   level.}
+#'
+#' \item{Rr}{An p-vector of \code{t(X)} times fitted values, \code{X
+#'   \%*\% colSums(alpha*mu)}.}
+#'
+#' @examples
+#'
+#' set.seed(1)
+#' n = 1000
+#' p = 1000
+#' beta = rep(0,p)
+#' beta[1:4] = 1
+#' X = matrix(rnorm(n*p),nrow = n,ncol = p)
+#' X = scale(X,center = TRUE,scale = TRUE)
+#' y = drop(X %*% beta + rnorm(n))
+#'
+#' input_ss = compute_ss(X,y,standardize = TRUE)
+#' ss   <- susieR:::univariate_regression(X,y)
+#' R    <- with(input_ss,cov2cor(XtX))
+#' zhat <- with(ss,betahat/sebetahat)
+#' res <- susie_rss(zhat,R,L = 10)
 #'
 #' @export
 #'
 susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
                       L = 10, prior_variance = 50, residual_variance = NULL,
-                      r_tol = 1e-08, prior_weights = NULL, null_weight = NULL,
+                      prior_weights = NULL, null_weight = NULL,
                       estimate_residual_variance = FALSE,
                       estimate_prior_variance = TRUE,
                       estimate_prior_method = c("optim", "EM", "simple"),
@@ -46,7 +186,7 @@ susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
                       max_iter = 100, s_init = NULL, intercept_value = 0,
                       coverage = 0.95, min_abs_corr = 0.5,
                       tol = 1e-03, verbose = FALSE, track_fit = FALSE,
-                      check_R = FALSE, refine = FALSE) {
+                      check_R = FALSE, r_tol = 1e-08, refine = FALSE) {
 
   # Check input R.
   if (nrow(R) != length(z))
@@ -91,7 +231,7 @@ susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
 
   # Modify R as needed.
   if (z_ld_weight > 0) {
-    warning('From version 0.11.0, the non-zero z_ld_weight is no longer recommanded.')
+    warning('From version 0.11.0, the non-zero z_ld_weight is no longer recommended.')
     R = muffled_cov2cor((1-z_ld_weight)*R + z_ld_weight * tcrossprod(z))
     R = (R + t(R))/2
   }

@@ -27,17 +27,6 @@
 #' these summary statistics; you may also want to scale each column of
 #' X and y to have variance 1 (see examples).
 #'
-#' \code{susie_rss} performs sum of single-effect linear regression
-#' with z scores; all posterior calculations are for z-scores. This
-#' function fits the regression model \eqn{z = \sum_l R*b_l + e},
-#' where e is \eqn{N(0,R)} and \eqn{\sum_l b_l} is a
-#' p-vector of effects to be estimated. The required summary data are
-#' the p by p correlation matrix, \code{R}, and the p-vector
-#' \code{z}. The summary stats should come from the same individuals
-#' (samples).
-#'
-#'
-#'
 #'
 #' susie_auto is an attempt to automate reliable running of susie even
 #' on hard problems. It implements a three-stage strategy for each L:
@@ -217,11 +206,6 @@
 #' \item{XtXr}{A p-vector of \code{t(X)} times the fitted values,
 #'   \code{X \%*\% colSums(alpha*mu)}.}
 #'
-#' \code{susie_rss} also outputs:
-#'
-#' \item{Rr}{An p-vector of \code{t(X)} times fitted values, \code{X
-#'   \%*\% colSums(alpha*mu)}.}
-#'
 #' @references
 #'
 #' G. Wang, A. Sarkar, P. Carbonetto and M. Stephens (2020). A simple
@@ -253,19 +237,11 @@
 #' plot(coef(res1)[-1],coef(res2)[-1])
 #' abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
 #'
-#' # susie_rss example.
-#' ss   <- susieR:::univariate_regression(X,y)
-#' R    <- with(input_ss,cov2cor(XtX))
-#' zhat <- with(ss,betahat/sebetahat)
-#' res3 <- susie_rss(zhat,R,L = 10)
-#' plot(coef(res1)[-1]/ss$sebetahat,coef(res3)[-1])
-#' abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
-#'
 #' # susie_auto example.
-#' res4 <- susie_auto(X,y)
-#' plot(beta,coef(res4)[-1])
+#' res3 <- susie_auto(X,y)
+#' plot(beta,coef(res3)[-1])
 #' abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
-#' plot(y,predict(res4))
+#' plot(y,predict(res3))
 #' abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
 #'
 #' @importFrom stats var
@@ -411,7 +387,7 @@ susie <- function (X,Y,L = min(10,ncol(X)),
     s$fitted = s$Xr
   }
   s$fitted = drop(s$fitted)
-  names(s$fitted) = `if`(is.null(names(Y)), rownames(X), names(Y)) 
+  names(s$fitted) = `if`(is.null(names(Y)), rownames(X), names(Y))
 
   if (track_fit)
     s$trace = tracking

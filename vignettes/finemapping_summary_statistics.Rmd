@@ -84,8 +84,7 @@ For starters, we assume there are at most 10 causal variables, i.e. set `L = 10`
 SuSiE regression with summary statistics is implemented as `susie_rss` function, 
 
 ```{r}
-fitted_rss <- susie_rss(z_scores, R, L = 10,
-                        estimate_prior_variance = TRUE)
+fitted_rss <- susie_rss(z_scores, R, L = 10)
 ```
 
 Using `summary` function, we can examine the posterior inclusion probability (PIP) for each variable, and the 95% credible sets. 

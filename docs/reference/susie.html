@@ -83,7 +83,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.3</span>
       </span>
     </div>
 
@@ -117,7 +117,7 @@
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Sum of Single Effects (SuSiE) Regression</h1>
-    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/susie.R'><code>R/susie.R</code></a>, <a href='https://github.com/stephenslab/susieR/blob/master/R/susie_rss.R'><code>R/susie_rss.R</code></a>, <a href='https://github.com/stephenslab/susieR/blob/master/R/susie_ss.R'><code>R/susie_ss.R</code></a>, and 1 more</small>
+    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/susie.R'><code>R/susie.R</code></a>, <a href='https://github.com/stephenslab/susieR/blob/master/R/susie_ss.R'><code>R/susie_ss.R</code></a>, <a href='https://github.com/stephenslab/susieR/blob/master/R/susie_zzz_auto.R'><code>R/susie_zzz_auto.R</code></a></small>
     <div class="hidden name"><code>susie.Rd</code></div>
     </div>
 
@@ -162,35 +162,6 @@
   verbose <span class='op'>=</span> <span class='cn'>FALSE</span>,
   track_fit <span class='op'>=</span> <span class='cn'>FALSE</span>,
   residual_variance_lowerbound <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/cor.html'>var</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/drop.html'>drop</a></span><span class='op'>(</span><span class='va'>Y</span><span class='op'>)</span><span class='op'>)</span><span class='op'>/</span><span class='fl'>10000</span>,
-  refine <span class='op'>=</span> <span class='cn'>FALSE</span>
-<span class='op'>)</span>
-
-<span class='fu'>susie_rss</span><span class='op'>(</span>
-  <span class='va'>z</span>,
-  <span class='va'>R</span>,
-  maf <span class='op'>=</span> <span class='cn'>NULL</span>,
-  maf_thresh <span class='op'>=</span> <span class='fl'>0</span>,
-  z_ld_weight <span class='op'>=</span> <span class='fl'>0</span>,
-  L <span class='op'>=</span> <span class='fl'>10</span>,
-  prior_variance <span class='op'>=</span> <span class='fl'>50</span>,
-  residual_variance <span class='op'>=</span> <span class='cn'>NULL</span>,
-  r_tol <span class='op'>=</span> <span class='fl'>1e-08</span>,
-  prior_weights <span class='op'>=</span> <span class='cn'>NULL</span>,
-  null_weight <span class='op'>=</span> <span class='cn'>NULL</span>,
-  estimate_residual_variance <span class='op'>=</span> <span class='cn'>FALSE</span>,
-  estimate_prior_variance <span class='op'>=</span> <span class='cn'>TRUE</span>,
-  estimate_prior_method <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"optim"</span>, <span class='st'>"EM"</span>, <span class='st'>"simple"</span><span class='op'>)</span>,
-  check_null_threshold <span class='op'>=</span> <span class='fl'>0</span>,
-  prior_tol <span class='op'>=</span> <span class='fl'>1e-09</span>,
-  max_iter <span class='op'>=</span> <span class='fl'>100</span>,
-  s_init <span class='op'>=</span> <span class='cn'>NULL</span>,
-  intercept_value <span class='op'>=</span> <span class='fl'>0</span>,
-  coverage <span class='op'>=</span> <span class='fl'>0.95</span>,
-  min_abs_corr <span class='op'>=</span> <span class='fl'>0.5</span>,
-  tol <span class='op'>=</span> <span class='fl'>0.001</span>,
-  verbose <span class='op'>=</span> <span class='cn'>FALSE</span>,
-  track_fit <span class='op'>=</span> <span class='cn'>FALSE</span>,
-  check_R <span class='op'>=</span> <span class='cn'>FALSE</span>,
   refine <span class='op'>=</span> <span class='cn'>FALSE</span>
 <span class='op'>)</span>
 
@@ -417,8 +388,12 @@ residual variance. It is only relevant when
 SuSiE get out of local optimum.</p></td>
     </tr>
     <tr>
-      <th>z</th>
-      <td><p>A p-vector of z scores.</p></td>
+      <th>bhat</th>
+      <td><p>A p-vector of estimated effects.</p></td>
+    </tr>
+    <tr>
+      <th>shat</th>
+      <td><p>A p-vector of standard errors.</p></td>
     </tr>
     <tr>
       <th>R</th>
@@ -427,56 +402,6 @@ can be \(X'X\), the covariance matrix \(X'X/(n-1)\), or a
 correlation matrix. It should be estimated from the same samples
 used to compute <code>bhat</code> and <code>shat</code>. Using an out-of-sample
 matrix may produce unreliable results.</p></td>
-    </tr>
-    <tr>
-      <th>maf</th>
-      <td><p>Minor allele frequency; to be used along with
-<code>maf_thresh</code> to filter input summary statistics.</p></td>
-    </tr>
-    <tr>
-      <th>maf_thresh</th>
-      <td><p>Variants having a minor allele frequency smaller
-than this threshold are not used.</p></td>
-    </tr>
-    <tr>
-      <th>z_ld_weight</th>
-      <td><p>The weights assigned to the z scores in the LD
-matrix. This feature is still under development.
-The LD matrix used in the model is <code><a href='https://rdrr.io/r/stats/cor.html'>cov2cor((1-w)*R +
-w*tcrossprod(z))</a></code>, where <code>w = z_ld_weight</code>. One way
-setting <code>z_ld_weight</code> as 1/n, where n is the number of
-samples in the reference panel used to compute R.</p></td>
-    </tr>
-    <tr>
-      <th>prior_variance</th>
-      <td><p>The prior variance. It is either a scalar or
-a vector of length L.</p></td>
-    </tr>
-    <tr>
-      <th>r_tol</th>
-      <td><p>Tolerance level for eigenvalue check of positive
-semidefinite matrix of R.</p></td>
-    </tr>
-    <tr>
-      <th>intercept_value</th>
-      <td><p>The intercept. (The intercept cannot be
-estimated from centered summary data.) This setting will be used by
-<code>coef</code> to assign an intercept value, mainly for consistency
-with <code>susie</code>. Set to <code>NULL</code> if you want <code>coef</code> not
-to include an intercept term (and so only a p-vector is returned).</p></td>
-    </tr>
-    <tr>
-      <th>check_R</th>
-      <td><p>If <code>check_R = TRUE</code>, check that <code>R</code> is
-positive semidefinite.</p></td>
-    </tr>
-    <tr>
-      <th>bhat</th>
-      <td><p>A p-vector of estimated effects.</p></td>
-    </tr>
-    <tr>
-      <th>shat</th>
-      <td><p>A p-vector of standard errors.</p></td>
     </tr>
     <tr>
       <th>n</th>
@@ -583,11 +508,6 @@ susie_suff_stat returns also outputs:
 <dt>XtXr</dt><dd><p>A p-vector of <code><a href='https://rdrr.io/r/base/t.html'>t(X)</a></code> times the fitted values,
   <code>X %*% colSums(alpha*mu)</code>.</p></dd>
 
-susie_rss also outputs:
-
-<dt>Rr</dt><dd><p>An p-vector of <code><a href='https://rdrr.io/r/base/t.html'>t(X)</a></code> times fitted values, <code>X
-  %*% colSums(alpha*mu)</code>.</p></dd>
-
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
     <p><code>susie_suff_stat</code> performs sum of single-effect
@@ -601,16 +521,6 @@ should come from the same individuals. Both the columns of X and
 the vector y should be centered to have mean zero before computing
 these summary statistics; you may also want to scale each column of
 X and y to have variance 1 (see examples).</p>
-<p><code>susie_rss</code> performs sum of single-effect linear regression
-with z scores; all posterior calculations are for z-scores. This
-function fits the regression model \(z = \sum_l R*b_l + e\),
-where e is \(N(0,R)\) and \(\sum_l b_l\) is a
-p-vector of effects to be estimated. The required summary data are
-the p by p correlation matrix, <code>R</code>, and the p-vector
-<code>z</code>. The summary stats should come from the same individuals
-(samples).</p>
-
-
 
 <p>susie_auto is an attempt to automate reliable running of susie even
 on hard problems. It implements a three-stage strategy for each L:
@@ -651,21 +561,13 @@ tolerance.</p>
 <span class='fu'><a href='https://rdrr.io/r/graphics/plot.default.html'>plot</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span><span class='op'>(</span><span class='va'>res1</span><span class='op'>)</span><span class='op'>[</span><span class='op'>-</span><span class='fl'>1</span><span class='op'>]</span>,<span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span><span class='op'>(</span><span class='va'>res2</span><span class='op'>)</span><span class='op'>[</span><span class='op'>-</span><span class='fl'>1</span><span class='op'>]</span><span class='op'>)</span>
 </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/abline.html'>abline</a></span><span class='op'>(</span>a <span class='op'>=</span> <span class='fl'>0</span>,b <span class='op'>=</span> <span class='fl'>1</span>,col <span class='op'>=</span> <span class='st'>"skyblue"</span>,lty <span class='op'>=</span> <span class='st'>"dashed"</span><span class='op'>)</span>
 </div><div class='img'><img src='susie-3.png' alt='' width='700' height='433' /></div><div class='input'>
-<span class='co'># susie_rss example.</span>
-<span class='va'>ss</span>   <span class='op'>&lt;-</span> <span class='fu'>susieR</span><span class='fu'>:::</span><span class='fu'><a href='univariate_regression.html'>univariate_regression</a></span><span class='op'>(</span><span class='va'>X</span>,<span class='va'>y</span><span class='op'>)</span>
-<span class='va'>R</span>    <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/with.html'>with</a></span><span class='op'>(</span><span class='va'>input_ss</span>,<span class='fu'><a href='https://rdrr.io/r/stats/cor.html'>cov2cor</a></span><span class='op'>(</span><span class='va'>XtX</span><span class='op'>)</span><span class='op'>)</span>
-<span class='va'>zhat</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/with.html'>with</a></span><span class='op'>(</span><span class='va'>ss</span>,<span class='va'>betahat</span><span class='op'>/</span><span class='va'>sebetahat</span><span class='op'>)</span>
-<span class='va'>res3</span> <span class='op'>&lt;-</span> <span class='fu'>susie_rss</span><span class='op'>(</span><span class='va'>zhat</span>,<span class='va'>R</span>,L <span class='op'>=</span> <span class='fl'>10</span><span class='op'>)</span>
-<span class='fu'><a href='https://rdrr.io/r/graphics/plot.default.html'>plot</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span><span class='op'>(</span><span class='va'>res1</span><span class='op'>)</span><span class='op'>[</span><span class='op'>-</span><span class='fl'>1</span><span class='op'>]</span><span class='op'>/</span><span class='va'>ss</span><span class='op'>$</span><span class='va'>sebetahat</span>,<span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span><span class='op'>(</span><span class='va'>res3</span><span class='op'>)</span><span class='op'>[</span><span class='op'>-</span><span class='fl'>1</span><span class='op'>]</span><span class='op'>)</span>
-</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/abline.html'>abline</a></span><span class='op'>(</span>a <span class='op'>=</span> <span class='fl'>0</span>,b <span class='op'>=</span> <span class='fl'>1</span>,col <span class='op'>=</span> <span class='st'>"skyblue"</span>,lty <span class='op'>=</span> <span class='st'>"dashed"</span><span class='op'>)</span>
-</div><div class='img'><img src='susie-4.png' alt='' width='700' height='433' /></div><div class='input'>
 <span class='co'># susie_auto example.</span>
-<span class='va'>res4</span> <span class='op'>&lt;-</span> <span class='fu'>susie_auto</span><span class='op'>(</span><span class='va'>X</span>,<span class='va'>y</span><span class='op'>)</span>
-<span class='fu'><a href='https://rdrr.io/r/graphics/plot.default.html'>plot</a></span><span class='op'>(</span><span class='va'>beta</span>,<span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span><span class='op'>(</span><span class='va'>res4</span><span class='op'>)</span><span class='op'>[</span><span class='op'>-</span><span class='fl'>1</span><span class='op'>]</span><span class='op'>)</span>
+<span class='va'>res3</span> <span class='op'>&lt;-</span> <span class='fu'>susie_auto</span><span class='op'>(</span><span class='va'>X</span>,<span class='va'>y</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/graphics/plot.default.html'>plot</a></span><span class='op'>(</span><span class='va'>beta</span>,<span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span><span class='op'>(</span><span class='va'>res3</span><span class='op'>)</span><span class='op'>[</span><span class='op'>-</span><span class='fl'>1</span><span class='op'>]</span><span class='op'>)</span>
 </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/abline.html'>abline</a></span><span class='op'>(</span>a <span class='op'>=</span> <span class='fl'>0</span>,b <span class='op'>=</span> <span class='fl'>1</span>,col <span class='op'>=</span> <span class='st'>"skyblue"</span>,lty <span class='op'>=</span> <span class='st'>"dashed"</span><span class='op'>)</span>
-</div><div class='img'><img src='susie-5.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/plot.default.html'>plot</a></span><span class='op'>(</span><span class='va'>y</span>,<span class='fu'><a href='https://rdrr.io/r/stats/predict.html'>predict</a></span><span class='op'>(</span><span class='va'>res4</span><span class='op'>)</span><span class='op'>)</span>
+</div><div class='img'><img src='susie-4.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/plot.default.html'>plot</a></span><span class='op'>(</span><span class='va'>y</span>,<span class='fu'><a href='https://rdrr.io/r/stats/predict.html'>predict</a></span><span class='op'>(</span><span class='va'>res3</span><span class='op'>)</span><span class='op'>)</span>
 </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/abline.html'>abline</a></span><span class='op'>(</span>a <span class='op'>=</span> <span class='fl'>0</span>,b <span class='op'>=</span> <span class='fl'>1</span>,col <span class='op'>=</span> <span class='st'>"skyblue"</span>,lty <span class='op'>=</span> <span class='st'>"dashed"</span><span class='op'>)</span>
-</div><div class='img'><img src='susie-6.png' alt='' width='700' height='433' /></div><div class='input'>
+</div><div class='img'><img src='susie-5.png' alt='' width='700' height='433' /></div><div class='input'>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
