@@ -100,3 +100,34 @@ NULL
 #' @examples
 #' data(N3finemapping)
 NULL
+
+#' @name FinemappingConvergence
+#'
+#' @title Add Title Here
+#'
+#' @description Add description here.
+#' 
+#' @format \code{FinemappingConvergence} is a list with the following
+#' elements:
+#' 
+#' \describe{
+#' 
+#'   \item{XtX}{Describe XtX here.}
+#' 
+#'   \item{Xty}{Describe Xty here.}
+#'
+#'   \item{yty}{Describe yty here.}
+#'
+#'   \item{n}{Describe n here.}
+#' 
+#'   \item{true_coef}{Describe true_coef here.}
+#' 
+#'   \item{z}{Describe z here.}}
+#' 
+#' @docType data
+#' 
+#' @keywords data
+#' 
+#' @examples
+#' data(FinemappingConvergence)
+NULL
