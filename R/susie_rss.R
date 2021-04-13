@@ -150,6 +150,8 @@ susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
 # assumption is that each b_l has exactly one non-zero element, with
 # all elements equally likely to be non-zero. The prior on the
 # non-zero element is N(0,var = prior_variance).
+#
+#' @importFrom stats optimize
 susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
                             L = 10, lambda = 0,
                             prior_variance = 50, residual_variance = NULL,
@@ -299,7 +301,8 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
         if (est_sigma2 > 1)
           est_sigma2 = 1
       } else {
-        est_sigma2 = optimize(Eloglik_rss, interval = c(1e-4, 1-lambda), R = R, z = z, s = s, maximum = TRUE)$maximum
+        est_sigma2 = optimize(Eloglik_rss, interval = c(1e-4, 1-lambda),
+                              R = R, z = z, s = s, maximum = TRUE)$maximum
         if(Eloglik_rss(est_sigma2, R, z, s) < Eloglik_rss(1-lambda, R, z, s)){
           est_sigma2 = 1-lambda
         }
