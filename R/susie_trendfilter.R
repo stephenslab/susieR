@@ -92,5 +92,10 @@ susie_trendfilter = function (y, order = 0, standardize = FALSE,
 # @title estimate residual variance using MAD estimator
 # @param y an n-vector
 # @return a scalar of estimated residual variance
-estimate_mad_residual_variance = function (y)
-  0.5*(median(abs(diff(y))/0.6745)^2)
+estimate_mad_residual_variance = function (y) {
+  sigma2 = 0.5*(median(abs(diff(y))/0.6745)^2)
+  if (sigma2 == 0) {
+    stop("Cannot use median absolute deviation (MAD) to initialize residual variance because MAD = 0 for the input data. Please set 'use_mad = FALSE'")
+  }
+  return(sigma2)
+}
