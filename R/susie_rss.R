@@ -1,12 +1,11 @@
 #' @title Sum of Single Effects (SuSiE) Regression using summary statistics
 #'
-#' @details \code{susie_rss} performs sum of single-effect linear regression
-#' with z scores; all posterior calculations are for z-scores. This
-#' function fits the regression model \eqn{z = \sum_l R*b_l + e},
-#' where e is \eqn{N(0,R)} and \eqn{\sum_l b_l} is a
-#' p-vector of effects to be estimated. The required summary data are
-#' the p by p correlation matrix, \code{R}, and the p-vector
-#' \code{z}.
+#' @description \code{susie_rss} performs sum of single-effect linear
+#'   regression with z scores; all posterior calculations are for
+#'   z-scores. This function fits the regression model \eqn{z = \sum_l
+#'   R*b_l + e}, where e is \eqn{N(0,R)} and \eqn{\sum_l b_l} is a
+#'   p-vector of effects to be estimated. The required summary data are
+#'   the p by p correlation matrix, \code{R}, and the p-vector \code{z}.
 #'
 #' @param z A p-vector of z scores.
 #'
@@ -158,7 +157,6 @@
 #'   \%*\% colSums(alpha*mu)}.}
 #'
 #' @examples
-#'
 #' set.seed(1)
 #' n = 1000
 #' p = 1000
@@ -168,11 +166,11 @@
 #' X = scale(X,center = TRUE,scale = TRUE)
 #' y = drop(X %*% beta + rnorm(n))
 #'
-#' input_ss = compute_ss(X,y,standardize = TRUE)
-#' ss   <- susieR:::univariate_regression(X,y)
+#' input_ss <- compute_ss(X,y,standardize = TRUE)
+#' ss   <- univariate_regression(X,y)
 #' R    <- with(input_ss,cov2cor(XtX))
 #' zhat <- with(ss,betahat/sebetahat)
-#' res <- susie_rss(zhat,R,L = 10)
+#' res  <- susie_rss(zhat,R,L = 10)
 #'
 #' @export
 #'
