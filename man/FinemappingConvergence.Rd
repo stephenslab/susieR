@@ -10,26 +10,26 @@ elements:
 
 \describe{
 
-  \item{XtX}{XtX is computed using centered and scaled genotype
-data.}
+  \item{XtX}{Summary statistics computed using the centered and
+    scaled genotype matrix.}
 
-  \item{Xty}{XtX is computed using centered and scaled genotype
-data and centered simulated response.}
+  \item{Xty}{Summary statistics computed using the centered and
+    scaled genotype data, and the centered simulated response.}
 
-  \item{yty}{yty is computed using centered simulated response.}
+  \item{yty}{yty is computed using the centered simulated response.}
 
-  \item{n}{Sample size.}
+  \item{n}{The sample size (50,000).}
 
-  \item{true_coef}{The simulated effect sizes.}
+  \item{true_coef}{The coefficients used to simulate the responses.}
 
-  \item{z}{Marginal z scores from simple linear regression.}}
+  \item{z}{z-scores from a simple (single-SNP) linear regression.}}
 }
 \description{
-The data is simulated using real genotypes
-from 50000 individuals and 1001 SNPs. Two of the variables have
-non-zero effects on the multivariate response. The response data
-are generated under a linear regression model.
-The genotypes and simulated response are column centered.
+Data simulated using real genotypes from 50,000
+  individuals and 1,001 SNPs. Two of the SNPs have non-zero effects
+  on the multivariate response. The response data are generated under
+  a linear regression model. The simulated response and the columns
+  of the genotype matrix are centered.
 }
 \examples{
 data(FinemappingConvergence)
