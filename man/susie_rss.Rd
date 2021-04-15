@@ -45,9 +45,9 @@ matrix.}
 \item{maf_thresh}{Variants having a minor allele frequency smaller
 than this threshold are not used.}
 
-\item{z_ld_weight}{This feature is not recommended.
-The weights assigned to the z scores in the LD matrix.
-If z_ld_weight > 0, the LD matrix used in the model is \code{cov2cor((1-w)*R +
+\item{z_ld_weight}{This feature is not recommended. The weights
+assigned to the z scores in the LD matrix. If \code{z_ld_weight >
+0}, the LD matrix used in the model is \code{cov2cor((1-w)*R +
 w*tcrossprod(z))}, where \code{w = z_ld_weight}.}
 
 \item{L}{Number of components (nonzero coefficients) in the susie
