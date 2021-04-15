@@ -59,6 +59,7 @@
 #' beta[1:4] = 1
 #' X = matrix(rnorm(n*p),nrow = n,ncol = p)
 #' X = scale(X,center = TRUE,scale = TRUE)
+#' y = drop(X %*% beta + rnorm(n))
 #' res = susie_auto(X,y)
 #' plot(beta,coef(res)[-1])
 #' abline(a = 0,b = 1,col = "skyblue",lty = "dashed")

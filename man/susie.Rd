@@ -214,6 +214,21 @@ centered to have mean zero.}
 \item{yty}{A scalar \eqn{y'y} in which y is centered to have mean
 zero.}
 
+\item{maf}{Minor allele frequency; to be used along with
+\code{maf_thresh} to filter input summary statistics.}
+
+\item{maf_thresh}{Variants having a minor allele frequency smaller
+than this threshold are not used.}
+
+\item{r_tol}{Tolerance level for eigenvalue check of positive
+semidefinite matrix of R.}
+
+\item{intercept_value}{The intercept. (The intercept cannot be
+estimated from centered summary data.) This setting will be used by
+\code{coef} to assign an intercept value, mainly for consistency
+with \code{susie}. Set to \code{NULL} if you want \code{coef} not
+to include an intercept term (and so only a p-vector is returned).}
+
 \item{check_input}{If \code{check_input = TRUE},
 \code{susie_suff_stat} performs additional checks on \code{XtX} and
 \code{Xty}. The checks are: (1) check that \code{XtX} is positive
