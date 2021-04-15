@@ -300,7 +300,6 @@ these summary statistics; you may also want to scale each column of
 X and y to have variance 1 (see examples).
 }
 \examples{
-
 # susie example.
 set.seed(1)
 n = 1000
@@ -329,4 +328,7 @@ G. Wang, A. Sarkar, P. Carbonetto and M. Stephens (2020). A simple
   new approach to variable selection in regression, with application
   to genetic fine-mapping. \emph{Journal of the Royal Statistical
   Society, Series B} \url{https://doi.org/10.1101/501114}.
+}
+\seealso{
+\code{\link{susie_rss}}
 }

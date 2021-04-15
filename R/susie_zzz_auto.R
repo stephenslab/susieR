@@ -49,6 +49,8 @@
 #'
 #' @param \dots Additional arguments passed to \code{\link{susie}}.
 #'
+#' @seealso \code{\link{susie}}
+#'  
 #' @examples
 #' set.seed(1)
 #' n = 1000

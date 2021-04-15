@@ -203,8 +203,9 @@
 #'   to genetic fine-mapping. \emph{Journal of the Royal Statistical
 #'   Society, Series B} \url{https://doi.org/10.1101/501114}.
 #'
+#' @seealso \code{\link{susie_rss}}
+#' 
 #' @examples
-#'
 #' # susie example.
 #' set.seed(1)
 #' n = 1000

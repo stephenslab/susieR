@@ -84,3 +84,6 @@ plot(y,predict(res))
 abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
 
 }
+\seealso{
+\code{\link{susie}}
+}
