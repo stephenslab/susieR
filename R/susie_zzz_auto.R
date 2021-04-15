@@ -1,14 +1,68 @@
-#' @rdname susie
-#' 
+#' @title Attempt at Automating SuSiE for Hard Problems
+#'
+#' @description \code{susie_auto} is an attempt to automate reliable
+#'   running of susie even on hard problems. It implements a three-stage
+#'   strategy for each L: first, fit susie with very small residual
+#'   error; next, estimate residual error; finally, estimate the prior
+#'   variance. If the last step estimates some prior variances to be
+#'   zero, stop. Otherwise, double L, and repeat. Initial runs are
+#'   performed with relaxed tolerance; the final run is performed using
+#'   the default susie tolerance.
+#'
+#' @param X An n by p matrix of covariates.
+#'
+#' @param Y The observed responses, a vector of length n.
+#'
 #' @param L_init The initial value of L.
 #' 
 #' @param L_max The largest value of L to consider.
-#' 
+#'
+#' @param verbose If \code{verbose = TRUE}, the algorithm's progress,
+#'   and a summary of the optimization settings, are printed to the
+#'   console.
+#'
 #' @param init_tol The tolerance to passed to \code{susie} during
 #'   early runs (set large to shorten the initial runs).
 #' 
+#' @param standardize If \code{standardize = TRUE}, standardize the
+#'   columns of X to unit variance prior to fitting. Note that
+#'   \code{scaled_prior_variance} specifies the prior on the
+#'   coefficients of X \emph{after} standardization (if it is
+#'   performed). If you do not standardize, you may need to think more
+#'   carefully about specifying \code{scaled_prior_variance}. Whatever
+#'   your choice, the coefficients returned by \code{coef} are given for
+#'   \code{X} on the original input scale. Any column of \code{X} that
+#'   has zero variance is not standardized.
+#'
+#' @param intercept If \code{intercept = TRUE}, the intercept is
+#'   fitted; it \code{intercept = FALSE}, the intercept is set to
+#'   zero. Setting \code{intercept = FALSE} is generally not
+#'   recommended.
+#'
+#' @param max_iter Maximum number of IBSS iterations to perform.
+#'
+#' @param tol A small, non-negative number specifying the convergence
+#'   tolerance for the IBSS fitting procedure. The fitting procedure
+#'   will halt when the difference in the variational lower bound, or
+#'   \dQuote{ELBO} (the objective function to be maximized), is
+#'   less than \code{tol}.
+#'
 #' @param \dots Additional arguments passed to \code{\link{susie}}.
 #'
+#' @examples
+#' set.seed(1)
+#' n = 1000
+#' p = 1000
+#' beta = rep(0,p)
+#' beta[1:4] = 1
+#' X = matrix(rnorm(n*p),nrow = n,ncol = p)
+#' X = scale(X,center = TRUE,scale = TRUE)
+#' res = susie_auto(X,y)
+#' plot(beta,coef(res)[-1])
+#' abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
+#' plot(y,predict(res))
+#' abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
+#' 
 #' @importFrom stats sd
 #'
 #' @export
