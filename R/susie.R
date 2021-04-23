@@ -204,7 +204,7 @@
 #'   Society, Series B} \url{https://doi.org/10.1101/501114}.
 #'
 #' @seealso \code{\link{susie_rss}}
-#' 
+#'
 #' @examples
 #' # susie example.
 #' set.seed(1)
@@ -404,23 +404,29 @@ susie <- function (X,Y,L = min(10,ncol(X)),
   s$X_column_scale_factors = attr(X,"scaled:scale")
 
   if(refine){
-    if(!is.null(null_weight) && null_weight!=0 && !compute_univariate_zscore){
-      ## if null_weight is specified, and the extra 0 column is not removed from compute_univariate_zscore,
-      ## we remove it here
-      X = X[,1:(ncol(X) - 1)]
+    if(!missing(s_init) && !is.null(s_init)){
+      warning('The given s_init is not used in refinement.')
+    }
+    if(!is.null(null_weight) && null_weight!=0){
+      ## if null_weight is specified, we compute the original prior_weight
+      pw_s = s$pi[-s$null_index]/(1-null_weight)
+      if(!compute_univariate_zscore){
+        ## if null_weight is specified, and the extra 0 column is not removed from compute_univariate_zscore,
+        ## we remove it here
+        X = X[,1:(ncol(X) - 1)]
+      }
+    }else{
+      pw_s = s$pi
     }
     conti = TRUE
     while(conti){
       m = list()
       for(cs in 1:length(s$sets$cs)){
-        if(!missing(s_init) && !is.null(s_init)){
-          warning('The given s_init is not used in refinement.')
-        }
-        pw = rep(1, ncol(X))
-        pw[s$sets$cs[[cs]]] = 0
+        pw_cs = pw_s
+        pw_cs[s$sets$cs[[cs]]] = 0
         s2 = susie(X,Y,L = L,
                    scaled_prior_variance = scaled_prior_variance,residual_variance = residual_variance,
-                   prior_weights = pw,s_init = NULL,
+                   prior_weights = pw_cs, s_init = NULL,
                    null_weight = null_weight,standardize = standardize,intercept = intercept,
                    estimate_residual_variance = estimate_residual_variance,
                    estimate_prior_variance = estimate_prior_variance,
@@ -436,7 +442,7 @@ susie <- function (X,Y,L = min(10,ncol(X)),
         class(sinit2) = 'susie'
         s3 = susie(X,Y,L = L,
                    scaled_prior_variance = scaled_prior_variance,residual_variance = residual_variance,
-                   prior_weights = NULL, s_init = sinit2,
+                   prior_weights = pw_s, s_init = sinit2,
                    null_weight = null_weight,standardize = standardize,intercept = intercept,
                    estimate_residual_variance = estimate_residual_variance,
                    estimate_prior_variance = estimate_prior_variance,

@@ -273,23 +273,26 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
   }
 
   if(refine){
+    if(!missing(s_init) && !is.null(s_init)){
+      warning('The given s_init is not used in refinement.')
+    }
     if(!is.null(null_weight) && null_weight!=0){
       ## if null_weight is specified
       ## we remove the extra 0 column
       XtX = XtX[1:(ncol(XtX)-1), 1:(ncol(XtX)-1)]
       Xty = Xty[1:(ncol(XtX)-1)]
+      pw_s = s$pi[-s$null_index]/(1-null_weight)
+    }else{
+      pw_s = s$pi
     }
     conti = TRUE
     while(conti){
       m = list()
       for(cs in 1:length(s$sets$cs)){
-        if(!missing(s_init) && !is.null(s_init)){
-          warning('The given s_init is not used in refinement.')
-        }
-        pw = rep(1, ncol(XtX))
-        pw[s$sets$cs[[cs]]] = 0
+        pw_cs = pw_s
+        pw_cs[s$sets$cs[[cs]]] = 0
         s2 = susie_suff_stat(XtX = XtX, Xty = Xty, yty = yty, n = n, L = L,
-                             prior_weights = pw, s_init = NULL,
+                             prior_weights = pw_cs, s_init = NULL,
                              scaled_prior_variance = scaled_prior_variance,
                              residual_variance = residual_variance,
                              estimate_residual_variance = estimate_residual_variance,
@@ -304,7 +307,7 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
         sinit2 = s2[c('alpha', 'mu', 'mu2')]
         class(sinit2) = 'susie'
         s3 = susie_suff_stat(XtX = XtX, Xty = Xty, yty = yty, n = n, L = L,
-                             prior_weights = NULL, s_init = sinit2,
+                             prior_weights = pw_s, s_init = sinit2,
                              scaled_prior_variance = scaled_prior_variance,
                              residual_variance = residual_variance,
                              estimate_residual_variance = estimate_residual_variance,
