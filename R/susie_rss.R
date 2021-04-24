@@ -54,25 +54,18 @@
 #'   0}, the matrix R used in the model is adjusted to be \code{cov2cor((1-w)*R +
 #'   w*tcrossprod(z))}, where \code{w = z_ld_weight}.
 #'
-#' @param L Number of components (nonzero coefficients) in the susie
+#' @param L Maximum number of components (nonzero coefficients) in the susie
 #'   regression model. If L is larger than the number of covariates, p,
 #'   L is set to p.
 #'
 #' @param prior_variance The prior variance(s) for the non-zero element of \eqn{b_l}. It is either a scalar or
 #'   a vector of length L.
 #'
-#' @param residual_variance Variance of the residual.
-#'   If it is not specified, we set it to 1.
-#'
 #' @param prior_weights A vector of length p, in which each entry
 #'   gives the prior probability that SNP j has non-zero effect.
 #'
 #' @param null_weight Prior probability of no effect (a number between
 #'   0 and 1, and cannot be exactly 1).
-#'
-#' @param estimate_residual_variance The residual variance is
-#'   fixed to the value supplied by \code{residual_variance}. We don't
-#'   estimate residual variance in susie_rss.
 #'
 #' @param estimate_prior_variance If \code{estimate_prior_variance =
 #'   TRUE}, the prior variance is estimated (this is a separate
@@ -140,8 +133,9 @@
 #' @param r_tol Tolerance level for eigenvalue check of positive
 #'   semidefinite matrix of R.
 #'
-#' @param refine If \code{refine = TRUE}, we use a procedure to help
-#'   SuSiE get out of local optimum.
+#' @param refine If \code{refine = TRUE}, then an additional
+#'  iterative refinement procedure is used, after the IBSS algorithm,
+#'  to check and escape from local optima (see \code{\link{susie}} details).
 #'
 #' @return A \code{"susie"} object with some or all of the following
 #'   elements:
@@ -217,9 +211,8 @@
 #' @export
 #'
 susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
-                      L = 10, prior_variance = 50, residual_variance = NULL,
+                      L = 10, prior_variance = 50,
                       prior_weights = NULL, null_weight = NULL,
-                      estimate_residual_variance = FALSE,
                       estimate_prior_variance = TRUE,
                       estimate_prior_method = c("optim", "EM", "simple"),
                       check_null_threshold = 0, prior_tol = 1e-9,
@@ -291,20 +284,9 @@ susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
     z = c(z,0)
   }
 
-  if(estimate_residual_variance){
-    warning("SuSiE-RSS no longer estimates residual variance, since we found it didn't help.")
-    estimate_residual_variance = FALSE
-  }
-
-  if (!is.null(residual_variance) &&
-      (residual_variance > 1 | residual_variance < 0))
-    stop("Residual variance should be a scalar between 0 and 1")
-  if (is.null(residual_variance))
-    residual_variance = 1
-
   s = susie_suff_stat(XtX = R, Xty = z, n = length(z), yty = length(z)-1,
                       L = L, scaled_prior_variance = prior_variance,
-                      residual_variance = residual_variance,
+                      residual_variance = 1,
                       estimate_residual_variance = FALSE,
                       estimate_prior_variance = estimate_prior_variance,
                       estimate_prior_method = estimate_prior_method,

@@ -12,10 +12,8 @@ susie_rss(
   z_ld_weight = 0,
   L = 10,
   prior_variance = 50,
-  residual_variance = NULL,
   prior_weights = NULL,
   null_weight = NULL,
-  estimate_residual_variance = FALSE,
   estimate_prior_variance = TRUE,
   estimate_prior_method = c("optim", "EM", "simple"),
   check_null_threshold = 0,
@@ -51,25 +49,18 @@ If \code{z_ld_weight >
   0}, the matrix R used in the model is adjusted to be \code{cov2cor((1-w)*R +
   w*tcrossprod(z))}, where \code{w = z_ld_weight}.}
 
-\item{L}{Number of components (nonzero coefficients) in the susie
+\item{L}{Maximum number of components (nonzero coefficients) in the susie
 regression model. If L is larger than the number of covariates, p,
 L is set to p.}
 
 \item{prior_variance}{The prior variance(s) for the non-zero element of \eqn{b_l}. It is either a scalar or
 a vector of length L.}
 
-\item{residual_variance}{Variance of the residual.
-If it is not specified, we set it to 1.}
-
 \item{prior_weights}{A vector of length p, in which each entry
 gives the prior probability that SNP j has non-zero effect.}
 
 \item{null_weight}{Prior probability of no effect (a number between
 0 and 1, and cannot be exactly 1).}
-
-\item{estimate_residual_variance}{The residual variance is
-fixed to the value supplied by \code{residual_variance}. We don't
-estimate residual variance in susie_rss.}
 
 \item{estimate_prior_variance}{If \code{estimate_prior_variance =
 TRUE}, the prior variance is estimated (this is a separate
@@ -137,8 +128,9 @@ positive semidefinite.}
 \item{r_tol}{Tolerance level for eigenvalue check of positive
 semidefinite matrix of R.}
 
-\item{refine}{If \code{refine = TRUE}, we use a procedure to help
-SuSiE get out of local optimum.}
+\item{refine}{If \code{refine = TRUE}, then an additional
+iterative refinement procedure is used, after the IBSS algorithm,
+to check and escape from local optima (see \code{\link{susie}} details).}
 }
 \value{
 A \code{"susie"} object with some or all of the following
