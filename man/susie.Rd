@@ -300,12 +300,11 @@ Performs a sparse Bayesian multiple linear regression of Y on
   non-zero element is normal with zero mean and variance \code{var(Y)
   * scaled_prior_variance}. The value of \code{L} is fixed, and should
   be chosen to provide a reasonable upper bound on the number of non-zero effects to be detected.
-  Typically other parameters (\code{residual_variance} and \code{scaled_prior_variance})
+  Typically the hyperparameters \code{residual_variance} and \code{scaled_prior_variance}
   will be estimated during model fitting, although they can also be fixed as specified by the user.
-  See also \code{\link{susie_trendfilter}} for applying the SuSiE model to
-  non-parametric regression, particularly changepoint problems, and
-  \code{\link{susie_rss}} for applying the SuSiE model when one only has access to
-  limited summary statistics related to X and Y (typically in genetic applications).
+
+See functions \code{\link{susie_get_cs}} and other functions of form \code{susie_get_*} to extract
+the most commonly-used results from a susie fit.
 }
 \details{
 The function \code{susie} implements the IBSS algorithm from Wang et al (2020).
@@ -339,7 +338,7 @@ However the methods differ in computational complexity:
 the cost of computing the sufficient statistics, which is dominated by
 the \eqn{O(np^2)} cost of computing \eqn{X'X}). Because of the cost of
 computing \eqn{X'X}, \code{susie} will usually be faster.
-However, if $n>>p$, and/or if \eqn{X'X} is already computed, then
+However, if \eqn{n>>p}, and/or if \eqn{X'X} is already computed, then
 \code{susie_suff_stat} may be faster.
 }
 \examples{
@@ -353,6 +352,7 @@ X = matrix(rnorm(n*p),nrow = n,ncol = p)
 X = scale(X,center = TRUE,scale = TRUE)
 y = drop(X \%*\% beta + rnorm(n))
 res1 = susie(X,y,L = 10)
+susie_get_cs(res1) # extract credible sets from fit
 plot(beta,coef(res1)[-1])
 abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
 plot(y,predict(res1))
@@ -373,6 +373,9 @@ G. Wang, A. Sarkar, P. Carbonetto and M. Stephens (2020). A simple
   Society, Series B} \url{https://doi.org/10.1101/501114}.
 }
 \seealso{
-\code{\link{susie_rss}} for applying susie using summary statistics;
-\code{\link{susie_trendfilter}}
+\code{\link{susie_get_cs}} and other \code{susie_get_*} functions to extract results;
+\code{\link{susie_trendfilter}} for applying the SuSiE model to
+  non-parametric regression, particularly changepoint problems, and
+  \code{\link{susie_rss}} for applying the SuSiE model when one only has access to
+  limited summary statistics related to \eqn{X} and \eqn{Y} (typically in genetic applications).
 }

@@ -13,12 +13,11 @@
 #'   non-zero element is normal with zero mean and variance \code{var(Y)
 #'   * scaled_prior_variance}. The value of \code{L} is fixed, and should
 #'   be chosen to provide a reasonable upper bound on the number of non-zero effects to be detected.
-#'   Typically other parameters (\code{residual_variance} and \code{scaled_prior_variance})
+#'   Typically the hyperparameters \code{residual_variance} and \code{scaled_prior_variance}
 #'   will be estimated during model fitting, although they can also be fixed as specified by the user.
-#'   See also \code{\link{susie_trendfilter}} for applying the SuSiE model to
-#'   non-parametric regression, particularly changepoint problems, and
-#'   \code{\link{susie_rss}} for applying the SuSiE model when one only has access to
-#'   limited summary statistics related to X and Y (typically in genetic applications).
+#'
+#' See functions \code{\link{susie_get_cs}} and other functions of form \code{susie_get_*} to extract
+#' the most commonly-used results from a susie fit.
 #'
 #' @details The function \code{susie} implements the IBSS algorithm from Wang et al (2020).
 #' The option \code{refine=TRUE} implements an additional step to help reduce
@@ -51,7 +50,7 @@
 #' the cost of computing the sufficient statistics, which is dominated by
 #' the \eqn{O(np^2)} cost of computing \eqn{X'X}). Because of the cost of
 #' computing \eqn{X'X}, \code{susie} will usually be faster.
-#' However, if $n>>p$, and/or if \eqn{X'X} is already computed, then
+#' However, if \eqn{n>>p}, and/or if \eqn{X'X} is already computed, then
 #' \code{susie_suff_stat} may be faster.
 #'
 #'
@@ -232,8 +231,12 @@
 #'   to genetic fine-mapping. \emph{Journal of the Royal Statistical
 #'   Society, Series B} \url{https://doi.org/10.1101/501114}.
 #'
-#' @seealso \code{\link{susie_rss}} for applying susie using summary statistics;
-#' \code{\link{susie_trendfilter}}
+#' @seealso \code{\link{susie_get_cs}} and other \code{susie_get_*} functions to extract results;
+#' \code{\link{susie_trendfilter}} for applying the SuSiE model to
+#'   non-parametric regression, particularly changepoint problems, and
+#'   \code{\link{susie_rss}} for applying the SuSiE model when one only has access to
+#'   limited summary statistics related to \eqn{X} and \eqn{Y} (typically in genetic applications).
+#'
 #'
 #' @examples
 #' # susie example.
@@ -246,6 +249,7 @@
 #' X = scale(X,center = TRUE,scale = TRUE)
 #' y = drop(X %*% beta + rnorm(n))
 #' res1 = susie(X,y,L = 10)
+#' susie_get_cs(res1) # extract credible sets from fit
 #' plot(beta,coef(res1)[-1])
 #' abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
 #' plot(y,predict(res1))
@@ -434,23 +438,29 @@ susie <- function (X,Y,L = min(10,ncol(X)),
   s$X_column_scale_factors = attr(X,"scaled:scale")
 
   if(refine){
-    if(!is.null(null_weight) && null_weight!=0 && !compute_univariate_zscore){
-      ## if null_weight is specified, and the extra 0 column is not removed from compute_univariate_zscore,
-      ## we remove it here
-      X = X[,1:(ncol(X) - 1)]
+    if(!missing(s_init) && !is.null(s_init)){
+      warning('The given s_init is not used in refinement.')
+    }
+    if(!is.null(null_weight) && null_weight!=0){
+      ## if null_weight is specified, we compute the original prior_weight
+      pw_s = s$pi[-s$null_index]/(1-null_weight)
+      if(!compute_univariate_zscore){
+        ## if null_weight is specified, and the extra 0 column is not removed from compute_univariate_zscore,
+        ## we remove it here
+        X = X[,1:(ncol(X) - 1)]
+      }
+    }else{
+      pw_s = s$pi
     }
     conti = TRUE
     while(conti){
       m = list()
       for(cs in 1:length(s$sets$cs)){
-        if(!missing(s_init) && !is.null(s_init)){
-          warning('The given s_init is not used in refinement.')
-        }
-        pw = rep(1, ncol(X))
-        pw[s$sets$cs[[cs]]] = 0
+        pw_cs = pw_s
+        pw_cs[s$sets$cs[[cs]]] = 0
         s2 = susie(X,Y,L = L,
                    scaled_prior_variance = scaled_prior_variance,residual_variance = residual_variance,
-                   prior_weights = pw,s_init = NULL,
+                   prior_weights = pw_cs, s_init = NULL,
                    null_weight = null_weight,standardize = standardize,intercept = intercept,
                    estimate_residual_variance = estimate_residual_variance,
                    estimate_prior_variance = estimate_prior_variance,
@@ -466,7 +476,7 @@ susie <- function (X,Y,L = min(10,ncol(X)),
         class(sinit2) = 'susie'
         s3 = susie(X,Y,L = L,
                    scaled_prior_variance = scaled_prior_variance,residual_variance = residual_variance,
-                   prior_weights = NULL, s_init = sinit2,
+                   prior_weights = pw_s, s_init = sinit2,
                    null_weight = null_weight,standardize = standardize,intercept = intercept,
                    estimate_residual_variance = estimate_residual_variance,
                    estimate_prior_variance = estimate_prior_variance,
