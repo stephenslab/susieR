@@ -19,7 +19,7 @@ test_that("Results from sufficient stat interface vs original data: no standardi
   expect_equal(fit$V, orig$V)
   X.c = set_X_attributes(X, center = TRUE, scale = FALSE)
   X.c = t((t(X.c) - attr(X.c, 'scaled:center'))/attr(X.c, 'scaled:scale'))
-  expect_equal(crossprod(X.c, orig$fitted), fit$Xtfitted)
+  expect_equal(crossprod(X.c, orig$Xr), fit$XtXr)
 }))
 
 test_that("Results from sufficient stat interface vs original data: standardize", with(simulate(200,1000), {
@@ -43,7 +43,7 @@ test_that("Results from sufficient stat interface vs original data: standardize"
   expect_equal(fit$mu, orig$mu)
   expect_equal(fit$mu2, orig$mu2)
   expect_equal(fit$V, orig$V)
-  expect_equal(crossprod(X.cs, orig$fitted), fit$Xtfitted)
+  expect_equal(crossprod(X.cs, orig$Xr), fit$XtXr)
 }))
 
 test_that("Results from sufficient stat interface: t statistics", with(simulate(200,1000), {
@@ -67,5 +67,5 @@ test_that("Results from sufficient stat interface: t statistics", with(simulate(
   expect_equal(fit$mu, orig$mu)
   expect_equal(fit$mu2, orig$mu2)
   expect_equal(fit$V, orig$V)
-  expect_equal(crossprod(X.cs, orig$fitted), fit$Xtfitted)
+  expect_equal(crossprod(X.cs, orig$Xr), fit$XtXr)
 }))

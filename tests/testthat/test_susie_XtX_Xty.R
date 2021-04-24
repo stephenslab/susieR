@@ -21,7 +21,7 @@ test_that("Results from sufficient stat vs original data", with(simulate(200,100
   csd = compute_colSds(X)
   csd[csd==0] = 1
   X.cs = t( (t(X) - cm) / csd )
-  expect_equal(crossprod(X.cs, res$fitted), res2$Xtfitted)
+  expect_equal(crossprod(X.cs, res$Xr), res2$XtXr)
 }))
 
 test_that("Results from sufficient stat vs original data: estimate residual variance", with(simulate(200,1000), {
@@ -46,7 +46,7 @@ test_that("Results from sufficient stat vs original data: estimate residual vari
   csd = compute_colSds(X)
   csd[csd==0] = 1
   X.cs = t( (t(X) - cm) / csd )
-  expect_equal(crossprod(X.cs, res$fitted), res2$Xtfitted)
+  expect_equal(crossprod(X.cs, res$Xr), res2$XtXr)
 }))
 
 test_that("MAF filter works", with(simulate(200,1000), {
@@ -68,6 +68,6 @@ test_that("MAF filter works", with(simulate(200,1000), {
   expect_equal(res1$V, res2$V)
   expect_equal(res1$elbo, res2$elbo)
   expect_equal(coef(res1), coef(res2))
-  expect_equal(res1$Xtfitted, res2$Xtfitted)
+  expect_equal(res1$XtXr, res2$XtXr)
 
 }))

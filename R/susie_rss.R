@@ -131,7 +131,7 @@
 #'  iterative refinement procedure is used, after the IBSS algorithm,
 #'  to check and escape from local optima (see \code{\link{susie}} details).
 #'
-#' @return A \code{"susie"} object with some or all of the following
+#' @return A \code{"susie"} object with the following
 #'   elements:
 #'
 #' \item{alpha}{An L by p matrix of posterior inclusion probabilites.}
@@ -145,10 +145,6 @@
 #' \item{lbf}{log-Bayes Factor for each single effect.}
 #'
 #' \item{lbf_variable}{log-Bayes Factor for each variable and single effect.}
-#'
-#' \item{intercept}{Fixed Intercept.}
-#'
-#' \item{sigma2}{Fixed Residual variance.}
 #'
 #' \item{V}{Prior variance of the non-zero elements of b.}
 #'
