@@ -257,8 +257,6 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
   }
 
   s$intercept = intercept_value
-  s$Xtfitted = s$XtXr
-
   s$X_column_scale_factors = attr(XtX,"scaled:scale")
 
   if (track_fit)

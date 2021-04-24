@@ -20,7 +20,6 @@ susie_rss(
   prior_tol = 1e-09,
   max_iter = 100,
   s_init = NULL,
-  intercept_value = 0,
   coverage = 0.95,
   min_abs_corr = 0.5,
   tol = 0.001,
@@ -94,12 +93,6 @@ prior variance is smaller than this tolerance value.}
 
 \item{s_init}{A previous susie fit with which to initialize.}
 
-\item{intercept_value}{The intercept. (The intercept cannot be
-estimated from centered summary data.) This setting will be used by
-\code{coef} to assign an intercept value, mainly for consistency
-with \code{susie}. Set to \code{NULL} if you want \code{coef} not
-to include an intercept term (and so only a p-vector is returned).}
-
 \item{coverage}{A number between 0 and 1 specifying the
 \dQuote{coverage} of the estimated confidence sets.}
 
@@ -152,15 +145,13 @@ A \code{"susie"} object with some or all of the following
 
 \item{sigma2}{Fixed Residual variance.}
 
-\item{V}{Prior variance of the non-zero elements of b, equal to
-  \code{scaled_prior_variance * var(Y)}.}
+\item{V}{Prior variance of the non-zero elements of b.}
 
 \item{elbo}{The value of the variational lower bound, or
   \dQuote{ELBO} (objective function to be maximized), achieved at
   each iteration of the IBSS fitting procedure.}
 
-\item{fitted}{Vector of length n containing the fitted values of
-  the outcome.}
+\item{Rr}{A vector of length p, equal to \code{R \%*\% colSums(alpha*mu)}.}
 
 \item{sets}{Credible sets estimated from model fit; see
   \code{\link{susie_get_cs}} for details.}
@@ -173,9 +164,6 @@ A \code{"susie"} object with some or all of the following
 \item{converged}{\code{TRUE} or \code{FALSE} indicating whether
   the IBSS converged to a solution within the chosen tolerance
   level.}
-
-\item{Rr}{An p-vector of \code{t(X)} times fitted values, \code{X
-  \%*\% colSums(alpha*mu)}.}
 }
 \description{
 \code{susie_rss}

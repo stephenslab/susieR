@@ -99,12 +99,6 @@
 #'
 #' @param s_init A previous susie fit with which to initialize.
 #'
-#' @param intercept_value The intercept. (The intercept cannot be
-#'   estimated from centered summary data.) This setting will be used by
-#'   \code{coef} to assign an intercept value, mainly for consistency
-#'   with \code{susie}. Set to \code{NULL} if you want \code{coef} not
-#'   to include an intercept term (and so only a p-vector is returned).
-#'
 #' @param coverage A number between 0 and 1 specifying the
 #'   \dQuote{coverage} of the estimated confidence sets.
 #'
@@ -156,15 +150,13 @@
 #'
 #' \item{sigma2}{Fixed Residual variance.}
 #'
-#' \item{V}{Prior variance of the non-zero elements of b, equal to
-#'   \code{scaled_prior_variance * var(Y)}.}
+#' \item{V}{Prior variance of the non-zero elements of b.}
 #'
 #' \item{elbo}{The value of the variational lower bound, or
 #'   \dQuote{ELBO} (objective function to be maximized), achieved at
 #'   each iteration of the IBSS fitting procedure.}
 #'
-#' \item{fitted}{Vector of length n containing the fitted values of
-#'   the outcome.}
+#' \item{Rr}{A vector of length p, equal to \code{R \%*\% colSums(alpha*mu)}.}
 #'
 #' \item{sets}{Credible sets estimated from model fit; see
 #'   \code{\link{susie_get_cs}} for details.}
@@ -177,9 +169,6 @@
 #' \item{converged}{\code{TRUE} or \code{FALSE} indicating whether
 #'   the IBSS converged to a solution within the chosen tolerance
 #'   level.}
-#'
-#' \item{Rr}{An p-vector of \code{t(X)} times fitted values, \code{X
-#'   \%*\% colSums(alpha*mu)}.}
 #'
 #' @references
 #'
@@ -216,7 +205,7 @@ susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
                       estimate_prior_variance = TRUE,
                       estimate_prior_method = c("optim", "EM", "simple"),
                       check_null_threshold = 0, prior_tol = 1e-9,
-                      max_iter = 100, s_init = NULL, intercept_value = 0,
+                      max_iter = 100, s_init = NULL,
                       coverage = 0.95, min_abs_corr = 0.5,
                       tol = 1e-03, verbose = FALSE, track_fit = FALSE,
                       check_R = FALSE, r_tol = 1e-08, refine = FALSE) {
@@ -293,12 +282,11 @@ susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
                       check_null_threshold = check_null_threshold, prior_tol = prior_tol,
                       r_tol = r_tol, prior_weights = prior_weights,
                       null_weight = NULL, standardize = FALSE,
-                      max_iter = max_iter, s_init = s_init, intercept_value = intercept_value,
+                      max_iter = max_iter, s_init = s_init, intercept_value = NULL,
                       coverage = coverage, min_abs_corr = min_abs_corr,
                       tol = tol, verbose = verbose, track_fit = track_fit, check_input = FALSE,
                       refine = refine)
-  s$fitted = s$Xtfitted
-  s$Rr = s$XtXr
+  s$Rr = s$Xtfitted
   s$Xtfitted = s$XtXr = NULL
   return(s)
 }
