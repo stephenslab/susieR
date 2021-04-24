@@ -1,11 +1,41 @@
 #' @title Sum of Single Effects (SuSiE) Regression using summary statistics
 #'
-#' @description \code{susie_rss} performs sum of single-effect linear
-#'   regression with z scores; all posterior calculations are for
-#'   z-scores. This function fits the regression model \eqn{z = \sum_l
-#'   R*b_l + e}, where e is \eqn{N(0,R)} and \eqn{\sum_l b_l} is a
-#'   p-vector of effects to be estimated. The required summary data are
-#'   the p by p correlation matrix, \code{R}, and the p-vector \code{z}.
+#' @description \code{susie_rss}
+#' performs variable selection under a sparse Bayesian multiple linear regression
+#' of \eqn{Y} on \eqn{X} using only the \eqn{z} scores from standard univariate regression of
+#'  \eqn{Y} on each column of \eqn{X}, and an estimate \eqn{R} of the correlation matrix
+#'  between columns of \eqn{X}.  It does this by combining the "RSS likelihood" from Zhu and Stephens (2017) with the
+#'   Sum of Single Effects" model from Wang et al (2020).
+#'
+#'
+#' @details In some applications, particularly genetic applications,
+#' it is desired to fit a regression model (\eqn{Y = X\tilde{b} +E} say,
+#' which we refer to as "the original regression model" or ORM) without access
+#' to the actual values of \eqn{Y} and \eqn{X}, but given only some summary statistics.
+#' \code{susie_rss} assumes the availability of \eqn{z} scores from standard univariate regression of
+#'  \eqn{Y} on each column of \eqn{X}, and an estimate \eqn{R} of the correlation matrix
+#'  between columns of \eqn{X} (\eqn{R} is sometimes called the LD matrix in genetic applications).
+#'  See Zhu and Stephens (2017), and references therein, for further background.
+#'
+#'  The \code{susie_rss} function is based on the model (2.10) from Zhu and Stephens,  \eqn{z | R, b ~ N(Rb,R)}
+#' where \eqn{b} is a vector of length p representing the effects to be estimated. The effect
+#' \eqn{b_j} is simply a multiple of the coefficient \eqn{\tilde{b}_j} in the ORM,
+#' and so \eqn{b_j} is non-zero if and only if \eqn{\tilde{b}_j} is non-zero. In this
+#' sense the variable selection problem in this model is the same as the variable selection
+#' problem in the ORM, and so the credible sets and PIPs computed by \code{susie_rss}
+#' can be interpreted as credible sets and PIPs for the ORM. However, converting posterior estimates of \eqn{b_j} to estimates
+#' of \eqn{\tilde{b}_j} would require computation of the scaling factor (not done here).
+#'
+#' More precisely
+#' \code{susie_rss} assumes the
+#' log-likelihood for \eqn{b} is \eqn{l(b; z,R) = 0.5 b'Rb - z'b},
+#' which is equivalent to model (2.10) from Zhu and Stephens if \eqn{R} is invertible,
+#' but does not require \eqn{R} to be invertible.
+#' It combines this likelihood with the \dQuote{susie prior} which assumes that \eqn{b = \sum_{l=1}^L b_l} where each
+#'   \eqn{b_l} is a vector of length p with exactly one non-zero element; see
+#'   \code{\link{susie}} and Wang et al (2020) for details. In practice
+#'   this is accomplished by calling \code{susie_suff_stat} with \code{XtX = R}
+#'   and \code{Xty = z}, and fixing \code{residual_variance=1}.
 #'
 #' @param z A p-vector of z scores.
 #'
@@ -18,16 +48,17 @@
 #' @param maf_thresh Variants having a minor allele frequency smaller
 #'   than this threshold are not used.
 #'
-#' @param z_ld_weight This feature is not recommended. The weights
-#'   assigned to the z scores in the LD matrix. If \code{z_ld_weight >
-#'   0}, the LD matrix used in the model is \code{cov2cor((1-w)*R +
+#' @param z_ld_weight (This parameter is included for backwards compatibility
+#' with previous versions of the function, but it is no longer recommended to use a non-zero value).
+#' If \code{z_ld_weight >
+#'   0}, the matrix R used in the model is adjusted to be \code{cov2cor((1-w)*R +
 #'   w*tcrossprod(z))}, where \code{w = z_ld_weight}.
 #'
 #' @param L Number of components (nonzero coefficients) in the susie
 #'   regression model. If L is larger than the number of covariates, p,
 #'   L is set to p.
 #'
-#' @param prior_variance The prior variance. It is either a scalar or
+#' @param prior_variance The prior variance(s) for the non-zero element of \eqn{b_l}. It is either a scalar or
 #'   a vector of length L.
 #'
 #' @param residual_variance Variance of the residual.
@@ -156,6 +187,17 @@
 #' \item{Rr}{An p-vector of \code{t(X)} times fitted values, \code{X
 #'   \%*\% colSums(alpha*mu)}.}
 #'
+#' @references
+#'
+#' G. Wang, A. Sarkar, P. Carbonetto and M. Stephens (2020). A simple
+#'   new approach to variable selection in regression, with application
+#'   to genetic fine-mapping. \emph{Journal of the Royal Statistical
+#'   Society, Series B} \url{https://doi.org/10.1101/501114}.
+#'
+#' X. Zhu and M. Stephens (2017). Bayesian large-scale multiple regression
+#' with summary statistics from genome-wide association studies.
+#' \emph{Annals of Applied Statistics} 11(3): 1561-1592.
+#'
 #' @examples
 #' set.seed(1)
 #' n = 1000
@@ -166,7 +208,7 @@
 #' X = scale(X,center = TRUE,scale = TRUE)
 #' y = drop(X %*% beta + rnorm(n))
 #'
-#' input_ss <- compute_ss(X,y,standardize = TRUE)
+#' input_ss <- compute_suff_stat(X,y,standardize = TRUE)
 #' ss   <- univariate_regression(X,y)
 #' R    <- with(input_ss,cov2cor(XtX))
 #' zhat <- with(ss,betahat/sebetahat)
@@ -229,7 +271,7 @@ susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
 
   # Modify R as needed.
   if (z_ld_weight > 0) {
-    warning('From version 0.11.0, the non-zero z_ld_weight is no longer recommended.')
+    warning('From version 0.11.0, use of non-zero z_ld_weight is no longer recommended.')
     R = muffled_cov2cor((1-z_ld_weight)*R + z_ld_weight * tcrossprod(z))
     R = (R + t(R))/2
   }

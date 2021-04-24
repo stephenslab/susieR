@@ -1,23 +1,27 @@
-#' @title Compute sufficient statistics for susie.
-#' 
+#' @title Compute sufficient statistics for input to \code{susie_suff_stat}
+#'
+#' @description  Computes the sufficient statistics \eqn{X'X, X'y, y'y} and \eqn{n}
+#' after centering (and possibly standardizing) the columns of \eqn{X} and centering \eqn{y}
+#' to have mean 0.
+#'
 #' @param X An n by p matrix of covariates.
-#' 
+#'
 #' @param y An n vector.
-#' 
+#'
 #' @param standardize Logical flag indicating whether to standardize
 #'   columns of X to unit variance prior to fitting.
-#' 
-#' @return A list of sufficient statistics.
-#' 
+#'
+#' @return A list of sufficient statistics (\code{XtX, Xty, yty} and \code{n}).
+#'
 #' @importFrom methods as
 #'
 #' @examples
 #' data(N2finemapping)
-#' ss = compute_ss(N2finemapping$X, N2finemapping$Y[,1])
-#' 
+#' ss = compute_suff_stat(N2finemapping$X, N2finemapping$Y[,1])
+#'
 #' @export
-#' 
-compute_ss = function(X, y, standardize = TRUE) {
+#'
+compute_suff_stat = function(X, y, standardize = TRUE) {
   y = y - mean(y)
   is.sparse = !is.matrix(X)
   X = set_X_attributes(as.matrix(X),center=TRUE,scale = standardize)
@@ -29,4 +33,29 @@ compute_ss = function(X, y, standardize = TRUE) {
   n = length(y)
   yty = sum(y^2)
   return(list(XtX = XtX,Xty = Xty,yty = yty,n = n))
+}
+
+#' @title Compute sufficient statistics for input to \code{susie_suff_stat}
+#'
+#' @description This is a synonym for \code{compute_suff_stat} included for historical reasons; deprecated.
+#'
+#' @param X An n by p matrix of covariates.
+#'
+#' @param y An n vector.
+#'
+#' @param standardize Logical flag indicating whether to standardize
+#'   columns of X to unit variance prior to fitting.
+#'
+#' @return A list of sufficient statistics (X'X, X'y, y'y and n)
+#'
+#' @importFrom methods as
+#'
+#' @examples
+#' data(N2finemapping)
+#' ss = compute_ss(N2finemapping$X, N2finemapping$Y[,1])
+#'
+#' @export
+#'
+compute_ss = function(X, y, standardize = TRUE) {
+  compute_suff_stat(X,y,standardize)
 }

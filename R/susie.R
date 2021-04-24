@@ -2,36 +2,64 @@
 #'
 #' @title Sum of Single Effects (SuSiE) Regression
 #'
-#' @description Performs Bayesian multiple linear regression of Y on
-#'   X; that is, this function fits the regression model \eqn{Y = \sum_l
-#'   X b_{l=1}^L + e}, where elements of e are \emph{i.i.d.} normal with
-#'   zero mean and variance \code{residual_variance}, and
-#'   \eqn{\sum_{l=1}^L b_l} is a vector of length p representing the
-#'   effects to be estimated. The \dQuote{susie assumption} is that each
-#'   \eqn{b_l} has exactly one non-zero element. The prior on the
+#' @description Performs a sparse Bayesian multiple linear regression of Y on
+#'   X, using the "Sum of Single Effects" model from Wang et al (2020).  In brief,
+#'   this function fits the regression model
+#'   \eqn{Y = X b + e}, where elements of e are \emph{i.i.d.} normal with
+#'   zero mean and variance \code{residual_variance}, and \eqn{b} is a vector
+#'   of length p representing the effects to be estimated.
+#'  The \dQuote{susie assumption} is that \eqn{b = \sum_{l=1}^L b_l} where each
+#'   \eqn{b_l} is a vector of length p with exactly one non-zero element. The prior on the
 #'   non-zero element is normal with zero mean and variance \code{var(Y)
-#'   * scaled_prior_variance}. The model is fitted using the
-#'   \dQuote{Iterative Bayesian Stepwise Selection} (IBSS) algorithm.
-#'   See also \code{\link{susie_trendfilter}} for applying susie to
-#'   non-parametric regression, particularly changepoint problems.
+#'   * scaled_prior_variance}. The value of \code{L} is fixed, and should
+#'   be chosen to provide a reasonable upper bound on the number of non-zero effects to be detected.
+#'   Typically other parameters (\code{residual_variance} and \code{scaled_prior_variance})
+#'   will be estimated during model fitting, although they can also be fixed as specified by the user.
+#'   See also \code{\link{susie_trendfilter}} for applying the SuSiE model to
+#'   non-parametric regression, particularly changepoint problems, and
+#'   \code{\link{susie_rss}} for applying the SuSiE model when one only has access to
+#'   limited summary statistics related to X and Y (typically in genetic applications).
 #'
-#' @details \code{susie_suff_stat} performs sum of single-effect
-#' linear regression with summary statistics. The required summary
-#' data are either: \code{bhat}, \code{shat}, the p by p symmetric,
-#' positive semidefinite correlation (or covariance) matrix \code{R},
-#' the sample size \code{n}, and the variance of y; or the p by p
-#' matrix \eqn{X'X}, the p-vector \eqn{X'y}, the sum of squares
-#' \eqn{y'y}, and the sample size \code{n}. The summary statistics
-#' should come from the same individuals. Both the columns of X and
+#' @details The function \code{susie} implements the IBSS algorithm from Wang et al (2020).
+#' The option \code{refine=TRUE} implements an additional step to help reduce
+#' problems caused by convergence of the IBSS algorithm to poor local optima
+#' (which is rare in our experience, but can provide
+#' misleading results when it occurs). The refinement step incurs additional computational expense.
+#'
+#' The function \code{susie_suff_stat} implements essentially the same algorithms,
+#' but using sufficient statistics. The simplest sufficient statistics are
+#' the p by p matrix \eqn{X'X}, the p-vector \eqn{X'y}, the sum of squared y values
+#' \eqn{y'y}, and the sample size \code{n};
+#' these can be computed using \code{compute_suff_stat}.
+#' Alternatively the user can provide \code{bhat} (the univariate OLS estimates from regressing y on each column of X),
+#' \code{shat} (the standard errrors from these OLS regressions), the p by p symmetric,
+#' positive semidefinite correlation (or covariance) matrix \code{R} = (1/(n-1))X'X,
+#' the sample size \code{n}, and the variance of \eqn{y}. Both the columns of X and
 #' the vector y should be centered to have mean zero before computing
-#' these summary statistics; you may also want to scale each column of
-#' X and y to have variance 1 (see examples).
+#' these sufficient statistics; you may also want to scale each column of
+#' \eqn{X} and \eqn{y} to have variance 1 (see examples). Note that here \code{R} and \code{bhat}
+#' should be computed using the same matrix \eqn{X}. If you do not have access to the original
+#' \eqn{X} to compute the matrix \code{R} then use \code{\link{susie_rss}}.
+#'
+#' The results from applying \code{susie} to the original \eqn{X,y} and
+#' from applying \code{susie_suff_stat}
+#' to the corresponding sufficient statistics should be the same
+#' when the sufficient statistics are correctly computed.
+#' However the methods differ in computational complexity:
+#' \code{susie} is \eqn{O(npL)} per iteration, whereas
+#' \code{susie_suff_stat} is \eqn{O(p^2L)} per iteration (not including
+#' the cost of computing the sufficient statistics, which is dominated by
+#' the \eqn{O(np^2)} cost of computing \eqn{X'X}). Because of the cost of
+#' computing \eqn{X'X}, \code{susie} will usually be faster.
+#' However, if $n>>p$, and/or if \eqn{X'X} is already computed, then
+#' \code{susie_suff_stat} may be faster.
+#'
 #'
 #' @param X An n by p matrix of covariates.
 #'
 #' @param Y The observed responses, a vector of length n.
 #'
-#' @param L Number of components (nonzero coefficients) in the susie
+#' @param L Maximum number of non-zero effects in the susie
 #'   regression model. If L is larger than the number of covariates, p,
 #'   L is set to p.
 #'
@@ -142,8 +170,9 @@
 #'   residual variance. It is only relevant when
 #'   \code{estimate_residual_variance = TRUE}.
 #'
-#' @param refine If \code{refine = TRUE}, we use a procedure to help
-#'   SuSiE get out of local optimum.
+#' @param refine If \code{refine = TRUE}, then an additional
+#'  iterative refinement procedure is used, after the IBSS algorithm,
+#'  to check and escape from local optima (see details).
 #'
 #' @return A \code{"susie"} object with some or all of the following
 #'   elements:
@@ -203,8 +232,9 @@
 #'   to genetic fine-mapping. \emph{Journal of the Royal Statistical
 #'   Society, Series B} \url{https://doi.org/10.1101/501114}.
 #'
-#' @seealso \code{\link{susie_rss}}
-#' 
+#' @seealso \code{\link{susie_rss}} for applying susie using summary statistics;
+#' \code{\link{susie_trendfilter}}
+#'
 #' @examples
 #' # susie example.
 #' set.seed(1)
@@ -222,7 +252,7 @@
 #' abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
 #'
 #' # susie_suff_stat example.
-#' input_ss = compute_ss(X,y,standardize = TRUE)
+#' input_ss = compute_suff_stat(X,y,standardize = TRUE)
 #' res2 = with(input_ss,
 #'             susie_suff_stat(XtX = XtX,Xty = Xty,yty = yty,n = n,L = 10))
 #' plot(coef(res1)[-1],coef(res2)[-1])
