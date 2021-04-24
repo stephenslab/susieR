@@ -28,7 +28,7 @@
 #'
 #' More precisely
 #' \code{susie_rss} assumes the
-#' log-likelihood for \eqn{b} is \eqn{l(b; z,R) = 0.5 b'Rb - z'b},
+#' log-likelihood for \eqn{b} is \eqn{l(b; z,R) = -0.5(b'Rb - 2z'b)},
 #' which is equivalent to model (2.10) from Zhu and Stephens if \eqn{R} is invertible,
 #' but does not require \eqn{R} to be invertible.
 #' It combines this likelihood with the \dQuote{susie prior} which assumes that \eqn{b = \sum_{l=1}^L b_l} where each
