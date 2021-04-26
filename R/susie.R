@@ -26,7 +26,9 @@
 #' misleading results when it occurs). The refinement step incurs additional computational expense.
 #'
 #' The function \code{susie_suff_stat} implements essentially the same algorithms,
-#' but using sufficient statistics. The simplest sufficient statistics are
+#' but using sufficient statistics. (The statistics are sufficient for the regression coefficients,
+#' but not for the intercept, so the estimated intercept is set to 0, or other user-specified value.)
+#' The simplest sufficient statistics are
 #' the p by p matrix \eqn{X'X}, the p-vector \eqn{X'y}, the sum of squared y values
 #' \eqn{y'y}, and the sample size \code{n};
 #' these can be computed using \code{compute_suff_stat}.
@@ -35,14 +37,13 @@
 #' positive semidefinite correlation (or covariance) matrix \code{R} = (1/(n-1))X'X,
 #' the sample size \code{n}, and the variance of \eqn{y}. Both the columns of X and
 #' the vector y should be centered to have mean zero before computing
-#' these sufficient statistics; you may also want to scale each column of
-#' \eqn{X} and \eqn{y} to have variance 1 (see examples). Note that here \code{R} and \code{bhat}
+#' these sufficient statistics. Note that here \code{R} and \code{bhat}
 #' should be computed using the same matrix \eqn{X}. If you do not have access to the original
 #' \eqn{X} to compute the matrix \code{R} then use \code{\link{susie_rss}}.
 #'
 #' The results from applying \code{susie} to the original \eqn{X,y} and
 #' from applying \code{susie_suff_stat}
-#' to the corresponding sufficient statistics should be the same
+#' to the corresponding sufficient statistics should be the same (except for intercept term)
 #' when the sufficient statistics are correctly computed.
 #' However the methods differ in computational complexity:
 #' \code{susie} is \eqn{O(npL)} per iteration, whereas
@@ -81,8 +82,9 @@
 #'   0 and 1, and cannot be exactly 1).
 #'
 #' @param standardize If \code{standardize = TRUE}, standardize the
-#'   columns of X (or XtX and Xty) to unit variance prior to
-#'   fitting. Note that \code{scaled_prior_variance} specifies the prior
+#'   columns of X  to unit variance prior to
+#'   fitting (or equivalently standardize XtX and Xty to have the same effect).
+#'   Note that \code{scaled_prior_variance} specifies the prior
 #'   on the coefficients of X \emph{after} standardization (if it is
 #'   performed). If you do not standardize, you may need to think more
 #'   carefully about specifying \code{scaled_prior_variance}. Whatever
@@ -256,7 +258,7 @@
 #' abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
 #'
 #' # susie_suff_stat example.
-#' input_ss = compute_suff_stat(X,y,standardize = TRUE)
+#' input_ss = compute_suff_stat(X,y)
 #' res2 = with(input_ss,
 #'             susie_suff_stat(XtX = XtX,Xty = Xty,yty = yty,n = n,L = 10))
 #' plot(coef(res1)[-1],coef(res2)[-1])
