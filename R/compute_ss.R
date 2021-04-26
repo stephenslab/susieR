@@ -9,7 +9,7 @@
 #' @param y An n vector.
 #'
 #' @param standardize Logical flag indicating whether to standardize
-#'   columns of X to unit variance prior to fitting.
+#'   columns of X to unit variance prior to computing summary data
 #'
 #' @return A list of sufficient statistics (\code{XtX, Xty, yty} and \code{n}).
 #'
@@ -21,7 +21,7 @@
 #'
 #' @export
 #'
-compute_suff_stat = function(X, y, standardize = TRUE) {
+compute_suff_stat = function(X, y, standardize = FALSE) {
   y = y - mean(y)
   is.sparse = !is.matrix(X)
   X = set_X_attributes(as.matrix(X),center=TRUE,scale = standardize)
@@ -44,7 +44,7 @@ compute_suff_stat = function(X, y, standardize = TRUE) {
 #' @param y An n vector.
 #'
 #' @param standardize Logical flag indicating whether to standardize
-#'   columns of X to unit variance prior to fitting.
+#'   columns of X to unit variance prior to computing summary data.
 #'
 #' @return A list of sufficient statistics (X'X, X'y, y'y and n)
 #'
@@ -56,6 +56,6 @@ compute_suff_stat = function(X, y, standardize = TRUE) {
 #'
 #' @export
 #'
-compute_ss = function(X, y, standardize = TRUE) {
+compute_ss = function(X, y, standardize = FALSE) {
   compute_suff_stat(X,y,standardize)
 }

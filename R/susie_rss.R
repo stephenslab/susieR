@@ -39,8 +39,8 @@
 #'   this is accomplished by calling \code{susie_suff_stat} with \code{XtX = R}
 #'   and \code{Xty = z}, and fixing \code{residual_variance=1}.
 #'   (Values for \code{n} and \code{yty} are also
-#'   required by \code{susie_suff_stat}, but they do not affect inference when the residual variance
-#'   is fixed, so they are given arbitrary values.)
+#'   required by \code{susie_suff_stat}. They do not affect inference when the residual variance
+#'   is fixed, but they do affect the interpretation of scaled_prior_variance; we set \code{n=2,yty=1} \eqn{var(y)=yty/(n-1) = 1}.)
 #'   Additional arguments to be passed to \code{\link{susie_suff_stat}} can be provided via \code{...}.
 #'
 #' @param z A p-vector of z scores.
@@ -59,21 +59,16 @@
 #'   L is set to p.
 #'
 #' @param prior_variance The prior variance(s) for the non-zero element of \eqn{b_l}. It is either a scalar or
-#'   a vector of length L.
+#'   a vector of length L. When \code{estimate_prior_variance=TRUE} (highly recommended)
+#'   this simply provides an initial value for the prior variance, and the default value of 50 is simply intended to be a large initial value.
 #'
 #' @param estimate_prior_variance If \code{estimate_prior_variance =
-#'   TRUE}, the prior variance is estimated (this is a separate
+#'   TRUE}, which is highly recommended, the prior variance is estimated (this is a separate
 #'   parameter for each of the L effects). If provided,
 #'   \code{prior_variance} is then used as an initial value for
-#'   the optimization. When \code{estimate_prior_variance = FALSE}, the
+#'   the optimization. When \code{estimate_prior_variance = FALSE} (not recommended) the
 #'   prior variance for each of the L effects is determined by the
 #'   value supplied to \code{prior_variance}.
-#'
-#' @param check_R If \code{check_R = TRUE}, check that \code{R} is
-#'   positive semidefinite.
-#'
-#' @param r_tol Tolerance level for eigenvalue check of positive
-#'   semidefinite matrix of R.
 #'
 #' @param ... Other parameters to be passed to \code{\link{susie_suff_stat}}.
 #'
@@ -141,9 +136,7 @@
 #'
 #' @export
 #'
-susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
-                      L = 10, prior_variance = 50,
-                      check_R = FALSE, r_tol = 1e-08, ...) {
+susie_rss = function (z, R, z_ld_weight = 0, L=10, prior_variance = 50, estimate_prior_variance=TRUE, ...) {
 
   # Check input R.
   if (nrow(R) != length(z))
@@ -168,24 +161,20 @@ susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
     z[is.na(z)] = 0
   }
 
-  if (check_R && any(attr(R,"eigen")$values < -r_tol)){
-    semi_pd = check_semi_pd(R,r_tol)
-    if (!semi_pd$status){
-      stop(paste0("The correlation matrix (",nrow(R)," by ",ncol(R),
-                  ") is not a positive semidefinite matrix. The smallest ",
-                  "eigenvalue is ",min(semi_pd$eigenvalues),"."))
-    }
-  }
-
-  # Modify R as needed.
+  # Modify R by z_ld_weight; this modification was designed to ensure
+  # the column space of R contained z, but susie_suff_stat does not
+  # require this, and it is no longer recommended
   if (z_ld_weight > 0) {
     warning('From version 0.11.0, use of non-zero z_ld_weight is no longer recommended.')
     R = muffled_cov2cor((1-z_ld_weight)*R + z_ld_weight * tcrossprod(z))
     R = (R + t(R))/2
   }
 
-  s = susie_suff_stat(XtX = R, Xty = z, n = 2, yty=1, #values of n and yty are arbitrary as residual variance fixed
+  # the choice of n=2, yty=1 is arbitrary except in that it ensures var(y) = yty/(n-1)=1
+  # and because of this scaled_prior_variance=prior_variance
+  s = susie_suff_stat(XtX = R, Xty = z, n = 2, yty=1,
                       L=L, scaled_prior_variance = prior_variance,
+                      estimate_prior_variance = estimate_prior_variance,
                       residual_variance = 1,
                       estimate_residual_variance = FALSE, standardize=FALSE,
                       intercept_value = NULL,...)

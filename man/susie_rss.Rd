@@ -7,13 +7,10 @@
 susie_rss(
   z,
   R,
-  maf = NULL,
-  maf_thresh = 0,
   z_ld_weight = 0,
   L = 10,
   prior_variance = 50,
-  check_R = FALSE,
-  r_tol = 1e-08,
+  estimate_prior_variance = TRUE,
   ...
 )
 }
@@ -34,23 +31,18 @@ regression model. If L is larger than the number of covariates, p,
 L is set to p.}
 
 \item{prior_variance}{The prior variance(s) for the non-zero element of \eqn{b_l}. It is either a scalar or
-a vector of length L.}
-
-\item{check_R}{If \code{check_R = TRUE}, check that \code{R} is
-positive semidefinite.}
-
-\item{r_tol}{Tolerance level for eigenvalue check of positive
-semidefinite matrix of R.}
-
-\item{...}{Other parameters to be passed to \code{\link{susie_suff_stat}}.}
+a vector of length L. When \code{estimate_prior_variance=TRUE} (highly recommended)
+this simply provides an initial value for the prior variance, and the default value of 50 is simply intended to be a large initial value.}
 
 \item{estimate_prior_variance}{If \code{estimate_prior_variance =
-TRUE}, the prior variance is estimated (this is a separate
+TRUE}, which is highly recommended, the prior variance is estimated (this is a separate
 parameter for each of the L effects). If provided,
 \code{prior_variance} is then used as an initial value for
-the optimization. When \code{estimate_prior_variance = FALSE}, the
+the optimization. When \code{estimate_prior_variance = FALSE} (not recommended) the
 prior variance for each of the L effects is determined by the
 value supplied to \code{prior_variance}.}
+
+\item{...}{Other parameters to be passed to \code{\link{susie_suff_stat}}.}
 }
 \value{
 A \code{"susie"} object with the following
@@ -128,8 +120,8 @@ It combines this likelihood with the \dQuote{susie prior} which assumes that \eq
   this is accomplished by calling \code{susie_suff_stat} with \code{XtX = R}
   and \code{Xty = z}, and fixing \code{residual_variance=1}.
   (Values for \code{n} and \code{yty} are also
-  required by \code{susie_suff_stat}, but they do not affect inference when the residual variance
-  is fixed, so they are given arbitrary values.)
+  required by \code{susie_suff_stat}. They do not affect inference when the residual variance
+  is fixed, but they do affect the interpretation of scaled_prior_variance; we set \code{n=2,yty=1} \eqn{var(y)=yty/(n-1) = 1}.)
   Additional arguments to be passed to \code{\link{susie_suff_stat}} can be provided via \code{...}.
 }
 \examples{

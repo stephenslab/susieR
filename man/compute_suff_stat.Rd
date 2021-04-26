@@ -4,7 +4,7 @@
 \alias{compute_suff_stat}
 \title{Compute sufficient statistics for input to \code{susie_suff_stat}}
 \usage{
-compute_suff_stat(X, y, standardize = TRUE)
+compute_suff_stat(X, y, standardize = FALSE)
 }
 \arguments{
 \item{X}{An n by p matrix of covariates.}
@@ -12,7 +12,7 @@ compute_suff_stat(X, y, standardize = TRUE)
 \item{y}{An n vector.}
 
 \item{standardize}{Logical flag indicating whether to standardize
-columns of X to unit variance prior to fitting.}
+columns of X to unit variance prior to computing summary data}
 }
 \value{
 A list of sufficient statistics (\code{XtX, Xty, yty} and \code{n}).
