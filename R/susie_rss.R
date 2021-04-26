@@ -33,20 +33,20 @@
 #' but does not require \eqn{R} to be invertible.
 #' It combines this likelihood with the \dQuote{susie prior} which assumes that \eqn{b = \sum_{l=1}^L b_l} where each
 #'   \eqn{b_l} is a vector of length p with exactly one non-zero element; see
-#'   \code{\link{susie}} and Wang et al (2020) for details. In practice
+#'   \code{\link{susie}} and Wang et al (2020) for details.
+#'
+#'   In practice
 #'   this is accomplished by calling \code{susie_suff_stat} with \code{XtX = R}
 #'   and \code{Xty = z}, and fixing \code{residual_variance=1}.
+#'   (Values for \code{n} and \code{yty} are also
+#'   required by \code{susie_suff_stat}, but they do not affect inference when the residual variance
+#'   is fixed, so they are given arbitrary values.)
+#'   Additional arguments to be passed to \code{\link{susie_suff_stat}} can be provided via \code{...}.
 #'
 #' @param z A p-vector of z scores.
 #'
 #' @param R A p by p symmetric, positive semidefinite correlation
 #' matrix.
-#'
-#' @param maf Minor allele frequency; to be used along with
-#'   \code{maf_thresh} to filter input summary statistics.
-#'
-#' @param maf_thresh Variants having a minor allele frequency smaller
-#'   than this threshold are not used.
 #'
 #' @param z_ld_weight (This parameter is included for backwards compatibility
 #' with previous versions of the function, but it is no longer recommended to use a non-zero value).
@@ -155,15 +155,6 @@ susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
   if (!(is.double(R) & is.matrix(R)) & !inherits(R,"CsparseMatrix"))
     stop("Input R must be a double-precision matrix, or a sparse matrix")
 
-  # MAF filter.
-  if (!is.null(maf)) {
-    if (length(maf) != length(z))
-      stop(paste0("The length of maf does not agree with expected ",length(z)))
-    id = which(maf > maf_thresh)
-    R = R[id,id]
-    z = z[id]
-  }
-
   if (any(is.infinite(z)))
     stop("z contains infinite value")
 
@@ -193,7 +184,7 @@ susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
     R = (R + t(R))/2
   }
 
-  s = susie_suff_stat(XtX = R, Xty = z, n = length(z), yty = length(z)-1,
+  s = susie_suff_stat(XtX = R, Xty = z, n = 2, yty=1, #values of n and yty are arbitrary as residual variance fixed
                       L=L, scaled_prior_variance = prior_variance,
                       residual_variance = 1,
                       estimate_residual_variance = FALSE, standardize=FALSE,

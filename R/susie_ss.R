@@ -69,6 +69,9 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
 
   if (missing(n))
     stop("n must be provided")
+  if(!(n>1)){
+    stop("n must be more than 1")
+  }
 
   # Check sufficient statistics.
   missing_bhat = c(missing(bhat), missing(shat), missing(R))

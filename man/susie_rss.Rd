@@ -23,12 +23,6 @@ susie_rss(
 \item{R}{A p by p symmetric, positive semidefinite correlation
 matrix.}
 
-\item{maf}{Minor allele frequency; to be used along with
-\code{maf_thresh} to filter input summary statistics.}
-
-\item{maf_thresh}{Variants having a minor allele frequency smaller
-than this threshold are not used.}
-
 \item{z_ld_weight}{(This parameter is included for backwards compatibility
 with previous versions of the function, but it is no longer recommended to use a non-zero value).
 If \code{z_ld_weight >
@@ -128,9 +122,15 @@ which is equivalent to model (2.10) from Zhu and Stephens if \eqn{R} is invertib
 but does not require \eqn{R} to be invertible.
 It combines this likelihood with the \dQuote{susie prior} which assumes that \eqn{b = \sum_{l=1}^L b_l} where each
   \eqn{b_l} is a vector of length p with exactly one non-zero element; see
-  \code{\link{susie}} and Wang et al (2020) for details. In practice
+  \code{\link{susie}} and Wang et al (2020) for details.
+
+  In practice
   this is accomplished by calling \code{susie_suff_stat} with \code{XtX = R}
   and \code{Xty = z}, and fixing \code{residual_variance=1}.
+  (Values for \code{n} and \code{yty} are also
+  required by \code{susie_suff_stat}, but they do not affect inference when the residual variance
+  is fixed, so they are given arbitrary values.)
+  Additional arguments to be passed to \code{\link{susie_suff_stat}} can be provided via \code{...}.
 }
 \examples{
 set.seed(1)
