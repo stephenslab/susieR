@@ -12,22 +12,9 @@ susie_rss(
   z_ld_weight = 0,
   L = 10,
   prior_variance = 50,
-  prior_weights = NULL,
-  null_weight = NULL,
-  estimate_prior_variance = TRUE,
-  estimate_prior_method = c("optim", "EM", "simple"),
-  check_null_threshold = 0,
-  prior_tol = 1e-09,
-  max_iter = 100,
-  s_init = NULL,
-  coverage = 0.95,
-  min_abs_corr = 0.5,
-  tol = 0.001,
-  verbose = FALSE,
-  track_fit = FALSE,
   check_R = FALSE,
   r_tol = 1e-08,
-  refine = FALSE
+  ...
 )
 }
 \arguments{
@@ -55,11 +42,13 @@ L is set to p.}
 \item{prior_variance}{The prior variance(s) for the non-zero element of \eqn{b_l}. It is either a scalar or
 a vector of length L.}
 
-\item{prior_weights}{A vector of length p, in which each entry
-gives the prior probability that SNP j has non-zero effect.}
+\item{check_R}{If \code{check_R = TRUE}, check that \code{R} is
+positive semidefinite.}
 
-\item{null_weight}{Prior probability of no effect (a number between
-0 and 1, and cannot be exactly 1).}
+\item{r_tol}{Tolerance level for eigenvalue check of positive
+semidefinite matrix of R.}
+
+\item{...}{Other parameters to be passed to \code{\link{susie_suff_stat}}.}
 
 \item{estimate_prior_variance}{If \code{estimate_prior_variance =
 TRUE}, the prior variance is estimated (this is a separate
@@ -68,62 +57,6 @@ parameter for each of the L effects). If provided,
 the optimization. When \code{estimate_prior_variance = FALSE}, the
 prior variance for each of the L effects is determined by the
 value supplied to \code{prior_variance}.}
-
-\item{estimate_prior_method}{The method used for estimating prior
-variance. When \code{estimate_prior_method = "simple"} is used, the
-likelihood at the specified prior variance is compared to the
-likelihood at a variance of zero, and the setting with the larger
-likelihood is retained.}
-
-\item{check_null_threshold}{When the prior variance is estimated,
-compare the estimate with the null, and set the prior variance to
-zero unless the log-likelihood using the estimate is larger by this
-threshold amount. For example, if you set
-\code{check_null_threshold = 0.1}, this will "nudge" the estimate
-towards zero when the difference in log-likelihoods is small. A
-note of caution that setting this to a value greater than zero may
-lead the IBSS fitting procedure to occasionally decrease the ELBO.}
-
-\item{prior_tol}{When the prior variance is estimated, compare the
-estimated value to \code{prior_tol} at the end of the computation,
-and exclude a single effect from PIP computation if the estimated
-prior variance is smaller than this tolerance value.}
-
-\item{max_iter}{Maximum number of IBSS iterations to perform.}
-
-\item{s_init}{A previous susie fit with which to initialize.}
-
-\item{coverage}{A number between 0 and 1 specifying the
-\dQuote{coverage} of the estimated confidence sets.}
-
-\item{min_abs_corr}{Minimum absolute correlation allowed in a
-credible set. The default, 0.5, corresponds to a squared
-correlation of 0.25, which is a commonly used threshold for
-genotype data in genetic studies.}
-
-\item{tol}{A small, non-negative number specifying the convergence
-tolerance for the IBSS fitting procedure. The fitting procedure
-will halt when the difference in the variational lower bound, or
-\dQuote{ELBO} (the objective function to be maximized), is
-less than \code{tol}.}
-
-\item{verbose}{If \code{verbose = TRUE}, the algorithm's progress,
-and a summary of the optimization settings, are printed to the
-console.}
-
-\item{track_fit}{If \code{track_fit = TRUE}, \code{trace}
-is also returned containing detailed information about the
-estimates at each iteration of the IBSS fitting procedure.}
-
-\item{check_R}{If \code{check_R = TRUE}, check that \code{R} is
-positive semidefinite.}
-
-\item{r_tol}{Tolerance level for eigenvalue check of positive
-semidefinite matrix of R.}
-
-\item{refine}{If \code{refine = TRUE}, then an additional
-iterative refinement procedure is used, after the IBSS algorithm,
-to check and escape from local optima (see \code{\link{susie}} details).}
 }
 \value{
 A \code{"susie"} object with the following

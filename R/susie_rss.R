@@ -61,12 +61,6 @@
 #' @param prior_variance The prior variance(s) for the non-zero element of \eqn{b_l}. It is either a scalar or
 #'   a vector of length L.
 #'
-#' @param prior_weights A vector of length p, in which each entry
-#'   gives the prior probability that SNP j has non-zero effect.
-#'
-#' @param null_weight Prior probability of no effect (a number between
-#'   0 and 1, and cannot be exactly 1).
-#'
 #' @param estimate_prior_variance If \code{estimate_prior_variance =
 #'   TRUE}, the prior variance is estimated (this is a separate
 #'   parameter for each of the L effects). If provided,
@@ -75,61 +69,13 @@
 #'   prior variance for each of the L effects is determined by the
 #'   value supplied to \code{prior_variance}.
 #'
-#' @param estimate_prior_method The method used for estimating prior
-#'   variance. When \code{estimate_prior_method = "simple"} is used, the
-#'   likelihood at the specified prior variance is compared to the
-#'   likelihood at a variance of zero, and the setting with the larger
-#'   likelihood is retained.
-#'
-#' @param check_null_threshold When the prior variance is estimated,
-#'   compare the estimate with the null, and set the prior variance to
-#'   zero unless the log-likelihood using the estimate is larger by this
-#'   threshold amount. For example, if you set
-#'   \code{check_null_threshold = 0.1}, this will "nudge" the estimate
-#'   towards zero when the difference in log-likelihoods is small. A
-#'   note of caution that setting this to a value greater than zero may
-#'   lead the IBSS fitting procedure to occasionally decrease the ELBO.
-#'
-#' @param prior_tol When the prior variance is estimated, compare the
-#'   estimated value to \code{prior_tol} at the end of the computation,
-#'   and exclude a single effect from PIP computation if the estimated
-#'   prior variance is smaller than this tolerance value.
-#'
-#' @param max_iter Maximum number of IBSS iterations to perform.
-#'
-#' @param s_init A previous susie fit with which to initialize.
-#'
-#' @param coverage A number between 0 and 1 specifying the
-#'   \dQuote{coverage} of the estimated confidence sets.
-#'
-#' @param min_abs_corr Minimum absolute correlation allowed in a
-#'   credible set. The default, 0.5, corresponds to a squared
-#'   correlation of 0.25, which is a commonly used threshold for
-#'   genotype data in genetic studies.
-#'
-#' @param tol A small, non-negative number specifying the convergence
-#'   tolerance for the IBSS fitting procedure. The fitting procedure
-#'   will halt when the difference in the variational lower bound, or
-#'   \dQuote{ELBO} (the objective function to be maximized), is
-#'   less than \code{tol}.
-#'
-#' @param verbose If \code{verbose = TRUE}, the algorithm's progress,
-#'   and a summary of the optimization settings, are printed to the
-#'   console.
-#'
-#' @param track_fit If \code{track_fit = TRUE}, \code{trace}
-#'   is also returned containing detailed information about the
-#'   estimates at each iteration of the IBSS fitting procedure.
-#'
 #' @param check_R If \code{check_R = TRUE}, check that \code{R} is
 #'   positive semidefinite.
 #'
 #' @param r_tol Tolerance level for eigenvalue check of positive
 #'   semidefinite matrix of R.
 #'
-#' @param refine If \code{refine = TRUE}, then an additional
-#'  iterative refinement procedure is used, after the IBSS algorithm,
-#'  to check and escape from local optima (see \code{\link{susie}} details).
+#' @param ... Other parameters to be passed to \code{\link{susie_suff_stat}}.
 #'
 #' @return A \code{"susie"} object with the following
 #'   elements:
@@ -197,14 +143,7 @@
 #'
 susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
                       L = 10, prior_variance = 50,
-                      prior_weights = NULL, null_weight = NULL,
-                      estimate_prior_variance = TRUE,
-                      estimate_prior_method = c("optim", "EM", "simple"),
-                      check_null_threshold = 0, prior_tol = 1e-9,
-                      max_iter = 100, s_init = NULL,
-                      coverage = 0.95, min_abs_corr = 0.5,
-                      tol = 1e-03, verbose = FALSE, track_fit = FALSE,
-                      check_R = FALSE, r_tol = 1e-08, refine = FALSE) {
+                      check_R = FALSE, r_tol = 1e-08, ...) {
 
   # Check input R.
   if (nrow(R) != length(z))
@@ -254,34 +193,12 @@ susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
     R = (R + t(R))/2
   }
 
-  if (is.numeric(null_weight) && null_weight == 0)
-    null_weight = NULL
-  if (!is.null(null_weight)) {
-    if (!is.numeric(null_weight))
-      stop("Null weight must be numeric")
-    if (null_weight < 0 || null_weight >= 1)
-      stop("Null weight must be between 0 and 1")
-    if (missing(prior_weights))
-      prior_weights = c(rep(1/ncol(R) * (1 - null_weight),ncol(R)),null_weight)
-    else
-      prior_weights = c(prior_weights * (1 - null_weight),null_weight)
-    R = cbind(rbind(R,0),0)
-    z = c(z,0)
-  }
-
   s = susie_suff_stat(XtX = R, Xty = z, n = length(z), yty = length(z)-1,
-                      L = L, scaled_prior_variance = prior_variance,
+                      L=L, scaled_prior_variance = prior_variance,
                       residual_variance = 1,
-                      estimate_residual_variance = FALSE,
-                      estimate_prior_variance = estimate_prior_variance,
-                      estimate_prior_method = estimate_prior_method,
-                      check_null_threshold = check_null_threshold, prior_tol = prior_tol,
-                      r_tol = r_tol, prior_weights = prior_weights,
-                      null_weight = NULL, standardize = FALSE,
-                      max_iter = max_iter, s_init = s_init, intercept_value = NULL,
-                      coverage = coverage, min_abs_corr = min_abs_corr,
-                      tol = tol, verbose = verbose, track_fit = track_fit, check_input = FALSE,
-                      refine = refine)
+                      estimate_residual_variance = FALSE, standardize=FALSE,
+                      intercept_value = NULL,...)
+
   s$Rr = s$Xtfitted
   s$Xtfitted = s$XtXr = NULL
   return(s)
