@@ -43,6 +43,8 @@ susie_suff_stat(
   XtX,
   Xty,
   yty,
+  X_colmeans = NULL,
+  y_mean = NULL,
   maf = NULL,
   maf_thresh = 0,
   L = 10,
@@ -59,7 +61,6 @@ susie_suff_stat(
   standardize = TRUE,
   max_iter = 100,
   s_init = NULL,
-  intercept_value = 0,
   coverage = 0.95,
   min_abs_corr = 0.5,
   tol = 0.001,
@@ -216,6 +217,14 @@ centered to have mean zero.}
 \item{yty}{A scalar \eqn{y'y} in which y is centered to have mean
 zero.}
 
+\item{X_colmeans}{A p-vectror of column means of \eqn{X}. If it is
+provided with \code{y_mean}, we compute the correct intercept.
+Otherwise, the intercept is NA.}
+
+\item{y_mean}{A scalar for mean of \eqn{y}. If it is
+provided with \code{X_colmeans}, we compute the correct intercept.
+Otherwise, the intercept is NA.}
+
 \item{maf}{Minor allele frequency; to be used along with
 \code{maf_thresh} to filter input summary statistics.}
 
@@ -224,12 +233,6 @@ than this threshold are not used.}
 
 \item{r_tol}{Tolerance level for eigenvalue check of positive
 semidefinite matrix of R.}
-
-\item{intercept_value}{The intercept. (The intercept cannot be
-estimated from centered summary data.) This setting will be used by
-\code{coef} to assign an intercept value, mainly for consistency
-with \code{susie}. Set to \code{NULL} if you want \code{coef} not
-to include an intercept term (and so only a p-vector is returned).}
 
 \item{check_input}{If \code{check_input = TRUE},
 \code{susie_suff_stat} performs additional checks on \code{XtX} and
@@ -363,8 +366,9 @@ abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
 # susie_suff_stat example.
 input_ss = compute_suff_stat(X,y)
 res2 = with(input_ss,
-            susie_suff_stat(XtX = XtX,Xty = Xty,yty = yty,n = n,L = 10))
-plot(coef(res1)[-1],coef(res2)[-1])
+            susie_suff_stat(XtX = XtX,Xty = Xty,yty = yty,n = n,
+                            X_colmeans = X_colmeans, y_mean = y_mean,L = 10))
+plot(coef(res1),coef(res2))
 abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
 
 }

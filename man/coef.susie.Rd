@@ -14,7 +14,8 @@ method.}
 }
 \value{
 A p+1 vector, the first element being an intercept, and the
-  remaining p elements being estimated regression coefficients.
+  remaining p elements being estimated regression coefficients. The intercept
+  is NA when there is no intercept in susie fit.
 }
 \description{
 Extract regression coefficients from susie fit

@@ -26,6 +26,14 @@
 #' @param yty A scalar \eqn{y'y} in which y is centered to have mean
 #'   zero.
 #'
+#' @param X_colmeans A p-vectror of column means of \eqn{X}. If it is
+#'   provided with \code{y_mean}, we compute the correct intercept.
+#'   Otherwise, the intercept is NA.
+#'
+#' @param y_mean A scalar for mean of \eqn{y}. If it is
+#'   provided with \code{X_colmeans}, we compute the correct intercept.
+#'   Otherwise, the intercept is NA.
+#'
 #' @param maf Minor allele frequency; to be used along with
 #'   \code{maf_thresh} to filter input summary statistics.
 #'
@@ -34,12 +42,6 @@
 #'
 #' @param r_tol Tolerance level for eigenvalue check of positive
 #'   semidefinite matrix of R.
-#'
-#' @param intercept_value The intercept. (The intercept cannot be
-#'   estimated from centered summary data.) This setting will be used by
-#'   \code{coef} to assign an intercept value, mainly for consistency
-#'   with \code{susie}. Set to \code{NULL} if you want \code{coef} not
-#'   to include an intercept term (and so only a p-vector is returned).
 #'
 #' @param check_input If \code{check_input = TRUE},
 #'   \code{susie_suff_stat} performs additional checks on \code{XtX} and
@@ -50,6 +52,7 @@
 #' @export
 #'
 susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
+                            X_colmeans = NULL, y_mean = NULL,
                             maf = NULL, maf_thresh = 0, L = 10,
                             scaled_prior_variance = 0.2,
                             residual_variance = NULL,
@@ -60,8 +63,7 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
                             r_tol = 1e-08, prior_weights = NULL,
                             null_weight = NULL, standardize = TRUE,
                             max_iter = 100, s_init = NULL,
-                            intercept_value = 0, coverage = 0.95,
-                            min_abs_corr = 0.5, tol = 1e-3, verbose = FALSE,
+                            coverage = 0.95, min_abs_corr = 0.5, tol = 1e-3, verbose = FALSE,
                             track_fit = FALSE, check_input = FALSE, refine = FALSE) {
 
   # Process input estimate_prior_method.
@@ -259,8 +261,19 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
     s$converged = FALSE
   }
 
-  s$intercept = intercept_value
   s$X_column_scale_factors = attr(XtX,"scaled:scale")
+
+  if(any(is.null(X_colmeans), is.null(y_mean))){
+    s$intercept = NA
+  }else{
+    if(length(X_colmeans) == 1 && X_colmeans == 0){
+      X_colmeans = numeric(p)
+    }
+    if(length(X_colmeans) != p){
+      stop('The length of X_colmeans does not agree with number of variables.')
+    }
+    s$intercept = y_mean - sum(X_colmeans * (colSums(s$alpha * s$mu)/s$X_column_scale_factors))
+  }
 
   if (track_fit)
     s$trace = tracking
@@ -280,8 +293,8 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
     if(!is.null(null_weight) && null_weight!=0){
       ## if null_weight is specified
       ## we remove the extra 0 column
-      XtX = XtX[1:(ncol(XtX)-1), 1:(ncol(XtX)-1)]
-      Xty = Xty[1:(ncol(XtX)-1)]
+      XtX = XtX[1:(p-1), 1:(p-1)]
+      Xty = Xty[1:(p-1)]
       pw_s = s$pi[-s$null_index]/(1-null_weight)
     }else{
       pw_s = s$pi
@@ -293,6 +306,7 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
         pw_cs = pw_s
         pw_cs[s$sets$cs[[cs]]] = 0
         s2 = susie_suff_stat(XtX = XtX, Xty = Xty, yty = yty, n = n, L = L,
+                             X_colmeans = X_colmeans, y_mean = y_mean,
                              prior_weights = pw_cs, s_init = NULL,
                              scaled_prior_variance = scaled_prior_variance,
                              residual_variance = residual_variance,
@@ -301,13 +315,14 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
                              estimate_prior_method = estimate_prior_method,
                              check_null_threshold = check_null_threshold, prior_tol = prior_tol,
                              r_tol = r_tol, max_iter = max_iter,
-                             null_weight = NULL, standardize = standardize,
-                             intercept_value = intercept_value, coverage = coverage,
+                             null_weight = null_weight, standardize = standardize,
+                             coverage = coverage,
                              min_abs_corr = min_abs_corr, tol = tol, verbose = FALSE,
                              track_fit = FALSE, check_input = FALSE, refine = FALSE)
         sinit2 = s2[c('alpha', 'mu', 'mu2')]
         class(sinit2) = 'susie'
         s3 = susie_suff_stat(XtX = XtX, Xty = Xty, yty = yty, n = n, L = L,
+                             X_colmeans = X_colmeans, y_mean = y_mean,
                              prior_weights = pw_s, s_init = sinit2,
                              scaled_prior_variance = scaled_prior_variance,
                              residual_variance = residual_variance,
@@ -316,8 +331,8 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
                              estimate_prior_method = estimate_prior_method,
                              check_null_threshold = check_null_threshold, prior_tol = prior_tol,
                              r_tol = r_tol, max_iter = max_iter,
-                             null_weight = NULL, standardize = standardize,
-                             intercept_value = intercept_value, coverage = coverage,
+                             null_weight = null_weight, standardize = standardize,
+                             coverage = coverage,
                              min_abs_corr = min_abs_corr, tol = tol, verbose = FALSE,
                              track_fit = FALSE, check_input = FALSE, refine = FALSE)
         m = c(m, list(s3))

@@ -177,8 +177,7 @@ susie_rss = function (z, R, z_ld_weight = 0, L=10, prior_variance = 50, estimate
                       L=L, scaled_prior_variance = prior_variance,
                       estimate_prior_variance = estimate_prior_variance,
                       residual_variance = 1,
-                      estimate_residual_variance = FALSE, standardize=FALSE,
-                      intercept_value = NULL,...)
+                      estimate_residual_variance = FALSE, standardize=FALSE,...)
 
   s$Rr = s$Xtfitted
   s$Xtfitted = s$XtXr = NULL

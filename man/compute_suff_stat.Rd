@@ -15,12 +15,12 @@ compute_suff_stat(X, y, standardize = FALSE)
 columns of X to unit variance prior to computing summary data}
 }
 \value{
-A list of sufficient statistics (\code{XtX, Xty, yty} and \code{n}).
+A list of sufficient statistics (\code{XtX, Xty, yty, n}) and X_colmeans, y_mean.
 }
 \description{
 Computes the sufficient statistics \eqn{X'X, X'y, y'y} and \eqn{n}
 after centering (and possibly standardizing) the columns of \eqn{X} and centering \eqn{y}
-to have mean 0.
+to have mean 0. We also store the column means of \eqn{X} and mean of \eqn{y}.
 }
 \examples{
 data(N2finemapping)

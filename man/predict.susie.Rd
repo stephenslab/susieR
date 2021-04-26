@@ -21,7 +21,8 @@ extra arguments are not used here.}
 \value{
 For \code{type = "response"}, predicted or fitted outcomes
   are returned; for \code{type = "coefficients"}, the estimated
-  coefficients are returned.
+  coefficients are returned. The prediction ignores the intercept (intercept = 0)
+  if there is no intercept in susie fit.
 }
 \description{
 Predict outcomes or extract coefficients from susie fit.

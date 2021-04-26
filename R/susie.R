@@ -260,8 +260,9 @@
 #' # susie_suff_stat example.
 #' input_ss = compute_suff_stat(X,y)
 #' res2 = with(input_ss,
-#'             susie_suff_stat(XtX = XtX,Xty = Xty,yty = yty,n = n,L = 10))
-#' plot(coef(res1)[-1],coef(res2)[-1])
+#'             susie_suff_stat(XtX = XtX,Xty = Xty,yty = yty,n = n,
+#'                             X_colmeans = X_colmeans, y_mean = y_mean,L = 10))
+#' plot(coef(res1),coef(res2))
 #' abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
 #'
 #' @importFrom stats var
