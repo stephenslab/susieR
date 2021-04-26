@@ -121,7 +121,8 @@ It combines this likelihood with the \dQuote{susie prior} which assumes that \eq
   and \code{Xty = z}, and fixing \code{residual_variance=1}.
   (Values for \code{n} and \code{yty} are also
   required by \code{susie_suff_stat}. They do not affect inference when the residual variance
-  is fixed, but they do affect the interpretation of scaled_prior_variance; we set \code{n=2,yty=1} \eqn{var(y)=yty/(n-1) = 1}.)
+  is fixed, but they do affect the interpretation of scaled_prior_variance;
+  we set \code{n=2,yty=1} so \eqn{var(y)=yty/(n-1) = 1}.)
   Additional arguments to be passed to \code{\link{susie_suff_stat}} can be provided via \code{...}.
 }
 \examples{
