@@ -217,7 +217,7 @@ centered to have mean zero.}
 \item{yty}{A scalar \eqn{y'y} in which y is centered to have mean
 zero.}
 
-\item{X_colmeans}{A p-vectror of column means of \eqn{X}. If it is
+\item{X_colmeans}{A p-vector of column means of \eqn{X}. If it is
 provided with \code{y_mean}, we compute the correct intercept.
 Otherwise, the intercept is NA.}
 

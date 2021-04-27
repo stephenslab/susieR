@@ -26,7 +26,7 @@
 #' @param yty A scalar \eqn{y'y} in which y is centered to have mean
 #'   zero.
 #'
-#' @param X_colmeans A p-vectror of column means of \eqn{X}. If it is
+#' @param X_colmeans A p-vector of column means of \eqn{X}. If it is
 #'   provided with \code{y_mean}, we compute the correct intercept.
 #'   Otherwise, the intercept is NA.
 #'
