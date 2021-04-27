@@ -6,8 +6,7 @@
 #'   method.
 #'
 #' @return A p+1 vector, the first element being an intercept, and the
-#'   remaining p elements being estimated regression coefficients. The intercept
-#'   is NA when there is no intercept in susie fit.
+#'   remaining p elements being estimated regression coefficients.
 #'
 #' @importFrom stats coef
 #'
@@ -35,8 +34,9 @@ coef.susie = function (object, ...) {
 #'
 #' @return For \code{type = "response"}, predicted or fitted outcomes
 #'   are returned; for \code{type = "coefficients"}, the estimated
-#'   coefficients are returned. The prediction ignores the intercept (intercept = 0)
-#'   if there is no intercept in susie fit.
+#'   coefficients are returned. If the susie fit has intercept = \code{NA} (which is common when
+#'   using \code{susie_suff_stat}) then
+#'   predictions are computed using an intercept of 0, and a warning is emitted.
 #'
 #' @importFrom stats coef
 #'

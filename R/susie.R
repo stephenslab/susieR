@@ -5,8 +5,9 @@
 #' @description Performs a sparse Bayesian multiple linear regression of Y on
 #'   X, using the "Sum of Single Effects" model from Wang et al (2020).  In brief,
 #'   this function fits the regression model
-#'   \eqn{Y = X b + e}, where elements of e are \emph{i.i.d.} normal with
-#'   zero mean and variance \code{residual_variance}, and \eqn{b} is a vector
+#'   \eqn{Y = \mu + X b + e}, where elements of \eqn{e} are \emph{i.i.d.} normal with
+#'   zero mean and variance \code{residual_variance}, \eqn{\mu} is an intercept term
+#'   and \eqn{b} is a vector
 #'   of length p representing the effects to be estimated.
 #'  The \dQuote{susie assumption} is that \eqn{b = \sum_{l=1}^L b_l} where each
 #'   \eqn{b_l} is a vector of length p with exactly one non-zero element. The prior on the
@@ -23,30 +24,43 @@
 #' The option \code{refine=TRUE} implements an additional step to help reduce
 #' problems caused by convergence of the IBSS algorithm to poor local optima
 #' (which is rare in our experience, but can provide
-#' misleading results when it occurs). The refinement step incurs additional computational expense.
+#' misleading results when it occurs). The refinement step incurs additional computational expense that
+#' increases with the number of CSs found in the initial run.
 #'
 #' The function \code{susie_suff_stat} implements essentially the same algorithms,
-#' but using sufficient statistics. (The statistics are sufficient for the regression coefficients,
-#' but not for the intercept, so the estimated intercept is set to 0, or other user-specified value.)
-#' The simplest sufficient statistics are
-#' the p by p matrix \eqn{X'X}, the p-vector \eqn{X'y}, the sum of squared y values
-#' \eqn{y'y}, and the sample size \code{n};
-#' these can be computed using \code{compute_suff_stat}.
-#' Alternatively the user can provide \code{bhat} (the univariate OLS estimates from regressing y on each column of X),
+#' but using sufficient statistics. (The statistics are sufficient for the regression coefficients \eqn{b},
+#' but not for the intercept \eqn{\mu}; see below for how the intercept is treated.)
+#' If the sufficient statistics are computed correctly then the results from \code{susie_suff_stat}
+#' should be the same as (or very similar to) \code{susie}, although run times will differ as discussed below.
+#' The simplest sufficient statistics are the sample size \code{n}, and then
+#' the p by p matrix \eqn{X'X}, the p-vector \eqn{X'y}, and the sum of squared y values
+#' \eqn{y'y}, all computed after centering the columns of \eqn{X} and the vector \eqn{y}
+#' to have mean 0; these can be computed using \code{compute_suff_stat}.
+#' Alternatively the user can provide \code{n} and \code{bhat} (the univariate OLS estimates from regressing y on each column of X),
 #' \code{shat} (the standard errrors from these OLS regressions), the p by p symmetric,
 #' positive semidefinite correlation (or covariance) matrix \code{R} = (1/(n-1))X'X,
-#' the sample size \code{n}, and the variance of \eqn{y}. Both the columns of X and
-#' the vector y should be centered to have mean zero before computing
-#' these sufficient statistics. Note that here \code{R} and \code{bhat}
+#' and the variance of \eqn{y}, again all computed from centered \eqn{X} and \eqn{y}.
+#' Note that here \code{R} and \code{bhat}
 #' should be computed using the same matrix \eqn{X}. If you do not have access to the original
 #' \eqn{X} to compute the matrix \code{R} then use \code{\link{susie_rss}}.
 #'
-#' The results from applying \code{susie} to the original \eqn{X,y} and
-#' from applying \code{susie_suff_stat}
-#' to the corresponding sufficient statistics should be the same (except for intercept term)
-#' when the sufficient statistics are correctly computed.
-#' However the methods differ in computational complexity:
-#' \code{susie} is \eqn{O(npL)} per iteration, whereas
+#' The handling of the intercept term in \code{susie_suff_stat} needs some additional explanation.
+#' Computing the summary data after centering \code{X} and \code{y} effectively ensures that the
+#' resulting posterior quantities for \eqn{b} allow for an intercept in the model; however
+#' the actual value of the intercept cannot be estimated from these centered data. To estimate the intercept term
+#' the user must also provide the column means of \eqn{X} and the mean of \eqn{y}
+#' (\code{X_colmeans} and \code{y_mean}).
+#' If these are not provided they are treated as \code{NA}, which results in the intercept being \code{NA}.
+#' (If for some reason you prefer to have the intercept be 0 instead of \code{NA} then set \code{X_colmeans=0, y_mean=0}).
+#'
+#' For completeness we note that if \code{susie_suff_stat} is run on \eqn{X'X, X'y, y'y} computed
+#' \emph{without} centering \eqn{X} and \eqn{y},
+#' and with \code{X_colmeans=0, y_mean=0}, then this is equivalent to \code{susie} applied
+#' to \eqn{X,y} with \code{intercept=FALSE} (although results may differ due
+#' to different initializations of \code{residual_variance} and \code{scaled_prior_variance}).
+#' However, this usage will not be appropriate for most situations.
+#'
+#' The computational complexity of \code{susie} is \eqn{O(npL)} per iteration, whereas
 #' \code{susie_suff_stat} is \eqn{O(p^2L)} per iteration (not including
 #' the cost of computing the sufficient statistics, which is dominated by
 #' the \eqn{O(np^2)} cost of computing \eqn{X'X}). Because of the cost of
@@ -63,16 +77,17 @@
 #'   regression model. If L is larger than the number of covariates, p,
 #'   L is set to p.
 #'
-#' @param scaled_prior_variance The scaled prior variance. This is
-#'   either a scalar or a vector of length \code{L}. The prior variance
-#'   of each non-zero element of b is set to \code{var(Y) *
-#'   scaled_prior_variance}. If \code{estimate_prior_variance = TRUE},
+#' @param scaled_prior_variance The prior variance, divided by \code{var(Y)}
+#' (or by \code{(1/(n-1))yty} for \code{susie_suff_stat}); that is,
+#' the prior variance of each non-zero element of b is \code{var(Y) *
+#'   scaled_prior_variance}. The value provided should be
+#'   either a scalar or a vector of length \code{L}.  If \code{estimate_prior_variance = TRUE},
 #'   this provides initial estimates of the prior variances.
 #'
 #' @param residual_variance Variance of the residual. If
 #'   \code{estimate_residual_variance = TRUE}, this value provides the
-#'   initial estimate of the residual variance. By default, it is
-#'   \code{var(Y)}.
+#'   initial estimate of the residual variance. By default, it is set to
+#'   \code{var(Y)} in \code{susie} and \code{(1/(n-1))yty} in \code{susie_suff_stat}.
 #'
 #' @param prior_weights A vector of length p, in which each entry
 #'   gives the prior probability that corresponding column of X has a

@@ -26,13 +26,13 @@
 #' @param yty A scalar \eqn{y'y} in which y is centered to have mean
 #'   zero.
 #'
-#' @param X_colmeans A p-vectror of column means of \eqn{X}. If it is
-#'   provided with \code{y_mean}, we compute the correct intercept.
-#'   Otherwise, the intercept is NA.
+#' @param X_colmeans A p-vector of column means of \eqn{X}. If both \code{X_colmeans}
+#' and \code{y_mean} are provided then the intercept is estimated;
+#' otherwise, the intercept is NA.
 #'
-#' @param y_mean A scalar for mean of \eqn{y}. If it is
-#'   provided with \code{X_colmeans}, we compute the correct intercept.
-#'   Otherwise, the intercept is NA.
+#' @param y_mean A scalar containing the mean of \eqn{y}. If both \code{X_colmeans}
+#' and \code{y_mean} are provided then the intercept is estimated;
+#' otherwise, the intercept is NA.
 #'
 #' @param maf Minor allele frequency; to be used along with
 #'   \code{maf_thresh} to filter input summary statistics.
@@ -52,7 +52,7 @@
 #' @export
 #'
 susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
-                            X_colmeans = NULL, y_mean = NULL,
+                            X_colmeans = NA, y_mean = NA,
                             maf = NULL, maf_thresh = 0, L = 10,
                             scaled_prior_variance = 0.2,
                             residual_variance = NULL,
@@ -131,6 +131,7 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
     yty = var_y * (n-1)
   }
 
+
   # Check input XtX.
   if (ncol(XtX) != length(Xty))
     stop(paste0("The dimension of XtX (",nrow(XtX)," by ",ncol(XtX),
@@ -196,6 +197,14 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
     csd = rep(1, length = p)
   attr(XtX,"d") = diag(XtX)
   attr(XtX,"scaled:scale") = csd
+
+  # Check X_colmeans has length 1 or p
+  if(length(X_colmeans) == 1){
+    X_colmeans = rep(X_colmeans,p)
+  }
+  if(length(X_colmeans) != p){
+    stop('The length of X_colmeans does not agree with number of variables.')
+  }
 
   # Initialize susie fit.
   s = init_setup(0,p,L,scaled_prior_variance,residual_variance,prior_weights,
@@ -263,17 +272,9 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
 
   s$X_column_scale_factors = attr(XtX,"scaled:scale")
 
-  if(any(is.null(X_colmeans), is.null(y_mean))){
-    s$intercept = NA
-  }else{
-    if(length(X_colmeans) == 1 && X_colmeans == 0){
-      X_colmeans = numeric(p)
-    }
-    if(length(X_colmeans) != p){
-      stop('The length of X_colmeans does not agree with number of variables.')
-    }
-    s$intercept = y_mean - sum(X_colmeans * (colSums(s$alpha * s$mu)/s$X_column_scale_factors))
-  }
+  # compute intercept
+  s$intercept = y_mean - sum(X_colmeans * (colSums(s$alpha * s$mu)/s$X_column_scale_factors))
+
 
   if (track_fit)
     s$trace = tracking

@@ -21,8 +21,9 @@ extra arguments are not used here.}
 \value{
 For \code{type = "response"}, predicted or fitted outcomes
   are returned; for \code{type = "coefficients"}, the estimated
-  coefficients are returned. The prediction ignores the intercept (intercept = 0)
-  if there is no intercept in susie fit.
+  coefficients are returned. If the susie fit has intercept = \code{NA} (which is common when
+  using \code{susie_suff_stat}) then
+  predictions are computed using an intercept of 0, and a warning is emitted.
 }
 \description{
 Predict outcomes or extract coefficients from susie fit.
