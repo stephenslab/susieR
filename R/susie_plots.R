@@ -1,5 +1,5 @@
 #' @rdname susie_plots
-#' 
+#'
 #' @title SuSiE Plots.
 #'
 #' @description \code{susie_plot} produces a per-variable summary of
@@ -7,42 +7,42 @@
 #'   diagnostic plot for the susie model fitting. For
 #'   \code{susie_plot_iteration}, several plots will be created if
 #'   \code{track_fit = TRUE} when calling \code{susie}.
-#' 
+#'
 #' @param model A susie fit, typically an output from
 #'   \code{\link{susie}} or one of its variants. For \code{suse_plot},
 #'   the susie fit must have \code{model$z}, \code{model$PIP}, and may
 #'   include \code{model$sets}. \code{model} may also be a vector of
 #'   z-scores or PIPs.
-#' 
+#'
 #' @param y A string indicating what to plot: either \code{"z"} for
 #'   z-scores, \code{"PIP"} for posterior inclusion probabilities,
 #'   \code{"log10PIP"} for posterior inclusion probabiliities on the
 #'   (base-10) log-scale. For any other setting, the data are plotted as
 #'   is.
-#' 
+#'
 #' @param add_bar If \code{add_bar = TRUE}, add horizontal bar to
 #'   signals in credible interval.
-#' 
+#'
 #' @param pos This can be either be (1) a numeric vector of indices of
 #'   variables to plot, or (2) a list with the following list elements:
 #'   \code{pos$attr}, \code{pos$start} and \code{pos$end}, where
 #'   \code{pos$attr} is a character string of the name of index variable
 #'   in \code{model} object, and \code{pos$start} and \code{pos$end} are
 #'   boundaries of indices to plot.
-#' 
+#'
 #' @param b For simulated data, set \code{b = TRUE} to highlight
 #'   "true" effects (highlights in red).
-#' 
+#'
 #' @param max_cs The largest credible set to display, either based on
 #'   purity (set \code{max_cs} between 0 and 1), or based on size (set
 #'   \code{max_cs > 1}).
-#' 
+#'
 #' @param add_legend If \code{add_legend = TRUE}, add a legend to
 #'   annotate the size and purity of each CS discovered.
 #'
 #' @param \dots Additional arguments passed to
 #'   \code{\link[graphics]{plot}}.
-#' 
+#'
 #' @seealso \code{\link{susie_plot_changepoint}}
 #'
 #' @examples
@@ -58,10 +58,10 @@
 #' susie_plot(res,'PIP')
 #' susie_plot(res,'PIP',add_bar = TRUE)
 #' susie_plot(res,'PIP',add_legend = TRUE)
-#' 
+#'
 #' # True effects are shown in red.
 #' susie_plot(res,'PIP',b = beta,add_legend = TRUE)
-#' 
+#'
 #' @importFrom utils head
 #' @importFrom stats pnorm
 #' @importFrom graphics plot
@@ -71,7 +71,7 @@
 #' @importFrom graphics par
 #'
 #' @export
-#' 
+#'
 susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
                        max_cs = 400, add_legend = FALSE, ...) {
   is_susie = inherits(model,"susie")
@@ -100,7 +100,7 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
     }
     else
       zneg = -abs(model)
-    p = -log10(pnorm(zneg))
+    p = -log10(2*pnorm(zneg))
     ylab = "-log10(p)"
   } else if (y == "PIP") {
     if (is_susie)
@@ -124,7 +124,7 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
     pos = 1:length(p)
   start = 0
   if (inherits(pos,"list")) {
-      
+
     # Check input.
     if (is.null(pos$attr) || is.null(pos$start) || is.null(pos$end))
       stop("pos argument should be a list of list(attr=,start=,end=)")
@@ -134,7 +134,7 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
       stop("Position start should be smaller than end")
     start = min(min(model[[pos$attr]]),pos$start)
     end = max(max(model[[pos$attr]]),pos$end)
-    
+
     # Add zeros to alpha and p.
     alpha = matrix(0,nrow(model$alpha),end - start + 1)
     new_p = rep(min(p),end - start + 1)
@@ -143,13 +143,13 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
     alpha[,pos_with_value] = model$alpha
     p = new_p
     model$alpha = alpha
-    
+
     # Adjust model$cs.
     if (!is.null(model$sets$cs)) {
-      for (i in 1:length(model$sets$cs)) 
+      for (i in 1:length(model$sets$cs))
         model$sets$cs[[i]] = pos_with_value[model$sets$cs[[i]]]
     }
-    
+
     # Change "pos" object to be indices.
     start_adj = -min(min(model[[pos$attr]]) - pos$start,0)
     end_adj = max(max(model[[pos$attr]]) - pos$end,0)
@@ -167,7 +167,7 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
   do.call(plot, args)
   if (is_susie && !is.null(model$sets$cs)) {
     for(i in rev(1:nrow(model$alpha))){
-      if (!is.null(model$sets$cs_index) && !(i %in% model$sets$cs_index)) 
+      if (!is.null(model$sets$cs_index) && !(i %in% model$sets$cs_index))
         next
       purity = model$sets$purity[which(model$sets$cs_index == i),1]
       if (!is.null(model$sets$purity) && max_cs < 1 && purity >= max_cs) {
@@ -189,14 +189,14 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
       }
       points(x0+start,y1,col = head(color,1),cex = 1.5,lwd = 2.5)
       legend_text$col = append(head(color,1), legend_text$col)
-      
+
       # Rotate color.
       color = c(color[-1],color[1])
       legend_text$purity = append(round(purity,4),legend_text$purity)
       legend_text$size = append(length(x0),legend_text$size)
     }
     if (length(legend_text$col) > 0 && add_legend) {
-        
+
       # Plot legend.
       text = vector()
       for (i in 1:length(legend_text$col)) {
@@ -216,14 +216,14 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
 }
 
 #' @rdname susie_plots
-#' 
+#'
 #' @param L An integer specifying the number of credible sets to plot.
-#' 
+#'
 #' @param file_prefix Prefix to path of output plot file.
-#' 
+#'
 #' @param pos Indices of variables to plot. If \code{pos = NULL} all
 #'   variables are plotted.
-#' 
+#'
 #' @examples
 #' set.seed(1)
 #' n = 1000
@@ -235,7 +235,7 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
 #' y = drop(X %*% beta + rnorm(n))
 #' res = susie(X,y,L = 10)
 #' susie_plot_iteration(res, L=10, file_prefix="plot_demo")
-#' 
+#'
 #' @importFrom grDevices pdf
 #' @importFrom grDevices dev.off
 #' @importFrom reshape melt
@@ -244,9 +244,9 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
 #' @importFrom ggplot2 geom_col
 #' @importFrom ggplot2 ggtitle
 #' @importFrom ggplot2 theme_classic
-#' 
+#'
 #' @export
-#' 
+#'
 susie_plot_iteration = function (model, L, file_prefix, pos = NULL) {
   get_layer = function (obj, k, idx, vars) {
     alpha = melt(obj$alpha[1:k,vars,drop = FALSE])
@@ -283,7 +283,7 @@ susie_plot_iteration = function (model, L, file_prefix, pos = NULL) {
     output = try(system(cmd))
     if (inherits(output,"try-error"))
       cat("Cannot create GIF animation because convert command failed.\n")
-    else 
+    else
       format = ".gif"
   }
   cat(paste0("Iterplot saved to ",file_prefix,format,"\n"))
