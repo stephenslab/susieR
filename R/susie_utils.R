@@ -684,11 +684,11 @@ estimate_s_rss = function(z, R, r_tol=1e-08, method="null-mle"){
 #' R    <- cor(X)
 #' attr(R, 'eigen') = eigen(R, symmetric = T)
 #' zhat <- with(ss,betahat/sebetahat)
-#' condz = krige_rss(zhat, R)
+#' condz = kriging_rss(zhat, R)
 #'
 #' @export
 #'
-krige_rss = function(z, R, r_tol=1e-08, s = estimate_s_rss(z, R, r_tol, method = 'null-mle')){
+kriging_rss = function(z, R, r_tol=1e-08, s = estimate_s_rss(z, R, r_tol, method = 'null-mle')){
   if (is.null(attr(R,"eigen")))
     attr(R,"eigen") = eigen(R,symmetric = TRUE)
   eigenld = attr(R,"eigen")
