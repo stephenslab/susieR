@@ -668,6 +668,10 @@ estimate_s_rss = function(z, R, r_tol=1e-08, method="null-mle"){
 #'
 #' @param s an estimated s from \code{estimate_s_rss}
 #'
+#' @param plot.it If \code{plot.it = TRUE}, it produces a plot with
+#'   observed z score vs the expected value. The possible allele switched
+#'   variants are labeled as red points (log LR > 2).
+#'
 #' @importFrom mixsqp mixsqp
 #'
 #' @examples
@@ -688,7 +692,9 @@ estimate_s_rss = function(z, R, r_tol=1e-08, method="null-mle"){
 #'
 #' @export
 #'
-kriging_rss = function(z, R, r_tol=1e-08, s = estimate_s_rss(z, R, r_tol, method = 'null-mle')){
+kriging_rss = function(z, R, r_tol=1e-08,
+                       s = estimate_s_rss(z, R, r_tol, method = 'null-mle'),
+                       plot.it = TRUE){
   if (is.null(attr(R,"eigen")))
     attr(R,"eigen") = eigen(R,symmetric = TRUE)
   eigenld = attr(R,"eigen")
@@ -736,9 +742,21 @@ kriging_rss = function(z, R, r_tol=1e-08, s = estimate_s_rss(z, R, r_tol, method
   logl1mix = as.numeric(log(exp(matrix_llik) %*% w)) + lfactors
   logLRmix = logl1mix - logl0mix
 
-  return(data.frame(z = z, postmean = postmean, postvar = postvar,
+
+  if(plot.it){
+    plot(z, postmean, pch = 16,
+         xlab = 'observed z scores',
+         ylab = 'Expected value')
+    abline(0,1, lty=2)
+    if(any(logLRmix>2)){
+      idx = which(logLRmix > 2)
+      points(z[idx], postmean[idx], col = 'red', pch=16)
+    }
+  }
+
+  return(invisible(data.frame(z = z, postmean = postmean, postvar = postvar,
                     post_z = post_z,
-                    logLR = logLRmix))
+                    logLR = logLRmix)))
 }
 
 

@@ -9,7 +9,8 @@ kriging_rss(
   z,
   R,
   r_tol = 1e-08,
-  s = estimate_s_rss(z, R, r_tol, method = "null-mle")
+  s = estimate_s_rss(z, R, r_tol, method = "null-mle"),
+  plot.it = TRUE
 )
 }
 \arguments{
@@ -22,6 +23,10 @@ matrix.}
 semidefinite matrix of R.}
 
 \item{s}{an estimated s from \code{estimate_s_rss}}
+
+\item{plot.it}{If \code{plot.it = TRUE}, it produces a plot with
+observed z score vs the expected value. The possible allele switched
+variants are labeled as red points (log LR > 2).}
 }
 \description{
 Under the null, the rss model with regularized LD matrix is
