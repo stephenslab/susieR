@@ -40,7 +40,12 @@
 
 
 <meta property="og:title" content="Sum of Single Effects (SuSiE) Regression using summary statistics — susie_rss" />
-<meta property="og:description" content="Sum of Single Effects (SuSiE) Regression using summary statistics" />
+<meta property="og:description" content="susie_rss
+performs variable selection under a sparse Bayesian multiple linear regression
+of \(Y\) on \(X\) using only the \(z\) scores from standard univariate regression of
+ \(Y\) on each column of \(X\), and an estimate \(R\) of the correlation matrix
+ between columns of \(X\).  It does this by combining the &quot;RSS likelihood&quot; from Zhu and Stephens (2017) with the
+  Sum of Single Effects&quot; model from Wang et al (2020)." />
 
 
 
@@ -72,7 +77,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.8</span>
       </span>
     </div>
 
@@ -111,36 +116,22 @@
     </div>
 
     <div class="ref-description">
-    <p>Sum of Single Effects (SuSiE) Regression using summary statistics</p>
+    <p><code>susie_rss</code>
+performs variable selection under a sparse Bayesian multiple linear regression
+of \(Y\) on \(X\) using only the \(z\) scores from standard univariate regression of
+ \(Y\) on each column of \(X\), and an estimate \(R\) of the correlation matrix
+ between columns of \(X\).  It does this by combining the "RSS likelihood" from Zhu and Stephens (2017) with the
+  Sum of Single Effects" model from Wang et al (2020).</p>
     </div>
 
     <pre class="usage"><span class='fu'>susie_rss</span><span class='op'>(</span>
   <span class='va'>z</span>,
   <span class='va'>R</span>,
-  maf <span class='op'>=</span> <span class='cn'>NULL</span>,
-  maf_thresh <span class='op'>=</span> <span class='fl'>0</span>,
   z_ld_weight <span class='op'>=</span> <span class='fl'>0</span>,
   L <span class='op'>=</span> <span class='fl'>10</span>,
   prior_variance <span class='op'>=</span> <span class='fl'>50</span>,
-  residual_variance <span class='op'>=</span> <span class='cn'>NULL</span>,
-  prior_weights <span class='op'>=</span> <span class='cn'>NULL</span>,
-  null_weight <span class='op'>=</span> <span class='cn'>NULL</span>,
-  estimate_residual_variance <span class='op'>=</span> <span class='cn'>FALSE</span>,
   estimate_prior_variance <span class='op'>=</span> <span class='cn'>TRUE</span>,
-  estimate_prior_method <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"optim"</span>, <span class='st'>"EM"</span>, <span class='st'>"simple"</span><span class='op'>)</span>,
-  check_null_threshold <span class='op'>=</span> <span class='fl'>0</span>,
-  prior_tol <span class='op'>=</span> <span class='fl'>1e-09</span>,
-  max_iter <span class='op'>=</span> <span class='fl'>100</span>,
-  s_init <span class='op'>=</span> <span class='cn'>NULL</span>,
-  intercept_value <span class='op'>=</span> <span class='fl'>0</span>,
-  coverage <span class='op'>=</span> <span class='fl'>0.95</span>,
-  min_abs_corr <span class='op'>=</span> <span class='fl'>0.5</span>,
-  tol <span class='op'>=</span> <span class='fl'>0.001</span>,
-  verbose <span class='op'>=</span> <span class='cn'>FALSE</span>,
-  track_fit <span class='op'>=</span> <span class='cn'>FALSE</span>,
-  check_R <span class='op'>=</span> <span class='cn'>FALSE</span>,
-  r_tol <span class='op'>=</span> <span class='fl'>1e-08</span>,
-  refine <span class='op'>=</span> <span class='cn'>FALSE</span>
+  <span class='va'>...</span>
 <span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -156,158 +147,44 @@
 matrix.</p></td>
     </tr>
     <tr>
-      <th>maf</th>
-      <td><p>Minor allele frequency; to be used along with
-<code>maf_thresh</code> to filter input summary statistics.</p></td>
-    </tr>
-    <tr>
-      <th>maf_thresh</th>
-      <td><p>Variants having a minor allele frequency smaller
-than this threshold are not used.</p></td>
-    </tr>
-    <tr>
       <th>z_ld_weight</th>
-      <td><p>This feature is not recommended.
-The weights assigned to the z scores in the LD matrix.
-If z_ld_weight &gt; 0, the LD matrix used in the model is <code><a href='https://rdrr.io/r/stats/cor.html'>cov2cor((1-w)*R +
-w*tcrossprod(z))</a></code>, where <code>w = z_ld_weight</code>.</p></td>
+      <td><p>(This parameter is included for backwards compatibility
+with previous versions of the function, but it is no longer recommended to use a non-zero value).
+If <code>z_ld_weight &gt;
+  0</code>, the matrix R used in the model is adjusted to be <code><a href='https://rdrr.io/r/stats/cor.html'>cov2cor((1-w)*R +
+  w*tcrossprod(z))</a></code>, where <code>w = z_ld_weight</code>.</p></td>
     </tr>
     <tr>
       <th>L</th>
-      <td><p>Number of components (nonzero coefficients) in the susie
+      <td><p>Maximum number of components (nonzero coefficients) in the susie
 regression model. If L is larger than the number of covariates, p,
 L is set to p.</p></td>
     </tr>
     <tr>
       <th>prior_variance</th>
-      <td><p>The prior variance. It is either a scalar or
-a vector of length L.</p></td>
-    </tr>
-    <tr>
-      <th>residual_variance</th>
-      <td><p>Variance of the residual.
-If it is not specified, we set it to 1.</p></td>
-    </tr>
-    <tr>
-      <th>prior_weights</th>
-      <td><p>A vector of length p, in which each entry
-gives the prior probability that SNP j has non-zero effect.</p></td>
-    </tr>
-    <tr>
-      <th>null_weight</th>
-      <td><p>Prior probability of no effect (a number between
-0 and 1, and cannot be exactly 1).</p></td>
-    </tr>
-    <tr>
-      <th>estimate_residual_variance</th>
-      <td><p>The residual variance is
-fixed to the value supplied by <code>residual_variance</code>. We don't
-estimate residual variance in susie_rss.</p></td>
+      <td><p>The prior variance(s) for the non-zero element of \(b_l\). It is either a scalar or
+a vector of length L. When <code>estimate_prior_variance=TRUE</code> (highly recommended)
+this simply provides an initial value for the prior variance, and the default value of 50 is simply intended to be a large initial value.</p></td>
     </tr>
     <tr>
       <th>estimate_prior_variance</th>
       <td><p>If <code>estimate_prior_variance =
-TRUE</code>, the prior variance is estimated (this is a separate
+TRUE</code>, which is highly recommended, the prior variance is estimated (this is a separate
 parameter for each of the L effects). If provided,
 <code>prior_variance</code> is then used as an initial value for
-the optimization. When <code>estimate_prior_variance = FALSE</code>, the
+the optimization. When <code>estimate_prior_variance = FALSE</code> (not recommended) the
 prior variance for each of the L effects is determined by the
 value supplied to <code>prior_variance</code>.</p></td>
     </tr>
     <tr>
-      <th>estimate_prior_method</th>
-      <td><p>The method used for estimating prior
-variance. When <code>estimate_prior_method = "simple"</code> is used, the
-likelihood at the specified prior variance is compared to the
-likelihood at a variance of zero, and the setting with the larger
-likelihood is retained.</p></td>
-    </tr>
-    <tr>
-      <th>check_null_threshold</th>
-      <td><p>When the prior variance is estimated,
-compare the estimate with the null, and set the prior variance to
-zero unless the log-likelihood using the estimate is larger by this
-threshold amount. For example, if you set
-<code>check_null_threshold = 0.1</code>, this will "nudge" the estimate
-towards zero when the difference in log-likelihoods is small. A
-note of caution that setting this to a value greater than zero may
-lead the IBSS fitting procedure to occasionally decrease the ELBO.</p></td>
-    </tr>
-    <tr>
-      <th>prior_tol</th>
-      <td><p>When the prior variance is estimated, compare the
-estimated value to <code>prior_tol</code> at the end of the computation,
-and exclude a single effect from PIP computation if the estimated
-prior variance is smaller than this tolerance value.</p></td>
-    </tr>
-    <tr>
-      <th>max_iter</th>
-      <td><p>Maximum number of IBSS iterations to perform.</p></td>
-    </tr>
-    <tr>
-      <th>s_init</th>
-      <td><p>A previous susie fit with which to initialize.</p></td>
-    </tr>
-    <tr>
-      <th>intercept_value</th>
-      <td><p>The intercept. (The intercept cannot be
-estimated from centered summary data.) This setting will be used by
-<code>coef</code> to assign an intercept value, mainly for consistency
-with <code>susie</code>. Set to <code>NULL</code> if you want <code>coef</code> not
-to include an intercept term (and so only a p-vector is returned).</p></td>
-    </tr>
-    <tr>
-      <th>coverage</th>
-      <td><p>A number between 0 and 1 specifying the
-&#8220;coverage&#8221; of the estimated confidence sets.</p></td>
-    </tr>
-    <tr>
-      <th>min_abs_corr</th>
-      <td><p>Minimum absolute correlation allowed in a
-credible set. The default, 0.5, corresponds to a squared
-correlation of 0.25, which is a commonly used threshold for
-genotype data in genetic studies.</p></td>
-    </tr>
-    <tr>
-      <th>tol</th>
-      <td><p>A small, non-negative number specifying the convergence
-tolerance for the IBSS fitting procedure. The fitting procedure
-will halt when the difference in the variational lower bound, or
-&#8220;ELBO&#8221; (the objective function to be maximized), is
-less than <code>tol</code>.</p></td>
-    </tr>
-    <tr>
-      <th>verbose</th>
-      <td><p>If <code>verbose = TRUE</code>, the algorithm's progress,
-and a summary of the optimization settings, are printed to the
-console.</p></td>
-    </tr>
-    <tr>
-      <th>track_fit</th>
-      <td><p>If <code>track_fit = TRUE</code>, <code>trace</code>
-is also returned containing detailed information about the
-estimates at each iteration of the IBSS fitting procedure.</p></td>
-    </tr>
-    <tr>
-      <th>check_R</th>
-      <td><p>If <code>check_R = TRUE</code>, check that <code>R</code> is
-positive semidefinite.</p></td>
-    </tr>
-    <tr>
-      <th>r_tol</th>
-      <td><p>Tolerance level for eigenvalue check of positive
-semidefinite matrix of R.</p></td>
-    </tr>
-    <tr>
-      <th>refine</th>
-      <td><p>If <code>refine = TRUE</code>, we use a procedure to help
-SuSiE get out of local optimum.</p></td>
+      <th>...</th>
+      <td><p>Other parameters to be passed to <code><a href='susie.html'>susie_suff_stat</a></code>.</p></td>
     </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>A <code>"susie"</code> object with some or all of the following
+    <p>A <code>"susie"</code> object with the following
   elements:</p>
 <dt>alpha</dt><dd><p>An L by p matrix of posterior inclusion probabilites.</p></dd>
 
@@ -321,19 +198,13 @@ SuSiE get out of local optimum.</p></td>
 
 <dt>lbf_variable</dt><dd><p>log-Bayes Factor for each variable and single effect.</p></dd>
 
-<dt>intercept</dt><dd><p>Fixed Intercept.</p></dd>
-
-<dt>sigma2</dt><dd><p>Fixed Residual variance.</p></dd>
-
-<dt>V</dt><dd><p>Prior variance of the non-zero elements of b, equal to
-  <code>scaled_prior_variance * var(Y)</code>.</p></dd>
+<dt>V</dt><dd><p>Prior variance of the non-zero elements of b.</p></dd>
 
 <dt>elbo</dt><dd><p>The value of the variational lower bound, or
   &#8220;ELBO&#8221; (objective function to be maximized), achieved at
   each iteration of the IBSS fitting procedure.</p></dd>
 
-<dt>fitted</dt><dd><p>Vector of length n containing the fitted values of
-  the outcome.</p></dd>
+<dt>Rr</dt><dd><p>A vector of length p, equal to <code>R %*% colSums(alpha*mu)</code>.</p></dd>
 
 <dt>sets</dt><dd><p>Credible sets estimated from model fit; see
   <code><a href='susie_get_objective.html'>susie_get_cs</a></code> for details.</p></dd>
@@ -347,22 +218,52 @@ SuSiE get out of local optimum.</p></td>
   the IBSS converged to a solution within the chosen tolerance
   level.</p></dd>
 
-<dt>Rr</dt><dd><p>An p-vector of <code><a href='https://rdrr.io/r/base/t.html'>t(X)</a></code> times fitted values, <code>X
-  %*% colSums(alpha*mu)</code>.</p></dd>
-
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p><code>susie_rss</code> performs sum of single-effect linear regression
-with z scores; all posterior calculations are for z-scores. This
-function fits the regression model \(z = \sum_l R*b_l + e\),
-where e is \(N(0,R)\) and \(\sum_l b_l\) is a
-p-vector of effects to be estimated. The required summary data are
-the p by p correlation matrix, <code>R</code>, and the p-vector
-<code>z</code>.</p>
+    <p>In some applications, particularly genetic applications,
+it is desired to fit a regression model (\(Y = X\tilde{b} +E\) say,
+which we refer to as "the original regression model" or ORM) without access
+to the actual values of \(Y\) and \(X\), but given only some summary statistics.
+<code>susie_rss</code> assumes the availability of \(z\) scores from standard univariate regression of
+ \(Y\) on each column of \(X\), and an estimate \(R\) of the correlation matrix
+ between columns of \(X\) (\(R\) is sometimes called the LD matrix in genetic applications).
+ See Zhu and Stephens (2017), and references therein, for further background.</p>
+<p>The <code>susie_rss</code> function is based on the model (2.10) from Zhu and Stephens,  \(z | R, b ~ N(Rb,R)\)
+where \(b\) is a vector of length p representing the effects to be estimated. The effect
+\(b_j\) is simply a multiple of the coefficient \(\tilde{b}_j\) in the ORM,
+and so \(b_j\) is non-zero if and only if \(\tilde{b}_j\) is non-zero. In this
+sense the variable selection problem in this model is the same as the variable selection
+problem in the ORM, and so the credible sets and PIPs computed by <code>susie_rss</code>
+can be interpreted as credible sets and PIPs for the ORM. However, converting posterior estimates of \(b_j\) to estimates
+of \(\tilde{b}_j\) would require computation of the scaling factor (not done here).</p>
+<p>More precisely
+<code>susie_rss</code> assumes the
+log-likelihood for \(b\) is \(l(b; z,R) = -0.5(b'Rb - 2z'b)\),
+which is equivalent to model (2.10) from Zhu and Stephens if \(R\) is invertible,
+but does not require \(R\) to be invertible.
+It combines this likelihood with the &#8220;susie prior&#8221; which assumes that \(b = \sum_{l=1}^L b_l\) where each
+  \(b_l\) is a vector of length p with exactly one non-zero element; see
+  <code><a href='susie.html'>susie</a></code> and Wang et al (2020) for details.</p>
+<p>In practice
+  this is accomplished by calling <code>susie_suff_stat</code> with <code>XtX = R</code>
+  and <code>Xty = z</code>, and fixing <code>residual_variance=1</code>.
+  (Values for <code>n</code> and <code>yty</code> are also
+  required by <code>susie_suff_stat</code>. They do not affect inference when the residual variance
+  is fixed, but they do affect the interpretation of scaled_prior_variance;
+  we set <code>n=2,yty=1</code> so \(var(y)=yty/(n-1) = 1\).)
+  Additional arguments to be passed to <code><a href='susie.html'>susie_suff_stat</a></code> can be provided via <code>...</code>.</p>
+    <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
+
+    <p>G. Wang, A. Sarkar, P. Carbonetto and M. Stephens (2020). A simple
+  new approach to variable selection in regression, with application
+  to genetic fine-mapping. <em>Journal of the Royal Statistical
+  Society, Series B</em> <a href='https://doi.org/10.1101/501114'>https://doi.org/10.1101/501114</a>.</p>
+<p>X. Zhu and M. Stephens (2017). Bayesian large-scale multiple regression
+with summary statistics from genome-wide association studies.
+<em>Annals of Applied Statistics</em> 11(3): 1561-1592.</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'>
-<span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span><span class='op'>(</span><span class='fl'>1</span><span class='op'>)</span>
+    <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span><span class='op'>(</span><span class='fl'>1</span><span class='op'>)</span>
 <span class='va'>n</span> <span class='op'>=</span> <span class='fl'>1000</span>
 <span class='va'>p</span> <span class='op'>=</span> <span class='fl'>1000</span>
 <span class='va'>beta</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span><span class='op'>(</span><span class='fl'>0</span>,<span class='va'>p</span><span class='op'>)</span>
@@ -371,11 +272,11 @@ the p by p correlation matrix, <code>R</code>, and the p-vector
 <span class='va'>X</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/scale.html'>scale</a></span><span class='op'>(</span><span class='va'>X</span>,center <span class='op'>=</span> <span class='cn'>TRUE</span>,scale <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
 <span class='va'>y</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/drop.html'>drop</a></span><span class='op'>(</span><span class='va'>X</span> <span class='op'>%*%</span> <span class='va'>beta</span> <span class='op'>+</span> <span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span><span class='op'>(</span><span class='va'>n</span><span class='op'>)</span><span class='op'>)</span>
 
-<span class='va'>input_ss</span> <span class='op'>=</span> <span class='fu'><a href='compute_ss.html'>compute_ss</a></span><span class='op'>(</span><span class='va'>X</span>,<span class='va'>y</span>,standardize <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
-<span class='va'>ss</span>   <span class='op'>&lt;-</span> <span class='fu'>susieR</span><span class='fu'>:::</span><span class='fu'><a href='univariate_regression.html'>univariate_regression</a></span><span class='op'>(</span><span class='va'>X</span>,<span class='va'>y</span><span class='op'>)</span>
+<span class='va'>input_ss</span> <span class='op'>&lt;-</span> <span class='fu'><a href='compute_suff_stat.html'>compute_suff_stat</a></span><span class='op'>(</span><span class='va'>X</span>,<span class='va'>y</span>,standardize <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
+<span class='va'>ss</span>   <span class='op'>&lt;-</span> <span class='fu'><a href='univariate_regression.html'>univariate_regression</a></span><span class='op'>(</span><span class='va'>X</span>,<span class='va'>y</span><span class='op'>)</span>
 <span class='va'>R</span>    <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/with.html'>with</a></span><span class='op'>(</span><span class='va'>input_ss</span>,<span class='fu'><a href='https://rdrr.io/r/stats/cor.html'>cov2cor</a></span><span class='op'>(</span><span class='va'>XtX</span><span class='op'>)</span><span class='op'>)</span>
 <span class='va'>zhat</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/with.html'>with</a></span><span class='op'>(</span><span class='va'>ss</span>,<span class='va'>betahat</span><span class='op'>/</span><span class='va'>sebetahat</span><span class='op'>)</span>
-<span class='va'>res</span> <span class='op'>&lt;-</span> <span class='fu'>susie_rss</span><span class='op'>(</span><span class='va'>zhat</span>,<span class='va'>R</span>,L <span class='op'>=</span> <span class='fl'>10</span><span class='op'>)</span>
+<span class='va'>res</span>  <span class='op'>&lt;-</span> <span class='fu'>susie_rss</span><span class='op'>(</span><span class='va'>zhat</span>,<span class='va'>R</span>,L <span class='op'>=</span> <span class='fl'>10</span><span class='op'>)</span>
 
 </div></pre>
   </div>

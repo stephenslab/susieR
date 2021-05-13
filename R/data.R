@@ -137,3 +137,35 @@ NULL
 #' @examples
 #' data(FinemappingConvergence)
 NULL
+
+#' @name SummaryConsistency
+#'
+#' @title Simulated Fine-mapping Data with LD matrix from reference panel.
+#'
+#' @description Data simulated using real genotypes from 10,000
+#'   individuals and 1,002 SNPs. One SNP have non-zero effect
+#'   on the multivariate response. The response data are generated under
+#'   a linear regression model. There is one SNP with flipped allele
+#'   between summary statistics and the reference panel
+#'
+#' @format \code{SummaryConsistency} is a list with the following
+#' elements:
+#'
+#' \describe{
+#'
+#'   \item{z}{z scores computed by fitting univariate simple regression
+#'   variable by variable.}
+#'
+#'   \item{ldref}{LD matrix estimated from the reference panel.}
+#'
+#'   \item{flip_id}{The idx of SNP with flipped allele.}
+#'
+#'   \item{signal_id}{The idx of SNP with non-zero effect.}}
+#'
+#' @docType data
+#'
+#' @keywords data
+#'
+#' @examples
+#' data(SummaryConsistency)
+NULL

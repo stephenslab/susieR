@@ -26,7 +26,7 @@ semidefinite matrix of R.}
 
 \item{plot.it}{If \code{plot.it = TRUE}, it produces a plot with
 observed z score vs the expected value. The possible allele switched
-variants are labeled as red points (log LR > 2).}
+variants are labeled as red points (log LR > 2 and abs(z) > 2).}
 }
 \description{
 Under the null, the rss model with regularized LD matrix is
@@ -46,7 +46,6 @@ beta[1:4] = 0.01
 X = matrix(rnorm(n*p),nrow = n,ncol = p)
 X = scale(X,center = TRUE,scale = TRUE)
 y = drop(X \%*\% beta + rnorm(n))
-input_ss <- compute_suff_stat(X,y,standardize = TRUE)
 ss   <- univariate_regression(X,y)
 R    <- cor(X)
 attr(R, 'eigen') = eigen(R, symmetric = T)

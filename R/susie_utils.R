@@ -750,7 +750,7 @@ kriging_rss = function(z, R, r_tol=1e-08,
          ylab = 'Expected value')
     abline(0,1, lty=2)
     if(any(logLRmix>2)){
-      idx = which(logLRmix > 3 && abs(z) > 2)
+      idx = which(logLRmix > 2 & abs(z) > 2)
       points(z[idx], postmean[idx], col = 'red', pch=16)
     }
   }

@@ -40,18 +40,22 @@
 
 
 <meta property="og:title" content="Sum of Single Effects (SuSiE) Regression — susie" />
-<meta property="og:description" content="Performs Bayesian multiple linear regression of Y on
-  X; that is, this function fits the regression model \(Y = \sum_l
-  X b_{l=1}^L + e\), where elements of e are i.i.d. normal with
-  zero mean and variance residual_variance, and
-  \(\sum_{l=1}^L b_l\) is a vector of length p representing the
-  effects to be estimated. The &amp;#8220;susie assumption&amp;#8221; is that each
-  \(b_l\) has exactly one non-zero element. The prior on the
+<meta property="og:description" content="Performs a sparse Bayesian multiple linear regression of Y on
+  X, using the &quot;Sum of Single Effects&quot; model from Wang et al (2020).  In brief,
+  this function fits the regression model
+  \(Y = \mu + X b + e\), where elements of \(e\) are i.i.d. normal with
+  zero mean and variance residual_variance, \(\mu\) is an intercept term
+  and \(b\) is a vector
+  of length p representing the effects to be estimated.
+ The &amp;#8220;susie assumption&amp;#8221; is that \(b = \sum_{l=1}^L b_l\) where each
+  \(b_l\) is a vector of length p with exactly one non-zero element. The prior on the
   non-zero element is normal with zero mean and variance var(Y)
-  * scaled_prior_variance. The model is fitted using the
-  &amp;#8220;Iterative Bayesian Stepwise Selection&amp;#8221; (IBSS) algorithm.
-  See also susie_trendfilter for applying susie to
-  non-parametric regression, particularly changepoint problems." />
+  * scaled_prior_variance. The value of L is fixed, and should
+  be chosen to provide a reasonable upper bound on the number of non-zero effects to be detected.
+  Typically the hyperparameters residual_variance and scaled_prior_variance
+  will be estimated during model fitting, although they can also be fixed as specified by the user.
+See functions susie_get_cs and other functions of form susie_get_* to extract
+the most commonly-used results from a susie fit." />
 
 
 
@@ -83,7 +87,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.8</span>
       </span>
     </div>
 
@@ -117,23 +121,27 @@
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Sum of Single Effects (SuSiE) Regression</h1>
-    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/susie.R'><code>R/susie.R</code></a>, <a href='https://github.com/stephenslab/susieR/blob/master/R/susie_ss.R'><code>R/susie_ss.R</code></a>, <a href='https://github.com/stephenslab/susieR/blob/master/R/susie_zzz_auto.R'><code>R/susie_zzz_auto.R</code></a></small>
+    <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/susie.R'><code>R/susie.R</code></a>, <a href='https://github.com/stephenslab/susieR/blob/master/R/susie_ss.R'><code>R/susie_ss.R</code></a></small>
     <div class="hidden name"><code>susie.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Performs Bayesian multiple linear regression of Y on
-  X; that is, this function fits the regression model \(Y = \sum_l
-  X b_{l=1}^L + e\), where elements of e are <em>i.i.d.</em> normal with
-  zero mean and variance <code>residual_variance</code>, and
-  \(\sum_{l=1}^L b_l\) is a vector of length p representing the
-  effects to be estimated. The &#8220;susie assumption&#8221; is that each
-  \(b_l\) has exactly one non-zero element. The prior on the
+    <p>Performs a sparse Bayesian multiple linear regression of Y on
+  X, using the "Sum of Single Effects" model from Wang et al (2020).  In brief,
+  this function fits the regression model
+  \(Y = \mu + X b + e\), where elements of \(e\) are <em>i.i.d.</em> normal with
+  zero mean and variance <code>residual_variance</code>, \(\mu\) is an intercept term
+  and \(b\) is a vector
+  of length p representing the effects to be estimated.
+ The &#8220;susie assumption&#8221; is that \(b = \sum_{l=1}^L b_l\) where each
+  \(b_l\) is a vector of length p with exactly one non-zero element. The prior on the
   non-zero element is normal with zero mean and variance <code>var(Y)
-  * scaled_prior_variance</code>. The model is fitted using the
-  &#8220;Iterative Bayesian Stepwise Selection&#8221; (IBSS) algorithm.
-  See also <code><a href='susie_trendfilter.html'>susie_trendfilter</a></code> for applying susie to
-  non-parametric regression, particularly changepoint problems.</p>
+  * scaled_prior_variance</code>. The value of <code>L</code> is fixed, and should
+  be chosen to provide a reasonable upper bound on the number of non-zero effects to be detected.
+  Typically the hyperparameters <code>residual_variance</code> and <code>scaled_prior_variance</code>
+  will be estimated during model fitting, although they can also be fixed as specified by the user.</p>
+<p>See functions <code><a href='susie_get_objective.html'>susie_get_cs</a></code> and other functions of form <code>susie_get_*</code> to extract
+the most commonly-used results from a susie fit.</p>
     </div>
 
     <pre class="usage"><span class='fu'>susie</span><span class='op'>(</span>
@@ -174,6 +182,8 @@
   <span class='va'>XtX</span>,
   <span class='va'>Xty</span>,
   <span class='va'>yty</span>,
+  X_colmeans <span class='op'>=</span> <span class='cn'>NA</span>,
+  y_mean <span class='op'>=</span> <span class='cn'>NA</span>,
   maf <span class='op'>=</span> <span class='cn'>NULL</span>,
   maf_thresh <span class='op'>=</span> <span class='fl'>0</span>,
   L <span class='op'>=</span> <span class='fl'>10</span>,
@@ -190,7 +200,6 @@
   standardize <span class='op'>=</span> <span class='cn'>TRUE</span>,
   max_iter <span class='op'>=</span> <span class='fl'>100</span>,
   s_init <span class='op'>=</span> <span class='cn'>NULL</span>,
-  intercept_value <span class='op'>=</span> <span class='fl'>0</span>,
   coverage <span class='op'>=</span> <span class='fl'>0.95</span>,
   min_abs_corr <span class='op'>=</span> <span class='fl'>0.5</span>,
   tol <span class='op'>=</span> <span class='fl'>0.001</span>,
@@ -198,20 +207,6 @@
   track_fit <span class='op'>=</span> <span class='cn'>FALSE</span>,
   check_input <span class='op'>=</span> <span class='cn'>FALSE</span>,
   refine <span class='op'>=</span> <span class='cn'>FALSE</span>
-<span class='op'>)</span>
-
-<span class='fu'>susie_auto</span><span class='op'>(</span>
-  <span class='va'>X</span>,
-  <span class='va'>Y</span>,
-  L_init <span class='op'>=</span> <span class='fl'>1</span>,
-  L_max <span class='op'>=</span> <span class='fl'>512</span>,
-  verbose <span class='op'>=</span> <span class='cn'>FALSE</span>,
-  init_tol <span class='op'>=</span> <span class='fl'>1</span>,
-  standardize <span class='op'>=</span> <span class='cn'>TRUE</span>,
-  intercept <span class='op'>=</span> <span class='cn'>TRUE</span>,
-  max_iter <span class='op'>=</span> <span class='fl'>100</span>,
-  tol <span class='op'>=</span> <span class='fl'>0.01</span>,
-  <span class='va'>...</span>
 <span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -227,24 +222,25 @@
     </tr>
     <tr>
       <th>L</th>
-      <td><p>Number of components (nonzero coefficients) in the susie
+      <td><p>Maximum number of non-zero effects in the susie
 regression model. If L is larger than the number of covariates, p,
 L is set to p.</p></td>
     </tr>
     <tr>
       <th>scaled_prior_variance</th>
-      <td><p>The scaled prior variance. This is
-either a scalar or a vector of length <code>L</code>. The prior variance
-of each non-zero element of b is set to <code>var(Y) *
-scaled_prior_variance</code>. If <code>estimate_prior_variance = TRUE</code>,
-this provides initial estimates of the prior variances.</p></td>
+      <td><p>The prior variance, divided by <code><a href='https://rdrr.io/r/stats/cor.html'>var(Y)</a></code>
+(or by <code>(1/(n-1))yty</code> for <code>susie_suff_stat</code>); that is,
+the prior variance of each non-zero element of b is <code>var(Y) *
+  scaled_prior_variance</code>. The value provided should be
+  either a scalar or a vector of length <code>L</code>.  If <code>estimate_prior_variance = TRUE</code>,
+  this provides initial estimates of the prior variances.</p></td>
     </tr>
     <tr>
       <th>residual_variance</th>
       <td><p>Variance of the residual. If
 <code>estimate_residual_variance = TRUE</code>, this value provides the
-initial estimate of the residual variance. By default, it is
-<code><a href='https://rdrr.io/r/stats/cor.html'>var(Y)</a></code>.</p></td>
+initial estimate of the residual variance. By default, it is set to
+<code><a href='https://rdrr.io/r/stats/cor.html'>var(Y)</a></code> in <code>susie</code> and <code>(1/(n-1))yty</code> in <code>susie_suff_stat</code>.</p></td>
     </tr>
     <tr>
       <th>prior_weights</th>
@@ -260,8 +256,9 @@ nonzero effect on the outcome, Y.</p></td>
     <tr>
       <th>standardize</th>
       <td><p>If <code>standardize = TRUE</code>, standardize the
-columns of X (or XtX and Xty) to unit variance prior to
-fitting. Note that <code>scaled_prior_variance</code> specifies the prior
+columns of X  to unit variance prior to
+fitting (or equivalently standardize XtX and Xty to have the same effect).
+Note that <code>scaled_prior_variance</code> specifies the prior
 on the coefficients of X <em>after</em> standardization (if it is
 performed). If you do not standardize, you may need to think more
 carefully about specifying <code>scaled_prior_variance</code>. Whatever
@@ -384,8 +381,9 @@ residual variance. It is only relevant when
     </tr>
     <tr>
       <th>refine</th>
-      <td><p>If <code>refine = TRUE</code>, we use a procedure to help
-SuSiE get out of local optimum.</p></td>
+      <td><p>If <code>refine = TRUE</code>, then an additional
+iterative refinement procedure is used, after the IBSS algorithm,
+to check and escape from local optima (see details).</p></td>
     </tr>
     <tr>
       <th>bhat</th>
@@ -430,29 +428,39 @@ centered to have mean zero.</p></td>
 zero.</p></td>
     </tr>
     <tr>
+      <th>X_colmeans</th>
+      <td><p>A p-vector of column means of \(X\). If both <code>X_colmeans</code>
+and <code>y_mean</code> are provided then the intercept is estimated;
+otherwise, the intercept is NA.</p></td>
+    </tr>
+    <tr>
+      <th>y_mean</th>
+      <td><p>A scalar containing the mean of \(y\). If both <code>X_colmeans</code>
+and <code>y_mean</code> are provided then the intercept is estimated;
+otherwise, the intercept is NA.</p></td>
+    </tr>
+    <tr>
+      <th>maf</th>
+      <td><p>Minor allele frequency; to be used along with
+<code>maf_thresh</code> to filter input summary statistics.</p></td>
+    </tr>
+    <tr>
+      <th>maf_thresh</th>
+      <td><p>Variants having a minor allele frequency smaller
+than this threshold are not used.</p></td>
+    </tr>
+    <tr>
+      <th>r_tol</th>
+      <td><p>Tolerance level for eigenvalue check of positive
+semidefinite matrix of R.</p></td>
+    </tr>
+    <tr>
       <th>check_input</th>
       <td><p>If <code>check_input = TRUE</code>,
 <code>susie_suff_stat</code> performs additional checks on <code>XtX</code> and
 <code>Xty</code>. The checks are: (1) check that <code>XtX</code> is positive
 semidefinite; (2) check that <code>Xty</code> is in the space spanned by
 the non-zero eigenvectors of <code>XtX</code>.</p></td>
-    </tr>
-    <tr>
-      <th>L_init</th>
-      <td><p>The initial value of L.</p></td>
-    </tr>
-    <tr>
-      <th>L_max</th>
-      <td><p>The largest value of L to consider.</p></td>
-    </tr>
-    <tr>
-      <th>init_tol</th>
-      <td><p>The tolerance to passed to <code>susie</code> during
-early runs (set large to shorten the initial runs).</p></td>
-    </tr>
-    <tr>
-      <th>...</th>
-      <td><p>Additional arguments passed to <code>susie</code>.</p></td>
     </tr>
     </table>
 
@@ -510,36 +518,65 @@ susie_suff_stat returns also outputs:
 
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p><code>susie_suff_stat</code> performs sum of single-effect
-linear regression with summary statistics. The required summary
-data are either: <code>bhat</code>, <code>shat</code>, the p by p symmetric,
-positive semidefinite correlation (or covariance) matrix <code>R</code>,
-the sample size <code>n</code>, and the variance of y; or the p by p
-matrix \(X'X\), the p-vector \(X'y\), the sum of squares
-\(y'y\), and the sample size <code>n</code>. The summary statistics
-should come from the same individuals. Both the columns of X and
-the vector y should be centered to have mean zero before computing
-these summary statistics; you may also want to scale each column of
-X and y to have variance 1 (see examples).</p>
-
-<p>susie_auto is an attempt to automate reliable running of susie even
-on hard problems. It implements a three-stage strategy for each L:
-first, fit susie with very small residual error; next, estimate
-residual error; finally, estimate the prior variance. If the last
-step estimates some prior variances to be zero, stop. Otherwise,
-double L, and repeat. Initial runs are performed with relaxed
-tolerance; the final run is performed using the default susie
-tolerance.</p>
+    <p>The function <code>susie</code> implements the IBSS algorithm from Wang et al (2020).
+The option <code>refine=TRUE</code> implements an additional step to help reduce
+problems caused by convergence of the IBSS algorithm to poor local optima
+(which is rare in our experience, but can provide
+misleading results when it occurs). The refinement step incurs additional computational expense that
+increases with the number of CSs found in the initial run.</p>
+<p>The function <code>susie_suff_stat</code> implements essentially the same algorithms,
+but using sufficient statistics. (The statistics are sufficient for the regression coefficients \(b\),
+but not for the intercept \(\mu\); see below for how the intercept is treated.)
+If the sufficient statistics are computed correctly then the results from <code>susie_suff_stat</code>
+should be the same as (or very similar to) <code>susie</code>, although run times will differ as discussed below.
+The simplest sufficient statistics are the sample size <code>n</code>, and then
+the p by p matrix \(X'X\), the p-vector \(X'y\), and the sum of squared y values
+\(y'y\), all computed after centering the columns of \(X\) and the vector \(y\)
+to have mean 0; these can be computed using <code>compute_suff_stat</code>.
+Alternatively the user can provide <code>n</code> and <code>bhat</code> (the univariate OLS estimates from regressing y on each column of X),
+<code>shat</code> (the standard errrors from these OLS regressions), the p by p symmetric,
+positive semidefinite correlation (or covariance) matrix <code>R</code> = (1/(n-1))X'X,
+and the variance of \(y\), again all computed from centered \(X\) and \(y\).
+Note that here <code>R</code> and <code>bhat</code>
+should be computed using the same matrix \(X\). If you do not have access to the original
+\(X\) to compute the matrix <code>R</code> then use <code><a href='susie_rss.html'>susie_rss</a></code>.</p>
+<p>The handling of the intercept term in <code>susie_suff_stat</code> needs some additional explanation.
+Computing the summary data after centering <code>X</code> and <code>y</code> effectively ensures that the
+resulting posterior quantities for \(b\) allow for an intercept in the model; however
+the actual value of the intercept cannot be estimated from these centered data. To estimate the intercept term
+the user must also provide the column means of \(X\) and the mean of \(y\)
+(<code>X_colmeans</code> and <code>y_mean</code>).
+If these are not provided they are treated as <code>NA</code>, which results in the intercept being <code>NA</code>.
+(If for some reason you prefer to have the intercept be 0 instead of <code>NA</code> then set <code>X_colmeans=0, y_mean=0</code>).</p>
+<p>For completeness we note that if <code>susie_suff_stat</code> is run on \(X'X, X'y, y'y\) computed
+<em>without</em> centering \(X\) and \(y\),
+and with <code>X_colmeans=0, y_mean=0</code>, then this is equivalent to <code>susie</code> applied
+to \(X,y\) with <code>intercept=FALSE</code> (although results may differ due
+to different initializations of <code>residual_variance</code> and <code>scaled_prior_variance</code>).
+However, this usage will not be appropriate for most situations.</p>
+<p>The computational complexity of <code>susie</code> is \(O(npL)\) per iteration, whereas
+<code>susie_suff_stat</code> is \(O(p^2L)\) per iteration (not including
+the cost of computing the sufficient statistics, which is dominated by
+the \(O(np^2)\) cost of computing \(X'X\)). Because of the cost of
+computing \(X'X\), <code>susie</code> will usually be faster.
+However, if \(n&gt;&gt;p\), and/or if \(X'X\) is already computed, then
+<code>susie_suff_stat</code> may be faster.</p>
     <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
 
     <p>G. Wang, A. Sarkar, P. Carbonetto and M. Stephens (2020). A simple
   new approach to variable selection in regression, with application
   to genetic fine-mapping. <em>Journal of the Royal Statistical
   Society, Series B</em> <a href='https://doi.org/10.1101/501114'>https://doi.org/10.1101/501114</a>.</p>
+    <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
+
+    <div class='dont-index'><p><code><a href='susie_get_objective.html'>susie_get_cs</a></code> and other <code>susie_get_*</code> functions to extract results;
+<code><a href='susie_trendfilter.html'>susie_trendfilter</a></code> for applying the SuSiE model to
+  non-parametric regression, particularly changepoint problems, and
+  <code><a href='susie_rss.html'>susie_rss</a></code> for applying the SuSiE model when one only has access to
+  limited summary statistics related to \(X\) and \(Y\) (typically in genetic applications).</p></div>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'>
-<span class='co'># susie example.</span>
+    <pre class="examples"><div class='input'><span class='co'># susie example.</span>
 <span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span><span class='op'>(</span><span class='fl'>1</span><span class='op'>)</span>
 <span class='va'>n</span> <span class='op'>=</span> <span class='fl'>1000</span>
 <span class='va'>p</span> <span class='op'>=</span> <span class='fl'>1000</span>
@@ -549,25 +586,39 @@ tolerance.</p>
 <span class='va'>X</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/scale.html'>scale</a></span><span class='op'>(</span><span class='va'>X</span>,center <span class='op'>=</span> <span class='cn'>TRUE</span>,scale <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
 <span class='va'>y</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/drop.html'>drop</a></span><span class='op'>(</span><span class='va'>X</span> <span class='op'>%*%</span> <span class='va'>beta</span> <span class='op'>+</span> <span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span><span class='op'>(</span><span class='va'>n</span><span class='op'>)</span><span class='op'>)</span>
 <span class='va'>res1</span> <span class='op'>=</span> <span class='fu'>susie</span><span class='op'>(</span><span class='va'>X</span>,<span class='va'>y</span>,L <span class='op'>=</span> <span class='fl'>10</span><span class='op'>)</span>
-<span class='fu'><a href='https://rdrr.io/r/graphics/plot.default.html'>plot</a></span><span class='op'>(</span><span class='va'>beta</span>,<span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span><span class='op'>(</span><span class='va'>res1</span><span class='op'>)</span><span class='op'>[</span><span class='op'>-</span><span class='fl'>1</span><span class='op'>]</span><span class='op'>)</span>
+<span class='fu'><a href='susie_get_objective.html'>susie_get_cs</a></span><span class='op'>(</span><span class='va'>res1</span><span class='op'>)</span> <span class='co'># extract credible sets from fit</span>
+</div><div class='output co'>#&gt; $cs
+#&gt; $cs$L1
+#&gt; [1] 1
+#&gt; 
+#&gt; $cs$L2
+#&gt; [1] 2
+#&gt; 
+#&gt; $cs$L3
+#&gt; [1] 3
+#&gt; 
+#&gt; $cs$L4
+#&gt; [1] 4
+#&gt; 
+#&gt; 
+#&gt; $coverage
+#&gt; [1] 1 1 1 1
+#&gt; 
+#&gt; $requested_coverage
+#&gt; [1] 0.95
+#&gt; </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/plot.default.html'>plot</a></span><span class='op'>(</span><span class='va'>beta</span>,<span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span><span class='op'>(</span><span class='va'>res1</span><span class='op'>)</span><span class='op'>[</span><span class='op'>-</span><span class='fl'>1</span><span class='op'>]</span><span class='op'>)</span>
 </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/abline.html'>abline</a></span><span class='op'>(</span>a <span class='op'>=</span> <span class='fl'>0</span>,b <span class='op'>=</span> <span class='fl'>1</span>,col <span class='op'>=</span> <span class='st'>"skyblue"</span>,lty <span class='op'>=</span> <span class='st'>"dashed"</span><span class='op'>)</span>
 </div><div class='img'><img src='susie-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/plot.default.html'>plot</a></span><span class='op'>(</span><span class='va'>y</span>,<span class='fu'><a href='https://rdrr.io/r/stats/predict.html'>predict</a></span><span class='op'>(</span><span class='va'>res1</span><span class='op'>)</span><span class='op'>)</span>
 </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/abline.html'>abline</a></span><span class='op'>(</span>a <span class='op'>=</span> <span class='fl'>0</span>,b <span class='op'>=</span> <span class='fl'>1</span>,col <span class='op'>=</span> <span class='st'>"skyblue"</span>,lty <span class='op'>=</span> <span class='st'>"dashed"</span><span class='op'>)</span>
 </div><div class='img'><img src='susie-2.png' alt='' width='700' height='433' /></div><div class='input'>
 <span class='co'># susie_suff_stat example.</span>
-<span class='va'>input_ss</span> <span class='op'>=</span> <span class='fu'><a href='compute_ss.html'>compute_ss</a></span><span class='op'>(</span><span class='va'>X</span>,<span class='va'>y</span>,standardize <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
+<span class='va'>input_ss</span> <span class='op'>=</span> <span class='fu'><a href='compute_suff_stat.html'>compute_suff_stat</a></span><span class='op'>(</span><span class='va'>X</span>,<span class='va'>y</span><span class='op'>)</span>
 <span class='va'>res2</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/with.html'>with</a></span><span class='op'>(</span><span class='va'>input_ss</span>,
-            <span class='fu'>susie_suff_stat</span><span class='op'>(</span>XtX <span class='op'>=</span> <span class='va'>XtX</span>,Xty <span class='op'>=</span> <span class='va'>Xty</span>,yty <span class='op'>=</span> <span class='va'>yty</span>,n <span class='op'>=</span> <span class='va'>n</span>,L <span class='op'>=</span> <span class='fl'>10</span><span class='op'>)</span><span class='op'>)</span>
-<span class='fu'><a href='https://rdrr.io/r/graphics/plot.default.html'>plot</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span><span class='op'>(</span><span class='va'>res1</span><span class='op'>)</span><span class='op'>[</span><span class='op'>-</span><span class='fl'>1</span><span class='op'>]</span>,<span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span><span class='op'>(</span><span class='va'>res2</span><span class='op'>)</span><span class='op'>[</span><span class='op'>-</span><span class='fl'>1</span><span class='op'>]</span><span class='op'>)</span>
+            <span class='fu'>susie_suff_stat</span><span class='op'>(</span>XtX <span class='op'>=</span> <span class='va'>XtX</span>,Xty <span class='op'>=</span> <span class='va'>Xty</span>,yty <span class='op'>=</span> <span class='va'>yty</span>,n <span class='op'>=</span> <span class='va'>n</span>,
+                            X_colmeans <span class='op'>=</span> <span class='va'>X_colmeans</span>, y_mean <span class='op'>=</span> <span class='va'>y_mean</span>,L <span class='op'>=</span> <span class='fl'>10</span><span class='op'>)</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/graphics/plot.default.html'>plot</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span><span class='op'>(</span><span class='va'>res1</span><span class='op'>)</span>,<span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span><span class='op'>(</span><span class='va'>res2</span><span class='op'>)</span><span class='op'>)</span>
 </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/abline.html'>abline</a></span><span class='op'>(</span>a <span class='op'>=</span> <span class='fl'>0</span>,b <span class='op'>=</span> <span class='fl'>1</span>,col <span class='op'>=</span> <span class='st'>"skyblue"</span>,lty <span class='op'>=</span> <span class='st'>"dashed"</span><span class='op'>)</span>
 </div><div class='img'><img src='susie-3.png' alt='' width='700' height='433' /></div><div class='input'>
-<span class='co'># susie_auto example.</span>
-<span class='va'>res3</span> <span class='op'>&lt;-</span> <span class='fu'>susie_auto</span><span class='op'>(</span><span class='va'>X</span>,<span class='va'>y</span><span class='op'>)</span>
-<span class='fu'><a href='https://rdrr.io/r/graphics/plot.default.html'>plot</a></span><span class='op'>(</span><span class='va'>beta</span>,<span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span><span class='op'>(</span><span class='va'>res3</span><span class='op'>)</span><span class='op'>[</span><span class='op'>-</span><span class='fl'>1</span><span class='op'>]</span><span class='op'>)</span>
-</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/abline.html'>abline</a></span><span class='op'>(</span>a <span class='op'>=</span> <span class='fl'>0</span>,b <span class='op'>=</span> <span class='fl'>1</span>,col <span class='op'>=</span> <span class='st'>"skyblue"</span>,lty <span class='op'>=</span> <span class='st'>"dashed"</span><span class='op'>)</span>
-</div><div class='img'><img src='susie-4.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/plot.default.html'>plot</a></span><span class='op'>(</span><span class='va'>y</span>,<span class='fu'><a href='https://rdrr.io/r/stats/predict.html'>predict</a></span><span class='op'>(</span><span class='va'>res3</span><span class='op'>)</span><span class='op'>)</span>
-</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/abline.html'>abline</a></span><span class='op'>(</span>a <span class='op'>=</span> <span class='fl'>0</span>,b <span class='op'>=</span> <span class='fl'>1</span>,col <span class='op'>=</span> <span class='st'>"skyblue"</span>,lty <span class='op'>=</span> <span class='st'>"dashed"</span><span class='op'>)</span>
-</div><div class='img'><img src='susie-5.png' alt='' width='700' height='433' /></div><div class='input'>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

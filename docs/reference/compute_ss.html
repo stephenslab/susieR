@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Compute sufficient statistics for susie. — compute_ss • susieR</title>
+<title>Compute sufficient statistics for input to susie_suff_stat — compute_ss • susieR</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,8 @@
 
 
 
-<meta property="og:title" content="Compute sufficient statistics for susie. — compute_ss" />
-<meta property="og:description" content="Compute sufficient statistics for susie." />
+<meta property="og:title" content="Compute sufficient statistics for input to susie_suff_stat — compute_ss" />
+<meta property="og:description" content="This is a synonym for compute_suff_stat included for historical reasons; deprecated." />
 
 
 
@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.8</span>
       </span>
     </div>
 
@@ -105,16 +105,16 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Compute sufficient statistics for susie.</h1>
+    <h1>Compute sufficient statistics for input to <code>susie_suff_stat</code></h1>
     <small class="dont-index">Source: <a href='https://github.com/stephenslab/susieR/blob/master/R/compute_ss.R'><code>R/compute_ss.R</code></a></small>
     <div class="hidden name"><code>compute_ss.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Compute sufficient statistics for susie.</p>
+    <p>This is a synonym for <code>compute_suff_stat</code> included for historical reasons; deprecated.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>compute_ss</span><span class='op'>(</span><span class='va'>X</span>, <span class='va'>y</span>, standardize <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>compute_ss</span><span class='op'>(</span><span class='va'>X</span>, <span class='va'>y</span>, standardize <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -130,13 +130,13 @@
     <tr>
       <th>standardize</th>
       <td><p>Logical flag indicating whether to standardize
-columns of X to unit variance prior to fitting.</p></td>
+columns of X to unit variance prior to computing summary data.</p></td>
     </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>A list of sufficient statistics.</p>
+    <p>A list of sufficient statistics (X'X, X'y, y'y and n)</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='va'>N2finemapping</span><span class='op'>)</span>

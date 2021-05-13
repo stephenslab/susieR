@@ -55,7 +55,7 @@ So the underlying causal variables are 403, 653 and 773.
 Summary statistics of genetic association studies typically contain effect size ($\hat{\beta}$ coefficient from regression), p-value and minor allele frequencies. 
 These information can be used to perform fine-mapping with given an additional input of correlation matrix between variables.
 The correlation matrix in genetics is typically referred to as LD matrix (LD for linkage disequilibrium). 
-One may use external reference panels to estimate it when this matrix cannot be obtained from samples directly. There is a potential problem using LD from reference panel, and we demonstrated it in the next section.
+One may use external reference panels to estimate it when this matrix cannot be obtained from samples directly.
 Caution that LD matrix here has to be correlation matrix $r$, not $r^2$ or $abs(r)$.
 
 `univariate_regression` function can be used to compute 
@@ -63,7 +63,6 @@ summary statistics by fitting univariate simple regression variable by variable.
 The results are $\hat{\beta}$ and $SE(\hat{\beta})$ from which z-scores can be derived. 
 Alternatively you can obtain z-scores from $\hat{\beta}$ and p-values if you are provided with those information.
 Again we focus only on results from the first data-set:
-
 
 ```{r}
 sumstats <- univariate_regression(X, Y[,1])
