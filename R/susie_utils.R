@@ -670,7 +670,7 @@ estimate_s_rss = function(z, R, r_tol=1e-08, method="null-mle"){
 #'
 #' @param plot.it If \code{plot.it = TRUE}, it produces a plot with
 #'   observed z score vs the expected value. The possible allele switched
-#'   variants are labeled as red points (log LR > 2).
+#'   variants are labeled as red points (log LR > 2 and abs(z) > 2).
 #'
 #' @importFrom mixsqp mixsqp
 #'
@@ -750,7 +750,7 @@ kriging_rss = function(z, R, r_tol=1e-08,
          ylab = 'Expected value')
     abline(0,1, lty=2)
     if(any(logLRmix>2)){
-      idx = which(logLRmix > 2)
+      idx = which(logLRmix > 3 && abs(z) > 2)
       points(z[idx], postmean[idx], col = 'red', pch=16)
     }
   }
