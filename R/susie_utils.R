@@ -706,6 +706,9 @@ kriging_rss = function(z, R, r_tol=1e-08,
     warning('The given s is greater than 1. We replace it with 0.8.')
     s = 0.8
   }
+  if(s < 0){
+    stop('The s must be non-negative.')
+  }
 
   dinv = 1/((1-s)*eigenld$values + s)
   dinv[is.infinite(dinv)] = 0
