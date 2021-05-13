@@ -683,7 +683,6 @@ estimate_s_rss = function(z, R, r_tol=1e-08, method="null-mle"){
 #' X = matrix(rnorm(n*p),nrow = n,ncol = p)
 #' X = scale(X,center = TRUE,scale = TRUE)
 #' y = drop(X %*% beta + rnorm(n))
-#' input_ss <- compute_suff_stat(X,y,standardize = TRUE)
 #' ss   <- univariate_regression(X,y)
 #' R    <- cor(X)
 #' attr(R, 'eigen') = eigen(R, symmetric = T)
@@ -708,7 +707,9 @@ kriging_rss = function(z, R, r_tol=1e-08,
     s = 0.8
   }
 
-  precision = eigenld$vectors %*% (t(eigenld$vectors) * (1/((1-s)*eigenld$values + s)))
+  dinv = 1/((1-s)*eigenld$values + s)
+  dinv[is.infinite(dinv)] = 0
+  precision = eigenld$vectors %*% (t(eigenld$vectors) * dinv)
   postmean = c()
   postvar = c()
   for(i in 1:length(z)){
