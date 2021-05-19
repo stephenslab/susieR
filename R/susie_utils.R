@@ -596,7 +596,7 @@ susie_prune_single_effects = function (s,L = 0,V = NULL,verbose = FALSE) {
 #' input_ss <- compute_suff_stat(X,y,standardize = TRUE)
 #' ss   <- univariate_regression(X,y)
 #' R    <- cor(X)
-#' attr(R, 'eigen') = eigen(R, symmetric = T)
+#' attr(R, 'eigen') = eigen(R, symmetric = TRUE)
 #' zhat <- with(ss,betahat/sebetahat)
 #' s = estimate_s_rss(zhat, R)
 #'
@@ -635,7 +635,7 @@ estimate_s_rss = function(z, R, r_tol=1e-08, method="null-mle"){
         postmean = c(postmean, -(1/precision[i,i]) * precision[i,-i] %*% z[-i])
         postvar = c(postvar, 1/precision[i,i])
       }
-      -sum(dnorm(z, mean=postmean, sd = sqrt(postvar), log=T))
+      -sum(dnorm(z, mean=postmean, sd = sqrt(postvar), log = TRUE))
     }
     s = optim(0.5, fn=pseudolikelihood,
               z=z, eigenld=eigenld,
@@ -672,6 +672,7 @@ estimate_s_rss = function(z, R, r_tol=1e-08, method="null-mle"){
 #'   observed z score vs the expected value. The possible allele switched
 #'   variants are labeled as red points (log LR > 2 and abs(z) > 2).
 #'
+#' @importFrom graphics abline
 #' @importFrom mixsqp mixsqp
 #'
 #' @examples
@@ -685,7 +686,7 @@ estimate_s_rss = function(z, R, r_tol=1e-08, method="null-mle"){
 #' y = drop(X %*% beta + rnorm(n))
 #' ss   <- univariate_regression(X,y)
 #' R    <- cor(X)
-#' attr(R, 'eigen') = eigen(R, symmetric = T)
+#' attr(R, 'eigen') = eigen(R, symmetric = TRUE)
 #' zhat <- with(ss,betahat/sebetahat)
 #' condz = kriging_rss(zhat, R)
 #'
@@ -733,19 +734,19 @@ kriging_rss = function(z, R, r_tol=1e-08,
 
   ## compute likelihood
   sd_mtx = outer(sqrt(postvar), a_grid)
-  matrix_llik = dnorm(z - postmean, sd=sd_mtx, log=T)
+  matrix_llik = dnorm(z - postmean, sd=sd_mtx, log = TRUE)
   lfactors    <- apply(matrix_llik,1,max)
   matrix_llik <- matrix_llik - lfactors
+  
   ## estimate weight
-  w = mixsqp(matrix_llik, log=T, control = list(verbose=FALSE))$x
+  w = mixsqp(matrix_llik, log = TRUE, control = list(verbose=FALSE))$x
 
   logl0mix = as.numeric(log(exp(matrix_llik) %*% w)) + lfactors
-  matrix_llik = dnorm(z + postmean, sd=sd_mtx, log=T)
+  matrix_llik = dnorm(z + postmean, sd=sd_mtx, log = TRUE)
   lfactors    <- apply(matrix_llik,1,max)
   matrix_llik <- matrix_llik - lfactors
   logl1mix = as.numeric(log(exp(matrix_llik) %*% w)) + lfactors
   logLRmix = logl1mix - logl0mix
-
 
   if(plot.it){
     plot(z, postmean, pch = 16,

@@ -48,7 +48,7 @@ X = scale(X,center = TRUE,scale = TRUE)
 y = drop(X \%*\% beta + rnorm(n))
 ss   <- univariate_regression(X,y)
 R    <- cor(X)
-attr(R, 'eigen') = eigen(R, symmetric = T)
+attr(R, 'eigen') = eigen(R, symmetric = TRUE)
 zhat <- with(ss,betahat/sebetahat)
 condz = kriging_rss(zhat, R)
 

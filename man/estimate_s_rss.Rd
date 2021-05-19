@@ -41,7 +41,7 @@ y = drop(X \%*\% beta + rnorm(n))
 input_ss <- compute_suff_stat(X,y,standardize = TRUE)
 ss   <- univariate_regression(X,y)
 R    <- cor(X)
-attr(R, 'eigen') = eigen(R, symmetric = T)
+attr(R, 'eigen') = eigen(R, symmetric = TRUE)
 zhat <- with(ss,betahat/sebetahat)
 s = estimate_s_rss(zhat, R)
 
