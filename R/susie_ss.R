@@ -26,13 +26,13 @@
 #' @param yty A scalar \eqn{y'y} in which y is centered to have mean
 #'   zero.
 #'
-#' @param X_colmeans A p-vector of column means of \eqn{X}. If both \code{X_colmeans}
-#' and \code{y_mean} are provided then the intercept is estimated;
-#' otherwise, the intercept is NA.
+#' @param X_colmeans A p-vector of column means of \code{X}. If both
+#'   \code{X_colmeans} and \code{y_mean} are provided, the intercept
+#'   is estimated; otherwise, the intercept is NA.
 #'
-#' @param y_mean A scalar containing the mean of \eqn{y}. If both \code{X_colmeans}
-#' and \code{y_mean} are provided then the intercept is estimated;
-#' otherwise, the intercept is NA.
+#' @param y_mean A scalar containing the mean of \code{y}. If both
+#'   \code{X_colmeans} and \code{y_mean} are provided, the intercept
+#'   is estimated; otherwise, the intercept is NA.
 #'
 #' @param maf Minor allele frequency; to be used along with
 #'   \code{maf_thresh} to filter input summary statistics.
@@ -62,18 +62,18 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
                             check_null_threshold = 0, prior_tol = 1e-9,
                             r_tol = 1e-08, prior_weights = NULL,
                             null_weight = NULL, standardize = TRUE,
-                            max_iter = 100, s_init = NULL,
-                            coverage = 0.95, min_abs_corr = 0.5, tol = 1e-3, verbose = FALSE,
-                            track_fit = FALSE, check_input = FALSE, refine = FALSE) {
+                            max_iter = 100, s_init = NULL, coverage = 0.95,
+                            min_abs_corr = 0.5, tol = 1e-3,
+                            verbose = FALSE, track_fit = FALSE,
+                             heck_input = FALSE, refine = FALSE) {
 
   # Process input estimate_prior_method.
   estimate_prior_method = match.arg(estimate_prior_method)
 
   if (missing(n))
     stop("n must be provided")
-  if(!(n>1)){
+  if (any(n <= 1))
     stop("n must be more than 1")
-  }
 
   # Check sufficient statistics.
   missing_bhat = c(missing(bhat), missing(shat), missing(R))
@@ -198,13 +198,11 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
   attr(XtX,"d") = diag(XtX)
   attr(XtX,"scaled:scale") = csd
 
-  # Check X_colmeans has length 1 or p
-  if(length(X_colmeans) == 1){
+  # Check that X_colmeans has length 1 or p.
+  if (length(X_colmeans) == 1) 
     X_colmeans = rep(X_colmeans,p)
-  }
-  if(length(X_colmeans) != p){
-    stop('The length of X_colmeans does not agree with number of variables.')
-  }
+  if (length(X_colmeans) != p)
+    stop("The length of X_colmeans does not agree with number of variables")
 
   # Initialize susie fit.
   s = init_setup(0,p,L,scaled_prior_variance,residual_variance,prior_weights,
@@ -272,8 +270,9 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
 
   s$X_column_scale_factors = attr(XtX,"scaled:scale")
 
-  # compute intercept
-  s$intercept = y_mean - sum(X_colmeans * (colSums(s$alpha * s$mu)/s$X_column_scale_factors))
+  # Compute intercept.
+  s$intercept = y_mean -
+    sum(X_colmeans * (colSums(s$alpha * s$mu)/s$X_column_scale_factors))
 
 
   if (track_fit)
@@ -287,63 +286,60 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
     s$pip = susie_get_pip(s,prune_by_cs = FALSE,prior_tol = prior_tol)
   }
 
-  if(refine){
-    if(!missing(s_init) && !is.null(s_init)){
-      warning('The given s_init is not used in refinement.')
-    }
-    if(!is.null(null_weight) && null_weight!=0){
+  if (refine) {
+    if (!missing(s_init) && !is.null(s_init))
+      warning("The given s_init is not used in refinement")
+    if (!is.null(null_weight) && null_weight != 0) {
       ## if null_weight is specified
       ## we remove the extra 0 column
       XtX = XtX[1:(p-1), 1:(p-1)]
       Xty = Xty[1:(p-1)]
-      pw_s = s$pi[-s$null_index]/(1-null_weight)
-    }else{
+      pw_s = s$pi[-s$null_index]/(1 - null_weight)
+    } else
       pw_s = s$pi
-    }
     conti = TRUE
-    while(conti){
+    while (conti) {
       m = list()
-      for(cs in 1:length(s$sets$cs)){
+      for(cs in 1:length(s$sets$cs)) {
         pw_cs = pw_s
         pw_cs[s$sets$cs[[cs]]] = 0
         s2 = susie_suff_stat(XtX = XtX, Xty = Xty, yty = yty, n = n, L = L,
-                             X_colmeans = X_colmeans, y_mean = y_mean,
-                             prior_weights = pw_cs, s_init = NULL,
-                             scaled_prior_variance = scaled_prior_variance,
-                             residual_variance = residual_variance,
-                             estimate_residual_variance = estimate_residual_variance,
-                             estimate_prior_variance = estimate_prior_variance,
-                             estimate_prior_method = estimate_prior_method,
-                             check_null_threshold = check_null_threshold, prior_tol = prior_tol,
-                             r_tol = r_tol, max_iter = max_iter,
-                             null_weight = null_weight, standardize = standardize,
-                             coverage = coverage,
-                             min_abs_corr = min_abs_corr, tol = tol, verbose = FALSE,
-                             track_fit = FALSE, check_input = FALSE, refine = FALSE)
-        sinit2 = s2[c('alpha', 'mu', 'mu2')]
-        class(sinit2) = 'susie'
+            X_colmeans = X_colmeans, y_mean = y_mean,
+            prior_weights = pw_cs, s_init = NULL,
+            scaled_prior_variance = scaled_prior_variance,
+            residual_variance = residual_variance,
+            estimate_residual_variance = estimate_residual_variance,
+            estimate_prior_variance = estimate_prior_variance,
+            estimate_prior_method = estimate_prior_method,
+            check_null_threshold = check_null_threshold, prior_tol = prior_tol,
+            r_tol = r_tol, max_iter = max_iter,
+            null_weight = null_weight, standardize = standardize,
+            coverage = coverage,
+            min_abs_corr = min_abs_corr, tol = tol, verbose = FALSE,
+            track_fit = FALSE, check_input = FALSE, refine = FALSE)
+        sinit2 = s2[c("alpha","mu","mu2")]
+        class(sinit2) = "susie"
         s3 = susie_suff_stat(XtX = XtX, Xty = Xty, yty = yty, n = n, L = L,
-                             X_colmeans = X_colmeans, y_mean = y_mean,
-                             prior_weights = pw_s, s_init = sinit2,
-                             scaled_prior_variance = scaled_prior_variance,
-                             residual_variance = residual_variance,
-                             estimate_residual_variance = estimate_residual_variance,
-                             estimate_prior_variance = estimate_prior_variance,
-                             estimate_prior_method = estimate_prior_method,
-                             check_null_threshold = check_null_threshold, prior_tol = prior_tol,
-                             r_tol = r_tol, max_iter = max_iter,
-                             null_weight = null_weight, standardize = standardize,
-                             coverage = coverage,
-                             min_abs_corr = min_abs_corr, tol = tol, verbose = FALSE,
-                             track_fit = FALSE, check_input = FALSE, refine = FALSE)
-        m = c(m, list(s3))
+            X_colmeans = X_colmeans, y_mean = y_mean,
+            prior_weights = pw_s, s_init = sinit2,
+            scaled_prior_variance = scaled_prior_variance,
+            residual_variance = residual_variance,
+            estimate_residual_variance = estimate_residual_variance,
+            estimate_prior_variance = estimate_prior_variance,
+            estimate_prior_method = estimate_prior_method,
+            check_null_threshold = check_null_threshold, prior_tol = prior_tol,
+            r_tol = r_tol, max_iter = max_iter,
+            null_weight = null_weight, standardize = standardize,
+            coverage = coverage,
+            min_abs_corr = min_abs_corr, tol = tol, verbose = FALSE,
+            track_fit = FALSE, check_input = FALSE, refine = FALSE)
+        m = c(m,list(s3))
       }
       elbo = sapply(m, function(x) susie_get_objective(x))
-      if((max(elbo) - susie_get_objective(s)) <= 0){
-        conti=FALSE
-      }else{
+      if ((max(elbo) - susie_get_objective(s)) <= 0)
+        conti = FALSE
+      else
         s = m[[which.max(elbo)]]
-      }
     }
   }
 
@@ -378,7 +374,8 @@ check_projection = function (A, b) {
   if (is.null(attr(A,"eigen")))
     attr(A,"eigen") = eigen(A,symmetric = TRUE)
   B = attr(A,"eigen")$vectors[,attr(A,"eigen")$values > .Machine$double.eps]
-  msg = all.equal(as.vector(B %*% crossprod(B,b)),as.vector(b),check.names = FALSE)
+  msg = all.equal(as.vector(B %*% crossprod(B,b)),as.vector(b),
+                  check.names = FALSE)
   if (!is.character(msg))
     return(list(status = TRUE,msg = NA))
   else

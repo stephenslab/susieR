@@ -66,7 +66,7 @@ susie_suff_stat(
   tol = 0.001,
   verbose = FALSE,
   track_fit = FALSE,
-  check_input = FALSE,
+  heck_input = FALSE,
   refine = FALSE
 )
 }
@@ -218,13 +218,13 @@ centered to have mean zero.}
 \item{yty}{A scalar \eqn{y'y} in which y is centered to have mean
 zero.}
 
-\item{X_colmeans}{A p-vector of column means of \eqn{X}. If both \code{X_colmeans}
-and \code{y_mean} are provided then the intercept is estimated;
-otherwise, the intercept is NA.}
+\item{X_colmeans}{A p-vector of column means of \code{X}. If both
+\code{X_colmeans} and \code{y_mean} are provided, the intercept
+is estimated; otherwise, the intercept is NA.}
 
-\item{y_mean}{A scalar containing the mean of \eqn{y}. If both \code{X_colmeans}
-and \code{y_mean} are provided then the intercept is estimated;
-otherwise, the intercept is NA.}
+\item{y_mean}{A scalar containing the mean of \code{y}. If both
+\code{X_colmeans} and \code{y_mean} are provided, the intercept
+is estimated; otherwise, the intercept is NA.}
 
 \item{maf}{Minor allele frequency; to be used along with
 \code{maf_thresh} to filter input summary statistics.}

@@ -457,7 +457,7 @@ susie <- function (X,Y,L = min(10,ncol(X)),
 
   if(refine){
     if(!missing(s_init) && !is.null(s_init)){
-      warning('The given s_init is not used in refinement.')
+      warning("The given s_init is not used in refinement")
     }
     if(!is.null(null_weight) && null_weight!=0){
       ## if null_weight is specified, we compute the original prior_weight
@@ -490,8 +490,8 @@ susie <- function (X,Y,L = min(10,ncol(X)),
                    na.rm = na.rm,max_iter = max_iter,tol = tol,
                    verbose = FALSE,track_fit = FALSE,residual_variance_lowerbound = var(drop(Y))/1e4,
                    refine = FALSE)
-        sinit2 = s2[c('alpha', 'mu', 'mu2')]
-        class(sinit2) = 'susie'
+        sinit2 = s2[c("alpha","mu","mu2")]
+        class(sinit2) = "susie"
         s3 = susie(X,Y,L = L,
                    scaled_prior_variance = scaled_prior_variance,residual_variance = residual_variance,
                    prior_weights = pw_s, s_init = sinit2,

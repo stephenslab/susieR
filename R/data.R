@@ -140,27 +140,27 @@ NULL
 
 #' @name SummaryConsistency
 #'
-#' @title Simulated Fine-mapping Data with LD matrix from reference panel.
+#' @title Simulated Fine-mapping Data with LD matrix From Reference Panel.
 #'
 #' @description Data simulated using real genotypes from 10,000
-#'   individuals and 1,002 SNPs. One SNP have non-zero effect
+#'   individuals and 1,002 SNPs. Only one SNP has a non-zero effect
 #'   on the multivariate response. The response data are generated under
-#'   a linear regression model. There is one SNP with flipped allele
-#'   between summary statistics and the reference panel
+#'   a linear regression model. There is also one SNP with flipped allele
+#'   between summary statistics and the reference panel.
 #'
 #' @format \code{SummaryConsistency} is a list with the following
 #' elements:
 #'
 #' \describe{
 #'
-#'   \item{z}{z scores computed by fitting univariate simple regression
-#'   variable by variable.}
+#'   \item{z}{z-scores computed by fitting univariate simple regression
+#'     variable-by-variable.}
 #'
 #'   \item{ldref}{LD matrix estimated from the reference panel.}
 #'
-#'   \item{flip_id}{The idx of SNP with flipped allele.}
+#'   \item{flip_id}{The index of the SNP with the flipped allele.}
 #'
-#'   \item{signal_id}{The idx of SNP with non-zero effect.}}
+#'   \item{signal_id}{The index of the SNP with the non-zero effect.}}
 #'
 #' @docType data
 #'

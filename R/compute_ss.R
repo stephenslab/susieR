@@ -1,8 +1,9 @@
 #' @title Compute sufficient statistics for input to \code{susie_suff_stat}
 #'
-#' @description  Computes the sufficient statistics \eqn{X'X, X'y, y'y} and \eqn{n}
-#' after centering (and possibly standardizing) the columns of \eqn{X} and centering \eqn{y}
-#' to have mean 0. We also store the column means of \eqn{X} and mean of \eqn{y}.
+#' @description Computes the sufficient statistics \eqn{X'X, X'y, y'y}
+#'   and \eqn{n} after centering (and possibly standardizing) the
+#'   columns of \eqn{X} and centering \eqn{y} to have mean zero. We also
+#'   store the column means of \eqn{X} and mean of \eqn{y}.
 #'
 #' @param X An n by p matrix of covariates.
 #'
@@ -11,7 +12,8 @@
 #' @param standardize Logical flag indicating whether to standardize
 #'   columns of X to unit variance prior to computing summary data
 #'
-#' @return A list of sufficient statistics (\code{XtX, Xty, yty, n}) and X_colmeans, y_mean.
+#' @return A list of sufficient statistics (\code{XtX, Xty, yty, n})
+#'   and \code{X_colmeans}, \code{y_mean}.
 #'
 #' @importFrom methods as
 #'
@@ -33,12 +35,14 @@ compute_suff_stat = function(X, y, standardize = FALSE) {
   Xty = c(y %*% X)
   n = length(y)
   yty = sum(y^2)
-  return(list(XtX = XtX,Xty = Xty,yty = yty,n = n, y_mean=y_mean, X_colmeans = attr(X,"scaled:center")))
+  return(list(XtX = XtX,Xty = Xty,yty = yty,n = n,y_mean = y_mean,
+              X_colmeans = attr(X,"scaled:center")))
 }
 
 #' @title Compute sufficient statistics for input to \code{susie_suff_stat}
 #'
-#' @description This is a synonym for \code{compute_suff_stat} included for historical reasons; deprecated.
+#' @description This is a synonym for \code{compute_suff_stat}
+#'   included for historical reasons (deprecated).
 #'
 #' @param X An n by p matrix of covariates.
 #'
@@ -58,5 +62,5 @@ compute_suff_stat = function(X, y, standardize = FALSE) {
 #' @export
 #'
 compute_ss = function(X, y, standardize = FALSE) {
-  compute_suff_stat(X,y,standardize)
+  return(compute_suff_stat(X,y,standardize))
 }
