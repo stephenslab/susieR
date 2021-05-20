@@ -639,8 +639,8 @@ estimate_s_rss = function(z, R, r_tol = 1e-08, method = "null-mle") {
       postmean = rep(0,length(z))
       postvar = rep(0,length(z))
       for (i in 1:length(z)) {
-        postmean[i] = c(postmean,-(1/precision[i,i])*precision[i,-i] %*% z[-i])
-        postvar[i] = c(postvar,1/precision[i,i])
+        postmean[i] = -(1/precision[i,i])*precision[i,-i] %*% z[-i]
+        postvar[i] = 1/precision[i,i]
       }
       return(-sum(dnorm(z,mean = postmean,sd = sqrt(postvar),log = TRUE)))
     }
@@ -726,8 +726,8 @@ kriging_rss = function (z, R, r_tol = 1e-08,
   postmean = rep(0,length(z))
   postvar = rep(0,length(z))
   for(i in 1:length(z)){
-    postmean[i] = c(postmean,-(1/precision[i,i]) * precision[i,-i] %*% z[-i])
-    postvar[i] = c(postvar,1/precision[i,i])
+    postmean[i] = -(1/precision[i,i]) * precision[i,-i] %*% z[-i]
+    postvar[i] = 1/precision[i,i]
   }
   post_z = (z-postmean)/sqrt(postvar)
 
