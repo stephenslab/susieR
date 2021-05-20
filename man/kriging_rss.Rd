@@ -2,8 +2,8 @@
 % Please edit documentation in R/susie_utils.R
 \name{kriging_rss}
 \alias{kriging_rss}
-\title{Compute the distribution of z score of variant j given other z scores, and detect
-possible allele switch issue.}
+\title{Compute the distribution of z score of variant j given other
+z scores, and detect possible allele switch issue.}
 \usage{
 kriging_rss(
   z,
@@ -29,13 +29,15 @@ observed z score vs the expected value. The possible allele switched
 variants are labeled as red points (log LR > 2 and abs(z) > 2).}
 }
 \description{
-Under the null, the rss model with regularized LD matrix is
-\eqn{z|R,s ~ N(0, (1-s)R + s I))}. We use a mixture of normals
-to model the conditional distribution of z_j given other z scores,
-\eqn{z_j | z_{-j}, R, s ~ \sum_{k=1}^{K} \pi_k N(-\Omega_{j,-j} z_{-j}/\Omega_{jj}, \sigma_{k}^2/\Omega_{jj})},
-\eqn{\Omega = ((1-s)R + s I)^{-1}}, \eqn{\sigma_1, ..., \sigma_k} is a
-grid of fixed positive numbers. We estimate the mixture weights \eqn{\pi}.
-We detect the possible allele switch issue using likelihood ratio for each variant.
+Under the null, the rss model with regularized LD
+  matrix is \eqn{z|R,s ~ N(0, (1-s)R + s I))}. We use a mixture of
+  normals to model the conditional distribution of z_j given other z
+  scores, \eqn{z_j | z_{-j}, R, s ~ \sum_{k=1}^{K} \pi_k
+  N(-\Omega_{j,-j} z_{-j}/\Omega_{jj}, \sigma_{k}^2/\Omega_{jj})},
+  \eqn{\Omega = ((1-s)R + sI)^{-1}}, \eqn{\sigma_1, ..., \sigma_k}
+  is a grid of fixed positive numbers. We estimate the mixture
+  weights \eqn{\pi}  We detect the possible allele switch issue
+  using likelihood ratio for each variant.
 }
 \examples{
 set.seed(1)

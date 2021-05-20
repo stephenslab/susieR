@@ -603,71 +603,75 @@ susie_prune_single_effects = function (s,L = 0,V = NULL,verbose = FALSE) {
 #' zhat = with(ss,betahat/sebetahat)
 #' s = estimate_s_rss(zhat, R)
 #'
+#' @importFrom stats dnorm
+#' @importFrom stats optim
+#' 
 #' @export
 #'
-estimate_s_rss = function(z, R, r_tol=1e-08, method="null-mle"){
+estimate_s_rss = function(z, R, r_tol = 1e-08, method = "null-mle") {
   if (is.null(attr(R,"eigen")))
     attr(R,"eigen") = eigen(R,symmetric = TRUE)
   eigenld = attr(R,"eigen")
-  if(any(eigenld$values < -r_tol)){
-    warning('The matrix R is not positive semidefinite. Negative eigenvalues are set to 0.')
-  }
+  if(any(eigenld$values < -r_tol))
+    warning("The matrix R is not positive semidefinite. Negative ",
+            "eigenvalues are set to zero")
   eigenld$values[eigenld$values < r_tol] = 0
 
-  if(method == 'null-mle'){
-    negloglikelihood = function(s, z, eigenld){
-      0.5 * sum(log((1-s)*eigenld$values+s)) +
-        0.5 * sum(z * eigenld$vectors %*% ((t(eigenld$vectors) * (1/((1-s)*eigenld$values + s))) %*% z))
-    }
-    s = optim(0.5, fn=negloglikelihood, z=z, eigenld=eigenld,
-              method = 'Brent', lower=0, upper=1)$par
-  }else if(method == 'null-partialmle'){
+  if (method == "null-mle") {
+    negloglikelihood = function(s, z, eigenld)
+      0.5 * sum(log((1-s)*eigenld$values + s)) +
+      0.5 * sum(z * eigenld$vectors %*% ((t(eigenld$vectors) *
+               (1/((1-s)*eigenld$values + s))) %*% z))
+    s = optim(0.5,fn = negloglikelihood,z = z,eigenld = eigenld,
+              method = "Brent",lower = 0,upper = 1)$par
+  } else if (method == "null-partialmle") {
     colspace = which(eigenld$values > 0)
-    if(length(colspace) == length(z)){
+    if (length(colspace) == length(z))
       s = 0
-    }else{
+    else{
       znull = crossprod(eigenld$vectors[,-colspace], z) # U2^T z
       s = sum(znull^2)/length(znull)
     }
-  }else if(method == 'null-pseudomle'){
-    pseudolikelihood = function(s, z, eigenld){
-      precision = eigenld$vectors %*% (t(eigenld$vectors) * (1/((1-s)*eigenld$values + s)))
-      postmean = c()
-      postvar = c()
-      for(i in 1:length(z)){
-        postmean = c(postmean, -(1/precision[i,i]) * precision[i,-i] %*% z[-i])
-        postvar = c(postvar, 1/precision[i,i])
+  } else if (method == "null-pseudomle") {
+    pseudolikelihood = function(s, z, eigenld) {
+      precision = eigenld$vectors %*% (t(eigenld$vectors) *
+                  (1/((1-s)*eigenld$values + s)))
+      postmean = rep(0,length(z))
+      postvar = rep(0,length(z))
+      for (i in 1:length(z)) {
+        postmean[i] = c(postmean,-(1/precision[i,i])*precision[i,-i] %*% z[-i])
+        postvar[i] = c(postvar,1/precision[i,i])
       }
-      -sum(dnorm(z, mean=postmean, sd = sqrt(postvar), log = TRUE))
+      return(-sum(dnorm(z,mean = postmean,sd = sqrt(postvar),log = TRUE)))
     }
-    s = optim(0.5, fn=pseudolikelihood,
-              z=z, eigenld=eigenld,
-              method = 'Brent', lower=0, upper=1)$par
+    s = optim(0.5,fn = pseudolikelihood,z = z,eigenld = eigenld,
+              method = "Brent",lower = 0,upper = 1)$par
   }
-  else{
-    stop('The method is not implemented.')
-  }
+  else
+    stop("The method is not implemented")
   return(s)
 }
 
-#' @title Compute the distribution of z score of variant j given other z scores, and detect
-#' possible allele switch issue.
+#' @title Compute the distribution of z score of variant j given other
+#' z scores, and detect possible allele switch issue.
 #'
-#' @description Under the null, the rss model with regularized LD matrix is
-#' \eqn{z|R,s ~ N(0, (1-s)R + s I))}. We use a mixture of normals
-#' to model the conditional distribution of z_j given other z scores,
-#' \eqn{z_j | z_{-j}, R, s ~ \sum_{k=1}^{K} \pi_k N(-\Omega_{j,-j} z_{-j}/\Omega_{jj}, \sigma_{k}^2/\Omega_{jj})},
-#' \eqn{\Omega = ((1-s)R + s I)^{-1}}, \eqn{\sigma_1, ..., \sigma_k} is a
-#' grid of fixed positive numbers. We estimate the mixture weights \eqn{\pi}.
-#' We detect the possible allele switch issue using likelihood ratio for each variant.
+#' @description Under the null, the rss model with regularized LD
+#'   matrix is \eqn{z|R,s ~ N(0, (1-s)R + s I))}. We use a mixture of
+#'   normals to model the conditional distribution of z_j given other z
+#'   scores, \eqn{z_j | z_{-j}, R, s ~ \sum_{k=1}^{K} \pi_k
+#'   N(-\Omega_{j,-j} z_{-j}/\Omega_{jj}, \sigma_{k}^2/\Omega_{jj})},
+#'   \eqn{\Omega = ((1-s)R + sI)^{-1}}, \eqn{\sigma_1, ..., \sigma_k}
+#'   is a grid of fixed positive numbers. We estimate the mixture
+#'   weights \eqn{\pi}  We detect the possible allele switch issue
+#'   using likelihood ratio for each variant.
 #'
 #' @param z A p-vector of z scores.
 #'
 #' @param R A p by p symmetric, positive semidefinite correlation
-#' matrix.
+#'   matrix.
 #'
 #' @param r_tol Tolerance level for eigenvalue check of positive
-#' semidefinite matrix of R.
+#'   semidefinite matrix of R.
 #'
 #' @param s an estimated s from \code{estimate_s_rss}
 #'
@@ -675,6 +679,9 @@ estimate_s_rss = function(z, R, r_tol=1e-08, method="null-mle"){
 #'   observed z score vs the expected value. The possible allele switched
 #'   variants are labeled as red points (log LR > 2 and abs(z) > 2).
 #'
+#' @importFrom stats dnorm
+#' @importFrom graphics plot
+#' @importFrom graphics points
 #' @importFrom graphics abline
 #' @importFrom mixsqp mixsqp
 #'
@@ -695,76 +702,72 @@ estimate_s_rss = function(z, R, r_tol=1e-08, method="null-mle"){
 #'
 #' @export
 #'
-kriging_rss = function(z, R, r_tol=1e-08,
-                       s = estimate_s_rss(z, R, r_tol, method = 'null-mle'),
-                       plot.it = TRUE){
+kriging_rss = function (z, R, r_tol = 1e-08,
+                        s = estimate_s_rss(z,R,r_tol,method = "null-mle"),
+                        plot.it = TRUE) {
   if (is.null(attr(R,"eigen")))
     attr(R,"eigen") = eigen(R,symmetric = TRUE)
   eigenld = attr(R,"eigen")
-  if(any(eigenld$values < -r_tol)){
-    warning('The matrix R is not positive semidefinite. Negative eigenvalues are set to 0.')
-  }
+  if (any(eigenld$values < -r_tol))
+    warning("The matrix R is not positive semidefinite. Negative ",
+            "eigenvalues are set to zero.")
   eigenld$values[eigenld$values < r_tol] = 0
 
-  if(s > 1){
-    warning('The given s is greater than 1. We replace it with 0.8.')
+  if (s > 1) {
+    warning("The given s is greater than 1. We replace it with 0.8.")
     s = 0.8
   }
-  if(s < 0){
-    stop('The s must be non-negative.')
-  }
+  if (s < 0) 
+    stop("The s must be non-negative")
 
   dinv = 1/((1-s)*eigenld$values + s)
   dinv[is.infinite(dinv)] = 0
   precision = eigenld$vectors %*% (t(eigenld$vectors) * dinv)
-  postmean = c()
-  postvar = c()
+  postmean = rep(0,length(z))
+  postvar = rep(0,length(z))
   for(i in 1:length(z)){
-    postmean = c(postmean, -(1/precision[i,i]) * precision[i,-i] %*% z[-i])
-    postvar = c(postvar, 1/precision[i,i])
+    postmean[i] = c(postmean,-(1/precision[i,i]) * precision[i,-i] %*% z[-i])
+    postvar[i] = c(postvar,1/precision[i,i])
   }
   post_z = (z-postmean)/sqrt(postvar)
 
-  ## obtain grid
+  # obtain grid
   a_min = 0.8
-  if(max(post_z^2) < 1){
+  if (max(post_z^2) < 1)
     a_max = 2
-  }else{
+  else
     a_max = 2*sqrt(max(post_z^2))
-  }
   npoint = ceiling(log2(a_max/a_min)/log2(1.05))
   a_grid = 1.05^((-npoint):0) * a_max
 
-  ## compute likelihood
-  sd_mtx = outer(sqrt(postvar), a_grid)
-  matrix_llik = dnorm(z - postmean, sd=sd_mtx, log = TRUE)
+  # compute likelihood
+  sd_mtx      = outer(sqrt(postvar),a_grid)
+  matrix_llik = dnorm(z - postmean,sd = sd_mtx,log = TRUE)
   lfactors    = apply(matrix_llik,1,max)
   matrix_llik = matrix_llik - lfactors
   
-  ## estimate weight
-  w = mixsqp(matrix_llik, log = TRUE, control = list(verbose=FALSE))$x
+  # estimate weight
+  w = mixsqp(matrix_llik,log = TRUE,control = list(verbose = FALSE))$x
 
-  logl0mix = as.numeric(log(exp(matrix_llik) %*% w)) + lfactors
+  logl0mix    = as.numeric(log(exp(matrix_llik) %*% w)) + lfactors
   matrix_llik = dnorm(z + postmean, sd=sd_mtx, log = TRUE)
   lfactors    = apply(matrix_llik,1,max)
   matrix_llik = matrix_llik - lfactors
-  logl1mix = as.numeric(log(exp(matrix_llik) %*% w)) + lfactors
-  logLRmix = logl1mix - logl0mix
+  logl1mix    = as.numeric(log(exp(matrix_llik) %*% w)) + lfactors
+  logLRmix    = logl1mix - logl0mix
 
-  if(plot.it){
-    plot(z, postmean, pch = 16,
-         xlab = 'observed z scores',
-         ylab = 'Expected value')
-    abline(0,1, lty=2)
-    if(any(logLRmix>2)){
+  if (plot.it) {
+    plot(z,postmean,pch = 16,xlab = "observed z scores",
+         ylab = "Expected value")
+    abline(0,1,lty = 2)
+    if(any(logLRmix > 2)) {
       idx = which(logLRmix > 2 & abs(z) > 2)
-      points(z[idx], postmean[idx], col = 'red', pch=16)
+      points(z[idx],postmean[idx],col = "red",pch = 16)
     }
   }
 
-  return(invisible(data.frame(z = z, postmean = postmean, postvar = postvar,
-                    post_z = post_z,
-                    logLR = logLRmix)))
+  return(invisible(data.frame(z = z,postmean = postmean,postvar = postvar,
+                              post_z = post_z,logLR = logLRmix)))
 }
 
 
