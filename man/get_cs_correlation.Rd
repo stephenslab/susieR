@@ -2,7 +2,8 @@
 % Please edit documentation in R/susie_utils.R
 \name{get_cs_correlation}
 \alias{get_cs_correlation}
-\title{Get correlations between CS, using variable with maximum PIP from each CS}
+\title{Get Correlations Between CSs, using Variable with Maximum PIP
+From Each CS}
 \usage{
 get_cs_correlation(res, X = NULL, Xcorr = NULL, max = FALSE)
 }
@@ -18,6 +19,7 @@ minimum correlation among variables is smaller than
 \code{min_abs_corr}.}
 }
 \description{
-Get correlations between CS, using variable with maximum PIP from each CS
+Get Correlations Between CSs, using Variable with Maximum PIP
+From Each CS
 }
 \keyword{internal}

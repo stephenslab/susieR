@@ -285,7 +285,7 @@
 #'
 #' @export
 #'
-susie <- function (X,Y,L = min(10,ncol(X)),
+susie = function (X,Y,L = min(10,ncol(X)),
                    scaled_prior_variance = 0.2,
                    residual_variance = NULL,
                    prior_weights = NULL,

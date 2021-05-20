@@ -149,11 +149,11 @@ X = matrix(rnorm(n*p),nrow = n,ncol = p)
 X = scale(X,center = TRUE,scale = TRUE)
 y = drop(X \%*\% beta + rnorm(n))
 
-input_ss <- compute_suff_stat(X,y,standardize = TRUE)
-ss   <- univariate_regression(X,y)
-R    <- with(input_ss,cov2cor(XtX))
-zhat <- with(ss,betahat/sebetahat)
-res  <- susie_rss(zhat,R,L = 10)
+input_ss = compute_suff_stat(X,y,standardize = TRUE)
+ss   = univariate_regression(X,y)
+R    = with(input_ss,cov2cor(XtX))
+zhat = with(ss,betahat/sebetahat)
+res  = susie_rss(zhat,R,L = 10)
 
 }
 \references{

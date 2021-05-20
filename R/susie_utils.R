@@ -185,7 +185,7 @@ susie_get_lfsr = function (res) {
 #'
 #' @export
 #'
-susie_get_posterior_samples <- function (susie_fit, num_samples) {
+susie_get_posterior_samples = function (susie_fit, num_samples) {
 
   # Remove effects having estimated prior variance equals zero.
   if (is.numeric(susie_fit$V))
@@ -314,7 +314,8 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
   }
 }
 
-#' @title Get correlations between CS, using variable with maximum PIP from each CS
+#' @title Get Correlations Between CSs, using Variable with Maximum PIP
+#' From Each CS
 #'
 #' @param X n by p matrix of values of the p variables (covariates) in
 #'   n samples. When provided, correlation between variables will be
@@ -561,18 +562,20 @@ susie_prune_single_effects = function (s,L = 0,V = NULL,verbose = FALSE) {
   return(s)
 }
 
-#' @title Estimate s in susie_rss model using regularized LD
+#' @title Estimate s in \code{susie_rss} Model Using Regularized LD
 #'
-#' @description The estimated s gives information about the consistency
-#' between the z scores and LD matrix. A larger \eqn{s} means there is a
-#' strong inconsistency between z scores and LD matrix.
-#' The 'null-mle' method obtains mle of \eqn{s}
-#' under \eqn{z | R ~ N(0,(1-s)R + s I)}, \eqn{0 < s < 1}. The 'null-partialmle'
-#' method obtains mle of \eqn{s} under \eqn{U^T z | R ~ N(0,s I)}, \eqn{U} is a matrix
-#' of eigenvectors of R with 0 eigenvalues. The estimated \eqn{s} from 'null-partialmle'
-#' could be greater than 1. The 'null-pseudomle' method obtains
-#' mle of \eqn{s} under pseudolikelihood \eqn{L(s) = \prod_{j=1}^{p} p(z_j | z_{-j}, s, R)},
-#' \eqn{0 < s < 1}.
+#' @description The estimated s gives information about the
+#' consistency between the z scores and LD matrix. A larger \eqn{s}
+#' means there is a strong inconsistency between z scores and LD
+#' matrix. The \dQuote{null-mle} method obtains mle of \eqn{s} under
+#' \eqn{z | R ~ N(0,(1-s)R + s I)}, \eqn{0 < s < 1}. The
+#' \dQuote{null-partialmle} method obtains mle of \eqn{s} under
+#' \eqn{U^T z | R ~ N(0,s I)}, in which \eqn{U} is a matrix of
+#' eigenvectors of R with 0 eigenvalues. The estimated \eqn{s} from
+#' \dQuote{null-partialmle} could be greater than 1. The
+#' \dQuote{null-pseudomle} method obtains mle of \eqn{s} under
+#' pseudolikelihood \eqn{L(s) = \prod_{j=1}^{p} p(z_j | z_{-j}, s,
+#' R)}, \eqn{0 < s < 1}.
 #'
 #' @param z A p-vector of z scores.
 #'
@@ -593,11 +596,11 @@ susie_prune_single_effects = function (s,L = 0,V = NULL,verbose = FALSE) {
 #' X = matrix(rnorm(n*p),nrow = n,ncol = p)
 #' X = scale(X,center = TRUE,scale = TRUE)
 #' y = drop(X %*% beta + rnorm(n))
-#' input_ss <- compute_suff_stat(X,y,standardize = TRUE)
-#' ss   <- univariate_regression(X,y)
-#' R    <- cor(X)
-#' attr(R, 'eigen') = eigen(R, symmetric = TRUE)
-#' zhat <- with(ss,betahat/sebetahat)
+#' input_ss = compute_suff_stat(X,y,standardize = TRUE)
+#' ss = univariate_regression(X,y)
+#' R = cor(X)
+#' attr(R,"eigen") = eigen(R, symmetric = TRUE)
+#' zhat = with(ss,betahat/sebetahat)
 #' s = estimate_s_rss(zhat, R)
 #'
 #' @export
@@ -684,10 +687,10 @@ estimate_s_rss = function(z, R, r_tol=1e-08, method="null-mle"){
 #' X = matrix(rnorm(n*p),nrow = n,ncol = p)
 #' X = scale(X,center = TRUE,scale = TRUE)
 #' y = drop(X %*% beta + rnorm(n))
-#' ss   <- univariate_regression(X,y)
-#' R    <- cor(X)
-#' attr(R, 'eigen') = eigen(R, symmetric = TRUE)
-#' zhat <- with(ss,betahat/sebetahat)
+#' ss = univariate_regression(X,y)
+#' R = cor(X)
+#' attr(R,"eigen") = eigen(R, symmetric = TRUE)
+#' zhat = with(ss,betahat/sebetahat)
 #' condz = kriging_rss(zhat, R)
 #'
 #' @export
@@ -735,16 +738,16 @@ kriging_rss = function(z, R, r_tol=1e-08,
   ## compute likelihood
   sd_mtx = outer(sqrt(postvar), a_grid)
   matrix_llik = dnorm(z - postmean, sd=sd_mtx, log = TRUE)
-  lfactors    <- apply(matrix_llik,1,max)
-  matrix_llik <- matrix_llik - lfactors
+  lfactors    = apply(matrix_llik,1,max)
+  matrix_llik = matrix_llik - lfactors
   
   ## estimate weight
   w = mixsqp(matrix_llik, log = TRUE, control = list(verbose=FALSE))$x
 
   logl0mix = as.numeric(log(exp(matrix_llik) %*% w)) + lfactors
   matrix_llik = dnorm(z + postmean, sd=sd_mtx, log = TRUE)
-  lfactors    <- apply(matrix_llik,1,max)
-  matrix_llik <- matrix_llik - lfactors
+  lfactors    = apply(matrix_llik,1,max)
+  matrix_llik = matrix_llik - lfactors
   logl1mix = as.numeric(log(exp(matrix_llik) %*% w)) + lfactors
   logLRmix = logl1mix - logl0mix
 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/susie_utils.R
 \name{estimate_s_rss}
 \alias{estimate_s_rss}
-\title{Estimate s in susie_rss model using regularized LD}
+\title{Estimate s in \code{susie_rss} Model Using Regularized LD}
 \usage{
 estimate_s_rss(z, R, r_tol = 1e-08, method = "null-mle")
 }
@@ -18,16 +18,18 @@ semidefinite matrix of R.}
 \item{method}{a string specifies the method to estimate \eqn{s}.}
 }
 \description{
-The estimated s gives information about the consistency
-between the z scores and LD matrix. A larger \eqn{s} means there is a
-strong inconsistency between z scores and LD matrix.
-The 'null-mle' method obtains mle of \eqn{s}
-under \eqn{z | R ~ N(0,(1-s)R + s I)}, \eqn{0 < s < 1}. The 'null-partialmle'
-method obtains mle of \eqn{s} under \eqn{U^T z | R ~ N(0,s I)}, \eqn{U} is a matrix
-of eigenvectors of R with 0 eigenvalues. The estimated \eqn{s} from 'null-partialmle'
-could be greater than 1. The 'null-pseudomle' method obtains
-mle of \eqn{s} under pseudolikelihood \eqn{L(s) = \prod_{j=1}^{p} p(z_j | z_{-j}, s, R)},
-\eqn{0 < s < 1}.
+The estimated s gives information about the
+consistency between the z scores and LD matrix. A larger \eqn{s}
+means there is a strong inconsistency between z scores and LD
+matrix. The \dQuote{null-mle} method obtains mle of \eqn{s} under
+\eqn{z | R ~ N(0,(1-s)R + s I)}, \eqn{0 < s < 1}. The
+\dQuote{null-partialmle} method obtains mle of \eqn{s} under
+\eqn{U^T z | R ~ N(0,s I)}, in which \eqn{U} is a matrix of
+eigenvectors of R with 0 eigenvalues. The estimated \eqn{s} from
+\dQuote{null-partialmle} could be greater than 1. The
+\dQuote{null-pseudomle} method obtains mle of \eqn{s} under
+pseudolikelihood \eqn{L(s) = \prod_{j=1}^{p} p(z_j | z_{-j}, s,
+R)}, \eqn{0 < s < 1}.
 }
 \examples{
 set.seed(1)
@@ -38,11 +40,11 @@ beta[1:4] = 0.01
 X = matrix(rnorm(n*p),nrow = n,ncol = p)
 X = scale(X,center = TRUE,scale = TRUE)
 y = drop(X \%*\% beta + rnorm(n))
-input_ss <- compute_suff_stat(X,y,standardize = TRUE)
-ss   <- univariate_regression(X,y)
-R    <- cor(X)
-attr(R, 'eigen') = eigen(R, symmetric = TRUE)
-zhat <- with(ss,betahat/sebetahat)
+input_ss = compute_suff_stat(X,y,standardize = TRUE)
+ss = univariate_regression(X,y)
+R = cor(X)
+attr(R,"eigen") = eigen(R, symmetric = TRUE)
+zhat = with(ss,betahat/sebetahat)
 s = estimate_s_rss(zhat, R)
 
 }
