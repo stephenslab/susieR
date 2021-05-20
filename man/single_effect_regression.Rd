@@ -8,7 +8,7 @@
 \title{Bayesian single-effect linear regression}
 \usage{
 single_effect_regression(
-  Y,
+  y,
   X,
   V,
   residual_variance = 1,
@@ -37,7 +37,7 @@ single_effect_regression_ss(
 )
 }
 \arguments{
-\item{Y}{An n-vector.}
+\item{y}{An n-vector.}
 
 \item{X}{An n by p matrix of covariates.}
 

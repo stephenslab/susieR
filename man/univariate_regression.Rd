@@ -39,9 +39,9 @@ A list with two vectors containing the least-squares
 }
 \description{
 This function performs the univariate linear
-regression y ~ x separately for each column x of X. Each regression
-is implemented using \code{.lm.fit()}. The estimated effect size
-and stardard error for each variable are outputted.
+  regression y ~ x separately for each column x of X. Each regression
+  is implemented using \code{.lm.fit()}. The estimated effect size
+  and stardard error for each variable are outputted.
 }
 \examples{
 set.seed(1)

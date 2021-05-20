@@ -1,9 +1,9 @@
 #' @title Perform Univariate Linear Regression Separately for Columns of X
 #' 
 #' @description This function performs the univariate linear
-#' regression y ~ x separately for each column x of X. Each regression
-#' is implemented using \code{.lm.fit()}. The estimated effect size
-#' and stardard error for each variable are outputted.
+#'   regression y ~ x separately for each column x of X. Each regression
+#'   is implemented using \code{.lm.fit()}. The estimated effect size
+#'   and stardard error for each variable are outputted.
 #' 
 #' @param X n by p matrix of regressors.
 #' 
@@ -19,13 +19,14 @@
 #' @param scale If \code{scale = TRUE}, scale X, y and Z.
 #' 
 #' @param return_residuals Whether or not to output the residuals if Z
-#' is not \code{NULL}.
+#'   is not \code{NULL}.
 #'
 #' @return A list with two vectors containing the least-squares
 #'   estimates of the coefficients (\code{betahat}) and their standard
 #'   errors (\code{sebetahat}). Optionally, and only when a matrix of
 #'   covariates \code{Z} is provided, a third vector \code{residuals}
 #'   containing the residuals is returned.
+#' 
 #' @examples
 #' set.seed(1)
 #' n = 1000

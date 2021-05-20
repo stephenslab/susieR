@@ -1,12 +1,12 @@
 # @title update each effect once
 # @param X an n by p matrix of regressor variables
-# @param Y an n vector of response variable
+# @param y an n vector of response variable
 # @param s a SuSiE fit
 # @param estimate_prior_variance boolean indicating whether to
 #   estimate prior variance
 # @param check_null_threshold float a threshold on the log scale to
 #   compare likelihood between current estimate and zero the null
-update_each_effect = function (X, Y, s, estimate_prior_variance = FALSE,
+update_each_effect = function (X, y, s, estimate_prior_variance = FALSE,
                                estimate_prior_method = "optim",
                                check_null_threshold) {
   if (!estimate_prior_variance)
@@ -21,7 +21,7 @@ update_each_effect = function (X, Y, s, estimate_prior_variance = FALSE,
       s$Xr = s$Xr - compute_Xb(X,s$alpha[l,] * s$mu[l,])
       
       # Compute residuals.
-      R = Y - s$Xr
+      R = y - s$Xr
 
       res = single_effect_regression(R,X,s$V[l],s$sigma2,s$pi,
                                      estimate_prior_method,

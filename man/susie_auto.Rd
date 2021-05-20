@@ -6,7 +6,7 @@
 \usage{
 susie_auto(
   X,
-  Y,
+  y,
   L_init = 1,
   L_max = 512,
   verbose = FALSE,
@@ -21,7 +21,7 @@ susie_auto(
 \arguments{
 \item{X}{An n by p matrix of covariates.}
 
-\item{Y}{The observed responses, a vector of length n.}
+\item{y}{The observed responses, a vector of length n.}
 
 \item{L_init}{The initial value of L.}
 

@@ -7,7 +7,7 @@
 \usage{
 susie(
   X,
-  Y,
+  y,
   L = min(10, ncol(X)),
   scaled_prior_variance = 0.2,
   residual_variance = NULL,
@@ -30,7 +30,7 @@ susie(
   tol = 0.001,
   verbose = FALSE,
   track_fit = FALSE,
-  residual_variance_lowerbound = var(drop(Y))/10000,
+  residual_variance_lowerbound = var(drop(y))/10000,
   refine = FALSE
 )
 
@@ -73,16 +73,16 @@ susie_suff_stat(
 \arguments{
 \item{X}{An n by p matrix of covariates.}
 
-\item{Y}{The observed responses, a vector of length n.}
+\item{y}{The observed responses, a vector of length n.}
 
 \item{L}{Maximum number of non-zero effects in the susie
 regression model. If L is larger than the number of covariates, p,
 L is set to p.}
 
 \item{scaled_prior_variance}{The prior variance, divided by
-\code{var(Y)} (or by \code{(1/(n-1))yty} for
+\code{var(y)} (or by \code{(1/(n-1))yty} for
 \code{susie_suff_stat}); that is, the prior variance of each
-non-zero element of b is \code{var(Y) * scaled_prior_variance}. The
+non-zero element of b is \code{var(y) * scaled_prior_variance}. The
 value provided should be either a scalar or a vector of length
 \code{L}. If \code{estimate_prior_variance = TRUE}, this provides
 initial estimates of the prior variances.}
@@ -90,12 +90,12 @@ initial estimates of the prior variances.}
 \item{residual_variance}{Variance of the residual. If
 \code{estimate_residual_variance = TRUE}, this value provides the
 initial estimate of the residual variance. By default, it is set to
-\code{var(Y)} in \code{susie} and \code{(1/(n-1))yty} in
+\code{var(y)} in \code{susie} and \code{(1/(n-1))yty} in
 \code{susie_suff_stat}.}
 
 \item{prior_weights}{A vector of length p, in which each entry
 gives the prior probability that corresponding column of X has a
-nonzero effect on the outcome, Y.}
+nonzero effect on the outcome, y.}
 
 \item{null_weight}{Prior probability of no effect (a number between
 0 and 1, and cannot be exactly 1).}
@@ -168,7 +168,7 @@ genotype data in genetic studies.}
 = TRUE}, the univariate regression z-scores are outputted for each
 variable.}
 
-\item{na.rm}{Drop any missing values in Y from both X and Y.}
+\item{na.rm}{Drop any missing values in y from both X and y.}
 
 \item{max_iter}{Maximum number of IBSS iterations to perform.}
 
@@ -267,7 +267,7 @@ A \code{"susie"} object with some or all of the following
 \item{sigma2}{Residual variance (fixed or estimated).}
 
 \item{V}{Prior variance of the non-zero elements of b, equal to
-  \code{scaled_prior_variance * var(Y)}.}
+  \code{scaled_prior_variance * var(y)}.}
 
 \item{elbo}{The value of the variational lower bound, or
   \dQuote{ELBO} (objective function to be maximized), achieved at
@@ -297,15 +297,15 @@ A \code{"susie"} object with some or all of the following
 }
 \description{
 Performs a sparse Bayesian multiple linear regression
-  of Y on X, using the "Sum of Single Effects" model from Wang et al
-  (2020). In brief, this function fits the regression model \eqn{Y =
+  of y on X, using the "Sum of Single Effects" model from Wang et al
+  (2020). In brief, this function fits the regression model \eqn{y =
   \mu + X b + e}, where elements of \eqn{e} are \emph{i.i.d.} normal
   with zero mean and variance \code{residual_variance}, \eqn{\mu} is
   an intercept term and \eqn{b} is a vector of length p representing
   the effects to be estimated. The \dQuote{susie assumption} is that
   \eqn{b = \sum_{l=1}^L b_l} where each \eqn{b_l} is a vector of
   length p with exactly one non-zero element. The prior on the
-  non-zero element is normal with zero mean and variance \code{var(Y)
+  non-zero element is normal with zero mean and variance \code{var(y)
   * scaled_prior_variance}. The value of \code{L} is fixed, and
   should be chosen to provide a reasonable upper bound on the number
   of non-zero effects to be detected. Typically, the hyperparameters
@@ -416,5 +416,5 @@ G. Wang, A. Sarkar, P. Carbonetto and M. Stephens (2020). A simple
   applying the SuSiE model to non-parametric regression, particularly
   changepoint problems, and \code{\link{susie_rss}} for applying the
   SuSiE model when one only has access to limited summary statistics
-  related to \eqn{X} and \eqn{Y} (typically in genetic applications).
+  related to \eqn{X} and \eqn{y} (typically in genetic applications).
 }

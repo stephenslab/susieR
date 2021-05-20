@@ -81,11 +81,11 @@ susie_trendfilter = function (y, order = 0, standardize = FALSE,
   attr(X,"order") = order
   if (use_mad && !("s_init" %in% names(list(...)))) {
     mad = estimate_mad_residual_variance(y)
-    s_mad_init = suppressWarnings(susie(X = X,Y = y,standardize = standardize,
+    s_mad_init = suppressWarnings(susie(X = X,y = y,standardize = standardize,
       estimate_residual_variance = FALSE,residual_variance = mad,...))
-    s = susie(X = X,Y = y,standardize = standardize, s_init = s_mad_init,...)
+    s = susie(X = X,y = y,standardize = standardize, s_init = s_mad_init,...)
   } else
-    s = susie(X = X,Y = y,standardize = standardize,...)
+    s = susie(X = X,y = y,standardize = standardize,...)
   return(s)
 }
 

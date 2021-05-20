@@ -3,15 +3,15 @@
 #' @title Sum of Single Effects (SuSiE) Regression
 #'
 #' @description Performs a sparse Bayesian multiple linear regression
-#'   of Y on X, using the "Sum of Single Effects" model from Wang et al
-#'   (2020). In brief, this function fits the regression model \eqn{Y =
+#'   of y on X, using the "Sum of Single Effects" model from Wang et al
+#'   (2020). In brief, this function fits the regression model \eqn{y =
 #'   \mu + X b + e}, where elements of \eqn{e} are \emph{i.i.d.} normal
 #'   with zero mean and variance \code{residual_variance}, \eqn{\mu} is
 #'   an intercept term and \eqn{b} is a vector of length p representing
 #'   the effects to be estimated. The \dQuote{susie assumption} is that
 #'   \eqn{b = \sum_{l=1}^L b_l} where each \eqn{b_l} is a vector of
 #'   length p with exactly one non-zero element. The prior on the
-#'   non-zero element is normal with zero mean and variance \code{var(Y)
+#'   non-zero element is normal with zero mean and variance \code{var(y)
 #'   * scaled_prior_variance}. The value of \code{L} is fixed, and
 #'   should be chosen to provide a reasonable upper bound on the number
 #'   of non-zero effects to be detected. Typically, the hyperparameters
@@ -84,16 +84,16 @@
 #'
 #' @param X An n by p matrix of covariates.
 #'
-#' @param Y The observed responses, a vector of length n.
+#' @param y The observed responses, a vector of length n.
 #'
 #' @param L Maximum number of non-zero effects in the susie
 #'   regression model. If L is larger than the number of covariates, p,
 #'   L is set to p.
 #'
 #' @param scaled_prior_variance The prior variance, divided by
-#'   \code{var(Y)} (or by \code{(1/(n-1))yty} for
+#'   \code{var(y)} (or by \code{(1/(n-1))yty} for
 #'   \code{susie_suff_stat}); that is, the prior variance of each
-#'   non-zero element of b is \code{var(Y) * scaled_prior_variance}. The
+#'   non-zero element of b is \code{var(y) * scaled_prior_variance}. The
 #'   value provided should be either a scalar or a vector of length
 #'   \code{L}. If \code{estimate_prior_variance = TRUE}, this provides
 #'   initial estimates of the prior variances.
@@ -101,12 +101,12 @@
 #' @param residual_variance Variance of the residual. If
 #'   \code{estimate_residual_variance = TRUE}, this value provides the
 #'   initial estimate of the residual variance. By default, it is set to
-#'   \code{var(Y)} in \code{susie} and \code{(1/(n-1))yty} in
+#'   \code{var(y)} in \code{susie} and \code{(1/(n-1))yty} in
 #'   \code{susie_suff_stat}.
 #'
 #' @param prior_weights A vector of length p, in which each entry
 #'   gives the prior probability that corresponding column of X has a
-#'   nonzero effect on the outcome, Y.
+#'   nonzero effect on the outcome, y.
 #'
 #' @param null_weight Prior probability of no effect (a number between
 #'   0 and 1, and cannot be exactly 1).
@@ -179,7 +179,7 @@
 #'   = TRUE}, the univariate regression z-scores are outputted for each
 #'   variable.
 #'
-#' @param na.rm Drop any missing values in Y from both X and Y.
+#' @param na.rm Drop any missing values in y from both X and y.
 #'
 #' @param max_iter Maximum number of IBSS iterations to perform.
 #'
@@ -228,7 +228,7 @@
 #' \item{sigma2}{Residual variance (fixed or estimated).}
 #'
 #' \item{V}{Prior variance of the non-zero elements of b, equal to
-#'   \code{scaled_prior_variance * var(Y)}.}
+#'   \code{scaled_prior_variance * var(y)}.}
 #'
 #' \item{elbo}{The value of the variational lower bound, or
 #'   \dQuote{ELBO} (objective function to be maximized), achieved at
@@ -268,7 +268,7 @@
 #'   applying the SuSiE model to non-parametric regression, particularly
 #'   changepoint problems, and \code{\link{susie_rss}} for applying the
 #'   SuSiE model when one only has access to limited summary statistics
-#'   related to \eqn{X} and \eqn{Y} (typically in genetic applications).
+#'   related to \eqn{X} and \eqn{y} (typically in genetic applications).
 #'
 #' @examples
 #' # susie example
@@ -300,7 +300,7 @@
 #'
 #' @export
 #'
-susie = function (X,Y,L = min(10,ncol(X)),
+susie = function (X,y,L = min(10,ncol(X)),
                    scaled_prior_variance = 0.2,
                    residual_variance = NULL,
                    prior_weights = NULL,
@@ -322,7 +322,7 @@ susie = function (X,Y,L = min(10,ncol(X)),
                    tol = 1e-3,
                    verbose = FALSE,
                    track_fit = FALSE,
-                   residual_variance_lowerbound = var(drop(Y))/1e4,
+                   residual_variance_lowerbound = var(drop(y))/1e4,
                    refine = FALSE) {
 
   # Process input estimate_prior_method.
@@ -349,28 +349,28 @@ susie = function (X,Y,L = min(10,ncol(X)),
   }
   if (any(is.na(X)))
     stop("Input X must not contain missing values")
-  if (any(is.na(Y))) {
+  if (any(is.na(y))) {
     if (na.rm) {
-      samples_kept = which(!is.na(Y))
-      Y = Y[samples_kept]
+      samples_kept = which(!is.na(y))
+      y = y[samples_kept]
       X = X[samples_kept,]
     } else
-      stop("Input Y must not contain missing values")
+      stop("Input y must not contain missing values")
   }
 
-  # Check input Y.
+  # Check input y.
   p = ncol(X)
   n = nrow(X)
-  mean_y = mean(Y)
+  mean_y = mean(y)
 
   # Center and scale input.
   if (intercept)
-    Y = Y - mean_y
+    y = y - mean_y
   X = set_X_attributes(X,center = intercept,scale = standardize)
 
   # Initialize susie fit.
   s = init_setup(n,p,L,scaled_prior_variance,residual_variance,prior_weights,
-                 null_weight,as.numeric(var(Y)),standardize)
+                 null_weight,as.numeric(var(y)),standardize)
   if (!missing(s_init) && !is.null(s_init)) {
     if (!inherits(s_init,"susie"))
       stop("s_init should be a susie object")
@@ -394,26 +394,26 @@ susie = function (X,Y,L = min(10,ncol(X)),
   for (i in 1:max_iter) {
     if (track_fit)
       tracking[[i]] = susie_slim(s)
-    s = update_each_effect(X,Y,s,estimate_prior_variance,estimate_prior_method,
+    s = update_each_effect(X,y,s,estimate_prior_variance,estimate_prior_method,
                            check_null_threshold)
     if (verbose)
-      print(paste0("objective:",get_objective(X,Y,s)))
+      print(paste0("objective:",get_objective(X,y,s)))
 
     # Compute objective before updating residual variance because part
     # of the objective s$kl has already been computed under the
     # residual variance before the update.
-    elbo[i+1] = get_objective(X,Y,s)
+    elbo[i+1] = get_objective(X,y,s)
     if ((elbo[i+1] - elbo[i]) < tol) {
       s$converged = TRUE
       break
     }
     if (estimate_residual_variance) {
       s$sigma2 = pmax(residual_variance_lowerbound,
-                      estimate_residual_variance(X,Y,s))
+                      estimate_residual_variance(X,y,s))
       if (s$sigma2 > residual_variance_upperbound)
         s$sigma2 = residual_variance_upperbound
       if (verbose)
-        print(paste0("objective:",get_objective(X,Y,s)))
+        print(paste0("objective:",get_objective(X,y,s)))
     }
   }
 
@@ -438,7 +438,7 @@ susie = function (X,Y,L = min(10,ncol(X)),
     s$fitted = s$Xr
   }
   s$fitted = drop(s$fitted)
-  names(s$fitted) = `if`(is.null(names(Y)),rownames(X),names(Y))
+  names(s$fitted) = `if`(is.null(names(y)),rownames(X),names(y))
 
   if (track_fit)
     s$trace = tracking
@@ -464,7 +464,7 @@ susie = function (X,Y,L = min(10,ncol(X)),
   if (compute_univariate_zscore) {
     if (!is.null(null_weight) && null_weight != 0)
       X = X[,1:(ncol(X) - 1)]
-    s$z = calc_z(X,Y,center = intercept,scale = standardize)
+    s$z = calc_z(X,y,center = intercept,scale = standardize)
   }
 
   # For prediction.
@@ -490,8 +490,7 @@ susie = function (X,Y,L = min(10,ncol(X)),
       for(cs in 1:length(s$sets$cs)){
         pw_cs = pw_s
         pw_cs[s$sets$cs[[cs]]] = 0
-        s2 = susie(X,Y,L = L,
-            scaled_prior_variance = scaled_prior_variance,
+        s2 = susie(X,y,L = L,scaled_prior_variance = scaled_prior_variance,
             residual_variance = residual_variance,
             prior_weights = pw_cs, s_init = NULL,null_weight = null_weight,
             standardize = standardize,intercept = intercept,
@@ -503,11 +502,11 @@ susie = function (X,Y,L = min(10,ncol(X)),
             residual_variance_upperbound = residual_variance_upperbound,
             min_abs_corr = min_abs_corr,compute_univariate_zscore = FALSE,
             na.rm = na.rm,max_iter = max_iter,tol = tol,verbose = FALSE,
-            track_fit = FALSE,residual_variance_lowerbound = var(drop(Y))/1e4,
+            track_fit = FALSE,residual_variance_lowerbound = var(drop(y))/1e4,
             refine = FALSE)
         sinit2 = s2[c("alpha","mu","mu2")]
         class(sinit2) = "susie"
-        s3 = susie(X,Y,L = L,scaled_prior_variance = scaled_prior_variance,
+        s3 = susie(X,y,L = L,scaled_prior_variance = scaled_prior_variance,
             residual_variance = residual_variance,prior_weights = pw_s,
             s_init = sinit2,null_weight = null_weight,
             standardize = standardize,intercept = intercept,
@@ -519,7 +518,7 @@ susie = function (X,Y,L = min(10,ncol(X)),
             residual_variance_upperbound = residual_variance_upperbound,
             min_abs_corr = min_abs_corr,compute_univariate_zscore = FALSE,
             na.rm = na.rm,max_iter = max_iter,tol = tol,verbose = FALSE,
-            track_fit = FALSE,residual_variance_lowerbound = var(drop(Y))/1e4,
+            track_fit = FALSE,residual_variance_lowerbound = var(drop(y))/1e4,
             refine = FALSE)
         m = c(m,list(s3))
       }

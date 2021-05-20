@@ -19,17 +19,18 @@ semidefinite matrix of R.}
 }
 \description{
 The estimated s gives information about the
-consistency between the z scores and LD matrix. A larger \eqn{s}
-means there is a strong inconsistency between z scores and LD
-matrix. The \dQuote{null-mle} method obtains mle of \eqn{s} under
-\eqn{z | R ~ N(0,(1-s)R + s I)}, \eqn{0 < s < 1}. The
-\dQuote{null-partialmle} method obtains mle of \eqn{s} under
-\eqn{U^T z | R ~ N(0,s I)}, in which \eqn{U} is a matrix of
-eigenvectors of R with 0 eigenvalues. The estimated \eqn{s} from
-\dQuote{null-partialmle} could be greater than 1. The
-\dQuote{null-pseudomle} method obtains mle of \eqn{s} under
-pseudolikelihood \eqn{L(s) = \prod_{j=1}^{p} p(z_j | z_{-j}, s,
-R)}, \eqn{0 < s < 1}.
+  consistency between the z scores and LD matrix. A larger \eqn{s}
+  means there is a strong inconsistency between z scores and LD
+  matrix. The \dQuote{null-mle} method obtains mle of \eqn{s} under
+  \eqn{z | R ~ N(0,(1-s)R + s I)}, \eqn{0 < s < 1}. The
+  \dQuote{null-partialmle} method obtains mle of \eqn{s} under
+  \eqn{U^T z | R ~ N(0,s I)}, in which \eqn{U} is a matrix containing
+  the of eigenvectors that span the null space of R; that is, the
+  eigenvectors corresponding to zero eigenvalues of R. The estimated
+  \eqn{s} from \dQuote{null-partialmle} could be greater than 1. The
+  \dQuote{null-pseudomle} method obtains mle of \eqn{s} under
+  pseudolikelihood \eqn{L(s) = \prod_{j=1}^{p} p(z_j | z_{-j}, s,
+  R)}, \eqn{0 < s < 1}.
 }
 \examples{
 set.seed(1)
