@@ -127,7 +127,7 @@
 #' G. Wang, A. Sarkar, P. Carbonetto and M. Stephens (2020). A simple
 #'   new approach to variable selection in regression, with application
 #'   to genetic fine-mapping. \emph{Journal of the Royal Statistical
-#'   Society, Series B} \bold{82} \url{https://doi.org/10.1101/501114}.
+#'   Society, Series B} \bold{82} \doi{10.1101/501114}.
 #'
 #' X. Zhu and M. Stephens (2017). Bayesian large-scale multiple regression
 #'   with summary statistics from genome-wide association studies.

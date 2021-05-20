@@ -21,10 +21,8 @@ fine-mapping.  We use simulated data of expression level of a gene
 genotype matrix $X_{N\times P}$ ($P=1001$) the genetic variables that
 causes changes in expression level.
 
-The simulated data-set is [available
-here][N3finemapping],
-as part of the `susieR` package. It is simulated to have exactly 3
-non-zero effects.
+The simulated data set is simulated to have exactly 3 non-zero
+effects.
 
 ```{r}
 library(susieR)

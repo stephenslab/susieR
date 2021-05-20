@@ -407,8 +407,7 @@ abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
 G. Wang, A. Sarkar, P. Carbonetto and M. Stephens (2020). A simple
   new approach to variable selection in regression, with application
   to genetic fine-mapping. \emph{Journal of the Royal Statistical
-  Society, Series B} \bold{82}, 1273-1300
-  \url{https://doi.org/10.1101/501114}.
+  Society, Series B} \bold{82}, 1273-1300 \doi{10.1101/501114}.
 }
 \seealso{
 \code{\link{susie_get_cs}} and other \code{susie_get_*}
