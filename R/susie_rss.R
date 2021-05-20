@@ -4,20 +4,20 @@
 #'   sparse Bayesian multiple linear regression of \eqn{Y} on \eqn{X}
 #'   using only the z-scores from standard univariate regression
 #'   of \eqn{Y} on each column of \eqn{X}, and an estimate \eqn{R} of
-#'   the correlation matrix between columns of \eqn{X}.  It does this by
+#'   the correlation matrix between columns of \eqn{X}. It does this by
 #'   combining the "RSS likelihood" from Zhu and Stephens (2017) with
 #'   the Sum of Single Effects" model from Wang et al (2020).
 #'
 #'
 #' @details In some applications, particularly genetic applications,
-#' it is desired to fit a regression model (\eqn{Y = X\tilde{b} +E}
+#' it is desired to fit a regression model (\eqn{Y = X\tilde{b} + E}
 #' say, which we refer to as "the original regression model" or ORM)
 #' without access to the actual values of \eqn{Y} and \eqn{X}, but
-#' given only some summary statistics.  \code{susie_rss} assumes the
+#' given only some summary statistics. \code{susie_rss} assumes the
 #' availability of \eqn{z} scores from standard univariate regression
 #' of \eqn{Y} on each column of \eqn{X}, and an estimate \eqn{R} of
 #' the correlation matrix between columns of \eqn{X} (\eqn{R} is
-#' sometimes called the LD matrix in genetic applications).  See Zhu
+#' sometimes called the LD matrix in genetic applications). See Zhu
 #' and Stephens (2017), and references therein, for further
 #' background.
 #'
@@ -34,22 +34,22 @@
 #' \eqn{b_j} to estimates of \eqn{\tilde{b}_j} would require
 #' computation of the scaling factor (not done here).
 #'
-#' More precisely \code{susie_rss} assumes the log-likelihood for
+#' More precisely, \code{susie_rss} assumes the log-likelihood for
 #' \eqn{b} is \eqn{l(b; z,R) = -0.5(b'Rb - 2z'b)}, which is equivalent
 #' to model (2.10) from Zhu and Stephens if \eqn{R} is invertible, but
-#' does not require \eqn{R} to be invertible.  It combines this
+#' does not require \eqn{R} to be invertible. It combines this
 #' likelihood with the \dQuote{susie prior} which assumes that \eqn{b
 #' = \sum_{l=1}^L b_l} where each \eqn{b_l} is a vector of length p
 #' with exactly one non-zero element; see \code{\link{susie}} and Wang
 #' et al (2020) for details.
 #'
-#' In practice this is accomplished by calling \code{susie_suff_stat}
+#' In practice, this is accomplished by calling \code{susie_suff_stat}
 #' with \code{XtX = R} and \code{Xty = z}, and fixing
-#' \code{residual_variance=1}.  (Values for \code{n} and \code{yty}
+#' \code{residual_variance = 1}. (Values for \code{n} and \code{yty}
 #' are also required by \code{susie_suff_stat}. They do not affect
 #' inference when the residual variance is fixed, but they do affect
-#' the interpretation of scaled_prior_variance; we set
-#' \code{n=2,yty=1} so \eqn{var(y)=yty/(n-1) = 1}.)  Additional
+#' the interpretation of \code{scaled_prior_variance}; we set
+#' \code{n=2, yty=1} so that \eqn{var(y) = yty/(n-1) = 1}.) Additional
 #' arguments to be passed to \code{\link{susie_suff_stat}} can be
 #' provided via \code{...}.
 #'

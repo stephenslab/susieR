@@ -66,7 +66,7 @@ susie_suff_stat(
   tol = 0.001,
   verbose = FALSE,
   track_fit = FALSE,
-  heck_input = FALSE,
+  check_input = FALSE,
   refine = FALSE
 )
 }
