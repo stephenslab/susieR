@@ -65,7 +65,7 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
                             max_iter = 100, s_init = NULL, coverage = 0.95,
                             min_abs_corr = 0.5, tol = 1e-3,
                             verbose = FALSE, track_fit = FALSE,
-                             heck_input = FALSE, refine = FALSE) {
+                            check_input = FALSE, refine = FALSE) {
 
   # Process input estimate_prior_method.
   estimate_prior_method = match.arg(estimate_prior_method)
@@ -314,9 +314,9 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
             check_null_threshold = check_null_threshold, prior_tol = prior_tol,
             r_tol = r_tol, max_iter = max_iter,
             null_weight = null_weight, standardize = standardize,
-            coverage = coverage,
-            min_abs_corr = min_abs_corr, tol = tol, verbose = FALSE,
-            track_fit = FALSE, check_input = FALSE, refine = FALSE)
+            coverage = coverage, min_abs_corr = min_abs_corr, tol = tol,
+            verbose = FALSE, track_fit = FALSE, check_input = FALSE,
+            refine = FALSE)
         sinit2 = s2[c("alpha","mu","mu2")]
         class(sinit2) = "susie"
         s3 = susie_suff_stat(XtX = XtX, Xty = Xty, yty = yty, n = n, L = L,
@@ -328,9 +328,8 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
             estimate_prior_variance = estimate_prior_variance,
             estimate_prior_method = estimate_prior_method,
             check_null_threshold = check_null_threshold, prior_tol = prior_tol,
-            r_tol = r_tol, max_iter = max_iter,
-            null_weight = null_weight, standardize = standardize,
-            coverage = coverage,
+            r_tol = r_tol, max_iter = max_iter, null_weight = null_weight,
+            standardize = standardize, coverage = coverage,
             min_abs_corr = min_abs_corr, tol = tol, verbose = FALSE,
             track_fit = FALSE, check_input = FALSE, refine = FALSE)
         m = c(m,list(s3))
