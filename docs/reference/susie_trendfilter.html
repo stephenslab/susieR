@@ -83,7 +83,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.8</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.18</span>
       </span>
     </div>
 
@@ -135,7 +135,7 @@
   <code><a href='../articles/trend_filtering.html'>vignette("trend_filtering")</a></code>.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>susie_trendfilter</span><span class='op'>(</span><span class='va'>y</span>, order <span class='op'>=</span> <span class='fl'>0</span>, standardize <span class='op'>=</span> <span class='cn'>FALSE</span>, use_mad <span class='op'>=</span> <span class='cn'>TRUE</span>, <span class='va'>...</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>susie_trendfilter</span>(<span class='no'>y</span>, <span class='kw'>order</span> <span class='kw'>=</span> <span class='fl'>0</span>, <span class='kw'>standardize</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>use_mad</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='no'>...</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -196,18 +196,14 @@ tendency to converge to poor local optima of the ELBO.</p></td>
   <b>42</b>, 285-323. <a href='https://doi.org/10.1214/13-AOS1189'>https://doi.org/10.1214/13-AOS1189</a></p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span><span class='op'>(</span><span class='fl'>1</span><span class='op'>)</span>
-<span class='va'>mu</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span><span class='op'>(</span><span class='fl'>0</span>,<span class='fl'>50</span><span class='op'>)</span>,<span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span><span class='op'>(</span><span class='fl'>1</span>,<span class='fl'>50</span><span class='op'>)</span>,<span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span><span class='op'>(</span><span class='fl'>3</span>,<span class='fl'>50</span><span class='op'>)</span>,<span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>2</span>,<span class='fl'>50</span><span class='op'>)</span>,<span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span><span class='op'>(</span><span class='fl'>0</span>,<span class='fl'>300</span><span class='op'>)</span><span class='op'>)</span>
-<span class='va'>y</span> <span class='op'>=</span> <span class='va'>mu</span> <span class='op'>+</span> <span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span><span class='op'>(</span><span class='fl'>500</span><span class='op'>)</span>
-<span class='va'>s</span> <span class='op'>=</span> <span class='fu'>susie_trendfilter</span><span class='op'>(</span><span class='va'>y</span><span class='op'>)</span>
-<span class='fu'><a href='https://rdrr.io/r/graphics/plot.default.html'>plot</a></span><span class='op'>(</span><span class='va'>y</span><span class='op'>)</span>
-</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/lines.html'>lines</a></span><span class='op'>(</span><span class='va'>mu</span>,col <span class='op'>=</span> <span class='fl'>1</span>,lwd <span class='op'>=</span> <span class='fl'>3</span><span class='op'>)</span>
-</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/lines.html'>lines</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/stats/predict.html'>predict</a></span><span class='op'>(</span><span class='va'>s</span><span class='op'>)</span>,col <span class='op'>=</span> <span class='fl'>2</span>,lwd <span class='op'>=</span> <span class='fl'>2</span><span class='op'>)</span>
-</div><div class='img'><img src='susie_trendfilter-1.png' alt='' width='700' height='433' /></div><div class='input'>
+    <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span>(<span class='fl'>1</span>)
+<span class='no'>mu</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>0</span>,<span class='fl'>50</span>),<span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>1</span>,<span class='fl'>50</span>),<span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>3</span>,<span class='fl'>50</span>),<span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(-<span class='fl'>2</span>,<span class='fl'>50</span>),<span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>0</span>,<span class='fl'>300</span>))
+<span class='no'>y</span> <span class='kw'>=</span> <span class='no'>mu</span> + <span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span>(<span class='fl'>500</span>)
+<span class='no'>s</span> <span class='kw'>=</span> <span class='fu'>susie_trendfilter</span>(<span class='no'>y</span>)
+<span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>y</span>)</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/lines.html'>lines</a></span>(<span class='no'>mu</span>,<span class='kw'>col</span> <span class='kw'>=</span> <span class='fl'>1</span>,<span class='kw'>lwd</span> <span class='kw'>=</span> <span class='fl'>3</span>)</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/lines.html'>lines</a></span>(<span class='fu'><a href='https://rdrr.io/r/stats/predict.html'>predict</a></span>(<span class='no'>s</span>),<span class='kw'>col</span> <span class='kw'>=</span> <span class='fl'>2</span>,<span class='kw'>lwd</span> <span class='kw'>=</span> <span class='fl'>2</span>)</div><div class='img'><img src='susie_trendfilter-1.png' alt='' width='700' height='433' /></div><div class='input'>
 <span class='co'># Calculate credible sets (indices of y that occur just before</span>
 <span class='co'># changepoints).</span>
-<span class='fu'><a href='susie_get_objective.html'>susie_get_cs</a></span><span class='op'>(</span><span class='va'>s</span><span class='op'>)</span>
-</div><div class='output co'>#&gt; $cs
+<span class='fu'><a href='susie_get_methods.html'>susie_get_cs</a></span>(<span class='no'>s</span>)</div><div class='output co'>#&gt; $cs
 #&gt; $cs$L1
 #&gt; [1] 150
 #&gt; 
@@ -228,8 +224,7 @@ tendency to converge to poor local optima of the ELBO.</p></td>
 #&gt; [1] 0.95
 #&gt; </div><div class='input'>
 <span class='co'># Plot with credible sets for changepoints.</span>
-<span class='fu'><a href='susie_plot_changepoint.html'>susie_plot_changepoint</a></span><span class='op'>(</span><span class='va'>s</span>,<span class='va'>y</span><span class='op'>)</span> 
-</div><div class='img'><img src='susie_trendfilter-2.png' alt='' width='700' height='433' /></div><div class='input'>
+<span class='fu'><a href='susie_plot_changepoint.html'>susie_plot_changepoint</a></span>(<span class='no'>s</span>,<span class='no'>y</span>)</div><div class='img'><img src='susie_trendfilter-2.png' alt='' width='700' height='433' /></div><div class='input'>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
@@ -246,7 +241,7 @@ tendency to converge to poor local optima of the ELBO.</p></td>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>
