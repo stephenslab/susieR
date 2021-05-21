@@ -234,7 +234,9 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
 #' X = scale(X,center = TRUE,scale = TRUE)
 #' y = drop(X %*% beta + rnorm(n))
 #' res = susie(X,y,L = 10)
+#' \dontrun{
 #' susie_plot_iteration(res, L=10, file_prefix="plot_demo")
+#' }
 #'
 #' @importFrom grDevices pdf
 #' @importFrom grDevices dev.off

@@ -87,7 +87,9 @@ X = matrix(rnorm(n*p),nrow = n,ncol = p)
 X = scale(X,center = TRUE,scale = TRUE)
 y = drop(X \%*\% beta + rnorm(n))
 res = susie(X,y,L = 10)
+\dontrun{
 susie_plot_iteration(res, L=10, file_prefix="plot_demo")
+}
 
 }
 \seealso{
