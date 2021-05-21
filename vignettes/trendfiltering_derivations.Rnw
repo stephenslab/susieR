@@ -7,7 +7,7 @@
 \usepackage{mathabx}
 \usepackage{xspace}
 \usepackage{natbib}
-\bibliographystyle{apa}
+\bibliographystyle{abbrvnat}
 
 \newcommand{\susie}{\textsl{SuSiE}\xspace}
 \def\vb{\bm b}
