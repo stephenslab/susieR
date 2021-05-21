@@ -31,7 +31,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.18</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.25</span>
       </span>
     </div>
 
@@ -61,13 +61,13 @@
 
       
 
-      </header><div class="row">
+      </header><script src="sparse_matrix_strategy_files/accessible-code-block-0.0.1/empty-anchor.js"></script><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>Sparse matrix multiplication strategy</h1>
                         <h4 class="author">Kaiqian Zhang</h4>
             
-            <h4 class="date">2021-05-20</h4>
+            <h4 class="date">2021-05-21</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/master/vignettes/sparse_matrix_strategy.Rmd"><code>vignettes/sparse_matrix_strategy.Rmd</code></a></small>
       <div class="hidden name"><code>sparse_matrix_strategy.Rmd</code></div>
@@ -79,11 +79,12 @@
 <div id="set-up-environment" class="section level2">
 <h2 class="hasAnchor">
 <a href="#set-up-environment" class="anchor"></a>Set up environment</h2>
-<div class="sourceCode" id="cb1"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">susieR</span>)
-<span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">Matrix</span>)
-<span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">microbenchmark</span>)
-<span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">ggplot2</span>)
-<span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span>(<span class="fl">1</span>)</pre></body></html></div>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/stephenslab/susieR">susieR</a></span><span class="op">)</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="http://Matrix.R-forge.R-project.org/">Matrix</a></span><span class="op">)</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/joshuaulrich/microbenchmark/">microbenchmark</a></span><span class="op">)</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org">ggplot2</a></span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></code></pre></div>
 </div>
 <div id="goal" class="section level2">
 <h2 class="hasAnchor">
@@ -149,40 +150,46 @@
 <div id="simulations" class="section level2">
 <h2 class="hasAnchor">
 <a href="#simulations" class="anchor"></a>Simulations</h2>
-<p>We simulate an <code>n = 1000</code> by <code>p = 10000</code> matrix <code>X</code> at sparsity <span class="math inline">\(99\%\)</span>, i.e. <span class="math inline">\(99\%\)</span> entries are zeros. We compare results between normal matrix computation and our sparse strategy as well as comparing speed using microbenchmark.</p>
-<div class="sourceCode" id="cb2"><html><body><pre class="r"><span class="no">create_sparsity_mat</span> <span class="kw">&lt;-</span> <span class="kw">function</span>(<span class="no">sparsity</span>, <span class="no">n</span>, <span class="no">p</span>) {
-  <span class="no">nonzero</span>          <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(<span class="no">n</span>*<span class="no">p</span>*(<span class="fl">1</span>-<span class="no">sparsity</span>))
-  <span class="no">nonzero.idx</span>      <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html">sample</a></span>(<span class="no">n</span>*<span class="no">p</span>, <span class="no">nonzero</span>)
-  <span class="no">mat</span>              <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html">numeric</a></span>(<span class="no">n</span>*<span class="no">p</span>)
-  <span class="no">mat</span>[<span class="no">nonzero.idx</span>] <span class="kw">&lt;-</span> <span class="fl">1</span>
-  <span class="no">mat</span>              <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html">matrix</a></span>(<span class="no">mat</span>, <span class="kw">nrow</span><span class="kw">=</span><span class="no">n</span>,<span class="kw">ncol</span><span class="kw">=</span><span class="no">p</span>)
-  <span class="fu"><a href="https://rdrr.io/r/base/function.html">return</a></span>(<span class="no">mat</span>)
-}
-<span class="no">n</span> <span class="kw">&lt;-</span> <span class="fl">1000</span>
-<span class="no">p</span> <span class="kw">&lt;-</span> <span class="fl">10000</span></pre></body></html></div>
-<div class="sourceCode" id="cb3"><html><body><pre class="r"><span class="no">X.dense</span>  <span class="kw">&lt;-</span> <span class="fu">create_sparsity_mat</span>(<span class="fl">0.99</span>,<span class="no">n</span>,<span class="no">p</span>)
-<span class="no">X.sparse</span> <span class="kw">&lt;-</span> <span class="fu">as</span>(<span class="no">X.dense</span>,<span class="st">"dgCMatrix"</span>)
-<span class="no">X.tilde</span>  <span class="kw">&lt;-</span> <span class="kw pkg">susieR</span><span class="kw ns">:::</span><span class="fu">set_X_attributes</span>(<span class="no">X.dense</span>) <span class="co">#returns a scaled X if input is a dense matrix</span>
-<span class="no">X</span> <span class="kw">&lt;-</span> <span class="kw pkg">susieR</span><span class="kw ns">:::</span><span class="fu">set_X_attributes</span>(<span class="no">X.sparse</span>) <span class="co">#return an unsacled sparse X if input is a sparse matrix </span>
-                                     <span class="co">#but computes column means and standard deviations</span></pre></body></html></div>
-<div class="sourceCode" id="cb4"><html><body><pre class="r"><span class="no">b</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html">rnorm</a></span>(<span class="no">p</span>)
-<span class="no">y</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html">rnorm</a></span>(<span class="no">n</span>)</pre></body></html></div>
+<p>We simulate an <code>n = 1000</code> by <code>p = 10000</code> matrix <code>X</code> at sparsity <span class="math inline">\(99\%\)</span>, i.e. <span class="math inline">\(99\%\)</span> entries are zeros. We compare results between normal matrix computation and our sparse strategy as well as comparing speed using microbenchmark.</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">create_sparsity_mat</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">sparsity</span>, <span class="va">n</span>, <span class="va">p</span><span class="op">)</span> <span class="op">{</span>
+  <span class="va">nonzero</span>          <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html">round</a></span><span class="op">(</span><span class="va">n</span><span class="op">*</span><span class="va">p</span><span class="op">*</span><span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="va">sparsity</span><span class="op">)</span><span class="op">)</span>
+  <span class="va">nonzero.idx</span>      <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html">sample</a></span><span class="op">(</span><span class="va">n</span><span class="op">*</span><span class="va">p</span>, <span class="va">nonzero</span><span class="op">)</span>
+  <span class="va">mat</span>              <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html">numeric</a></span><span class="op">(</span><span class="va">n</span><span class="op">*</span><span class="va">p</span><span class="op">)</span>
+  <span class="va">mat</span><span class="op">[</span><span class="va">nonzero.idx</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">1</span>
+  <span class="va">mat</span>              <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html">matrix</a></span><span class="op">(</span><span class="va">mat</span>, nrow<span class="op">=</span><span class="va">n</span>,ncol<span class="op">=</span><span class="va">p</span><span class="op">)</span>
+  <span class="kw"><a href="https://rdrr.io/r/base/function.html">return</a></span><span class="op">(</span><span class="va">mat</span><span class="op">)</span>
+<span class="op">}</span>
+<span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">1000</span>
+<span class="va">p</span> <span class="op">&lt;-</span> <span class="fl">10000</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">X.dense</span>  <span class="op">&lt;-</span> <span class="fu">create_sparsity_mat</span><span class="op">(</span><span class="fl">0.99</span>,<span class="va">n</span>,<span class="va">p</span><span class="op">)</span>
+<span class="va">X.sparse</span> <span class="op">&lt;-</span> <span class="fu">as</span><span class="op">(</span><span class="va">X.dense</span>,<span class="st">"dgCMatrix"</span><span class="op">)</span>
+<span class="va">X.tilde</span>  <span class="op">&lt;-</span> <span class="fu">susieR</span><span class="fu">:::</span><span class="fu">set_X_attributes</span><span class="op">(</span><span class="va">X.dense</span><span class="op">)</span> <span class="co">#returns a scaled X if input is a dense matrix</span>
+<span class="va">X</span> <span class="op">&lt;-</span> <span class="fu">susieR</span><span class="fu">:::</span><span class="fu">set_X_attributes</span><span class="op">(</span><span class="va">X.sparse</span><span class="op">)</span> <span class="co">#return an unsacled sparse X if input is a sparse matrix </span>
+                                     <span class="co">#but computes column means and standard deviations</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">b</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html">rnorm</a></span><span class="op">(</span><span class="va">p</span><span class="op">)</span>
+<span class="va">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span></code></pre></div>
 <div id="benchmark-for-computing-boldsymboltildexb" class="section level3">
 <h3 class="hasAnchor">
 <a href="#benchmark-for-computing-boldsymboltildexb" class="anchor"></a>Benchmark for computing <span class="math inline">\(\boldsymbol{\tilde{X}b}\)</span>
 </h3>
 <p>The final results of two methods when computing <span class="math inline">\(\tilde{X}b\)</span> are very close.</p>
-<div class="sourceCode" id="cb5"><html><body><pre class="r"><span class="no">res1</span> <span class="kw">&lt;-</span> <span class="no">X.tilde</span> <span class="kw">%*%</span> <span class="no">b</span>
-<span class="no">res2</span> <span class="kw">&lt;-</span> <span class="kw pkg">susieR</span><span class="kw ns">:::</span><span class="fu">compute_Xb</span>(<span class="no">X</span>,<span class="no">b</span>)
-<span class="fu"><a href="https://rdrr.io/r/base/Extremes.html">max</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/MathFun.html">abs</a></span>(<span class="no">res1</span> - <span class="no">res2</span>))
-<span class="co"># [1] 362.79</span></pre></body></html></div>
-<div class="sourceCode" id="cb6"><html><body><pre class="r"><span class="no">compute_Xb_benchmark</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/microbenchmark/man/microbenchmark.html">microbenchmark</a></span>(
-  <span class="kw">dense</span>  <span class="kw">=</span> (<span class="no">use.normal.Xb</span> <span class="kw">&lt;-</span> <span class="no">X.tilde</span><span class="kw">%*%</span><span class="no">b</span>),
-  <span class="kw">sparse</span> <span class="kw">=</span> (<span class="no">use.sparse.Xb</span> <span class="kw">&lt;-</span> <span class="kw pkg">susieR</span><span class="kw ns">:::</span><span class="fu">compute_Xb</span>(<span class="no">X</span>,<span class="no">b</span>)),
-  <span class="kw">times</span> <span class="kw">=</span> <span class="fl">20</span>,<span class="kw">unit</span> <span class="kw">=</span> <span class="st">"s"</span>)</pre></body></html></div>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">res1</span> <span class="op">&lt;-</span> <span class="va">X.tilde</span> <span class="op">%*%</span> <span class="va">b</span>
+<span class="va">res2</span> <span class="op">&lt;-</span> <span class="fu">susieR</span><span class="fu">:::</span><span class="fu">compute_Xb</span><span class="op">(</span><span class="va">X</span>,<span class="va">b</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/base/Extremes.html">max</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html">abs</a></span><span class="op">(</span><span class="va">res1</span> <span class="op">-</span> <span class="va">res2</span><span class="op">)</span><span class="op">)</span>
+<span class="co"># [1] 362.79</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">compute_Xb_benchmark</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/microbenchmark/man/microbenchmark.html">microbenchmark</a></span><span class="op">(</span>
+  dense  <span class="op">=</span> <span class="op">(</span><span class="va">use.normal.Xb</span> <span class="op">&lt;-</span> <span class="va">X.tilde</span><span class="op">%*%</span><span class="va">b</span><span class="op">)</span>,
+  sparse <span class="op">=</span> <span class="op">(</span><span class="va">use.sparse.Xb</span> <span class="op">&lt;-</span> <span class="fu">susieR</span><span class="fu">:::</span><span class="fu">compute_Xb</span><span class="op">(</span><span class="va">X</span>,<span class="va">b</span><span class="op">)</span><span class="op">)</span>,
+  times <span class="op">=</span> <span class="fl">20</span>,unit <span class="op">=</span> <span class="st">"s"</span><span class="op">)</span></code></pre></div>
 <p>Our sparse strategy demonstrates an obvious advantage over the normal matrix multiplication in computing <span class="math inline">\(\tilde{X}b\)</span>.</p>
-<div class="sourceCode" id="cb7"><html><body><pre class="r"><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span>(<span class="no">compute_Xb_benchmark</span>)
-<span class="co"># Coordinate system already present. Adding new coordinate system, which will replace the existing one.</span></pre></body></html></div>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span><span class="op">(</span><span class="va">compute_Xb_benchmark</span><span class="op">)</span>
+<span class="co"># Coordinate system already present. Adding new coordinate system, which will replace the existing one.</span></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="sparse_matrix_strategy_files/figure-html/unnamed-chunk-7-1.png" alt="&amp;nbsp;" width="540"><p class="caption">
  
@@ -194,17 +201,20 @@
 <a href="#benchmark-for-computing-boldsymboltildexty" class="anchor"></a>Benchmark for computing <span class="math inline">\(\boldsymbol{\tilde{X}^Ty}\)</span>
 </h3>
 <p>The final results of two methods when computing <span class="math inline">\(\tilde{X}^Ty\)</span> are almost the same.</p>
-<div class="sourceCode" id="cb8"><html><body><pre class="r"><span class="no">res3</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/t.html">t</a></span>(<span class="no">X.tilde</span>) <span class="kw">%*%</span> <span class="no">y</span>
-<span class="no">res4</span> <span class="kw">&lt;-</span> <span class="kw pkg">susieR</span><span class="kw ns">:::</span><span class="fu">compute_Xty</span>(<span class="no">X</span>,<span class="no">y</span>)
-<span class="fu"><a href="https://rdrr.io/r/base/Extremes.html">max</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/MathFun.html">abs</a></span>(<span class="no">res3</span> - <span class="no">res4</span>))
-<span class="co"># [1] 119.2975</span></pre></body></html></div>
-<div class="sourceCode" id="cb9"><html><body><pre class="r"><span class="no">compute_Xty_benchmark</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/pkg/microbenchmark/man/microbenchmark.html">microbenchmark</a></span>(
-  <span class="kw">dense</span>  <span class="kw">=</span> (<span class="no">use.normal.Xty</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/t.html">t</a></span>(<span class="no">X.tilde</span>)<span class="kw">%*%</span><span class="no">y</span>),
-  <span class="kw">sparse</span> <span class="kw">=</span> (<span class="no">use.sparse.Xty</span> <span class="kw">&lt;-</span> <span class="kw pkg">susieR</span><span class="kw ns">:::</span><span class="fu">compute_Xty</span>(<span class="no">X</span>, <span class="no">y</span>)),
-  <span class="kw">times</span> <span class="kw">=</span> <span class="fl">20</span>,<span class="kw">unit</span> <span class="kw">=</span> <span class="st">"s"</span>)</pre></body></html></div>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">res3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/t.html">t</a></span><span class="op">(</span><span class="va">X.tilde</span><span class="op">)</span> <span class="op">%*%</span> <span class="va">y</span>
+<span class="va">res4</span> <span class="op">&lt;-</span> <span class="fu">susieR</span><span class="fu">:::</span><span class="fu">compute_Xty</span><span class="op">(</span><span class="va">X</span>,<span class="va">y</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/base/Extremes.html">max</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html">abs</a></span><span class="op">(</span><span class="va">res3</span> <span class="op">-</span> <span class="va">res4</span><span class="op">)</span><span class="op">)</span>
+<span class="co"># [1] 119.2975</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">compute_Xty_benchmark</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/microbenchmark/man/microbenchmark.html">microbenchmark</a></span><span class="op">(</span>
+  dense  <span class="op">=</span> <span class="op">(</span><span class="va">use.normal.Xty</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/t.html">t</a></span><span class="op">(</span><span class="va">X.tilde</span><span class="op">)</span><span class="op">%*%</span><span class="va">y</span><span class="op">)</span>,
+  sparse <span class="op">=</span> <span class="op">(</span><span class="va">use.sparse.Xty</span> <span class="op">&lt;-</span> <span class="fu">susieR</span><span class="fu">:::</span><span class="fu">compute_Xty</span><span class="op">(</span><span class="va">X</span>, <span class="va">y</span><span class="op">)</span><span class="op">)</span>,
+  times <span class="op">=</span> <span class="fl">20</span>,unit <span class="op">=</span> <span class="st">"s"</span><span class="op">)</span></code></pre></div>
 <p>Our sparse strategy evidently has a better performance than the normal method in computing <span class="math inline">\(\tilde{X}^Ty\)</span>.</p>
-<div class="sourceCode" id="cb10"><html><body><pre class="r"><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span>(<span class="no">compute_Xty_benchmark</span>)
-<span class="co"># Coordinate system already present. Adding new coordinate system, which will replace the existing one.</span></pre></body></html></div>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span><span class="op">(</span><span class="va">compute_Xty_benchmark</span><span class="op">)</span>
+<span class="co"># Coordinate system already present. Adding new coordinate system, which will replace the existing one.</span></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="sparse_matrix_strategy_files/figure-html/unnamed-chunk-10-1.png" alt="&amp;nbsp;" width="540"><p class="caption">
  
@@ -229,7 +239,7 @@
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>

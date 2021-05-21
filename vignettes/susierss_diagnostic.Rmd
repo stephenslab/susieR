@@ -56,7 +56,7 @@ condz_in = kriging_rss(z_scores, Rin)
 
 ## LD information from the reference panel
 
-We use another simulated data where the LD matrix is estimated from a reference panel. There is one signal in the simulated data (red  point). There is one SNP with mismatched reference and alternative allele between summary statistics and the reference panel (yellow point).
+We use another simulated data where the LD matrix is estimated from a reference panel. There is one signal in the simulated data (red point). There is one SNP with mismatched reference and alternative allele between summary statistics and the reference panel (yellow point).
 
 ```{r}
 data("SummaryConsistency")

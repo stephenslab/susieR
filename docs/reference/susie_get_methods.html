@@ -73,7 +73,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.18</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.25</span>
       </span>
     </div>
 
@@ -116,33 +116,33 @@
   inferences from a fitted susie model.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>susie_get_objective</span>(<span class='no'>res</span>, <span class='kw'>last_only</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>warning_tol</span> <span class='kw'>=</span> <span class='fl'>1e-06</span>)
+    <pre class="usage"><span class='fu'>susie_get_objective</span><span class='op'>(</span><span class='va'>res</span>, last_only <span class='op'>=</span> <span class='cn'>TRUE</span>, warning_tol <span class='op'>=</span> <span class='fl'>1e-06</span><span class='op'>)</span>
 
-<span class='fu'>susie_get_posterior_mean</span>(<span class='no'>res</span>, <span class='kw'>prior_tol</span> <span class='kw'>=</span> <span class='fl'>1e-09</span>)
+<span class='fu'>susie_get_posterior_mean</span><span class='op'>(</span><span class='va'>res</span>, prior_tol <span class='op'>=</span> <span class='fl'>1e-09</span><span class='op'>)</span>
 
-<span class='fu'>susie_get_posterior_sd</span>(<span class='no'>res</span>, <span class='kw'>prior_tol</span> <span class='kw'>=</span> <span class='fl'>1e-09</span>)
+<span class='fu'>susie_get_posterior_sd</span><span class='op'>(</span><span class='va'>res</span>, prior_tol <span class='op'>=</span> <span class='fl'>1e-09</span><span class='op'>)</span>
 
-<span class='fu'>susie_get_niter</span>(<span class='no'>res</span>)
+<span class='fu'>susie_get_niter</span><span class='op'>(</span><span class='va'>res</span><span class='op'>)</span>
 
-<span class='fu'>susie_get_prior_variance</span>(<span class='no'>res</span>)
+<span class='fu'>susie_get_prior_variance</span><span class='op'>(</span><span class='va'>res</span><span class='op'>)</span>
 
-<span class='fu'>susie_get_residual_variance</span>(<span class='no'>res</span>)
+<span class='fu'>susie_get_residual_variance</span><span class='op'>(</span><span class='va'>res</span><span class='op'>)</span>
 
-<span class='fu'>susie_get_lfsr</span>(<span class='no'>res</span>)
+<span class='fu'>susie_get_lfsr</span><span class='op'>(</span><span class='va'>res</span><span class='op'>)</span>
 
-<span class='fu'>susie_get_posterior_samples</span>(<span class='no'>susie_fit</span>, <span class='no'>num_samples</span>)
+<span class='fu'>susie_get_posterior_samples</span><span class='op'>(</span><span class='va'>susie_fit</span>, <span class='va'>num_samples</span><span class='op'>)</span>
 
-<span class='fu'>susie_get_cs</span>(
-  <span class='no'>res</span>,
-  <span class='kw'>X</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>Xcorr</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>coverage</span> <span class='kw'>=</span> <span class='fl'>0.95</span>,
-  <span class='kw'>min_abs_corr</span> <span class='kw'>=</span> <span class='fl'>0.5</span>,
-  <span class='kw'>dedup</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>squared</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>
-)
+<span class='fu'>susie_get_cs</span><span class='op'>(</span>
+  <span class='va'>res</span>,
+  X <span class='op'>=</span> <span class='cn'>NULL</span>,
+  Xcorr <span class='op'>=</span> <span class='cn'>NULL</span>,
+  coverage <span class='op'>=</span> <span class='fl'>0.95</span>,
+  min_abs_corr <span class='op'>=</span> <span class='fl'>0.5</span>,
+  dedup <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  squared <span class='op'>=</span> <span class='cn'>FALSE</span>
+<span class='op'>)</span>
 
-<span class='fu'>susie_get_pip</span>(<span class='no'>res</span>, <span class='kw'>prune_by_cs</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>prior_tol</span> <span class='kw'>=</span> <span class='fl'>1e-09</span>)</pre>
+<span class='fu'>susie_get_pip</span><span class='op'>(</span><span class='va'>res</span>, prune_by_cs <span class='op'>=</span> <span class='cn'>FALSE</span>, prior_tol <span class='op'>=</span> <span class='fl'>1e-09</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -265,17 +265,22 @@ elements:</p>
 
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span>(<span class='fl'>1</span>)
-<span class='no'>n</span> <span class='kw'>=</span> <span class='fl'>1000</span>
-<span class='no'>p</span> <span class='kw'>=</span> <span class='fl'>1000</span>
-<span class='no'>beta</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>0</span>,<span class='no'>p</span>)
-<span class='no'>beta</span>[<span class='fl'>1</span>:<span class='fl'>4</span>] <span class='kw'>=</span> <span class='fl'>1</span>
-<span class='no'>X</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>matrix</a></span>(<span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span>(<span class='no'>n</span>*<span class='no'>p</span>),<span class='kw'>nrow</span> <span class='kw'>=</span> <span class='no'>n</span>,<span class='kw'>ncol</span> <span class='kw'>=</span> <span class='no'>p</span>)
-<span class='no'>X</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/scale.html'>scale</a></span>(<span class='no'>X</span>,<span class='kw'>center</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,<span class='kw'>scale</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
-<span class='no'>y</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/drop.html'>drop</a></span>(<span class='no'>X</span> <span class='kw'>%*%</span> <span class='no'>beta</span> + <span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span>(<span class='no'>n</span>))
-<span class='no'>s</span> <span class='kw'>=</span> <span class='fu'><a href='susie.html'>susie</a></span>(<span class='no'>X</span>,<span class='no'>y</span>,<span class='kw'>L</span> <span class='kw'>=</span> <span class='fl'>10</span>)
-<span class='fu'>susie_get_objective</span>(<span class='no'>s</span>)</div><div class='output co'>#&gt; [1] -1455.416</div><div class='input'><span class='fu'>susie_get_objective</span>(<span class='no'>s</span>, <span class='kw'>last_only</span><span class='kw'>=</span><span class='fl'>FALSE</span>)</div><div class='output co'>#&gt; [1] -1927.147 -1477.646 -1455.416 -1455.416</div><div class='input'><span class='fu'>susie_get_residual_variance</span>(<span class='no'>s</span>)</div><div class='output co'>#&gt; [1] 0.9899176</div><div class='input'><span class='fu'>susie_get_prior_variance</span>(<span class='no'>s</span>)</div><div class='output co'>#&gt;  [1] 1.132713 1.049537 1.009391 0.978421 0.000000 0.000000 0.000000 0.000000
-#&gt;  [9] 0.000000 0.000000</div><div class='input'><span class='fu'>susie_get_posterior_mean</span>(<span class='no'>s</span>)</div><div class='output co'>#&gt;    [1]   1.063825e+00   1.023986e+00   1.004192e+00   9.886512e-01
+    <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span><span class='op'>(</span><span class='fl'>1</span><span class='op'>)</span>
+<span class='va'>n</span> <span class='op'>=</span> <span class='fl'>1000</span>
+<span class='va'>p</span> <span class='op'>=</span> <span class='fl'>1000</span>
+<span class='va'>beta</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span><span class='op'>(</span><span class='fl'>0</span>,<span class='va'>p</span><span class='op'>)</span>
+<span class='va'>beta</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>4</span><span class='op'>]</span> <span class='op'>=</span> <span class='fl'>1</span>
+<span class='va'>X</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>matrix</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span><span class='op'>(</span><span class='va'>n</span><span class='op'>*</span><span class='va'>p</span><span class='op'>)</span>,nrow <span class='op'>=</span> <span class='va'>n</span>,ncol <span class='op'>=</span> <span class='va'>p</span><span class='op'>)</span>
+<span class='va'>X</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/scale.html'>scale</a></span><span class='op'>(</span><span class='va'>X</span>,center <span class='op'>=</span> <span class='cn'>TRUE</span>,scale <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
+<span class='va'>y</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/drop.html'>drop</a></span><span class='op'>(</span><span class='va'>X</span> <span class='op'>%*%</span> <span class='va'>beta</span> <span class='op'>+</span> <span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span><span class='op'>(</span><span class='va'>n</span><span class='op'>)</span><span class='op'>)</span>
+<span class='va'>s</span> <span class='op'>=</span> <span class='fu'><a href='susie.html'>susie</a></span><span class='op'>(</span><span class='va'>X</span>,<span class='va'>y</span>,L <span class='op'>=</span> <span class='fl'>10</span><span class='op'>)</span>
+<span class='fu'>susie_get_objective</span><span class='op'>(</span><span class='va'>s</span><span class='op'>)</span>
+</div><div class='output co'>#&gt; [1] -1455.416</div><div class='input'><span class='fu'>susie_get_objective</span><span class='op'>(</span><span class='va'>s</span>, last_only<span class='op'>=</span><span class='cn'>FALSE</span><span class='op'>)</span>
+</div><div class='output co'>#&gt; [1] -1927.147 -1477.646 -1455.416 -1455.416</div><div class='input'><span class='fu'>susie_get_residual_variance</span><span class='op'>(</span><span class='va'>s</span><span class='op'>)</span>
+</div><div class='output co'>#&gt; [1] 0.9899176</div><div class='input'><span class='fu'>susie_get_prior_variance</span><span class='op'>(</span><span class='va'>s</span><span class='op'>)</span>
+</div><div class='output co'>#&gt;  [1] 1.132713 1.049537 1.009391 0.978421 0.000000 0.000000 0.000000 0.000000
+#&gt;  [9] 0.000000 0.000000</div><div class='input'><span class='fu'>susie_get_posterior_mean</span><span class='op'>(</span><span class='va'>s</span><span class='op'>)</span>
+</div><div class='output co'>#&gt;    [1]   1.063825e+00   1.023986e+00   1.004192e+00   9.886512e-01
 #&gt;    [5] -8.453415e-217 -1.417151e-213  1.201583e-214  4.561723e-216
 #&gt;    [9]  1.734347e-216 -4.657945e-217  2.154023e-216  5.614509e-216
 #&gt;   [13]  1.119569e-216  2.862909e-216 -1.153959e-216  1.523149e-218
@@ -524,7 +529,8 @@ elements:</p>
 #&gt;  [985] -7.170516e-217  1.894373e-217 -1.180732e-216 -6.570960e-217
 #&gt;  [989] -2.003210e-216 -7.259567e-216 -1.256882e-216  1.892978e-216
 #&gt;  [993] -3.396743e-214 -1.739134e-215  7.822050e-218  9.530523e-214
-#&gt;  [997] -7.282605e-217  2.477154e-216 -1.299976e-216  1.246133e-214</div><div class='input'><span class='fu'>susie_get_posterior_sd</span>(<span class='no'>s</span>)</div><div class='output co'>#&gt;    [1]  3.146494e-02  3.146385e-02  3.146326e-02  3.146277e-02 2.471927e-109
+#&gt;  [997] -7.282605e-217  2.477154e-216 -1.299976e-216  1.246133e-214</div><div class='input'><span class='fu'>susie_get_posterior_sd</span><span class='op'>(</span><span class='va'>s</span><span class='op'>)</span>
+</div><div class='output co'>#&gt;    [1]  3.146494e-02  3.146385e-02  3.146326e-02  3.146277e-02 2.471927e-109
 #&gt;    [6] 1.285636e-107 3.399189e-108 5.508877e-109 3.308551e-109 2.150000e-109
 #&gt;   [11] 3.682613e-109 6.184568e-109 2.730881e-109 4.271947e-109 2.763642e-109
 #&gt;   [16] 1.961004e-109 9.552288e-109 1.569790e-108 4.280621e-109 4.691272e-109
@@ -723,7 +729,9 @@ elements:</p>
 #&gt;  [981] 2.475915e-109 7.680753e-109 2.153140e-109 1.114040e-108 2.355389e-109
 #&gt;  [986] 1.995344e-109 2.789190e-109 2.303000e-109 3.550402e-109 7.142855e-109
 #&gt;  [991] 2.861791e-109 3.452192e-109 5.975449e-108 1.166951e-108 1.966777e-109
-#&gt;  [996] 1.040156e-107 2.365352e-109 3.957772e-109 2.902790e-109 3.467428e-108</div><div class='input'><span class='fu'>susie_get_niter</span>(<span class='no'>s</span>)</div><div class='output co'>#&gt; [1] 4</div><div class='input'><span class='fu'>susie_get_pip</span>(<span class='no'>s</span>)</div><div class='output co'>#&gt;    [1] 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+#&gt;  [996] 1.040156e-107 2.365352e-109 3.957772e-109 2.902790e-109 3.467428e-108</div><div class='input'><span class='fu'>susie_get_niter</span><span class='op'>(</span><span class='va'>s</span><span class='op'>)</span>
+</div><div class='output co'>#&gt; [1] 4</div><div class='input'><span class='fu'>susie_get_pip</span><span class='op'>(</span><span class='va'>s</span><span class='op'>)</span>
+</div><div class='output co'>#&gt;    [1] 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
 #&gt;   [38] 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
 #&gt;   [75] 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
 #&gt;  [112] 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
@@ -750,7 +758,8 @@ elements:</p>
 #&gt;  [889] 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
 #&gt;  [926] 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
 #&gt;  [963] 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
-#&gt; [1000] 0</div><div class='input'><span class='fu'>susie_get_lfsr</span>(<span class='no'>s</span>)</div><div class='output co'>#&gt;  [1] 0.0 0.0 0.0 0.0 0.2 0.2 0.2 0.2 0.2 0.2</div><div class='input'>
+#&gt; [1000] 0</div><div class='input'><span class='fu'>susie_get_lfsr</span><span class='op'>(</span><span class='va'>s</span><span class='op'>)</span>
+</div><div class='output co'>#&gt;  [1] 0.0 0.0 0.0 0.0 0.2 0.2 0.2 0.2 0.2 0.2</div><div class='input'>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
@@ -767,7 +776,7 @@ elements:</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>

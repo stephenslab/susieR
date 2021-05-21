@@ -21,7 +21,7 @@ elements:
 }
 \description{
 Data simulated using real genotypes from 10,000
-  individuals and 1,002 SNPs. Only one SNP has a non-zero effect
+  individuals and 200 SNPs. One SNP have non-zero effect
   on the multivariate response. The response data are generated under
   a linear regression model. There is also one SNP with flipped allele
   between summary statistics and the reference panel.
