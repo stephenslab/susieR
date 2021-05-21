@@ -41,9 +41,9 @@ The $j$th element of $b$ therefore determines the change in the mean $|\mu_j-\mu
 assumption that $\mu$ is spatially structured (indeed, piecewise constant).
 
 This very simple approach is essentially 0th-order trend filtering
-(Tibshirani, 2014; doi:10.1214/13-AOS1189). Note that higher-order
-trend filtering can be similarly implemented using different basis
-functions; here we use 0th order only for simplicity.
+(Tibshirani, 2014, *Annals of Statistics* 42, 285--323). Note that
+higher-order trend filtering can be similarly implemented using
+different basis functions; here we use 0th order only for simplicity.
 
 
 # Examples
