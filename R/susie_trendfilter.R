@@ -49,7 +49,7 @@
 #'
 #' @references R. J. Tibshirani (2014). Adaptive piecewise polynomial
 #'   estimation via trend filtering. \emph{Annals of Statistics}
-#'   \bold{42}, 285-323. \doi{10.1214/13-AOS1189}
+#'   \bold{42}, 285-323.
 #' 
 #' @examples
 #' set.seed(1)
