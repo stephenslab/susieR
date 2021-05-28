@@ -25,6 +25,7 @@ minimum correlation among variables is smaller than
 Describe return value here.
 }
 \description{
-Add brief description of function here.
+TO DO: Add brief description of function here. Note that
+  using this function requires some care and should only be used by
+  more knowledgeable users.
 }
-\keyword{internal}

@@ -52,7 +52,9 @@ annotate the size and purity of each CS discovered.}
 
 \item{L}{An integer specifying the number of credible sets to plot.}
 
-\item{file_prefix}{Prefix to path of output plot file.}
+\item{file_prefix}{Prefix to path of output plot file. If not
+specified, the plot, or plots, will be saved to a temporary
+directory generated using \code{\link{tempdir}}.}
 }
 \description{
 \code{susie_plot} produces a per-variable summary of
@@ -87,9 +89,7 @@ X = matrix(rnorm(n*p),nrow = n,ncol = p)
 X = scale(X,center = TRUE,scale = TRUE)
 y = drop(X \%*\% beta + rnorm(n))
 res = susie(X,y,L = 10)
-\dontrun{
-susie_plot_iteration(res, L=10, file_prefix="plot_demo")
-}
+susie_plot_iteration(res, L=10)
 
 }
 \seealso{

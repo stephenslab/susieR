@@ -219,7 +219,9 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
 #'
 #' @param L An integer specifying the number of credible sets to plot.
 #'
-#' @param file_prefix Prefix to path of output plot file.
+#' @param file_prefix Prefix to path of output plot file. If not
+#'   specified, the plot, or plots, will be saved to a temporary
+#'   directory generated using \code{\link{tempdir}}.
 #'
 #' @param pos Indices of variables to plot. If \code{pos = NULL} all
 #'   variables are plotted.
@@ -234,9 +236,7 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
 #' X = scale(X,center = TRUE,scale = TRUE)
 #' y = drop(X %*% beta + rnorm(n))
 #' res = susie(X,y,L = 10)
-#' \dontrun{
-#' susie_plot_iteration(res, L=10, file_prefix="plot_demo")
-#' }
+#' susie_plot_iteration(res, L=10)
 #'
 #' @importFrom grDevices pdf
 #' @importFrom grDevices dev.off
@@ -264,6 +264,8 @@ susie_plot_iteration = function (model, L, file_prefix, pos = NULL) {
     vars = 1:ncol(model$alpha)
   else
     vars = pos
+  if (missing(file_prefix))
+    file_prefix = file.path(tempdir(),"susie_plot")
   pdf(paste0(file_prefix,".pdf"),8,3)
   if (is.null(model$trace))
     print(get_layer(model,k,model$niter,vars))
@@ -279,7 +281,7 @@ susie_plot_iteration = function (model, L, file_prefix, pos = NULL) {
                 "\\( -clone 0 -set delay 300 \\) -swap 0 +delete",
                 "\\( +clone -set delay 300 \\) +swap +delete -coalesce",
                 "-layers optimize",paste0(file_prefix,".gif"))
-    message("Creating GIF animation ...")
+    message("Creating GIF animation...")
     if (file.exists(paste0(file_prefix,".gif")))
       file.remove(paste0(file_prefix,".gif"))
     output = try(system(cmd))
