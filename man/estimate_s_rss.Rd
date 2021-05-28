@@ -17,6 +17,9 @@ semidefinite matrix of R.}
 
 \item{method}{a string specifies the method to estimate \eqn{s}.}
 }
+\value{
+TO DO: Describe the return value here.
+}
 \description{
 The estimated s gives information about the
   consistency between the z scores and LD matrix. A larger \eqn{s}

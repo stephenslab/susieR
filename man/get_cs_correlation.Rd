@@ -2,12 +2,13 @@
 % Please edit documentation in R/susie_utils.R
 \name{get_cs_correlation}
 \alias{get_cs_correlation}
-\title{Get Correlations Between CSs, using Variable with Maximum PIP
-From Each CS}
+\title{Get Correlations Between CSs, using Variable with Maximum PIP From Each CS}
 \usage{
 get_cs_correlation(res, X = NULL, Xcorr = NULL, max = FALSE)
 }
 \arguments{
+\item{res}{Describe input argument "res" here.}
+
 \item{X}{n by p matrix of values of the p variables (covariates) in
 n samples. When provided, correlation between variables will be
 computed and used to remove CSs whose minimum correlation among
@@ -17,9 +18,13 @@ variables is smaller than \code{min_abs_corr}.}
 (covariates). When provided, it will be used to remove CSs whose
 minimum correlation among variables is smaller than
 \code{min_abs_corr}.}
+
+\item{max}{Describe input argument "max" here.}
+}
+\value{
+Describe return value here.
 }
 \description{
-Get Correlations Between CSs, using Variable with Maximum PIP
-From Each CS
+Add brief description of function here.
 }
 \keyword{internal}

@@ -2,8 +2,7 @@
 % Please edit documentation in R/susie_utils.R
 \name{kriging_rss}
 \alias{kriging_rss}
-\title{Compute the distribution of z score of variant j given other
-z scores, and detect possible allele switch issue.}
+\title{Compute Distribution of z-scores of Variant j Given Other z-scores, and Detect Possible Allele Switch Issue.}
 \usage{
 kriging_rss(
   z,
@@ -27,6 +26,9 @@ semidefinite matrix of R.}
 \item{plot.it}{If \code{plot.it = TRUE}, it produces a plot with
 observed z score vs the expected value. The possible allele switched
 variants are labeled as red points (log LR > 2 and abs(z) > 2).}
+}
+\value{
+Describe return value here.
 }
 \description{
 Under the null, the rss model with regularized LD

@@ -156,8 +156,8 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
     pos = (1 + start_adj):(length(p) - end_adj)
   }
   legend_text = list(col = vector(),purity = vector(),size = vector())
-  scipen0 = options()$scipen
-  options(scipen = 10)
+  # scipen0 = options()$scipen
+  # options(scipen = 10)
   args = list(...)
   if (!exists("xlab", args)) args$xlab = 'variable'
   if (!exists("ylab", args)) args$ylab = ylab
@@ -211,7 +211,7 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
     }
   }
   points(pos[b != 0] + start,p[b != 0] + start,col = 2,pch = 16)
-  options(scipen = scipen0)
+  # options(scipen = scipen0)
   return(invisible())
 }
 
@@ -279,15 +279,15 @@ susie_plot_iteration = function (model, L, file_prefix, pos = NULL) {
                 "\\( -clone 0 -set delay 300 \\) -swap 0 +delete",
                 "\\( +clone -set delay 300 \\) +swap +delete -coalesce",
                 "-layers optimize",paste0(file_prefix,".gif"))
-    cat("Creating GIF animation ...\n")
+    message("Creating GIF animation ...")
     if (file.exists(paste0(file_prefix,".gif")))
       file.remove(paste0(file_prefix,".gif"))
     output = try(system(cmd))
     if (inherits(output,"try-error"))
-      cat("Cannot create GIF animation because convert command failed.\n")
+      stop("Cannot create GIF animation because convert command failed")
     else
       format = ".gif"
   }
-  cat(paste0("Iterplot saved to ",file_prefix,format,"\n"))
+  message(paste0("Iterplot saved to ",file_prefix,format,"\n"))
   return(invisible())
 }

@@ -57,7 +57,7 @@ summary.susie = function (object, ...) {
 #' 
 print.summary.susie = function (x, ...) {
   cat('\nVariables in credible sets:\n\n')
-  print.data.frame(x$vars[which(x$vars$cs > 0),], row.names = FALSE)
+  print.data.frame(x$vars[which(x$vars$cs > 0),],row.names = FALSE)
   cat('\nCredible sets summary:\n\n')
-  print.data.frame(x$cs, row.names = FALSE)
+  print.data.frame(x$cs,row.names = FALSE)
 }

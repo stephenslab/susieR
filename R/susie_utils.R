@@ -314,9 +314,14 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
   }
 }
 
-#' @title Get Correlations Between CSs, using Variable with Maximum PIP
-#' From Each CS
+#' @title Get Correlations Between CSs, using Variable with Maximum PIP From Each CS
 #'
+#' @description TO DO: Add brief description of function here. Note that
+#'   using this function requires some care and should only be used by
+#'   more knowledgeable users.
+#' 
+#' @param res Describe input argument "res" here.
+#' 
 #' @param X n by p matrix of values of the p variables (covariates) in
 #'   n samples. When provided, correlation between variables will be
 #'   computed and used to remove CSs whose minimum correlation among
@@ -327,8 +332,12 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
 #'   minimum correlation among variables is smaller than
 #'   \code{min_abs_corr}.
 #'
-#' @keywords internal
+#' @param max Describe input argument "max" here.
 #'
+#' @return Describe return value here.
+#' 
+#' @export
+#' 
 get_cs_correlation = function (res, X = NULL, Xcorr = NULL, max = FALSE) {
   if (is.null(res$sets$cs) || length(res$sets$cs) == 1) return(NA)
   if (!is.null(X) && !is.null(Xcorr))
@@ -588,6 +597,8 @@ susie_prune_single_effects = function (s,L = 0,V = NULL,verbose = FALSE) {
 #'
 #' @param method a string specifies the method to estimate \eqn{s}.
 #'
+#' @return TO DO: Describe the return value here.
+#' 
 #' @examples
 #' set.seed(1)
 #' n = 500
@@ -609,7 +620,7 @@ susie_prune_single_effects = function (s,L = 0,V = NULL,verbose = FALSE) {
 #' 
 #' @export
 #'
-estimate_s_rss = function(z, R, r_tol = 1e-08, method = "null-mle") {
+estimate_s_rss = function (z, R, r_tol = 1e-08, method = "null-mle") {
   if (is.null(attr(R,"eigen")))
     attr(R,"eigen") = eigen(R,symmetric = TRUE)
   eigenld = attr(R,"eigen")
@@ -653,8 +664,7 @@ estimate_s_rss = function(z, R, r_tol = 1e-08, method = "null-mle") {
   return(s)
 }
 
-#' @title Compute the distribution of z score of variant j given other
-#' z scores, and detect possible allele switch issue.
+#' @title Compute Distribution of z-scores of Variant j Given Other z-scores, and Detect Possible Allele Switch Issue.
 #'
 #' @description Under the null, the rss model with regularized LD
 #'   matrix is \eqn{z|R,s ~ N(0, (1-s)R + s I))}. We use a mixture of
@@ -680,6 +690,8 @@ estimate_s_rss = function(z, R, r_tol = 1e-08, method = "null-mle") {
 #'   observed z score vs the expected value. The possible allele switched
 #'   variants are labeled as red points (log LR > 2 and abs(z) > 2).
 #'
+#' @return Describe return value here.
+#' 
 #' @importFrom stats dnorm
 #' @importFrom graphics plot
 #' @importFrom graphics points
