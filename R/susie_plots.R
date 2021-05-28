@@ -43,8 +43,10 @@
 #' @param \dots Additional arguments passed to
 #'   \code{\link[graphics]{plot}}.
 #'
+#' @return Invisibly returns \code{NULL}.
+#' 
 #' @seealso \code{\link{susie_plot_changepoint}}
-#'
+#' 
 #' @examples
 #' set.seed(1)
 #' n = 1000

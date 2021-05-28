@@ -2,7 +2,7 @@
 % Please edit documentation in R/susie_utils.R
 \name{kriging_rss}
 \alias{kriging_rss}
-\title{Compute Distribution of z-scores of Variant j Given Other z-scores, and Detect Possible Allele Switch Issue.}
+\title{Compute Distribution of z-scores of Variant j Given Other z-scores, and Detect Possible Allele Switch Issue}
 \usage{
 kriging_rss(
   z,
@@ -28,7 +28,7 @@ observed z score vs the expected value. The possible allele switched
 variants are labeled as red points (log LR > 2 and abs(z) > 2).}
 }
 \value{
-Describe return value here.
+Describe the \code{kriging_rss} return value here.
 }
 \description{
 Under the null, the rss model with regularized LD

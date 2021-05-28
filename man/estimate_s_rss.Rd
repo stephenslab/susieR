@@ -18,7 +18,7 @@ semidefinite matrix of R.}
 \item{method}{a string specifies the method to estimate \eqn{s}.}
 }
 \value{
-TO DO: Describe the return value here.
+A number between 0 and 1.
 }
 \description{
 The estimated s gives information about the

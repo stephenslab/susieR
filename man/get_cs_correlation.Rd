@@ -22,7 +22,7 @@ minimum correlation among variables is smaller than
 \item{max}{Describe input argument "max" here.}
 }
 \value{
-Describe return value here.
+Describe the \code{get_cs_correlation} return value here.
 }
 \description{
 TO DO: Add brief description of function here. Note that

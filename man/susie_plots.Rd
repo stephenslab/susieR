@@ -56,6 +56,9 @@ annotate the size and purity of each CS discovered.}
 specified, the plot, or plots, will be saved to a temporary
 directory generated using \code{\link{tempdir}}.}
 }
+\value{
+Invisibly returns \code{NULL}.
+}
 \description{
 \code{susie_plot} produces a per-variable summary of
   the SuSiE credible sets. \code{susie_plot_iteration} produces a

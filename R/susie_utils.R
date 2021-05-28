@@ -334,7 +334,7 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
 #'
 #' @param max Describe input argument "max" here.
 #'
-#' @return Describe return value here.
+#' @return Describe the \code{get_cs_correlation} return value here.
 #' 
 #' @export
 #' 
@@ -590,14 +590,14 @@ susie_prune_single_effects = function (s,L = 0,V = NULL,verbose = FALSE) {
 #' @param z A p-vector of z scores.
 #'
 #' @param R A p by p symmetric, positive semidefinite correlation
-#' matrix.
+#'   matrix.
 #'
 #' @param r_tol Tolerance level for eigenvalue check of positive
 #'   semidefinite matrix of R.
 #'
 #' @param method a string specifies the method to estimate \eqn{s}.
 #'
-#' @return TO DO: Describe the return value here.
+#' @return A number between 0 and 1.
 #' 
 #' @examples
 #' set.seed(1)
@@ -664,7 +664,7 @@ estimate_s_rss = function (z, R, r_tol = 1e-08, method = "null-mle") {
   return(s)
 }
 
-#' @title Compute Distribution of z-scores of Variant j Given Other z-scores, and Detect Possible Allele Switch Issue.
+#' @title Compute Distribution of z-scores of Variant j Given Other z-scores, and Detect Possible Allele Switch Issue
 #'
 #' @description Under the null, the rss model with regularized LD
 #'   matrix is \eqn{z|R,s ~ N(0, (1-s)R + s I))}. We use a mixture of
@@ -690,7 +690,7 @@ estimate_s_rss = function (z, R, r_tol = 1e-08, method = "null-mle") {
 #'   observed z score vs the expected value. The possible allele switched
 #'   variants are labeled as red points (log LR > 2 and abs(z) > 2).
 #'
-#' @return Describe return value here.
+#' @return Describe the \code{kriging_rss} return value here.
 #' 
 #' @importFrom stats dnorm
 #' @importFrom graphics plot
