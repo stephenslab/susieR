@@ -52,6 +52,7 @@ s
 The plot for the expected z scores vs the observed z scores is 
 ```{r}
 condz_in = kriging_rss(z_scores, Rin)
+condz_in$plot
 ```
 
 ## LD information from the reference panel
@@ -76,6 +77,7 @@ s
 
 ```{r}
 condz = kriging_rss(zflip, ld)
+condz$plot
 ```
 
 The diagnostic plot identifies the SNP with flipped allele between summary statistics and the reference panel.

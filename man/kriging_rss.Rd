@@ -8,8 +8,7 @@ kriging_rss(
   z,
   R,
   r_tol = 1e-08,
-  s = estimate_s_rss(z, R, r_tol, method = "null-mle"),
-  plot.it = TRUE
+  s = estimate_s_rss(z, R, r_tol, method = "null-mle")
 )
 }
 \arguments{
@@ -28,7 +27,11 @@ observed z score vs the expected value. The possible allele switched
 variants are labeled as red points (log LR > 2 and abs(z) > 2).}
 }
 \value{
-Describe the \code{kriging_rss} return value here.
+a list containing a ggplot2 plot object and a table. The plot
+  compares observed z score vs the expected value. The possible allele
+  switched variants are labeled as red points (log LR > 2 and abs(z) > 2).
+  The table summarizes the conditional distribution for each variant
+  and the likelihood ratio test.
 }
 \description{
 Under the null, the rss model with regularized LD
@@ -55,5 +58,6 @@ R = cor(X)
 attr(R,"eigen") = eigen(R, symmetric = TRUE)
 zhat = with(ss,betahat/sebetahat)
 condz = kriging_rss(zhat, R)
+condz$plot
 
 }

@@ -319,9 +319,9 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
 #' @description TO DO: Add brief description of function here. Note that
 #'   using this function requires some care and should only be used by
 #'   more knowledgeable users.
-#' 
+#'
 #' @param res Describe input argument "res" here.
-#' 
+#'
 #' @param X n by p matrix of values of the p variables (covariates) in
 #'   n samples. When provided, correlation between variables will be
 #'   computed and used to remove CSs whose minimum correlation among
@@ -335,9 +335,9 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
 #' @param max Describe input argument "max" here.
 #'
 #' @return Describe the \code{get_cs_correlation} return value here.
-#' 
+#'
 #' @export
-#' 
+#'
 get_cs_correlation = function (res, X = NULL, Xcorr = NULL, max = FALSE) {
   if (is.null(res$sets$cs) || length(res$sets$cs) == 1) return(NA)
   if (!is.null(X) && !is.null(Xcorr))
@@ -598,7 +598,7 @@ susie_prune_single_effects = function (s,L = 0,V = NULL,verbose = FALSE) {
 #' @param method a string specifies the method to estimate \eqn{s}.
 #'
 #' @return A number between 0 and 1.
-#' 
+#'
 #' @examples
 #' set.seed(1)
 #' n = 500
@@ -617,7 +617,7 @@ susie_prune_single_effects = function (s,L = 0,V = NULL,verbose = FALSE) {
 #'
 #' @importFrom stats dnorm
 #' @importFrom stats optim
-#' 
+#'
 #' @export
 #'
 estimate_s_rss = function (z, R, r_tol = 1e-08, method = "null-mle") {
@@ -690,12 +690,19 @@ estimate_s_rss = function (z, R, r_tol = 1e-08, method = "null-mle") {
 #'   observed z score vs the expected value. The possible allele switched
 #'   variants are labeled as red points (log LR > 2 and abs(z) > 2).
 #'
-#' @return Describe the \code{kriging_rss} return value here.
-#' 
+#' @return a list containing a ggplot2 plot object and a table. The plot
+#'   compares observed z score vs the expected value. The possible allele
+#'   switched variants are labeled as red points (log LR > 2 and abs(z) > 2).
+#'   The table summarizes the conditional distribution for each variant
+#'   and the likelihood ratio test.
+#'
 #' @importFrom stats dnorm
-#' @importFrom graphics plot
-#' @importFrom graphics points
-#' @importFrom graphics abline
+#' @importFrom ggplot2 ggplot
+#' @importFrom ggplot2 geom_point
+#' @importFrom ggplot2 geom_abline
+#' @importFrom ggplot2 theme_bw
+#' @importFrom ggplot2 labs
+#' @importFrom ggplot2 aes
 #' @importFrom mixsqp mixsqp
 #'
 #' @examples
@@ -712,12 +719,12 @@ estimate_s_rss = function (z, R, r_tol = 1e-08, method = "null-mle") {
 #' attr(R,"eigen") = eigen(R, symmetric = TRUE)
 #' zhat = with(ss,betahat/sebetahat)
 #' condz = kriging_rss(zhat, R)
+#' condz$plot
 #'
 #' @export
 #'
 kriging_rss = function (z, R, r_tol = 1e-08,
-                        s = estimate_s_rss(z,R,r_tol,method = "null-mle"),
-                        plot.it = TRUE) {
+                        s = estimate_s_rss(z,R,r_tol,method = "null-mle")) {
   if (is.null(attr(R,"eigen")))
     attr(R,"eigen") = eigen(R,symmetric = TRUE)
   eigenld = attr(R,"eigen")
@@ -730,57 +737,60 @@ kriging_rss = function (z, R, r_tol = 1e-08,
     warning("The given s is greater than 1. We replace it with 0.8.")
     s = 0.8
   }
-  if (s < 0) 
+  if (s < 0)
     stop("The s must be non-negative")
 
   dinv = 1/((1-s)*eigenld$values + s)
   dinv[is.infinite(dinv)] = 0
   precision = eigenld$vectors %*% (t(eigenld$vectors) * dinv)
-  postmean = rep(0,length(z))
-  postvar = rep(0,length(z))
+  condmean = rep(0,length(z))
+  condvar = rep(0,length(z))
   for(i in 1:length(z)){
-    postmean[i] = -(1/precision[i,i]) * precision[i,-i] %*% z[-i]
-    postvar[i] = 1/precision[i,i]
+    condmean[i] = -(1/precision[i,i]) * precision[i,-i] %*% z[-i]
+    condvar[i] = 1/precision[i,i]
   }
-  post_z = (z-postmean)/sqrt(postvar)
+  cond_z = (z-condmean)/sqrt(condvar)
 
   # obtain grid
   a_min = 0.8
-  if (max(post_z^2) < 1)
+  if (max(cond_z^2) < 1)
     a_max = 2
   else
-    a_max = 2*sqrt(max(post_z^2))
+    a_max = 2*sqrt(max(cond_z^2))
   npoint = ceiling(log2(a_max/a_min)/log2(1.05))
   a_grid = 1.05^((-npoint):0) * a_max
 
   # compute likelihood
-  sd_mtx      = outer(sqrt(postvar),a_grid)
-  matrix_llik = dnorm(z - postmean,sd = sd_mtx,log = TRUE)
+  sd_mtx      = outer(sqrt(condvar),a_grid)
+  matrix_llik = dnorm(z - condmean,sd = sd_mtx,log = TRUE)
   lfactors    = apply(matrix_llik,1,max)
   matrix_llik = matrix_llik - lfactors
-  
+
   # estimate weight
   w = mixsqp(matrix_llik,log = TRUE,control = list(verbose = FALSE))$x
 
   logl0mix    = as.numeric(log(exp(matrix_llik) %*% w)) + lfactors
-  matrix_llik = dnorm(z + postmean, sd=sd_mtx, log = TRUE)
+  matrix_llik = dnorm(z + condmean, sd=sd_mtx, log = TRUE)
   lfactors    = apply(matrix_llik,1,max)
   matrix_llik = matrix_llik - lfactors
   logl1mix    = as.numeric(log(exp(matrix_llik) %*% w)) + lfactors
   logLRmix    = logl1mix - logl0mix
 
-  if (plot.it) {
-    plot(z,postmean,pch = 16,xlab = "observed z scores",
-         ylab = "Expected value")
-    abline(0,1,lty = 2)
-    if(any(logLRmix > 2)) {
-      idx = which(logLRmix > 2 & abs(z) > 2)
-      points(z[idx],postmean[idx],col = "red",pch = 16)
-    }
+  res = data.frame(z = z,condmean = condmean,condvar = condvar,
+                   cond_z = cond_z,logLR = logLRmix)
+
+  p = ggplot(res) + geom_point(aes(x = z, y = condmean)) +
+    labs(x = 'Observed z scores', y = "Expected value") +
+    geom_abline(intercept = 0, slope = 1) +
+    theme_bw()
+
+  idx = which(logLRmix > 2 & abs(z) > 2)
+  if(length(idx) > 0) {
+    p = p + geom_point(aes(x = z[idx], y = condmean[idx]),col = "red")
   }
 
-  return(invisible(data.frame(z = z,postmean = postmean,postvar = postvar,
-                              post_z = post_z,logLR = logLRmix)))
+  return(list(plot = p,
+              conditional_dist = res))
 }
 
 
