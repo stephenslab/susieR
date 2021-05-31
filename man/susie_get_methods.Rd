@@ -13,11 +13,11 @@
 \alias{susie_get_pip}
 \title{Inferences From Fitted SuSiE Model}
 \usage{
-susie_get_objective(res, last_only = TRUE, warning_tol = 0.000001)
+susie_get_objective(res, last_only = TRUE, warning_tol = 1e-06)
 
-susie_get_posterior_mean(res, prior_tol = 0.000000001)
+susie_get_posterior_mean(res, prior_tol = 1e-09)
 
-susie_get_posterior_sd(res, prior_tol = 0.000000001)
+susie_get_posterior_sd(res, prior_tol = 1e-09)
 
 susie_get_niter(res)
 
@@ -39,7 +39,7 @@ susie_get_cs(
   squared = FALSE
 )
 
-susie_get_pip(res, prune_by_cs = FALSE, prior_tol = 0.000000001)
+susie_get_pip(res, prune_by_cs = FALSE, prior_tol = 1e-09)
 }
 \arguments{
 \item{res}{A susie fit, typically an output from

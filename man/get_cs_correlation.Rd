@@ -20,12 +20,13 @@ variables is smaller than \code{min_abs_corr}.}
 minimum correlation among variables is smaller than
 \code{min_abs_corr}.}
 
-\item{max}{Instead of reporting a matrix of CS correlations, report the maximum
+\item{max}{When \code{max = FAFLSE}, return a matrix of CS
+correlations. When \code{max = TRUE}, return only the maximum
 absolute correlation among all pairs of correlations.}
 }
 \value{
-A matrix of correlations between CSs, or the maximum absolute correlation 
-when \code(max=TRUE) is used.
+A matrix of correlations between CSs, or the maximum
+  absolute correlation when \code{max = TRUE}.
 }
 \description{
 This function evaluates the correlation between single effect
