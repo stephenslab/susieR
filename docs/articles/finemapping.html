@@ -31,7 +31,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.29</span>
       </span>
     </div>
 
@@ -67,7 +67,7 @@
       <h1 data-toc-skip>Fine-mapping examples</h1>
                         <h4 class="author">Gao Wang</h4>
             
-            <h4 class="date">2021-04-13</h4>
+            <h4 class="date">2021-05-28</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/master/vignettes/finemapping.Rmd"><code>vignettes/finemapping.Rmd</code></a></small>
       <div class="hidden name"><code>finemapping.Rmd</code></div>
@@ -77,7 +77,7 @@
     
     
 <p>This vignette demonstrates <code>susieR</code> in the context of genetic fine-mapping. We use simulated data of expression level of a gene (<span class="math inline">\(y\)</span>) in <span class="math inline">\(N \approx 600\)</span> individuals. We want to identify with the genotype matrix <span class="math inline">\(X_{N\times P}\)</span> (<span class="math inline">\(P=1001\)</span>) the genetic variables that causes changes in expression level.</p>
-<p>The simulated data-set is <a href="https://github.com/stephenslab/susieR/blob/master/inst/datafiles/N3finemapping.rds">available here</a>, as part of the <code>susieR</code> package. It is simulated to have exactly 3 non-zero effects.</p>
+<p>The simulated data set is simulated to have exactly 3 non-zero effects.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/stephenslab/susieR">susieR</a></span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></code></pre></div>
@@ -337,22 +337,23 @@
 <span class="co"># [1] stats     graphics  grDevices utils     datasets  methods   base     </span>
 <span class="co"># </span>
 <span class="co"># other attached packages:</span>
-<span class="co"># [1] susieR_0.11.3</span>
+<span class="co"># [1] susieR_0.11.29</span>
 <span class="co"># </span>
 <span class="co"># loaded via a namespace (and not attached):</span>
 <span class="co">#  [1] Rcpp_1.0.6        highr_0.8         plyr_1.8.6        compiler_4.0.3   </span>
-<span class="co">#  [5] pillar_1.6.0      tools_4.0.3       digest_0.6.27     evaluate_0.14    </span>
-<span class="co">#  [9] memoise_2.0.0     lifecycle_1.0.0   tibble_3.1.0      gtable_0.3.0     </span>
-<span class="co"># [13] lattice_0.20-41   pkgconfig_2.0.3   rlang_0.4.10      Matrix_1.3-2     </span>
+<span class="co">#  [5] pillar_1.6.1      tools_4.0.3       digest_0.6.27     evaluate_0.14    </span>
+<span class="co">#  [9] memoise_2.0.0     lifecycle_1.0.0   tibble_3.1.2      gtable_0.3.0     </span>
+<span class="co"># [13] lattice_0.20-41   pkgconfig_2.0.3   rlang_0.4.11      Matrix_1.3-2     </span>
 <span class="co"># [17] DBI_1.1.1         yaml_2.2.1        pkgdown_1.6.1     xfun_0.22        </span>
 <span class="co"># [21] fastmap_1.1.0     dplyr_1.0.5       stringr_1.4.0     knitr_1.31       </span>
-<span class="co"># [25] generics_0.1.0    desc_1.3.0        fs_1.5.0          vctrs_0.3.7      </span>
+<span class="co"># [25] generics_0.1.0    desc_1.3.0        fs_1.5.0          vctrs_0.3.8      </span>
 <span class="co"># [29] systemfonts_1.0.1 tidyselect_1.1.0  rprojroot_2.0.2   grid_4.0.3       </span>
 <span class="co"># [33] reshape_0.8.8     glue_1.4.2        R6_2.5.0          textshaping_0.3.3</span>
-<span class="co"># [37] fansi_0.4.2       rmarkdown_2.7     purrr_0.3.4       ggplot2_3.3.3    </span>
-<span class="co"># [41] magrittr_2.0.1    scales_1.1.1      htmltools_0.5.1.1 ellipsis_0.3.1   </span>
-<span class="co"># [45] assertthat_0.2.1  colorspace_2.0-0  ragg_1.1.2        utf8_1.2.1       </span>
-<span class="co"># [49] stringi_1.5.3     munsell_0.5.0     cachem_1.0.4      crayon_1.4.1</span></code></pre></div>
+<span class="co"># [37] fansi_0.4.2       rmarkdown_2.7     mixsqp_0.3-46     irlba_2.3.3      </span>
+<span class="co"># [41] purrr_0.3.4       ggplot2_3.3.3     magrittr_2.0.1    scales_1.1.1     </span>
+<span class="co"># [45] htmltools_0.5.1.1 ellipsis_0.3.2    assertthat_0.2.1  colorspace_2.0-1 </span>
+<span class="co"># [49] ragg_1.1.2        utf8_1.2.1        stringi_1.5.3     munsell_0.5.0    </span>
+<span class="co"># [53] cachem_1.0.4      crayon_1.4.1</span></code></pre></div>
 </div>
   </div>
 

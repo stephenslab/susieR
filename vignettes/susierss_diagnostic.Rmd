@@ -1,0 +1,92 @@
+---
+title: "Diagnostic for fine-mapping with summary statistics"
+author: "Yuxin Zou"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Diagnostic for fine-mapping with summary statistics}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE,comment = "#",fig.width = 5,
+                      fig.height = 3,fig.align = "center",
+                      fig.cap = "&nbsp;",dpi = 120)
+```
+
+This vignette demonstrates diagnostic plot for consistency between summary statistics and refenrence LD matrix. 
+
+The `susie_rss` assumes the LD matrix accurately estimate the correlations among SNPs from the original GWAS genotype data. Typically, the LD matrix comes from some public database of genotypes in a suitable reference population. The inaccurate LD information leads to unreliable fine-mapping result.
+
+The diagnostic for consistency between summary statistics and refenrence LD matrix is based on the RSS model under the null with regularized LD matrix.
+$$
+\hat{z} | R, s \sim N(0, (1-s)R + s I), 0<s<1
+$$
+The parameter `s` is estimated by maximum likelihood. A larger `s` means a greater inconsistency between summary statistics and the LD matrix. The expected z score is computed for each SNP, $E(\hat{z}_j | \hat{z}_{-j})$, and plotted against the observed z scores.
+
+```{r}
+library(susieR)
+```
+
+## LD information from the original genotype data
+
+We demonstrate the diagnostic plot in a simple case, the LD matrix is estimated from the original genotype data. We use the same simulated data as in [fine mapping vignette](finemapping.html). 
+
+```{r}
+data("N3finemapping")
+b = N3finemapping$true_coef[,1]
+sumstats <- univariate_regression(N3finemapping$X, N3finemapping$Y[,1])
+z_scores <- sumstats$betahat / sumstats$sebetahat
+Rin = cor(N3finemapping$X)
+attr(Rin, 'eigen') = eigen(Rin, symmetric = T)
+susie_plot(z_scores, y = "z", b=b)
+```
+
+The estimated `s` is
+```{r}
+s = estimate_s_rss(z_scores, Rin)
+s
+```
+
+The plot for the expected z scores vs the observed z scores is 
+```{r}
+condz_in = kriging_rss(z_scores, Rin)
+condz_in$plot
+```
+
+## LD information from the reference panel
+
+We use another simulated data where the LD matrix is estimated from a reference panel. There is one signal in the simulated data (red point). There is one SNP with mismatched reference and alternative allele between summary statistics and the reference panel (yellow point).
+
+```{r}
+data("SummaryConsistency")
+zflip = SummaryConsistency$z
+ld = SummaryConsistency$ldref
+plot(zflip, pch = 16, col = '#767676', main = 'Marginal Associations', 
+     xlab='SNP', ylab = 'z scores')
+points(SummaryConsistency$signal_id, zflip[SummaryConsistency$signal_id], col=2, pch=16)
+points(SummaryConsistency$flip_id, zflip[SummaryConsistency$flip_id], col=7, pch=16)
+```
+
+The estimated `s` is
+```{r}
+s = estimate_s_rss(zflip, ld)
+s
+```
+
+```{r}
+condz = kriging_rss(zflip, ld)
+condz$plot
+```
+
+The diagnostic plot identifies the SNP with flipped allele between summary statistics and the reference panel.
+
+## Session information
+
+Here are some details about the computing environment, including the
+versions of R, and the R packages, used to generate these results.
+
+```{r}
+sessionInfo()
+```

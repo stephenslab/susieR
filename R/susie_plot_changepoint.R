@@ -36,8 +36,8 @@
 #' 
 #' @export
 #' 
-susie_plot_changepoint <- function (s, y, line_col = "blue", line_size = 1.5,
-                                    cs_col = "red") {
+susie_plot_changepoint = function (s, y, line_col = "blue", line_size = 1.5,
+                                   cs_col = "red") {
   df = data.frame(x = 1:length(y),y = y,mu = predict.susie(s))
   CS = susie_get_cs(s)$cs
   p = ggplot(df) +

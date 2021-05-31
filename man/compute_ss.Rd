@@ -18,7 +18,8 @@ columns of X to unit variance prior to computing summary data.}
 A list of sufficient statistics (X'X, X'y, y'y and n)
 }
 \description{
-This is a synonym for \code{compute_suff_stat} included for historical reasons; deprecated.
+This is a synonym for \code{compute_suff_stat}
+  included for historical reasons (deprecated).
 }
 \examples{
 data(N2finemapping)

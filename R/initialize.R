@@ -44,7 +44,7 @@ susie_init_coef = function (coef_index, coef_value, p) {
     mu[i,coef_index[i]] = coef_value[i]
   }
   out = list(alpha = alpha,mu = mu,mu2 = mu*mu)
-  class(out) <- c("susie","list")
+  class(out) = c("susie","list")
   return(out)
 }
 

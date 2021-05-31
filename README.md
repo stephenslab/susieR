@@ -45,7 +45,8 @@ To automatically retrieve and install `susieR` from this repository,
 with the vignettes included, run:
 
 ```R
-devtools::install_github("stephenslab/susieR")
+# install.packages("remotes")
+remotes::install_github("stephenslab/susieR")
 ```
 
 See [here](https://stephenslab.github.io/susieR/articles/mwe.html) for
@@ -57,7 +58,11 @@ please visit https://stephenslab.github.io/susieR
 If you find the `susieR` package or any of the source code in this
 repository useful for your work, please cite:
 
-> Wang, G., Sarkar, A., Carbonetto, P., & Stephens, M. (2020). A simple new approach to variable selection in regression, with application to genetic fine mapping. Journal of the Royal Statistical Society: Series B (Statistical Methodology). https://doi.org/10.1111/rssb.12388
+> Wang, G., Sarkar, A., Carbonetto, P., & Stephens, M. (2020). A
+> simple new approach to variable selection in regression, with
+> application to genetic fine mapping. *Journal of the Royal
+> Statistical Society, Series B* **82**, 1273--1300.
+> https://doi.org/10.1111/rssb.12388
 
 ## Developer notes
 

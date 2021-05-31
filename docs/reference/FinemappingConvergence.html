@@ -40,11 +40,11 @@
 
 
 <meta property="og:title" content="Simulated Fine-mapping Data with Convergence Problem. — FinemappingConvergence" />
-<meta property="og:description" content="The data is simulated using real genotypes
-from 50000 individuals and 1001 SNPs. Two of the variables have
-non-zero effects on the multivariate response. The response data
-are generated under a linear regression model.
-The genotypes and simulated response are column centered." />
+<meta property="og:description" content="Data simulated using real genotypes from 50,000
+  individuals and 200 SNPs. Two of the SNPs have non-zero effects
+  on the multivariate response. The response data are generated under
+  a linear regression model. The simulated response and the columns
+  of the genotype matrix are centered." />
 
 
 
@@ -76,7 +76,7 @@ The genotypes and simulated response are column centered." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.29</span>
       </span>
     </div>
 
@@ -115,11 +115,11 @@ The genotypes and simulated response are column centered." />
     </div>
 
     <div class="ref-description">
-    <p>The data is simulated using real genotypes
-from 50000 individuals and 1001 SNPs. Two of the variables have
-non-zero effects on the multivariate response. The response data
-are generated under a linear regression model.
-The genotypes and simulated response are column centered.</p>
+    <p>Data simulated using real genotypes from 50,000
+  individuals and 200 SNPs. Two of the SNPs have non-zero effects
+  on the multivariate response. The response data are generated under
+  a linear regression model. The simulated response and the columns
+  of the genotype matrix are centered.</p>
     </div>
 
 
@@ -130,19 +130,19 @@ The genotypes and simulated response are column centered.</p>
 elements:</p>
 <dl>
 
-  <dt>XtX</dt><dd><p>XtX is computed using centered and scaled genotype
-data.</p></dd>
+  <dt>XtX</dt><dd><p>Summary statistics computed using the centered and
+    scaled genotype matrix.</p></dd>
 
-  <dt>Xty</dt><dd><p>XtX is computed using centered and scaled genotype
-data and centered simulated response.</p></dd>
+  <dt>Xty</dt><dd><p>Summary statistics computed using the centered and
+    scaled genotype data, and the centered simulated response.</p></dd>
 
-  <dt>yty</dt><dd><p>yty is computed using centered simulated response.</p></dd>
+  <dt>yty</dt><dd><p>yty is computed using the centered simulated response.</p></dd>
 
-  <dt>n</dt><dd><p>Sample size.</p></dd>
+  <dt>n</dt><dd><p>The sample size (50,000).</p></dd>
 
-  <dt>true_coef</dt><dd><p>The simulated effect sizes.</p></dd>
+  <dt>true_coef</dt><dd><p>The coefficients used to simulate the responses.</p></dd>
 
-  <dt>z</dt><dd><p>Marginal z scores from simple linear regression.</p></dd>
+  <dt>z</dt><dd><p>z-scores from a simple (single-SNP) linear regression.</p></dd>
 </dl>
 
 

@@ -11,7 +11,9 @@
 #' @importFrom stats coef
 #'
 #' @method coef susie
+#' 
 #' @export coef.susie
+#' 
 #' @export
 #'
 coef.susie = function (object, ...) {
@@ -34,14 +36,17 @@ coef.susie = function (object, ...) {
 #'
 #' @return For \code{type = "response"}, predicted or fitted outcomes
 #'   are returned; for \code{type = "coefficients"}, the estimated
-#'   coefficients are returned. If the susie fit has intercept = \code{NA} (which is common when
-#'   using \code{susie_suff_stat}) then
-#'   predictions are computed using an intercept of 0, and a warning is emitted.
+#'   coefficients are returned. If the susie fit has intercept =
+#'   \code{NA} (which is common when using \code{susie_suff_stat}) then
+#'   predictions are computed using an intercept of 0, and a warning is
+#'   emitted.
 #'
 #' @importFrom stats coef
 #'
 #' @method predict susie
+#' 
 #' @export predict.susie
+#' 
 #' @export
 #'
 predict.susie = function (object, newx = NULL,
@@ -55,10 +60,9 @@ predict.susie = function (object, newx = NULL,
   }
   if (missing(newx))
     return(s$fitted)
-  if(is.na(s$intercept)){
-    warning('The prediction assumes intercept = 0.')
+  if (is.na(s$intercept)) {
+    warning("The prediction assumes intercept = 0")
     return(drop(newx %*% coef(s)[-1]))
-  }else{
+  } else
     return(drop(s$intercept + newx %*% coef(s)[-1]))
-  }
 }

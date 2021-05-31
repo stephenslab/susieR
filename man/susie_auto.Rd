@@ -6,7 +6,7 @@
 \usage{
 susie_auto(
   X,
-  Y,
+  y,
   L_init = 1,
   L_max = 512,
   verbose = FALSE,
@@ -21,7 +21,7 @@ susie_auto(
 \arguments{
 \item{X}{An n by p matrix of covariates.}
 
-\item{Y}{The observed responses, a vector of length n.}
+\item{y}{The observed responses, a vector of length n.}
 
 \item{L_init}{The initial value of L.}
 
@@ -58,6 +58,9 @@ will halt when the difference in the variational lower bound, or
 less than \code{tol}.}
 
 \item{\dots}{Additional arguments passed to \code{\link{susie}}.}
+}
+\value{
+Describe \code{susie_auto} return value here.
 }
 \description{
 \code{susie_auto} is an attempt to automate reliable

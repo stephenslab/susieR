@@ -46,7 +46,7 @@ init_finalize_rss = function (s, R = NULL, Rz = NULL) {
   if (length(s$sigma2) != 1)
     stop("Input residual variance sigma2 must be a scalar")
   if (s$sigma2 <= 0)
-    stop("residual variance sigma2 must be positive (is your var(Y) zero?)")
+    stop("residual variance sigma2 must be positive (is your var(y) zero?)")
   
   # Check prior variance.
   if (!is.numeric(s$V))

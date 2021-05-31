@@ -49,7 +49,7 @@
 #'
 #' @references R. J. Tibshirani (2014). Adaptive piecewise polynomial
 #'   estimation via trend filtering. \emph{Annals of Statistics}
-#'   \bold{42}, 285-323. \url{https://doi.org/10.1214/13-AOS1189}
+#'   \bold{42}, 285-323.
 #' 
 #' @examples
 #' set.seed(1)
@@ -81,11 +81,11 @@ susie_trendfilter = function (y, order = 0, standardize = FALSE,
   attr(X,"order") = order
   if (use_mad && !("s_init" %in% names(list(...)))) {
     mad = estimate_mad_residual_variance(y)
-    s_mad_init = suppressWarnings(susie(X = X,Y = y,standardize = standardize,
+    s_mad_init = suppressWarnings(susie(X = X,y = y,standardize = standardize,
       estimate_residual_variance = FALSE,residual_variance = mad,...))
-    s = susie(X = X,Y = y,standardize = standardize, s_init = s_mad_init,...)
+    s = susie(X = X,y = y,standardize = standardize, s_init = s_mad_init,...)
   } else
-    s = susie(X = X,Y = y,standardize = standardize,...)
+    s = susie(X = X,y = y,standardize = standardize,...)
   return(s)
 }
 

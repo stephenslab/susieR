@@ -1,13 +1,9 @@
 ^docs$
 ^.gitignore$
-^TODO\.txt$
 ^appveyor\.yml$
 ^_pkgdown\.yml$
 ^susieR\.Rproj$
 ^\.Rproj\.user$
 ^\.travis\.yml$
 ^.*\.Rproj$
-^data/N3finemapping\.CAVIAR\.RData$
-^data/N3finemapping\.DAP\.RData$
-^data/N3finemapping\.FINEMAP\.RData$
-
+^tests/testthat/full_data_1_sim_gaussian_null_1\.rds$

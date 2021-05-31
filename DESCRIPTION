@@ -14,9 +14,8 @@ Description: Implements methods for variable selection in linear
     called "Iterative Bayesian Stepwise Selection" (IBSS), is simple
     and fast, allowing the SuSiE model be fit to large data sets
     (thousands of samples and hundreds of thousands of variables).
-    The main function is \code{\link{susie}}.
-Date: 2021-04-15
-Version: 0.11.8
+Date: 2021-05-28
+Version: 0.11.29
 Authors@R: c(person("Gao","Wang",role="aut",email="wang.gao@columbia.edu"),
              person("Yuxin","Zou",role="aut"),
              person("Kaiqian","Zhang",role="aut"),
@@ -33,8 +32,9 @@ Imports:
     grDevices,
     stats,
     Matrix,
+    mixsqp,
     reshape,
-    ggplot2,
+    ggplot2
 Suggests:
     testthat,
     microbenchmark,
@@ -42,7 +42,8 @@ Suggests:
     rmarkdown,
     L0Learn,
     genlasso
-LazyData: true
+LazyData: yes
+LazyDataCompression: xz
 NeedsCompilation: no
 RoxygenNote: 7.1.1
 VignetteBuilder: knitr

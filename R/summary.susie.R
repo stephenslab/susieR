@@ -41,7 +41,7 @@ summary.susie = function (object, ...) {
   } else
     cs = NULL
   out = list(vars = variables,cs = cs)
-  class(out) <- c("summary.susie","list")
+  class(out) = c("summary.susie","list")
   return(out)
 }
 
@@ -55,9 +55,9 @@ summary.susie = function (object, ...) {
 #' 
 #' @export
 #' 
-print.summary.susie <- function (x, ...) {
+print.summary.susie = function (x, ...) {
   cat('\nVariables in credible sets:\n\n')
-  print.data.frame(x$vars[which(x$vars$cs > 0),], row.names = FALSE)
+  print.data.frame(x$vars[which(x$vars$cs > 0),],row.names = FALSE)
   cat('\nCredible sets summary:\n\n')
-  print.data.frame(x$cs, row.names = FALSE)
+  print.data.frame(x$cs,row.names = FALSE)
 }

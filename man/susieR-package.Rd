@@ -18,7 +18,6 @@ Implements methods for variable selection in linear
     called "Iterative Bayesian Stepwise Selection" (IBSS), is simple
     and fast, allowing the SuSiE model be fit to large data sets
     (thousands of samples and hundreds of thousands of variables).
-    The main function is \code{\link{susie}}.
 }
 \seealso{
 Useful links:

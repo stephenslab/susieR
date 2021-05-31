@@ -31,7 +31,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.29</span>
       </span>
     </div>
 
@@ -67,7 +67,7 @@
       <h1 data-toc-skip>Trend filtering</h1>
                         <h4 class="author">Matthew Stephens</h4>
             
-            <h4 class="date">2021-04-13</h4>
+            <h4 class="date">2021-05-28</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/master/vignettes/trend_filtering.Rmd"><code>vignettes/trend_filtering.Rmd</code></a></small>
       <div class="hidden name"><code>trend_filtering.Rmd</code></div>
@@ -81,7 +81,7 @@
 <a href="#introduction" class="anchor"></a>Introduction</h1>
 <p>Although we developed SuSiE primarily with the goal of performing variable selection in highly sparse settings – and, in particular, for genetic fine-mapping – the approach also has considerable potential for application to other large-scale regression problems. Here we briefly illustrate this potential by applying it to a non-parametric regression problem that at first sight seems to be ill-suited to our approach. In particular, it does not involve strict sparsity, and the underlying correlation structure of the explanatory variables is very different from the ``blocky" covariance structure of genetic data that SuSiE was designed for. Nonetheless, we will see that SuSiE performs well here despite this (partly due to its ability to capture non-sparse signals via Bayesian Model Averaging).</p>
 <p>Specifically, consider the non-parametric regression: <span class="math display">\[y_t = \mu_t + e_t \quad t=1,\dots,T\]</span> where the goal is to estimate the underlying mean, <span class="math inline">\(\mu_t\)</span>, under the assumption that it varies smoothly (or, more precisely, in a spatially-structured way) with <span class="math inline">\(t\)</span>. One very simple way to capture spatial structure in <span class="math inline">\(\mu\)</span> is to model it as a (sparse) linear combination of step functions: <span class="math display">\[\mu = Xb\]</span> where the <span class="math inline">\(j\)</span>th column of <span class="math inline">\(X\)</span> is the step function with a step at <span class="math inline">\(j\)</span> (<span class="math inline">\(j = 1,\dots,(T-1)\)</span>); that is <span class="math inline">\(x_{tj}=0\)</span> for <span class="math inline">\(t&lt;=j\)</span> and 1 for <span class="math inline">\(t&gt;j\)</span>. The <span class="math inline">\(j\)</span>th element of <span class="math inline">\(b\)</span> therefore determines the change in the mean <span class="math inline">\(|\mu_j-\mu_{j+1}|\)</span>, and an assumption that <span class="math inline">\(b\)</span> is sparse encapsulates an assumption that <span class="math inline">\(\mu\)</span> is spatially structured (indeed, piecewise constant).</p>
-<p>This very simple approach is essentially 0th-order trend filtering (<a href="https://projecteuclid.org/euclid.aos/1395234979" class="uri">https://projecteuclid.org/euclid.aos/1395234979</a>). Note that higher-order trend filtering can be similarly implemented using different basis functions; here we use 0th order only for simplicity.</p>
+<p>This very simple approach is essentially 0th-order trend filtering (Tibshirani, 2014, <em>Annals of Statistics</em> 42, 285–323). Note that higher-order trend filtering can be similarly implemented using different basis functions; here we use 0th order only for simplicity.</p>
 </div>
 <div id="examples" class="section level1">
 <h1 class="hasAnchor">

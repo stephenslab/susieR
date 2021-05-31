@@ -44,7 +44,7 @@
 #' G. Wang, A. Sarkar, P. Carbonetto and M. Stephens (2020). A simple
 #'   new approach to variable selection in regression, with application
 #'   to genetic fine-mapping. \emph{Journal of the Royal Statistical
-#'   Society, Series B} \url{https://doi.org/10.1101/501114}.
+#'   Society, Series B} \doi{10.1101/501114}.
 #'
 #' @examples
 #' data(N2finemapping)
@@ -95,7 +95,7 @@ NULL
 #' G. Wang, A. Sarkar, P. Carbonetto and M. Stephens (2020). A simple
 #'   new approach to variable selection in regression, with application
 #'   to genetic fine-mapping. \emph{Journal of the Royal Statistical
-#'   Society, Series B} \url{https://doi.org/10.1101/501114}.
+#'   Society, Series B} \doi{10.1101/501114}.
 #'
 #' @examples
 #' data(N3finemapping)
@@ -106,7 +106,7 @@ NULL
 #' @title Simulated Fine-mapping Data with Convergence Problem.
 #'
 #' @description Data simulated using real genotypes from 50,000
-#'   individuals and 1,001 SNPs. Two of the SNPs have non-zero effects
+#'   individuals and 200 SNPs. Two of the SNPs have non-zero effects
 #'   on the multivariate response. The response data are generated under
 #'   a linear regression model. The simulated response and the columns
 #'   of the genotype matrix are centered.
@@ -136,4 +136,36 @@ NULL
 #'
 #' @examples
 #' data(FinemappingConvergence)
+NULL
+
+#' @name SummaryConsistency
+#'
+#' @title Simulated Fine-mapping Data with LD matrix From Reference Panel.
+#'
+#' @description Data simulated using real genotypes from 10,000
+#'   individuals and 200 SNPs. One SNP have non-zero effect
+#'   on the multivariate response. The response data are generated under
+#'   a linear regression model. There is also one SNP with flipped allele
+#'   between summary statistics and the reference panel.
+#'
+#' @format \code{SummaryConsistency} is a list with the following
+#' elements:
+#'
+#' \describe{
+#'
+#'   \item{z}{z-scores computed by fitting univariate simple regression
+#'     variable-by-variable.}
+#'
+#'   \item{ldref}{LD matrix estimated from the reference panel.}
+#'
+#'   \item{flip_id}{The index of the SNP with the flipped allele.}
+#'
+#'   \item{signal_id}{The index of the SNP with the non-zero effect.}}
+#'
+#' @docType data
+#'
+#' @keywords data
+#'
+#' @examples
+#' data(SummaryConsistency)
 NULL

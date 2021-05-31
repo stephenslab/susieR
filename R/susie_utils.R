@@ -185,7 +185,7 @@ susie_get_lfsr = function (res) {
 #'
 #' @export
 #'
-susie_get_posterior_samples <- function (susie_fit, num_samples) {
+susie_get_posterior_samples = function (susie_fit, num_samples) {
 
   # Remove effects having estimated prior variance equals zero.
   if (is.numeric(susie_fit$V))
@@ -314,7 +314,13 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
   }
 }
 
-#' @title Get correlations between CS, using variable with maximum PIP from each CS
+#' @title Get Correlations Between CSs, using Variable with Maximum PIP From Each CS
+#'
+#' @description TO DO: Add brief description of function here. Note that
+#'   using this function requires some care and should only be used by
+#'   more knowledgeable users.
+#'
+#' @param res Describe input argument "res" here.
 #'
 #' @param X n by p matrix of values of the p variables (covariates) in
 #'   n samples. When provided, correlation between variables will be
@@ -326,7 +332,11 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
 #'   minimum correlation among variables is smaller than
 #'   \code{min_abs_corr}.
 #'
-#' @keywords internal
+#' @param max Describe input argument "max" here.
+#'
+#' @return Describe the \code{get_cs_correlation} return value here.
+#'
+#' @export
 #'
 get_cs_correlation = function (res, X = NULL, Xcorr = NULL, max = FALSE) {
   if (is.null(res$sets$cs) || length(res$sets$cs) == 1) return(NA)
@@ -561,28 +571,33 @@ susie_prune_single_effects = function (s,L = 0,V = NULL,verbose = FALSE) {
   return(s)
 }
 
-#' @title Estimate s in susie_rss model using regularized LD
+#' @title Estimate s in \code{susie_rss} Model Using Regularized LD
 #'
-#' @description The estimated s gives information about the consistency
-#' between the z scores and LD matrix. A larger \eqn{s} means there is a
-#' strong inconsistency between z scores and LD matrix.
-#' The 'null-mle' method obtains mle of \eqn{s}
-#' under \eqn{z | R ~ N(0,(1-s)R + s I)}, \eqn{0 < s < 1}. The 'null-partialmle'
-#' method obtains mle of \eqn{s} under \eqn{U^T z | R ~ N(0,s I)}, \eqn{U} is a matrix
-#' of eigenvectors of R with 0 eigenvalues. The estimated \eqn{s} from 'null-partialmle'
-#' could be greater than 1. The 'null-pseudomle' method obtains
-#' mle of \eqn{s} under pseudolikelihood \eqn{L(s) = \prod_{j=1}^{p} p(z_j | z_{-j}, s, R)},
-#' \eqn{0 < s < 1}.
+#' @description The estimated s gives information about the
+#'   consistency between the z scores and LD matrix. A larger \eqn{s}
+#'   means there is a strong inconsistency between z scores and LD
+#'   matrix. The \dQuote{null-mle} method obtains mle of \eqn{s} under
+#'   \eqn{z | R ~ N(0,(1-s)R + s I)}, \eqn{0 < s < 1}. The
+#'   \dQuote{null-partialmle} method obtains mle of \eqn{s} under
+#'   \eqn{U^T z | R ~ N(0,s I)}, in which \eqn{U} is a matrix containing
+#'   the of eigenvectors that span the null space of R; that is, the
+#'   eigenvectors corresponding to zero eigenvalues of R. The estimated
+#'   \eqn{s} from \dQuote{null-partialmle} could be greater than 1. The
+#'   \dQuote{null-pseudomle} method obtains mle of \eqn{s} under
+#'   pseudolikelihood \eqn{L(s) = \prod_{j=1}^{p} p(z_j | z_{-j}, s,
+#'   R)}, \eqn{0 < s < 1}.
 #'
 #' @param z A p-vector of z scores.
 #'
 #' @param R A p by p symmetric, positive semidefinite correlation
-#' matrix.
+#'   matrix.
 #'
 #' @param r_tol Tolerance level for eigenvalue check of positive
 #'   semidefinite matrix of R.
 #'
 #' @param method a string specifies the method to estimate \eqn{s}.
+#'
+#' @return A number between 0 and 1.
 #'
 #' @examples
 #' set.seed(1)
@@ -593,81 +608,101 @@ susie_prune_single_effects = function (s,L = 0,V = NULL,verbose = FALSE) {
 #' X = matrix(rnorm(n*p),nrow = n,ncol = p)
 #' X = scale(X,center = TRUE,scale = TRUE)
 #' y = drop(X %*% beta + rnorm(n))
-#' input_ss <- compute_suff_stat(X,y,standardize = TRUE)
-#' ss   <- univariate_regression(X,y)
-#' R    <- cor(X)
-#' attr(R, 'eigen') = eigen(R, symmetric = T)
-#' zhat <- with(ss,betahat/sebetahat)
+#' input_ss = compute_suff_stat(X,y,standardize = TRUE)
+#' ss = univariate_regression(X,y)
+#' R = cor(X)
+#' attr(R,"eigen") = eigen(R, symmetric = TRUE)
+#' zhat = with(ss,betahat/sebetahat)
 #' s = estimate_s_rss(zhat, R)
+#'
+#' @importFrom stats dnorm
+#' @importFrom stats optim
 #'
 #' @export
 #'
-estimate_s_rss = function(z, R, r_tol=1e-08, method="null-mle"){
+estimate_s_rss = function (z, R, r_tol = 1e-08, method = "null-mle") {
   if (is.null(attr(R,"eigen")))
     attr(R,"eigen") = eigen(R,symmetric = TRUE)
   eigenld = attr(R,"eigen")
-  if(any(eigenld$values < -r_tol)){
-    warning('The matrix R is not positive semidefinite. Negative eigenvalues are set to 0.')
-  }
+  if(any(eigenld$values < -r_tol))
+    warning("The matrix R is not positive semidefinite. Negative ",
+            "eigenvalues are set to zero")
   eigenld$values[eigenld$values < r_tol] = 0
 
-  if(method == 'null-mle'){
-    negloglikelihood = function(s, z, eigenld){
-      0.5 * sum(log((1-s)*eigenld$values+s)) +
-        0.5 * sum(z * eigenld$vectors %*% ((t(eigenld$vectors) * (1/((1-s)*eigenld$values + s))) %*% z))
-    }
-    s = optim(0.5, fn=negloglikelihood, z=z, eigenld=eigenld,
-              method = 'Brent', lower=0, upper=1)$par
-  }else if(method == 'null-partialmle'){
+  if (method == "null-mle") {
+    negloglikelihood = function(s, z, eigenld)
+      0.5 * sum(log((1-s)*eigenld$values + s)) +
+      0.5 * sum(z * eigenld$vectors %*% ((t(eigenld$vectors) *
+               (1/((1-s)*eigenld$values + s))) %*% z))
+    s = optim(0.5,fn = negloglikelihood,z = z,eigenld = eigenld,
+              method = "Brent",lower = 0,upper = 1)$par
+  } else if (method == "null-partialmle") {
     colspace = which(eigenld$values > 0)
-    if(length(colspace) == length(z)){
+    if (length(colspace) == length(z))
       s = 0
-    }else{
+    else{
       znull = crossprod(eigenld$vectors[,-colspace], z) # U2^T z
       s = sum(znull^2)/length(znull)
     }
-  }else if(method == 'null-pseudomle'){
-    pseudolikelihood = function(s, z, eigenld){
-      precision = eigenld$vectors %*% (t(eigenld$vectors) * (1/((1-s)*eigenld$values + s)))
-      postmean = c()
-      postvar = c()
-      for(i in 1:length(z)){
-        postmean = c(postmean, -(1/precision[i,i]) * precision[i,-i] %*% z[-i])
-        postvar = c(postvar, 1/precision[i,i])
+  } else if (method == "null-pseudomle") {
+    pseudolikelihood = function(s, z, eigenld) {
+      precision = eigenld$vectors %*% (t(eigenld$vectors) *
+                  (1/((1-s)*eigenld$values + s)))
+      postmean = rep(0,length(z))
+      postvar = rep(0,length(z))
+      for (i in 1:length(z)) {
+        postmean[i] = -(1/precision[i,i])*precision[i,-i] %*% z[-i]
+        postvar[i] = 1/precision[i,i]
       }
-      -sum(dnorm(z, mean=postmean, sd = sqrt(postvar), log=T))
+      return(-sum(dnorm(z,mean = postmean,sd = sqrt(postvar),log = TRUE)))
     }
-    s = optim(0.5, fn=pseudolikelihood,
-              z=z, eigenld=eigenld,
-              method = 'Brent', lower=0, upper=1)$par
+    s = optim(0.5,fn = pseudolikelihood,z = z,eigenld = eigenld,
+              method = "Brent",lower = 0,upper = 1)$par
   }
-  else{
-    stop('The method is not implemented.')
-  }
+  else
+    stop("The method is not implemented")
   return(s)
 }
 
-#' @title Compute the distribution of z score of variant j given other z scores, and detect
-#' possible allele switch issue.
+#' @title Compute Distribution of z-scores of Variant j Given Other z-scores, and Detect Possible Allele Switch Issue
 #'
-#' @description Under the null, the rss model with regularized LD matrix is
-#' \eqn{z|R,s ~ N(0, (1-s)R + s I))}. We use a mixture of normals
-#' to model the conditional distribution of z_j given other z scores,
-#' \eqn{z_j | z_{-j}, R, s ~ \sum_{k=1}^{K} \pi_k N(-\Omega_{j,-j} z_{-j}/\Omega_{jj}, \sigma_{k}^2/\Omega_{jj})},
-#' \eqn{\Omega = ((1-s)R + s I)^{-1}}, \eqn{\sigma_1, ..., \sigma_k} is a
-#' grid of fixed positive numbers. We estimate the mixture weights \eqn{\pi}.
-#' We detect the possible allele switch issue using likelihood ratio for each variant.
+#' @description Under the null, the rss model with regularized LD
+#'   matrix is \eqn{z|R,s ~ N(0, (1-s)R + s I))}. We use a mixture of
+#'   normals to model the conditional distribution of z_j given other z
+#'   scores, \eqn{z_j | z_{-j}, R, s ~ \sum_{k=1}^{K} \pi_k
+#'   N(-\Omega_{j,-j} z_{-j}/\Omega_{jj}, \sigma_{k}^2/\Omega_{jj})},
+#'   \eqn{\Omega = ((1-s)R + sI)^{-1}}, \eqn{\sigma_1, ..., \sigma_k}
+#'   is a grid of fixed positive numbers. We estimate the mixture
+#'   weights \eqn{\pi}  We detect the possible allele switch issue
+#'   using likelihood ratio for each variant.
 #'
 #' @param z A p-vector of z scores.
 #'
 #' @param R A p by p symmetric, positive semidefinite correlation
-#' matrix.
+#'   matrix.
 #'
 #' @param r_tol Tolerance level for eigenvalue check of positive
-#' semidefinite matrix of R.
+#'   semidefinite matrix of R.
 #'
 #' @param s an estimated s from \code{estimate_s_rss}
 #'
+#' @param plot.it If \code{plot.it = TRUE}, it produces a plot with
+#'   observed z score vs the expected value. The possible allele switched
+#'   variants are labeled as red points (log LR > 2 and abs(z) > 2).
+#'
+#' @return a list containing a ggplot2 plot object and a table. The plot
+#'   compares observed z score vs the expected value. The possible allele
+#'   switched variants are labeled as red points (log LR > 2 and abs(z) > 2).
+#'   The table summarizes the conditional distribution for each variant
+#'   and the likelihood ratio test.
+#'
+#' @importFrom stats dnorm
+#' @importFrom ggplot2 ggplot
+#' @importFrom ggplot2 geom_point
+#' @importFrom ggplot2 geom_abline
+#' @importFrom ggplot2 theme_bw
+#' @importFrom ggplot2 labs
+#' @importFrom ggplot2 aes
 #' @importFrom mixsqp mixsqp
 #'
 #' @examples
@@ -679,66 +714,83 @@ estimate_s_rss = function(z, R, r_tol=1e-08, method="null-mle"){
 #' X = matrix(rnorm(n*p),nrow = n,ncol = p)
 #' X = scale(X,center = TRUE,scale = TRUE)
 #' y = drop(X %*% beta + rnorm(n))
-#' input_ss <- compute_suff_stat(X,y,standardize = TRUE)
-#' ss   <- univariate_regression(X,y)
-#' R    <- cor(X)
-#' attr(R, 'eigen') = eigen(R, symmetric = T)
-#' zhat <- with(ss,betahat/sebetahat)
+#' ss = univariate_regression(X,y)
+#' R = cor(X)
+#' attr(R,"eigen") = eigen(R, symmetric = TRUE)
+#' zhat = with(ss,betahat/sebetahat)
 #' condz = kriging_rss(zhat, R)
+#' condz$plot
 #'
 #' @export
 #'
-kriging_rss = function(z, R, r_tol=1e-08, s = estimate_s_rss(z, R, r_tol, method = 'null-mle')){
+kriging_rss = function (z, R, r_tol = 1e-08,
+                        s = estimate_s_rss(z,R,r_tol,method = "null-mle")) {
   if (is.null(attr(R,"eigen")))
     attr(R,"eigen") = eigen(R,symmetric = TRUE)
   eigenld = attr(R,"eigen")
-  if(any(eigenld$values < -r_tol)){
-    warning('The matrix R is not positive semidefinite. Negative eigenvalues are set to 0.')
-  }
+  if (any(eigenld$values < -r_tol))
+    warning("The matrix R is not positive semidefinite. Negative ",
+            "eigenvalues are set to zero.")
   eigenld$values[eigenld$values < r_tol] = 0
 
-  if(s > 1){
-    warning('The given s is greater than 1. We replace it with 0.8.')
+  if (s > 1) {
+    warning("The given s is greater than 1. We replace it with 0.8.")
     s = 0.8
   }
+  if (s < 0)
+    stop("The s must be non-negative")
 
-  precision = eigenld$vectors %*% (t(eigenld$vectors) * (1/((1-s)*eigenld$values + s)))
-  postmean = c()
-  postvar = c()
+  dinv = 1/((1-s)*eigenld$values + s)
+  dinv[is.infinite(dinv)] = 0
+  precision = eigenld$vectors %*% (t(eigenld$vectors) * dinv)
+  condmean = rep(0,length(z))
+  condvar = rep(0,length(z))
   for(i in 1:length(z)){
-    postmean = c(postmean, -(1/precision[i,i]) * precision[i,-i] %*% z[-i])
-    postvar = c(postvar, 1/precision[i,i])
+    condmean[i] = -(1/precision[i,i]) * precision[i,-i] %*% z[-i]
+    condvar[i] = 1/precision[i,i]
   }
-  post_z = (z-postmean)/sqrt(postvar)
+  cond_z = (z-condmean)/sqrt(condvar)
 
-  ## obtain grid
+  # obtain grid
   a_min = 0.8
-  if(max(post_z^2) < 1){
+  if (max(cond_z^2) < 1)
     a_max = 2
-  }else{
-    a_max = 2*sqrt(max(post_z^2))
-  }
+  else
+    a_max = 2*sqrt(max(cond_z^2))
   npoint = ceiling(log2(a_max/a_min)/log2(1.05))
   a_grid = 1.05^((-npoint):0) * a_max
 
-  ## compute likelihood
-  sd_mtx = outer(sqrt(postvar), a_grid)
-  matrix_llik = dnorm(z - postmean, sd=sd_mtx, log=T)
-  lfactors    <- apply(matrix_llik,1,max)
-  matrix_llik <- matrix_llik - lfactors
-  ## estimate weight
-  w = mixsqp(matrix_llik, log=T, control = list(verbose=FALSE))$x
+  # compute likelihood
+  sd_mtx      = outer(sqrt(condvar),a_grid)
+  matrix_llik = dnorm(z - condmean,sd = sd_mtx,log = TRUE)
+  lfactors    = apply(matrix_llik,1,max)
+  matrix_llik = matrix_llik - lfactors
 
-  logl0mix = as.numeric(log(exp(matrix_llik) %*% w)) + lfactors
-  matrix_llik = dnorm(z + postmean, sd=sd_mtx, log=T)
-  lfactors    <- apply(matrix_llik,1,max)
-  matrix_llik <- matrix_llik - lfactors
-  logl1mix = as.numeric(log(exp(matrix_llik) %*% w)) + lfactors
-  logLRmix = logl1mix - logl0mix
+  # estimate weight
+  w = mixsqp(matrix_llik,log = TRUE,control = list(verbose = FALSE))$x
 
-  return(data.frame(z = z, postmean = postmean, postvar = postvar,
-                    post_z = post_z,
-                    logLR = logLRmix))
+  logl0mix    = as.numeric(log(exp(matrix_llik) %*% w)) + lfactors
+  matrix_llik = dnorm(z + condmean, sd=sd_mtx, log = TRUE)
+  lfactors    = apply(matrix_llik,1,max)
+  matrix_llik = matrix_llik - lfactors
+  logl1mix    = as.numeric(log(exp(matrix_llik) %*% w)) + lfactors
+  logLRmix    = logl1mix - logl0mix
+
+  res = data.frame(z = z,condmean = condmean,condvar = condvar,
+                   cond_z = cond_z,logLR = logLRmix)
+
+  p = ggplot(res) + geom_point(aes(x = z, y = condmean)) +
+    labs(x = 'Observed z scores', y = "Expected value") +
+    geom_abline(intercept = 0, slope = 1) +
+    theme_bw()
+
+  idx = which(logLRmix > 2 & abs(z) > 2)
+  if(length(idx) > 0) {
+    p = p + geom_point(aes(x = z[idx], y = condmean[idx]),col = "red")
+  }
+
+  return(list(plot = p,
+              conditional_dist = res))
 }
 
 

@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.29</span>
       </span>
     </div>
 
@@ -145,7 +145,10 @@ extra arguments are not used here.</p></td>
 
     <p>For <code>type = "response"</code>, predicted or fitted outcomes
   are returned; for <code>type = "coefficients"</code>, the estimated
-  coefficients are returned.</p>
+  coefficients are returned. If the susie fit has intercept =
+  <code>NA</code> (which is common when using <code>susie_suff_stat</code>) then
+  predictions are computed using an intercept of 0, and a warning is
+  emitted.</p>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

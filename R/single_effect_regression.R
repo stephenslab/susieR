@@ -25,7 +25,7 @@
 #' \code{Sigma}. The summary statistics should come from the same
 #' individuals.
 #' 
-#' @param Y An n-vector.
+#' @param y An n-vector.
 #' 
 #' @param X An n by p matrix of covariates.
 #' 
@@ -65,6 +65,7 @@
 #' 
 #' \item{loglik}{The log-likelihood, \eqn{\log p(y | X, V)}.}
 #'
+#' @importFrom stats dnorm
 #' @importFrom stats uniroot
 #' @importFrom stats optim
 #' @importFrom Matrix colSums
@@ -72,11 +73,11 @@
 #' @keywords internal
 #' 
 single_effect_regression =
-  function (Y, X, V, residual_variance = 1, prior_weights = NULL,
+  function (y, X, V, residual_variance = 1, prior_weights = NULL,
             optimize_V = c("none", "optim", "uniroot", "EM", "simple"),
             check_null_threshold = 0) {
   optimize_V = match.arg(optimize_V)
-  Xty = compute_Xty(X,Y)
+  Xty = compute_Xty(X,y)
   betahat = (1/attr(X,"d")) * Xty
   shat2 = residual_variance/attr(X,"d")
   if (is.null(prior_weights))
@@ -108,7 +109,7 @@ single_effect_regression =
   
   # BF for single effect model.
   lbf_model = maxlbf + log(weighted_sum_w)
-  loglik = lbf_model + sum(dnorm(Y,0,sqrt(residual_variance),log = TRUE))
+  loglik = lbf_model + sum(dnorm(y,0,sqrt(residual_variance),log = TRUE))
 
   if(optimize_V == "EM")
     V = optimize_prior_variance(optimize_V,betahat,shat2,prior_weights,

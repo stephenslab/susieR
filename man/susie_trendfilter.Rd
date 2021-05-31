@@ -77,5 +77,5 @@ susie_plot_changepoint(s,y)
 \references{
 R. J. Tibshirani (2014). Adaptive piecewise polynomial
   estimation via trend filtering. \emph{Annals of Statistics}
-  \bold{42}, 285-323. \url{https://doi.org/10.1214/13-AOS1189}
+  \bold{42}, 285-323.
 }

@@ -26,7 +26,7 @@ elements:
 }
 \description{
 Data simulated using real genotypes from 50,000
-  individuals and 1,001 SNPs. Two of the SNPs have non-zero effects
+  individuals and 200 SNPs. Two of the SNPs have non-zero effects
   on the multivariate response. The response data are generated under
   a linear regression model. The simulated response and the columns
   of the genotype matrix are centered.

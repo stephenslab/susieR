@@ -25,3 +25,5 @@ articles:
     - sparse_matrix_strategy
     - sparse_susie_eval
     - susie_refine
+    - susierss_diagnostic
+

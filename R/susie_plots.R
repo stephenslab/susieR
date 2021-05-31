@@ -45,8 +45,10 @@
 #' @param \dots Additional arguments passed to
 #'   \code{\link[graphics]{plot}}.
 #'
+#' @return Invisibly returns \code{NULL}.
+#' 
 #' @seealso \code{\link{susie_plot_changepoint}}
-#'
+#' 
 #' @examples
 #' set.seed(1)
 #' n = 1000
@@ -158,8 +160,8 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
     pos = (1 + start_adj):(length(p) - end_adj)
   }
   legend_text = list(col = vector(),purity = vector(),size = vector())
-  scipen0 = options()$scipen
-  options(scipen = 10)
+  # scipen0 = options()$scipen
+  # options(scipen = 10)
   args = list(...)
   if (!exists("xlab", args)) args$xlab = 'variable'
   if (!exists("ylab", args)) args$ylab = ylab
@@ -217,7 +219,7 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
     }
   }
   points(pos[b != 0] + start,p[b != 0] + start,col = 2,pch = 16)
-  options(scipen = scipen0)
+  # options(scipen = scipen0)
   return(invisible())
 }
 
@@ -225,7 +227,9 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
 #'
 #' @param L An integer specifying the number of credible sets to plot.
 #'
-#' @param file_prefix Prefix to path of output plot file.
+#' @param file_prefix Prefix to path of output plot file. If not
+#'   specified, the plot, or plots, will be saved to a temporary
+#'   directory generated using \code{\link{tempdir}}.
 #'
 #' @param pos Indices of variables to plot. If \code{pos = NULL} all
 #'   variables are plotted.
@@ -240,7 +244,7 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
 #' X = scale(X,center = TRUE,scale = TRUE)
 #' y = drop(X %*% beta + rnorm(n))
 #' res = susie(X,y,L = 10)
-#' susie_plot_iteration(res, L=10, file_prefix="plot_demo")
+#' susie_plot_iteration(res, L=10)
 #'
 #' @importFrom grDevices pdf
 #' @importFrom grDevices dev.off
@@ -268,6 +272,8 @@ susie_plot_iteration = function (model, L, file_prefix, pos = NULL) {
     vars = 1:ncol(model$alpha)
   else
     vars = pos
+  if (missing(file_prefix))
+    file_prefix = file.path(tempdir(),"susie_plot")
   pdf(paste0(file_prefix,".pdf"),8,3)
   if (is.null(model$trace))
     print(get_layer(model,k,model$niter,vars))
@@ -283,15 +289,15 @@ susie_plot_iteration = function (model, L, file_prefix, pos = NULL) {
                 "\\( -clone 0 -set delay 300 \\) -swap 0 +delete",
                 "\\( +clone -set delay 300 \\) +swap +delete -coalesce",
                 "-layers optimize",paste0(file_prefix,".gif"))
-    cat("Creating GIF animation ...\n")
+    message("Creating GIF animation...")
     if (file.exists(paste0(file_prefix,".gif")))
       file.remove(paste0(file_prefix,".gif"))
     output = try(system(cmd))
     if (inherits(output,"try-error"))
-      cat("Cannot create GIF animation because convert command failed.\n")
+      stop("Cannot create GIF animation because convert command failed")
     else
       format = ".gif"
   }
-  cat(paste0("Iterplot saved to ",file_prefix,format,"\n"))
+  message(paste0("Iterplot saved to ",file_prefix,format,"\n"))
   return(invisible())
 }
