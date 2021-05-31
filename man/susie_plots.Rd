@@ -19,7 +19,7 @@ susie_plot(
 susie_plot_iteration(model, L, file_prefix, pos = NULL)
 }
 \arguments{
-\item{model}{A susie fit, typically an output from
+\item{model}{A SuSiE fit, typically an output from
 \code{\link{susie}} or one of its variants. For \code{suse_plot},
 the susie fit must have \code{model$z}, \code{model$PIP}, and may
 include \code{model$sets}. \code{model} may also be a vector of
@@ -82,10 +82,9 @@ susie_plot(res,'PIP')
 susie_plot(res,'PIP',add_bar = TRUE)
 susie_plot(res,'PIP',add_legend = TRUE)
 susie_plot(res,'PIP', pos=1:500, add_legend = TRUE)
-Plot selected regions with adjusted x-axis position label
+# Plot selected regions with adjusted x-axis position label
 res$genomic_position = 1000 + (1:length(res$pip))
 susie_plot(res,'PIP', pos=list(attr="genomic_position", start=1000, end=1500), add_legend = TRUE)
-
 # True effects are shown in red.
 susie_plot(res,'PIP',b = beta,add_legend = TRUE)
 

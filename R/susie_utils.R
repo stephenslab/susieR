@@ -316,11 +316,11 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
 
 #' @title Get Correlations Between CSs, using Variable with Maximum PIP From Each CS
 #'
-#' @description TO DO: Add brief description of function here. Note that
-#'   using this function requires some care and should only be used by
-#'   more knowledgeable users.
-#'
-#' @param res Describe input argument "res" here.
+#' @description This function evaluates the correlation between single effect
+#'   CSs. It is not part of the SuSiE inference. Rather, it is designed as 
+#'   a diagnostic tool to assess how correlated the reported CS are. 
+#' @param model A SuSiE fit, typically an output from
+#'   \code{\link{susie}} or one of its variants.
 #'
 #' @param X n by p matrix of values of the p variables (covariates) in
 #'   n samples. When provided, correlation between variables will be
@@ -332,14 +332,16 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
 #'   minimum correlation among variables is smaller than
 #'   \code{min_abs_corr}.
 #'
-#' @param max Describe input argument "max" here.
+#' @param max Instead of reporting a matrix of CS correlations, report the maximum
+#' absolute correlation among all pairs of correlations.
 #'
-#' @return Describe the \code{get_cs_correlation} return value here.
+#' @return A matrix of correlations between CSs, or the maximum absolute correlation 
+#' when \code(max=TRUE) is used.
 #'
 #' @export
 #'
-get_cs_correlation = function (res, X = NULL, Xcorr = NULL, max = FALSE) {
-  if (is.null(res$sets$cs) || length(res$sets$cs) == 1) return(NA)
+get_cs_correlation = function (model, X = NULL, Xcorr = NULL, max = FALSE) {
+  if (is.null(model$sets$cs) || length(model$sets$cs) == 1) return(NA)
   if (!is.null(X) && !is.null(Xcorr))
     stop("Only one of X or Xcorr should be specified")
   if (is.null(Xcorr) && is.null(X))
@@ -347,7 +349,7 @@ get_cs_correlation = function (res, X = NULL, Xcorr = NULL, max = FALSE) {
   if (!is.null(Xcorr) && !is_symmetric_matrix(Xcorr))
     stop("Xcorr matrix must be symmetric")
   # Get index for the best PIP per CS
-  max_pip_idx = sapply(res$sets$cs, function(cs) cs[which.max(res$pip[cs])])
+  max_pip_idx = sapply(model$sets$cs, function(cs) cs[which.max(model$pip[cs])])
   if (is.null(Xcorr)) {
     X_sub = X[,max_pip_idx]
     cs_corr = muffled_corr(as.matrix(X_sub))

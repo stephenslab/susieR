@@ -4,10 +4,11 @@
 \alias{get_cs_correlation}
 \title{Get Correlations Between CSs, using Variable with Maximum PIP From Each CS}
 \usage{
-get_cs_correlation(res, X = NULL, Xcorr = NULL, max = FALSE)
+get_cs_correlation(model, X = NULL, Xcorr = NULL, max = FALSE)
 }
 \arguments{
-\item{res}{Describe input argument "res" here.}
+\item{model}{A SuSiE fit, typically an output from
+\code{\link{susie}} or one of its variants.}
 
 \item{X}{n by p matrix of values of the p variables (covariates) in
 n samples. When provided, correlation between variables will be
@@ -19,13 +20,15 @@ variables is smaller than \code{min_abs_corr}.}
 minimum correlation among variables is smaller than
 \code{min_abs_corr}.}
 
-\item{max}{Describe input argument "max" here.}
+\item{max}{Instead of reporting a matrix of CS correlations, report the maximum
+absolute correlation among all pairs of correlations.}
 }
 \value{
-Describe the \code{get_cs_correlation} return value here.
+A matrix of correlations between CSs, or the maximum absolute correlation 
+when \code(max=TRUE) is used.
 }
 \description{
-TO DO: Add brief description of function here. Note that
-  using this function requires some care and should only be used by
-  more knowledgeable users.
+This function evaluates the correlation between single effect
+  CSs. It is not part of the SuSiE inference. Rather, it is designed as 
+  a diagnostic tool to assess how correlated the reported CS are.
 }
