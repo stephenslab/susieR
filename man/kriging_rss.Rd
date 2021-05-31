@@ -7,7 +7,7 @@
 kriging_rss(
   z,
   R,
-  r_tol = 1e-08,
+  r_tol = 0.00000001,
   s = estimate_s_rss(z, R, r_tol, method = "null-mle")
 )
 }

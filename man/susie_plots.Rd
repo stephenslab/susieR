@@ -12,7 +12,7 @@ susie_plot(
   pos = NULL,
   b = NULL,
   max_cs = 400,
-  add_legend = FALSE,
+  add_legend = NULL,
   ...
 )
 
@@ -45,7 +45,9 @@ purity (set \code{max_cs} between 0 and 1), or based on size (set
 \code{max_cs > 1}).}
 
 \item{add_legend}{If \code{add_legend = TRUE}, add a legend to
-annotate the size and purity of each CS discovered.}
+  annotate the size and purity of each CS discovered. It can also be specified
+as location where legends should be added, eg \code{add_legend = "bottomright"} 
+(default is "topright")}
 
 \item{\dots}{Additional arguments passed to
 \code{\link[graphics]{plot}}.}
@@ -79,6 +81,10 @@ res = susie(X,y,L = 10)
 susie_plot(res,'PIP')
 susie_plot(res,'PIP',add_bar = TRUE)
 susie_plot(res,'PIP',add_legend = TRUE)
+susie_plot(res,'PIP', pos=1:500, add_legend = TRUE)
+Plot selected regions with adjusted x-axis position label
+res$genomic_position = 1000 + (1:length(res$pip))
+susie_plot(res,'PIP', pos=list(attr="genomic_position", start=1000, end=1500), add_legend = TRUE)
 
 # True effects are shown in red.
 susie_plot(res,'PIP',b = beta,add_legend = TRUE)

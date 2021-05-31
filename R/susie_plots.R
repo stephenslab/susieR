@@ -24,11 +24,11 @@
 #'   signals in credible interval.
 #'
 #' @param pos This can be either be (1) a numeric vector of indices of
-#'   variables to plot, or (2) a list with the following list elements:
+#'   subset of variables to plot, or (2) a list with the following list elements:
 #'   \code{pos$attr}, \code{pos$start} and \code{pos$end}, where
 #'   \code{pos$attr} is a character string of the name of index variable
 #'   in \code{model} object, and \code{pos$start} and \code{pos$end} are
-#'   boundaries of indices to plot.
+#'   boundaries of indices to plot. See "Examples" for some details.
 #'
 #' @param b For simulated data, set \code{b = TRUE} to highlight
 #'   "true" effects (highlights in red).
@@ -62,9 +62,10 @@
 #' susie_plot(res,'PIP')
 #' susie_plot(res,'PIP',add_bar = TRUE)
 #' susie_plot(res,'PIP',add_legend = TRUE)
+#' susie_plot(res,'PIP', pos=1:500, add_legend = TRUE)
 #' Plot selected regions with adjusted x-axis position label
-#' res$position = 1000 + (1:length(res$pip))
-#' susie_plot(res,'PIP', pos=list(attr="position", start=1000, end=1500), add_legend = TRUE)
+#' res$genomic_position = 1000 + (1:length(res$pip))
+#' susie_plot(res,'PIP', pos=list(attr="genomic_position", start=1000, end=1500), add_legend = TRUE)
 #'
 #' # True effects are shown in red.
 #' susie_plot(res,'PIP',b = beta,add_legend = TRUE)
@@ -161,6 +162,9 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
     start_adj = -min(min(model[[pos$attr]]) - pos$start,0)
     end_adj = max(max(model[[pos$attr]]) - pos$end,0)
     pos = (1 + start_adj):(length(p) - end_adj)
+  } else {
+    if (!all(pos %in% 1:length(p))) 
+      stop("Provided position is outside the range of variables")
   }
   legend_text = list(col = vector(),purity = vector(),size = vector())
   # scipen0 = options()$scipen

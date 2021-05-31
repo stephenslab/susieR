@@ -4,7 +4,7 @@
 \alias{estimate_s_rss}
 \title{Estimate s in \code{susie_rss} Model Using Regularized LD}
 \usage{
-estimate_s_rss(z, R, r_tol = 1e-08, method = "null-mle")
+estimate_s_rss(z, R, r_tol = 0.00000001, method = "null-mle")
 }
 \arguments{
 \item{z}{A p-vector of z scores.}
