@@ -38,7 +38,9 @@
 #'   \code{max_cs > 1}).
 #'
 #' @param add_legend If \code{add_legend = TRUE}, add a legend to
-#'   annotate the size and purity of each CS discovered.
+#'   annotate the size and purity of each CS discovered. It can also be specified
+#' as location where legends should be added, eg \code{add_legend = "bottomright"} 
+#' (default is "topright")
 #'
 #' @param \dots Additional arguments passed to
 #'   \code{\link[graphics]{plot}}.
@@ -73,7 +75,7 @@
 #' @export
 #'
 susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
-                       max_cs = 400, add_legend = FALSE, ...) {
+                       max_cs = 400, add_legend = NULL, ...) {
   is_susie = inherits(model,"susie")
   ylab = y
   color = c(
@@ -195,7 +197,7 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
       legend_text$purity = append(round(purity,4),legend_text$purity)
       legend_text$size = append(length(x0),legend_text$size)
     }
-    if (length(legend_text$col) > 0 && add_legend) {
+    if (length(legend_text$col) > 0 && !is.null(add_legend)) {
 
       # Plot legend.
       text = vector()
@@ -206,7 +208,11 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
           text[i] = paste0("L",i,": C=",legend_text$size[i],"/R=",
                            legend_text$purity[i])
       }
-      legend("topright",text,bty = "n",col = legend_text$col,cex = 0.65,
+      if (!(add_legend %in% c("bottomright", "bottom", "bottomleft", "left", 
+        "topleft", "top", "topright", "right", "center"))) {
+          add_legend = "topright"
+        }
+      legend(add_legend,text,bty = "n",col = legend_text$col,cex = 0.65,
              pch = 15)
     }
   }
