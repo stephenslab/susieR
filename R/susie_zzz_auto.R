@@ -49,7 +49,7 @@
 #'
 #' @param \dots Additional arguments passed to \code{\link{susie}}.
 #'
-#' @return Describe \code{susie_auto} return value here.
+#' @return See \code{\link{susie}} for a description of return values.
 #' 
 #' @seealso \code{\link{susie}}
 #'  

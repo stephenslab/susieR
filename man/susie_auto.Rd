@@ -60,7 +60,7 @@ less than \code{tol}.}
 \item{\dots}{Additional arguments passed to \code{\link{susie}}.}
 }
 \value{
-Describe \code{susie_auto} return value here.
+See \code{\link{susie}} for a description of return values.
 }
 \description{
 \code{susie_auto} is an attempt to automate reliable
