@@ -59,8 +59,8 @@ This implementation exploits the special structure of X,
 }
 \examples{
 set.seed(1)
-mu = c(rep(0,50),rep(1,50),rep(3,50),rep(-2,50),rep(0,300))
-y = mu + rnorm(500)
+mu = c(rep(0,50),rep(1,50),rep(3,50),rep(-2,50),rep(0,200))
+y = mu + rnorm(400)
 s = susie_trendfilter(y)
 plot(y)
 lines(mu,col = 1,lwd = 3)
