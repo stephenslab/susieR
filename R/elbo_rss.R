@@ -47,7 +47,7 @@ get_ER2_rss = function (sigma2, R, z, s) {
 # @param Eb the posterior mean of b (p vector) (alpha * mu)
 # @param Eb2 the posterior second moment of b (p vector) (alpha * mu2)
 SER_posterior_e_loglik_rss = function (R, Sigma, r, Ez, Ez2) {
-  eigenS = attr(Sigma,'eigenS')
+  eigenS = attr(Sigma,"eigenS")
   Dinv = 1/(eigenS$values)
   Dinv[is.infinite(Dinv)] = 0
   rR = R %*% r

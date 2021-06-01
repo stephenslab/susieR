@@ -21,10 +21,6 @@ matrix.}
 semidefinite matrix of R.}
 
 \item{s}{an estimated s from \code{estimate_s_rss}}
-
-\item{plot.it}{If \code{plot.it = TRUE}, it produces a plot with
-observed z score vs the expected value. The possible allele switched
-variants are labeled as red points (log LR > 2 and abs(z) > 2).}
 }
 \value{
 a list containing a ggplot2 plot object and a table. The plot

@@ -690,10 +690,6 @@ estimate_s_rss = function (z, R, r_tol = 1e-08, method = "null-mle") {
 #'
 #' @param s an estimated s from \code{estimate_s_rss}
 #'
-#' @param plot.it If \code{plot.it = TRUE}, it produces a plot with
-#'   observed z score vs the expected value. The possible allele switched
-#'   variants are labeled as red points (log LR > 2 and abs(z) > 2).
-#'
 #' @return a list containing a ggplot2 plot object and a table. The plot
 #'   compares observed z score vs the expected value. The possible allele
 #'   switched variants are labeled as red points (log LR > 2 and abs(z) > 2).
@@ -784,7 +780,7 @@ kriging_rss = function (z, R, r_tol = 1e-08,
                    cond_z = cond_z,logLR = logLRmix)
 
   p = ggplot(res) + geom_point(aes(x = z, y = condmean)) +
-    labs(x = 'Observed z scores', y = "Expected value") +
+    labs(x = "Observed z scores", y = "Expected value") +
     geom_abline(intercept = 0, slope = 1) +
     theme_bw()
 

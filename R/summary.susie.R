@@ -56,8 +56,8 @@ summary.susie = function (object, ...) {
 #' @export
 #' 
 print.summary.susie = function (x, ...) {
-  cat('\nVariables in credible sets:\n\n')
+  cat("\nVariables in credible sets:\n\n")
   print.data.frame(x$vars[which(x$vars$cs > 0),],row.names = FALSE)
-  cat('\nCredible sets summary:\n\n')
+  cat("\nCredible sets summary:\n\n")
   print.data.frame(x$cs,row.names = FALSE)
 }

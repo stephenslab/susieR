@@ -41,7 +41,8 @@
 #' @param add_legend If \code{add_legend = TRUE}, add a legend to
 #'   annotate the size and purity of each CS discovered. It can also be
 #'   specified as location where legends should be added, e.g.,
-#'   \code{add_legend = "bottomright"} (default location is top-right).
+#'   \code{add_legend = "bottomright"} (default location is
+#'   \code{"topright"}).
 #'
 #' @param \dots Additional arguments passed to
 #'   \code{\link[graphics]{plot}}.
@@ -60,16 +61,16 @@
 #' X = scale(X,center = TRUE,scale = TRUE)
 #' y = drop(X %*% beta + rnorm(n))
 #' res = susie(X,y,L = 10)
-#' susie_plot(res,'PIP')
-#' susie_plot(res,'PIP',add_bar = TRUE)
-#' susie_plot(res,'PIP',add_legend = TRUE)
-#' susie_plot(res,'PIP', pos=1:500, add_legend = TRUE)
+#' susie_plot(res,"PIP")
+#' susie_plot(res,"PIP",add_bar = TRUE)
+#' susie_plot(res,"PIP",add_legend = TRUE)
+#' susie_plot(res,"PIP", pos=1:500, add_legend = TRUE)
 #' # Plot selected regions with adjusted x-axis position label
 #' res$genomic_position = 1000 + (1:length(res$pip))
-#' susie_plot(res,'PIP',add_legend = TRUE,
-#'            pos = list(attr = 'genomic_position',start = 1000,end = 1500))
+#' susie_plot(res,"PIP",add_legend = TRUE,
+#'            pos = list(attr = "genomic_position",start = 1000,end = 1500))
 #' # True effects are shown in red.
-#' susie_plot(res,'PIP',b = beta,add_legend = TRUE)
+#' susie_plot(res,"PIP",b = beta,add_legend = TRUE)
 #'
 #' @importFrom utils head
 #' @importFrom stats pnorm
@@ -171,7 +172,7 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
   # scipen0 = options()$scipen
   # options(scipen = 10)
   args = list(...)
-  if (!exists("xlab", args)) args$xlab = 'variable'
+  if (!exists("xlab", args)) args$xlab = "variable"
   if (!exists("ylab", args)) args$ylab = ylab
   if (!exists("pch", args)) args$pch = 16
   args$x = pos + start
@@ -186,7 +187,8 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
         x0 = intersect(pos,model$sets$cs[[which(model$sets$cs_index == i)]])
         y1 = p[x0]
       } else if (n_in_CS(model, model$sets$requested_coverage)[i] < max_cs) {
-        x0 = intersect(pos,which(in_CS(model,model$sets$requested_coverage)[i,] > 0))
+        x0 = intersect(pos,
+               which(in_CS(model,model$sets$requested_coverage)[i,] > 0))
         y1 = p[x0]
       } else {
         x0 = NULL
@@ -207,7 +209,8 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
       legend_text$purity = append(round(purity,4),legend_text$purity)
       legend_text$size = append(length(x0),legend_text$size)
     }
-    if (length(legend_text$col) > 0 && !is.null(add_legend) && !identical(add_legend, FALSE)) {
+    if (length(legend_text$col) > 0 && !is.null(add_legend) &&
+        !identical(add_legend, FALSE)) {
 
       # Plot legend.
       text = vector()
