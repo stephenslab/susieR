@@ -207,7 +207,7 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
       legend_text$purity = append(round(purity,4),legend_text$purity)
       legend_text$size = append(length(x0),legend_text$size)
     }
-    if (length(legend_text$col) > 0 && (!is.null(add_legend) || !identical(add_legend, FALSE))) {
+    if (length(legend_text$col) > 0 && !is.null(add_legend) && !identical(add_legend, FALSE)) {
 
       # Plot legend.
       text = vector()
