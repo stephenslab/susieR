@@ -42,8 +42,14 @@ you have helped fixing bugs or making improvements to the source code.
 
 ## Quick Start
 
-To automatically retrieve and install `susieR` from this repository,
-with the vignettes included, run:
+Install susieR from [CRAN](https://cran.r-project.org/package=susieR):
+
+```R
+install.packages("susieR")
+```
+
+Alternatively, install the latest in-development version of `susieR`
+from GitHub:
 
 ```R
 # install.packages("remotes")
@@ -51,7 +57,7 @@ remotes::install_github("stephenslab/susieR")
 ```
 
 See [here](https://stephenslab.github.io/susieR/articles/mwe.html) for
-a brief illustration of `susieR`.  For more documentation and examples
+a brief illustration of `susieR`. For more documentation and examples
 please visit https://stephenslab.github.io/susieR
 
 ## Citing this work
