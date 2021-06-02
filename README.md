@@ -48,7 +48,7 @@ Install susieR from [CRAN](https://cran.r-project.org/package=susieR):
 install.packages("susieR")
 ```
 
-Alternatively, install the latest in-development version of `susieR`
+Alternatively, install the latest development version of `susieR`
 from GitHub:
 
 ```R
