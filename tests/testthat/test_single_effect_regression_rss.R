@@ -13,8 +13,8 @@ test_that("single_effect_regression_rss (lambda = 0) agrees with previous versio
 
   s = single_effect_regression_rss(z, Sigma, optimize_V = "none")
 
-  expect_equal(attr(R, 'd'), rep(1, 500), tol=1E-4)
-  expect_equal_SER_suff_stat(s, original.res, tol=1E-4)
+  expect_equal(attr(R, 'd'), rep(1, 500), tolerance=1e-4)
+  expect_equal_SER_suff_stat(s, original.res, tolerance=1e-4)
 }))
 
 test_that("single_effect_regression_rss (lambda = 1) agrees with previous version", with(simulate(200, 500), {
@@ -30,6 +30,6 @@ test_that("single_effect_regression_rss (lambda = 1) agrees with previous versio
 
   s = single_effect_regression_rss(z, Sigma, optimize_V = "none")
 
-  expect_equal(attr(R, 'd'), rep(1, 500), tol=1E-4)
-  expect_equal_SER_suff_stat(s, original.res, tol=1E-4)
+  expect_equal(attr(R, 'd'), rep(1, 500), tolerance=1e-4)
+  expect_equal_SER_suff_stat(s, original.res, tolerance=1e-4)
 }))

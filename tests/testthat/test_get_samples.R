@@ -6,7 +6,7 @@ test_that("Sampling from posterior distribution agrees with expected value", wit
   expect_equal(dim(post_samples1$b), c(500, 10000))
   expect_equal(dim(post_samples1$gamma), c(500, 10000))
   expect_equal(rowMeans(post_samples1$gamma), res1$pip)
-  expect_equal(rowMeans(post_samples1$b), susie_get_posterior_mean(res1), tol=1E-2)
+  expect_equal(rowMeans(post_samples1$b), susie_get_posterior_mean(res1), tolerance=0.01)
 
   ss = univariate_regression(X, y)
   R = cor(X)
@@ -16,5 +16,5 @@ test_that("Sampling from posterior distribution agrees with expected value", wit
   expect_equal(dim(post_samples2$b), c(500, 10000))
   expect_equal(dim(post_samples2$gamma), c(500, 10000))
   expect_equal(rowMeans(post_samples2$gamma), res2$pip)
-  expect_equal(rowMeans(post_samples2$b), susie_get_posterior_mean(res2), tol=1E-2)
+  expect_equal(rowMeans(post_samples2$b), susie_get_posterior_mean(res2), tolerance=0.01)
 }))

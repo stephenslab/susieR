@@ -11,7 +11,7 @@ test_that("susie_rss (lambda = 0) agrees with previous version", with(simulate(2
 
   skip('susie_rss_lambda is updated.')
   expect_equal(res$converged, TRUE)
-  expect_equal_susie_rss(res, original.res, tol=1E-4)
+  expect_equal_susie_rss(res, original.res, tolerance=1e-4)
 }))
 
 test_that("susie_rss (lambda = 1) agrees with previous version", with(simulate(200, 500), {
@@ -25,5 +25,5 @@ test_that("susie_rss (lambda = 1) agrees with previous version", with(simulate(2
 
   skip('susie_rss_lambda is updated.')
   expect_equal(res$converged, TRUE)
-  expect_equal_susie_rss(res, original.res, tol=1E-4)
+  expect_equal_susie_rss(res, original.res, tolerance=1e-4)
 }))

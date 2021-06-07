@@ -11,7 +11,7 @@ test_that("get_objective (lambda = 0) agrees with previous version", with(simula
 
   res = get_objective_rss(R, z, s)
 
-  expect_equal(res, original.res, tol=1E-4)
+  expect_equal(res, original.res, tolerance=1e-4)
 }))
 
 test_that("get_objective (lambda = 1) agrees with previous version", with(simulate(200, 500), {
@@ -25,5 +25,5 @@ test_that("get_objective (lambda = 1) agrees with previous version", with(simula
 
   res = get_objective_rss(R, z, s)
 
-  expect_equal(res, original.res, tol=1E-4)
+  expect_equal(res, original.res, tolerance=1e-4)
 }))
