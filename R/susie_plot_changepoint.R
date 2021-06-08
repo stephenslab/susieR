@@ -21,9 +21,12 @@
 #' 
 #' @examples
 #' set.seed(1)
-#' mu = c(rep(0,50),rep(1,50),rep(3,50),rep(-2,50),rep(0,100))
-#' y = mu + rnorm(300)
-#' s = susie_trendfilter(y)
+#' mu = c(rep(0,50),rep(1,50),rep(3,50),rep(-2,50),rep(0,300))
+#' y = mu + rnorm(500)
+#' # Here we use a less sensitive tolerance so that the example takes
+#' # less time; in practice you will likely want to use a more stringent
+#' # setting such as tol = 0.001.
+#' s = susie_trendfilter(y,tol = 0.1)
 #'
 #' # Produces ggplot with credible sets for changepoints.
 #' susie_plot_changepoint(s,y) 
