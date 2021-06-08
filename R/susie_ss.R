@@ -199,7 +199,7 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
   attr(XtX,"scaled:scale") = csd
 
   # Check that X_colmeans has length 1 or p.
-  if (length(X_colmeans) == 1) 
+  if (length(X_colmeans) == 1)
     X_colmeans = rep(X_colmeans,p)
   if (length(X_colmeans) != p)
     stop("The length of X_colmeans does not agree with number of variables")
@@ -217,9 +217,19 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
       stop("s_init$alpha has invalid values outside range [0,1]; please ",
            "check your input")
     # First, remove effects with s_init$V = 0
-    s_init = susie_prune_single_effects(s_init, verbose=FALSE)
-    # Then prune or expand
-    s_init = susie_prune_single_effects(s_init, L, s$V, verbose)
+    s_init = susie_prune_single_effects(s_init)
+    num_effects = nrow(s_init$alpha)
+    if(missing(L)){
+      L = num_effects
+    }else if(L < num_effects){
+      warning(paste("Specified number of effects L =",L,
+                    "is smaller than the number of effects",num_effects,
+                    "in input SuSiE model. The initialized SuSiE model will have",
+                    num_effects,"effects."))
+      L = num_effects
+    }
+    # expand s_init if L > num_effects.
+    s_init = susie_prune_single_effects(s_init, L, s$V)
     s = modifyList(s,s_init)
     s = init_finalize(s,X = XtX)
     s$XtXr = s$Xr

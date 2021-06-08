@@ -65,10 +65,6 @@
 #'   \code{cov2cor((1-w)*R + w*tcrossprod(z))}, where \code{w =
 #'   z_ld_weight}.
 #'
-#' @param L Maximum number of components (nonzero coefficients) in the
-#'   susie regression model. If L is larger than the number of
-#'   covariates, p, L is set to p.
-#'
 #' @param prior_variance The prior variance(s) for the non-zero
 #'   element of \eqn{b_l}. It is either a scalar, or a vector of length
 #'   L. When \code{estimate_prior_variance = TRUE} (highly recommended)
@@ -147,11 +143,11 @@
 #' ss   = univariate_regression(X,y)
 #' R    = with(input_ss,cov2cor(XtX))
 #' zhat = with(ss,betahat/sebetahat)
-#' res  = susie_rss(zhat,R,L = 10)
+#' res  = susie_rss(zhat,R)
 #'
 #' @export
 #'
-susie_rss = function (z, R, z_ld_weight = 0, L=10, prior_variance = 50,
+susie_rss = function (z, R, z_ld_weight = 0, prior_variance = 50,
                       estimate_prior_variance=TRUE, ...) {
 
   # Check input R.
@@ -190,7 +186,7 @@ susie_rss = function (z, R, z_ld_weight = 0, L=10, prior_variance = 50,
   # The choice of n=2, yty=1 is arbitrary except in that it ensures
   # var(y) = yty/(n-1) = 1 and because of this scaled_prior_variance =
   # prior_variance.
-  s = susie_suff_stat(XtX = R,Xty = z,n = 2,yty = 1,L = L,
+  s = susie_suff_stat(XtX = R,Xty = z,n = 2,yty = 1,
                       scaled_prior_variance = prior_variance,
                       estimate_prior_variance = estimate_prior_variance,
                       residual_variance = 1,
@@ -317,9 +313,18 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
       stop("s_init$alpha has invalid values outside range [0,1]; please ",
            "check your input")
     # First, remove effects with s_init$V = 0
-    s_init = susie_prune_single_effects(s_init, verbose=FALSE)
-    # Then prune or expand
-    s_init = susie_prune_single_effects(s_init, L, s$V, verbose)
+    s_init = susie_prune_single_effects(s_init)
+    num_effects = nrow(s_init$alpha)
+    if(missing(L)){
+      L = num_effects
+    }else if(L < num_effects){
+      warning(paste("Specified number of effects L =",L,
+                    "is smaller than the number of effects",num_effects,
+                    "in input SuSiE model. It will have",num_effects,"effects."))
+      L = num_effects
+    }
+    # expand s_init if L > num_effects.
+    s_init = susie_prune_single_effects(s_init, L, s$V)
     s = modifyList(s,s_init)
     s = init_finalize_rss(s,R = R)
   } else

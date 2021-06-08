@@ -317,9 +317,9 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
 #' @title Get Correlations Between CSs, using Variable with Maximum PIP From Each CS
 #'
 #' @description This function evaluates the correlation between single effect
-#'   CSs. It is not part of the SuSiE inference. Rather, it is designed as 
+#'   CSs. It is not part of the SuSiE inference. Rather, it is designed as
 #'   a diagnostic tool to assess how correlated the reported CS are.
-#' 
+#'
 #' @param model A SuSiE fit, typically an output from
 #'   \code{\link{susie}} or one of its variants.
 #'
@@ -523,10 +523,9 @@ susie_slim = function (res)
 
 # Prune single effects to given number L in susie model object.
 #' @keywords internal
-susie_prune_single_effects = function (s,L = 0,V = NULL,verbose = FALSE) {
+susie_prune_single_effects = function (s,L = 0,V = NULL) {
   num_effects = nrow(s$alpha)
   if (L == 0) {
-
     # Filtering will be based on non-zero elements in s$V.
     if (!is.null(s$V))
       L = length(which(s$V > 0))
@@ -541,20 +540,13 @@ susie_prune_single_effects = function (s,L = 0,V = NULL,verbose = FALSE) {
     effects_rank = c(s$sets$cs_index,setdiff(1:num_effects,s$sets$cs_index))
   else
     effects_rank = 1:num_effects
-  if (verbose)
-    warning(paste("Specified number of effects L =",L,
-                  "does not match the number of effects",num_effects,
-                  "in input SuSiE model. It will be",
-                  ifelse(L < num_effects,"pruned","expanded"),"to have",L,
+
+  if (L > num_effects) {
+    message(paste("Specified number of effects L =",L,
+                  "is greater the number of effects",num_effects,
+                  "in input SuSiE model. The SuSiE model will be expanded to have",L,
                   "effects."))
-  if (L < num_effects) {
-    for (n in c("alpha","mu","mu2","lbf_variable"))
-      if (!is.null(s[[n]]))
-        s[[n]] = s[[n]][effects_rank,][1:L,]
-    for (n in c("KL","lbf","V"))
-      if (!is.null(s[[n]]))
-        s[[n]] = s[[n]][effects_rank][1:L]
-  } else {
+
     s$alpha = rbind(s$alpha[effects_rank,],
                     matrix(1/ncol(s$alpha),L - num_effects,ncol(s$alpha)))
     for (n in c("mu","mu2","lbf_variable"))
