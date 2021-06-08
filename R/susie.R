@@ -376,10 +376,21 @@ susie = function (X,y,L = min(10,ncol(X)),
     if (max(s_init$alpha) > 1 || min(s_init$alpha) < 0)
       stop("s_init$alpha has invalid values outside range [0,1]; please ",
            "check your input")
+
     # First, remove effects with s_init$V = 0
-    s_init = susie_prune_single_effects(s_init, verbose=FALSE)
-    # Then prune or expand
-    s_init = susie_prune_single_effects(s_init, L, s$V, verbose)
+    s_init = susie_prune_single_effects(s_init)
+    num_effects = nrow(s_init$alpha)
+    if(missing(L)){
+      L = num_effects
+    }else if(L < num_effects){
+      warning(paste("Specified number of effects L =",L,
+                    "is smaller than the number of effects",num_effects,
+                    "in input SuSiE model. The SuSiE model will have",
+                    num_effects,"effects."))
+      L = num_effects
+    }
+    # expand s_init if L > num_effects.
+    s_init = susie_prune_single_effects(s_init, L, s$V)
     s = modifyList(s,s_init)
     s = init_finalize(s,X = X)
   } else {
@@ -473,11 +484,11 @@ susie = function (X,y,L = min(10,ncol(X)),
     if (!missing(s_init) && !is.null(s_init))
       warning("The given s_init is not used in refinement")
     if (!is.null(null_weight) && null_weight != 0) {
-        
+
       ## if null_weight is specified, we compute the original prior_weight
       pw_s = s$pi[-s$null_index]/(1-null_weight)
       if (!compute_univariate_zscore)
-          
+
         ## if null_weight is specified, and the extra 0 column is not
         ## removed from compute_univariate_zscore, we remove it here
         X = X[,1:(ncol(X) - 1)]

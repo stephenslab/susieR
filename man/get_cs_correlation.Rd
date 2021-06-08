@@ -30,6 +30,6 @@ A matrix of correlations between CSs, or the maximum
 }
 \description{
 This function evaluates the correlation between single effect
-  CSs. It is not part of the SuSiE inference. Rather, it is designed as 
+  CSs. It is not part of the SuSiE inference. Rather, it is designed as
   a diagnostic tool to assess how correlated the reported CS are.
 }

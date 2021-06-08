@@ -8,7 +8,6 @@ susie_rss(
   z,
   R,
   z_ld_weight = 0,
-  L = 10,
   prior_variance = 50,
   estimate_prior_variance = TRUE,
   ...
@@ -26,10 +25,6 @@ longer recommended to use a non-zero value. If \code{z_ld_weight
 > 0}, the matrix R used in the model is adjusted to be
 \code{cov2cor((1-w)*R + w*tcrossprod(z))}, where \code{w =
 z_ld_weight}.}
-
-\item{L}{Maximum number of components (nonzero coefficients) in the
-susie regression model. If L is larger than the number of
-covariates, p, L is set to p.}
 
 \item{prior_variance}{The prior variance(s) for the non-zero
 element of \eqn{b_l}. It is either a scalar, or a vector of length
@@ -153,7 +148,7 @@ input_ss = compute_suff_stat(X,y,standardize = TRUE)
 ss   = univariate_regression(X,y)
 R    = with(input_ss,cov2cor(XtX))
 zhat = with(ss,betahat/sebetahat)
-res  = susie_rss(zhat,R,L = 10)
+res  = susie_rss(zhat,R)
 
 }
 \references{
