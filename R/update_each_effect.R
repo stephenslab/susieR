@@ -16,17 +16,16 @@ update_each_effect = function (X, y, s, estimate_prior_variance = FALSE,
   L = nrow(s$alpha)
   if (L > 0)
     for (l in 1:L) {
-        
+
       # Remove lth effect from fitted values.
       s$Xr = s$Xr - compute_Xb(X,s$alpha[l,] * s$mu[l,])
-      
+
       # Compute residuals.
       R = y - s$Xr
 
       res = single_effect_regression(R,X,s$V[l],s$sigma2,s$pi,
                                      estimate_prior_method,
                                      check_null_threshold)
-
       # Update the variational estimate of the posterior mean.
       s$mu[l,]    = res$mu
       s$alpha[l,] = res$alpha

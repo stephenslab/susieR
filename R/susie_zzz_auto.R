@@ -14,7 +14,7 @@
 #' @param y The observed responses, a vector of length n.
 #'
 #' @param L_init The initial value of L.
-#' 
+#'
 #' @param L_max The largest value of L to consider.
 #'
 #' @param verbose If \code{verbose = TRUE}, the algorithm's progress,
@@ -23,7 +23,7 @@
 #'
 #' @param init_tol The tolerance to passed to \code{susie} during
 #'   early runs (set large to shorten the initial runs).
-#' 
+#'
 #' @param standardize If \code{standardize = TRUE}, standardize the
 #'   columns of X to unit variance prior to fitting. Note that
 #'   \code{scaled_prior_variance} specifies the prior on the
@@ -50,9 +50,9 @@
 #' @param \dots Additional arguments passed to \code{\link{susie}}.
 #'
 #' @return See \code{\link{susie}} for a description of return values.
-#' 
+#'
 #' @seealso \code{\link{susie}}
-#'  
+#'
 #' @examples
 #' set.seed(1)
 #' n = 1000
@@ -67,11 +67,11 @@
 #' abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
 #' plot(y,predict(res))
 #' abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
-#' 
+#'
 #' @importFrom stats sd
 #'
 #' @export
-#' 
+#'
 susie_auto = function (X, y, L_init = 1, L_max = 512, verbose = FALSE,
                        init_tol = 1, standardize = TRUE, intercept = TRUE,
                        max_iter = 100,tol = 1e-2, ...) {
@@ -95,7 +95,7 @@ susie_auto = function (X, y, L_init = 1, L_max = 512, verbose = FALSE,
 
   # We call it converged---i.e., L is "big enough"---if there are any
   # prior variances set to zero.
-  converged = !all(s.2$V > 0) 
+  converged = !all(s.2$V > 0)
   while (!converged & (L <= L_max)) {
     for (i in 1:L) {
       s.2 = add_null_effect(s.2,1) # Add in L more effects.
@@ -123,9 +123,9 @@ susie_auto = function (X, y, L_init = 1, L_max = 512, verbose = FALSE,
 
     # We call it converged---i.e., L is "big enough"---if there are
     # any prior variances set to zero.
-    converged = !all(s.2$V > 0) 
+    converged = !all(s.2$V > 0)
   }
-  
+
   # Final run at default tolerance to improve fit.
   s.2 = susie(X,y,s_init = s.2,estimate_residual_variance = TRUE,
               estimate_prior_variance = TRUE,tol = tol,
