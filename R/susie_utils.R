@@ -447,9 +447,10 @@ get_purity = function(pos, X, Xcorr, squared = FALSE, n = 100) {
   if (length(pos) == 1)
     c(1,1,1)
   else {
-    if (length(pos) > n)
-      pos = sample(pos, n)
     if (is.null(Xcorr)) {
+      if (length(pos) > n)
+        pos = sample(pos, n)
+
       X_sub = X[,pos]
       if (length(pos) > n) {
 
