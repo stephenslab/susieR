@@ -16,8 +16,7 @@ susie_rss(
 \arguments{
 \item{z}{A p-vector of z scores.}
 
-\item{R}{A p by p symmetric, positive semidefinite correlation
-matrix.}
+\item{R}{A p by p correlation matrix.}
 
 \item{z_ld_weight}{This parameter is included for backwards
 compatibility with previous versions of the function, but it is no

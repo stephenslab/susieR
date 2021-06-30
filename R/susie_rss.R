@@ -55,8 +55,7 @@
 #'
 #' @param z A p-vector of z scores.
 #'
-#' @param R A p by p symmetric, positive semidefinite correlation
-#' matrix.
+#' @param R A p by p correlation matrix.
 #'
 #' @param z_ld_weight This parameter is included for backwards
 #'   compatibility with previous versions of the function, but it is no
