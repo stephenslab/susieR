@@ -77,7 +77,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.29</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.43</span>
       </span>
     </div>
 
@@ -124,34 +124,34 @@
   is \(N(0,V)\).</p>
     </div>
 
-    <pre class="usage"><span class='fu'>single_effect_regression</span><span class='op'>(</span>
-  <span class='va'>y</span>,
-  <span class='va'>X</span>,
-  <span class='va'>V</span>,
-  residual_variance <span class='op'>=</span> <span class='fl'>1</span>,
-  prior_weights <span class='op'>=</span> <span class='cn'>NULL</span>,
-  optimize_V <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"none"</span>, <span class='st'>"optim"</span>, <span class='st'>"uniroot"</span>, <span class='st'>"EM"</span>, <span class='st'>"simple"</span><span class='op'>)</span>,
-  check_null_threshold <span class='op'>=</span> <span class='fl'>0</span>
-<span class='op'>)</span>
+    <pre class="usage"><span class='fu'>single_effect_regression</span>(
+  <span class='no'>y</span>,
+  <span class='no'>X</span>,
+  <span class='no'>V</span>,
+  <span class='kw'>residual_variance</span> <span class='kw'>=</span> <span class='fl'>1</span>,
+  <span class='kw'>prior_weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>optimize_V</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"none"</span>, <span class='st'>"optim"</span>, <span class='st'>"uniroot"</span>, <span class='st'>"EM"</span>, <span class='st'>"simple"</span>),
+  <span class='kw'>check_null_threshold</span> <span class='kw'>=</span> <span class='fl'>0</span>
+)
 
-<span class='fu'>single_effect_regression_rss</span><span class='op'>(</span>
-  <span class='va'>z</span>,
-  <span class='va'>Sigma</span>,
-  V <span class='op'>=</span> <span class='fl'>1</span>,
-  prior_weights <span class='op'>=</span> <span class='cn'>NULL</span>,
-  optimize_V <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"none"</span>, <span class='st'>"optim"</span>, <span class='st'>"uniroot"</span>, <span class='st'>"EM"</span>, <span class='st'>"simple"</span><span class='op'>)</span>,
-  check_null_threshold <span class='op'>=</span> <span class='fl'>0</span>
-<span class='op'>)</span>
+<span class='fu'>single_effect_regression_rss</span>(
+  <span class='no'>z</span>,
+  <span class='no'>Sigma</span>,
+  <span class='kw'>V</span> <span class='kw'>=</span> <span class='fl'>1</span>,
+  <span class='kw'>prior_weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>optimize_V</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"none"</span>, <span class='st'>"optim"</span>, <span class='st'>"uniroot"</span>, <span class='st'>"EM"</span>, <span class='st'>"simple"</span>),
+  <span class='kw'>check_null_threshold</span> <span class='kw'>=</span> <span class='fl'>0</span>
+)
 
-<span class='fu'>single_effect_regression_ss</span><span class='op'>(</span>
-  <span class='va'>Xty</span>,
-  <span class='va'>dXtX</span>,
-  V <span class='op'>=</span> <span class='fl'>1</span>,
-  residual_variance <span class='op'>=</span> <span class='fl'>1</span>,
-  prior_weights <span class='op'>=</span> <span class='cn'>NULL</span>,
-  optimize_V <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"none"</span>, <span class='st'>"optim"</span>, <span class='st'>"uniroot"</span>, <span class='st'>"EM"</span>, <span class='st'>"simple"</span><span class='op'>)</span>,
-  check_null_threshold <span class='op'>=</span> <span class='fl'>0</span>
-<span class='op'>)</span></pre>
+<span class='fu'>single_effect_regression_ss</span>(
+  <span class='no'>Xty</span>,
+  <span class='no'>dXtX</span>,
+  <span class='kw'>V</span> <span class='kw'>=</span> <span class='fl'>1</span>,
+  <span class='kw'>residual_variance</span> <span class='kw'>=</span> <span class='fl'>1</span>,
+  <span class='kw'>prior_weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>optimize_V</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"none"</span>, <span class='st'>"optim"</span>, <span class='st'>"uniroot"</span>, <span class='st'>"EM"</span>, <span class='st'>"simple"</span>),
+  <span class='kw'>check_null_threshold</span> <span class='kw'>=</span> <span class='fl'>0</span>
+)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -262,7 +262,7 @@ individuals.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>

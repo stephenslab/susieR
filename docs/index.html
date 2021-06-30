@@ -42,7 +42,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.29</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.43</span>
       </span>
     </div>
 
@@ -86,10 +86,11 @@
 <div id="quick-start" class="section level2">
 <h2 class="hasAnchor">
 <a href="#quick-start" class="anchor"></a>Quick Start</h2>
-<p>To automatically retrieve and install <code>susieR</code> from this repository, with the vignettes included, run:</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co"># install.packages("remotes")</span>
-<span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html">install_github</a></span><span class="op">(</span><span class="st">"stephenslab/susieR"</span><span class="op">)</span></code></pre></div>
+<p>Install susieR from <a href="https://cran.r-project.org/package=susieR">CRAN</a>:</p>
+<div class="sourceCode" id="cb1"><pre class="r"><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span>(<span class="st">"susieR"</span>)</pre></div>
+<p>Alternatively, install the latest development version of <code>susieR</code> from GitHub:</p>
+<div class="sourceCode" id="cb2"><pre class="r"><span class="co"># install.packages("remotes")</span>
+<span class="kw pkg">remotes</span><span class="kw ns">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html">install_github</a></span>(<span class="st">"stephenslab/susieR"</span>)</pre></div>
 <p>See <a href="https://stephenslab.github.io/susieR/articles/mwe.html">here</a> for a brief illustration of <code>susieR</code>. For more documentation and examples please visit <a href="https://stephenslab.github.io/susieR" class="uri">https://stephenslab.github.io/susieR</a></p>
 </div>
 <div id="citing-this-work" class="section level2">
@@ -107,9 +108,9 @@
 <li><p>When any changes are made to <code>roxygen2</code> markup, run <code><a href="https://devtools.r-lib.org//reference/document.html">devtools::document()</a></code> to update package <code>NAMESPACE</code> and documentation files.</p></li>
 <li><p>Run <code><a href="https://pkgdown.r-lib.org/reference/build_site.html">pkgdown::build_site()</a></code> to build the website. Getting <code>pkgdown</code> to work properly can be frustrating due to numerous &amp; fragile dependencies. If <code>pkgdown</code> does not work for you out of the box you can use this <code>docker</code> command to run all vignettes and build the site:</p></li>
 </ul>
-<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1"></a><span class="ex">docker</span> run --rm --security-opt label:disable -t -P -w <span class="va">$PWD</span> -v <span class="va">$PWD</span>:<span class="va">$PWD</span> \</span>
-<span id="cb2-2"><a href="#cb2-2"></a>  -u <span class="va">$UID</span>:<span class="va">${GROUPS[0]}</span> -e HOME=/home/<span class="va">$USER</span> -e USER=<span class="va">$USER</span> gaow/susie \</span>
-<span id="cb2-3"><a href="#cb2-3"></a>  R --slave -e <span class="st">"pkgdown::build_site(lazy=TRUE, examples=FALSE)"</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb3-1" title="1"><span class="ex">docker</span> run --rm --security-opt label:disable -t -P -w <span class="va">$PWD</span> -v <span class="va">$PWD</span>:<span class="va">$PWD</span> \</a>
+<a class="sourceLine" id="cb3-2" title="2">  -u <span class="va">$UID</span>:<span class="va">${GROUPS[0]}</span> -e HOME=/home/<span class="va">$USER</span> -e USER=<span class="va">$USER</span> gaow/susie \</a>
+<a class="sourceLine" id="cb3-3" title="3">  R --slave -e <span class="st">"pkgdown::build_site(lazy=TRUE, examples=FALSE)"</span></a></code></pre></div>
 </div>
 </div>
   </div>
@@ -118,6 +119,8 @@
     <div class="links">
 <h2>Links</h2>
 <ul class="list-unstyled">
+<li>Download from CRAN at <br><a href="https://cloud.r-project.org/package=susieR">https://​cloud.r-project.org/​package=susieR</a>
+</li>
 <li>Browse source code at <br><a href="https://github.com/stephenslab/susieR/">https://​github.com/​stephenslab/​susieR/​</a>
 </li>
 <li>Report a bug at <br><a href="https://github.com/stephenslab/susieR/issues">https://​github.com/​stephenslab/​susieR/​issues</a>
@@ -152,6 +155,7 @@
   <div class="dev-status">
 <h2>Dev status</h2>
 <ul class="list-unstyled">
+<li><a href="https://cran.r-project.org/package=susieR"><img src="https://www.r-pkg.org/badges/version/susieR" alt="CRAN status badge"></a></li>
 <li><a href="https://travis-ci.org/stephenslab/susieR"><img src="https://travis-ci.org/stephenslab/susieR.svg?branch=master" alt="Travis Build Status"></a></li>
 <li><a href="https://ci.appveyor.com/project/pcarbo/susier"><img src="https://ci.appveyor.com/api/projects/status/tcgeqxd8q8krija6?svg=true" alt="Appveyor Build status"></a></li>
 <li><a href="https://codecov.io/gh/stephenslab/susieR"><img src="https://codecov.io/gh/stephenslab/susieR/branch/master/graph/badge.svg" alt="codecov"></a></li>
@@ -166,7 +170,7 @@
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>

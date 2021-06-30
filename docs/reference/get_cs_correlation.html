@@ -40,9 +40,9 @@
 
 
 <meta property="og:title" content="Get Correlations Between CSs, using Variable with Maximum PIP From Each CS — get_cs_correlation" />
-<meta property="og:description" content="TO DO: Add brief description of function here. Note that
-  using this function requires some care and should only be used by
-  more knowledgeable users." />
+<meta property="og:description" content="This function evaluates the correlation between single effect
+  CSs. It is not part of the SuSiE inference. Rather, it is designed as
+  a diagnostic tool to assess how correlated the reported CS are." />
 
 
 
@@ -74,7 +74,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.29</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.43</span>
       </span>
     </div>
 
@@ -113,19 +113,20 @@
     </div>
 
     <div class="ref-description">
-    <p>TO DO: Add brief description of function here. Note that
-  using this function requires some care and should only be used by
-  more knowledgeable users.</p>
+    <p>This function evaluates the correlation between single effect
+  CSs. It is not part of the SuSiE inference. Rather, it is designed as
+  a diagnostic tool to assess how correlated the reported CS are.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>get_cs_correlation</span><span class='op'>(</span><span class='va'>res</span>, X <span class='op'>=</span> <span class='cn'>NULL</span>, Xcorr <span class='op'>=</span> <span class='cn'>NULL</span>, max <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>get_cs_correlation</span>(<span class='no'>model</span>, <span class='kw'>X</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>Xcorr</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>max</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>res</th>
-      <td><p>Describe input argument "res" here.</p></td>
+      <th>model</th>
+      <td><p>A SuSiE fit, typically an output from
+<code><a href='susie.html'>susie</a></code> or one of its variants.</p></td>
     </tr>
     <tr>
       <th>X</th>
@@ -143,13 +144,16 @@ minimum correlation among variables is smaller than
     </tr>
     <tr>
       <th>max</th>
-      <td><p>Describe input argument "max" here.</p></td>
+      <td><p>When <code>max = FAFLSE</code>, return a matrix of CS
+correlations. When <code>max = TRUE</code>, return only the maximum
+absolute correlation among all pairs of correlations.</p></td>
     </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>Describe the <code>get_cs_correlation</code> return value here.</p>
+    <p>A matrix of correlations between CSs, or the maximum
+  absolute correlation when <code>max = TRUE</code>.</p>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
@@ -166,7 +170,7 @@ minimum correlation among variables is smaller than
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>

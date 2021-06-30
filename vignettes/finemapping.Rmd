@@ -78,20 +78,12 @@ susie_plot(z_scores, y = "z", b=b)
 For starters, we assume there are at most 10 causal variables, i.e.,
 set `L = 10`, although SuSiE is robust to the choice of `L`.
 
-Notice that by default SuSiE estimates prior effect size from data. For
-fine-mapping applications, however, we often have some knowledge of SuSiE prior effect
-size since it is parameterized as percentage of variance explained. Here for this eQTL
-fine-mapping application we set SuSiE prior variance to 0.1, and update residual variance in
-the variational algorithm that fits SuSiE model. The `susieR` function
-call is:
+The `susieR` function call is:
 
 ```{r}
 fitted <- susie(X, Y[,1],
                 L = 10,
-                estimate_residual_variance = TRUE, 
-                estimate_prior_variance = FALSE,
-                scaled_prior_variance = 0.1,
-				verbose = TRUE)
+		verbose = TRUE)
 ```
 
 ### Credible sets
@@ -147,8 +139,15 @@ z3[order(z3[,2], decreasing = TRUE),]
 
 ### Choice of priors
 
-We found that SuSiE is generally robust to choice of priors. Here we
-set scaled prior variance (percentage of variance explained) to 0.2,
+Notice that by default SuSiE estimates prior effect size from data. For
+fine-mapping applications, however, we sometimes have knowledge of SuSiE prior effect
+size since it is parameterized as percentage of variance explained (PVE) by a non-zero effect, 
+which, in the context of fine-mapping, is related to per-SNP heritability. It is possible
+to use `scaled_prior_variance` to specify this PVE and explicitly set `estimate_prior_variance=FALSE`
+to fix the prior effect to given value.
+
+In this data-set, SuSiE is robust to choice of priors. Here we
+set PVE to 0.2,
 and compare with previous results:
 
 ```{r}
@@ -160,15 +159,7 @@ fitted = susie(X, Y[,1],
 susie_plot(fitted, y='PIP', b=b)
 ```
 
-which largely remains unchanged. We also illustrate below analysis using 
-default prior estimated from data,
-
-```{r}
-fitted = susie(X, Y[,1],
-               L = 10,
-               estimate_residual_variance = TRUE)
-susie_plot(fitted, y='PIP', b=b)
-```
+which largely remains unchanged. 
 
 ### A note on covariate adjustment
 
@@ -189,8 +180,7 @@ remove.covariate.effects <- function (X, Z, y) {
 
 out = remove.covariate.effects(X, Z, Y[,1])
 fitted_adjusted = susie(out$X, out$y,
-               L = 10,
-               estimate_residual_variance = TRUE)
+               L = 10) ,
 ```
 
 Note that the covariates `Z` should have a column of ones as the first column. If not, the above function `remove.covariate.effects`

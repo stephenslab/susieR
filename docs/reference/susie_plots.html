@@ -76,7 +76,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.29</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.43</span>
       </span>
     </div>
 
@@ -122,25 +122,25 @@
   <code>track_fit = TRUE</code> when calling <code>susie</code>.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>susie_plot</span><span class='op'>(</span>
-  <span class='va'>model</span>,
-  <span class='va'>y</span>,
-  add_bar <span class='op'>=</span> <span class='cn'>FALSE</span>,
-  pos <span class='op'>=</span> <span class='cn'>NULL</span>,
-  b <span class='op'>=</span> <span class='cn'>NULL</span>,
-  max_cs <span class='op'>=</span> <span class='fl'>400</span>,
-  add_legend <span class='op'>=</span> <span class='cn'>FALSE</span>,
-  <span class='va'>...</span>
-<span class='op'>)</span>
+    <pre class="usage"><span class='fu'>susie_plot</span>(
+  <span class='no'>model</span>,
+  <span class='no'>y</span>,
+  <span class='kw'>add_bar</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>pos</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>b</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>max_cs</span> <span class='kw'>=</span> <span class='fl'>400</span>,
+  <span class='kw'>add_legend</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='no'>...</span>
+)
 
-<span class='fu'>susie_plot_iteration</span><span class='op'>(</span><span class='va'>model</span>, <span class='va'>L</span>, <span class='va'>file_prefix</span>, pos <span class='op'>=</span> <span class='cn'>NULL</span><span class='op'>)</span></pre>
+<span class='fu'>susie_plot_iteration</span>(<span class='no'>model</span>, <span class='no'>L</span>, <span class='no'>file_prefix</span>, <span class='kw'>pos</span> <span class='kw'>=</span> <span class='kw'>NULL</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>model</th>
-      <td><p>A susie fit, typically an output from
+      <td><p>A SuSiE fit, typically an output from
 <code><a href='susie.html'>susie</a></code> or one of its variants. For <code>suse_plot</code>,
 the susie fit must have <code>model$z</code>, <code>model$PIP</code>, and may
 include <code>model$sets</code>. <code>model</code> may also be a vector of
@@ -178,12 +178,15 @@ purity (set <code>max_cs</code> between 0 and 1), or based on size (set
     <tr>
       <th>add_legend</th>
       <td><p>If <code>add_legend = TRUE</code>, add a legend to
-annotate the size and purity of each CS discovered.</p></td>
+annotate the size and purity of each CS discovered. It can also be
+specified as location where legends should be added, e.g.,
+<code>add_legend = "bottomright"</code> (default location is
+<code>"topright"</code>).</p></td>
     </tr>
     <tr>
       <th>...</th>
       <td><p>Additional arguments passed to
-<code><a href='https://rdrr.io/r/graphics/plot.default.html'>plot</a></code>.</p></td>
+<code><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></code>.</p></td>
     </tr>
     <tr>
       <th>L</th>
@@ -205,34 +208,36 @@ directory generated using <code><a href='https://rdrr.io/r/base/tempfile.html'>t
     <div class='dont-index'><p><code><a href='susie_plot_changepoint.html'>susie_plot_changepoint</a></code></p></div>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span><span class='op'>(</span><span class='fl'>1</span><span class='op'>)</span>
-<span class='va'>n</span> <span class='op'>=</span> <span class='fl'>1000</span>
-<span class='va'>p</span> <span class='op'>=</span> <span class='fl'>1000</span>
-<span class='va'>beta</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span><span class='op'>(</span><span class='fl'>0</span>,<span class='va'>p</span><span class='op'>)</span>
-<span class='va'>beta</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/sample.html'>sample</a></span><span class='op'>(</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>1000</span>,<span class='fl'>4</span><span class='op'>)</span><span class='op'>]</span> <span class='op'>=</span> <span class='fl'>1</span>
-<span class='va'>X</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>matrix</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span><span class='op'>(</span><span class='va'>n</span><span class='op'>*</span><span class='va'>p</span><span class='op'>)</span>,nrow <span class='op'>=</span> <span class='va'>n</span>,ncol <span class='op'>=</span> <span class='va'>p</span><span class='op'>)</span>
-<span class='va'>X</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/scale.html'>scale</a></span><span class='op'>(</span><span class='va'>X</span>,center <span class='op'>=</span> <span class='cn'>TRUE</span>,scale <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
-<span class='va'>y</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/drop.html'>drop</a></span><span class='op'>(</span><span class='va'>X</span> <span class='op'>%*%</span> <span class='va'>beta</span> <span class='op'>+</span> <span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span><span class='op'>(</span><span class='va'>n</span><span class='op'>)</span><span class='op'>)</span>
-<span class='va'>res</span> <span class='op'>=</span> <span class='fu'><a href='susie.html'>susie</a></span><span class='op'>(</span><span class='va'>X</span>,<span class='va'>y</span>,L <span class='op'>=</span> <span class='fl'>10</span><span class='op'>)</span>
-<span class='fu'>susie_plot</span><span class='op'>(</span><span class='va'>res</span>,<span class='st'>'PIP'</span><span class='op'>)</span>
-</div><div class='img'><img src='susie_plots-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'>susie_plot</span><span class='op'>(</span><span class='va'>res</span>,<span class='st'>'PIP'</span>,add_bar <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
-</div><div class='img'><img src='susie_plots-2.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'>susie_plot</span><span class='op'>(</span><span class='va'>res</span>,<span class='st'>'PIP'</span>,add_legend <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
-</div><div class='img'><img src='susie_plots-3.png' alt='' width='700' height='433' /></div><div class='input'>
+    <pre class="examples"><span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span>(<span class='fl'>1</span>)
+<span class='no'>n</span> <span class='kw'>=</span> <span class='fl'>1000</span>
+<span class='no'>p</span> <span class='kw'>=</span> <span class='fl'>1000</span>
+<span class='no'>beta</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>0</span>,<span class='no'>p</span>)
+<span class='no'>beta</span>[<span class='fu'><a href='https://rdrr.io/r/base/sample.html'>sample</a></span>(<span class='fl'>1</span>:<span class='fl'>1000</span>,<span class='fl'>4</span>)] <span class='kw'>=</span> <span class='fl'>1</span>
+<span class='no'>X</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>matrix</a></span>(<span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span>(<span class='no'>n</span>*<span class='no'>p</span>),<span class='kw'>nrow</span> <span class='kw'>=</span> <span class='no'>n</span>,<span class='kw'>ncol</span> <span class='kw'>=</span> <span class='no'>p</span>)
+<span class='no'>X</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/scale.html'>scale</a></span>(<span class='no'>X</span>,<span class='kw'>center</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,<span class='kw'>scale</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+<span class='no'>y</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/drop.html'>drop</a></span>(<span class='no'>X</span> <span class='kw'>%*%</span> <span class='no'>beta</span> + <span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span>(<span class='no'>n</span>))
+<span class='no'>res</span> <span class='kw'>=</span> <span class='fu'><a href='susie.html'>susie</a></span>(<span class='no'>X</span>,<span class='no'>y</span>,<span class='kw'>L</span> <span class='kw'>=</span> <span class='fl'>10</span>)
+<span class='fu'>susie_plot</span>(<span class='no'>res</span>,<span class='st'>"PIP"</span>)
+<span class='fu'>susie_plot</span>(<span class='no'>res</span>,<span class='st'>"PIP"</span>,<span class='kw'>add_bar</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+<span class='fu'>susie_plot</span>(<span class='no'>res</span>,<span class='st'>"PIP"</span>,<span class='kw'>add_legend</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+<span class='fu'>susie_plot</span>(<span class='no'>res</span>,<span class='st'>"PIP"</span>, <span class='kw'>pos</span><span class='kw'>=</span><span class='fl'>1</span>:<span class='fl'>500</span>, <span class='kw'>add_legend</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+<span class='co'># Plot selected regions with adjusted x-axis position label</span>
+<span class='no'>res</span>$<span class='no'>genomic_position</span> <span class='kw'>=</span> <span class='fl'>1000</span> + (<span class='fl'>1</span>:<span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span>(<span class='no'>res</span>$<span class='no'>pip</span>))
+<span class='fu'>susie_plot</span>(<span class='no'>res</span>,<span class='st'>"PIP"</span>,<span class='kw'>add_legend</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+           <span class='kw'>pos</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(<span class='kw'>attr</span> <span class='kw'>=</span> <span class='st'>"genomic_position"</span>,<span class='kw'>start</span> <span class='kw'>=</span> <span class='fl'>1000</span>,<span class='kw'>end</span> <span class='kw'>=</span> <span class='fl'>1500</span>))
 <span class='co'># True effects are shown in red.</span>
-<span class='fu'>susie_plot</span><span class='op'>(</span><span class='va'>res</span>,<span class='st'>'PIP'</span>,b <span class='op'>=</span> <span class='va'>beta</span>,add_legend <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
-</div><div class='img'><img src='susie_plots-4.png' alt='' width='700' height='433' /></div><div class='input'>
-<span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span><span class='op'>(</span><span class='fl'>1</span><span class='op'>)</span>
-<span class='va'>n</span> <span class='op'>=</span> <span class='fl'>1000</span>
-<span class='va'>p</span> <span class='op'>=</span> <span class='fl'>1000</span>
-<span class='va'>beta</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span><span class='op'>(</span><span class='fl'>0</span>,<span class='va'>p</span><span class='op'>)</span>
-<span class='va'>beta</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/sample.html'>sample</a></span><span class='op'>(</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>1000</span>,<span class='fl'>4</span><span class='op'>)</span><span class='op'>]</span> <span class='op'>=</span> <span class='fl'>1</span>
-<span class='va'>X</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>matrix</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span><span class='op'>(</span><span class='va'>n</span><span class='op'>*</span><span class='va'>p</span><span class='op'>)</span>,nrow <span class='op'>=</span> <span class='va'>n</span>,ncol <span class='op'>=</span> <span class='va'>p</span><span class='op'>)</span>
-<span class='va'>X</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/scale.html'>scale</a></span><span class='op'>(</span><span class='va'>X</span>,center <span class='op'>=</span> <span class='cn'>TRUE</span>,scale <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
-<span class='va'>y</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/drop.html'>drop</a></span><span class='op'>(</span><span class='va'>X</span> <span class='op'>%*%</span> <span class='va'>beta</span> <span class='op'>+</span> <span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span><span class='op'>(</span><span class='va'>n</span><span class='op'>)</span><span class='op'>)</span>
-<span class='va'>res</span> <span class='op'>=</span> <span class='fu'><a href='susie.html'>susie</a></span><span class='op'>(</span><span class='va'>X</span>,<span class='va'>y</span>,L <span class='op'>=</span> <span class='fl'>10</span><span class='op'>)</span>
-<span class='fu'>susie_plot_iteration</span><span class='op'>(</span><span class='va'>res</span>, L<span class='op'>=</span><span class='fl'>10</span><span class='op'>)</span>
-</div><div class='output co'>#&gt; <span class='message'>Iterplot saved to /var/folders/1f/td7tngvd5dz3m4d_21txggq80000gn/T//Rtmpd0fseF/susie_plot.pdf</span></div><div class='input'>
-</div></pre>
+<span class='fu'>susie_plot</span>(<span class='no'>res</span>,<span class='st'>"PIP"</span>,<span class='kw'>b</span> <span class='kw'>=</span> <span class='no'>beta</span>,<span class='kw'>add_legend</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+
+<span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span>(<span class='fl'>1</span>)
+<span class='no'>n</span> <span class='kw'>=</span> <span class='fl'>1000</span>
+<span class='no'>p</span> <span class='kw'>=</span> <span class='fl'>1000</span>
+<span class='no'>beta</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>0</span>,<span class='no'>p</span>)
+<span class='no'>beta</span>[<span class='fu'><a href='https://rdrr.io/r/base/sample.html'>sample</a></span>(<span class='fl'>1</span>:<span class='fl'>1000</span>,<span class='fl'>4</span>)] <span class='kw'>=</span> <span class='fl'>1</span>
+<span class='no'>X</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>matrix</a></span>(<span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span>(<span class='no'>n</span>*<span class='no'>p</span>),<span class='kw'>nrow</span> <span class='kw'>=</span> <span class='no'>n</span>,<span class='kw'>ncol</span> <span class='kw'>=</span> <span class='no'>p</span>)
+<span class='no'>X</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/scale.html'>scale</a></span>(<span class='no'>X</span>,<span class='kw'>center</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,<span class='kw'>scale</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+<span class='no'>y</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/drop.html'>drop</a></span>(<span class='no'>X</span> <span class='kw'>%*%</span> <span class='no'>beta</span> + <span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span>(<span class='no'>n</span>))
+<span class='no'>res</span> <span class='kw'>=</span> <span class='fu'><a href='susie.html'>susie</a></span>(<span class='no'>X</span>,<span class='no'>y</span>,<span class='kw'>L</span> <span class='kw'>=</span> <span class='fl'>10</span>)
+<span class='fu'>susie_plot_iteration</span>(<span class='no'>res</span>, <span class='kw'>L</span><span class='kw'>=</span><span class='fl'>10</span>)</pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
@@ -248,7 +253,7 @@ directory generated using <code><a href='https://rdrr.io/r/base/tempfile.html'>t
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>
