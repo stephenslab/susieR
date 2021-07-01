@@ -4,9 +4,7 @@
 #'
 #' @param shat A p-vector of standard errors.
 #'
-#' @param R A p by p symmetric, positive semidefinite matrix. It
-#'   can be \eqn{X'X}, the covariance matrix \eqn{X'X/(n-1)}, or a
-#'   correlation matrix. It should be estimated from the same samples
+#' @param R A p by p correlation matrix. It should be estimated from the same samples
 #'   used to compute \code{bhat} and \code{shat}. Using an out-of-sample
 #'   matrix may produce unreliable results.
 #'

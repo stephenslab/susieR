@@ -198,9 +198,7 @@ to check and escape from local optima (see details).}
 
 \item{shat}{A p-vector of standard errors.}
 
-\item{R}{A p by p symmetric, positive semidefinite matrix. It
-can be \eqn{X'X}, the covariance matrix \eqn{X'X/(n-1)}, or a
-correlation matrix. It should be estimated from the same samples
+\item{R}{A p by p correlation matrix. It should be estimated from the same samples
 used to compute \code{bhat} and \code{shat}. Using an out-of-sample
 matrix may produce unreliable results.}
 
