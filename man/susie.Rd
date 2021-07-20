@@ -337,8 +337,8 @@ have mean 0; these can be computed using \code{compute_suff_stat}.
 Alternatively the user can provide \code{n} and \code{bhat} (the
 univariate OLS estimates from regressing y on each column of X),
 \code{shat} (the standard errrors from these OLS regressions), the
-p by p symmetric, positive semidefinite correlation (or covariance)
-matrix \eqn{R = (1/(n-1))X'X}, and the variance of \eqn{y}, again
+p by p symmetric, positive semidefinite correlation
+matrix \eqn{R = cov2cor(X'X)}, and the variance of \eqn{y}, again
 all computed from centered \eqn{X} and \eqn{y}. Note that here
 \code{R} and \code{bhat} should be computed using the same matrix
 \eqn{X}. If you do not have access to the original \eqn{X} to
