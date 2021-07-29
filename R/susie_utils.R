@@ -779,7 +779,8 @@ kriging_rss = function (z, R, r_tol = 1e-08,
 
   idx = which(logLRmix > 2 & abs(z) > 2)
   if(length(idx) > 0) {
-    p = p + geom_point(aes(y = z[idx], x = condmean[idx]),col = "red")
+    p = p + geom_point(data = res[idx,],
+                       aes(y = z, x = condmean),col = "red")
   }
 
   return(list(plot = p,
