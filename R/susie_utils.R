@@ -687,7 +687,10 @@ estimate_s_rss = function (z, R, r_tol = 1e-08, method = "null-mle") {
 #'   compares observed z score vs the expected value. The possible allele
 #'   switched variants are labeled as red points (log LR > 2 and abs(z) > 2).
 #'   The table summarizes the conditional distribution for each variant
-#'   and the likelihood ratio test.
+#'   and the likelihood ratio test. The table has the following columns:
+#'   the observed z scores, the conditional expectation, the conditional
+#'   variance, the standardized differences between the observed z score
+#'   and expected value, the log likelihood ratio statistics.
 #'
 #' @importFrom stats dnorm
 #' @importFrom ggplot2 ggplot
@@ -711,8 +714,8 @@ estimate_s_rss = function (z, R, r_tol = 1e-08, method = "null-mle") {
 #' R = cor(X)
 #' attr(R,"eigen") = eigen(R, symmetric = TRUE)
 #' zhat = with(ss,betahat/sebetahat)
-#' condz = kriging_rss(zhat, R)
-#' condz$plot
+#' cond_dist = kriging_rss(zhat, R)
+#' cond_dist$plot
 #'
 #' @export
 #'
@@ -742,14 +745,15 @@ kriging_rss = function (z, R, r_tol = 1e-08,
     condmean[i] = -(1/precision[i,i]) * precision[i,-i] %*% z[-i]
     condvar[i] = 1/precision[i,i]
   }
-  cond_z = (z-condmean)/sqrt(condvar)
+  z_std_diff = (z-condmean)/sqrt(condvar)
 
   # obtain grid
   a_min = 0.8
-  if (max(cond_z^2) < 1)
+  if (max(z_std_diff^2) < 1){
     a_max = 2
-  else
-    a_max = 2*sqrt(max(cond_z^2))
+  }else{
+    a_max = 2*sqrt(max(z_std_diff^2))
+  }
   npoint = ceiling(log2(a_max/a_min)/log2(1.05))
   a_grid = 1.05^((-npoint):0) * a_max
 
@@ -770,7 +774,7 @@ kriging_rss = function (z, R, r_tol = 1e-08,
   logLRmix    = logl1mix - logl0mix
 
   res = data.frame(z = z,condmean = condmean,condvar = condvar,
-                   cond_z = cond_z,logLR = logLRmix)
+                   z_std_diff = z_std_diff,logLR = logLRmix)
 
   p = ggplot(res) + geom_point(aes(y = z, x = condmean)) +
     labs(y = "Observed z scores", x = "Expected value") +
