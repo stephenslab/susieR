@@ -1,7 +1,7 @@
 #' @rdname single_effect_regression
 #'
 #' @title Bayesian single-effect linear regression
-#' 
+#'
 #' @description These methods fit the regression model \eqn{y = Xb +
 #'   e}, where elements of e are \emph{i.i.d.}  \eqn{N(0,s^2)}, and b is
 #'   a p-vector of effects to be estimated. The assumption is that b has
@@ -13,7 +13,7 @@
 #' linear regression with summary data, in which only the statistcs
 #' \eqn{X^Ty} and diagonal elements of \eqn{X^TX} are provided to the
 #' method.
-#' 
+#'
 #' \code{single_effect_regression_rss} performs single-effect linear
 #' regression with z scores. That is, this function fits the
 #' regression model \eqn{z = R*b + e}, where e is \eqn{N(0,Sigma)},
@@ -24,45 +24,45 @@
 #' summary data are the p-vector \code{z} and the p by p matrix
 #' \code{Sigma}. The summary statistics should come from the same
 #' individuals.
-#' 
+#'
 #' @param y An n-vector.
-#' 
+#'
 #' @param X An n by p matrix of covariates.
-#' 
+#'
 #' @param V A scalar giving the (initial) prior variance
-#' 
+#'
 #' @param residual_variance The residual variance.
-#' 
+#'
 #' @param prior_weights A p-vector of prior weights.
-#' 
+#'
 #' @param optimize_V The optimization method to use for fitting the
 #'   prior variance.
-#' 
+#'
 #' @param check_null_threshold Scalar specifying threshold on the
 #'   log-scale to compare likelihood between current estimate and zero
 #'   the null.
-#' 
+#'
 #' @return A list with the following elements:
-#' 
+#'
 #' \item{alpha}{Vector of posterior inclusion probabilities;
 #'   \code{alpha[i]} is posterior probability that the ith coefficient
 #'   is non-zero.}
-#' 
+#'
 #' \item{mu}{Vector of posterior means (conditional on inclusion).}
-#' 
+#'
 #' \item{mu2}{Vector of posterior second moments (conditional on
 #'   inclusion).}
-#' 
+#'
 #' \item{lbf}{Vector of log-Bayes factors for each variable.}
-#' 
+#'
 #' \item{lbf_model}{Log-Bayes factor for the single effect regression.}
 #'
 #' \code{single_effect_regression} and \code{single_effect_regression_ss}
 #' additionally output:
-#' 
+#'
 #' \item{V}{Prior variance (after optimization if \code{optimize_V !=
 #'   "none"}).}
-#' 
+#'
 #' \item{loglik}{The log-likelihood, \eqn{\log p(y | X, V)}.}
 #'
 #' @importFrom stats dnorm
@@ -71,7 +71,7 @@
 #' @importFrom Matrix colSums
 #'
 #' @keywords internal
-#' 
+#'
 single_effect_regression =
   function (y, X, V, residual_variance = 1, prior_weights = NULL,
             optimize_V = c("none", "optim", "uniroot", "EM", "simple"),
@@ -93,12 +93,12 @@ single_effect_regression =
 
   # Deal with special case of infinite shat2 (e.g., happens if X does
   # not vary).
-  lbf[is.infinite(shat2)] = 0 
+  lbf[is.infinite(shat2)] = 0
   maxlbf = max(lbf)
 
   # w is proportional to BF, but subtract max for numerical stability.
   w = exp(lbf - maxlbf)
-  
+
   # Posterior prob for each SNP.
   w_weighted = w * prior_weights
   weighted_sum_w = sum(w_weighted)
@@ -106,7 +106,7 @@ single_effect_regression =
   post_var = (1/V + attr(X,"d")/residual_variance)^(-1) # Posterior variance.
   post_mean = (1/residual_variance) * post_var * Xty
   post_mean2 = post_var + post_mean^2 # Second moment.
-  
+
   # BF for single effect model.
   lbf_model = maxlbf + log(weighted_sum_w)
   loglik = lbf_model + sum(dnorm(y,0,sqrt(residual_variance),log = TRUE))
@@ -138,7 +138,7 @@ optimize_prior_variance = function (optimize_V, betahat, shat2, prior_weights,
           prior_weights = prior_weights,method = "Brent",lower = -30,
           upper = 15)$par
       ## if the estimated one is worse than current one, don't change it.
-      if(neg.loglik.logscale(lV, betahat = betahat,shat2 = shat2,prior_weights = prior_weights) > 
+      if(neg.loglik.logscale(lV, betahat = betahat,shat2 = shat2,prior_weights = prior_weights) >
          neg.loglik.logscale(log(V), betahat = betahat,
                              shat2 = shat2,prior_weights = prior_weights)){
         lV = log(V)
@@ -151,7 +151,7 @@ optimize_prior_variance = function (optimize_V, betahat, shat2, prior_weights,
     else
      stop("Invalid option for optimize_V method")
   }
-  
+
   # Set V exactly 0 if that beats the numerical value by
   # check_null_threshold in loglik. check_null_threshold = 0.1 is
   # exp(0.1) = 1.1 on likelihood scale; it means that for parsimony
@@ -166,6 +166,12 @@ optimize_prior_variance = function (optimize_V, betahat, shat2, prior_weights,
   if (loglik(0,betahat,shat2,prior_weights) +
       check_null_threshold >= loglik(V,betahat,shat2,prior_weights))
     V = 0
+
+  if (V > exp(14)){
+    stop(paste0('The estimated prior vairance is greater than ',exp(14),
+                '. There could be something wrong with the input.'))
+  }
+
   return(V)
 }
 
@@ -174,7 +180,7 @@ optimize_prior_variance = function (optimize_V, betahat, shat2, prior_weights,
 
 # The log likelihood function for SER model (based on summary data
 # betahat, shat2) as a function of prior variance V.
-# 
+#
 #' @importFrom Matrix colSums
 #' @importFrom stats dnorm
 loglik = function (V, betahat, shat2, prior_weights) {
@@ -185,7 +191,7 @@ loglik = function (V, betahat, shat2, prior_weights) {
 
   # Deal with special case of infinite shat2 (e.g., happens if X does
   # not vary).
-  lbf[is.infinite(shat2)] = 0 
+  lbf[is.infinite(shat2)] = 0
 
   maxlbf = max(lbf)
   w = exp(lbf - maxlbf) # w = BF/BFmax
@@ -207,7 +213,7 @@ loglik.grad = function(V, betahat, shat2, prior_weights) {
 
   # Deal with special case of infinite shat2 (e.g., happens if X does
   # not vary).
-  lbf[is.infinite(shat2)] = 0 
+  lbf[is.infinite(shat2)] = 0
 
   maxlbf = max(lbf)
   w = exp(lbf - maxlbf) # w = BF/BFmax

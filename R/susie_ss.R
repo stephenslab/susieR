@@ -253,6 +253,10 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
     # of the objective s$kl has already been computed under the
     # residual variance before the update.
     elbo[i+1] = get_objective_ss(XtX,Xty,s,yty,n)
+    if(is.infinite(elbo[i+1])){
+      stop('The objective becomes infinite. Please check the input.')
+    }
+
     if ((elbo[i+1] - elbo[i]) < tol) {
       s$converged = TRUE
       break
