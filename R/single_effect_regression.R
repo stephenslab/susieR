@@ -168,7 +168,7 @@ optimize_prior_variance = function (optimize_V, betahat, shat2, prior_weights,
     V = 0
 
   if (V > exp(14)){
-    stop(paste0('The estimated prior vairance is greater than ',exp(14),
+    stop(paste0('The estimated prior vairance is greater than ',round(exp(14)),
                 '. There could be something wrong with the input.'))
   }
 
