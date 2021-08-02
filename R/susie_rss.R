@@ -147,7 +147,7 @@
 #' @export
 #'
 susie_rss = function (z, R, z_ld_weight = 0, prior_variance = 50,
-                      estimate_prior_variance=TRUE, ...) {
+                      estimate_prior_variance=TRUE, check_prior=TRUE, ...) {
 
   # Check input R.
   if (nrow(R) != length(z))
@@ -190,6 +190,7 @@ susie_rss = function (z, R, z_ld_weight = 0, prior_variance = 50,
                       estimate_prior_variance = estimate_prior_variance,
                       residual_variance = 1,
                       estimate_residual_variance = FALSE,standardize = FALSE,
+                      check_prior = check_prior,
                       ...)
 
   s$Rr = s$XtXr

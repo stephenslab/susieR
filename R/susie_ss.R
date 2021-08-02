@@ -47,6 +47,10 @@
 #'   semidefinite; (2) check that \code{Xty} is in the space spanned by
 #'   the non-zero eigenvectors of \code{XtX}.
 #'
+#' @param check_prior If \code{check_prior = TRUE}, it checks if the
+#'   estimated prior variance becomes unreasonably large (comparing with
+#'   10 * max(abs(z))^2).
+#'
 #' @export
 #'
 susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
@@ -63,7 +67,8 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
                             max_iter = 100, s_init = NULL, coverage = 0.95,
                             min_abs_corr = 0.5, tol = 1e-3,
                             verbose = FALSE, track_fit = FALSE,
-                            check_input = FALSE, refine = FALSE) {
+                            check_input = FALSE, refine = FALSE,
+                            check_prior = FALSE) {
 
   # Process input estimate_prior_method.
   estimate_prior_method = match.arg(estimate_prior_method)
@@ -240,11 +245,22 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
   elbo[1] = -Inf;
   tracking = list()
 
+  bhat = (1/attr(XtX,"d")) * Xty
+  shat = sqrt(s$sigma2/attr(XtX,"d"))
+  z = bhat/shat
+  zm = max(abs(z[!is.nan(z)]))
+
   for (i in 1:max_iter) {
     if (track_fit)
       tracking[[i]] = susie_slim(s)
     s = update_each_effect_ss(XtX,Xty,s,estimate_prior_variance,
                               estimate_prior_method,check_null_threshold)
+    if(check_prior){
+      if(any(s$V > 10*(zm^2))){
+        stop('The estimated prior vairance is unreasonably large.
+             Please check the input.')
+      }
+    }
 
     if (verbose)
       print(paste0("objective:",get_objective_ss(XtX,Xty,s,yty,n)))
