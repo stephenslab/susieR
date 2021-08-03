@@ -44,6 +44,8 @@ Under the null, the rss model with regularized LD
   using likelihood ratio for each variant.
 }
 \examples{
+# See also the vignette, "Diagnostic for fine-mapping with summary
+# statistics."
 set.seed(1)
 n = 500
 p = 1000

@@ -702,6 +702,8 @@ estimate_s_rss = function (z, R, r_tol = 1e-08, method = "null-mle") {
 #' @importFrom mixsqp mixsqp
 #'
 #' @examples
+#' # See also the vignette, "Diagnostic for fine-mapping with summary
+#' # statistics."
 #' set.seed(1)
 #' n = 500
 #' p = 1000

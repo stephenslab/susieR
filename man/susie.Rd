@@ -67,7 +67,8 @@ susie_suff_stat(
   verbose = FALSE,
   track_fit = FALSE,
   check_input = FALSE,
-  refine = FALSE
+  refine = FALSE,
+  check_prior = FALSE
 )
 }
 \arguments{
@@ -240,6 +241,10 @@ semidefinite matrix of R.}
 \code{Xty}. The checks are: (1) check that \code{XtX} is positive
 semidefinite; (2) check that \code{Xty} is in the space spanned by
 the non-zero eigenvectors of \code{XtX}.}
+
+\item{check_prior}{If \code{check_prior = TRUE}, it checks if the
+estimated prior variance becomes unreasonably large (comparing with
+10 * max(abs(z))^2).}
 }
 \value{
 A \code{"susie"} object with some or all of the following

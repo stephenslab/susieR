@@ -10,6 +10,7 @@ susie_rss(
   z_ld_weight = 0,
   prior_variance = 50,
   estimate_prior_variance = TRUE,
+  check_prior = TRUE,
   ...
 )
 }
