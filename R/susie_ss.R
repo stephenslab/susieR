@@ -331,6 +331,9 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
       for(cs in 1:length(s$sets$cs)) {
         pw_cs = pw_s
         pw_cs[s$sets$cs[[cs]]] = 0
+        if(all(pw_cs == 0)){
+          break
+        }
         s2 = susie_suff_stat(XtX = XtX, Xty = Xty, yty = yty, n = n, L = L,
             X_colmeans = X_colmeans, y_mean = y_mean,
             prior_weights = pw_cs, s_init = NULL,
@@ -362,11 +365,15 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
             track_fit = FALSE, check_input = FALSE, refine = FALSE)
         m = c(m,list(s3))
       }
-      elbo = sapply(m, function(x) susie_get_objective(x))
-      if ((max(elbo) - susie_get_objective(s)) <= 0)
+      if(length(m) == 0){
         conti = FALSE
-      else
-        s = m[[which.max(elbo)]]
+      }else{
+        elbo = sapply(m, function(x) susie_get_objective(x))
+        if ((max(elbo) - susie_get_objective(s)) <= 0)
+          conti = FALSE
+        else
+          s = m[[which.max(elbo)]]
+      }
     }
   }
 

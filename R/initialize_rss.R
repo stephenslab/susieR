@@ -8,8 +8,14 @@ init_setup_rss = function(p, L, prior_variance, residual_variance,
     stop("Residual variance should be a scaler between 0 and 1")
   if (is.null(residual_variance))
     residual_variance = 1
-  if (is.null(prior_weights))
+  if (is.null(prior_weights)){
     prior_weights = rep(1/p,p)
+  }else{
+   if(all(prior_weights == 0)){
+     stop("Prior weight should greater than 0 for at least one variable.")
+   }
+   prior_weights = prior_weights / sum(prior_weights)
+  }
   if(length(prior_weights) != p)
     stop("Prior weights must have length p")
   if (p < L)
@@ -36,18 +42,18 @@ init_setup_rss = function(p, L, prior_variance, residual_variance,
 init_finalize_rss = function (s, R = NULL, Rz = NULL) {
   if(length(s$V) == 1)
     s$V = rep(s$V,nrow(s$alpha))
-  
+
   # Check sigma2.
   if (!is.numeric(s$sigma2))
     stop("Input residual variance sigma2 must be numeric")
-  
+
   # Avoid problems with dimension if input is a 1 x 1 matrix.
   s$sigma2 = as.numeric(s$sigma2)
   if (length(s$sigma2) != 1)
     stop("Input residual variance sigma2 must be a scalar")
   if (s$sigma2 <= 0)
     stop("residual variance sigma2 must be positive (is your var(y) zero?)")
-  
+
   # Check prior variance.
   if (!is.numeric(s$V))
     stop("Input prior variance must be numeric")
@@ -60,13 +66,13 @@ init_finalize_rss = function (s, R = NULL, Rz = NULL) {
   if (nrow(s$alpha) != length(s$V))
     stop("Input prior variance V must have length of nrow of alpha in ",
          "input object")
-  
+
   # Update Rz.
   if (!missing(Rz))
     s$Rz = Rz
   if (!missing(R))
     s$Rz = compute_Xb(R,colSums(s$mu * s$alpha))
-  
+
   # Reset KL and lbf.
   s$KL = rep(as.numeric(NA),nrow(s$alpha))
   s$lbf = rep(as.numeric(NA),nrow(s$alpha))

@@ -2,12 +2,12 @@
 #'
 #' @param coef_index An L-vector containing the the indices of the
 #'   nonzero coefficients.
-#' 
+#'
 #' @param coef_value An L-vector containing initial coefficient
 #' estimates.
-#' 
+#'
 #' @param p A scalar giving the number of variables.
-#' 
+#'
 #' @return A list with elements \code{alpha}, \code{mu} and \code{mu2}
 #'   to be used by \code{susie}.
 #'
@@ -20,13 +20,13 @@
 #' X = matrix(rnorm(n*p),nrow = n,ncol = p)
 #' X = scale(X,center = TRUE,scale = TRUE)
 #' y = drop(X %*% beta + rnorm(n))
-#' 
+#'
 #' # Initialize susie to ground-truth coefficients.
 #' s = susie_init_coef(which(beta != 0),beta[beta != 0],length(beta))
 #' res = susie(X,y,L = 10,s_init=s)
-#' 
+#'
 #' @export
-#' 
+#'
 susie_init_coef = function (coef_index, coef_value, p) {
   L = length(coef_index)
   if (L <= 0)
@@ -58,10 +58,14 @@ init_setup = function (n, p, L, scaled_prior_variance, residual_variance,
          "standardize = TRUE")
   if(is.null(residual_variance))
     residual_variance = varY
-  if(is.null(prior_weights))
+  if(is.null(prior_weights)){
     prior_weights = rep(1/p,p)
-  else
+  }else{
+    if(all(prior_weights == 0)){
+      stop("Prior weight should greater than 0 for at least one variable.")
+    }
     prior_weights = prior_weights / sum(prior_weights)
+  }
   if(length(prior_weights) != p)
     stop("Prior weights must have length p")
   if (p < L)
@@ -88,18 +92,18 @@ init_setup = function (n, p, L, scaled_prior_variance, residual_variance,
 init_finalize = function (s, X = NULL, Xr = NULL) {
   if(length(s$V) == 1)
     s$V = rep(s$V,nrow(s$alpha))
-  
+
   # Check sigma2.
   if (!is.numeric(s$sigma2))
     stop("Input residual variance sigma2 must be numeric")
-  
+
   # Avoid problems with dimension if input is a 1 x 1 matrix.
   s$sigma2 = as.numeric(s$sigma2)
   if (length(s$sigma2) != 1)
     stop("Input residual variance sigma2 must be a scalar")
   if (s$sigma2 <= 0)
     stop("Residual variance sigma2 must be positive (is your var(Y) zero?)")
-  
+
   # check prior variance
   if (!is.numeric(s$V))
     stop("Input prior variance must be numeric")
@@ -112,13 +116,13 @@ init_finalize = function (s, X = NULL, Xr = NULL) {
   if (nrow(s$alpha) != length(s$V))
     stop("Input prior variance V must have length of nrow of alpha in ",
          "input object")
-  
+
   # Update Xr.
   if (!missing(Xr))
     s$Xr = Xr
   if (!missing(X))
     s$Xr = compute_Xb(X,colSums(s$mu * s$alpha))
-  
+
   # Reset KL and lbf.
   s$KL = rep(as.numeric(NA),nrow(s$alpha))
   s$lbf = rep(as.numeric(NA),nrow(s$alpha))
