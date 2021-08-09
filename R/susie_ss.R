@@ -222,17 +222,17 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
     # First, remove effects with s_init$V = 0
     s_init = susie_prune_single_effects(s_init)
     num_effects = nrow(s_init$alpha)
-    if(missing(L)){
+    if(missing(L)){ # if L is not specified, we set it as in s_init.
       L = num_effects
-    }else if(L < num_effects){
-      warning(paste("Specified number of effects L =",L,
+    }else if(min(p, L) < num_effects){
+      warning(paste("Specified number of effects L =",min(p, L),
                     "is smaller than the number of effects",num_effects,
                     "in input SuSiE model. The initialized SuSiE model will have",
                     num_effects,"effects."))
       L = num_effects
     }
     # expand s_init if L > num_effects.
-    s_init = susie_prune_single_effects(s_init, L, s$V)
+    s_init = susie_prune_single_effects(s_init, min(p, L), s$V)
     s = modifyList(s,s_init)
     s = init_finalize(s,X = XtX)
     s$XtXr = s$Xr

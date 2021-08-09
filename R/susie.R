@@ -382,15 +382,15 @@ susie = function (X,y,L = min(10,ncol(X)),
     num_effects = nrow(s_init$alpha)
     if(missing(L)){
       L = num_effects
-    }else if(L < num_effects){
-      warning(paste("Specified number of effects L =",L,
+    }else if(min(p,L) < num_effects){
+      warning(paste("Specified number of effects L =",min(p,L),
                     "is smaller than the number of effects",num_effects,
                     "in input SuSiE model. The SuSiE model will have",
                     num_effects,"effects."))
       L = num_effects
     }
     # expand s_init if L > num_effects.
-    s_init = susie_prune_single_effects(s_init, L, s$V)
+    s_init = susie_prune_single_effects(s_init, min(p, L), s$V)
     s = modifyList(s,s_init)
     s = init_finalize(s,X = X)
   } else {
