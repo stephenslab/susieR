@@ -257,7 +257,7 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
                               estimate_prior_method,check_null_threshold)
     if(check_prior){
       if(any(s$V > 10*(zm^2))){
-        stop('The estimated prior vairance is unreasonably large.
+        stop('The estimated prior variance is unreasonably large.
              Please check the input.')
       }
     }
