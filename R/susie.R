@@ -500,6 +500,9 @@ susie = function (X,y,L = min(10,ncol(X)),
       for(cs in 1:length(s$sets$cs)){
         pw_cs = pw_s
         pw_cs[s$sets$cs[[cs]]] = 0
+        if(all(pw_cs == 0)){
+          break
+        }
         s2 = susie(X,y,L = L,scaled_prior_variance = scaled_prior_variance,
             residual_variance = residual_variance,
             prior_weights = pw_cs, s_init = NULL,null_weight = null_weight,
@@ -532,11 +535,15 @@ susie = function (X,y,L = min(10,ncol(X)),
             refine = FALSE)
         m = c(m,list(s3))
       }
-      elbo = sapply(m,function(x) susie_get_objective(x))
-      if ((max(elbo) - susie_get_objective(s)) <= 0)
+      if(length(m) == 0){
         conti = FALSE
-      else
-        s = m[[which.max(elbo)]]
+      }else{
+        elbo = sapply(m,function(x) susie_get_objective(x))
+        if ((max(elbo) - susie_get_objective(s)) <= 0)
+          conti = FALSE
+        else
+          s = m[[which.max(elbo)]]
+      }
     }
   }
   return(s)
