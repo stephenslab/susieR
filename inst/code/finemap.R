@@ -47,6 +47,8 @@ run_finemap <- function(beta, se, LD_file, n, k, args = "", prefix="data")
   snp$snp = as.character(snp$rsid)
 
   snp = rank_snp(snp)
+  # we add snp-prob for backwards-compatability with code that used this script with FINEMAP v1.1
+  snp$prob = snp$snp_prob
   config = read.table(cfg$config,header=TRUE,sep=" ")
 
   # Only keep configurations with cumulative 95% probability
