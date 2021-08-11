@@ -144,6 +144,25 @@
 #' zhat = with(ss,betahat/sebetahat)
 #' res  = susie_rss(zhat,R)
 #'
+#' # Toy example illustrating behaviour susie_rss when the z-scores
+#' # are mostly consistent with a non-invertible correlation matrix.
+#' # Here the CS should contain both variables, and two PIPs should
+#' # be nearly the same.
+#' z <- c(6,6.01)
+#' R <- matrix(1,2,2)
+#' fit <- susie_rss(z,R)
+#' print(fit$sets$cs)
+#' print(fit$pip)
+#'
+#' # In this second toy example, the only difference is that one
+#' # z-score is much larger than the other. Here we expect that the
+#' # second PIP will be much larger than the first.
+#' z <- c(6,7)
+#' R <- matrix(1,2,2)
+#' fit <- susie_rss(z,R)
+#' print(fit$sets$cs)
+#' print(fit$pip)
+#'
 #' @export
 #'
 susie_rss = function (z, R, z_ld_weight = 0, prior_variance = 50,
