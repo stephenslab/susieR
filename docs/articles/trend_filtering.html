@@ -31,7 +31,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.43</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.48</span>
       </span>
     </div>
 
@@ -61,13 +61,13 @@
 
       
 
-      </header><div class="row">
+      </header><script src="trend_filtering_files/header-attrs-2.9/header-attrs.js"></script><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>Trend filtering</h1>
                         <h4 class="author">Matthew Stephens</h4>
             
-            <h4 class="date">2021-06-30</h4>
+            <h4 class="date">2021-08-12</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/master/vignettes/trend_filtering.Rmd"><code>vignettes/trend_filtering.Rmd</code></a></small>
       <div class="hidden name"><code>trend_filtering.Rmd</code></div>
@@ -87,38 +87,43 @@
 <h1 class="hasAnchor">
 <a href="#examples" class="anchor"></a>Examples</h1>
 <p>Here we apply SuSiE to perform 0th order trend filtering in some simple simulated examples. We have implemented in <code>susieR</code> 0.6.0 a funciton <code>susie_trendfilter</code> which internally creates <span class="math inline">\(X\)</span> matrix with step functions in the columns to match input <span class="math inline">\(y\)</span>. The algebra have been optimized to work on such trendfiltering matrices. Here we simulate some data where <span class="math inline">\(\mu\)</span> is a step function with four steps, a 0th order trendfiltering problem. The regression is truly sparse and SuSiE should do well.</p>
-<div class="sourceCode" id="cb1"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">susieR</span>)
-<span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span>(<span class="fl">1</span>)
-<span class="no">n</span><span class="kw">=</span><span class="fl">1000</span>
-<span class="no">mu</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/rep.html">rep</a></span>(<span class="fl">0</span>,<span class="fl">100</span>),<span class="fu"><a href="https://rdrr.io/r/base/rep.html">rep</a></span>(<span class="fl">1</span>,<span class="fl">100</span>),<span class="fu"><a href="https://rdrr.io/r/base/rep.html">rep</a></span>(<span class="fl">3</span>,<span class="fl">100</span>),<span class="fu"><a href="https://rdrr.io/r/base/rep.html">rep</a></span>(-<span class="fl">2</span>,<span class="fl">100</span>),<span class="fu"><a href="https://rdrr.io/r/base/rep.html">rep</a></span>(<span class="fl">0</span>,<span class="fl">600</span>))
-<span class="no">y</span> <span class="kw">=</span> <span class="no">mu</span> + <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html">rnorm</a></span>(<span class="no">n</span>)
-<span class="no">s</span> <span class="kw">=</span> <span class="fu"><a href="../reference/susie_trendfilter.html">susie_trendfilter</a></span>(<span class="no">y</span>, <span class="fl">0</span>, <span class="kw">L</span><span class="kw">=</span><span class="fl">10</span>)</pre></body></html></div>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/stephenslab/susieR">susieR</a></span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span>
+<span class="va">n</span><span class="op">=</span><span class="fl">1000</span>
+<span class="va">mu</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html">rep</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">100</span><span class="op">)</span>,<span class="fu"><a href="https://rdrr.io/r/base/rep.html">rep</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">100</span><span class="op">)</span>,<span class="fu"><a href="https://rdrr.io/r/base/rep.html">rep</a></span><span class="op">(</span><span class="fl">3</span>,<span class="fl">100</span><span class="op">)</span>,<span class="fu"><a href="https://rdrr.io/r/base/rep.html">rep</a></span><span class="op">(</span><span class="op">-</span><span class="fl">2</span>,<span class="fl">100</span><span class="op">)</span>,<span class="fu"><a href="https://rdrr.io/r/base/rep.html">rep</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">600</span><span class="op">)</span><span class="op">)</span>
+<span class="va">y</span> <span class="op">=</span> <span class="va">mu</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span>
+<span class="va">s</span> <span class="op">=</span> <span class="fu"><a href="../reference/susie_trendfilter.html">susie_trendfilter</a></span><span class="op">(</span><span class="va">y</span>, <span class="fl">0</span>, L<span class="op">=</span><span class="fl">10</span><span class="op">)</span></code></pre></div>
 <p>Plot results: the truth is black, and susie estimate is red.</p>
-<div class="sourceCode" id="cb2"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/graphics/plot.html">plot</a></span>(<span class="no">y</span>,<span class="kw">pch</span><span class="kw">=</span><span class="st">"."</span>)
-<span class="fu"><a href="https://rdrr.io/r/graphics/lines.html">lines</a></span>(<span class="no">mu</span>,<span class="kw">col</span><span class="kw">=</span><span class="fl">1</span>,<span class="kw">lwd</span><span class="kw">=</span><span class="fl">3</span>)
-<span class="fu"><a href="https://rdrr.io/r/graphics/lines.html">lines</a></span>(<span class="fu"><a href="https://rdrr.io/r/stats/predict.html">predict</a></span>(<span class="no">s</span>),<span class="kw">col</span><span class="kw">=</span><span class="fl">2</span>,<span class="kw">lwd</span><span class="kw">=</span><span class="fl">2</span>)</pre></body></html></div>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html">plot</a></span><span class="op">(</span><span class="va">y</span>,pch<span class="op">=</span><span class="st">"."</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/graphics/lines.html">lines</a></span><span class="op">(</span><span class="va">mu</span>,col<span class="op">=</span><span class="fl">1</span>,lwd<span class="op">=</span><span class="fl">3</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/graphics/lines.html">lines</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html">predict</a></span><span class="op">(</span><span class="va">s</span><span class="op">)</span>,col<span class="op">=</span><span class="fl">2</span>,lwd<span class="op">=</span><span class="fl">2</span><span class="op">)</span></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="trend_filtering_files/figure-html/unnamed-chunk-2-1.png" alt="&amp;nbsp;" width="540"><p class="caption">
  
 </p>
 </div>
-<div class="sourceCode" id="cb3"><html><body><pre class="r"><span class="no">s</span>$<span class="no">sigma2</span>
-<span class="co"># [1] 1.076261</span></pre></body></html></div>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">s</span><span class="op">$</span><span class="va">sigma2</span>
+<span class="co"># [1] 1.076261</span></code></pre></div>
 <p>In the next example mu increases linearly. Thus we are approximating a linear function by step functions. Here the truth is not trully ``sparse", so we might expect performance to be poor, but it is not too bad.</p>
-<div class="sourceCode" id="cb4"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span>(<span class="fl">1</span>)
-<span class="no">mu</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html">seq</a></span>(<span class="fl">0</span>,<span class="fl">4</span>,<span class="kw">length</span><span class="kw">=</span><span class="fl">1000</span>)
-<span class="no">y</span> <span class="kw">=</span> <span class="no">mu</span> + <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html">rnorm</a></span>(<span class="no">n</span>)
-<span class="no">s</span> <span class="kw">=</span> <span class="fu"><a href="../reference/susie_trendfilter.html">susie_trendfilter</a></span>(<span class="no">y</span>,<span class="fl">0</span>,<span class="kw">L</span><span class="kw">=</span><span class="fl">10</span>)
-<span class="fu"><a href="https://rdrr.io/r/graphics/plot.html">plot</a></span>(<span class="no">y</span>,<span class="kw">pch</span><span class="kw">=</span><span class="st">"."</span>)
-<span class="fu"><a href="https://rdrr.io/r/graphics/lines.html">lines</a></span>(<span class="no">mu</span>,<span class="kw">col</span><span class="kw">=</span><span class="fl">1</span>,<span class="kw">lwd</span><span class="kw">=</span><span class="fl">3</span>)
-<span class="fu"><a href="https://rdrr.io/r/graphics/lines.html">lines</a></span>(<span class="fu"><a href="https://rdrr.io/r/stats/predict.html">predict</a></span>(<span class="no">s</span>),<span class="kw">col</span><span class="kw">=</span><span class="fl">2</span>,<span class="kw">lwd</span><span class="kw">=</span><span class="fl">2</span>)</pre></body></html></div>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span>
+<span class="va">mu</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html">seq</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">4</span>,length<span class="op">=</span><span class="fl">1000</span><span class="op">)</span>
+<span class="va">y</span> <span class="op">=</span> <span class="va">mu</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span>
+<span class="va">s</span> <span class="op">=</span> <span class="fu"><a href="../reference/susie_trendfilter.html">susie_trendfilter</a></span><span class="op">(</span><span class="va">y</span>,<span class="fl">0</span>,L<span class="op">=</span><span class="fl">10</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html">plot</a></span><span class="op">(</span><span class="va">y</span>,pch<span class="op">=</span><span class="st">"."</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/graphics/lines.html">lines</a></span><span class="op">(</span><span class="va">mu</span>,col<span class="op">=</span><span class="fl">1</span>,lwd<span class="op">=</span><span class="fl">3</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/graphics/lines.html">lines</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html">predict</a></span><span class="op">(</span><span class="va">s</span><span class="op">)</span>,col<span class="op">=</span><span class="fl">2</span>,lwd<span class="op">=</span><span class="fl">2</span><span class="op">)</span></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="trend_filtering_files/figure-html/unnamed-chunk-3-1.png" alt="&amp;nbsp;" width="540"><p class="caption">
  
 </p>
 </div>
 <p>Compare with the genlasso (lasso-based) solution (blue). (This will require installation of the <code>genlasso</code> package.)</p>
-<div class="sourceCode" id="cb5"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">genlasso</span>)
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/glmgen/genlasso">genlasso</a></span><span class="op">)</span>
 <span class="co"># Loading required package: Matrix</span>
 <span class="co"># Loading required package: igraph</span>
 <span class="co"># </span>
@@ -129,43 +134,45 @@
 <span class="co"># The following object is masked from 'package:base':</span>
 <span class="co"># </span>
 <span class="co">#     union</span>
-<span class="no">y.tf</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/pkg/genlasso/man/trendfilter.html">trendfilter</a></span>(<span class="no">y</span>,<span class="kw">ord</span><span class="kw">=</span><span class="fl">0</span>)
-<span class="no">y.tf.cv</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/pkg/genlasso/man/cv.trendfilter.html">cv.trendfilter</a></span>(<span class="no">y.tf</span>)
+<span class="va">y.tf</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/genlasso/man/trendfilter.html">trendfilter</a></span><span class="op">(</span><span class="va">y</span>,ord<span class="op">=</span><span class="fl">0</span><span class="op">)</span>
+<span class="va">y.tf.cv</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/genlasso/man/cv.trendfilter.html">cv.trendfilter</a></span><span class="op">(</span><span class="va">y.tf</span><span class="op">)</span>
 <span class="co"># Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ...</span>
 
-<span class="fu"><a href="https://rdrr.io/r/graphics/plot.html">plot</a></span>(<span class="no">y</span>,<span class="kw">pch</span><span class="kw">=</span><span class="st">"."</span>)
-<span class="fu"><a href="https://rdrr.io/r/graphics/lines.html">lines</a></span>(<span class="no">mu</span>,<span class="kw">col</span><span class="kw">=</span><span class="fl">1</span>,<span class="kw">lwd</span><span class="kw">=</span><span class="fl">3</span>)
-<span class="fu"><a href="https://rdrr.io/r/graphics/lines.html">lines</a></span>(<span class="fu"><a href="https://rdrr.io/r/stats/predict.html">predict</a></span>(<span class="no">s</span>),<span class="kw">col</span><span class="kw">=</span><span class="fl">2</span>,<span class="kw">lwd</span><span class="kw">=</span><span class="fl">2</span>)
-<span class="fu"><a href="https://rdrr.io/r/graphics/lines.html">lines</a></span>(<span class="no">y.tf</span>$<span class="no">fit</span>[,<span class="fu"><a href="https://rdrr.io/r/base/which.html">which</a></span>(<span class="no">y.tf</span>$<span class="no">lambda</span><span class="kw">==</span><span class="no">y.tf.cv</span>$<span class="no">lambda.min</span>)],<span class="kw">col</span><span class="kw">=</span><span class="fl">4</span>,<span class="kw">lwd</span><span class="kw">=</span><span class="fl">2</span>)</pre></body></html></div>
+<span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html">plot</a></span><span class="op">(</span><span class="va">y</span>,pch<span class="op">=</span><span class="st">"."</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/graphics/lines.html">lines</a></span><span class="op">(</span><span class="va">mu</span>,col<span class="op">=</span><span class="fl">1</span>,lwd<span class="op">=</span><span class="fl">3</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/graphics/lines.html">lines</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html">predict</a></span><span class="op">(</span><span class="va">s</span><span class="op">)</span>,col<span class="op">=</span><span class="fl">2</span>,lwd<span class="op">=</span><span class="fl">2</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/graphics/lines.html">lines</a></span><span class="op">(</span><span class="va">y.tf</span><span class="op">$</span><span class="va">fit</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/which.html">which</a></span><span class="op">(</span><span class="va">y.tf</span><span class="op">$</span><span class="va">lambda</span><span class="op">==</span><span class="va">y.tf.cv</span><span class="op">$</span><span class="va">lambda.min</span><span class="op">)</span><span class="op">]</span>,col<span class="op">=</span><span class="fl">4</span>,lwd<span class="op">=</span><span class="fl">2</span><span class="op">)</span></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="trend_filtering_files/figure-html/unnamed-chunk-4-1.png" alt="&amp;nbsp;" width="540"><p class="caption">
  
 </p>
 </div>
 <p>What happens if we have linear trend plus a sudden change.</p>
-<div class="sourceCode" id="cb6"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span>(<span class="fl">1</span>)
-<span class="no">mu</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html">seq</a></span>(<span class="fl">0</span>,<span class="fl">4</span>,<span class="kw">length</span><span class="kw">=</span><span class="fl">1000</span>)
-<span class="no">mu</span> <span class="kw">=</span> <span class="no">mu</span> + <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/rep.html">rep</a></span>(<span class="fl">0</span>,<span class="fl">500</span>),<span class="fu"><a href="https://rdrr.io/r/base/rep.html">rep</a></span>(<span class="fl">4</span>,<span class="fl">500</span>))
-<span class="no">y</span> <span class="kw">=</span> <span class="no">mu</span> + <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html">rnorm</a></span>(<span class="no">n</span>)
-<span class="no">s</span> <span class="kw">=</span> <span class="fu"><a href="../reference/susie_trendfilter.html">susie_trendfilter</a></span>(<span class="no">y</span>,<span class="fl">0</span>,<span class="kw">L</span><span class="kw">=</span><span class="fl">10</span>)
-<span class="no">y.tf</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/pkg/genlasso/man/trendfilter.html">trendfilter</a></span>(<span class="no">y</span>,<span class="kw">ord</span><span class="kw">=</span><span class="fl">0</span>)
-<span class="no">y.tf.cv</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/pkg/genlasso/man/cv.trendfilter.html">cv.trendfilter</a></span>(<span class="no">y.tf</span>)
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span>
+<span class="va">mu</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html">seq</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">4</span>,length<span class="op">=</span><span class="fl">1000</span><span class="op">)</span>
+<span class="va">mu</span> <span class="op">=</span> <span class="va">mu</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html">rep</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">500</span><span class="op">)</span>,<span class="fu"><a href="https://rdrr.io/r/base/rep.html">rep</a></span><span class="op">(</span><span class="fl">4</span>,<span class="fl">500</span><span class="op">)</span><span class="op">)</span>
+<span class="va">y</span> <span class="op">=</span> <span class="va">mu</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span>
+<span class="va">s</span> <span class="op">=</span> <span class="fu"><a href="../reference/susie_trendfilter.html">susie_trendfilter</a></span><span class="op">(</span><span class="va">y</span>,<span class="fl">0</span>,L<span class="op">=</span><span class="fl">10</span><span class="op">)</span>
+<span class="va">y.tf</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/genlasso/man/trendfilter.html">trendfilter</a></span><span class="op">(</span><span class="va">y</span>,ord<span class="op">=</span><span class="fl">0</span><span class="op">)</span>
+<span class="va">y.tf.cv</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/genlasso/man/cv.trendfilter.html">cv.trendfilter</a></span><span class="op">(</span><span class="va">y.tf</span><span class="op">)</span>
 <span class="co"># Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ...</span>
 
-<span class="fu"><a href="https://rdrr.io/r/graphics/plot.html">plot</a></span>(<span class="no">y</span>,<span class="kw">pch</span><span class="kw">=</span><span class="st">"."</span>)
-<span class="fu"><a href="https://rdrr.io/r/graphics/lines.html">lines</a></span>(<span class="no">mu</span>,<span class="kw">col</span><span class="kw">=</span><span class="fl">1</span>,<span class="kw">lwd</span><span class="kw">=</span><span class="fl">3</span>)
-<span class="fu"><a href="https://rdrr.io/r/graphics/lines.html">lines</a></span>(<span class="fu"><a href="https://rdrr.io/r/stats/predict.html">predict</a></span>(<span class="no">s</span>),<span class="kw">col</span><span class="kw">=</span><span class="fl">2</span>,<span class="kw">lwd</span><span class="kw">=</span><span class="fl">2</span>)
-<span class="fu"><a href="https://rdrr.io/r/graphics/lines.html">lines</a></span>(<span class="no">y.tf</span>$<span class="no">fit</span>[,<span class="fu"><a href="https://rdrr.io/r/base/which.html">which</a></span>(<span class="no">y.tf</span>$<span class="no">lambda</span><span class="kw">==</span><span class="no">y.tf.cv</span>$<span class="no">lambda.min</span>)],<span class="kw">col</span><span class="kw">=</span><span class="fl">4</span>,<span class="kw">lwd</span><span class="kw">=</span><span class="fl">2</span>)</pre></body></html></div>
+<span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html">plot</a></span><span class="op">(</span><span class="va">y</span>,pch<span class="op">=</span><span class="st">"."</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/graphics/lines.html">lines</a></span><span class="op">(</span><span class="va">mu</span>,col<span class="op">=</span><span class="fl">1</span>,lwd<span class="op">=</span><span class="fl">3</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/graphics/lines.html">lines</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html">predict</a></span><span class="op">(</span><span class="va">s</span><span class="op">)</span>,col<span class="op">=</span><span class="fl">2</span>,lwd<span class="op">=</span><span class="fl">2</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/graphics/lines.html">lines</a></span><span class="op">(</span><span class="va">y.tf</span><span class="op">$</span><span class="va">fit</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/which.html">which</a></span><span class="op">(</span><span class="va">y.tf</span><span class="op">$</span><span class="va">lambda</span><span class="op">==</span><span class="va">y.tf.cv</span><span class="op">$</span><span class="va">lambda.min</span><span class="op">)</span><span class="op">]</span>,col<span class="op">=</span><span class="fl">4</span>,lwd<span class="op">=</span><span class="fl">2</span><span class="op">)</span></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="trend_filtering_files/figure-html/unnamed-chunk-5-1.png" alt="&amp;nbsp;" width="540"><p class="caption">
  
 </p>
 </div>
 <p>The two fits seem similar in accuracy. We can check this numerically:</p>
-<div class="sourceCode" id="cb7"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html">sqrt</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/mean.html">mean</a></span>((<span class="no">mu</span>-<span class="no">y.tf</span>$<span class="no">fit</span>[,<span class="fu"><a href="https://rdrr.io/r/base/which.html">which</a></span>(<span class="no">y.tf</span>$<span class="no">lambda</span><span class="kw">==</span><span class="no">y.tf.cv</span>$<span class="no">lambda.min</span>)])^<span class="fl">2</span>))
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html">mean</a></span><span class="op">(</span><span class="op">(</span><span class="va">mu</span><span class="op">-</span><span class="va">y.tf</span><span class="op">$</span><span class="va">fit</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/which.html">which</a></span><span class="op">(</span><span class="va">y.tf</span><span class="op">$</span><span class="va">lambda</span><span class="op">==</span><span class="va">y.tf.cv</span><span class="op">$</span><span class="va">lambda.min</span><span class="op">)</span><span class="op">]</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span>
 <span class="co"># [1] 0.1413506</span>
-<span class="fu"><a href="https://rdrr.io/r/base/MathFun.html">sqrt</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/mean.html">mean</a></span>((<span class="no">mu</span>-<span class="fu"><a href="https://rdrr.io/r/stats/predict.html">predict</a></span>(<span class="no">s</span>))^<span class="fl">2</span>))
-<span class="co"># [1] 0.1832637</span></pre></body></html></div>
+<span class="fu"><a href="https://rdrr.io/r/base/MathFun.html">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html">mean</a></span><span class="op">(</span><span class="op">(</span><span class="va">mu</span><span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html">predict</a></span><span class="op">(</span><span class="va">s</span><span class="op">)</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span>
+<span class="co"># [1] 0.1832637</span></code></pre></div>
 </div>
   </div>
 
@@ -184,7 +191,7 @@
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>

@@ -1,5 +1,5 @@
 ---
-title: "Fine-mapping examples"
+title: "Fine-mapping example"
 author: "Gao Wang"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette

@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.29</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.48</span>
       </span>
     </div>
 
@@ -153,7 +153,7 @@ estimates.</p></td>
 <span class='co'># Initialize susie to ground-truth coefficients.</span>
 <span class='va'>s</span> <span class='op'>=</span> <span class='fu'>susie_init_coef</span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/which.html'>which</a></span><span class='op'>(</span><span class='va'>beta</span> <span class='op'>!=</span> <span class='fl'>0</span><span class='op'>)</span>,<span class='va'>beta</span><span class='op'>[</span><span class='va'>beta</span> <span class='op'>!=</span> <span class='fl'>0</span><span class='op'>]</span>,<span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span><span class='op'>(</span><span class='va'>beta</span><span class='op'>)</span><span class='op'>)</span>
 <span class='va'>res</span> <span class='op'>=</span> <span class='fu'><a href='susie.html'>susie</a></span><span class='op'>(</span><span class='va'>X</span>,<span class='va'>y</span>,L <span class='op'>=</span> <span class='fl'>10</span>,s_init<span class='op'>=</span><span class='va'>s</span><span class='op'>)</span>
-
+</div><div class='output co'>#&gt; <span class='message'>Specified number of effects L = 10 is greater the number of effects 4 in input SuSiE model. The SuSiE model will be expanded to have 10 effects.</span></div><div class='input'>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
