@@ -256,7 +256,7 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
     s = update_each_effect_ss(XtX,Xty,s,estimate_prior_variance,
                               estimate_prior_method,check_null_threshold)
     if(check_prior){
-      if(any(s$V > 10*(zm^2))){
+      if(any(s$V > 100*(zm^2))){
         stop('The estimated prior variance is unreasonably large.
              Please check the input.')
       }
