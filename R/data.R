@@ -134,6 +134,9 @@ NULL
 #'
 #' @keywords data
 #'
+#' @seealso A similar data set with more SNPs is used in the "Refine
+#'   SuSiE model" vignette.
+#'
 #' @examples
 #' data(FinemappingConvergence)
 NULL
