@@ -27,6 +27,7 @@ The parameter `s` is estimated by maximum likelihood. A larger `s` means a great
 
 ```{r}
 library(susieR)
+library(curl)
 ```
 
 ## LD information from the original genotype data
@@ -39,7 +40,7 @@ b = N3finemapping$true_coef[,1]
 sumstats <- univariate_regression(N3finemapping$X, N3finemapping$Y[,1])
 z_scores <- sumstats$betahat / sumstats$sebetahat
 Rin = cor(N3finemapping$X)
-attr(Rin, 'eigen') = eigen(Rin, symmetric = T)
+attr(Rin, "eigen") = eigen(Rin, symmetric = T)
 susie_plot(z_scores, y = "z", b=b)
 ```
 
@@ -60,11 +61,15 @@ condz_in$plot
 We use another simulated data where the LD matrix is estimated from a reference panel. There is one signal in the simulated data (red point). There is one SNP with mismatched reference and alternative allele between summary statistics and the reference panel (yellow point).
 
 ```{r}
-data("SummaryConsistency")
+data_file <- tempfile(fileext = ".RData")
+data_url <- paste0("https://raw.githubusercontent.com/stephenslab/susieR/",
+                   "master/inst/datafiles/SummaryConsistency1k.RData")
+curl_download(data_url,data_file)
+load(data_file)
 zflip = SummaryConsistency$z
 ld = SummaryConsistency$ldref
-plot(zflip, pch = 16, col = '#767676', main = 'Marginal Associations', 
-     xlab='SNP', ylab = 'z scores')
+plot(zflip, pch = 16, col = "#767676", main = "Marginal Associations", 
+     xlab="SNP", ylab = "z scores")
 points(SummaryConsistency$signal_id, zflip[SummaryConsistency$signal_id], col=2, pch=16)
 points(SummaryConsistency$flip_id, zflip[SummaryConsistency$flip_id], col=7, pch=16)
 ```
