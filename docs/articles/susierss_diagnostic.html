@@ -31,7 +31,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.50</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.52</span>
       </span>
     </div>
 
@@ -61,13 +61,13 @@
 
       
 
-      </header><script src="susierss_diagnostic_files/header-attrs-2.9/header-attrs.js"></script><div class="row">
+      </header><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>Diagnostic for fine-mapping with summary statistics</h1>
                         <h4 class="author">Yuxin Zou</h4>
             
-            <h4 class="date">2021-08-29</h4>
+            <h4 class="date">2021-08-30</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/master/vignettes/susierss_diagnostic.Rmd"><code>vignettes/susierss_diagnostic.Rmd</code></a></small>
       <div class="hidden name"><code>susierss_diagnostic.Rmd</code></div>
@@ -81,34 +81,31 @@
 <p>The diagnostic for consistency between summary statistics and refenrence LD matrix is based on the RSS model under the null with regularized LD matrix. <span class="math display">\[
 \hat{z} | R, s \sim N(0, (1-s)R + s I), 0&lt;s&lt;1
 \]</span> The parameter <code>s</code> is estimated by maximum likelihood. A larger <code>s</code> means a greater inconsistency between summary statistics and the LD matrix. The expected z score is computed for each SNP, <span class="math inline">\(E(\hat{z}_j | \hat{z}_{-j})\)</span>, and plotted against the observed z scores.</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/stephenslab/susieR">susieR</a></span><span class="op">)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">susieR</span>)
+<span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">curl</span>)</pre></body></html></div>
 <div id="ld-information-from-the-original-genotype-data" class="section level2">
 <h2 class="hasAnchor">
 <a href="#ld-information-from-the-original-genotype-data" class="anchor"></a>LD information from the original genotype data</h2>
 <p>We demonstrate the diagnostic plot in a simple case, the LD matrix is estimated from the original genotype data. We use the same simulated data as in <a href="finemapping.html">fine mapping vignette</a>.</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span><span class="op">(</span><span class="st">"N3finemapping"</span><span class="op">)</span>
-<span class="va">b</span> <span class="op">=</span> <span class="va">N3finemapping</span><span class="op">$</span><span class="va">true_coef</span><span class="op">[</span>,<span class="fl">1</span><span class="op">]</span>
-<span class="va">sumstats</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/univariate_regression.html">univariate_regression</a></span><span class="op">(</span><span class="va">N3finemapping</span><span class="op">$</span><span class="va">X</span>, <span class="va">N3finemapping</span><span class="op">$</span><span class="va">Y</span><span class="op">[</span>,<span class="fl">1</span><span class="op">]</span><span class="op">)</span>
-<span class="va">z_scores</span> <span class="op">&lt;-</span> <span class="va">sumstats</span><span class="op">$</span><span class="va">betahat</span> <span class="op">/</span> <span class="va">sumstats</span><span class="op">$</span><span class="va">sebetahat</span>
-<span class="va">Rin</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html">cor</a></span><span class="op">(</span><span class="va">N3finemapping</span><span class="op">$</span><span class="va">X</span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/r/base/attr.html">attr</a></span><span class="op">(</span><span class="va">Rin</span>, <span class="st">'eigen'</span><span class="op">)</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/eigen.html">eigen</a></span><span class="op">(</span><span class="va">Rin</span>, symmetric <span class="op">=</span> <span class="cn">T</span><span class="op">)</span>
-<span class="fu"><a href="../reference/susie_plot.html">susie_plot</a></span><span class="op">(</span><span class="va">z_scores</span>, y <span class="op">=</span> <span class="st">"z"</span>, b<span class="op">=</span><span class="va">b</span><span class="op">)</span></code></pre></div>
+<div class="sourceCode" id="cb2"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span>(<span class="st">"N3finemapping"</span>)
+<span class="no">b</span> <span class="kw">=</span> <span class="no">N3finemapping</span>$<span class="no">true_coef</span>[,<span class="fl">1</span>]
+<span class="no">sumstats</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/univariate_regression.html">univariate_regression</a></span>(<span class="no">N3finemapping</span>$<span class="no">X</span>, <span class="no">N3finemapping</span>$<span class="no">Y</span>[,<span class="fl">1</span>])
+<span class="no">z_scores</span> <span class="kw">&lt;-</span> <span class="no">sumstats</span>$<span class="no">betahat</span> / <span class="no">sumstats</span>$<span class="no">sebetahat</span>
+<span class="no">Rin</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html">cor</a></span>(<span class="no">N3finemapping</span>$<span class="no">X</span>)
+<span class="fu"><a href="https://rdrr.io/r/base/attr.html">attr</a></span>(<span class="no">Rin</span>, <span class="st">"eigen"</span>) <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/eigen.html">eigen</a></span>(<span class="no">Rin</span>, <span class="kw">symmetric</span> <span class="kw">=</span> <span class="no">T</span>)
+<span class="fu"><a href="../reference/susie_plots.html">susie_plot</a></span>(<span class="no">z_scores</span>, <span class="kw">y</span> <span class="kw">=</span> <span class="st">"z"</span>, <span class="kw">b</span><span class="kw">=</span><span class="no">b</span>)</pre></body></html></div>
 <div class="figure" style="text-align: center">
 <img src="susierss_diagnostic_files/figure-html/unnamed-chunk-2-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
  
 </p>
 </div>
 <p>The estimated <code>s</code> is</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">s</span> <span class="op">=</span> <span class="fu"><a href="../reference/estimate_s_rss.html">estimate_s_rss</a></span><span class="op">(</span><span class="va">z_scores</span>, <span class="va">Rin</span><span class="op">)</span>
-<span class="va">s</span>
-<span class="co"># [1] 0.0001123485</span></code></pre></div>
+<div class="sourceCode" id="cb3"><html><body><pre class="r"><span class="no">s</span> <span class="kw">=</span> <span class="fu"><a href="../reference/estimate_s_rss.html">estimate_s_rss</a></span>(<span class="no">z_scores</span>, <span class="no">Rin</span>)
+<span class="no">s</span>
+<span class="co"># [1] 0.0001123485</span></pre></body></html></div>
 <p>The plot for the expected z scores vs the observed z scores is</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">condz_in</span> <span class="op">=</span> <span class="fu"><a href="../reference/kriging_rss.html">kriging_rss</a></span><span class="op">(</span><span class="va">z_scores</span>, <span class="va">Rin</span><span class="op">)</span>
-<span class="va">condz_in</span><span class="op">$</span><span class="va">plot</span></code></pre></div>
+<div class="sourceCode" id="cb4"><html><body><pre class="r"><span class="no">condz_in</span> <span class="kw">=</span> <span class="fu"><a href="../reference/kriging_rss.html">kriging_rss</a></span>(<span class="no">z_scores</span>, <span class="no">Rin</span>)
+<span class="no">condz_in</span>$<span class="no">plot</span></pre></body></html></div>
 <div class="figure" style="text-align: center">
 <img src="susierss_diagnostic_files/figure-html/unnamed-chunk-4-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
  
@@ -119,27 +116,28 @@
 <h2 class="hasAnchor">
 <a href="#ld-information-from-the-reference-panel" class="anchor"></a>LD information from the reference panel</h2>
 <p>We use another simulated data where the LD matrix is estimated from a reference panel. There is one signal in the simulated data (red point). There is one SNP with mismatched reference and alternative allele between summary statistics and the reference panel (yellow point).</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span><span class="op">(</span><span class="st">"SummaryConsistency"</span><span class="op">)</span>
-<span class="va">zflip</span> <span class="op">=</span> <span class="va">SummaryConsistency</span><span class="op">$</span><span class="va">z</span>
-<span class="va">ld</span> <span class="op">=</span> <span class="va">SummaryConsistency</span><span class="op">$</span><span class="va">ldref</span>
-<span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html">plot</a></span><span class="op">(</span><span class="va">zflip</span>, pch <span class="op">=</span> <span class="fl">16</span>, col <span class="op">=</span> <span class="st">'#767676'</span>, main <span class="op">=</span> <span class="st">'Marginal Associations'</span>, 
-     xlab<span class="op">=</span><span class="st">'SNP'</span>, ylab <span class="op">=</span> <span class="st">'z scores'</span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/r/graphics/points.html">points</a></span><span class="op">(</span><span class="va">SummaryConsistency</span><span class="op">$</span><span class="va">signal_id</span>, <span class="va">zflip</span><span class="op">[</span><span class="va">SummaryConsistency</span><span class="op">$</span><span class="va">signal_id</span><span class="op">]</span>, col<span class="op">=</span><span class="fl">2</span>, pch<span class="op">=</span><span class="fl">16</span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/r/graphics/points.html">points</a></span><span class="op">(</span><span class="va">SummaryConsistency</span><span class="op">$</span><span class="va">flip_id</span>, <span class="va">zflip</span><span class="op">[</span><span class="va">SummaryConsistency</span><span class="op">$</span><span class="va">flip_id</span><span class="op">]</span>, col<span class="op">=</span><span class="fl">7</span>, pch<span class="op">=</span><span class="fl">16</span><span class="op">)</span></code></pre></div>
+<div class="sourceCode" id="cb5"><html><body><pre class="r"><span class="no">data_file</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html">tempfile</a></span>(<span class="kw">fileext</span> <span class="kw">=</span> <span class="st">".RData"</span>)
+<span class="no">data_url</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste0</a></span>(<span class="st">"https://raw.githubusercontent.com/stephenslab/susieR/"</span>,
+                   <span class="st">"master/inst/datafiles/SummaryConsistency1k.RData"</span>)
+<span class="fu"><a href="https://jeroen.cran.dev/curl/reference/curl_download.html">curl_download</a></span>(<span class="no">data_url</span>,<span class="no">data_file</span>)
+<span class="fu"><a href="https://rdrr.io/r/base/load.html">load</a></span>(<span class="no">data_file</span>)
+<span class="no">zflip</span> <span class="kw">=</span> <span class="no">SummaryConsistency</span>$<span class="no">z</span>
+<span class="no">ld</span> <span class="kw">=</span> <span class="no">SummaryConsistency</span>$<span class="no">ldref</span>
+<span class="fu"><a href="https://rdrr.io/r/graphics/plot.html">plot</a></span>(<span class="no">zflip</span>, <span class="kw">pch</span> <span class="kw">=</span> <span class="fl">16</span>, <span class="kw">col</span> <span class="kw">=</span> <span class="st">"#767676"</span>, <span class="kw">main</span> <span class="kw">=</span> <span class="st">"Marginal Associations"</span>,
+     <span class="kw">xlab</span><span class="kw">=</span><span class="st">"SNP"</span>, <span class="kw">ylab</span> <span class="kw">=</span> <span class="st">"z scores"</span>)
+<span class="fu"><a href="https://rdrr.io/r/graphics/points.html">points</a></span>(<span class="no">SummaryConsistency</span>$<span class="no">signal_id</span>, <span class="no">zflip</span>[<span class="no">SummaryConsistency</span>$<span class="no">signal_id</span>], <span class="kw">col</span><span class="kw">=</span><span class="fl">2</span>, <span class="kw">pch</span><span class="kw">=</span><span class="fl">16</span>)
+<span class="fu"><a href="https://rdrr.io/r/graphics/points.html">points</a></span>(<span class="no">SummaryConsistency</span>$<span class="no">flip_id</span>, <span class="no">zflip</span>[<span class="no">SummaryConsistency</span>$<span class="no">flip_id</span>], <span class="kw">col</span><span class="kw">=</span><span class="fl">7</span>, <span class="kw">pch</span><span class="kw">=</span><span class="fl">16</span>)</pre></body></html></div>
 <div class="figure" style="text-align: center">
 <img src="susierss_diagnostic_files/figure-html/unnamed-chunk-5-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
  
 </p>
 </div>
 <p>The estimated <code>s</code> is</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">s</span> <span class="op">=</span> <span class="fu"><a href="../reference/estimate_s_rss.html">estimate_s_rss</a></span><span class="op">(</span><span class="va">zflip</span>, <span class="va">ld</span><span class="op">)</span>
-<span class="va">s</span>
-<span class="co"># [1] 0.0198113</span></code></pre></div>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">condz</span> <span class="op">=</span> <span class="fu"><a href="../reference/kriging_rss.html">kriging_rss</a></span><span class="op">(</span><span class="va">zflip</span>, <span class="va">ld</span><span class="op">)</span>
-<span class="va">condz</span><span class="op">$</span><span class="va">plot</span></code></pre></div>
+<div class="sourceCode" id="cb6"><html><body><pre class="r"><span class="no">s</span> <span class="kw">=</span> <span class="fu"><a href="../reference/estimate_s_rss.html">estimate_s_rss</a></span>(<span class="no">zflip</span>, <span class="no">ld</span>)
+<span class="no">s</span>
+<span class="co"># [1] 0.005371902</span></pre></body></html></div>
+<div class="sourceCode" id="cb7"><html><body><pre class="r"><span class="no">condz</span> <span class="kw">=</span> <span class="fu"><a href="../reference/kriging_rss.html">kriging_rss</a></span>(<span class="no">zflip</span>, <span class="no">ld</span>)
+<span class="no">condz</span>$<span class="no">plot</span></pre></body></html></div>
 <div class="figure" style="text-align: center">
 <img src="susierss_diagnostic_files/figure-html/unnamed-chunk-7-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
  
@@ -151,15 +149,14 @@
 <h2 class="hasAnchor">
 <a href="#session-information" class="anchor"></a>Session information</h2>
 <p>Here are some details about the computing environment, including the versions of R, and the R packages, used to generate these results.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html">sessionInfo</a></span><span class="op">(</span><span class="op">)</span>
-<span class="co"># R version 4.1.0 (2021-05-18)</span>
-<span class="co"># Platform: x86_64-apple-darwin17.0 (64-bit)</span>
-<span class="co"># Running under: macOS Big Sur 10.16</span>
+<div class="sourceCode" id="cb8"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html">sessionInfo</a></span>()
+<span class="co"># R version 3.6.2 (2019-12-12)</span>
+<span class="co"># Platform: x86_64-apple-darwin15.6.0 (64-bit)</span>
+<span class="co"># Running under: macOS Catalina 10.15.7</span>
 <span class="co"># </span>
 <span class="co"># Matrix products: default</span>
-<span class="co"># BLAS:   /Library/Frameworks/R.framework/Versions/4.1/Resources/lib/libRblas.dylib</span>
-<span class="co"># LAPACK: /Library/Frameworks/R.framework/Versions/4.1/Resources/lib/libRlapack.dylib</span>
+<span class="co"># BLAS:   /Library/Frameworks/R.framework/Versions/3.6/Resources/lib/libRblas.0.dylib</span>
+<span class="co"># LAPACK: /Library/Frameworks/R.framework/Versions/3.6/Resources/lib/libRlapack.dylib</span>
 <span class="co"># </span>
 <span class="co"># locale:</span>
 <span class="co"># [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8</span>
@@ -168,23 +165,23 @@
 <span class="co"># [1] stats     graphics  grDevices utils     datasets  methods   base     </span>
 <span class="co"># </span>
 <span class="co"># other attached packages:</span>
-<span class="co"># [1] susieR_0.11.50</span>
+<span class="co"># [1] curl_4.3       susieR_0.11.33</span>
 <span class="co"># </span>
 <span class="co"># loaded via a namespace (and not attached):</span>
-<span class="co">#  [1] Rcpp_1.0.7        highr_0.9         plyr_1.8.6        compiler_4.1.0   </span>
-<span class="co">#  [5] pillar_1.6.2      tools_4.1.0       digest_0.6.27     evaluate_0.14    </span>
-<span class="co">#  [9] memoise_2.0.0     lifecycle_1.0.0   tibble_3.1.4      gtable_0.3.0     </span>
-<span class="co"># [13] lattice_0.20-44   pkgconfig_2.0.3   rlang_0.4.11      Matrix_1.3-3     </span>
-<span class="co"># [17] yaml_2.2.1        pkgdown_1.6.1     xfun_0.24         fastmap_1.1.0    </span>
-<span class="co"># [21] dplyr_1.0.7       stringr_1.4.0     knitr_1.33        generics_0.1.0   </span>
-<span class="co"># [25] desc_1.3.0        fs_1.5.0          vctrs_0.3.8       systemfonts_1.0.2</span>
-<span class="co"># [29] tidyselect_1.1.1  rprojroot_2.0.2   grid_4.1.0        reshape_0.8.8    </span>
-<span class="co"># [33] glue_1.4.2        R6_2.5.1          textshaping_0.3.5 fansi_0.5.0      </span>
-<span class="co"># [37] rmarkdown_2.9     mixsqp_0.3-46     irlba_2.3.3       farver_2.1.0     </span>
-<span class="co"># [41] purrr_0.3.4       ggplot2_3.3.5     magrittr_2.0.1    scales_1.1.1     </span>
-<span class="co"># [45] htmltools_0.5.1.1 ellipsis_0.3.2    colorspace_2.0-2  labeling_0.4.2   </span>
-<span class="co"># [49] ragg_1.1.3        utf8_1.2.2        stringi_1.7.3     munsell_0.5.0    </span>
-<span class="co"># [53] cachem_1.0.5      crayon_1.4.1</span></code></pre></div>
+<span class="co">#  [1] Rcpp_1.0.7       highr_0.8        plyr_1.8.5       compiler_3.6.2  </span>
+<span class="co">#  [5] pillar_1.6.2     tools_3.6.2      digest_0.6.23    evaluate_0.14   </span>
+<span class="co">#  [9] memoise_1.1.0    lifecycle_1.0.0  tibble_3.1.3     gtable_0.3.0    </span>
+<span class="co"># [13] lattice_0.20-38  pkgconfig_2.0.3  rlang_0.4.11     Matrix_1.2-18   </span>
+<span class="co"># [17] DBI_1.1.0        yaml_2.2.0       pkgdown_1.5.1    xfun_0.11       </span>
+<span class="co"># [21] dplyr_1.0.7      stringr_1.4.0    knitr_1.26       generics_0.0.2  </span>
+<span class="co"># [25] desc_1.2.0       fs_1.3.1         vctrs_0.3.8      tidyselect_1.1.1</span>
+<span class="co"># [29] rprojroot_1.3-2  grid_3.6.2       reshape_0.8.8    glue_1.4.2      </span>
+<span class="co"># [33] R6_2.4.1         fansi_0.4.0      rmarkdown_2.3    mixsqp_0.3-46   </span>
+<span class="co"># [37] irlba_2.3.3      farver_2.0.1     purrr_0.3.4      ggplot2_3.3.5   </span>
+<span class="co"># [41] magrittr_2.0.1   backports_1.1.5  scales_1.1.0     htmltools_0.4.0 </span>
+<span class="co"># [45] ellipsis_0.3.2   MASS_7.3-51.4    assertthat_0.2.1 colorspace_1.4-1</span>
+<span class="co"># [49] labeling_0.3     utf8_1.1.4       stringi_1.4.3    munsell_0.5.0   </span>
+<span class="co"># [53] crayon_1.4.1</span></pre></body></html></div>
 </div>
   </div>
 
@@ -203,7 +200,7 @@
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>
