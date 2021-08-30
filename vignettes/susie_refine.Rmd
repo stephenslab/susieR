@@ -17,8 +17,8 @@ knitr::opts_chunk$set(collapse = TRUE,comment = "#",fig.width = 5,
 
 In this vignette, we demonstrate a procedure that helps SuSiE get out of local optimum.
 
-We simulate phenotype using UK Biobank genotypes from 50,000 individuals. There are 200 SNPs.
-It is simulated to have exactly 2 non-zero effects at 34, 87.
+We simulate phenotype using UK Biobank genotypes from 50,000 individuals. There are 1001 SNPs.
+It is simulated to have exactly 2 non-zero effects at 234, 287.
 
 ```{r}
 library(susieR)
