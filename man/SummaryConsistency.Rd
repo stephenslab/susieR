@@ -29,4 +29,9 @@ Data simulated using real genotypes from 10,000
 \examples{
 data(SummaryConsistency)
 }
+\seealso{
+A similar data set with more samples is used in the
+  \dQuote{Diagnostic for fine-mapping with summary statistics}
+  vignette.
+}
 \keyword{data}

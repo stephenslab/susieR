@@ -134,8 +134,8 @@ NULL
 #'
 #' @keywords data
 #'
-#' @seealso A similar data set with more SNPs is used in the "Refine
-#'   SuSiE model" vignette.
+#' @seealso A similar data set with more SNPs is used in the
+#'   \dQuote{Refine SuSiE model} vignette.
 #'
 #' @examples
 #' data(FinemappingConvergence)
@@ -164,6 +164,10 @@ NULL
 #'   \item{flip_id}{The index of the SNP with the flipped allele.}
 #'
 #'   \item{signal_id}{The index of the SNP with the non-zero effect.}}
+#'
+#' @seealso A similar data set with more samples is used in the
+#'   \dQuote{Diagnostic for fine-mapping with summary statistics}
+#'   vignette.
 #'
 #' @docType data
 #'
