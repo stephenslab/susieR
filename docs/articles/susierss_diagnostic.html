@@ -67,7 +67,7 @@
       <h1 data-toc-skip>Diagnostic for fine-mapping with summary statistics</h1>
                         <h4 class="author">Yuxin Zou</h4>
             
-            <h4 class="date">2021-08-30</h4>
+            <h4 class="date">2021-08-31</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/master/vignettes/susierss_diagnostic.Rmd"><code>vignettes/susierss_diagnostic.Rmd</code></a></small>
       <div class="hidden name"><code>susierss_diagnostic.Rmd</code></div>
@@ -107,7 +107,7 @@
 <code class="sourceCode R"><span class="va">s</span> <span class="op">=</span> <span class="fu"><a href="../reference/estimate_s_rss.html">estimate_s_rss</a></span><span class="op">(</span><span class="va">z_scores</span>, <span class="va">Rin</span><span class="op">)</span>
 <span class="va">s</span>
 <span class="co"># [1] 0.0001123485</span></code></pre></div>
-<p>The plot for the expected z scores vs the observed z scores is</p>
+<p>The plot for the observed z scores vs the expected z scores is</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">condz_in</span> <span class="op">=</span> <span class="fu"><a href="../reference/kriging_rss.html">kriging_rss</a></span><span class="op">(</span><span class="va">z_scores</span>, <span class="va">Rin</span><span class="op">)</span>
 <span class="va">condz_in</span><span class="op">$</span><span class="va">plot</span></code></pre></div>
@@ -116,12 +116,21 @@
  
 </p>
 </div>
+<p>Summary of SuSiE Credible Sets:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/susie_rss.html">susie_rss</a></span><span class="op">(</span><span class="va">z_scores</span>, <span class="va">Rin</span><span class="op">)</span>
+<span class="fu"><a href="../reference/susie_plot.html">susie_plot</a></span><span class="op">(</span><span class="va">fit</span>,y <span class="op">=</span> <span class="st">"PIP"</span>, b<span class="op">=</span><span class="va">b</span><span class="op">)</span></code></pre></div>
+<div class="figure" style="text-align: center">
+<img src="susierss_diagnostic_files/figure-html/unnamed-chunk-5-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
+ 
+</p>
+</div>
 </div>
 <div id="ld-information-from-the-reference-panel" class="section level2">
 <h2 class="hasAnchor">
 <a href="#ld-information-from-the-reference-panel" class="anchor"></a>LD information from the reference panel</h2>
 <p>We use another simulated data where the LD matrix is estimated from a reference panel. There is one signal in the simulated data (red point). There is one SNP with mismatched reference and alternative allele between summary statistics and the reference panel (yellow point).</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">data_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html">tempfile</a></span><span class="op">(</span>fileext <span class="op">=</span> <span class="st">".RData"</span><span class="op">)</span>
 <span class="va">data_url</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste0</a></span><span class="op">(</span><span class="st">"https://raw.githubusercontent.com/stephenslab/susieR/"</span>,
                    <span class="st">"master/inst/datafiles/SummaryConsistency1k.RData"</span><span class="op">)</span>
@@ -129,35 +138,58 @@
 <span class="fu"><a href="https://rdrr.io/r/base/load.html">load</a></span><span class="op">(</span><span class="va">data_file</span><span class="op">)</span>
 <span class="va">zflip</span> <span class="op">=</span> <span class="va">SummaryConsistency</span><span class="op">$</span><span class="va">z</span>
 <span class="va">ld</span> <span class="op">=</span> <span class="va">SummaryConsistency</span><span class="op">$</span><span class="va">ldref</span>
+<span class="va">b</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html">numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html">length</a></span><span class="op">(</span><span class="va">zflip</span><span class="op">)</span><span class="op">)</span>
+<span class="va">b</span><span class="op">[</span><span class="va">SummaryConsistency</span><span class="op">$</span><span class="va">signal_id</span><span class="op">]</span> <span class="op">=</span> <span class="va">zflip</span><span class="op">[</span><span class="va">SummaryConsistency</span><span class="op">$</span><span class="va">signal_id</span><span class="op">]</span>
 <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html">plot</a></span><span class="op">(</span><span class="va">zflip</span>, pch <span class="op">=</span> <span class="fl">16</span>, col <span class="op">=</span> <span class="st">"#767676"</span>, main <span class="op">=</span> <span class="st">"Marginal Associations"</span>, 
      xlab<span class="op">=</span><span class="st">"SNP"</span>, ylab <span class="op">=</span> <span class="st">"z scores"</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/graphics/points.html">points</a></span><span class="op">(</span><span class="va">SummaryConsistency</span><span class="op">$</span><span class="va">signal_id</span>, <span class="va">zflip</span><span class="op">[</span><span class="va">SummaryConsistency</span><span class="op">$</span><span class="va">signal_id</span><span class="op">]</span>, col<span class="op">=</span><span class="fl">2</span>, pch<span class="op">=</span><span class="fl">16</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/graphics/points.html">points</a></span><span class="op">(</span><span class="va">SummaryConsistency</span><span class="op">$</span><span class="va">flip_id</span>, <span class="va">zflip</span><span class="op">[</span><span class="va">SummaryConsistency</span><span class="op">$</span><span class="va">flip_id</span><span class="op">]</span>, col<span class="op">=</span><span class="fl">7</span>, pch<span class="op">=</span><span class="fl">16</span><span class="op">)</span></code></pre></div>
 <div class="figure" style="text-align: center">
-<img src="susierss_diagnostic_files/figure-html/unnamed-chunk-5-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
+<img src="susierss_diagnostic_files/figure-html/unnamed-chunk-6-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
  
 </p>
 </div>
-<p>The estimated <code>s</code> is</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">s</span> <span class="op">=</span> <span class="fu"><a href="../reference/estimate_s_rss.html">estimate_s_rss</a></span><span class="op">(</span><span class="va">zflip</span>, <span class="va">ld</span><span class="op">)</span>
-<span class="va">s</span>
-<span class="co"># [1] 0.005371902</span></code></pre></div>
+<p>Using the data with misaligned allele, SuSiE-RSS identifies a true positive CS containing the true effect SNP; and a false positive CS that incorrectly contains the mismatched SNP.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">condz</span> <span class="op">=</span> <span class="fu"><a href="../reference/kriging_rss.html">kriging_rss</a></span><span class="op">(</span><span class="va">zflip</span>, <span class="va">ld</span><span class="op">)</span>
-<span class="va">condz</span><span class="op">$</span><span class="va">plot</span></code></pre></div>
+<code class="sourceCode R"><span class="va">fit</span> <span class="op">=</span> <span class="fu"><a href="../reference/susie_rss.html">susie_rss</a></span><span class="op">(</span><span class="va">zflip</span>, <span class="va">ld</span><span class="op">)</span>
+<span class="fu"><a href="../reference/susie_plot.html">susie_plot</a></span><span class="op">(</span><span class="va">fit</span>, y<span class="op">=</span><span class="st">'PIP'</span>, b<span class="op">=</span><span class="va">b</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/graphics/points.html">points</a></span><span class="op">(</span><span class="va">SummaryConsistency</span><span class="op">$</span><span class="va">flip_id</span>, <span class="va">fit</span><span class="op">$</span><span class="va">pip</span><span class="op">[</span><span class="va">SummaryConsistency</span><span class="op">$</span><span class="va">flip_id</span><span class="op">]</span>, col<span class="op">=</span><span class="fl">7</span>, pch<span class="op">=</span><span class="fl">16</span><span class="op">)</span></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="susierss_diagnostic_files/figure-html/unnamed-chunk-7-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
  
 </p>
 </div>
-<p>The diagnostic plot identifies the SNP with flipped allele between summary statistics and the reference panel.</p>
+<p>The estimated <code>s</code> is</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">s</span> <span class="op">=</span> <span class="fu"><a href="../reference/estimate_s_rss.html">estimate_s_rss</a></span><span class="op">(</span><span class="va">zflip</span>, <span class="va">ld</span><span class="op">)</span>
+<span class="va">s</span>
+<span class="co"># [1] 0.005371902</span></code></pre></div>
+<p>In the diagnostic plot, the mismatched SNP shows the largest difference between observed and expected z-scores, and therefore appears furthest away from the diagonal.</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">condz</span> <span class="op">=</span> <span class="fu"><a href="../reference/kriging_rss.html">kriging_rss</a></span><span class="op">(</span><span class="va">zflip</span>, <span class="va">ld</span><span class="op">)</span>
+<span class="va">condz</span><span class="op">$</span><span class="va">plot</span></code></pre></div>
+<div class="figure" style="text-align: center">
+<img src="susierss_diagnostic_files/figure-html/unnamed-chunk-9-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
+ 
+</p>
+</div>
+<p>After fixing the allele encoding, SuSiE-RSS identifies a single true positive CS containing the true-effect SNP, and the formerly mismatched SNP is (correctly) not included in a CS.</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">z</span> <span class="op">=</span> <span class="va">zflip</span>
+<span class="va">z</span><span class="op">[</span><span class="va">SummaryConsistency</span><span class="op">$</span><span class="va">flip_id</span><span class="op">]</span> <span class="op">=</span> <span class="op">-</span><span class="va">z</span><span class="op">[</span><span class="va">SummaryConsistency</span><span class="op">$</span><span class="va">flip_id</span><span class="op">]</span>
+<span class="va">fit</span> <span class="op">=</span> <span class="fu"><a href="../reference/susie_rss.html">susie_rss</a></span><span class="op">(</span><span class="va">z</span>, <span class="va">ld</span><span class="op">)</span>
+<span class="fu"><a href="../reference/susie_plot.html">susie_plot</a></span><span class="op">(</span><span class="va">fit</span>, y<span class="op">=</span><span class="st">'PIP'</span>, b<span class="op">=</span><span class="va">b</span><span class="op">)</span></code></pre></div>
+<div class="figure" style="text-align: center">
+<img src="susierss_diagnostic_files/figure-html/unnamed-chunk-10-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
+ 
+</p>
+</div>
 </div>
 <div id="session-information" class="section level2">
 <h2 class="hasAnchor">
 <a href="#session-information" class="anchor"></a>Session information</h2>
 <p>Here are some details about the computing environment, including the versions of R, and the R packages, used to generate these results.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html">sessionInfo</a></span><span class="op">(</span><span class="op">)</span>
 <span class="co"># R version 4.1.0 (2021-05-18)</span>
 <span class="co"># Platform: x86_64-apple-darwin17.0 (64-bit)</span>
