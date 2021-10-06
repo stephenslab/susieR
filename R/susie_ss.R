@@ -292,7 +292,9 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
   s$niter = i
 
   if (is.null(s$converged)) {
-    warning(paste("IBSS algorithm did not converge in",max_iter,"iterations!"))
+    warning(paste("IBSS algorithm did not converge in",max_iter,"iterations!
+                  Please check consistency between summary statistics and LD matrix.
+                  See https://stephenslab.github.io/susieR/articles/susierss_diagnostic.html"))
     s$converged = FALSE
   }
 
