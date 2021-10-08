@@ -316,6 +316,17 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
     s$pip = susie_get_pip(s,prune_by_cs = FALSE,prior_tol = prior_tol)
   }
 
+  if (!is.null(colnames(XtX))) {
+    variable_names = colnames(XtX)
+    if (!is.null(null_weight))
+      variable_names = c("null", variable_names)
+    colnames(s$alpha) = variable_names
+    colnames(s$mu) = variable_names
+    colnames(s$mu2) = variable_names
+    colnames(s$lbf_variable) = variable_names
+    names(s$pip) = variable_names
+  }
+
   if (refine) {
     if (!missing(s_init) && !is.null(s_init))
       warning("The given s_init is not used in refinement")
