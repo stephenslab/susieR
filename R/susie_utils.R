@@ -246,11 +246,14 @@ susie_get_posterior_samples = function (susie_fit, num_samples) {
 #' @export
 #'
 susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
-                         min_abs_corr = 0.5, dedup = TRUE, squared = FALSE) {
+                         min_abs_corr = 0.5, dedup = TRUE, squared = FALSE,
+                         check_symmetric = TRUE) {
   if (!is.null(X) && !is.null(Xcorr))
     stop("Only one of X or Xcorr should be specified")
-  if (!is.null(Xcorr) && !is_symmetric_matrix(Xcorr))
-    stop("Xcorr matrix must be symmetric")
+  if (check_symmetric){
+    if (!is.null(Xcorr) && !is_symmetric_matrix(Xcorr))
+      stop("Xcorr matrix must be symmetric")
+  }
   null_index = 0
   include_idx = rep(TRUE,nrow(res$alpha))
   if (!is.null(res$null_index)) null_index = res$null_index
@@ -442,7 +445,7 @@ n_in_CS = function(res, coverage = 0.9) {
 
 # Subsample and compute min, mean, median and max abs corr.
 #
-#' @importFrom stats median
+#' @importFrom Rfast med
 get_purity = function(pos, X, Xcorr, squared = FALSE, n = 100) {
   if (length(pos) == 1)
     c(1,1,1)
@@ -453,7 +456,6 @@ get_purity = function(pos, X, Xcorr, squared = FALSE, n = 100) {
 
       X_sub = X[,pos]
       if (length(pos) > n) {
-
         # Remove identical columns.
         pos_rm = sapply(1:ncol(X_sub),
                        function(i) all(abs(X_sub[,i] - mean(X_sub[,i])) <
@@ -461,14 +463,19 @@ get_purity = function(pos, X, Xcorr, squared = FALSE, n = 100) {
         if (length(pos_rm))
           X_sub = X_sub[,-pos_rm]
       }
-      value = abs(muffled_corr(as.matrix(X_sub)))
-    } else
-      value = abs(Xcorr[pos,pos])
+      Rsub = muffled_corr(as.matrix(X_sub))
+      value = abs(Rsub[upper.tri(Rsub, diag = TRUE)])
+      rm(Rsub)
+    } else{
+      Xcorr = Xcorr[pos, pos]
+      value = abs(Xcorr[upper.tri(Xcorr, diag = TRUE)])
+      rm(Xcorr)
+    }
     if (squared)
       value = value^2
     return(c(min(value,na.rm = TRUE),
-             mean(value,na.rm = TRUE),
-             median(value,na.rm = TRUE)))
+             sum(value,na.rm = TRUE)/sum(!is.na(value)),
+             med(value,na.rm = TRUE)))
   }
 }
 

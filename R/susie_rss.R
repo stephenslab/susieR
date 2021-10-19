@@ -173,23 +173,6 @@ susie_rss = function (z, R, z_ld_weight = 0, prior_variance = 50,
     stop(paste0("The dimension of correlation matrix (", nrow(R)," by ",
                 ncol(R),") does not agree with expected (",length(z)," by ",
                 length(z),")"))
-  if (!is_symmetric_matrix(R))
-    stop("R is not a symmetric matrix")
-  if (!(is.double(R) & is.matrix(R)) & !inherits(R,"CsparseMatrix"))
-    stop("Input R must be a double-precision matrix, or a sparse matrix")
-
-  if (any(is.infinite(z)))
-    stop("z contains infinite value")
-
-  # Check for NAs in R.
-  if (any(is.na(R)))
-    stop("R matrix contains missing values")
-
-  # Replace NAs in z with zeros.
-  if (any(is.na(z))) {
-    warning("NA values in z-scores are replaced with 0")
-    z[is.na(z)] = 0
-  }
 
   # Modify R by z_ld_weight; this modification was designed to ensure
   # the column space of R contained z, but susie_suff_stat does not

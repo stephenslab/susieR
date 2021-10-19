@@ -36,7 +36,8 @@ susie_get_cs(
   coverage = 0.95,
   min_abs_corr = 0.5,
   dedup = TRUE,
-  squared = FALSE
+  squared = FALSE,
+  check_symmetric = TRUE
 )
 
 susie_get_pip(res, prune_by_cs = FALSE, prior_tol = 1e-09)

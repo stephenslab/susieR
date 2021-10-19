@@ -141,7 +141,7 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
                 ") does not agree with expected (",length(Xty)," by ",
                 length(Xty),")"))
   if (!is_symmetric_matrix(XtX))
-    stop("XtX is not a symmetric matrix")
+    stop("Input XtX or R is not a symmetric matrix")
 
   # MAF filter.
   if (!is.null(maf)) {
@@ -153,11 +153,17 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
   }
 
   if (any(is.infinite(Xty)))
-    stop("Xty contains infinite values")
+    stop("Input Xty or zscores contains infinite values")
   if (!(is.double(XtX) & is.matrix(XtX)) & !inherits(XtX,"CsparseMatrix"))
-    stop("Input X must be a double-precision matrix, or a sparse matrix")
+    stop("Input XtX or R must be a double-precision matrix, or a sparse matrix")
   if (any(is.na(XtX)))
-    stop("XtX matrix contains NAs")
+    stop("Input XtX or R matrix contains NAs")
+  # Replace NAs in z with zeros.
+  if (any(is.na(Xty))) {
+    warning("NA values in Xty or z-scores are replaced with 0")
+    Xty[is.na(Xty)] = 0
+  }
+
 
   if (check_input) {
 
@@ -310,9 +316,15 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
 
   # SuSiE CS and PIP.
   if (!is.null(coverage) && !is.null(min_abs_corr)) {
-    R = muffled_cov2cor(XtX)
-    s$sets = susie_get_cs(s,coverage = coverage,Xcorr = R,
-                          min_abs_corr = min_abs_corr)
+    if(any(!(diag(XtX) %in% c(0,1)))){
+      s$sets = susie_get_cs(s,coverage = coverage,Xcorr = muffled_cov2cor(XtX),
+                            min_abs_corr = min_abs_corr,
+                            check_symmetric = FALSE)
+    }else{
+      s$sets = susie_get_cs(s,coverage = coverage,Xcorr = XtX,
+                            min_abs_corr = min_abs_corr,
+                            check_symmetric = FALSE)
+    }
     s$pip = susie_get_pip(s,prune_by_cs = FALSE,prior_tol = prior_tol)
   }
 
