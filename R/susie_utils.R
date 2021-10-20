@@ -509,14 +509,9 @@ muffled_cov2cor = function (x)
 # Check for symmetric matrix.
 #' @keywords internal
 is_symmetric_matrix = function (x) {
-  if(require(Rfast)){
-    my_is_symmetric = Rfast::is.symmetric
-  }else{
-    my_is_symmetric = isSymmetric
-  }
-  res = my_is_symmetric(x)
+  res = isSymmetric(x)
   if (!res)
-    res = my_is_symmetric(unname(x))
+    res = isSymmetric(unname(x))
   return(res)
 }
 
