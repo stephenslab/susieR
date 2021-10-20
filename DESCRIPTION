@@ -15,7 +15,7 @@ Description: Implements methods for variable selection in linear
     and fast, allowing the SuSiE model be fit to large data sets
     (thousands of samples and hundreds of thousands of variables).
 Date: 2021-08-30
-Version: 0.11.53
+Version: 0.11.54
 Authors@R: c(person("Gao","Wang",role="aut",email="wang.gao@columbia.edu"),
              person("Yuxin","Zou",role="aut"),
              person("Kaiqian","Zhang",role="aut"),
@@ -34,15 +34,15 @@ Imports:
     Matrix,
     mixsqp,
     reshape,
-    ggplot2,
-    Rfast
+    ggplot2
 Suggests:
     testthat,
     microbenchmark,
     knitr,
     rmarkdown,
     L0Learn,
-    genlasso
+    genlasso,
+    Rfast
 LazyData: yes
 LazyDataCompression: xz
 NeedsCompilation: no

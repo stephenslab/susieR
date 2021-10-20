@@ -447,6 +447,14 @@ n_in_CS = function(res, coverage = 0.9) {
 #
 #' @importFrom Rfast med
 get_purity = function(pos, X, Xcorr, squared = FALSE, n = 100) {
+  if ( require(Rfast) ){
+    my_median = Rfast::med
+    my_upper_tri = Rfast::upper_tri
+  }else{
+    my_median = stats::median
+    my_upper_tri = upper_tri
+  }
+
   if (length(pos) == 1)
     c(1,1,1)
   else {
@@ -463,19 +471,16 @@ get_purity = function(pos, X, Xcorr, squared = FALSE, n = 100) {
         if (length(pos_rm))
           X_sub = X_sub[,-pos_rm]
       }
-      Rsub = muffled_corr(as.matrix(X_sub))
-      value = abs(Rsub[upper.tri(Rsub, diag = TRUE)])
-      rm(Rsub)
+      value = abs(my_upper_tri(muffled_corr(as.matrix(X_sub)), diag = TRUE))
     } else{
-      Xcorr = Xcorr[pos, pos]
-      value = abs(Xcorr[upper.tri(Xcorr, diag = TRUE)])
+      value = abs(my_upper_tri(Xcorr[pos, pos], diag = TRUE))
       rm(Xcorr)
     }
     if (squared)
       value = value^2
     return(c(min(value,na.rm = TRUE),
              sum(value,na.rm = TRUE)/sum(!is.na(value)),
-             med(value,na.rm = TRUE)))
+             my_median(value)))
   }
 }
 
@@ -504,9 +509,14 @@ muffled_cov2cor = function (x)
 # Check for symmetric matrix.
 #' @keywords internal
 is_symmetric_matrix = function (x) {
-  res = isSymmetric(x)
+  if(require(Rfast)){
+    my_is_symmetric = Rfast::is.symmetric
+  }else{
+    my_is_symmetric = isSymmetric
+  }
+  res = my_is_symmetric(x)
   if (!res)
-    res = isSymmetric(unname(x))
+    res = my_is_symmetric(unname(x))
   return(res)
 }
 
