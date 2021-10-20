@@ -445,7 +445,7 @@ n_in_CS = function(res, coverage = 0.9) {
 
 # Subsample and compute min, mean, median and max abs corr.
 #
-#' @importFrom Rfast med
+#' @importFrom stats median
 get_purity = function(pos, X, Xcorr, squared = FALSE, n = 100) {
   if ( require(Rfast) ){
     my_median = Rfast::med
