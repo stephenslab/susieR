@@ -452,7 +452,7 @@ get_purity = function(pos, X, Xcorr, squared = FALSE, n = 100) {
     my_upper_tri = Rfast::upper_tri
   }else{
     my_median = stats::median
-    my_upper_tri = upper_tri
+    my_upper_tri = upper.tri
   }
 
   if (length(pos) == 1)
