@@ -134,15 +134,20 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
     yty = var_y * (n-1)
   }
 
-
+  # NOTE: At this point, about 1.2 GB is used when R is a 8,000 x
+  # 8,000 matrix.
+  
   # Check input XtX.
-  if (ncol(XtX) != length(Xty))
-    stop(paste0("The dimension of XtX (",nrow(XtX)," by ",ncol(XtX),
-                ") does not agree with expected (",length(Xty)," by ",
-                length(Xty),")"))
-  if (!is_symmetric_matrix(XtX))
-    stop("Input XtX or R is not a symmetric matrix")
+  # if (ncol(XtX) != length(Xty))
+  #   stop(paste0("The dimension of XtX (",nrow(XtX)," by ",ncol(XtX),
+  #               ") does not agree with expected (",length(Xty)," by ",
+  #               length(Xty),")"))
+  # if (!is_symmetric_matrix(XtX))
+  #   stop("Input XtX or R is not a symmetric matrix")
 
+  # The lines above checking input XtX require an additional 3 GB of
+  # memomry on a 8,000 x 8,000 R matrix.
+  
   # MAF filter.
   if (!is.null(maf)) {
     if (length(maf) != length(Xty))
@@ -163,7 +168,6 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
     warning("NA values in Xty or z-scores are replaced with 0")
     Xty[is.na(Xty)] = 0
   }
-
 
   if (check_input) {
 

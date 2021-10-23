@@ -286,12 +286,13 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
                 coverage = claimed_coverage,
                 requested_coverage = coverage))
   } else {
-    purity = data.frame(do.call(rbind,lapply(1:length(cs),function (i) {
-              if (null_index > 0 && null_index %in% cs[[i]])
-                c(-9,-9,-9)
-              else
-                get_purity(cs[[i]],X,Xcorr,squared)
-             })))
+    purity <- NULL
+    for (i in 1:length(cs)) {
+      if (null_index > 0 && null_index %in% cs[[i]])
+        purity <- rbind(purity,c(-9,-9,-9))
+      else
+        purity <- rbind(purity,get_purity(cs[[i]],X,Xcorr,squared))
+    }
     if (squared)
       colnames(purity) = c("min.sq.corr","mean.sq.corr","median.sq.corr")
     else
