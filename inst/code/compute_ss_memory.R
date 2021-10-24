@@ -3,12 +3,22 @@
 #
 # NOTES:
 #
-# - *Add notes here.*
+# - Without any improvements:
+#   Size of X: 0.3 GB
+#   max rss_memory: 1.65GB
+#
+# - The centering and scaling steps require about 1 GB.
 #
 # library(susieR)
-set.seed(1)
 devtools::load_all()
-load("susie_rss_data.RData")
+# set.seed(1)
+# p <- 2000
+# n <- 20000
+# X <- matrix(rnorm(n*p),n,p)
+# y <- rnorm(n)
+# save(list = c("X","y"),file = "compute_ss_data.RData")
+set.seed(1)
+load("compute_ss_data.RData")
 cat("Size of X:\n")
 print(object.size(X),unit = "GB")
 cat("Running compute_ss.\n")
