@@ -519,7 +519,7 @@ is_symmetric_matrix = function (x) {
 # S = (X'X)^-1 \Sigma
 #' @keywords internal
 calc_stderr = function (X, residuals)
-  sqrt(diag(sum(residuals^2)/(nrow(X) - 2) * chol2inv(chol(t(X) %*% X))))
+  sqrt(diag(sum(residuals^2)/(nrow(X) - 2) * chol2inv(chol(crossprod(X)))))
 
 # Return residuals of Y after removing the linear effects of the susie
 # model.

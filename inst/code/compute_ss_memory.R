@@ -1,13 +1,9 @@
 # export MEM_CHECK_INTERVAL=0.01
-# python3 monitor_memory.py Rscript susie_memory.R
+# python3 monitor_memory.py Rscript compute_ss_memory.R
 #
 # NOTES:
 #
-# - Without any improvements:
-#   Size of X: 1 GB
-#
-# - The initial checks use about 2 GB. Most of that memory usage is
-#   due to set_X_attributes.
+# - *Add notes here.*
 #
 # library(susieR)
 devtools::load_all()
@@ -22,6 +18,4 @@ set.seed(1)
 cat("Size of X:\n")
 print(object.size(X),unit = "GB")
 cat("Running susie.\n")
-out <- susie(X,y,estimate_prior_variance = FALSE,min_abs_corr = 0,
-             verbose = TRUE)
-print(sapply(out$sets$cs,length))
+out <- compute_ss(X,y,standardize = TRUE)

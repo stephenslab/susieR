@@ -61,6 +61,4 @@ compute_suff_stat = function(X, y, standardize = FALSE) {
 #'
 #' @export
 #'
-compute_ss = function(X, y, standardize = FALSE) {
-  return(compute_suff_stat(X,y,standardize))
-}
+compute_ss <- compute_suff_stat
