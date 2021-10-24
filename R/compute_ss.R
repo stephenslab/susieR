@@ -27,8 +27,8 @@ compute_suff_stat = function(X, y, standardize = FALSE) {
   y_mean    = mean(y)
   y         = y - y_mean
   is.sparse = !is.matrix(X)
-  # X   = set_X_attributes(as.matrix(X),center=TRUE,scale = standardize)
-  # X   = t((t(X) - attr(X,"scaled:center"))/attr(X,"scaled:scale"))
+  X   = set_X_attributes(as.matrix(X),center=TRUE,scale = standardize)
+  X   = t((t(X) - attr(X,"scaled:center"))/attr(X,"scaled:scale"))
   XtX = crossprod(X)
   if (is.sparse)
     XtX = as(XtX,"dgCMatrix")
@@ -36,7 +36,7 @@ compute_suff_stat = function(X, y, standardize = FALSE) {
   n   = length(y)
   yty = sum(y^2)
   return(list(XtX = XtX,Xty = Xty,yty = yty,n = n,y_mean = y_mean,
-              X_colmeans = NULL)) # attr(X,"scaled:center")))
+              X_colmeans = attr(X,"scaled:center")))
 }
 
 #' @title Compute sufficient statistics for input to \code{susie_suff_stat}
