@@ -61,7 +61,13 @@ set_X_attributes = function(X, center = TRUE, scale = TRUE) {
 # @return a p vector of column standard deviations.
 #
 #' @importFrom Matrix colSums
+#' @importFrom matrixStats colSds
 compute_colSds = function(X) {
-  n = nrow(X)
-  return(sqrt((colSums(X^2)/n - (colSums(X)/n)^2)*(n/(n-1))))
+  if (is.matrix(X))
+    y = colSds(X)
+  else {
+    n = nrow(X)
+    y = sqrt((colSums(X^2)/n - (colSums(X)/n)^2)*(n/(n-1)))
+  }
+  return(y)
 }

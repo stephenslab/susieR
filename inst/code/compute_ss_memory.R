@@ -5,9 +5,13 @@
 #
 # - Without any improvements:
 #   Size of X: 0.3 GB
-#   max rss_memory: 1.65GB
+#   max rss_memory: 1.65 GB
 #
-# - The centering and scaling steps require about 1 GB.
+# - The original centering and scaling steps require about 1 GB.
+#
+# - With the improvements:
+#   Size of X: 0.3 GB
+#   max rss_memory: 0.66 GB
 #
 # library(susieR)
 devtools::load_all()

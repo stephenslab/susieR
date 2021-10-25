@@ -367,8 +367,6 @@ susie = function (X,y,L = min(10,ncol(X)),
     y = y - mean_y
   X = set_X_attributes(X,center = intercept,scale = standardize)
 
-  return(list())
-  
   # Initialize susie fit.
   s = init_setup(n,p,L,scaled_prior_variance,residual_variance,prior_weights,
                  null_weight,as.numeric(var(y)),standardize)

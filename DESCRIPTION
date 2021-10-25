@@ -15,7 +15,7 @@ Description: Implements methods for variable selection in linear
     and fast, allowing the SuSiE model be fit to large data sets
     (thousands of samples and hundreds of thousands of variables).
 Date: 2021-10-24
-Version: 0.11.56
+Version: 0.11.57
 Authors@R: c(person("Gao","Wang",role="aut",email="wang.gao@columbia.edu"),
              person("Yuxin","Zou",role="aut"),
              person("Kaiqian","Zhang",role="aut"),
@@ -32,6 +32,7 @@ Imports:
     grDevices,
     stats,
     Matrix,
+    matrixStats,
     mixsqp,
     reshape,
     ggplot2
