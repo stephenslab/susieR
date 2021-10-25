@@ -5,18 +5,20 @@
 #
 # - Without any improvements:
 #   Size of X: 1 GB
+#   max rss_memory: 4.70 GB
 #
 # - The initial checks use about 2 GB. Most of that memory usage is
 #   due to set_X_attributes.
 #
-# library(susieR)
-devtools::load_all()
 # set.seed(1)
 # p <- 16000
 # n <- 8000
 # X <- matrix(rnorm(n*p),n,p)
+# X <- scale(X,center = TRUE,scale = TRUE)
 # y <- rnorm(n)
 # save(list = c("X","y"),file = "susie_data.RData")
+# library(susieR)
+devtools::load_all()
 load("susie_data.RData")
 cat("Size of X:\n")
 print(object.size(X),unit = "GB")

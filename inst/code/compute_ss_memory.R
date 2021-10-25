@@ -13,14 +13,14 @@
 #   Size of X: 0.3 GB
 #   max rss_memory: 0.66 GB
 #
-# library(susieR)
-devtools::load_all()
 # set.seed(1)
 # p <- 2000
 # n <- 20000
 # X <- matrix(rnorm(n*p),n,p)
 # y <- rnorm(n)
 # save(list = c("X","y"),file = "compute_ss_data.RData")
+# library(susieR)
+devtools::load_all()
 set.seed(1)
 load("compute_ss_data.RData")
 cat("Size of X:\n")

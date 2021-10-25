@@ -328,34 +328,34 @@ susie = function (X,y,L = min(10,ncol(X)),
   estimate_prior_method = match.arg(estimate_prior_method)
 
   # Check input X.
-  if (!(is.double(X) & is.matrix(X)) &
-      !inherits(X,"CsparseMatrix") &
-      is.null(attr(X,"matrix.type")))
-    stop("Input X must be a double-precision matrix, or a sparse matrix, or ",
-         "a trend filtering matrix")
-  if (is.numeric(null_weight) && null_weight == 0)
-    null_weight = NULL
-  if (!is.null(null_weight) && is.null(attr(X,"matrix.type"))) {
-    if (!is.numeric(null_weight))
-      stop("Null weight must be numeric")
-    if (null_weight < 0 || null_weight >= 1)
-      stop("Null weight must be between 0 and 1")
-    if (missing(prior_weights))
-      prior_weights = c(rep(1/ncol(X) * (1 - null_weight),ncol(X)),null_weight)
-    else
-      prior_weights = c(prior_weights * (1-null_weight),null_weight)
-    X = cbind(X,0)
-  }
-  if (any(is.na(X)))
-    stop("Input X must not contain missing values")
-  if (any(is.na(y))) {
-    if (na.rm) {
-      samples_kept = which(!is.na(y))
-      y = y[samples_kept]
-      X = X[samples_kept,]
-    } else
-      stop("Input y must not contain missing values")
-  }
+  ## if (!(is.double(X) & is.matrix(X)) &
+  ##     !inherits(X,"CsparseMatrix") &
+  ##     is.null(attr(X,"matrix.type")))
+  ##   stop("Input X must be a double-precision matrix, or a sparse matrix, or ",
+  ##        "a trend filtering matrix")
+  ## if (is.numeric(null_weight) && null_weight == 0)
+  ##   null_weight = NULL
+  ## if (!is.null(null_weight) && is.null(attr(X,"matrix.type"))) {
+  ##   if (!is.numeric(null_weight))
+  ##     stop("Null weight must be numeric")
+  ##   if (null_weight < 0 || null_weight >= 1)
+  ##     stop("Null weight must be between 0 and 1")
+  ##   if (missing(prior_weights))
+  ##     prior_weights = c(rep(1/ncol(X) * (1 - null_weight),ncol(X)),null_weight)
+  ##   else
+  ##     prior_weights = c(prior_weights * (1-null_weight),null_weight)
+  ##   X = cbind(X,0)
+  ## }
+  ## if (any(is.na(X)))
+  ##   stop("Input X must not contain missing values")
+  ## if (any(is.na(y))) {
+  ##   if (na.rm) {
+  ##     samples_kept = which(!is.na(y))
+  ##     y = y[samples_kept]
+  ##     X = X[samples_kept,]
+  ##   } else
+  ##     stop("Input y must not contain missing values")
+  ## }
 
   # Check input y.
   p = ncol(X)
@@ -365,7 +365,7 @@ susie = function (X,y,L = min(10,ncol(X)),
   # Center and scale input.
   if (intercept)
     y = y - mean_y
-  X = set_X_attributes(X,center = intercept,scale = standardize)
+  # X = set_X_attributes(X,center = intercept,scale = standardize)
 
   # Initialize susie fit.
   s = init_setup(n,p,L,scaled_prior_variance,residual_variance,prior_weights,
@@ -453,6 +453,8 @@ susie = function (X,y,L = min(10,ncol(X)),
   if (track_fit)
     s$trace = tracking
 
+  return(s)
+  
   # SuSiE CS and PIP.
   if (!is.null(coverage) && !is.null(min_abs_corr)) {
     s$sets = susie_get_cs(s,coverage = coverage,X = X,
