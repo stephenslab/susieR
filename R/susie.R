@@ -396,6 +396,7 @@ susie = function (X,y,L = min(10,ncol(X)),
   } else {
     s = init_finalize(s)
   }
+
   # Initialize elbo to NA.
   elbo = rep(as.numeric(NA),max_iter + 1)
   elbo[1] = -Inf;
@@ -426,7 +427,7 @@ susie = function (X,y,L = min(10,ncol(X)),
         print(paste0("objective:",get_objective(X,y,s)))
     }
   }
-
+  
   # Remove first (infinite) entry, and trailing NAs.
   elbo = elbo[2:(i+1)]
   s$elbo = elbo
@@ -452,8 +453,6 @@ susie = function (X,y,L = min(10,ncol(X)),
 
   if (track_fit)
     s$trace = tracking
-
-  return(s)
   
   # SuSiE CS and PIP.
   if (!is.null(coverage) && !is.null(min_abs_corr)) {
