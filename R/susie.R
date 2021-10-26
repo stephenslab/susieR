@@ -495,7 +495,7 @@ susie = function (X,y,L = min(10,ncol(X)),
     } else
       pw_s = s$pi
     conti = TRUE
-    while (conti) {
+    while (conti & length(s$sets$cs)>0) {
       m = list()
       for(cs in 1:length(s$sets$cs)){
         pw_cs = pw_s
