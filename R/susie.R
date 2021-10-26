@@ -296,6 +296,8 @@
 #'
 #' @importFrom stats var
 #' @importFrom utils modifyList
+#' @importFrom Matrix rowSums
+#' @importFrom Matrix colMeans
 #'
 #' @export
 #'
@@ -328,34 +330,34 @@ susie = function (X,y,L = min(10,ncol(X)),
   estimate_prior_method = match.arg(estimate_prior_method)
 
   # Check input X.
-  ## if (!(is.double(X) & is.matrix(X)) &
-  ##     !inherits(X,"CsparseMatrix") &
-  ##     is.null(attr(X,"matrix.type")))
-  ##   stop("Input X must be a double-precision matrix, or a sparse matrix, or ",
-  ##        "a trend filtering matrix")
-  ## if (is.numeric(null_weight) && null_weight == 0)
-  ##   null_weight = NULL
-  ## if (!is.null(null_weight) && is.null(attr(X,"matrix.type"))) {
-  ##   if (!is.numeric(null_weight))
-  ##     stop("Null weight must be numeric")
-  ##   if (null_weight < 0 || null_weight >= 1)
-  ##     stop("Null weight must be between 0 and 1")
-  ##   if (missing(prior_weights))
-  ##     prior_weights = c(rep(1/ncol(X) * (1 - null_weight),ncol(X)),null_weight)
-  ##   else
-  ##     prior_weights = c(prior_weights * (1-null_weight),null_weight)
-  ##   X = cbind(X,0)
-  ## }
-  ## if (any(is.na(X)))
-  ##   stop("Input X must not contain missing values")
-  ## if (any(is.na(y))) {
-  ##   if (na.rm) {
-  ##     samples_kept = which(!is.na(y))
-  ##     y = y[samples_kept]
-  ##     X = X[samples_kept,]
-  ##   } else
-  ##     stop("Input y must not contain missing values")
-  ## }
+  if (!(is.double(X) & is.matrix(X)) &
+      !inherits(X,"CsparseMatrix") &
+      is.null(attr(X,"matrix.type")))
+    stop("Input X must be a double-precision matrix, or a sparse matrix, or ",
+         "a trend filtering matrix")
+  if (is.numeric(null_weight) && null_weight == 0)
+    null_weight = NULL
+  if (!is.null(null_weight) && is.null(attr(X,"matrix.type"))) {
+    if (!is.numeric(null_weight))
+      stop("Null weight must be numeric")
+    if (null_weight < 0 || null_weight >= 1)
+      stop("Null weight must be between 0 and 1")
+    if (missing(prior_weights))
+      prior_weights = c(rep(1/ncol(X) * (1 - null_weight),ncol(X)),null_weight)
+    else
+      prior_weights = c(prior_weights * (1-null_weight),null_weight)
+    X = cbind(X,0)
+  }
+  if (any(is.na(X)))
+    stop("Input X must not contain missing values")
+  if (any(is.na(y))) {
+    if (na.rm) {
+      samples_kept = which(!is.na(y))
+      y = y[samples_kept]
+      X = X[samples_kept,]
+    } else
+      stop("Input y must not contain missing values")
+  }
 
   # Check input y.
   p = ncol(X)
@@ -365,8 +367,47 @@ susie = function (X,y,L = min(10,ncol(X)),
   # Center and scale input.
   if (intercept)
     y = y - mean_y
-  # X = set_X_attributes(X,center = intercept,scale = standardize)
 
+  # Set three attributes for matrix X: attr(X,'scaled:center') is a
+  # p-vector of column means of X if center=TRUE, a p vector of zeros
+  # otherwise; 'attr(X,'scaled:scale') is a p-vector of column
+  # standard deviations of X if scale=TRUE, a p vector of ones
+  # otherwise; 'attr(X,'d') is a p-vector of column sums of
+  # X.standardized^2,' where X.standardized is the matrix X centered
+  # by attr(X,'scaled:center') and scaled by attr(X,'scaled:scale').
+  center = intercept
+  scale  = standardize
+  if (!is.null(attr(X,"matrix.type"))) {
+
+    # X is a trend filtering matrix.
+    cm  = compute_tf_cm(attr(X,"order"),ncol(X))
+    csd = compute_tf_csd(attr(X,"order"),ncol(X))
+    xx  = compute_tf_d(attr(X,"order"),ncol(X),cm,csd,scale,center)
+    if (!center)
+      cm = rep(0,ncol(X))
+    if (!scale)
+      csd = rep(1,ncol(X))
+  } else {
+      
+    # X is an ordinary dense or sparse matrix.  Set sd = 1 when the
+    # column has variance 0.
+    cm  = colMeans(X,na.rm = TRUE)
+    csd = compute_colSds(X)
+    csd[csd == 0] = 1
+    if (!center)
+      cm = rep(0,length = length(cm))
+    if (!scale) 
+      csd = rep(1,length = length(cm))
+
+    # *** FIX THIS ***
+    X.std = (t(X) - cm)/csd
+    xx = rowSums(X.std * X.std)
+  }
+  attr(X,"scaled:center") = cm
+  attr(X,"scaled:scale") = csd
+  attr(X,"d") = xx
+  return(list())
+  
   # Initialize susie fit.
   s = init_setup(n,p,L,scaled_prior_variance,residual_variance,prior_weights,
                  null_weight,as.numeric(var(y)),standardize)
