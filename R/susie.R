@@ -412,7 +412,7 @@ susie = function (X,y,L = min(10,ncol(X)),
   attr(X,"scaled:center") = cm
   attr(X,"scaled:scale") = csd
   attr(X,"d") = xx
-  
+
   # Initialize susie fit.
   s = init_setup(n,p,L,scaled_prior_variance,residual_variance,prior_weights,
                  null_weight,as.numeric(var(y)),standardize)
@@ -484,6 +484,8 @@ susie = function (X,y,L = min(10,ncol(X)),
     s$converged = FALSE
   }
 
+  return(s)
+  
   if (intercept) {
 
     # Estimate unshrunk intercept.
@@ -499,7 +501,6 @@ susie = function (X,y,L = min(10,ncol(X)),
 
   if (track_fit)
     s$trace = tracking
-  # return(s)
   
   # SuSiE CS and PIP.
   if (!is.null(coverage) && !is.null(min_abs_corr)) {

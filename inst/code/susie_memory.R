@@ -7,12 +7,6 @@
 #   Size of X: 1 GB
 #   max rss_memory: 4.70 GB
 #
-# - The initial checks use about 2 GB. Most of that memory usage is
-#   due to set_X_attributes.
-#
-# - If we skip the checks on X, then the remaining steps up until the
-#   main model fitting loop use 0.3 GB.
-#
 # - The main loop uses >2 GB. But update_each_effect itself does not
 #   need much memory. It appears that get_objective is what takes up
 #   most of this memory, in particular this calculation:
