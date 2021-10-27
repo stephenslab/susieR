@@ -389,7 +389,7 @@ susie = function (X,y,L = min(10,ncol(X)),
       csd = rep(1,ncol(X))
   } else {
       
-    # X is an ordinary dense or sparse matrix.  Set sd = 1 when the
+    # X is an ordinary dense or sparse matrix. Set sd = 1 when the
     # column has variance 0.
     cm  = colMeans(X,na.rm = TRUE)
     csd = compute_colSds(X)
@@ -399,14 +399,19 @@ susie = function (X,y,L = min(10,ncol(X)),
     if (!scale) 
       csd = rep(1,length = length(cm))
 
-    # *** FIX THIS ***
-    X.std = (t(X) - cm)/csd
-    xx = rowSums(X.std * X.std)
+    # These two lines of code should give the same result as
+    #
+    #   Y = (t(X) - cm)/csd
+    #   xx = rowSums(Y^2)
+    #
+    # for all four combinations of "center" and "scale", but do so
+    # without having to modify X, or create copies of X in memory.
+    xx = n*colMeans(X)^2 + (n-1)*compute_colSds(X)^2
+    xx = (xx - n*cm^2)/csd^2
   }
   attr(X,"scaled:center") = cm
   attr(X,"scaled:scale") = csd
   attr(X,"d") = xx
-  return(list())
   
   # Initialize susie fit.
   s = init_setup(n,p,L,scaled_prior_variance,residual_variance,prior_weights,
@@ -494,6 +499,7 @@ susie = function (X,y,L = min(10,ncol(X)),
 
   if (track_fit)
     s$trace = tracking
+  # return(s)
   
   # SuSiE CS and PIP.
   if (!is.null(coverage) && !is.null(min_abs_corr)) {
