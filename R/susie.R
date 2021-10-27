@@ -296,8 +296,6 @@
 #'
 #' @importFrom stats var
 #' @importFrom utils modifyList
-#' @importFrom Matrix rowSums
-#' @importFrom Matrix colMeans
 #'
 #' @export
 #'
@@ -375,43 +373,10 @@ susie = function (X,y,L = min(10,ncol(X)),
   # otherwise; 'attr(X,'d') is a p-vector of column sums of
   # X.standardized^2,' where X.standardized is the matrix X centered
   # by attr(X,'scaled:center') and scaled by attr(X,'scaled:scale').
-  center = intercept
-  scale  = standardize
-  if (!is.null(attr(X,"matrix.type"))) {
-
-    # X is a trend filtering matrix.
-    cm  = compute_tf_cm(attr(X,"order"),ncol(X))
-    csd = compute_tf_csd(attr(X,"order"),ncol(X))
-    xx  = compute_tf_d(attr(X,"order"),ncol(X),cm,csd,scale,center)
-    if (!center)
-      cm = rep(0,ncol(X))
-    if (!scale)
-      csd = rep(1,ncol(X))
-  } else {
-      
-    # X is an ordinary dense or sparse matrix. Set sd = 1 when the
-    # column has variance 0.
-    cm  = colMeans(X,na.rm = TRUE)
-    csd = compute_colSds(X)
-    csd[csd == 0] = 1
-    if (!center)
-      cm = rep(0,length = length(cm))
-    if (!scale) 
-      csd = rep(1,length = length(cm))
-
-    # These two lines of code should give the same result as
-    #
-    #   Y = (t(X) - cm)/csd
-    #   xx = rowSums(Y^2)
-    #
-    # for all four combinations of "center" and "scale", but do so
-    # without having to modify X, or create copies of X in memory.
-    xx = n*colMeans(X)^2 + (n-1)*compute_colSds(X)^2
-    xx = (xx - n*cm^2)/csd^2
-  }
-  attr(X,"scaled:center") = cm
-  attr(X,"scaled:scale") = csd
-  attr(X,"d") = xx
+  out = compute_colstats(X,center = intercept,scale = standardize)
+  attr(X,"scaled:center") = out$cm
+  attr(X,"scaled:scale") = out$csd
+  attr(X,"d") = out$d
 
   # Initialize susie fit.
   s = init_setup(n,p,L,scaled_prior_variance,residual_variance,prior_weights,
@@ -484,8 +449,6 @@ susie = function (X,y,L = min(10,ncol(X)),
     s$converged = FALSE
   }
 
-  return(s)
-  
   if (intercept) {
 
     # Estimate unshrunk intercept.

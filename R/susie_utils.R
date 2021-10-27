@@ -805,5 +805,68 @@ kriging_rss = function (z, R, r_tol = 1e-08,
               conditional_dist = res))
 }
 
+# Compute the column means of X, the column standard deviations of X,
+# and rowSums(Y^2), where Y is the centered and/or scaled version of
+# X.
+#
+#' @importFrom Matrix rowSums
+#' @importFrom Matrix colMeans
+compute_colstats = function (X, center = TRUE, scale = TRUE) {
+  n = nrow(X)
+  p = ncol(X)
+  if (!is.null(attr(X,"matrix.type"))) {
 
+    # X is a trend filtering matrix.
+    cm  = compute_tf_cm(attr(X,"order"),p)
+    csd = compute_tf_csd(attr(X,"order"),p)
+    d   = compute_tf_d(attr(X,"order"),p,cm,csd,scale,center)
+    if (!center)
+      cm = rep(0,p)
+    if (!scale)
+      csd = rep(1,p)
+  } else {
+      
+    # X is an ordinary dense or sparse matrix. Set sd = 1 when the
+    # column has variance 0.
+    if (center)
+      cm = colMeans(X,na.rm = TRUE)
+    else
+      cm = rep(0,p)
+    if (scale) {
+      csd = compute_colSds(X)
+      csd[csd == 0] = 1
+    } else
+      csd = rep(1,p)
 
+    # These two lines of code should give the same result as
+    #
+    #   Y = (t(X) - cm)/csd
+    #   d = rowSums(Y^2)
+    #
+    # for all four combinations of "center" and "scale", but do so
+    # without having to modify X, or create copies of X in memory. In
+    # particular the first line should be equivalent to colSums(X^2).
+    d = n*colMeans(X)^2 + (n-1)*compute_colSds(X)^2
+    d = (d - n*cm^2)/csd^2
+  }
+  
+  return(list(cm = cm,csd = csd,d = d))
+}
+
+# @title computes column standard deviations for any type of matrix
+# @details This should give the same result as matrixStats::colSds(X),
+#   but allows for sparse matrices as well as dense ones.
+# @param X an n by p matrix of any type, e.g. sparse, dense.
+# @return a p vector of column standard deviations.
+#
+#' @importFrom Matrix colSums
+#' @importFrom matrixStats colSds
+compute_colSds = function(X) {
+  if (is.matrix(X))
+    y = colSds(X)
+  else {
+    n = nrow(X)
+    y = sqrt((colSums(X^2)/n - (colSums(X)/n)^2)*(n/(n-1)))
+  }
+  return(y)
+}
