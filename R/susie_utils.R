@@ -243,11 +243,20 @@ susie_get_posterior_samples = function (susie_fit, num_samples) {
 #' @param squared If \code{squared = TRUE}, report min, mean and
 #' median of squared correlation instead of the absolute correlation.
 #'
+#' @param check_symmetric If \code{check_symmetric = TRUE}, perform a
+#'   check for symmetry of matrix \code{Xcorr} when \code{Xcorr} is
+#'   provided (not \code{NULL}).
+#' 
+#' @param n_purity The maximum number of credible set (CS) variables
+#'   used in calculating the correlation (\dQuote{purity})
+#'   statistics. When the number of variables included in the CS is
+#'   greater than this number, the CS variables are randomly subsampled.
+#'
 #' @export
 #'
 susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
                          min_abs_corr = 0.5, dedup = TRUE, squared = FALSE,
-                         check_symmetric = TRUE) {
+                         check_symmetric = TRUE, n_purity = 100) {
   if (!is.null(X) && !is.null(Xcorr))
     stop("Only one of X or Xcorr should be specified")
   if (check_symmetric){
@@ -291,7 +300,9 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
       if (null_index > 0 && null_index %in% cs[[i]])
         purity <- rbind(purity,c(-9,-9,-9))
       else
-        purity <- rbind(purity,matrix(get_purity(cs[[i]],X,Xcorr,squared),1,3))
+        purity <-
+          rbind(purity,
+                matrix(get_purity(cs[[i]],X,Xcorr,squared,n_purity),1,3))
     }
     purity <- as.data.frame(purity)
     if (squared)

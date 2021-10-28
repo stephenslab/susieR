@@ -205,6 +205,9 @@
 #'  iterative refinement procedure is used, after the IBSS algorithm,
 #'  to check and escape from local optima (see details).
 #'
+#' @param n_purity Passed as argument \code{n_purity} to
+#'   \code{\link{susie_get_cs}}.
+#'
 #' @return A \code{"susie"} object with some or all of the following
 #'   elements:
 #'
@@ -322,7 +325,8 @@ susie = function (X,y,L = min(10,ncol(X)),
                    verbose = FALSE,
                    track_fit = FALSE,
                    residual_variance_lowerbound = var(drop(y))/1e4,
-                   refine = FALSE) {
+                   refine = FALSE,
+                   n_purity = 100) {
 
   # Process input estimate_prior_method.
   estimate_prior_method = match.arg(estimate_prior_method)
@@ -468,7 +472,8 @@ susie = function (X,y,L = min(10,ncol(X)),
   # SuSiE CS and PIP.
   if (!is.null(coverage) && !is.null(min_abs_corr)) {
     s$sets = susie_get_cs(s,coverage = coverage,X = X,
-                          min_abs_corr = min_abs_corr)
+                          min_abs_corr = min_abs_corr,
+                          n_purity = n_purity)
     s$pip = susie_get_pip(s,prune_by_cs = FALSE,prior_tol = prior_tol)
   }
 

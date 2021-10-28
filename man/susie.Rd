@@ -31,7 +31,8 @@ susie(
   verbose = FALSE,
   track_fit = FALSE,
   residual_variance_lowerbound = var(drop(y))/10000,
-  refine = FALSE
+  refine = FALSE,
+  n_purity = 100
 )
 
 susie_suff_stat(
@@ -194,6 +195,9 @@ residual variance. It is only relevant when
 \item{refine}{If \code{refine = TRUE}, then an additional
 iterative refinement procedure is used, after the IBSS algorithm,
 to check and escape from local optima (see details).}
+
+\item{n_purity}{Passed as argument \code{n_purity} to
+\code{\link{susie_get_cs}}.}
 
 \item{bhat}{A p-vector of estimated effects.}
 
