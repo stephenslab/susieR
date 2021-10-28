@@ -456,7 +456,7 @@ get_purity = function(pos, X, Xcorr, squared = FALSE, n = 100) {
   }
 
   if (length(pos) == 1)
-    c(1,1,1)
+    return(c(1,1,1))
   else {
     if (is.null(Xcorr)) {
       if (length(pos) > n)
@@ -859,14 +859,18 @@ compute_colstats = function (X, center = TRUE, scale = TRUE) {
 # @param X an n by p matrix of any type, e.g. sparse, dense.
 # @return a p vector of column standard deviations.
 #
+#' @importFrom Matrix rowSums
 #' @importFrom Matrix colSums
+#' @importFrom Matrix rowMeans
 #' @importFrom matrixStats colSds
 compute_colSds = function(X) {
   if (is.matrix(X))
     y = colSds(X)
   else {
     n = nrow(X)
-    y = sqrt((colSums(X^2)/n - (colSums(X)/n)^2)*(n/(n-1)))
+    X = t(X)
+    X = X - rowMeans(X)
+    y = sqrt(rowSums(X^2)/(n-1))
   }
   return(y)
 }
