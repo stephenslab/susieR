@@ -51,6 +51,9 @@
 #'   estimated prior variance becomes unreasonably large (comparing with
 #'   10 * max(abs(z))^2).
 #'
+#' @param n_purity Passed as argument \code{n_purity} to
+#'   \code{\link{susie_get_cs}}.
+#'
 #' @export
 #'
 susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
@@ -68,7 +71,7 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
                             min_abs_corr = 0.5, tol = 1e-3,
                             verbose = FALSE, track_fit = FALSE,
                             check_input = FALSE, refine = FALSE,
-                            check_prior = FALSE) {
+                            check_prior = FALSE, n_purity = 100) {
 
   # Process input estimate_prior_method.
   estimate_prior_method = match.arg(estimate_prior_method)
@@ -319,12 +322,13 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
     if(any(!(diag(XtX) %in% c(0,1)))){
       s$sets = susie_get_cs(s,coverage = coverage,Xcorr = muffled_cov2cor(XtX),
                             min_abs_corr = min_abs_corr,
-                            check_symmetric = FALSE)
-    }else{
+                            check_symmetric = FALSE,
+                            n_purity = n_purity)
+    }else
       s$sets = susie_get_cs(s,coverage = coverage,Xcorr = XtX,
                             min_abs_corr = min_abs_corr,
-                            check_symmetric = FALSE)
-    }
+                            check_symmetric = FALSE,
+                            n_purity = n_purity)
     s$pip = susie_get_pip(s,prune_by_cs = FALSE,prior_tol = prior_tol)
   }
 

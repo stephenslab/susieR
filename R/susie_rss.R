@@ -79,6 +79,13 @@
 #'   (not recommended) the prior variance for each of the L effects is
 #'   determined by the value supplied to \code{prior_variance}.
 #'
+#' @param check_prior When \code{check_prior = TRUE}, it checks if the
+#'   estimated prior variance becomes unreasonably large (comparing with
+#'   10 * max(abs(z))^2).
+#'
+#' @param n_purity Passed as argument \code{n_purity} to
+#'   \code{\link{susie_get_cs}}.
+#'
 #' @param \dots Other parameters to be passed to
 #' \code{\link{susie_suff_stat}}.
 #'
@@ -407,7 +414,8 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
   if (!is.null(coverage) && !is.null(min_abs_corr)) {
     R = muffled_cov2cor(R)
     s$sets = susie_get_cs(s,coverage = coverage,Xcorr = R,
-                          min_abs_corr = min_abs_corr)
+                          min_abs_corr = min_abs_corr,
+                          n_purity = n_purity)
     s$pip = susie_get_pip(s,prune_by_cs = FALSE,prior_tol = prior_tol)
   }
   if (!is.null(names(z))) {

@@ -41,8 +41,15 @@ for the optimization. When \code{estimate_prior_variance = FALSE}
 (not recommended) the prior variance for each of the L effects is
 determined by the value supplied to \code{prior_variance}.}
 
+\item{check_prior}{When \code{check_prior = TRUE}, it checks if the
+estimated prior variance becomes unreasonably large (comparing with
+10 * max(abs(z))^2).}
+
 \item{\dots}{Other parameters to be passed to
 \code{\link{susie_suff_stat}}.}
+
+\item{n_purity}{Passed as argument \code{n_purity} to
+\code{\link{susie_get_cs}}.}
 }
 \value{
 A \code{"susie"} object with the following

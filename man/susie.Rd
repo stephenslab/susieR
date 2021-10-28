@@ -69,7 +69,8 @@ susie_suff_stat(
   track_fit = FALSE,
   check_input = FALSE,
   refine = FALSE,
-  check_prior = FALSE
+  check_prior = FALSE,
+  n_purity = 100
 )
 }
 \arguments{
