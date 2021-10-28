@@ -291,8 +291,9 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
       if (null_index > 0 && null_index %in% cs[[i]])
         purity <- rbind(purity,c(-9,-9,-9))
       else
-        purity <- rbind(purity,get_purity(cs[[i]],X,Xcorr,squared))
+        purity <- rbind(purity,matrix(get_purity(cs[[i]],X,Xcorr,squared),1,3))
     }
+    purity <- as.data.frame(purity)
     if (squared)
       colnames(purity) = c("min.sq.corr","mean.sq.corr","median.sq.corr")
     else
@@ -300,8 +301,8 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
     threshold = ifelse(squared,min_abs_corr^2,min_abs_corr)
     is_pure = which(purity[,1] >= threshold)
     if (length(is_pure) > 0) {
-      cs = cs[is_pure]
-      purity = purity[is_pure,]
+      cs        = cs[is_pure]
+      purity    = purity[is_pure,]
       row_names = paste0("L",which(include_idx)[is_pure])
       names(cs) = row_names
       rownames(purity) = row_names
