@@ -449,38 +449,31 @@ n_in_CS = function(res, coverage = 0.9) {
 #' @importFrom stats median
 get_purity = function(pos, X, Xcorr, squared = FALSE, n = 100) {
   if (requireNamespace("Rfast",quietly = TRUE)) {
-    my_median = Rfast::med
+    my_median    = function (x) Rfast::med(x,na.rm = TRUE)
     my_upper_tri = Rfast::upper_tri
   } else {
-    my_median = stats::median
+    my_median    = function (x) stats::median(x,na.rm = TRUE)
     my_upper_tri = upper.tri
   }
 
   if (length(pos) == 1)
     return(c(1,1,1))
   else {
-    if (is.null(Xcorr)) {
-      if (length(pos) > n)
-        pos = sample(pos, n)
 
+    # Subsample the columns if necessary.
+    if (length(pos) > n)
+      pos = sample(pos,n)
+      
+    if (is.null(Xcorr)) {
       X_sub = X[,pos]
-      if (length(pos) > n) {
-        # Remove identical columns.
-        pos_rm = sapply(1:ncol(X_sub),
-                       function(i) all(abs(X_sub[,i] - mean(X_sub[,i])) <
-                                       .Machine$double.eps^0.5))
-        if (length(pos_rm))
-          X_sub = X_sub[,-pos_rm]
-      }
-      value = abs(my_upper_tri(muffled_corr(as.matrix(X_sub)), diag = TRUE))
-    } else{
-      value = abs(my_upper_tri(Xcorr[pos, pos], diag = TRUE))
-      rm(Xcorr)
-    }
+      X_sub = as.matrix(X_sub)
+      value = abs(my_upper_tri(muffled_corr(X_sub),diag = TRUE))
+    } else
+      value = abs(my_upper_tri(Xcorr[pos,pos],diag = TRUE))
     if (squared)
       value = value^2
     return(c(min(value,na.rm = TRUE),
-             sum(value,na.rm = TRUE)/sum(!is.na(value)),
+             mean(value,na.rm = TRUE),
              my_median(value)))
   }
 }
