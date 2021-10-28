@@ -7,10 +7,9 @@
 #   Size of X: 1 GB
 #   max rss_memory: 4.70 GB
 #
-# - The main loop uses >2 GB. But update_each_effect itself does not
-#   need much memory. It appears that get_objective is what takes up
-#   most of this memory, in particular this calculation:
-#   tcrossprod(M,sweep(X,2,csd,"/"))
+# - With the improvements:
+#   Size of X: 1 GB
+#   max rss_memory: 3.00 GB
 #
 # set.seed(1)
 # p <- 16000
