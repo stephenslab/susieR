@@ -246,7 +246,7 @@ susie_get_posterior_samples = function (susie_fit, num_samples) {
 #' @param check_symmetric If \code{check_symmetric = TRUE}, perform a
 #'   check for symmetry of matrix \code{Xcorr} when \code{Xcorr} is
 #'   provided (not \code{NULL}).
-#' 
+#'
 #' @param n_purity The maximum number of credible set (CS) variables
 #'   used in calculating the correlation (\dQuote{purity})
 #'   statistics. When the number of variables included in the CS is
@@ -475,17 +475,17 @@ get_purity = function(pos, X, Xcorr, squared = FALSE, n = 100) {
     # Subsample the columns if necessary.
     if (length(pos) > n)
       pos = sample(pos,n)
-      
+
     if (is.null(Xcorr)) {
       X_sub = X[,pos]
       X_sub = as.matrix(X_sub)
-      value = abs(my_upper_tri(muffled_corr(X_sub),diag = TRUE))
+      value = abs(my_upper_tri(muffled_corr(X_sub)))
     } else
-      value = abs(my_upper_tri(Xcorr[pos,pos],diag = TRUE))
+      value = abs(my_upper_tri(Xcorr[pos,pos]))
     if (squared)
       value = value^2
-    return(c(min(value,na.rm = TRUE),
-             mean(value,na.rm = TRUE),
+    return(c(min(value),
+             sum(value)/length(value),
              my_median(value)))
   }
 }
@@ -831,7 +831,7 @@ compute_colstats = function (X, center = TRUE, scale = TRUE) {
     if (!scale)
       csd = rep(1,p)
   } else {
-      
+
     # X is an ordinary dense or sparse matrix. Set sd = 1 when the
     # column has variance 0.
     if (center)
@@ -855,7 +855,7 @@ compute_colstats = function (X, center = TRUE, scale = TRUE) {
     d = n*colMeans(X)^2 + (n-1)*compute_colSds(X)^2
     d = (d - n*cm^2)/csd^2
   }
-  
+
   return(list(cm = cm,csd = csd,d = d))
 }
 
