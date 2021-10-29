@@ -472,15 +472,15 @@ get_purity = function(pos, X, Xcorr, squared = FALSE, n = 100) {
         if (length(pos_rm))
           X_sub = X_sub[,-pos_rm]
       }
-      value = abs(my_upper_tri(muffled_corr(as.matrix(X_sub)), diag = TRUE))
+      value = abs(my_upper_tri(muffled_corr(as.matrix(X_sub))))
     } else{
-      value = abs(my_upper_tri(Xcorr[pos, pos], diag = TRUE))
+      value = abs(my_upper_tri(Xcorr[pos, pos]))
       rm(Xcorr)
     }
     if (squared)
       value = value^2
-    return(c(min(value,na.rm = TRUE),
-             sum(value,na.rm = TRUE)/sum(!is.na(value)),
+    return(c(min(value),
+             sum(value)/length(value),
              my_median(value)))
   }
 }
