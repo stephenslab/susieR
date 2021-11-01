@@ -514,12 +514,8 @@ muffled_cov2cor = function (x)
 
 # Check for symmetric matrix.
 #' @keywords internal
-is_symmetric_matrix = function (x) {
-  res = isSymmetric(x)
-  if (!res)
-    res = isSymmetric(unname(x))
-  return(res)
-}
+is_symmetric_matrix = function (x)
+  res = isSymmetric(x,check.attributes = FALSE)
 
 # Compute standard error for regression coef.
 # S = (X'X)^-1 \Sigma
@@ -879,4 +875,41 @@ compute_colSds = function(X) {
     y = sqrt(rowSums(X^2)/(n-1))
   }
   return(y)
+}
+
+# @title Check whether A is positive semidefinite
+# @param A a symmetric matrix
+# @return a list of result:
+# \item{matrix}{The matrix with eigen decomposition}
+# \item{status}{whether A is positive semidefinite}
+# \item{eigenvalues}{eigenvalues of A truncated by r_tol}
+check_semi_pd = function (A, tol) {
+  attr(A,"eigen") = eigen(A,symmetric = TRUE)
+  v = attr(A,"eigen")$values
+  v[abs(v) < tol] = 0
+  return(list(matrix      = A,
+              status      = !any(v < 0),
+              eigenvalues = v))
+}
+
+# @title Check whether b is in space spanned by the non-zero eigenvectors
+#   of A
+# @param A a p by p matrix
+# @param b a length p vector
+# @return a list of result:
+# \item{status}{whether b in space spanned by the non-zero
+#  eigenvectors of A}
+# \item{msg}{msg gives the difference between the projected b and b if
+#   status is FALSE}
+check_projection = function (A, b) {
+  if (is.null(attr(A,"eigen")))
+    attr(A,"eigen") = eigen(A,symmetric = TRUE)
+  v = attr(A,"eigen")$values
+  B = attr(A,"eigen")$vectors[,v > .Machine$double.eps]
+  msg = all.equal(as.vector(B %*% crossprod(B,b)),as.vector(b),
+                  check.names = FALSE)
+  if (!is.character(msg))
+    return(list(status = TRUE,msg = NA))
+  else
+    return(list(status = FALSE,msg = msg))
 }

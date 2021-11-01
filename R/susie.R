@@ -350,9 +350,9 @@ susie = function (X,y,L = min(10,ncol(X)),
       prior_weights = c(prior_weights * (1-null_weight),null_weight)
     X = cbind(X,0)
   }
-  if (any(is.na(X)))
+  if (anyNA(X))
     stop("Input X must not contain missing values")
-  if (any(is.na(y))) {
+  if (anyNA(y)) {
     if (na.rm) {
       samples_kept = which(!is.na(y))
       y = y[samples_kept]

@@ -137,14 +137,13 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
     yty = var_y * (n-1)
   }
 
-
   # Check input XtX.
   if (ncol(XtX) != length(Xty))
     stop(paste0("The dimension of XtX (",nrow(XtX)," by ",ncol(XtX),
                 ") does not agree with expected (",length(Xty)," by ",
                 length(Xty),")"))
-  if (!is_symmetric_matrix(XtX))
-    stop("Input XtX or R is not a symmetric matrix")
+  # if (!is_symmetric_matrix(XtX))
+  #   stop("Input XtX or R is not a symmetric matrix")
 
   # MAF filter.
   if (!is.null(maf)) {
@@ -159,14 +158,14 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
     stop("Input Xty or zscores contains infinite values")
   if (!(is.double(XtX) & is.matrix(XtX)) & !inherits(XtX,"CsparseMatrix"))
     stop("Input XtX or R must be a double-precision matrix, or a sparse matrix")
-  if (any(is.na(XtX)))
+  if (anyNA(XtX))
     stop("Input XtX or R matrix contains NAs")
+  
   # Replace NAs in z with zeros.
-  if (any(is.na(Xty))) {
+  if (anyNA(Xty)) {
     warning("NA values in Xty or z-scores are replaced with 0")
     Xty[is.na(Xty)] = 0
   }
-
 
   if (check_input) {
 
@@ -203,10 +202,12 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
     dXtX = diag(XtX)
     csd = sqrt(dXtX/(n-1))
     csd[csd == 0] = 1
-    XtX = (1/csd) * t((1/csd) * XtX)
-    Xty = (1/csd) * Xty
+    XtX = (1/csd) * XtX
+    XtX = t(XtX)
+    XtX = XtX / csd
+    Xty = Xty / csd
   } else
-    csd = rep(1, length = p)
+    csd = rep(1,length = p)
   attr(XtX,"d") = diag(XtX)
   attr(XtX,"scaled:scale") = csd
 
@@ -228,6 +229,7 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
     if (max(s_init$alpha) > 1 || min(s_init$alpha) < 0)
       stop("s_init$alpha has invalid values outside range [0,1]; please ",
            "check your input")
+    
     # First, remove effects with s_init$V = 0
     s_init = susie_prune_single_effects(s_init)
     num_effects = nrow(s_init$alpha)
@@ -407,40 +409,4 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
   }
 
   return(s)
-}
-
-# @title Check whether A is positive semidefinite
-# @param A a symmetric matrix
-# @return a list of result:
-# \item{matrix}{The matrix with eigen decomposition}
-# \item{status}{whether A is positive semidefinite}
-# \item{eigenvalues}{eigenvalues of A truncated by r_tol}
-check_semi_pd = function (A, tol) {
-  attr(A,"eigen") = eigen(A,symmetric = TRUE)
-  eigenvalues = attr(A,"eigen")$values
-  eigenvalues[abs(eigenvalues) < tol] = 0
-  return(list(matrix = A,
-              status = !any(eigenvalues < 0),
-              eigenvalues = eigenvalues))
-}
-
-# @title Check whether b is in space spanned by the non-zero eigenvectors
-#   of A
-# @param A a p by p matrix
-# @param b a length p vector
-# @return a list of result:
-# \item{status}{whether b in space spanned by the non-zero
-#  eigenvectors of A}
-# \item{msg}{msg gives the difference between the projected b and b if
-#   status is FALSE}
-check_projection = function (A, b) {
-  if (is.null(attr(A,"eigen")))
-    attr(A,"eigen") = eigen(A,symmetric = TRUE)
-  B = attr(A,"eigen")$vectors[,attr(A,"eigen")$values > .Machine$double.eps]
-  msg = all.equal(as.vector(B %*% crossprod(B,b)),as.vector(b),
-                  check.names = FALSE)
-  if (!is.character(msg))
-    return(list(status = TRUE,msg = NA))
-  else
-    return(list(status = FALSE,msg = msg))
 }
