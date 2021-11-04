@@ -83,9 +83,6 @@
 #'   estimated prior variance becomes unreasonably large (comparing with
 #'   10 * max(abs(z))^2).
 #'
-#' @param n_purity Passed as argument \code{n_purity} to
-#'   \code{\link{susie_get_cs}}.
-#'
 #' @param \dots Other parameters to be passed to
 #' \code{\link{susie_suff_stat}}.
 #'

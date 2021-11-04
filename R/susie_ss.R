@@ -137,7 +137,7 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
       XtX = t(XtX)
       XtX = XtX * sqrt(XtXdiag)
       XtX = XtX + t(XtX)
-      XtX = XtXb/2
+      XtX = XtX/2
     }
     yty = var_y * (n-1)
   }

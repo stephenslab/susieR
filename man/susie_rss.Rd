@@ -47,9 +47,6 @@ estimated prior variance becomes unreasonably large (comparing with
 
 \item{\dots}{Other parameters to be passed to
 \code{\link{susie_suff_stat}}.}
-
-\item{n_purity}{Passed as argument \code{n_purity} to
-\code{\link{susie_get_cs}}.}
 }
 \value{
 A \code{"susie"} object with the following

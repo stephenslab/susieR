@@ -2,6 +2,7 @@
 ^.gitignore$
 ^appveyor\.yml$
 ^_pkgdown\.yml$
+^\.circleci$
 ^susieR\.Rproj$
 ^\.Rproj\.user$
 ^\.travis\.yml$
