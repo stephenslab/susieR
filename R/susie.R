@@ -360,9 +360,12 @@ susie = function (X,y,L = min(10,ncol(X)),
     } else
       stop("Input y must not contain missing values")
   }
-
-  # Check input y.
   p = ncol(X)
+  if (p > 1000 & !requireNamespace("Rfast",quietly = TRUE))
+    message("For an X with many columns, consider installing the Rfast ",
+            "package for more efficient credible set (CS) calculations.")
+  
+  # Check input y.
   n = nrow(X)
   mean_y = mean(y)
 

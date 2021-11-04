@@ -204,9 +204,9 @@ to check and escape from local optima (see details).}
 
 \item{shat}{A p-vector of standard errors.}
 
-\item{R}{A p by p correlation matrix. It should be estimated from the same samples
-used to compute \code{bhat} and \code{shat}. Using an out-of-sample
-matrix may produce unreliable results.}
+\item{R}{A p by p correlation matrix. It should be estimated from
+the same samples used to compute \code{bhat} and \code{shat}. Using
+an out-of-sample matrix may produce unreliable results.}
 
 \item{n}{The sample size.}
 

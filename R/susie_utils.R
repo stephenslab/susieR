@@ -458,9 +458,15 @@ n_in_CS = function(res, coverage = 0.9) {
 
 # Subsample and compute min, mean, median and max abs corr.
 #
-#' @importFrom Rfast med
-#' @importFrom Rfast upper_tri
+#' @importFrom stats median
 get_purity = function(pos, X, Xcorr, squared = FALSE, n = 100) {
+  if (requireNamespace("Rfast",quietly = TRUE)) {
+    get_upper_tri <- Rfast::upper_tri
+    get_median    <- Rfast::med
+  } else {
+    get_upper_tri <- upper.tri
+    get_median    <- stats::median
+  }
   if (length(pos) == 1)
     return(c(1,1,1))
   else {
@@ -472,14 +478,14 @@ get_purity = function(pos, X, Xcorr, squared = FALSE, n = 100) {
     if (is.null(Xcorr)) {
       X_sub = X[,pos]
       X_sub = as.matrix(X_sub)
-      value = abs(upper_tri(muffled_corr(X_sub)))
+      value = abs(get_upper_tri(muffled_corr(X_sub)))
     } else
-      value = abs(upper_tri(Xcorr[pos,pos]))
+      value = abs(get_upper_tri(Xcorr[pos,pos]))
     if (squared)
       value = value^2
     return(c(min(value),
              sum(value)/length(value),
-             med(value)))
+             get_median(value)))
   }
 }
 
@@ -506,10 +512,13 @@ muffled_cov2cor = function (x)
       })
 
 # Check for symmetric matrix.
-#' @importFrom Rfast is.symmetric
 #' @keywords internal
-is_symmetric_matrix = function (x)
-  is.symmetric(x)
+is_symmetric_matrix = function (x) {
+  if (requireNamespace("Rfast",quietly = TRUE))
+    return(Rfast::is.symmetric(x))
+  else
+    return(isSymmetric(x))
+}
 
 # Compute standard error for regression coef.
 # S = (X'X)^-1 \Sigma

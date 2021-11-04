@@ -4,9 +4,9 @@
 #'
 #' @param shat A p-vector of standard errors.
 #'
-#' @param R A p by p correlation matrix. It should be estimated from the same samples
-#'   used to compute \code{bhat} and \code{shat}. Using an out-of-sample
-#'   matrix may produce unreliable results.
+#' @param R A p by p correlation matrix. It should be estimated from
+#'   the same samples used to compute \code{bhat} and \code{shat}. Using
+#'   an out-of-sample matrix may produce unreliable results.
 #'
 #' @param n The sample size.
 #'
@@ -132,18 +132,26 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
     } else {
       XtXdiag = var_y * sigma2/(shat^2)
       Xty = that * var_y * sigma2/shat
-      XtX = t(R * sqrt(XtXdiag)) * sqrt(XtXdiag)
+      XtX = R
+      XtX = R * sqrt(XtXdiag)
+      XtX = t(XtX)
+      XtX = XtX * sqrt(XtXdiag)
+      XtX = XtX + t(XtX)
+      XtX = XtXb/2
     }
     yty = var_y * (n-1)
   }
-
+  if (ncol(XtX) > 1000 & !requireNamespace("Rfast",quietly = TRUE))
+    message("For large R or large XtX, consider installing the Rfast ",
+            "package for better performance.")
+  
   # Check input XtX.
   if (ncol(XtX) != length(Xty))
     stop(paste0("The dimension of XtX (",nrow(XtX)," by ",ncol(XtX),
                 ") does not agree with expected (",length(Xty)," by ",
                 length(Xty),")"))
-  # if (!is_symmetric_matrix(XtX))
-  #   stop("Input XtX or R is not a symmetric matrix")
+  if (!is_symmetric_matrix(XtX))
+    stop("Input XtX or R is not a symmetric matrix")
 
   # MAF filter.
   if (!is.null(maf)) {
