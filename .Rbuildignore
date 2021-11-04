@@ -9,3 +9,6 @@
 ^tests/testthat/full_data_1_sim_gaussian_null_1\.rds$
 ^inst/datafiles/FinemappingConvergence1k\.RData$
 ^inst/datafiles/SummaryConsistency1k\.RData$
+^inst/code/compute_ss_data\.RData$
+^inst/code/susie_data\.RData$
+^inst/code/susie_rss_data\.RData

@@ -16,6 +16,8 @@
 #'   and \code{X_colmeans}, \code{y_mean}.
 #'
 #' @importFrom methods as
+#' @importFrom Matrix colMeans
+#' @importFrom Matrix crossprod
 #'
 #' @examples
 #' data(N2finemapping)
@@ -25,18 +27,23 @@
 #'
 compute_suff_stat = function(X, y, standardize = FALSE) {
   y_mean = mean(y)
-  y = y - y_mean
-  is.sparse = !is.matrix(X)
-  X = set_X_attributes(as.matrix(X),center=TRUE,scale = standardize)
-  X = t((t(X) - attr(X,"scaled:center"))/attr(X,"scaled:scale"))
+  y   = y - y_mean
+  n   = nrow(X)
+  mu  = colMeans(X)
+  s   = compute_colSds(X)
   XtX = crossprod(X)
-  if(is.sparse)
-    XtX = as(XtX,"dgCMatrix")
-  Xty = c(y %*% X)
-  n = length(y)
+  XtX = as.matrix(XtX)    
+  XtX = XtX - n*tcrossprod(mu)
+  if (standardize) {
+    XtX = XtX/s
+    XtX = t(XtX)
+    XtX = XtX/s
+  }
+  Xty = drop(y %*% X)
+  n   = length(y)
   yty = sum(y^2)
-  return(list(XtX = XtX,Xty = Xty,yty = yty,n = n,y_mean = y_mean,
-              X_colmeans = attr(X,"scaled:center")))
+  return(list(XtX = XtX,Xty = Xty,yty = yty,n = n,
+              y_mean = y_mean,X_colmeans = mu))
 }
 
 #' @title Compute sufficient statistics for input to \code{susie_suff_stat}
@@ -61,6 +68,4 @@ compute_suff_stat = function(X, y, standardize = FALSE) {
 #'
 #' @export
 #'
-compute_ss = function(X, y, standardize = FALSE) {
-  return(compute_suff_stat(X,y,standardize))
-}
+compute_ss = compute_suff_stat

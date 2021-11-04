@@ -1,5 +1,31 @@
 context("test_susie_XtX_Xty.R")
 
+test_that(paste("compute_ss XtX calculations are correct with",
+                "standardize = FALSE and with standardize = TRUE"),{
+  set.seed(1)
+  n <- 10
+  p <- 5
+  X <- matrix(rnorm(n*p),n,p)
+  y <- rnorm(n)
+  Y1 <- scale(X,center = TRUE,scale = FALSE)
+  Y2 <- scale(X,center = TRUE,scale = TRUE)
+  out1 <- compute_suff_stat(X,y,standardize = FALSE)
+  out2 <- compute_suff_stat(X,y,standardize = TRUE)
+  dimnames(out1$XtX) <- NULL
+  dimnames(out2$XtX) <- NULL
+  expect_equal(out1$XtX,crossprod(Y1),scale = 1,tolerance = 1e-14)
+  expect_equal(out2$XtX,crossprod(Y2),scale = 1,tolerance = 1e-14)
+
+  # Run the same checks again, but with X now being a sparse matrix.
+  X    <- as(X,"dgCMatrix")
+  out1 <- compute_suff_stat(X,y,standardize = FALSE)
+  out2 <- compute_suff_stat(X,y,standardize = TRUE)
+  dimnames(out1$XtX) <- NULL
+  dimnames(out2$XtX) <- NULL
+  expect_equal(out1$XtX,crossprod(Y1),scale = 1,tolerance = 1e-14)
+  expect_equal(out2$XtX,crossprod(Y2),scale = 1,tolerance = 1e-14)
+})
+
 test_that("Results from sufficient stat vs original data", with(simulate(200,1000), {
   ss = compute_ss(X, y, standardize = FALSE)
 

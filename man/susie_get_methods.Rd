@@ -37,7 +37,8 @@ susie_get_cs(
   min_abs_corr = 0.5,
   dedup = TRUE,
   squared = FALSE,
-  check_symmetric = TRUE
+  check_symmetric = TRUE,
+  n_purity = 100
 )
 
 susie_get_pip(res, prune_by_cs = FALSE, prior_tol = 1e-09)
@@ -84,6 +85,15 @@ threshold will be filtered out and not reported.}
 
 \item{squared}{If \code{squared = TRUE}, report min, mean and
 median of squared correlation instead of the absolute correlation.}
+
+\item{check_symmetric}{If \code{check_symmetric = TRUE}, perform a
+check for symmetry of matrix \code{Xcorr} when \code{Xcorr} is
+provided (not \code{NULL}).}
+
+\item{n_purity}{The maximum number of credible set (CS) variables
+used in calculating the correlation (\dQuote{purity})
+statistics. When the number of variables included in the CS is
+greater than this number, the CS variables are randomly subsampled.}
 
 \item{prune_by_cs}{Whether or not to ignore single effects not in
 a reported CS when calculating PIP.}
