@@ -19,7 +19,7 @@ environment:
     WARNINGS_ARE_ERRORS: 
     R_VERSION: release
     R_ARCH: x64
-    R_CHECK_ARGS: --as-cran
+    R_CHECK_ARGS: --as-cran --no-manual
 
 build_script:
   - R -e install.packages(c('devtools','testthat','matrixStats','mixsqp','reshape','ggplot2','microbenchmark','knitr','rmarkdown','L0Learn','genlasso','Rfast'),head(.libPaths(),1),'http://cran.wustl.edu')
