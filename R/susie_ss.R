@@ -150,8 +150,12 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
     stop(paste0("The dimension of XtX (",nrow(XtX)," by ",ncol(XtX),
                 ") does not agree with expected (",length(Xty)," by ",
                 length(Xty),")"))
-  if (!is_symmetric_matrix(XtX))
-    stop("Input XtX or R is not a symmetric matrix")
+  if (!is_symmetric_matrix(XtX)) {
+    message("XtX is not symmetric; forcing XtX to be symmetric by ",
+            "replacing XtX with (XtX + t(XtX))/2")
+    XtX = XtX + t(XtX)
+    XtX = XtX/2
+  }
 
   # MAF filter.
   if (!is.null(maf)) {

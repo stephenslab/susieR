@@ -260,8 +260,12 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
   if (!is.null(X) && !is.null(Xcorr))
     stop("Only one of X or Xcorr should be specified")
   if (check_symmetric){
-    if (!is.null(Xcorr) && !is_symmetric_matrix(Xcorr))
-      stop("Xcorr matrix must be symmetric")
+    if (!is.null(Xcorr) && !is_symmetric_matrix(Xcorr)) {
+      message("Xcorr is not symmetric; forcing Xcorr to be symmetric by ",
+              "replacing Xcorr with (Xcorr + t(Xcorr))/2")
+      Xcorr = Xcorr + t(Xcorr)
+      Xcorr = Xcorr/2
+    }
   }
   null_index = 0
   include_idx = rep(TRUE,nrow(res$alpha))
@@ -364,8 +368,12 @@ get_cs_correlation = function (model, X = NULL, Xcorr = NULL, max = FALSE) {
     stop("Only one of X or Xcorr should be specified")
   if (is.null(Xcorr) && is.null(X))
     stop("One of X or Xcorr must be specified")
-  if (!is.null(Xcorr) && !is_symmetric_matrix(Xcorr))
-    stop("Xcorr matrix must be symmetric")
+  if (!is.null(Xcorr) && !is_symmetric_matrix(Xcorr)) {
+    message("Xcorr is not symmetric; forcing Xcorr to be symmetric by ",
+            "replacing Xcorr with (Xcorr + t(Xcorr))/2")
+    Xcorr = Xcorr + t(Xcorr)
+    Xcorr = Xcorr/2
+  }
   # Get index for the best PIP per CS
   max_pip_idx = sapply(model$sets$cs, function(cs) cs[which.max(model$pip[cs])])
   if (is.null(Xcorr)) {

@@ -145,7 +145,6 @@
 #' input_ss = compute_suff_stat(X,y,standardize = TRUE)
 #' ss   = univariate_regression(X,y)
 #' R    = with(input_ss,cov2cor(XtX))
-#' R    = (R + t(R))/2
 #' zhat = with(ss,betahat/sebetahat)
 #' res  = susie_rss(zhat,R)
 #'
