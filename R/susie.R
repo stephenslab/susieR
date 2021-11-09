@@ -265,6 +265,10 @@
 #'   to genetic fine-mapping. \emph{Journal of the Royal Statistical
 #'   Society, Series B} \bold{82}, 1273-1300 \doi{10.1101/501114}.
 #'
+#'   Y. Zou, P. Carbonetto, G. Wang and M. Stephens (2021).
+#'   Fine-mapping from summary data with the \dQuote{Sum of Single Effects}
+#'   model. \emph{bioRxiv} \doi{10.1101/2021.11.03.467167}.
+#'
 #' @seealso \code{\link{susie_get_cs}} and other \code{susie_get_*}
 #'   functions for extracting results; \code{\link{susie_trendfilter}} for
 #'   applying the SuSiE model to non-parametric regression, particularly

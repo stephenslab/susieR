@@ -61,7 +61,7 @@ NULL
 #' genotypes centered and scaled, and therefore retains the
 #' correlation structure of variables in the original genotype data. 3
 #' out of the variables have non-zero effects.  The response data is
-#' generated under a multivariate linear regression model.  See Wang
+#' generated under a multivariate linear regression model. See Wang
 #' \emph{et al} (2020) for more details.
 #'
 #' @format \code{N3finemapping} is a list with the following elements:
