@@ -484,12 +484,12 @@ susie = function (X,y,L = min(10,ncol(X)),
   if (!is.null(colnames(X))) {
     variable_names = colnames(X)
     if (!is.null(null_weight))
-      variable_names = c("null", variable_names)
+      variable_names[length(variable_names)] = "null"
     colnames(s$alpha) = variable_names
     colnames(s$mu) = variable_names
     colnames(s$mu2) = variable_names
     colnames(s$lbf_variable) = variable_names
-    names(s$pip) = variable_names
+    names(s$pip) = variable_names[1:(length(variable_names)-1)]
   }
   # report z-scores from univariate regression.
   if (compute_univariate_zscore) {
