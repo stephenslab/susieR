@@ -363,8 +363,9 @@ susie = function (X,y,L = min(10,ncol(X)),
   }
   p = ncol(X)
   if (p > 1000 & !requireNamespace("Rfast",quietly = TRUE))
-    message(magenta("For an X with many columns, please consider installing the Rfast",
-            "package for more efficient credible set (CS) calculations."))
+    message(magenta("For an X with many columns, please consider installing ",
+                    "the Rfast package for more efficient credible set (CS) ",
+                    "calculations."))
   
   # Check input y.
   n = nrow(X)
@@ -489,7 +490,7 @@ susie = function (X,y,L = min(10,ncol(X)),
     colnames(s$mu) = variable_names
     colnames(s$mu2) = variable_names
     colnames(s$lbf_variable) = variable_names
-    names(s$pip) = variable_names[1:(length(variable_names)-1)]
+    names(s$pip) = variable_names[-length(variable_names)]
   }
   # report z-scores from univariate regression.
   if (compute_univariate_zscore) {

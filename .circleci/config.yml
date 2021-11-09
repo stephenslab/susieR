@@ -17,7 +17,7 @@ jobs:
           name: Install package dependencies
           command: |
             mkdir -p ~/R/Library
-            Rscript -e 'install.packages(c("devtools","mixsqp","reshape","ggplot2","matrixStats","testthat","microbenchmark","knitr","rmarkdown","L0Learn","genlasso","Rfast"))'
+            Rscript -e 'install.packages(c("devtools","mixsqp","reshape","ggplot2","crayon","matrixStats","testthat","microbenchmark","knitr","rmarkdown","L0Learn","genlasso","Rfast"))'
       - run:
           name: Session information and installed package versions
           command: |
