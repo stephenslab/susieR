@@ -35,6 +35,7 @@ Imports:
     matrixStats,
     mixsqp,
     reshape,
+    crayon,
     ggplot2
 Suggests:
     curl,

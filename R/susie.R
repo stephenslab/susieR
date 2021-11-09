@@ -299,6 +299,7 @@
 #'
 #' @importFrom stats var
 #' @importFrom utils modifyList
+#' @importFrom crayon magenta
 #'
 #' @export
 #'
@@ -362,8 +363,8 @@ susie = function (X,y,L = min(10,ncol(X)),
   }
   p = ncol(X)
   if (p > 1000 & !requireNamespace("Rfast",quietly = TRUE))
-    message("For an X with many columns, consider installing the Rfast ",
-            "package for more efficient credible set (CS) calculations.")
+    message(magenta("For an X with many columns, please consider installing the Rfast",
+            "package for more efficient credible set (CS) calculations."))
   
   # Check input y.
   n = nrow(X)

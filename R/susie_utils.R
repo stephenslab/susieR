@@ -252,6 +252,7 @@ susie_get_posterior_samples = function (susie_fit, num_samples) {
 #'   statistics. When the number of variables included in the CS is
 #'   greater than this number, the CS variables are randomly subsampled.
 #'
+#' @importFrom crayon red
 #' @export
 #'
 susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
@@ -261,8 +262,8 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
     stop("Only one of X or Xcorr should be specified")
   if (check_symmetric){
     if (!is.null(Xcorr) && !is_symmetric_matrix(Xcorr)) {
-      message("Xcorr is not symmetric; forcing Xcorr to be symmetric by ",
-              "replacing Xcorr with (Xcorr + t(Xcorr))/2")
+      message(red("Xcorr is not symmetric; forcing Xcorr to be symmetric by ",
+              "replacing Xcorr with (Xcorr + t(Xcorr))/2"))
       Xcorr = Xcorr + t(Xcorr)
       Xcorr = Xcorr/2
     }
@@ -359,7 +360,8 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
 #'
 #' @return A matrix of correlations between CSs, or the maximum
 #'   absolute correlation when \code{max = TRUE}.
-#'
+#' 
+#' @importFrom crayon red
 #' @export
 #'
 get_cs_correlation = function (model, X = NULL, Xcorr = NULL, max = FALSE) {
@@ -369,8 +371,8 @@ get_cs_correlation = function (model, X = NULL, Xcorr = NULL, max = FALSE) {
   if (is.null(Xcorr) && is.null(X))
     stop("One of X or Xcorr must be specified")
   if (!is.null(Xcorr) && !is_symmetric_matrix(Xcorr)) {
-    message("Xcorr is not symmetric; forcing Xcorr to be symmetric by ",
-            "replacing Xcorr with (Xcorr + t(Xcorr))/2")
+    message(red("Xcorr is not symmetric; forcing Xcorr to be symmetric by ",
+            "replacing Xcorr with (Xcorr + t(Xcorr))/2"))
     Xcorr = Xcorr + t(Xcorr)
     Xcorr = Xcorr/2
   }

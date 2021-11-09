@@ -54,6 +54,7 @@
 #' @param n_purity Passed as argument \code{n_purity} to
 #'   \code{\link{susie_get_cs}}.
 #'
+#' @importFrom crayon red magenta
 #' @export
 #'
 susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
@@ -142,8 +143,8 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
     yty = var_y * (n-1)
   }
   if (ncol(XtX) > 1000 & !requireNamespace("Rfast",quietly = TRUE))
-    message("For large R or large XtX, consider installing the Rfast ",
-            "package for better performance.")
+    message(magenta("For large R or large XtX, consider installing the Rfast",
+            "package for better performance."))
   
   # Check input XtX.
   if (ncol(XtX) != length(Xty))
@@ -151,8 +152,8 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
                 ") does not agree with expected (",length(Xty)," by ",
                 length(Xty),")"))
   if (!is_symmetric_matrix(XtX)) {
-    message("XtX is not symmetric; forcing XtX to be symmetric by ",
-            "replacing XtX with (XtX + t(XtX))/2")
+    message(red("XtX is not symmetric; forcing XtX to be symmetric by ",
+            "replacing XtX with (XtX + t(XtX))/2"))
     XtX = XtX + t(XtX)
     XtX = XtX/2
   }
