@@ -15,7 +15,7 @@ knitr::opts_chunk$set(collapse = TRUE,comment = "#",fig.width = 5,
                       fig.cap = "&nbsp;",dpi = 120)
 ```
 
-This vignette demonstrates diagnostic plot for consistency between summary statistics and refenrence LD matrix. 
+This vignette demonstrates diagnostic plot for consistency between summary statistics and reference LD matrix. 
 
 The `susie_rss` assumes the LD matrix accurately estimate the correlations among SNPs from the original GWAS genotype data. Typically, the LD matrix comes from some public database of genotypes in a suitable reference population. The inaccurate LD information leads to unreliable fine-mapping result.
 
