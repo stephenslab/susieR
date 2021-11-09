@@ -78,7 +78,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.50</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.83</span>
       </span>
     </div>
 
@@ -126,15 +126,15 @@
   the Sum of Single Effects" model from Wang et al (2020).</p>
     </div>
 
-    <pre class="usage"><span class='fu'>susie_rss</span><span class='op'>(</span>
-  <span class='va'>z</span>,
-  <span class='va'>R</span>,
-  z_ld_weight <span class='op'>=</span> <span class='fl'>0</span>,
-  prior_variance <span class='op'>=</span> <span class='fl'>50</span>,
-  estimate_prior_variance <span class='op'>=</span> <span class='cn'>TRUE</span>,
-  check_prior <span class='op'>=</span> <span class='cn'>TRUE</span>,
-  <span class='va'>...</span>
-<span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>susie_rss</span>(
+  <span class='no'>z</span>,
+  <span class='no'>R</span>,
+  <span class='kw'>z_ld_weight</span> <span class='kw'>=</span> <span class='fl'>0</span>,
+  <span class='kw'>prior_variance</span> <span class='kw'>=</span> <span class='fl'>50</span>,
+  <span class='kw'>estimate_prior_variance</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>check_prior</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='no'>...</span>
+)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -176,6 +176,12 @@ for the optimization. When <code>estimate_prior_variance = FALSE</code>
 determined by the value supplied to <code>prior_variance</code>.</p></td>
     </tr>
     <tr>
+      <th>check_prior</th>
+      <td><p>When <code>check_prior = TRUE</code>, it checks if the
+estimated prior variance becomes unreasonably large (comparing with
+10 * max(abs(z))^2).</p></td>
+    </tr>
+    <tr>
       <th>...</th>
       <td><p>Other parameters to be passed to
 <code><a href='susie.html'>susie_suff_stat</a></code>.</p></td>
@@ -207,7 +213,7 @@ determined by the value supplied to <code>prior_variance</code>.</p></td>
 <dt>Rr</dt><dd><p>A vector of length p, equal to <code>R %*% colSums(alpha*mu)</code>.</p></dd>
 
 <dt>sets</dt><dd><p>Credible sets estimated from model fit; see
-  <code><a href='susie_get_objective.html'>susie_get_cs</a></code> for details.</p></dd>
+  <code><a href='susie_get_methods.html'>susie_get_cs</a></code> for details.</p></dd>
 
 <dt>pip</dt><dd><p>A vector of length p giving the (marginal) posterior
   inclusion probabilities for all p covariates.</p></dd>
@@ -265,52 +271,51 @@ provided via <code>...</code>.</p>
     <p>G. Wang, A. Sarkar, P. Carbonetto and M. Stephens (2020). A simple
   new approach to variable selection in regression, with application
   to genetic fine-mapping. <em>Journal of the Royal Statistical
-  Society, Series B</em> <b>82</b> doi: <a href='https://doi.org/10.1101/501114'>10.1101/501114</a>
+  Society, Series B</em> <b>82</b>, 1273-1300 doi: <a href='https://doi.org/10.1101/501114'>10.1101/501114</a>
 .</p>
-<p>X. Zhu and M. Stephens (2017). Bayesian large-scale multiple regression
-  with summary statistics from genome-wide association studies.
-  <em>Annals of Applied Statistics</em> <b>11</b>, 1561-1592.</p>
+<p>Y. Zou, P. Carbonetto, G. Wang and M. Stephens (2021).
+  Fine-mapping from summary data with the &#8220;Sum of Single Effects&#8221;
+  model. <em>bioRxiv</em> doi: <a href='https://doi.org/10.1101/2021.11.03.467167'>10.1101/2021.11.03.467167</a>
+.</p>
+<p>X. Zhu and M. Stephens (2017). Bayesian large-scale multiple
+  regression with summary statistics from genome-wide association
+  studies. <em>Annals of Applied Statistics</em> <b>11</b>, 1561-1592.</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span><span class='op'>(</span><span class='fl'>1</span><span class='op'>)</span>
-<span class='va'>n</span> <span class='op'>=</span> <span class='fl'>1000</span>
-<span class='va'>p</span> <span class='op'>=</span> <span class='fl'>1000</span>
-<span class='va'>beta</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span><span class='op'>(</span><span class='fl'>0</span>,<span class='va'>p</span><span class='op'>)</span>
-<span class='va'>beta</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>4</span><span class='op'>]</span> <span class='op'>=</span> <span class='fl'>1</span>
-<span class='va'>X</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>matrix</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span><span class='op'>(</span><span class='va'>n</span><span class='op'>*</span><span class='va'>p</span><span class='op'>)</span>,nrow <span class='op'>=</span> <span class='va'>n</span>,ncol <span class='op'>=</span> <span class='va'>p</span><span class='op'>)</span>
-<span class='va'>X</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/scale.html'>scale</a></span><span class='op'>(</span><span class='va'>X</span>,center <span class='op'>=</span> <span class='cn'>TRUE</span>,scale <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
-<span class='va'>y</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/drop.html'>drop</a></span><span class='op'>(</span><span class='va'>X</span> <span class='op'>%*%</span> <span class='va'>beta</span> <span class='op'>+</span> <span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span><span class='op'>(</span><span class='va'>n</span><span class='op'>)</span><span class='op'>)</span>
+    <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span>(<span class='fl'>1</span>)
+<span class='no'>n</span> <span class='kw'>=</span> <span class='fl'>1000</span>
+<span class='no'>p</span> <span class='kw'>=</span> <span class='fl'>1000</span>
+<span class='no'>beta</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>0</span>,<span class='no'>p</span>)
+<span class='no'>beta</span>[<span class='fl'>1</span>:<span class='fl'>4</span>] <span class='kw'>=</span> <span class='fl'>1</span>
+<span class='no'>X</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>matrix</a></span>(<span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span>(<span class='no'>n</span>*<span class='no'>p</span>),<span class='kw'>nrow</span> <span class='kw'>=</span> <span class='no'>n</span>,<span class='kw'>ncol</span> <span class='kw'>=</span> <span class='no'>p</span>)
+<span class='no'>X</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/scale.html'>scale</a></span>(<span class='no'>X</span>,<span class='kw'>center</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,<span class='kw'>scale</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+<span class='no'>y</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/drop.html'>drop</a></span>(<span class='no'>X</span> <span class='kw'>%*%</span> <span class='no'>beta</span> + <span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span>(<span class='no'>n</span>))
 
-<span class='va'>input_ss</span> <span class='op'>=</span> <span class='fu'><a href='compute_suff_stat.html'>compute_suff_stat</a></span><span class='op'>(</span><span class='va'>X</span>,<span class='va'>y</span>,standardize <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
-<span class='va'>ss</span>   <span class='op'>=</span> <span class='fu'><a href='univariate_regression.html'>univariate_regression</a></span><span class='op'>(</span><span class='va'>X</span>,<span class='va'>y</span><span class='op'>)</span>
-<span class='va'>R</span>    <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/with.html'>with</a></span><span class='op'>(</span><span class='va'>input_ss</span>,<span class='fu'><a href='https://rdrr.io/r/stats/cor.html'>cov2cor</a></span><span class='op'>(</span><span class='va'>XtX</span><span class='op'>)</span><span class='op'>)</span>
-<span class='va'>zhat</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/with.html'>with</a></span><span class='op'>(</span><span class='va'>ss</span>,<span class='va'>betahat</span><span class='op'>/</span><span class='va'>sebetahat</span><span class='op'>)</span>
-<span class='va'>res</span>  <span class='op'>=</span> <span class='fu'>susie_rss</span><span class='op'>(</span><span class='va'>zhat</span>,<span class='va'>R</span><span class='op'>)</span>
-
+<span class='no'>input_ss</span> <span class='kw'>=</span> <span class='fu'><a href='compute_suff_stat.html'>compute_suff_stat</a></span>(<span class='no'>X</span>,<span class='no'>y</span>,<span class='kw'>standardize</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+<span class='no'>ss</span>   <span class='kw'>=</span> <span class='fu'><a href='univariate_regression.html'>univariate_regression</a></span>(<span class='no'>X</span>,<span class='no'>y</span>)
+<span class='no'>R</span>    <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/with.html'>with</a></span>(<span class='no'>input_ss</span>,<span class='fu'><a href='https://rdrr.io/r/stats/cor.html'>cov2cor</a></span>(<span class='no'>XtX</span>))
+<span class='no'>zhat</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/with.html'>with</a></span>(<span class='no'>ss</span>,<span class='no'>betahat</span>/<span class='no'>sebetahat</span>)
+<span class='no'>res</span>  <span class='kw'>=</span> <span class='fu'>susie_rss</span>(<span class='no'>zhat</span>,<span class='no'>R</span>)</div><div class='output co'>#&gt; <span class='message'><span style='color: #BB0000;'>XtX is not symmetric; forcing XtX to be symmetric by  replacing XtX with (XtX + t(XtX))/2</span><span></span></div><div class='input'>
 <span class='co'># Toy example illustrating behaviour susie_rss when the z-scores</span>
 <span class='co'># are mostly consistent with a non-invertible correlation matrix.</span>
 <span class='co'># Here the CS should contain both variables, and two PIPs should</span>
 <span class='co'># be nearly the same.</span>
-<span class='va'>z</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>6</span>,<span class='fl'>6.01</span><span class='op'>)</span>
-<span class='va'>R</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>matrix</a></span><span class='op'>(</span><span class='fl'>1</span>,<span class='fl'>2</span>,<span class='fl'>2</span><span class='op'>)</span>
-<span class='va'>fit</span> <span class='op'>=</span> <span class='fu'>susie_rss</span><span class='op'>(</span><span class='va'>z</span>,<span class='va'>R</span><span class='op'>)</span>
-<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span><span class='op'>(</span><span class='va'>fit</span><span class='op'>$</span><span class='va'>sets</span><span class='op'>$</span><span class='va'>cs</span><span class='op'>)</span>
-</div><div class='output co'>#&gt; $L1
+<span class='no'>z</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>6</span>,<span class='fl'>6.01</span>)
+<span class='no'>R</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>matrix</a></span>(<span class='fl'>1</span>,<span class='fl'>2</span>,<span class='fl'>2</span>)
+<span class='no'>fit</span> <span class='kw'>=</span> <span class='fu'>susie_rss</span>(<span class='no'>z</span>,<span class='no'>R</span>)
+<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>fit</span>$<span class='no'>sets</span>$<span class='no'>cs</span>)</div><div class='output co'>#&gt; $L1
 #&gt; [1] 1 2
-#&gt; </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span><span class='op'>(</span><span class='va'>fit</span><span class='op'>$</span><span class='va'>pip</span><span class='op'>)</span>
-</div><div class='output co'>#&gt; [1] 0.4854079 0.5145921</div><div class='input'>
+#&gt; </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>fit</span>$<span class='no'>pip</span>)</div><div class='output co'>#&gt; [1] 0.4854079 0.5145921</div><div class='input'>
 <span class='co'># In this second toy example, the only difference is that one</span>
 <span class='co'># z-score is much larger than the other. Here we expect that the</span>
 <span class='co'># second PIP will be much larger than the first.</span>
-<span class='va'>z</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>6</span>,<span class='fl'>7</span><span class='op'>)</span>
-<span class='va'>R</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>matrix</a></span><span class='op'>(</span><span class='fl'>1</span>,<span class='fl'>2</span>,<span class='fl'>2</span><span class='op'>)</span>
-<span class='va'>fit</span> <span class='op'>=</span> <span class='fu'>susie_rss</span><span class='op'>(</span><span class='va'>z</span>,<span class='va'>R</span><span class='op'>)</span>
-<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span><span class='op'>(</span><span class='va'>fit</span><span class='op'>$</span><span class='va'>sets</span><span class='op'>$</span><span class='va'>cs</span><span class='op'>)</span>
-</div><div class='output co'>#&gt; $L1
+<span class='no'>z</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>6</span>,<span class='fl'>7</span>)
+<span class='no'>R</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>matrix</a></span>(<span class='fl'>1</span>,<span class='fl'>2</span>,<span class='fl'>2</span>)
+<span class='no'>fit</span> <span class='kw'>=</span> <span class='fu'>susie_rss</span>(<span class='no'>z</span>,<span class='no'>R</span>)
+<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>fit</span>$<span class='no'>sets</span>$<span class='no'>cs</span>)</div><div class='output co'>#&gt; $L1
 #&gt; [1] 2
-#&gt; </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span><span class='op'>(</span><span class='va'>fit</span><span class='op'>$</span><span class='va'>pip</span><span class='op'>)</span>
-</div><div class='output co'>#&gt; [1] 0.001713869 0.998286131</div><div class='input'>
-</div></pre>
+#&gt; </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>fit</span>$<span class='no'>pip</span>)</div><div class='output co'>#&gt; [1] 0.001713869 0.998286131</div><div class='input'>
+</div></span></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
@@ -326,7 +331,7 @@ provided via <code>...</code>.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>
