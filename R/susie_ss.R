@@ -350,13 +350,16 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
 
   if (!is.null(colnames(XtX))) {
     variable_names = colnames(XtX)
-    if (!is.null(null_weight))
+    if (!is.null(null_weight)) {
       variable_names[length(variable_names)] = "null"
+      names(s$pip) = variable_names[-p]
+    } else {
+      names(s$pip) = variable_names
+    }
     colnames(s$alpha) = variable_names
     colnames(s$mu) = variable_names
     colnames(s$mu2) = variable_names
     colnames(s$lbf_variable) = variable_names
-    names(s$pip) = variable_names[-length(variable_names)]
   }
 
   if (refine) {
