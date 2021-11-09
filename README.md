@@ -3,8 +3,8 @@
 [![CRAN status badge](https://www.r-pkg.org/badges/version/susieR)](https://cran.r-project.org/package=susieR)
 [![Travis Build Status](https://travis-ci.org/stephenslab/susieR.svg?branch=master)](https://travis-ci.org/stephenslab/susieR)
 [![Appveyor Build status](https://ci.appveyor.com/api/projects/status/tcgeqxd8q8krija6?svg=true)](https://ci.appveyor.com/project/pcarbo/susier)
-[![CircleCI](https://circleci.com/gh/stephenslab/susieR/tree/master.svg?style=svg)](https://circleci.com/gh/stephenslab/susieR/tree/master)
-[![codecov](https://codecov.io/gh/stephenslab/susieR/branch/master/graph/badge.svg)](https://codecov.io/gh/stephenslab/susieR)
+[![CircleCI](https://circleci.com/gh/stephenslab/susieR/tree/master.svg?style=svg)](https://app.circleci.com/pipelines/github/stephenslab/susieR?branch=master)
+[![codecov](https://codecov.io/gh/stephenslab/susieR/branch/master/graph/badge.svg)](https://app.codecov.io/gh/stephenslab/susieR)
 
 The `susieR` package implements a simple new way to perform variable
 selection in multiple regression ($y=Xb+e$). The methods implemented
@@ -32,7 +32,7 @@ but they are too correlated to be sure which one.
 
 The package is developed by Gao Wang, Peter Carbonetto, Yuxin Zou,
 Kaiqian Zhang, and Matthew Stephens from the
-[Stephens Lab](http://stephenslab.uchicago.edu) at the University of
+[Stephens Lab](https://stephenslab.uchicago.edu) at the University of
 Chicago.
 
 Please
