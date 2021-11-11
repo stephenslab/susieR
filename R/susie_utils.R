@@ -477,7 +477,7 @@ get_purity = function(pos, X, Xcorr, squared = FALSE, n = 100) {
     get_upper_tri <- Rfast::upper_tri
     get_median    <- Rfast::med
   } else {
-    get_upper_tri <- function(R) R[upper.tri(R)]
+    get_upper_tri <- function (R) R[upper.tri(R)]
     get_median    <- stats::median
   }
   if (length(pos) == 1)
