@@ -253,7 +253,7 @@ susie_get_posterior_samples = function (susie_fit, num_samples) {
 #'   greater than this number, the CS variables are randomly subsampled.
 #'
 #' @importFrom crayon red
-#' 
+#'
 #' @export
 #'
 susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
@@ -269,6 +269,7 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
       Xcorr = Xcorr/2
     }
   }
+
   null_index = 0
   include_idx = rep(TRUE,nrow(res$alpha))
   if (!is.null(res$null_index)) null_index = res$null_index
@@ -361,9 +362,9 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
 #'
 #' @return A matrix of correlations between CSs, or the maximum
 #'   absolute correlation when \code{max = TRUE}.
-#' 
+#'
 #' @importFrom crayon red
-#' 
+#'
 #' @export
 #'
 get_cs_correlation = function (model, X = NULL, Xcorr = NULL, max = FALSE) {
@@ -476,7 +477,7 @@ get_purity = function(pos, X, Xcorr, squared = FALSE, n = 100) {
     get_upper_tri <- Rfast::upper_tri
     get_median    <- Rfast::med
   } else {
-    get_upper_tri <- upper.tri
+    get_upper_tri <- function(R) R[upper.tri(R)]
     get_median    <- stats::median
   }
   if (length(pos) == 1)
