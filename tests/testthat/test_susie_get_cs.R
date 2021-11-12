@@ -14,15 +14,13 @@ test_that("susie_get_cs purity calculations are correct",{
   fit <- susie(X,y,estimate_prior_variance = FALSE)
 
   # The purity calculations should be the same whether or not the
-  # Rfast package functions are used. Also, all the purity statistics
+  # Rfast package functions are used, and all the purity statistics
   # should be positive.
-  if (!require("Rfast"))
-    stop("Rfast is not installed")
   set.seed(1)
   purity1 <- susie_get_cs(fit,X,min_abs_corr = 0,use_rfast = FALSE)$purity
+  expect_gt(min(purity1),0)
+  skip_if_not_installed("Rfast")
   set.seed(1)
   purity2 <- susie_get_cs(fit,X,min_abs_corr = 0,use_rfast = TRUE)$purity
   expect_equal(purity1,purity2,scale = 1,tolerance = 1e-15)
-  expect_gt(min(purity1),0)
-  expect_gt(min(purity2),0)
 })

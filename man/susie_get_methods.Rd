@@ -39,7 +39,7 @@ susie_get_cs(
   squared = FALSE,
   check_symmetric = TRUE,
   n_purity = 100,
-  use_rfast = TRUE
+  use_rfast
 )
 
 susie_get_pip(res, prune_by_cs = FALSE, prior_tol = 1e-09)
@@ -96,8 +96,9 @@ used in calculating the correlation (\dQuote{purity})
 statistics. When the number of variables included in the CS is
 greater than this number, the CS variables are randomly subsampled.}
 
-\item{use_rfast}{Use the Rfast package for the purity calculations
-when Rfast package is available.}
+\item{use_rfast}{Use the Rfast package for the purity calculations.
+By default \code{use_rfast = TRUE} if the Rfast package is
+installed.}
 
 \item{prune_by_cs}{Whether or not to ignore single effects not in
 a reported CS when calculating PIP.}

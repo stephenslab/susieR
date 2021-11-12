@@ -252,8 +252,9 @@ susie_get_posterior_samples = function (susie_fit, num_samples) {
 #'   statistics. When the number of variables included in the CS is
 #'   greater than this number, the CS variables are randomly subsampled.
 #'
-#' @param use_rfast Use the Rfast package for the purity calculations
-#'   when Rfast package is available.
+#' @param use_rfast Use the Rfast package for the purity calculations.
+#'   By default \code{use_rfast = TRUE} if the Rfast package is
+#'   installed.
 #' 
 #' @importFrom crayon red
 #'
@@ -261,8 +262,7 @@ susie_get_posterior_samples = function (susie_fit, num_samples) {
 #'
 susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
                          min_abs_corr = 0.5, dedup = TRUE, squared = FALSE,
-                         check_symmetric = TRUE, n_purity = 100,
-                         use_rfast = TRUE) {
+                         check_symmetric = TRUE, n_purity = 100, use_rfast) {
   if (!is.null(X) && !is.null(Xcorr))
     stop("Only one of X or Xcorr should be specified")
   if (check_symmetric){
@@ -300,22 +300,24 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
   claimed_coverage = claimed_coverage[include_idx]
 
   # Compute and filter by "purity".
+  if (missing(use_rfast))
+    use_rfast = requireNamespace("Rfast",quietly = TRUE)
   if (is.null(Xcorr) && is.null(X)) {
     names(cs) = paste0("L",which(include_idx))
     return(list(cs = cs,
                 coverage = claimed_coverage,
                 requested_coverage = coverage))
   } else {
-    purity <- NULL
+    purity = NULL
     for (i in 1:length(cs)) {
       if (null_index > 0 && null_index %in% cs[[i]])
-        purity <- rbind(purity,c(-9,-9,-9))
+        purity = rbind(purity,c(-9,-9,-9))
       else
-        purity <-
+        purity =
           rbind(purity,
             matrix(get_purity(cs[[i]],X,Xcorr,squared,n_purity,use_rfast),1,3))
     }
-    purity <- as.data.frame(purity)
+    purity = as.data.frame(purity)
     if (squared)
       colnames(purity) = c("min.sq.corr","mean.sq.corr","median.sq.corr")
     else
@@ -477,13 +479,15 @@ n_in_CS = function(res, coverage = 0.9) {
 #
 #' @importFrom stats median
 get_purity = function (pos, X, Xcorr, squared = FALSE, n = 100,
-                       use_rfast = TRUE) {
-  if (use_rfast & requireNamespace("Rfast",quietly = TRUE)) {
-    get_upper_tri <- Rfast::upper_tri
-    get_median    <- Rfast::med
+                       use_rfast) {
+  if (missing(use_rfast))
+    use_rfast = requireNamespace("Rfast",quietly = TRUE)
+  if (use_rfast) {
+    get_upper_tri = Rfast::upper_tri
+    get_median    = Rfast::med
   } else {
-    get_upper_tri <- function (R) R[upper.tri(R)]
-    get_median    <- stats::median
+    get_upper_tri = function (R) R[upper.tri(R)]
+    get_median    = stats::median
   }
   if (length(pos) == 1)
     return(c(1,1,1))
