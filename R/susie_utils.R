@@ -252,13 +252,17 @@ susie_get_posterior_samples = function (susie_fit, num_samples) {
 #'   statistics. When the number of variables included in the CS is
 #'   greater than this number, the CS variables are randomly subsampled.
 #'
+#' @param use_rfast Use the Rfast package for the purity calculations
+#'   when Rfast package is available.
+#' 
 #' @importFrom crayon red
 #'
 #' @export
 #'
 susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
                          min_abs_corr = 0.5, dedup = TRUE, squared = FALSE,
-                         check_symmetric = TRUE, n_purity = 100) {
+                         check_symmetric = TRUE, n_purity = 100,
+                         use_rfast = TRUE) {
   if (!is.null(X) && !is.null(Xcorr))
     stop("Only one of X or Xcorr should be specified")
   if (check_symmetric){
@@ -309,7 +313,7 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
       else
         purity <-
           rbind(purity,
-                matrix(get_purity(cs[[i]],X,Xcorr,squared,n_purity),1,3))
+            matrix(get_purity(cs[[i]],X,Xcorr,squared,n_purity,use_rfast),1,3))
     }
     purity <- as.data.frame(purity)
     if (squared)
@@ -472,8 +476,9 @@ n_in_CS = function(res, coverage = 0.9) {
 # Subsample and compute min, mean, median and max abs corr.
 #
 #' @importFrom stats median
-get_purity = function(pos, X, Xcorr, squared = FALSE, n = 100) {
-  if (requireNamespace("Rfast",quietly = TRUE)) {
+get_purity = function (pos, X, Xcorr, squared = FALSE, n = 100,
+                       use_rfast = TRUE) {
+  if (use_rfast & requireNamespace("Rfast",quietly = TRUE)) {
     get_upper_tri <- Rfast::upper_tri
     get_median    <- Rfast::med
   } else {
