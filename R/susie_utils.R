@@ -267,7 +267,7 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
     stop("Only one of X or Xcorr should be specified")
   if (check_symmetric){
     if (!is.null(Xcorr) && !is_symmetric_matrix(Xcorr)) {
-      message(red("Xcorr is not symmetric; forcing Xcorr to be symmetric ",
+      message(red("Xcorr is not symmetric; forcing Xcorr to be symmetric",
                   "by replacing Xcorr with (Xcorr + t(Xcorr))/2"))
       Xcorr = Xcorr + t(Xcorr)
       Xcorr = Xcorr/2
@@ -380,7 +380,7 @@ get_cs_correlation = function (model, X = NULL, Xcorr = NULL, max = FALSE) {
   if (is.null(Xcorr) && is.null(X))
     stop("One of X or Xcorr must be specified")
   if (!is.null(Xcorr) && !is_symmetric_matrix(Xcorr)) {
-    message(red("Xcorr is not symmetric; forcing Xcorr to be symmetric ",
+    message(red("Xcorr is not symmetric; forcing Xcorr to be symmetric",
                 "by replacing Xcorr with (Xcorr + t(Xcorr))/2"))
     Xcorr = Xcorr + t(Xcorr)
     Xcorr = Xcorr/2
@@ -584,8 +584,8 @@ susie_prune_single_effects = function (s,L = 0,V = NULL) {
   if (L > num_effects) {
     message(paste("Specified number of effects L =",L,
                   "is greater the number of effects",num_effects,
-                  "in input SuSiE model. The SuSiE model will be expanded to have",L,
-                  "effects."))
+                  "in input SuSiE model. The SuSiE model will be expanded",
+                  "to have",L,"effects."))
 
     s$alpha = rbind(s$alpha[effects_rank,],
                     matrix(1/ncol(s$alpha),L - num_effects,ncol(s$alpha)))

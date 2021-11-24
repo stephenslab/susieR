@@ -13,7 +13,7 @@
 #
 #' @importFrom Matrix rowSums
 #' @importFrom Matrix colMeans
-set_X_attributes = function(X, center = TRUE, scale = TRUE) {
+set_X_attributes = function (X, center = TRUE, scale = TRUE) {
     
   # if X is a trend filtering matrix
   if (!is.null(attr(X,"matrix.type"))) {

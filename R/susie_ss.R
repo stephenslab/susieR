@@ -144,7 +144,7 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
     yty = var_y * (n-1)
   }
   if (ncol(XtX) > 1000 & !requireNamespace("Rfast",quietly = TRUE))
-    message(magenta("For large R or large XtX, consider installing the ",
+    message(magenta("For large R or large XtX, consider installing the",
                     "Rfast package for better performance."))
   
   # Check input XtX.
@@ -153,7 +153,7 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
                 ") does not agree with expected (",length(Xty)," by ",
                 length(Xty),")"))
   if (!is_symmetric_matrix(XtX)) {
-    message(red("XtX is not symmetric; forcing XtX to be symmetric by ",
+    message(red("XtX is not symmetric; forcing XtX to be symmetric by",
                 "replacing XtX with (XtX + t(XtX))/2"))
     XtX = XtX + t(XtX)
     XtX = XtX/2
