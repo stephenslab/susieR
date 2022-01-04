@@ -3,7 +3,8 @@
 [![CRAN status badge](https://www.r-pkg.org/badges/version/susieR)](https://cran.r-project.org/package=susieR)
 [![Travis Build Status](https://travis-ci.org/stephenslab/susieR.svg?branch=master)](https://travis-ci.org/stephenslab/susieR)
 [![Appveyor Build status](https://ci.appveyor.com/api/projects/status/tcgeqxd8q8krija6?svg=true)](https://ci.appveyor.com/project/pcarbo/susier)
-[![codecov](https://codecov.io/gh/stephenslab/susieR/branch/master/graph/badge.svg)](https://codecov.io/gh/stephenslab/susieR)
+[![CircleCI](https://circleci.com/gh/stephenslab/susieR/tree/master.svg?style=svg)](https://app.circleci.com/pipelines/github/stephenslab/susieR?branch=master)
+[![codecov](https://codecov.io/gh/stephenslab/susieR/branch/master/graph/badge.svg)](https://app.codecov.io/gh/stephenslab/susieR)
 
 The `susieR` package implements a simple new way to perform variable
 selection in multiple regression ($y=Xb+e$). The methods implemented
@@ -31,7 +32,7 @@ but they are too correlated to be sure which one.
 
 The package is developed by Gao Wang, Peter Carbonetto, Yuxin Zou,
 Kaiqian Zhang, and Matthew Stephens from the
-[Stephens Lab](http://stephenslab.uchicago.edu) at the University of
+[Stephens Lab](https://stephenslab.uchicago.edu) at the University of
 Chicago.
 
 Please
@@ -65,11 +66,18 @@ please visit https://stephenslab.github.io/susieR
 If you find the `susieR` package or any of the source code in this
 repository useful for your work, please cite:
 
-> Wang, G., Sarkar, A., Carbonetto, P., & Stephens, M. (2020). A
+> Wang, G., Sarkar, A., Carbonetto, P. & Stephens, M. (2020). A
 > simple new approach to variable selection in regression, with
 > application to genetic fine mapping. *Journal of the Royal
 > Statistical Society, Series B* **82**, 1273--1300.
 > https://doi.org/10.1111/rssb.12388
+
+If you use any of the summary data methods---`susie_suff_stat` or
+`susie_rss`---please also cite:
+
+> Zou, Y., Carbonetto, P., Wang, G. & Stephens, M. (2021).
+> Fine-mapping from summary data with the "Sum of Single Effects"
+> model. *bioRxiv* https://doi.org/10.1101/2021.11.03.467167 
 
 ## Developer notes
 

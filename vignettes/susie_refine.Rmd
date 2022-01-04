@@ -17,13 +17,18 @@ knitr::opts_chunk$set(collapse = TRUE,comment = "#",fig.width = 5,
 
 In this vignette, we demonstrate a procedure that helps SuSiE get out of local optimum.
 
-We simulate phenotype using UK Biobank genotypes from 50,000 individuals. There are 200 SNPs.
-It is simulated to have exactly 2 non-zero effects at 34, 87.
+We simulate phenotype using UK Biobank genotypes from 50,000 individuals. There are 1001 SNPs.
+It is simulated to have exactly 2 non-zero effects at 234, 287.
 
 ```{r}
 library(susieR)
-data('FinemappingConvergence')
-b = FinemappingConvergence$true_coef
+library(curl)
+data_file <- tempfile(fileext = ".RData")
+data_url <- paste0("https://raw.githubusercontent.com/stephenslab/susieR/",
+                   "master/inst/datafiles/FinemappingConvergence1k.RData")
+curl_download(data_url,data_file)
+load(data_file)
+b <- FinemappingConvergence$true_coef
 susie_plot(FinemappingConvergence$z, y = "z", b=b)
 ```
 

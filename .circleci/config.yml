@@ -1,0 +1,44 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: rocker/verse:latest
+    environment:
+      R_LIBS: ~/R/Library
+      R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
+      _R_CHECK_FORCE_SUGGESTS_: false
+    steps:
+      - restore_cache:
+          keys:
+            - r-pkg-cache-{{ arch }}-{{ .Branch }}
+            - r-pkg-cache-{{ arch }}-
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            apt-get update
+            apt-get -y install libgsl-dev
+      - run:
+          name: Install package dependencies
+          command: |
+            mkdir -p ~/R/Library
+            Rscript -e 'install.packages(c("devtools","mixsqp","reshape","ggplot2","crayon","matrixStats","testthat","microbenchmark","knitr","rmarkdown","L0Learn","genlasso","Rfast"))'
+      - run:
+          name: Session information and installed package versions
+          command: |
+            Rscript -e 'sessionInfo()'
+            Rscript -e 'installed.packages()[, c("Package", "Version")]'
+            Rscript -e 'rmarkdown::pandoc_version()'
+      - run:
+          name: Build package
+          command: R CMD build --no-build-vignettes --no-manual .
+      - run:
+          name: Check package
+          no_output_timeout: 20m
+          command: R CMD check --as-cran --ignore-vignettes --no-examples --no-manual *tar.gz
+      - store_artifacts:
+          path: susieR.Rcheck/
+      - save_cache:
+          key: r-pkg-cache-{{ arch }}-{{ .Branch }}
+          paths:
+            - "~/R/Library"

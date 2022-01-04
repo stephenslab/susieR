@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Estimate s in susie_rss Model Using Regularized LD — estimate_s_rss • susieR</title>
+<title>Estimate s in <code>susie_rss</code> Model Using Regularized LD — estimate_s_rss • susieR</title>
 
 
 <!-- jquery -->
@@ -39,7 +39,7 @@
 
 
 
-<meta property="og:title" content="Estimate s in susie_rss Model Using Regularized LD — estimate_s_rss" />
+<meta property="og:title" content="Estimate s in <code>susie_rss</code> Model Using Regularized LD — estimate_s_rss" />
 <meta property="og:description" content="The estimated s gives information about the
   consistency between the z scores and LD matrix. A larger \(s\)
   means there is a strong inconsistency between z scores and LD
@@ -84,7 +84,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.48</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.83</span>
       </span>
     </div>
 
@@ -138,7 +138,7 @@
   R)\), \(0 &lt; s &lt; 1\).</p>
     </div>
 
-    <pre class="usage"><span class='fu'>estimate_s_rss</span><span class='op'>(</span><span class='va'>z</span>, <span class='va'>R</span>, r_tol <span class='op'>=</span> <span class='fl'>1e-08</span>, method <span class='op'>=</span> <span class='st'>"null-mle"</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>estimate_s_rss</span>(<span class='no'>z</span>, <span class='no'>R</span>, <span class='kw'>r_tol</span> <span class='kw'>=</span> <span class='fl'>1e-08</span>, <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"null-mle"</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -168,22 +168,20 @@ semidefinite matrix of R.</p></td>
     <p>A number between 0 and 1.</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span><span class='op'>(</span><span class='fl'>1</span><span class='op'>)</span>
-<span class='va'>n</span> <span class='op'>=</span> <span class='fl'>500</span>
-<span class='va'>p</span> <span class='op'>=</span> <span class='fl'>1000</span>
-<span class='va'>beta</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span><span class='op'>(</span><span class='fl'>0</span>,<span class='va'>p</span><span class='op'>)</span>
-<span class='va'>beta</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>4</span><span class='op'>]</span> <span class='op'>=</span> <span class='fl'>0.01</span>
-<span class='va'>X</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>matrix</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span><span class='op'>(</span><span class='va'>n</span><span class='op'>*</span><span class='va'>p</span><span class='op'>)</span>,nrow <span class='op'>=</span> <span class='va'>n</span>,ncol <span class='op'>=</span> <span class='va'>p</span><span class='op'>)</span>
-<span class='va'>X</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/scale.html'>scale</a></span><span class='op'>(</span><span class='va'>X</span>,center <span class='op'>=</span> <span class='cn'>TRUE</span>,scale <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
-<span class='va'>y</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/drop.html'>drop</a></span><span class='op'>(</span><span class='va'>X</span> <span class='op'>%*%</span> <span class='va'>beta</span> <span class='op'>+</span> <span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span><span class='op'>(</span><span class='va'>n</span><span class='op'>)</span><span class='op'>)</span>
-<span class='va'>input_ss</span> <span class='op'>=</span> <span class='fu'><a href='compute_suff_stat.html'>compute_suff_stat</a></span><span class='op'>(</span><span class='va'>X</span>,<span class='va'>y</span>,standardize <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
-<span class='va'>ss</span> <span class='op'>=</span> <span class='fu'><a href='univariate_regression.html'>univariate_regression</a></span><span class='op'>(</span><span class='va'>X</span>,<span class='va'>y</span><span class='op'>)</span>
-<span class='va'>R</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/cor.html'>cor</a></span><span class='op'>(</span><span class='va'>X</span><span class='op'>)</span>
-<span class='fu'><a href='https://rdrr.io/r/base/attr.html'>attr</a></span><span class='op'>(</span><span class='va'>R</span>,<span class='st'>"eigen"</span><span class='op'>)</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/eigen.html'>eigen</a></span><span class='op'>(</span><span class='va'>R</span>, symmetric <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
-<span class='va'>zhat</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/with.html'>with</a></span><span class='op'>(</span><span class='va'>ss</span>,<span class='va'>betahat</span><span class='op'>/</span><span class='va'>sebetahat</span><span class='op'>)</span>
-<span class='va'>s</span> <span class='op'>=</span> <span class='fu'>estimate_s_rss</span><span class='op'>(</span><span class='va'>zhat</span>, <span class='va'>R</span><span class='op'>)</span>
-
-</div></pre>
+    <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span>(<span class='fl'>1</span>)
+<span class='no'>n</span> <span class='kw'>=</span> <span class='fl'>500</span>
+<span class='no'>p</span> <span class='kw'>=</span> <span class='fl'>1000</span>
+<span class='no'>beta</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>0</span>,<span class='no'>p</span>)
+<span class='no'>beta</span>[<span class='fl'>1</span>:<span class='fl'>4</span>] <span class='kw'>=</span> <span class='fl'>0.01</span>
+<span class='no'>X</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>matrix</a></span>(<span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span>(<span class='no'>n</span>*<span class='no'>p</span>),<span class='kw'>nrow</span> <span class='kw'>=</span> <span class='no'>n</span>,<span class='kw'>ncol</span> <span class='kw'>=</span> <span class='no'>p</span>)
+<span class='no'>X</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/scale.html'>scale</a></span>(<span class='no'>X</span>,<span class='kw'>center</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,<span class='kw'>scale</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+<span class='no'>y</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/drop.html'>drop</a></span>(<span class='no'>X</span> <span class='kw'>%*%</span> <span class='no'>beta</span> + <span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span>(<span class='no'>n</span>))
+<span class='no'>input_ss</span> <span class='kw'>=</span> <span class='fu'><a href='compute_suff_stat.html'>compute_suff_stat</a></span>(<span class='no'>X</span>,<span class='no'>y</span>,<span class='kw'>standardize</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+<span class='no'>ss</span> <span class='kw'>=</span> <span class='fu'><a href='univariate_regression.html'>univariate_regression</a></span>(<span class='no'>X</span>,<span class='no'>y</span>)
+<span class='no'>R</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/cor.html'>cor</a></span>(<span class='no'>X</span>)
+<span class='fu'><a href='https://rdrr.io/r/base/attr.html'>attr</a></span>(<span class='no'>R</span>,<span class='st'>"eigen"</span>) <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/eigen.html'>eigen</a></span>(<span class='no'>R</span>, <span class='kw'>symmetric</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+<span class='no'>zhat</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/with.html'>with</a></span>(<span class='no'>ss</span>,<span class='no'>betahat</span>/<span class='no'>sebetahat</span>)
+<span class='no'>s</span> <span class='kw'>=</span> <span class='fu'>estimate_s_rss</span>(<span class='no'>zhat</span>, <span class='no'>R</span>)</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
@@ -199,7 +197,7 @@ semidefinite matrix of R.</p></td>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>

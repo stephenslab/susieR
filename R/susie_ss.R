@@ -4,9 +4,9 @@
 #'
 #' @param shat A p-vector of standard errors.
 #'
-#' @param R A p by p correlation matrix. It should be estimated from the same samples
-#'   used to compute \code{bhat} and \code{shat}. Using an out-of-sample
-#'   matrix may produce unreliable results.
+#' @param R A p by p correlation matrix. It should be estimated from
+#'   the same samples used to compute \code{bhat} and \code{shat}. Using
+#'   an out-of-sample matrix may produce unreliable results.
 #'
 #' @param n The sample size.
 #'
@@ -51,6 +51,11 @@
 #'   estimated prior variance becomes unreasonably large (comparing with
 #'   10 * max(abs(z))^2).
 #'
+#' @param n_purity Passed as argument \code{n_purity} to
+#'   \code{\link{susie_get_cs}}.
+#'
+#' @importFrom crayon red magenta
+#' 
 #' @export
 #'
 susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
@@ -68,7 +73,7 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
                             min_abs_corr = 0.5, tol = 1e-3,
                             verbose = FALSE, track_fit = FALSE,
                             check_input = FALSE, refine = FALSE,
-                            check_prior = FALSE) {
+                            check_prior = FALSE, n_purity = 100) {
 
   # Process input estimate_prior_method.
   estimate_prior_method = match.arg(estimate_prior_method)
@@ -129,19 +134,30 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
     } else {
       XtXdiag = var_y * sigma2/(shat^2)
       Xty = that * var_y * sigma2/shat
-      XtX = t(R * sqrt(XtXdiag)) * sqrt(XtXdiag)
+      XtX = R
+      XtX = R * sqrt(XtXdiag)
+      XtX = t(XtX)
+      XtX = XtX * sqrt(XtXdiag)
+      XtX = XtX + t(XtX)
+      XtX = XtX/2
     }
     yty = var_y * (n-1)
   }
-
-
+  if (ncol(XtX) > 1000 & !requireNamespace("Rfast",quietly = TRUE))
+    message(magenta("For large R or large XtX, consider installing the",
+                    "Rfast package for better performance."))
+  
   # Check input XtX.
   if (ncol(XtX) != length(Xty))
     stop(paste0("The dimension of XtX (",nrow(XtX)," by ",ncol(XtX),
                 ") does not agree with expected (",length(Xty)," by ",
                 length(Xty),")"))
-  if (!is_symmetric_matrix(XtX))
-    stop("XtX is not a symmetric matrix")
+  if (!is_symmetric_matrix(XtX)) {
+    message(red("XtX is not symmetric; forcing XtX to be symmetric by",
+                "replacing XtX with (XtX + t(XtX))/2"))
+    XtX = XtX + t(XtX)
+    XtX = XtX/2
+  }
 
   # MAF filter.
   if (!is.null(maf)) {
@@ -153,11 +169,17 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
   }
 
   if (any(is.infinite(Xty)))
-    stop("Xty contains infinite values")
+    stop("Input Xty or zscores contains infinite values")
   if (!(is.double(XtX) & is.matrix(XtX)) & !inherits(XtX,"CsparseMatrix"))
-    stop("Input X must be a double-precision matrix, or a sparse matrix")
-  if (any(is.na(XtX)))
-    stop("XtX matrix contains NAs")
+    stop("Input XtX or R must be a double-precision matrix, or a sparse matrix")
+  if (anyNA(XtX))
+    stop("Input XtX or R matrix contains NAs")
+  
+  # Replace NAs in z with zeros.
+  if (anyNA(Xty)) {
+    warning("NA values in Xty or z-scores are replaced with 0")
+    Xty[is.na(Xty)] = 0
+  }
 
   if (check_input) {
 
@@ -194,10 +216,12 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
     dXtX = diag(XtX)
     csd = sqrt(dXtX/(n-1))
     csd[csd == 0] = 1
-    XtX = (1/csd) * t((1/csd) * XtX)
-    Xty = (1/csd) * Xty
+    XtX = (1/csd) * XtX
+    XtX = t(XtX)
+    XtX = XtX / csd
+    Xty = Xty / csd
   } else
-    csd = rep(1, length = p)
+    csd = rep(1,length = p)
   attr(XtX,"d") = diag(XtX)
   attr(XtX,"scaled:scale") = csd
 
@@ -219,6 +243,7 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
     if (max(s_init$alpha) > 1 || min(s_init$alpha) < 0)
       stop("s_init$alpha has invalid values outside range [0,1]; please ",
            "check your input")
+    
     # First, remove effects with s_init$V = 0
     s_init = susie_prune_single_effects(s_init)
     num_effects = nrow(s_init$alpha)
@@ -293,7 +318,9 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
   s$niter = i
 
   if (is.null(s$converged)) {
-    warning(paste("IBSS algorithm did not converge in",max_iter,"iterations!"))
+    warning(paste("IBSS algorithm did not converge in",max_iter,"iterations!
+                  Please check consistency between summary statistics and LD matrix.
+                  See https://stephenslab.github.io/susieR/articles/susierss_diagnostic.html"))
     s$converged = FALSE
   }
 
@@ -309,10 +336,30 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
 
   # SuSiE CS and PIP.
   if (!is.null(coverage) && !is.null(min_abs_corr)) {
-    R = muffled_cov2cor(XtX)
-    s$sets = susie_get_cs(s,coverage = coverage,Xcorr = R,
-                          min_abs_corr = min_abs_corr)
+    if(any(!(diag(XtX) %in% c(0,1)))){
+      s$sets = susie_get_cs(s,coverage = coverage,Xcorr = muffled_cov2cor(XtX),
+                            min_abs_corr = min_abs_corr,
+                            check_symmetric = FALSE,
+                            n_purity = n_purity)
+    }else
+      s$sets = susie_get_cs(s,coverage = coverage,Xcorr = XtX,
+                            min_abs_corr = min_abs_corr,
+                            check_symmetric = FALSE,
+                            n_purity = n_purity)
     s$pip = susie_get_pip(s,prune_by_cs = FALSE,prior_tol = prior_tol)
+  }
+
+  if (!is.null(colnames(XtX))) {
+    variable_names = colnames(XtX)
+    if (!is.null(null_weight)) {
+      variable_names[length(variable_names)] = "null"
+      names(s$pip) = variable_names[-p]
+    } else
+      names(s$pip) = variable_names
+    colnames(s$alpha) = variable_names
+    colnames(s$mu)    = variable_names
+    colnames(s$mu2)   = variable_names
+    colnames(s$lbf_variable) = variable_names
   }
 
   if (refine) {
@@ -327,7 +374,7 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
     } else
       pw_s = s$pi
     conti = TRUE
-    while (conti) {
+    while (conti & length(s$sets$cs)>0) {
       m = list()
       for(cs in 1:length(s$sets$cs)) {
         pw_cs = pw_s
@@ -379,40 +426,4 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
   }
 
   return(s)
-}
-
-# @title Check whether A is positive semidefinite
-# @param A a symmetric matrix
-# @return a list of result:
-# \item{matrix}{The matrix with eigen decomposition}
-# \item{status}{whether A is positive semidefinite}
-# \item{eigenvalues}{eigenvalues of A truncated by r_tol}
-check_semi_pd = function (A, tol) {
-  attr(A,"eigen") = eigen(A,symmetric = TRUE)
-  eigenvalues = attr(A,"eigen")$values
-  eigenvalues[abs(eigenvalues) < tol] = 0
-  return(list(matrix = A,
-              status = !any(eigenvalues < 0),
-              eigenvalues = eigenvalues))
-}
-
-# @title Check whether b is in space spanned by the non-zero eigenvectors
-#   of A
-# @param A a p by p matrix
-# @param b a length p vector
-# @return a list of result:
-# \item{status}{whether b in space spanned by the non-zero
-#  eigenvectors of A}
-# \item{msg}{msg gives the difference between the projected b and b if
-#   status is FALSE}
-check_projection = function (A, b) {
-  if (is.null(attr(A,"eigen")))
-    attr(A,"eigen") = eigen(A,symmetric = TRUE)
-  B = attr(A,"eigen")$vectors[,attr(A,"eigen")$values > .Machine$double.eps]
-  msg = all.equal(as.vector(B %*% crossprod(B,b)),as.vector(b),
-                  check.names = FALSE)
-  if (!is.character(msg))
-    return(list(status = TRUE,msg = NA))
-  else
-    return(list(status = FALSE,msg = msg))
 }

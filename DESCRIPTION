@@ -4,8 +4,9 @@ Package: susieR
 Title: Sum of Single Effects Linear Regression
 Description: Implements methods for variable selection in linear
     regression based on the "Sum of Single Effects" (SuSiE) model, as
-    described in Wang et al (2020) <DOI:10.1101/501114>. These methods
-    provide simple summaries, called "Credible Sets", for accurately
+    described in Wang et al (2020) <DOI:10.1101/501114> and Zou et al
+    (2021) <DOI:10.1101/2021.11.03.467167>. These methods provide
+    simple summaries, called "Credible Sets", for accurately
     quantifying uncertainty in which variables should be selected.
     The methods are motivated by genetic fine-mapping applications,
     and are particularly well-suited to settings where variables are
@@ -14,8 +15,8 @@ Description: Implements methods for variable selection in linear
     called "Iterative Bayesian Stepwise Selection" (IBSS), is simple
     and fast, allowing the SuSiE model be fit to large data sets
     (thousands of samples and hundreds of thousands of variables).
-Date: 2021-08-11
-Version: 0.11.48
+Date: 2021-11-24
+Version: 0.11.93
 Authors@R: c(person("Gao","Wang",role="aut",email="wang.gao@columbia.edu"),
              person("Yuxin","Zou",role="aut"),
              person("Kaiqian","Zhang",role="aut"),
@@ -32,18 +33,22 @@ Imports:
     grDevices,
     stats,
     Matrix,
+    matrixStats,
     mixsqp,
     reshape,
+    crayon,
     ggplot2
 Suggests:
+    curl,
     testthat,
     microbenchmark,
     knitr,
     rmarkdown,
     L0Learn,
-    genlasso
+    genlasso,
+    Rfast
 LazyData: yes
 LazyDataCompression: xz
 NeedsCompilation: no
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
 VignetteBuilder: knitr

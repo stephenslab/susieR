@@ -31,7 +31,8 @@ susie(
   verbose = FALSE,
   track_fit = FALSE,
   residual_variance_lowerbound = var(drop(y))/10000,
-  refine = FALSE
+  refine = FALSE,
+  n_purity = 100
 )
 
 susie_suff_stat(
@@ -68,7 +69,8 @@ susie_suff_stat(
   track_fit = FALSE,
   check_input = FALSE,
   refine = FALSE,
-  check_prior = FALSE
+  check_prior = FALSE,
+  n_purity = 100
 )
 }
 \arguments{
@@ -195,13 +197,16 @@ residual variance. It is only relevant when
 iterative refinement procedure is used, after the IBSS algorithm,
 to check and escape from local optima (see details).}
 
+\item{n_purity}{Passed as argument \code{n_purity} to
+\code{\link{susie_get_cs}}.}
+
 \item{bhat}{A p-vector of estimated effects.}
 
 \item{shat}{A p-vector of standard errors.}
 
-\item{R}{A p by p correlation matrix. It should be estimated from the same samples
-used to compute \code{bhat} and \code{shat}. Using an out-of-sample
-matrix may produce unreliable results.}
+\item{R}{A p by p correlation matrix. It should be estimated from
+the same samples used to compute \code{bhat} and \code{shat}. Using
+an out-of-sample matrix may produce unreliable results.}
 
 \item{n}{The sample size.}
 
@@ -411,6 +416,10 @@ G. Wang, A. Sarkar, P. Carbonetto and M. Stephens (2020). A simple
   new approach to variable selection in regression, with application
   to genetic fine-mapping. \emph{Journal of the Royal Statistical
   Society, Series B} \bold{82}, 1273-1300 \doi{10.1101/501114}.
+
+  Y. Zou, P. Carbonetto, G. Wang and M. Stephens (2021).
+  Fine-mapping from summary data with the \dQuote{Sum of Single Effects}
+  model. \emph{bioRxiv} \doi{10.1101/2021.11.03.467167}.
 }
 \seealso{
 \code{\link{susie_get_cs}} and other \code{susie_get_*}

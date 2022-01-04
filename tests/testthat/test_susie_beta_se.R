@@ -8,7 +8,8 @@ test_that("Results from sufficient stat interface vs original data: no standardi
   expect_warning(orig <- susie(X, y, intercept = TRUE, standardize = FALSE, max_iter = 2,
               estimate_residual_variance=FALSE, estimate_prior_variance = FALSE))
 
-  expect_warning(fit <- susie_suff_stat(bhat = ss$betahat, shat = ss$sebetahat, R = R,
+  expect_warning(fit <- susie_suff_stat(bhat = ss$betahat,
+                   shat = ss$sebetahat, R = R,
                    var_y = var(y), n = n, standardize = FALSE,
                    max_iter = 2, estimate_prior_variance = FALSE,
                    estimate_residual_variance = FALSE))

@@ -69,10 +69,9 @@ compute_MXt = function (M, X) {
     # When X is a trend filtering matrix.
     return(as.matrix(t(apply(M,1,function(b) compute_Xb(X,b)))))
   else
-
+    
     # When X is an ordinary sparse/dense matrix.
-    return(as.matrix(tcrossprod(M,sweep(X,2,csd,"/")) -
-                     drop(tcrossprod(M,t(cm/csd)))))
+    return(as.matrix(t(X %*% (t(M)/csd)) - drop(M %*% (cm/csd))))
 
   # This should be the same as
   #

@@ -205,6 +205,9 @@
 #'  iterative refinement procedure is used, after the IBSS algorithm,
 #'  to check and escape from local optima (see details).
 #'
+#' @param n_purity Passed as argument \code{n_purity} to
+#'   \code{\link{susie_get_cs}}.
+#'
 #' @return A \code{"susie"} object with some or all of the following
 #'   elements:
 #'
@@ -262,6 +265,10 @@
 #'   to genetic fine-mapping. \emph{Journal of the Royal Statistical
 #'   Society, Series B} \bold{82}, 1273-1300 \doi{10.1101/501114}.
 #'
+#'   Y. Zou, P. Carbonetto, G. Wang and M. Stephens (2021).
+#'   Fine-mapping from summary data with the \dQuote{Sum of Single Effects}
+#'   model. \emph{bioRxiv} \doi{10.1101/2021.11.03.467167}.
+#'
 #' @seealso \code{\link{susie_get_cs}} and other \code{susie_get_*}
 #'   functions for extracting results; \code{\link{susie_trendfilter}} for
 #'   applying the SuSiE model to non-parametric regression, particularly
@@ -296,6 +303,7 @@
 #'
 #' @importFrom stats var
 #' @importFrom utils modifyList
+#' @importFrom crayon magenta
 #'
 #' @export
 #'
@@ -322,7 +330,8 @@ susie = function (X,y,L = min(10,ncol(X)),
                    verbose = FALSE,
                    track_fit = FALSE,
                    residual_variance_lowerbound = var(drop(y))/1e4,
-                   refine = FALSE) {
+                   refine = FALSE,
+                   n_purity = 100) {
 
   # Process input estimate_prior_method.
   estimate_prior_method = match.arg(estimate_prior_method)
@@ -346,9 +355,9 @@ susie = function (X,y,L = min(10,ncol(X)),
       prior_weights = c(prior_weights * (1-null_weight),null_weight)
     X = cbind(X,0)
   }
-  if (any(is.na(X)))
+  if (anyNA(X))
     stop("Input X must not contain missing values")
-  if (any(is.na(y))) {
+  if (anyNA(y)) {
     if (na.rm) {
       samples_kept = which(!is.na(y))
       y = y[samples_kept]
@@ -356,16 +365,31 @@ susie = function (X,y,L = min(10,ncol(X)),
     } else
       stop("Input y must not contain missing values")
   }
-
-  # Check input y.
   p = ncol(X)
+  if (p > 1000 & !requireNamespace("Rfast",quietly = TRUE))
+    message(magenta("For an X with many columns, please consider installing",
+                    "the Rfast package for more efficient credible set (CS)",
+                    "calculations."))
+  
+  # Check input y.
   n = nrow(X)
   mean_y = mean(y)
 
   # Center and scale input.
   if (intercept)
     y = y - mean_y
-  X = set_X_attributes(X,center = intercept,scale = standardize)
+
+  # Set three attributes for matrix X: attr(X,'scaled:center') is a
+  # p-vector of column means of X if center=TRUE, a p vector of zeros
+  # otherwise; 'attr(X,'scaled:scale') is a p-vector of column
+  # standard deviations of X if scale=TRUE, a p vector of ones
+  # otherwise; 'attr(X,'d') is a p-vector of column sums of
+  # X.standardized^2,' where X.standardized is the matrix X centered
+  # by attr(X,'scaled:center') and scaled by attr(X,'scaled:scale').
+  out = compute_colstats(X,center = intercept,scale = standardize)
+  attr(X,"scaled:center") = out$cm
+  attr(X,"scaled:scale") = out$csd
+  attr(X,"d") = out$d
 
   # Initialize susie fit.
   s = init_setup(n,p,L,scaled_prior_variance,residual_variance,prior_weights,
@@ -396,6 +420,7 @@ susie = function (X,y,L = min(10,ncol(X)),
   } else {
     s = init_finalize(s)
   }
+
   # Initialize elbo to NA.
   elbo = rep(as.numeric(NA),max_iter + 1)
   elbo[1] = -Inf;
@@ -426,7 +451,7 @@ susie = function (X,y,L = min(10,ncol(X)),
         print(paste0("objective:",get_objective(X,y,s)))
     }
   }
-
+  
   # Remove first (infinite) entry, and trailing NAs.
   elbo = elbo[2:(i+1)]
   s$elbo = elbo
@@ -452,23 +477,26 @@ susie = function (X,y,L = min(10,ncol(X)),
 
   if (track_fit)
     s$trace = tracking
-
+  
   # SuSiE CS and PIP.
   if (!is.null(coverage) && !is.null(min_abs_corr)) {
     s$sets = susie_get_cs(s,coverage = coverage,X = X,
-                          min_abs_corr = min_abs_corr)
+                          min_abs_corr = min_abs_corr,
+                          n_purity = n_purity)
     s$pip = susie_get_pip(s,prune_by_cs = FALSE,prior_tol = prior_tol)
   }
 
   if (!is.null(colnames(X))) {
     variable_names = colnames(X)
-    if (!is.null(null_weight))
-      variable_names = c("null", variable_names)
+    if (!is.null(null_weight)) {
+      variable_names[length(variable_names)] = "null"
+      names(s$pip) = variable_names[-p]
+    } else
+      names(s$pip)    = variable_names
     colnames(s$alpha) = variable_names
-    colnames(s$mu) = variable_names
-    colnames(s$mu2) = variable_names
+    colnames(s$mu)    = variable_names
+    colnames(s$mu2)   = variable_names
     colnames(s$lbf_variable) = variable_names
-    names(s$pip) = variable_names
   }
   # report z-scores from univariate regression.
   if (compute_univariate_zscore) {
@@ -495,7 +523,7 @@ susie = function (X,y,L = min(10,ncol(X)),
     } else
       pw_s = s$pi
     conti = TRUE
-    while (conti) {
+    while (conti & length(s$sets$cs)>0) {
       m = list()
       for(cs in 1:length(s$sets$cs)){
         pw_cs = pw_s

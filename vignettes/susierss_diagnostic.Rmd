@@ -15,7 +15,7 @@ knitr::opts_chunk$set(collapse = TRUE,comment = "#",fig.width = 5,
                       fig.cap = "&nbsp;",dpi = 120)
 ```
 
-This vignette demonstrates diagnostic plot for consistency between summary statistics and refenrence LD matrix. 
+This vignette demonstrates diagnostic plot for consistency between summary statistics and reference LD matrix. 
 
 The `susie_rss` assumes the LD matrix accurately estimate the correlations among SNPs from the original GWAS genotype data. Typically, the LD matrix comes from some public database of genotypes in a suitable reference population. The inaccurate LD information leads to unreliable fine-mapping result.
 
@@ -27,6 +27,7 @@ The parameter `s` is estimated by maximum likelihood. A larger `s` means a great
 
 ```{r}
 library(susieR)
+library(curl)
 ```
 
 ## LD information from the original genotype data
@@ -39,7 +40,7 @@ b = N3finemapping$true_coef[,1]
 sumstats <- univariate_regression(N3finemapping$X, N3finemapping$Y[,1])
 z_scores <- sumstats$betahat / sumstats$sebetahat
 Rin = cor(N3finemapping$X)
-attr(Rin, 'eigen') = eigen(Rin, symmetric = T)
+attr(Rin, "eigen") = eigen(Rin, symmetric = T)
 susie_plot(z_scores, y = "z", b=b)
 ```
 
@@ -49,10 +50,16 @@ s = estimate_s_rss(z_scores, Rin)
 s
 ```
 
-The plot for the expected z scores vs the observed z scores is 
+The plot for the observed z scores vs the expected z scores is 
 ```{r}
 condz_in = kriging_rss(z_scores, Rin)
 condz_in$plot
+```
+
+Summary of SuSiE Credible Sets:
+```{r}
+fit <- susie_rss(z_scores, Rin)
+susie_plot(fit,y = "PIP", b=b)
 ```
 
 ## LD information from the reference panel
@@ -60,13 +67,25 @@ condz_in$plot
 We use another simulated data where the LD matrix is estimated from a reference panel. There is one signal in the simulated data (red point). There is one SNP with mismatched reference and alternative allele between summary statistics and the reference panel (yellow point).
 
 ```{r}
-data("SummaryConsistency")
+data_file <- tempfile(fileext = ".RData")
+data_url <- paste0("https://raw.githubusercontent.com/stephenslab/susieR/",
+                   "master/inst/datafiles/SummaryConsistency1k.RData")
+curl_download(data_url,data_file)
+load(data_file)
 zflip = SummaryConsistency$z
 ld = SummaryConsistency$ldref
-plot(zflip, pch = 16, col = '#767676', main = 'Marginal Associations', 
-     xlab='SNP', ylab = 'z scores')
+b = numeric(length(zflip))
+b[SummaryConsistency$signal_id] = zflip[SummaryConsistency$signal_id]
+plot(zflip, pch = 16, col = "#767676", main = "Marginal Associations", 
+     xlab="SNP", ylab = "z scores")
 points(SummaryConsistency$signal_id, zflip[SummaryConsistency$signal_id], col=2, pch=16)
 points(SummaryConsistency$flip_id, zflip[SummaryConsistency$flip_id], col=7, pch=16)
+```
+Using the data with misaligned allele, SuSiE-RSS identifies a true positive CS containing the true effect SNP; and a false positive CS that incorrectly contains the mismatched SNP.
+```{r}
+fit = susie_rss(zflip, ld)
+susie_plot(fit, y='PIP', b=b)
+points(SummaryConsistency$flip_id, fit$pip[SummaryConsistency$flip_id], col=7, pch=16)
 ```
 
 The estimated `s` is
@@ -75,12 +94,21 @@ s = estimate_s_rss(zflip, ld)
 s
 ```
 
+In the diagnostic plot, the mismatched SNP shows the largest difference between observed and expected z-scores, and therefore appears furthest away from the diagonal.
+
 ```{r}
 condz = kriging_rss(zflip, ld)
 condz$plot
 ```
 
-The diagnostic plot identifies the SNP with flipped allele between summary statistics and the reference panel.
+After fixing the allele encoding, SuSiE-RSS identifies a single true positive CS containing the true-effect SNP, and the formerly mismatched SNP is (correctly) not included in a CS.
+
+```{r}
+z = zflip
+z[SummaryConsistency$flip_id] = -z[SummaryConsistency$flip_id]
+fit = susie_rss(z, ld)
+susie_plot(fit, y='PIP', b=b)
+```
 
 ## Session information
 

@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Compute sufficient statistics for input to susie_suff_stat — compute_suff_stat • susieR</title>
+<title>Compute sufficient statistics for input to <code>susie_suff_stat</code> — compute_suff_stat • susieR</title>
 
 
 <!-- jquery -->
@@ -39,7 +39,7 @@
 
 
 
-<meta property="og:title" content="Compute sufficient statistics for input to susie_suff_stat — compute_suff_stat" />
+<meta property="og:title" content="Compute sufficient statistics for input to <code>susie_suff_stat</code> — compute_suff_stat" />
 <meta property="og:description" content="Computes the sufficient statistics \(X'X, X'y, y'y\)
   and \(n\) after centering (and possibly standardizing) the
   columns of \(X\) and centering \(y\) to have mean zero. We also
@@ -75,7 +75,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.48</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.83</span>
       </span>
     </div>
 
@@ -120,7 +120,7 @@
   store the column means of \(X\) and mean of \(y\).</p>
     </div>
 
-    <pre class="usage"><span class='fu'>compute_suff_stat</span><span class='op'>(</span><span class='va'>X</span>, <span class='va'>y</span>, standardize <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>compute_suff_stat</span>(<span class='no'>X</span>, <span class='no'>y</span>, <span class='kw'>standardize</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -146,10 +146,8 @@ columns of X to unit variance prior to computing summary data</p></td>
   and <code>X_colmeans</code>, <code>y_mean</code>.</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='va'>N2finemapping</span><span class='op'>)</span>
-<span class='va'>ss</span> <span class='op'>=</span> <span class='fu'>compute_suff_stat</span><span class='op'>(</span><span class='va'>N2finemapping</span><span class='op'>$</span><span class='va'>X</span>, <span class='va'>N2finemapping</span><span class='op'>$</span><span class='va'>Y</span><span class='op'>[</span>,<span class='fl'>1</span><span class='op'>]</span><span class='op'>)</span>
-
-</div></pre>
+    <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>N2finemapping</span>)
+<span class='no'>ss</span> <span class='kw'>=</span> <span class='fu'>compute_suff_stat</span>(<span class='no'>N2finemapping</span>$<span class='no'>X</span>, <span class='no'>N2finemapping</span>$<span class='no'>Y</span>[,<span class='fl'>1</span>])</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
@@ -165,7 +163,7 @@ columns of X to unit variance prior to computing summary data</p></td>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>

@@ -14,8 +14,9 @@
 #'   include \code{model$sets}. \code{model} may also be a vector of
 #'   z-scores or PIPs.
 #'
-#' @param y A string indicating what to plot: either \code{"z"} for
-#'   z-scores, \code{"PIP"} for posterior inclusion probabilities,
+#' @param y A string indicating what to plot: either \code{"z_original"} for
+#'   z-scores, \code{"z"} for z-score derived p-values on (base-10) log-scale, 
+#'   \code{"PIP"} for posterior inclusion probabilities,
 #'   \code{"log10PIP"} for posterior inclusion probabiliities on the
 #'   (base-10) log-scale. For any other setting, the data are plotted as
 #'   is.
@@ -112,6 +113,16 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
       zneg = -abs(model)
     p = -log10(2*pnorm(zneg))
     ylab = "-log10(p)"
+  } else if (y == "z_original") {
+    if (is_susie) {
+      if (is.null(model$z))
+        stop("z-scores are not available from SuSiE fit; please set ",
+             "compute_univariate_zscore = TRUE in susie() call")
+      p = model$z
+    } else {
+      p = model
+    }
+    ylab = "z score"
   } else if (y == "PIP") {
     if (is_susie)
       p = model$pip
@@ -125,7 +136,7 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
     ylab = "log10(PIP)"
   } else {
     if (is_susie)
-      stop("Need to specify z or PIP or log10PIP for SuSiE fits")
+      stop("Need to specify z_original, z, PIP or log10PIP for SuSiE fits")
     p = model
   }
   if(is.null(b))

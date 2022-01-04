@@ -34,4 +34,8 @@ Data simulated using real genotypes from 50,000
 \examples{
 data(FinemappingConvergence)
 }
+\seealso{
+A similar data set with more SNPs is used in the
+  \dQuote{Refine SuSiE model} vignette.
+}
 \keyword{data}
