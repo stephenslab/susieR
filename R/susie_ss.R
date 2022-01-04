@@ -258,6 +258,7 @@ susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
     if(check_prior){
       if(any(s$V > 100*(zm^2))){
         stop('The estimated prior variance is unreasonably large.
+	     This is usually caused by mismatch between the z scores and the LD matrix.
              Please check the input.')
       }
     }
