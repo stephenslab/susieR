@@ -265,7 +265,7 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
                          check_symmetric = TRUE, n_purity = 100, use_rfast) {
   if (!is.null(X) && !is.null(Xcorr))
     stop("Only one of X or Xcorr should be specified")
-  if (check_symmetric){
+  if (check_symmetric) {
     if (!is.null(Xcorr) && !is_symmetric_matrix(Xcorr)) {
       message(red("Xcorr is not symmetric; forcing Xcorr to be symmetric",
                   "by replacing Xcorr with (Xcorr + t(Xcorr))/2"))
@@ -660,7 +660,7 @@ estimate_s_rss = function (z, R, r_tol = 1e-08, method = "null-mle") {
   if (is.null(attr(R,"eigen")))
     attr(R,"eigen") = eigen(R,symmetric = TRUE)
   eigenld = attr(R,"eigen")
-  if(any(eigenld$values < -r_tol))
+  if (any(eigenld$values < -r_tol))
     warning("The matrix R is not positive semidefinite. Negative ",
             "eigenvalues are set to zero")
   eigenld$values[eigenld$values < r_tol] = 0
@@ -777,26 +777,25 @@ kriging_rss = function (z, R, r_tol = 1e-08,
   if (s < 0)
     stop("The s must be non-negative")
 
-  dinv = 1/((1-s)*eigenld$values + s)
+  dinv = 1/((1-s) * eigenld$values + s)
   dinv[is.infinite(dinv)] = 0
   precision = eigenld$vectors %*% (t(eigenld$vectors) * dinv)
   condmean = rep(0,length(z))
   condvar = rep(0,length(z))
-  for(i in 1:length(z)){
+  for (i in 1:length(z)) {
     condmean[i] = -(1/precision[i,i]) * precision[i,-i] %*% z[-i]
-    condvar[i] = 1/precision[i,i]
+    condvar[i]  = 1/precision[i,i]
   }
   z_std_diff = (z-condmean)/sqrt(condvar)
 
   # obtain grid
   a_min = 0.8
-  if (max(z_std_diff^2) < 1){
+  if (max(z_std_diff^2) < 1)
     a_max = 2
-  }else{
+  else
     a_max = 2*sqrt(max(z_std_diff^2))
-  }
   npoint = ceiling(log2(a_max/a_min)/log2(1.05))
-  a_grid = 1.05^((-npoint):0) * a_max
+  a_grid = 1.05^(seq(-npoint,0)) * a_max
 
   # compute likelihood
   sd_mtx      = outer(sqrt(condvar),a_grid)
@@ -808,7 +807,7 @@ kriging_rss = function (z, R, r_tol = 1e-08,
   w = mixsqp(matrix_llik,log = TRUE,control = list(verbose = FALSE))$x
 
   logl0mix    = as.numeric(log(exp(matrix_llik) %*% w)) + lfactors
-  matrix_llik = dnorm(z + condmean, sd=sd_mtx, log = TRUE)
+  matrix_llik = dnorm(z + condmean,sd = sd_mtx,log = TRUE)
   lfactors    = apply(matrix_llik,1,max)
   matrix_llik = matrix_llik - lfactors
   logl1mix    = as.numeric(log(exp(matrix_llik) %*% w)) + lfactors
@@ -818,18 +817,14 @@ kriging_rss = function (z, R, r_tol = 1e-08,
                    z_std_diff = z_std_diff,logLR = logLRmix)
 
   p = ggplot(res) + geom_point(aes(y = z, x = condmean)) +
-    labs(y = "Observed z scores", x = "Expected value") +
-    geom_abline(intercept = 0, slope = 1) +
-    theme_bw()
-
+        labs(y = "Observed z scores", x = "Expected value") +
+        geom_abline(intercept = 0, slope = 1) +
+        theme_bw()
   idx = which(logLRmix > 2 & abs(z) > 2)
-  if(length(idx) > 0) {
+  if (length(idx) > 0)
     p = p + geom_point(data = res[idx,],
                        aes(y = z, x = condmean),col = "red")
-  }
-
-  return(list(plot = p,
-              conditional_dist = res))
+  return(list(plot = p,conditional_dist = res))
 }
 
 # Compute the column means of X, the column standard deviations of X,
