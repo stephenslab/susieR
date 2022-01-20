@@ -807,16 +807,14 @@ kriging_rss = function (z, R, r_tol = 1e-08,
   w = mixsqp(matrix_llik,log = TRUE,control = list(verbose = FALSE))$x
 
   # Compute denominators in likelihood ratios.
-  y        = apply(matrix_llik,1,max)
-  logl0mix = drop(log(exp(matrix_llik - y) %*% w)) + y + lfactors
+  logl0mix = drop(log(exp(matrix_llik) %*% (w + 1e-15))) + lfactors
 
   # Compute numerators in likelihood ratios.
   matrix_llik = dnorm(z + condmean,sd = sd_mtx,log = TRUE)
   lfactors    = apply(matrix_llik,1,max)
   matrix_llik = matrix_llik - lfactors
-  y           = apply(matrix_llik,1,max)
-  logl1mix    = drop(log(exp(matrix_llik - y) %*% w)) + y + lfactors
-
+  logl1mix    = drop(log(exp(matrix_llik) %*% (w + 1e-15))) + lfactors
+  
   # Compute (log) likelihood ratios.
   logLRmix = logl1mix - logl0mix
 
