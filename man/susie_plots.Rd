@@ -25,8 +25,9 @@ the susie fit must have \code{model$z}, \code{model$PIP}, and may
 include \code{model$sets}. \code{model} may also be a vector of
 z-scores or PIPs.}
 
-\item{y}{A string indicating what to plot: either \code{"z"} for
-z-scores, \code{"PIP"} for posterior inclusion probabilities,
+\item{y}{A string indicating what to plot: either \code{"z_original"} for
+z-scores, \code{"z"} for z-score derived p-values on (base-10) log-scale, 
+\code{"PIP"} for posterior inclusion probabilities,
 \code{"log10PIP"} for posterior inclusion probabiliities on the
 (base-10) log-scale. For any other setting, the data are plotted as
 is.}

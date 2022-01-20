@@ -806,12 +806,19 @@ kriging_rss = function (z, R, r_tol = 1e-08,
   # estimate weight
   w = mixsqp(matrix_llik,log = TRUE,control = list(verbose = FALSE))$x
 
-  logl0mix    = as.numeric(log(exp(matrix_llik) %*% w)) + lfactors
+  # Compute denominators in likelihood ratios.
+  y        = apply(matrix_llik,1,max)
+  logl0mix = drop(log(exp(matrix_llik - y) %*% w)) + y + lfactors
+
+  # Compute numerators in likelihood ratios.
   matrix_llik = dnorm(z + condmean,sd = sd_mtx,log = TRUE)
   lfactors    = apply(matrix_llik,1,max)
   matrix_llik = matrix_llik - lfactors
-  logl1mix    = as.numeric(log(exp(matrix_llik) %*% w)) + lfactors
-  logLRmix    = logl1mix - logl0mix
+  y           = apply(matrix_llik,1,max)
+  logl1mix    = drop(log(exp(matrix_llik - y) %*% w)) + y + lfactors
+
+  # Compute (log) likelihood ratios.
+  logLRmix = logl1mix - logl0mix
 
   res = data.frame(z = z,condmean = condmean,condvar = condvar,
                    z_std_diff = z_std_diff,logLR = logLRmix)
