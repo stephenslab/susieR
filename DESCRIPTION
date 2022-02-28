@@ -15,8 +15,8 @@ Description: Implements methods for variable selection in linear
     called "Iterative Bayesian Stepwise Selection" (IBSS), is simple
     and fast, allowing the SuSiE model be fit to large data sets
     (thousands of samples and hundreds of thousands of variables).
-Date: 2022-01-19
-Version: 0.11.96
+Date: 2022-02-28
+Version: 0.11.97
 Authors@R: c(person("Gao","Wang",role="aut",email="wang.gao@columbia.edu"),
              person("Yuxin","Zou",role="aut"),
              person("Kaiqian","Zhang",role="aut"),
@@ -25,7 +25,7 @@ Authors@R: c(person("Gao","Wang",role="aut",email="wang.gao@columbia.edu"),
 	     person("Matthew","Stephens",role="aut"))
 URL: https://github.com/stephenslab/susieR
 BugReports: https://github.com/stephenslab/susieR/issues
-License: MIT + file LICENSE
+License: BSD_3_clause + file LICENSE
 Depends: R (>= 3.0.0)
 Imports:
     methods,
