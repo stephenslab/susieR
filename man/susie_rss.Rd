@@ -2,7 +2,7 @@
 % Please edit documentation in R/susie_rss.R
 \name{susie_rss}
 \alias{susie_rss}
-\title{Sum of Single Effects (SuSiE) Regression using summary statistics}
+\title{Sum of Single Effects (SuSiE) Regression using Summary Statistics}
 \usage{
 susie_rss(
   z,
@@ -19,41 +19,46 @@ susie_rss(
 )
 }
 \arguments{
-\item{z}{A p-vector of z scores.}
+\item{z}{p-vector of z-scores.}
 
-\item{R}{A p by p correlation matrix.}
+\item{R}{p x p correlation matrix.}
 
 \item{n}{The sample size.}
 
-\item{bhat}{A p-vector of estimated effects.}
+\item{bhat}{Alternative summary data giving the estimated effects
+(a vector of length p). This, together with \code{shat}, may be
+provided instead of \code{z}.}
 
-\item{shat}{A p-vector of standard errors.}
+\item{shat}{Alternative summary data giving the standard errors of
+the estimated effects (a vector of length p). This, together with
+\code{bhat}, may be provided instead of \code{z}.}
 
 \item{var_y}{The sample variance of y, defined as \eqn{y'y/(n-1)}.
-When the sample variance cannot be provided, the coefficients
-(returned from \code{coef}) are computed on the "standardized" X, y
-scale.}
+When the sample variance is not provided, the coefficients
+(returned from \code{coef}) are computed on the
+\dQuote{standardized} X, y scale.}
 
 \item{z_ld_weight}{This parameter is included for backwards
 compatibility with previous versions of the function, but it is no
-longer recommended to use a non-zero value. If \code{z_ld_weight
-> 0}, the matrix R used in the model is adjusted to be
+longer recommended to set this to a non-zero value. When
+\code{z_ld_weight > 0}, the matrix \code{R} is adjusted to be
 \code{cov2cor((1-w)*R + w*tcrossprod(z))}, where \code{w =
 z_ld_weight}.}
 
-\item{estimate_residual_variance}{The default is FALSE, the residual variance is
-fixed to 1 or variance of y. If the in-sample LD matrix is provided, we
-recommend \code{estimate_residual_variance = TRUE}, the residual variance is
-estimated.}
+\item{estimate_residual_variance}{The default is FALSE, the
+residual variance is fixed to 1 or variance of y. If the in-sample
+LD matrix is provided, we recommend setting
+\code{estimate_residual_variance = TRUE}.}
 
 \item{prior_variance}{The prior variance(s) for the non-zero
-element of \eqn{\tilde{b}_l}. It is either a scalar, or a vector of length
-L. When \code{estimate_prior_variance = TRUE} (highly recommended)
-this simply provides an initial value for the prior variance, and
-the default value of 50 is simply intended to be a large initial
-value. This parameter is used only when \code{n} is unknown. If \code{n}
-is known, please use \code{scaled_prior_variance} as in \code{susie} or
-\code{susie_suff_stat}.}
+element of \eqn{\tilde{b}_l}. It is either a scalar, or a vector of
+length L. When the \code{susie_suff_stat} option
+\code{estimate_prior_variance} is set to \code{TRUE} (which is
+highly recommended) this simply provides an initial value for the
+prior variance. The default value of 50 is simply intended to be a
+large initial value. Note this setting is only relevant when
+\code{n} is unknown. If \code{n} is known, the relevant option is
+\code{scaled_prior_variance} in \code{\link{susie_suff_stat}}.}
 
 \item{check_prior}{When \code{check_prior = TRUE}, it checks if the
 estimated prior variance becomes unreasonably large (comparing with
@@ -100,55 +105,60 @@ A \code{"susie"} object with the following
 \code{susie_rss} performs variable selection under a
   sparse Bayesian multiple linear regression of \eqn{Y} on \eqn{X}
   using the z-scores from standard univariate regression
-  of \eqn{Y} on each column of \eqn{X}, an estimate \eqn{R} of
-  the correlation matrix between columns of \eqn{X}, and optionally
-  but strongly recommended, the sample size n.
+  of \eqn{Y} on each column of \eqn{X}, an estimate, \eqn{R}, of
+  the correlation matrix for the columns of \eqn{X}, and optionally,
+  \emph{but strongly recommended}, the sample size n. See
+  \dQuote{Details} for other ways to call \code{susie_rss}
 }
 \details{
 In some applications, particularly genetic applications,
-it is desired to fit a regression model (\eqn{Y = Xb + E}
-say, which we refer to as "the original regression model" or ORM)
+it is desired to fit a regression model (\eqn{Y = Xb + E} say,
+which we refer to as "the original regression model" or ORM)
 without access to the actual values of \eqn{Y} and \eqn{X}, but
-given only some summary statistics. \code{susie_rss} assumes the
-availability of \eqn{z} scores from standard univariate regression
-of \eqn{Y} on each column of \eqn{X}, and an estimate \eqn{R} of
-the correlation matrix between columns of \eqn{X} (\eqn{R} is
-sometimes called the LD matrix in genetic applications).
+given only some summary statistics. \code{susie_rss} assumes
+availability of z-scores from standard univariate regression of
+\eqn{Y} on each column of \eqn{X}, and an estimate, \eqn{R}, of the
+correlation matrix for the columns of \eqn{X} (in genetic
+applications \eqn{R} is sometimes called the \dQuote{LD matrix}).
 
-With the inputs \code{z}, \code{R} and sample size \code{n}, \code{susie_rss}
-computes PVE-adjusted z-scores z_tilde, and calls
-\code{susie_suff_stat} with \code{XtX = (n-1)R},
-\code{Xty = } \eqn{\sqrt{n-1} z_tilde}, \code{yty = n-1}, \code{n = n}.
-The output effect estimates are on the scale of \eqn{b} in the ORM with
-standardized \eqn{X} and \eqn{y}.
-When the LD matrix \code{R} and the z-scores \code{z} are computed
-using the same matrix \eqn{X}, the results from \code{susie_rss} are same as
-(or very similar to) \code{susie} with standardized \eqn{X} and \eqn{y}.
-Alteratively, if the user provides \code{n} and \code{bhat} (the
-univariate OLS estimates from regressing \eqn{y} on each column of \eqn{X}),
-\code{shat} (the standard errrors from these OLS regressions), the
-in-sample correlation matrix \eqn{R = cov2cor(X'X)}, and the variance of
-\eqn{y}, the results from \code{susie_rss} are same as \code{susie}
-with original \eqn{X} and \eqn{y}. The output effect estimates are on the
-scale of \eqn{b} in the ORM with original \eqn{X} and \eqn{y}.
+With the inputs \code{z}, \code{R} and sample size \code{n},
+\code{susie_rss} computes PVE-adjusted z-scores \code{z_tilde}, and
+calls \code{susie_suff_stat} with \code{XtX = (n-1)R}, \code{Xty =
+} \eqn{\sqrt{n-1} z_tilde}, \code{yty = n-1}, \code{n = n}. The
+output effect estimates are on the scale of \eqn{b} in the ORM with
+standardized \eqn{X} and \eqn{y}.  When the LD matrix \code{R} and
+the z-scores \code{z} are computed using the same matrix \eqn{X},
+the results from \code{susie_rss} are same as, or very similar to,
+\code{susie} with \emph{standardized} \eqn{X} and \eqn{y}.
 
-In rare cases where sample size \eqn{n} is unknown, \code{susie_rss} calls
-\code{susie_suff_stat} with \code{XtX = R} and \code{Xty = z},
-and fixing \code{residual_variance = 1}, which assumes the sample size
-is infinity and all the effects are small. It combines the
-the log-likelihood for noncentrality parameters \eqn{b_tilde = \sqrt{n} b},
-\eqn{l(b_tilde; z,R) = -0.5(b_tilde'Rb_tilde - 2z'b_tilde)},
-with the \dQuote{susie prior} which assumes that \eqn{b_tilde
-= \sum_{l=1}^L b_tilde_l} where each \eqn{b_tilde_l} is a vector of length p
-with exactly one non-zero element; see \code{\link{susie}} and Wang
-et al (2020) for details. The output effect estimates are on the
-noncentrality parameter scale.
+Alteratively, if the user provides \code{n}, \code{bhat} (the
+univariate OLS estimates from regressing \eqn{y} on each column of
+\eqn{X}), \code{shat} (the standard errrors from these OLS
+regressions), the in-sample correlation matrix \eqn{R =
+cov2cor(crossprod(X))}, and the variance of \eqn{y}, the results
+from \code{susie_rss} are same as \code{susie} with \eqn{X} and
+\eqn{y}. The effect estimates are on the same scale as the
+coefficients \eqn{b} in the ORM with \eqn{X} and \eqn{y}.
 
-The estimate residual variance is FALSE by default, which is recommended
-when the LD matrix is estimated from a reference panel.
-When the LD matrix \code{R} and the summary statistics \code{z}
-(or \code{bhat}, \code{shat}) are computed using the same matrix
-\eqn{X}, we recommend setting estimate residual variance as TRUE.
+In rare cases in which the sample size, \eqn{n}, is unknown,
+\code{susie_rss} calls \code{susie_suff_stat} with \code{XtX = R}
+and \code{Xty = z}, and with \code{residual_variance = 1}. The
+underlying assumption of performing the analysis in this way is
+that the sample size is large (\emph{i.e.}, infinity), and/or the
+effects are small. More formally, this combines the log-likelihood
+for the noncentrality parameters, \eqn{\tilde{b} = \sqrt{n} b},
+\deqn{L(\tilde{b}; z, R) = -(\tilde{b}'R\tilde{b} -
+2z'\tilde{b})/2,} with the \dQuote{susie prior} on
+\eqn{\tilde{b}}; see \code{\link{susie}} and Wang \emph{et al}
+(2020) for details. In this case, the effect estimates returned by
+\code{susie_rss} are on the noncentrality parameter scale.
+
+The \code{estimate_residual_variance} setting is \code{FALSE} by
+default, which is recommended when the LD matrix is estimated from
+a reference panel. When the LD matrix \code{R} and the summary
+statistics \code{z} (or \code{bhat}, \code{shat}) are computed
+using the same matrix \eqn{X}, we recommend setting
+\code{estimate_residual_variance = TRUE}.
 }
 \examples{
 set.seed(1)
@@ -190,9 +200,10 @@ print(fit$pip)
 G. Wang, A. Sarkar, P. Carbonetto and M. Stephens (2020). A simple
   new approach to variable selection in regression, with application
   to genetic fine-mapping. \emph{Journal of the Royal Statistical
-  Society, Series B} \bold{82}, 1273-1300 \doi{10.1101/501114}.
+  Society, Series B} \bold{82}, 1273-1300
+  \url{https://doi.org/10.1101/501114}.
 
   Y. Zou, P. Carbonetto, G. Wang and M. Stephens (2021).
   Fine-mapping from summary data with the \dQuote{Sum of Single Effects}
-  model. \emph{bioRxiv} \doi{10.1101/2021.11.03.467167}.
+  model. \emph{bioRxiv} \url{https://doi.org/10.1101/2021.11.03.467167}.
 }

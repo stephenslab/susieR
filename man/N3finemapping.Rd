@@ -46,6 +46,6 @@ data(N3finemapping)
 G. Wang, A. Sarkar, P. Carbonetto and M. Stephens (2020). A simple
   new approach to variable selection in regression, with application
   to genetic fine-mapping. \emph{Journal of the Royal Statistical
-  Society, Series B} \doi{10.1101/501114}.
+  Society, Series B} \url{https://doi.org/10.1101/501114}.
 }
 \keyword{data}

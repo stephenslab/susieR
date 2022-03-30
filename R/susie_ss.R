@@ -86,8 +86,8 @@ susie_suff_stat = function (XtX, Xty, yty, n,
                 ") does not agree with expected (",length(Xty)," by ",
                 length(Xty),")"))
   if (!is_symmetric_matrix(XtX)) {
-    message(red("XtX is not symmetric; forcing XtX to be symmetric by",
-                "replacing XtX with (XtX + t(XtX))/2"))
+    message("XtX is not symmetric; forcing XtX to be symmetric by ",
+            "replacing XtX with (XtX + t(XtX))/2")
     XtX = XtX + t(XtX)
     XtX = XtX/2
   }
