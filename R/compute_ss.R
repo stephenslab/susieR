@@ -31,15 +31,16 @@ compute_suff_stat = function(X, y, standardize = FALSE) {
   n   = nrow(X)
   mu  = colMeans(X)
   s   = compute_colSds(X)
+  Xty = drop(y %*% X)
   XtX = crossprod(X)
-  XtX = as.matrix(XtX)    
+  XtX = as.matrix(XtX)
   XtX = XtX - n*tcrossprod(mu)
   if (standardize) {
     XtX = XtX/s
     XtX = t(XtX)
     XtX = XtX/s
+    Xty = Xty/s
   }
-  Xty = drop(y %*% X)
   n   = length(y)
   yty = sum(y^2)
   return(list(XtX = XtX,Xty = Xty,yty = yty,n = n,

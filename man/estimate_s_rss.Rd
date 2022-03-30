@@ -4,13 +4,15 @@
 \alias{estimate_s_rss}
 \title{Estimate s in \code{susie_rss} Model Using Regularized LD}
 \usage{
-estimate_s_rss(z, R, r_tol = 1e-08, method = "null-mle")
+estimate_s_rss(z, R, n, r_tol = 1e-08, method = "null-mle")
 }
 \arguments{
 \item{z}{A p-vector of z scores.}
 
 \item{R}{A p by p symmetric, positive semidefinite correlation
 matrix.}
+
+\item{n}{The sample size.}
 
 \item{r_tol}{Tolerance level for eigenvalue check of positive
 semidefinite matrix of R.}
@@ -49,6 +51,6 @@ ss = univariate_regression(X,y)
 R = cor(X)
 attr(R,"eigen") = eigen(R, symmetric = TRUE)
 zhat = with(ss,betahat/sebetahat)
-s = estimate_s_rss(zhat, R)
+s = estimate_s_rss(zhat, R, n=n)
 
 }

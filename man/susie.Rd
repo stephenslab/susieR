@@ -12,7 +12,7 @@ susie(
   scaled_prior_variance = 0.2,
   residual_variance = NULL,
   prior_weights = NULL,
-  null_weight = NULL,
+  null_weight = 0,
   standardize = TRUE,
   intercept = TRUE,
   estimate_residual_variance = TRUE,
@@ -36,14 +36,10 @@ susie(
 )
 
 susie_suff_stat(
-  bhat,
-  shat,
-  R,
-  n,
-  var_y,
   XtX,
   Xty,
   yty,
+  n,
   X_colmeans = NA,
   y_mean = NA,
   maf = NULL,
@@ -58,7 +54,7 @@ susie_suff_stat(
   prior_tol = 1e-09,
   r_tol = 1e-08,
   prior_weights = NULL,
-  null_weight = NULL,
+  null_weight = 0,
   standardize = TRUE,
   max_iter = 100,
   s_init = NULL,
@@ -200,21 +196,6 @@ to check and escape from local optima (see details).}
 \item{n_purity}{Passed as argument \code{n_purity} to
 \code{\link{susie_get_cs}}.}
 
-\item{bhat}{A p-vector of estimated effects.}
-
-\item{shat}{A p-vector of standard errors.}
-
-\item{R}{A p by p correlation matrix. It should be estimated from
-the same samples used to compute \code{bhat} and \code{shat}. Using
-an out-of-sample matrix may produce unreliable results.}
-
-\item{n}{The sample size.}
-
-\item{var_y}{The sample variance of y, defined as \eqn{y'y/(n-1)}.
-When the sample variance cannot be provided, the coefficients
-(returned from \code{coef}) are computed on the "standardized" X, y
-scale.}
-
 \item{XtX}{A p by p matrix \eqn{X'X} in which the columns of X
 are centered to have mean zero.}
 
@@ -223,6 +204,8 @@ centered to have mean zero.}
 
 \item{yty}{A scalar \eqn{y'y} in which y is centered to have mean
 zero.}
+
+\item{n}{The sample size.}
 
 \item{X_colmeans}{A p-vector of column means of \code{X}. If both
 \code{X_colmeans} and \code{y_mean} are provided, the intercept
@@ -339,20 +322,11 @@ intercept \eqn{\mu}; see below for how the intercept is treated.)
 If the sufficient statistics are computed correctly then the
 results from \code{susie_suff_stat} should be the same as (or very
 similar to) \code{susie}, although runtimes will differ as
-discussed below. The simplest sufficient statistics are the sample
+discussed below. The sufficient statistics are the sample
 size \code{n}, and then the p by p matrix \eqn{X'X}, the p-vector
 \eqn{X'y}, and the sum of squared y values \eqn{y'y}, all computed
 after centering the columns of \eqn{X} and the vector \eqn{y} to
 have mean 0; these can be computed using \code{compute_suff_stat}.
-Alternatively the user can provide \code{n} and \code{bhat} (the
-univariate OLS estimates from regressing y on each column of X),
-\code{shat} (the standard errrors from these OLS regressions), the
-p by p symmetric, positive semidefinite correlation
-matrix \eqn{R = cov2cor(X'X)}, and the variance of \eqn{y}, again
-all computed from centered \eqn{X} and \eqn{y}. Note that here
-\code{R} and \code{bhat} should be computed using the same matrix
-\eqn{X}. If you do not have access to the original \eqn{X} to
-compute the matrix \code{R} then use \code{\link{susie_rss}}.
 
 The handling of the intercept term in \code{susie_suff_stat} needs
 some additional explanation. Computing the summary data after
