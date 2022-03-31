@@ -1,5 +1,5 @@
 ---
-title: "Compare `susie_rss` variants"
+title: "Compare susie_rss variants"
 author: "Peter Carbonetto"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
@@ -10,8 +10,8 @@ vignette: >
 ---
 
 In this vignette, we briefly illustrate the different ways
-[susie_rss][`susie_rss`] can be called, and draw connections between
-running `susie_rss` on summary data, and running `susie` on
+[susie_rss][susie_rss] can be called, and draw connections between
+running susie_rss on summary data, and running susie on
 individual-level data.
 
 ```{r setup, include=FALSE}
@@ -39,8 +39,8 @@ y <- drop(X %*% beta + rnorm(n))
 ```
 
 Compute summary statistics $\hat{b}_j, \hat{s}_j$ and the correlation
-(LD) matrix, ${\bf R}$ (without standardizing), which will be used to
-run `susie_rss`.
+matrix, ${\bf R}$. These quantities will be provided as input to
+susie_rss.
 
 ```{r sumstats-no-standardize}
 ss  <- univariate_regression(X,y)
@@ -48,9 +48,9 @@ dat <- compute_suff_stat(X,y,standardize = FALSE)
 R   <- cov2cor(dat$XtX)
 ```
 
-The `susie` and `susie_rss` analyses produce the exact same results
-when the summary statistics `bhat`, `shat` and `var_y` (and `n`) are
-provided to `susie_rss`.
+The susie and susie_rss analyses produce the exact same results
+when the summary statistics `bhat`, `shat`, `var_y` and `n` are
+provided to susie_rss.
 
 ```{r first-comparison, fig.height=3.5, fig.width=3}
 res1 <- susie(X,y,L = 10)
@@ -63,11 +63,11 @@ abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
 When some but not all of these statistics are provided, the results
 should be similar, but not exactly the same.
 
-Next let's compare the `susie` and `susie_rss` outputs when ${\bf X},
+Next let's compare the susie and susie_rss outputs when ${\bf X},
 y$ are *standardized* before computing the summary statistics (by
 "standardize", we mean that $y$ and the columns of ${\bf X}$ are each
-divided by the standard deviation so that they all have the same
-standard deviation.
+divided by the sample standard deviation so that they each have the
+same standard deviation.
 
 ```{r sumstats-standardize-1}
 ss  <- univariate_regression(scale(X),scale(y))
@@ -81,9 +81,9 @@ Then we compute the *z*-scores:
 zhat <- ss$betahat/ss$sebetahat
 ```
 
-When standardizing, providing `susie_rss` with summary data `z` (or
-`bhat`, `shat`), `R` and `n` should allow `susie_rss` to recover the
-same results as `susie`:
+When standardizing, providing susie_rss with summary data `z` (or
+`bhat`, `shat`), `R` and `n` is sufficient for susie_rss to recover
+the same results as susie:
 
 ```{r second-comparison, fig.height=3.5, fig.width=6, message=FALSE}
 res1 <- susie(scale(X),scale(y),L = 10)
@@ -98,8 +98,8 @@ plot(coef(res1),coef(res3),pch = 20,xlab = "susie",ylab = "susie_rss(z)")
 abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
 ```
 
-When the residual variance is not estimated in `susie_rss`, the
-`susie_rss` results may be close to `susie`, but may no longer be
+When the residual variance is not estimated in susie_rss, the
+susie_rss results may be close to susie, but may no longer be
 exactly the same:
 
 ```{r third-comparison, fig.height=3.5, fig.width=3, message=FALSE}
@@ -108,11 +108,11 @@ plot(coef(res1),coef(res4),pch = 20,xlab = "susie",ylab = "susie_rss")
 abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
 ```
 
-When possible we recommend estimating the residual variance.
+Whenever possible, we recommend estimating the residual variance.
 
 Without providing the sample size, `n`, the coefficients are
 interpreted as the "noncentrality parameters" (NCPs), and are
-(roughly) related to the `susie` parameters by a factor of $\sqrt{n}$:
+(roughly) related to the susie parameters by a factor of $\sqrt{n}$:
 
 ```{r fourth-comparison, fig.height=3.5, fig.width=3, message=FALSE, warning=FALSE}
 res5 <- susie_rss(zhat,R,L = 10)
@@ -120,5 +120,8 @@ plot(coef(res1),coef(res5)/sqrt(n),pch = 20,xlab = "susie",
 ylab = "susie_rss/sqrt(n)")
 abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
 ```
+
+Whenever possible, the sample size, or a reasonable estimate of the
+sample size, should be provided.
 
 [susie_rss]: https://stephenslab.github.io/susieR/reference/susie_rss.html
