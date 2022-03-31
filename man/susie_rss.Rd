@@ -126,10 +126,11 @@ With the inputs \code{z}, \code{R} and sample size \code{n},
 calls \code{susie_suff_stat} with \code{XtX = (n-1)R}, \code{Xty =
 } \eqn{\sqrt{n-1} z_tilde}, \code{yty = n-1}, \code{n = n}. The
 output effect estimates are on the scale of \eqn{b} in the ORM with
-standardized \eqn{X} and \eqn{y}.  When the LD matrix \code{R} and
-the z-scores \code{z} are computed using the same matrix \eqn{X},
-the results from \code{susie_rss} are same as, or very similar to,
-\code{susie} with \emph{standardized} \eqn{X} and \eqn{y}.
+\emph{standardized} \eqn{X} and \eqn{y}. When the LD matrix
+\code{R} and the z-scores \code{z} are computed using the same
+matrix \eqn{X}, the results from \code{susie_rss} are same as, or
+very similar to, \code{susie} with \emph{standardized} \eqn{X} and
+\eqn{y}.
 
 Alternatively, if the user provides \code{n}, \code{bhat} (the
 univariate OLS estimates from regressing \eqn{y} on each column of

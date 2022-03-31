@@ -23,10 +23,11 @@
 #' calls \code{susie_suff_stat} with \code{XtX = (n-1)R}, \code{Xty =
 #' } \eqn{\sqrt{n-1} z_tilde}, \code{yty = n-1}, \code{n = n}. The
 #' output effect estimates are on the scale of \eqn{b} in the ORM with
-#' standardized \eqn{X} and \eqn{y}.  When the LD matrix \code{R} and
-#' the z-scores \code{z} are computed using the same matrix \eqn{X},
-#' the results from \code{susie_rss} are same as, or very similar to,
-#' \code{susie} with \emph{standardized} \eqn{X} and \eqn{y}.
+#' \emph{standardized} \eqn{X} and \eqn{y}. When the LD matrix
+#' \code{R} and the z-scores \code{z} are computed using the same
+#' matrix \eqn{X}, the results from \code{susie_rss} are same as, or
+#' very similar to, \code{susie} with \emph{standardized} \eqn{X} and
+#' \eqn{y}.
 #'
 #' Alternatively, if the user provides \code{n}, \code{bhat} (the
 #' univariate OLS estimates from regressing \eqn{y} on each column of
@@ -64,12 +65,12 @@
 #' @param n The sample size.
 #'
 #' @param bhat Alternative summary data giving the estimated effects
-#' (a vector of length p). This, together with \code{shat}, may be
-#' provided instead of \code{z}.
+#'   (a vector of length p). This, together with \code{shat}, may be
+#'   provided instead of \code{z}.
 #'
 #' @param shat Alternative summary data giving the standard errors of
-#' the estimated effects (a vector of length p). This, together with
-#' \code{bhat}, may be provided instead of \code{z}.
+#'   the estimated effects (a vector of length p). This, together with
+#'   \code{bhat}, may be provided instead of \code{z}.
 #'
 #' @param var_y The sample variance of y, defined as \eqn{y'y/(n-1)}.
 #'   When the sample variance is not provided, the coefficients
@@ -192,55 +193,46 @@ susie_rss = function (z, R, n, bhat, shat, var_y,
                       prior_variance = 50,
                       check_prior = TRUE, ...) {
 
-  if (!estimate_residual_variance) {
-    message("If the in-sample LD matrix is available, we recommend to ",
-            "call susie_rss with the in-sample LD matrix ",
-            "and estimate_residual_variance = TRUE.")
-  }
+  if (!estimate_residual_variance)
+    message("If the in-sample LD matrix is available, we recommend calling ",
+            "susie_rss with the in-sample LD matrix, and setting ",
+            "estimate_residual_variance = TRUE")
 
   # Check input R.
-  if (!missing(bhat))
-    if (length(bhat) != nrow(R))
-      stop(paste0("The dimension of correlation matrix (",nrow(R)," by ",
-                  ncol(R),") does not agree with expected (",length(bhat),
-                  " by ",length(bhat),")"))
+  if (missing(z))
+    p <- length(bhat)
+  else
+    p <- length(z)
+  if (nrow(R) != p)
+      stop(paste0("The dimension of R (",nrow(R)," x ",ncol(R),") does not ",
+                  "agree with expected (",p," x ",p,")"))
 
-  if (!missing(z))
-    if (length(z) != nrow(R))
-      stop(paste0("The dimension of correlation matrix (", nrow(R)," by ",
-                  ncol(R),") does not agree with expected (",length(z)," by ",
-                  length(z),")"))
-
+  # Check input n.
   if (!missing(n))
     if (n <= 1)
       stop("n must be greater than 1")
 
-  if (all(c(missing(bhat),missing(shat),missing(z))))
-    stop("Please provide one of bhat, shat, or z.")
-
-  if ((!missing(bhat)) & (!missing(shat))){
-    if(!missing(z)){
-      message("Computation uses bhat and shat")
-    }
-
-    # Check bhat and shat.
+  # Check inputs z, bhat and shat. Note that bhat is no longer used
+  # after this step.
+  if (sum(c(missing(z),missing(bhat) || missing(shat))) != 1)
+    stop("Please provide either z or (bhat, shat), but not both")
+  if (missing(z)) {
     if (length(shat) == 1)
       shat = rep(shat,length(bhat))
     if (length(bhat) != length(shat))
-      stop("The length of bhat does not agree with length of shat")
+      stop("The lengths of bhat and shat do not agree")
     if (anyNA(bhat) || anyNA(shat))
-      stop("The input summary statistics have missing values")
-    if (any(shat == 0))
-      stop("shat contains one or more zeros")
+      stop("bhat, shat cannot have missing values")
+    if (any(shat <= 0))
+      stop("shat cannot have zero or negative elements")
     z = bhat/shat
   }
-
   z[is.na(z)] = 0
 
-  # Compute the PVE-adjusted z-scores.
+  # When n is provided, compute the PVE-adjusted z-scores.
   if (!missing(n)) {
-    adj = (n-1)/(z^2 + n -2)
-    z = sqrt(adj) * z
+    adj = (n-1)/(z^2 + n - 2)
+    z   = sqrt(adj) * z
   }
 
   # Modify R by z_ld_weight; this modification was designed to ensure
@@ -253,43 +245,43 @@ susie_rss = function (z, R, n, bhat, shat, var_y,
     R = (R + t(R))/2
   }
 
-  if (!missing(n)) {
-    # n is given
-    if(!missing(shat) & !missing(var_y)){
-      ## var_y, bhat, shat are given
-      ## effects in original scale
-      XtXdiag = var_y * adj/(shat^2)
-      XtX = t(R * sqrt(XtXdiag)) * sqrt(XtXdiag)
-      XtX = (XtX + t(XtX))/2
-      Xty = z * sqrt(adj) * var_y /shat
-    }else{
-      ## var_y is missing
-      ## effects in standardized X and y scale
-      XtX = (n-1)*R
-      Xty = sqrt(n-1) * z
-      var_y = 1
-    }
-    yty = var_y * (n-1)
-    s = susie_suff_stat(XtX = XtX,Xty = Xty,n = n,yty = yty,
-                        estimate_residual_variance = estimate_residual_variance,
-                        check_prior = check_prior,...)
-  }else{
-    ## n is unknown
-    ## use unadjusted z
-    warning("The sample size is not provided. ",
-            "It's recommended to provide the sample size. ",
-            "Without the sample size, we assume n is infinity and the sample sizes are small.")
-    # The choice of n=2, yty=1 is arbitrary except in that it ensures
-    # var(y) = yty/(n-1) = 1 and because of this scaled_prior_variance =
-    # prior_variance.
+  # Call susie_suff_stat. We call susie_suff_stat in two different
+  # ways depending on whether n is provided.
+  if (missing(n)) {
+
+    # The sample size (n) is not provided, so use unadjusted z-scores.
+    # The choice of n=2, yty=1 is mostly arbitrary except in that it
+    # ensures var(y) = yty/(n-1) = 1, and because of this
+    # scaled_prior_variance = prior_variance.
+    warning("Providing the sample size (n), or even a rough estimate of n, ",
+            "is highly recommended. Without n, the implicit assumption is ",
+            "n is large (Inf) and the effect sizes are small (close to zero).")
     s = susie_suff_stat(XtX = R,Xty = z,n = 2,yty = 1,
                         scaled_prior_variance = prior_variance,
                         estimate_residual_variance = estimate_residual_variance,
-                        standardize = FALSE,
+                        standardize = FALSE,check_prior = check_prior,...)
+  } else {
+      
+    # The sample size (n) is provided, so use PVE-adjusted z-scores.
+    if (!missing(shat) & !missing(var_y)) {
+        
+      # var_y, shat (and bhat) are provided, so the effects are on the
+      # *original scale*.
+      XtXdiag = var_y * adj/(shat^2)
+      XtX = t(R * sqrt(XtXdiag)) * sqrt(XtXdiag)
+      XtX = (XtX + t(XtX))/2
+      Xty = z * sqrt(adj) * var_y / shat
+    } else {
+
+      # The effects are on the *standardized* X, y scale.
+      XtX = (n-1)*R
+      Xty = sqrt(n-1)*z
+      var_y = 1
+    }
+    s = susie_suff_stat(XtX = XtX,Xty = Xty,n = n,yty = (n-1)*var_y,
+                        estimate_residual_variance = estimate_residual_variance,
                         check_prior = check_prior,...)
   }
-  # s$Rr = s$XtXr
-  # s$XtXr = NULL
   return(s)
 }
 
