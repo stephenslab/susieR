@@ -48,9 +48,11 @@ dat <- compute_suff_stat(X,y,standardize = FALSE)
 R   <- cov2cor(dat$XtX)
 ```
 
-The susie and susie_rss analyses produce the exact same results
-when the summary statistics `bhat`, `shat`, `var_y` and `n` are
-provided to susie_rss.
+The susie and susie_rss analyses produce the exact same results when
+the summary statistics `bhat`, `shat`, `var_y` and `n` are provided to
+susie_rss (and when `R` is an "in sample" correlation estimate---that
+is, when it was computed from the same matrix `X` that was used to
+obtain the other statistics).
 
 ```{r first-comparison, fig.height=3.5, fig.width=3}
 res1 <- susie(X,y,L = 10)
@@ -108,7 +110,8 @@ plot(coef(res1),coef(res4),pch = 20,xlab = "susie",ylab = "susie_rss")
 abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
 ```
 
-Whenever possible, we recommend estimating the residual variance.
+Whenever `R` is an "in sample" correlation matrix, we recommend
+estimating the residual variance.
 
 Without providing the sample size, `n`, the coefficients are
 interpreted as the "noncentrality parameters" (NCPs), and are
