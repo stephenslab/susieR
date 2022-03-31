@@ -51,8 +51,8 @@ LD matrix is provided, we recommend setting
 \code{estimate_residual_variance = TRUE}.}
 
 \item{prior_variance}{The prior variance(s) for the non-zero
-element of \eqn{\tilde{b}_l}. It is either a scalar, or a vector of
-length L. When the \code{susie_suff_stat} option
+noncentrality parameterss \eqn{\tilde{b}_l}. It is either a scalar,
+or a vector of length L. When the \code{susie_suff_stat} option
 \code{estimate_prior_variance} is set to \code{TRUE} (which is
 highly recommended) this simply provides an initial value for the
 prior variance. The default value of 50 is simply intended to be a
@@ -131,9 +131,9 @@ the z-scores \code{z} are computed using the same matrix \eqn{X},
 the results from \code{susie_rss} are same as, or very similar to,
 \code{susie} with \emph{standardized} \eqn{X} and \eqn{y}.
 
-Alteratively, if the user provides \code{n}, \code{bhat} (the
+Alternatively, if the user provides \code{n}, \code{bhat} (the
 univariate OLS estimates from regressing \eqn{y} on each column of
-\eqn{X}), \code{shat} (the standard errrors from these OLS
+\eqn{X}), \code{shat} (the standard errors from these OLS
 regressions), the in-sample correlation matrix \eqn{R =
 cov2cor(crossprod(X))}, and the variance of \eqn{y}, the results
 from \code{susie_rss} are same as \code{susie} with \eqn{X} and
