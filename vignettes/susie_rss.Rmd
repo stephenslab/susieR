@@ -1,0 +1,70 @@
+---
+title: "Compare `susie_rss` variants"
+author: "Peter Carbonetto"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Compare susie_rss variants}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+*Add brief introductory text here.*
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE,comment = "#",fig.width = 5,
+                      fig.height = 3,fig.align = "center",
+                      dpi = 120)
+```
+
+Simulate a data set with $n = 200$ samples and $p = 1000$ variables.
+
+```{r simdata}
+set.seed(1)
+n <- 200
+p <- 1000
+beta <- rep(0,p)
+beta[1:4] <- 1
+X <- matrix(rnorm(n*p),nrow = n,ncol = p)
+X <- scale(X,center = TRUE,scale = FALSE)
+y <- drop(X %*% beta + rnorm(n))
+```
+
+Compute summary statistics $\hat{b}_j, \hat{s}_j, {\bf R}$ for
+`susie_rss` without standardizing.
+
+```{r sumstats}
+ss  <- univariate_regression(X,y)
+dat <- compute_suff_stat(X,y,standardize = FALSE)
+R   <- cov2cor(dat$XtX)
+```
+
+`susie` and `susie_rss` produce the same result when the summary data
+`bhat`, `shat` and `var_y` (and the sample size `n`) are provided to
+`susie_rss`.
+
+```{r first-comparison, fig.height=3.5, fig.width=3}
+res1 <- susie(X,y,L = 10)
+res2 <- susie_rss(bhat = ss$betahat,shat = ss$sebetahat,R = R,n = n,
+                  var_y = var(y),L = 10,estimate_residual_variance = TRUE)
+plot(coef(res1),coef(res2),pch = 20,xlab = "susie",ylab = "susie_rss")
+abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
+```
+
+Next we will compare `susie` and `susie_rss` with *standardized*
+${\bf X}, y$.
+
+First we compute the summary statistics as before, but this time with
+standardizing ${\bf X}, y$.
+
+```{r sumstats-std-1}
+ss  <- univariate_regression(scale(X),scale(y))
+dat <- compute_suff_stat(X,y,standardize = TRUE)
+R   <- cov2cor(dat$XtX)
+```
+
+And compute the *z*-scores:
+
+```{r sumstats-std-2}
+zhat <- ss$betahat/ss$sebetahat
+```
