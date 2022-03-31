@@ -628,7 +628,7 @@ susie_prune_single_effects = function (s,L = 0,V = NULL) {
 #' @param R A p by p symmetric, positive semidefinite correlation
 #'   matrix.
 #'
-#' @param n The sample size.
+#' @param n The sample size. (Optional, but highly recommended.)
 #'
 #' @param r_tol Tolerance level for eigenvalue check of positive
 #'   semidefinite matrix of R.
@@ -649,9 +649,9 @@ susie_prune_single_effects = function (s,L = 0,V = NULL) {
 #' input_ss = compute_suff_stat(X,y,standardize = TRUE)
 #' ss = univariate_regression(X,y)
 #' R = cor(X)
-#' attr(R,"eigen") = eigen(R, symmetric = TRUE)
+#' attr(R,"eigen") = eigen(R,symmetric = TRUE)
 #' zhat = with(ss,betahat/sebetahat)
-#' s = estimate_s_rss(zhat, R, n=n)
+#' s = estimate_s_rss(zhat,R,n = n)
 #'
 #' @importFrom stats dnorm
 #' @importFrom stats optim
@@ -670,9 +670,8 @@ estimate_s_rss = function (z, R, n, r_tol = 1e-08, method = "null-mle") {
   if ((!missing(n)) && (n <= 1))
     stop("n must be greater than 1")
   z[is.na(z)] = 0
-
-  if(!missing(n)){
-    sigma2 = (n-1)/(z^2 + n -2)
+  if (!missing(n)) {
+    sigma2 = (n-1)/(z^2 + n - 2)
     z = sqrt(sigma2) * z
   }
 
@@ -728,7 +727,7 @@ estimate_s_rss = function (z, R, n, r_tol = 1e-08, method = "null-mle") {
 #' @param R A p by p symmetric, positive semidefinite correlation
 #'   matrix.
 #'
-#' @param n The sample size.
+#' @param n The sample size. (Optional, but highly recommended.)
 #'
 #' @param r_tol Tolerance level for eigenvalue check of positive
 #'   semidefinite matrix of R.
@@ -766,9 +765,9 @@ estimate_s_rss = function (z, R, n, r_tol = 1e-08, method = "null-mle") {
 #' y = drop(X %*% beta + rnorm(n))
 #' ss = univariate_regression(X,y)
 #' R = cor(X)
-#' attr(R,"eigen") = eigen(R, symmetric = TRUE)
+#' attr(R,"eigen") = eigen(R,symmetric = TRUE)
 #' zhat = with(ss,betahat/sebetahat)
-#' cond_dist = kriging_rss(zhat, R, n=n)
+#' cond_dist = kriging_rss(zhat,R,n = n)
 #' cond_dist$plot
 #'
 #' @export
@@ -782,24 +781,19 @@ kriging_rss = function (z, R, n, r_tol = 1e-08,
     warning("The matrix R is not positive semidefinite. Negative ",
             "eigenvalues are set to zero.")
   eigenld$values[eigenld$values < r_tol] = 0
-
   if ((!missing(n)) && (n <= 1))
     stop("n must be greater than 1")
   z[is.na(z)] = 0
-
-  if(missing(n)){
-    warning("The sample size is not provided. ",
-            "It's recommended to provide the sample size. ",
-            "Without the sample size, we assume n is infinity and the sample sizes are small.")
-  }else{
-    sigma2 = (n-1)/(z^2 + n -2)
+  if (missing(n))
+    warning("Providing the sample size (n), or even a rough estimate of n, ",
+            "is highly recommended. Without n, the implicit assumption is ",
+            "n is large (Inf) and the effect sizes are small (close to zero).")
+  else {
+    sigma2 = (n-1)/(z^2 + n - 2)
     z = sqrt(sigma2) * z
   }
-
-  if(missing(s)){
-    s = estimate_s_rss(z,R,r_tol=r_tol,method = "null-mle")
-  }
-
+  if (missing(s))
+    s = estimate_s_rss(z,R,r_tol = r_tol,method = "null-mle")
   if (s > 1) {
     warning("The given s is greater than 1. We replace it with 0.8.")
     s = 0.8

@@ -41,7 +41,7 @@ b = N3finemapping$true_coef[,1]
 sumstats <- univariate_regression(N3finemapping$X, N3finemapping$Y[,1])
 z_scores <- sumstats$betahat / sumstats$sebetahat
 Rin = cor(N3finemapping$X)
-attr(Rin, "eigen") = eigen(Rin, symmetric = T)
+attr(Rin, "eigen") = eigen(Rin, symmetric = TRUE)
 susie_plot(z_scores, y = "z", b=b)
 ```
 
