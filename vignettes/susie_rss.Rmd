@@ -114,7 +114,7 @@ Without providing the sample size, `n`, the coefficients are
 interpreted as the "noncentrality parameters" (NCPs), and are
 (roughly) related to the `susie` parameters by a factor of $\sqrt{n}$:
 
-```{r fourth-comparison, fig.height=3.5, fig.width=3, message=FALSE}
+```{r fourth-comparison, fig.height=3.5, fig.width=3, message=FALSE, warning=FALSE}
 res5 <- susie_rss(zhat,R,L = 10)
 plot(coef(res1),coef(res5)/sqrt(n),pch = 20,xlab = "susie",
 ylab = "susie_rss/sqrt(n)")
