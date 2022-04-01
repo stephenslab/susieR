@@ -651,7 +651,12 @@ susie_prune_single_effects = function (s,L = 0,V = NULL) {
 #' R = cor(X)
 #' attr(R,"eigen") = eigen(R,symmetric = TRUE)
 #' zhat = with(ss,betahat/sebetahat)
-#' s = estimate_s_rss(zhat,R,n = n)
+#'
+#' # Estimate s using the unadjusted z-scores.
+#' s0 = estimate_s_rss(zhat,R)
+#' 
+#' # Estimate s using the adjusted z-scores.
+#' s1 = estimate_s_rss(zhat,R,n)
 #'
 #' @importFrom stats dnorm
 #' @importFrom stats optim
@@ -659,6 +664,9 @@ susie_prune_single_effects = function (s,L = 0,V = NULL) {
 #' @export
 #'
 estimate_s_rss = function (z, R, n, r_tol = 1e-08, method = "null-mle") {
+
+  # Check and process input arguments z, R.
+  z[is.na(z)] = 0
   if (is.null(attr(R,"eigen")))
     attr(R,"eigen") = eigen(R,symmetric = TRUE)
   eigenld = attr(R,"eigen")
@@ -667,9 +675,13 @@ estimate_s_rss = function (z, R, n, r_tol = 1e-08, method = "null-mle") {
             "eigenvalues are set to zero")
   eigenld$values[eigenld$values < r_tol] = 0
 
-  if ((!missing(n)) && (n <= 1))
+  # Check input n, and adjust the z-scores if n is provided.
+  if (missing(n))
+    warning("Providing the sample size (n), or even a rough estimate of n, ",
+            "is highly recommended. Without n, the implicit assumption is ",
+            "n is large (Inf) and the effect sizes are small (close to zero).")
+  else if (n <= 1)
     stop("n must be greater than 1")
-  z[is.na(z)] = 0
   if (!missing(n)) {
     sigma2 = (n-1)/(z^2 + n - 2)
     z = sqrt(sigma2) * z
@@ -773,7 +785,10 @@ estimate_s_rss = function (z, R, n, r_tol = 1e-08, method = "null-mle") {
 #' @export
 #'
 kriging_rss = function (z, R, n, r_tol = 1e-08,
-                        s = estimate_s_rss(z,R,r_tol,method = "null-mle")) {
+                        s = estimate_s_rss(z,R,n,r_tol,method = "null-mle")) {
+
+  # Check and process input arguments z, R.
+  z[is.na(z)] = 0
   if (is.null(attr(R,"eigen")))
     attr(R,"eigen") = eigen(R,symmetric = TRUE)
   eigenld = attr(R,"eigen")
@@ -781,9 +796,18 @@ kriging_rss = function (z, R, n, r_tol = 1e-08,
     warning("The matrix R is not positive semidefinite. Negative ",
             "eigenvalues are set to zero.")
   eigenld$values[eigenld$values < r_tol] = 0
+
+  # Check and progress input argument s.
+  force(s)
+  if (s > 1) {
+    warning("The given s is greater than 1. We replace it with 0.8.")
+    s = 0.8
+  } else if (s < 0)
+    stop("The s must be non-negative")
+  
+  # Check input n, and adjust the z-scores if n is provided.
   if ((!missing(n)) && (n <= 1))
     stop("n must be greater than 1")
-  z[is.na(z)] = 0
   if (missing(n))
     warning("Providing the sample size (n), or even a rough estimate of n, ",
             "is highly recommended. Without n, the implicit assumption is ",
@@ -792,15 +816,7 @@ kriging_rss = function (z, R, n, r_tol = 1e-08,
     sigma2 = (n-1)/(z^2 + n - 2)
     z = sqrt(sigma2) * z
   }
-  if (missing(s))
-    s = estimate_s_rss(z,R,r_tol = r_tol,method = "null-mle")
-  if (s > 1) {
-    warning("The given s is greater than 1. We replace it with 0.8.")
-    s = 0.8
-  }
-  if (s < 0)
-    stop("The s must be non-negative")
-
+  
   dinv = 1/((1-s) * eigenld$values + s)
   dinv[is.infinite(dinv)] = 0
   precision = eigenld$vectors %*% (t(eigenld$vectors) * dinv)

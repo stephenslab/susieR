@@ -12,7 +12,7 @@ estimate_s_rss(z, R, n, r_tol = 1e-08, method = "null-mle")
 \item{R}{A p by p symmetric, positive semidefinite correlation
 matrix.}
 
-\item{n}{The sample size.}
+\item{n}{The sample size. (Optional, but highly recommended.)}
 
 \item{r_tol}{Tolerance level for eigenvalue check of positive
 semidefinite matrix of R.}
@@ -49,8 +49,13 @@ y = drop(X \%*\% beta + rnorm(n))
 input_ss = compute_suff_stat(X,y,standardize = TRUE)
 ss = univariate_regression(X,y)
 R = cor(X)
-attr(R,"eigen") = eigen(R, symmetric = TRUE)
+attr(R,"eigen") = eigen(R,symmetric = TRUE)
 zhat = with(ss,betahat/sebetahat)
-s = estimate_s_rss(zhat, R, n=n)
+
+# Estimate s using the unadjusted z-scores.
+s0 = estimate_s_rss(zhat,R)
+
+# Estimate s using the adjusted z-scores.
+s1 = estimate_s_rss(zhat,R,n)
 
 }
