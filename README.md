@@ -7,7 +7,7 @@
 [![codecov](https://codecov.io/gh/stephenslab/susieR/branch/master/graph/badge.svg)](https://app.codecov.io/gh/stephenslab/susieR)
 
 The `susieR` package implements a simple new way to perform variable
-selection in multiple regression ($y=Xb+e$). The methods implemented
+selection in multiple regression ($y = Xb + e$). The methods implemented
 here are particularly well-suited to settings where some of the X
 variables are highly correlated, and the true effects are highly
 sparse (e.g. <20 non-zero effects in the vector $b$).  One example of
