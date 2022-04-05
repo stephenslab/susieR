@@ -22,10 +22,10 @@ test_that("RSS: null weight specification agrees with default", with(simulate(20
   ss = univariate_regression(X, y)
   R = cor(X)
   z = ss$betahat/ss$sebetahat
-  res1 = susie_rss(z = c(z, 0), R = cbind(rbind(R,0),0),
+  res1 = susie_rss(z = c(z, 0), R = cbind(rbind(R,0),0), n=n,
                    estimate_prior_variance = TRUE)
 
-  res2 = susie_rss(z = z, R = R,
+  res2 = susie_rss(z = z, R = R,n=n,
                    estimate_prior_variance = TRUE,
                    null_weight = 1/(ncol(R)+1))
   expect_equal_susie_suff_stat(res2,res1,tolerance = 1e-04)

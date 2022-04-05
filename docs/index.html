@@ -14,8 +14,9 @@
 <script src="pkgdown.js"></script><meta property="og:title" content="Sum of Single Effects Linear Regression">
 <meta property="og:description" content='Implements methods for variable selection in linear
     regression based on the "Sum of Single Effects" (SuSiE) model, as
-    described in Wang et al (2020) &lt;DOI:10.1101/501114&gt;. These methods
-    provide simple summaries, called "Credible Sets", for accurately
+    described in Wang et al (2020) &lt;DOI:10.1101/501114&gt; and Zou et al
+    (2021) &lt;DOI:10.1101/2021.11.03.467167&gt;. These methods provide
+    simple summaries, called "Credible Sets", for accurately
     quantifying uncertainty in which variables should be selected.
     The methods are motivated by genetic fine-mapping applications,
     and are particularly well-suited to settings where variables are
@@ -30,6 +31,8 @@
 <![endif]-->
 </head>
 <body data-spy="scroll" data-target="#toc">
+    
+
     <div class="container template-home">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -42,7 +45,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.83</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.12.00</span>
       </span>
     </div>
 
@@ -60,7 +63,7 @@
       </ul>
 <ul class="nav navbar-nav navbar-right">
 <li>
-  <a href="https://github.com/stephenslab/susieR">Source</a>
+  <a href="https://github.com/stephenslab/susieR" class="external-link">Source</a>
 </li>
       </ul>
 </div>
@@ -74,79 +77,81 @@
 
       </header><div class="row">
   <div class="contents col-md-9">
-<div id="susier" class="section level1">
-<div class="page-header"><h1 class="hasAnchor">
-<a href="#susier" class="anchor"></a>susieR</h1></div>
+<div class="section level1">
+<div class="page-header"><h1 id="susier">susieR<a class="anchor" aria-label="anchor" href="#susier"></a>
+</h1></div>
 
-<p>The <code>susieR</code> package implements a simple new way to perform variable selection in multiple regression (<span class="math inline"><em>y</em> = <em>X</em><em>b</em> + <em>e</em></span>). The methods implemented here are particularly well-suited to settings where some of the X variables are highly correlated, and the true effects are highly sparse (e.g. &lt;20 non-zero effects in the vector <span class="math inline"><em>b</em></span>). One example of this is genetic fine-mapping applications, and this application was a major motivation for developing these methods. However, the methods should also be useful more generally.</p>
+<p>The <code>susieR</code> package implements a simple new way to perform variable selection in multiple regression (<span class="math inline"><em>y</em> = <em>X</em><em>b</em> + <em>e</em></span>). The methods implemented here are particularly well-suited to settings where some of the X variables are highly correlated, and the true effects are highly sparse (e.g. &lt;20 non-zero effects in the vector <span class="math inline"><em>b</em></span>). One example of this is genetic fine-mapping applications, and this application was a major motivation for developing these methods. However, the methods should also be useful more generally.</p>
 <p>The methods are based on a new model for sparse multiple regression, which we call the “Sum of Single Effects” (SuSiE) model. This model, which will be described in a manuscript in preparation (Wang et al), lends itself to a particularly simple and intuitive fitting procedure – effectively a Bayesian modification of simple forward selection, which we call “Iterative Bayesian Step-wise Selection”.</p>
 <p>The output of the fitting procedure is a number of “Credible Sets” (CSs), which are each designed to have high probability to contain a variable with non-zero effect, while at the same time being as small as possible. You can think of the CSs as being a set of “highly correlated” variables that are each associated with the response: you can be confident that one of the variables has a non-zero coefficient, but they are too correlated to be sure which one.</p>
-<p>The package is developed by Gao Wang, Peter Carbonetto, Yuxin Zou, Kaiqian Zhang, and Matthew Stephens from the <a href="https://stephenslab.uchicago.edu">Stephens Lab</a> at the University of Chicago.</p>
-<p>Please <a href="https://github.com/stephenslab/susieR/issues">post issues</a> to ask questions, get our support or provide us feedback; please <a href="https://github.com/stephenslab/susieR/pulls">send pull requests</a> if you have helped fixing bugs or making improvements to the source code.</p>
-<div id="quick-start" class="section level2">
-<h2 class="hasAnchor">
-<a href="#quick-start" class="anchor"></a>Quick Start</h2>
-<p>Install susieR from <a href="https://cran.r-project.org/package=susieR">CRAN</a>:</p>
-<div class="sourceCode" id="cb1"><pre class="r"><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span>(<span class="st">"susieR"</span>)</pre></div>
+<p>The package is developed by Gao Wang, Peter Carbonetto, Yuxin Zou, Kaiqian Zhang, and Matthew Stephens from the <a href="https://stephenslab.uchicago.edu" class="external-link">Stephens Lab</a> at the University of Chicago.</p>
+<p>Please <a href="https://github.com/stephenslab/susieR/issues" class="external-link">post issues</a> to ask questions, get our support or provide us feedback; please <a href="https://github.com/stephenslab/susieR/pulls" class="external-link">send pull requests</a> if you have helped fixing bugs or making improvements to the source code.</p>
+<div class="section level2">
+<h2 id="quick-start">Quick Start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
+</h2>
+<p>Install susieR from <a href="https://cran.r-project.org/package=susieR" class="external-link">CRAN</a>:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"susieR"</span><span class="op">)</span></code></pre></div>
 <p>Alternatively, install the latest development version of <code>susieR</code> from GitHub:</p>
-<div class="sourceCode" id="cb2"><pre class="r"><span class="co"># install.packages("remotes")</span>
-<span class="kw pkg">remotes</span><span class="kw ns">::</span><span class="fu"><a href="https://rdrr.io/pkg/remotes/man/install_github.html">install_github</a></span>(<span class="st">"stephenslab/susieR"</span>)</pre></div>
-<p>See <a href="https://stephenslab.github.io/susieR/articles/mwe.html">here</a> for a brief illustration of <code>susieR</code>. For more documentation and examples please visit <a href="https://stephenslab.github.io/susieR" class="uri">https://stephenslab.github.io/susieR</a></p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># install.packages("remotes")</span>
+<span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"stephenslab/susieR"</span><span class="op">)</span></code></pre></div>
+<p>See <a href="https://stephenslab.github.io/susieR/articles/mwe.html" class="external-link">here</a> for a brief illustration of <code>susieR</code>. For more documentation and examples please visit <a href="https://stephenslab.github.io/susieR" class="external-link uri">https://stephenslab.github.io/susieR</a></p>
 </div>
-<div id="citing-this-work" class="section level2">
-<h2 class="hasAnchor">
-<a href="#citing-this-work" class="anchor"></a>Citing this work</h2>
+<div class="section level2">
+<h2 id="citing-this-work">Citing this work<a class="anchor" aria-label="anchor" href="#citing-this-work"></a>
+</h2>
 <p>If you find the <code>susieR</code> package or any of the source code in this repository useful for your work, please cite:</p>
 <blockquote>
-<p>Wang, G., Sarkar, A., Carbonetto, P. &amp; Stephens, M. (2020). A simple new approach to variable selection in regression, with application to genetic fine mapping. <em>Journal of the Royal Statistical Society, Series B</em> <strong>82</strong>, 1273–1300. <a href="https://doi.org/10.1111/rssb.12388" class="uri">https://doi.org/10.1111/rssb.12388</a></p>
+<p>Wang, G., Sarkar, A., Carbonetto, P. &amp; Stephens, M. (2020). A simple new approach to variable selection in regression, with application to genetic fine mapping. <em>Journal of the Royal Statistical Society, Series B</em> <strong>82</strong>, 1273–1300. <a href="https://doi.org/10.1111/rssb.12388" class="external-link uri">https://doi.org/10.1111/rssb.12388</a></p>
 </blockquote>
 <p>If you use any of the summary data methods—<code>susie_suff_stat</code> or <code>susie_rss</code>—please also cite:</p>
 <blockquote>
-<p>Zou, Y., Carbonetto, P., Wang, G. &amp; Stephens, M. (2021). Fine-mapping from summary data with the “Sum of Single Effects” model. <em>bioRxiv</em> <a href="https://doi.org/10.1101/2021.11.03.467167" class="uri">https://doi.org/10.1101/2021.11.03.467167</a></p>
+<p>Zou, Y., Carbonetto, P., Wang, G. &amp; Stephens, M. (2021). Fine-mapping from summary data with the “Sum of Single Effects” model. <em>bioRxiv</em> <a href="https://doi.org/10.1101/2021.11.03.467167" class="external-link uri">https://doi.org/10.1101/2021.11.03.467167</a></p>
 </blockquote>
 </div>
-<div id="developer-notes" class="section level2">
-<h2 class="hasAnchor">
-<a href="#developer-notes" class="anchor"></a>Developer notes</h2>
+<div class="section level2">
+<h2 id="developer-notes">Developer notes<a class="anchor" aria-label="anchor" href="#developer-notes"></a>
+</h2>
 <ul>
-<li><p>When any changes are made to <code>roxygen2</code> markup, run <code><a href="https://rdrr.io/pkg/devtools/man/document.html">devtools::document()</a></code> to update package <code>NAMESPACE</code> and documentation files.</p></li>
-<li><p>Run <code><a href="https://pkgdown.r-lib.org/reference/build_site.html">pkgdown::build_site()</a></code> to build the website. Getting <code>pkgdown</code> to work properly can be frustrating due to numerous &amp; fragile dependencies. If <code>pkgdown</code> does not work for you out of the box you can use this <code>docker</code> command to run all vignettes and build the site:</p></li>
+<li><p>When any changes are made to <code>roxygen2</code> markup, run <code><a href="https://devtools.r-lib.org/reference/document.html" class="external-link">devtools::document()</a></code> to update package <code>NAMESPACE</code> and documentation files.</p></li>
+<li><p>Run <code><a href="https://pkgdown.r-lib.org/reference/build_site.html" class="external-link">pkgdown::build_site()</a></code> to build the website. Getting <code>pkgdown</code> to work properly can be frustrating due to numerous &amp; fragile dependencies. If <code>pkgdown</code> does not work for you out of the box you can use this <code>docker</code> command to run all vignettes and build the site:</p></li>
 </ul>
-<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ex">docker</span> run --rm --security-opt label:disable -t -P -w <span class="va">$PWD</span> -v <span class="va">$PWD</span>:<span class="va">$PWD</span> \</a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">  -u <span class="va">$UID</span>:<span class="va">${GROUPS[0]}</span> -e HOME=/home/<span class="va">$USER</span> -e USER=<span class="va">$USER</span> gaow/susie \</a>
-<a class="sourceLine" id="cb3-3" data-line-number="3">  R --slave -e <span class="st">"pkgdown::build_site(lazy=TRUE, examples=FALSE)"</span></a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> run <span class="at">--rm</span> <span class="at">--security-opt</span> label:disable <span class="at">-t</span> <span class="at">-P</span> <span class="at">-w</span> <span class="va">$PWD</span> <span class="at">-v</span> <span class="va">$PWD</span>:<span class="va">$PWD</span> <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-u</span> <span class="va">$UID</span>:<span class="va">${GROUPS</span><span class="op">[</span><span class="dv">0</span><span class="op">]</span><span class="va">}</span> <span class="at">-e</span> HOME=/home/<span class="va">$USER</span> <span class="at">-e</span> USER=<span class="va">$USER</span> gaow/susie <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  R <span class="at">--slave</span> <span class="at">-e</span> <span class="st">"pkgdown::build_site(lazy=TRUE, examples=FALSE)"</span></span></code></pre></div>
 </div>
 </div>
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <div class="links">
-<h2>Links</h2>
+<h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
-<li>Download from CRAN at <br><a href="https://cloud.r-project.org/package=susieR">https://​cloud.r-project.org/​package=susieR</a>
-</li>
-<li>Browse source code at <br><a href="https://github.com/stephenslab/susieR/">https://​github.com/​stephenslab/​susieR/​</a>
-</li>
-<li>Report a bug at <br><a href="https://github.com/stephenslab/susieR/issues">https://​github.com/​stephenslab/​susieR/​issues</a>
-</li>
+<li><a href="https://cloud.r-project.org/package=susieR" class="external-link">View on CRAN</a></li>
+<li><a href="https://github.com/stephenslab/susieR/" class="external-link">Browse source code</a></li>
+<li><a href="https://github.com/stephenslab/susieR/issues" class="external-link">Report a bug</a></li>
 </ul>
 </div>
+
 <div class="license">
-<h2>License</h2>
+<h2 data-toc-skip>License</h2>
 <ul class="list-unstyled">
-<li>
-<a href="https://opensource.org/licenses/mit-license.php">MIT</a> + file <a href="LICENSE-text.html">LICENSE</a>
-</li>
+<li><a href="LICENSE.html">Full license</a></li>
+<li><small><a href="https://opensource.org/licenses/BSD-3-Clause" class="external-link">BSD_3_clause</a> + file <a href="LICENSE-text.html">LICENSE</a></small></li>
 </ul>
 </div>
+
+
 <div class="citation">
-<h2>Citation</h2>
+<h2 data-toc-skip>Citation</h2>
 <ul class="list-unstyled">
-<li><a href="authors.html">Citing susieR</a></li>
+<li><a href="authors.html#citation">Citing susieR</a></li>
 </ul>
 </div>
+
 <div class="developers">
-<h2>Developers</h2>
+<h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
 <li>Gao Wang <br><small class="roles"> Author </small>  </li>
 <li>Yuxin Zou <br><small class="roles"> Author </small>  </li>
@@ -156,26 +161,29 @@
 </ul>
 </div>
 
-  <div class="dev-status">
-<h2>Dev status</h2>
+<div class="dev-status">
+<h2 data-toc-skip>Dev status</h2>
 <ul class="list-unstyled">
-<li><a href="https://cran.r-project.org/package=susieR"><img src="https://www.r-pkg.org/badges/version/susieR" alt="CRAN status badge"></a></li>
-<li><a href="https://travis-ci.org/stephenslab/susieR"><img src="https://travis-ci.org/stephenslab/susieR.svg?branch=master" alt="Travis Build Status"></a></li>
-<li><a href="https://ci.appveyor.com/project/pcarbo/susier"><img src="https://ci.appveyor.com/api/projects/status/tcgeqxd8q8krija6?svg=true" alt="Appveyor Build status"></a></li>
-<li><a href="https://app.circleci.com/pipelines/github/stephenslab/susieR?branch=master"><img src="https://circleci.com/gh/stephenslab/susieR/tree/master.svg?style=svg" alt="CircleCI"></a></li>
-<li><a href="https://app.codecov.io/gh/stephenslab/susieR"><img src="https://codecov.io/gh/stephenslab/susieR/branch/master/graph/badge.svg" alt="codecov"></a></li>
+<li><a href="https://cran.r-project.org/package=susieR" class="external-link"><img src="https://www.r-pkg.org/badges/version/susieR" alt="CRAN status badge"></a></li>
+<li><a href="https://travis-ci.org/stephenslab/susieR" class="external-link"><img src="https://travis-ci.org/stephenslab/susieR.svg?branch=master" alt="Travis Build Status"></a></li>
+<li><a href="https://ci.appveyor.com/project/pcarbo/susier" class="external-link"><img src="https://ci.appveyor.com/api/projects/status/tcgeqxd8q8krija6?svg=true" alt="Appveyor Build status"></a></li>
+<li><a href="https://app.circleci.com/pipelines/github/stephenslab/susieR?branch=master" class="external-link"><img src="https://circleci.com/gh/stephenslab/susieR/tree/master.svg?style=svg" alt="CircleCI"></a></li>
+<li><a href="https://app.codecov.io/gh/stephenslab/susieR" class="external-link"><img src="https://codecov.io/gh/stephenslab/susieR/branch/master/graph/badge.svg" alt="codecov"></a></li>
 </ul>
 </div>
-</div>
+
+  </div>
 </div>
 
 
       <footer><div class="copyright">
-  <p>Developed by Gao Wang, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto, Matthew Stephens.</p>
+  <p></p>
+<p>Developed by Gao Wang, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto, Matthew Stephens.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p></p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
 </div>
 
       </footer>
@@ -183,6 +191,8 @@
 
   
 
+
+  
 
   </body>
 </html>

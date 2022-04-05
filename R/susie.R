@@ -36,20 +36,11 @@
 #' If the sufficient statistics are computed correctly then the
 #' results from \code{susie_suff_stat} should be the same as (or very
 #' similar to) \code{susie}, although runtimes will differ as
-#' discussed below. The simplest sufficient statistics are the sample
+#' discussed below. The sufficient statistics are the sample
 #' size \code{n}, and then the p by p matrix \eqn{X'X}, the p-vector
 #' \eqn{X'y}, and the sum of squared y values \eqn{y'y}, all computed
 #' after centering the columns of \eqn{X} and the vector \eqn{y} to
 #' have mean 0; these can be computed using \code{compute_suff_stat}.
-#' Alternatively the user can provide \code{n} and \code{bhat} (the
-#' univariate OLS estimates from regressing y on each column of X),
-#' \code{shat} (the standard errrors from these OLS regressions), the
-#' p by p symmetric, positive semidefinite correlation
-#' matrix \eqn{R = cov2cor(X'X)}, and the variance of \eqn{y}, again
-#' all computed from centered \eqn{X} and \eqn{y}. Note that here
-#' \code{R} and \code{bhat} should be computed using the same matrix
-#' \eqn{X}. If you do not have access to the original \eqn{X} to
-#' compute the matrix \code{R} then use \code{\link{susie_rss}}.
 #'
 #' The handling of the intercept term in \code{susie_suff_stat} needs
 #' some additional explanation. Computing the summary data after
@@ -263,11 +254,13 @@
 #' G. Wang, A. Sarkar, P. Carbonetto and M. Stephens (2020). A simple
 #'   new approach to variable selection in regression, with application
 #'   to genetic fine-mapping. \emph{Journal of the Royal Statistical
-#'   Society, Series B} \bold{82}, 1273-1300 \doi{10.1101/501114}.
+#'   Society, Series B} \bold{82}, 1273-1300
+#'   \url{https://doi.org/10.1101/501114}.
 #'
 #'   Y. Zou, P. Carbonetto, G. Wang and M. Stephens (2021).
 #'   Fine-mapping from summary data with the \dQuote{Sum of Single Effects}
-#'   model. \emph{bioRxiv} \doi{10.1101/2021.11.03.467167}.
+#'   model. \emph{bioRxiv}
+#'   \url{https://doi.org/10.1101/2021.11.03.467167}.
 #'
 #' @seealso \code{\link{susie_get_cs}} and other \code{susie_get_*}
 #'   functions for extracting results; \code{\link{susie_trendfilter}} for
@@ -370,7 +363,7 @@ susie = function (X,y,L = min(10,ncol(X)),
     message(magenta("For an X with many columns, please consider installing",
                     "the Rfast package for more efficient credible set (CS)",
                     "calculations."))
-  
+
   # Check input y.
   n = nrow(X)
   mean_y = mean(y)
@@ -451,7 +444,7 @@ susie = function (X,y,L = min(10,ncol(X)),
         print(paste0("objective:",get_objective(X,y,s)))
     }
   }
-  
+
   # Remove first (infinite) entry, and trailing NAs.
   elbo = elbo[2:(i+1)]
   s$elbo = elbo
@@ -477,7 +470,7 @@ susie = function (X,y,L = min(10,ncol(X)),
 
   if (track_fit)
     s$trace = tracking
-  
+
   # SuSiE CS and PIP.
   if (!is.null(coverage) && !is.null(min_abs_corr)) {
     s$sets = susie_get_cs(s,coverage = coverage,X = X,

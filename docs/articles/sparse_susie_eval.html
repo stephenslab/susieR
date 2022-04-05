@@ -19,6 +19,8 @@
 <![endif]-->
 </head>
 <body data-spy="scroll" data-target="#toc">
+    
+
     <div class="container template-article">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -31,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.11.83</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.12.00</span>
       </span>
     </div>
 
@@ -49,7 +51,7 @@
       </ul>
 <ul class="nav navbar-nav navbar-right">
 <li>
-  <a href="https://github.com/stephenslab/susieR">Source</a>
+  <a href="https://github.com/stephenslab/susieR" class="external-link">Source</a>
 </li>
       </ul>
 </div>
@@ -65,63 +67,70 @@
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>Evaluation of sparse version of SuSiE</h1>
-                        <h4 class="author">Kaiqian Zhang</h4>
+                        <h4 data-toc-skip class="author">Kaiqian Zhang</h4>
             
-            <h4 class="date">2021-11-09</h4>
+            <h4 data-toc-skip class="date">2022-03-30</h4>
       
-      <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/master/vignettes/sparse_susie_eval.Rmd"><code>vignettes/sparse_susie_eval.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/HEAD/vignettes/sparse_susie_eval.Rmd" class="external-link"><code>vignettes/sparse_susie_eval.Rmd</code></a></small>
       <div class="hidden name"><code>sparse_susie_eval.Rmd</code></div>
 
     </div>
 
     
     
-<div id="set-up-environment" class="section level2">
-<h2 class="hasAnchor">
-<a href="#set-up-environment" class="anchor"></a>Set up environment</h2>
-<div class="sourceCode" id="cb1"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">Matrix</span>)
-<span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">susieR</span>)
-<span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span>(<span class="fl">1</span>)</pre></body></html></div>
+<div class="section level2">
+<h2 id="set-up-environment">Set up environment<a class="anchor" aria-label="anchor" href="#set-up-environment"></a>
+</h2>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://Matrix.R-forge.R-project.org/" class="external-link">Matrix</a></span><span class="op">)</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/stephenslab/susieR" class="external-link">susieR</a></span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></code></pre></div>
 </div>
-<div id="overview" class="section level2">
-<h2 class="hasAnchor">
-<a href="#overview" class="anchor"></a>Overview</h2>
+<div class="section level2">
+<h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
+</h2>
 <p>In this vignette, we provide line profiles for revised version SuSiE, which allows for a sparse matrix structure. We compare speed performance when the form of the matrix <code>X</code> is dense and sparse.</p>
 <p>In this minimal example, we observe that given a large sparse matrix, if it is in the dense form, the speed is around <code>40%</code> slower than that in a sparse form.</p>
 </div>
-<div id="simulate-data" class="section level2">
-<h2 class="hasAnchor">
-<a href="#simulate-data" class="anchor"></a>Simulate data</h2>
-<p>We randomly simulate a <code>n=1000</code> by <code>p=1000</code> dense matrix and a sparse matrix at sparsity <span class="math inline">\(99\%\)</span>, i.e. <span class="math inline">\(99\%\)</span> entries are zeros.</p>
-<div class="sourceCode" id="cb2"><html><body><pre class="r"><span class="no">create_sparsity_mat</span> <span class="kw">=</span> <span class="kw">function</span>(<span class="no">sparsity</span>, <span class="no">n</span>, <span class="no">p</span>) {
-  <span class="no">nonzero</span>          <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(<span class="no">n</span>*<span class="no">p</span>*(<span class="fl">1</span>-<span class="no">sparsity</span>))
-  <span class="no">nonzero.idx</span>      <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html">sample</a></span>(<span class="no">n</span>*<span class="no">p</span>, <span class="no">nonzero</span>)
-  <span class="no">mat</span>              <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html">numeric</a></span>(<span class="no">n</span>*<span class="no">p</span>)
-  <span class="no">mat</span>[<span class="no">nonzero.idx</span>] <span class="kw">&lt;-</span> <span class="fl">1</span>
-  <span class="no">mat</span>              <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html">matrix</a></span>(<span class="no">mat</span>, <span class="kw">nrow</span><span class="kw">=</span><span class="no">n</span>, <span class="kw">ncol</span><span class="kw">=</span><span class="no">p</span>)
-  <span class="fu"><a href="https://rdrr.io/r/base/function.html">return</a></span>(<span class="no">mat</span>)
-}</pre></body></html></div>
-<div class="sourceCode" id="cb3"><html><body><pre class="r"><span class="no">n</span> <span class="kw">&lt;-</span> <span class="fl">1000</span>
-<span class="no">p</span> <span class="kw">&lt;-</span> <span class="fl">1000</span>
-<span class="no">beta</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html">rep</a></span>(<span class="fl">0</span>,<span class="no">p</span>)
-<span class="no">beta</span>[<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">1</span>,<span class="fl">300</span>,<span class="fl">400</span>,<span class="fl">1000</span>)] <span class="kw">&lt;-</span> <span class="fl">10</span>
-<span class="no">X.dense</span>  <span class="kw">&lt;-</span> <span class="fu">create_sparsity_mat</span>(<span class="fl">0.99</span>,<span class="no">n</span>,<span class="no">p</span>)
-<span class="no">X.sparse</span> <span class="kw">&lt;-</span> <span class="fu">as</span>(<span class="no">X.dense</span>,<span class="st">"dgCMatrix"</span>)
-<span class="no">y</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="no">X.dense</span> <span class="kw">%*%</span> <span class="no">beta</span> + <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html">rnorm</a></span>(<span class="no">n</span>))</pre></body></html></div>
+<div class="section level2">
+<h2 id="simulate-data">Simulate data<a class="anchor" aria-label="anchor" href="#simulate-data"></a>
+</h2>
+<p>We randomly simulate a <code>n=1000</code> by <code>p=1000</code> dense matrix and a sparse matrix at sparsity <span class="math inline">\(99\%\)</span>, i.e. <span class="math inline">\(99\%\)</span> entries are zeros.</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">create_sparsity_mat</span> <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">sparsity</span>, <span class="va">n</span>, <span class="va">p</span><span class="op">)</span> <span class="op">{</span>
+  <span class="va">nonzero</span>          <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">n</span><span class="op">*</span><span class="va">p</span><span class="op">*</span><span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="va">sparsity</span><span class="op">)</span><span class="op">)</span>
+  <span class="va">nonzero.idx</span>      <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="va">n</span><span class="op">*</span><span class="va">p</span>, <span class="va">nonzero</span><span class="op">)</span>
+  <span class="va">mat</span>              <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">numeric</a></span><span class="op">(</span><span class="va">n</span><span class="op">*</span><span class="va">p</span><span class="op">)</span>
+  <span class="va">mat</span><span class="op">[</span><span class="va">nonzero.idx</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">1</span>
+  <span class="va">mat</span>              <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="va">mat</span>, nrow<span class="op">=</span><span class="va">n</span>, ncol<span class="op">=</span><span class="va">p</span><span class="op">)</span>
+  <span class="kw"><a href="https://rdrr.io/r/base/function.html" class="external-link">return</a></span><span class="op">(</span><span class="va">mat</span><span class="op">)</span>
+<span class="op">}</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">1000</span>
+<span class="va">p</span> <span class="op">&lt;-</span> <span class="fl">1000</span>
+<span class="va">beta</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>,<span class="va">p</span><span class="op">)</span>
+<span class="va">beta</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">300</span>,<span class="fl">400</span>,<span class="fl">1000</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">10</span> 
+<span class="va">X.dense</span>  <span class="op">&lt;-</span> <span class="fu">create_sparsity_mat</span><span class="op">(</span><span class="fl">0.99</span>,<span class="va">n</span>,<span class="va">p</span><span class="op">)</span>
+<span class="va">X.sparse</span> <span class="op">&lt;-</span> <span class="fu">as</span><span class="op">(</span><span class="va">X.dense</span>,<span class="st">"dgCMatrix"</span><span class="op">)</span>
+<span class="va">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">X.dense</span> <span class="op"><a href="https://rdrr.io/pkg/Matrix/man/matrix-products.html" class="external-link">%*%</a></span> <span class="va">beta</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span><span class="op">)</span></code></pre></div>
 </div>
-<div id="x-in-a-dense-form" class="section level2">
-<h2 class="hasAnchor">
-<a href="#x-in-a-dense-form" class="anchor"></a><code>X</code> in a dense form</h2>
-<div class="sourceCode" id="cb4"><html><body><pre class="r"><span class="no">susie.dense</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/susie.html">susie</a></span>(<span class="no">X.dense</span>,<span class="no">y</span>)</pre></body></html></div>
+<div class="section level2">
+<h2 id="x-in-a-dense-form">
+<code>X</code> in a dense form<a class="anchor" aria-label="anchor" href="#x-in-a-dense-form"></a>
+</h2>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">susie.dense</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/susie.html">susie</a></span><span class="op">(</span><span class="va">X.dense</span>,<span class="va">y</span><span class="op">)</span></code></pre></div>
 </div>
-<div id="x-in-a-sparse-form" class="section level2">
-<h2 class="hasAnchor">
-<a href="#x-in-a-sparse-form" class="anchor"></a><code>X</code> in a sparse form</h2>
-<div class="sourceCode" id="cb5"><html><body><pre class="r"><span class="no">susie.sparse</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/susie.html">susie</a></span>(<span class="no">X.sparse</span>,<span class="no">y</span>)</pre></body></html></div>
+<div class="section level2">
+<h2 id="x-in-a-sparse-form">
+<code>X</code> in a sparse form<a class="anchor" aria-label="anchor" href="#x-in-a-sparse-form"></a>
+</h2>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">susie.sparse</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/susie.html">susie</a></span><span class="op">(</span><span class="va">X.sparse</span>,<span class="va">y</span><span class="op">)</span></code></pre></div>
 </div>
-<div id="further-step" class="section level2">
-<h2 class="hasAnchor">
-<a href="#further-step" class="anchor"></a>Further step</h2>
+<div class="section level2">
+<h2 id="further-step">Further step<a class="anchor" aria-label="anchor" href="#further-step"></a>
+</h2>
 <p>We encourage people who are insterested in improving SuSiE can get insights from those line profiles provided.</p>
 </div>
   </div>
@@ -137,11 +146,13 @@
 
 
       <footer><div class="copyright">
-  <p>Developed by Gao Wang, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto, Matthew Stephens.</p>
+  <p></p>
+<p>Developed by Gao Wang, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto, Matthew Stephens.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p></p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
 </div>
 
       </footer>
@@ -149,6 +160,8 @@
 
   
 
+
+  
 
   </body>
 </html>

@@ -21,9 +21,9 @@ The `susie_rss` assumes the LD matrix accurately estimate the correlations among
 
 The diagnostic for consistency between summary statistics and refenrence LD matrix is based on the RSS model under the null with regularized LD matrix.
 $$
-\hat{z} | R, s \sim N(0, (1-s)R + s I), 0<s<1
+\hat{z} | R, \lambda \sim N(0, (1-\lambda)R + \lambda I), 0<\lambda<1
 $$
-The parameter `s` is estimated by maximum likelihood. A larger `s` means a greater inconsistency between summary statistics and the LD matrix. The expected z score is computed for each SNP, $E(\hat{z}_j | \hat{z}_{-j})$, and plotted against the observed z scores.
+The parameter $\lambda$ is estimated by maximum likelihood. A larger $\lambda$ means a greater inconsistency between summary statistics and the LD matrix. The expected z score is computed for each SNP, $E(\hat{z}_j | \hat{z}_{-j})$, and plotted against the observed z scores.
 
 ```{r}
 library(susieR)
@@ -36,29 +36,30 @@ We demonstrate the diagnostic plot in a simple case, the LD matrix is estimated 
 
 ```{r}
 data("N3finemapping")
+n = nrow(N3finemapping$X)
 b = N3finemapping$true_coef[,1]
 sumstats <- univariate_regression(N3finemapping$X, N3finemapping$Y[,1])
 z_scores <- sumstats$betahat / sumstats$sebetahat
 Rin = cor(N3finemapping$X)
-attr(Rin, "eigen") = eigen(Rin, symmetric = T)
+attr(Rin, "eigen") = eigen(Rin, symmetric = TRUE)
 susie_plot(z_scores, y = "z", b=b)
 ```
 
-The estimated `s` is
+The estimated $\lambda$ is
 ```{r}
-s = estimate_s_rss(z_scores, Rin)
-s
+lambda = estimate_s_rss(z_scores, Rin, n=n)
+lambda
 ```
 
 The plot for the observed z scores vs the expected z scores is 
 ```{r}
-condz_in = kriging_rss(z_scores, Rin)
+condz_in = kriging_rss(z_scores, Rin, n=n)
 condz_in$plot
 ```
 
 Summary of SuSiE Credible Sets:
 ```{r}
-fit <- susie_rss(z_scores, Rin)
+fit <- susie_rss(z_scores, Rin, n=n, estimate_residual_variance = TRUE)
 susie_plot(fit,y = "PIP", b=b)
 ```
 
@@ -74,6 +75,7 @@ curl_download(data_url,data_file)
 load(data_file)
 zflip = SummaryConsistency$z
 ld = SummaryConsistency$ldref
+n=10000
 b = numeric(length(zflip))
 b[SummaryConsistency$signal_id] = zflip[SummaryConsistency$signal_id]
 plot(zflip, pch = 16, col = "#767676", main = "Marginal Associations", 
@@ -83,21 +85,21 @@ points(SummaryConsistency$flip_id, zflip[SummaryConsistency$flip_id], col=7, pch
 ```
 Using the data with misaligned allele, SuSiE-RSS identifies a true positive CS containing the true effect SNP; and a false positive CS that incorrectly contains the mismatched SNP.
 ```{r}
-fit = susie_rss(zflip, ld)
+fit = susie_rss(zflip, ld, n=n)
 susie_plot(fit, y='PIP', b=b)
 points(SummaryConsistency$flip_id, fit$pip[SummaryConsistency$flip_id], col=7, pch=16)
 ```
 
-The estimated `s` is
+The estimated $\lambda$ is
 ```{r}
-s = estimate_s_rss(zflip, ld)
-s
+lambda = estimate_s_rss(zflip, ld, n=n)
+lambda
 ```
 
 In the diagnostic plot, the mismatched SNP shows the largest difference between observed and expected z-scores, and therefore appears furthest away from the diagonal.
 
 ```{r}
-condz = kriging_rss(zflip, ld)
+condz = kriging_rss(zflip, ld, n=n)
 condz$plot
 ```
 
@@ -106,7 +108,7 @@ After fixing the allele encoding, SuSiE-RSS identifies a single true positive CS
 ```{r}
 z = zflip
 z[SummaryConsistency$flip_id] = -z[SummaryConsistency$flip_id]
-fit = susie_rss(z, ld)
+fit = susie_rss(z, ld, n=n)
 susie_plot(fit, y='PIP', b=b)
 ```
 

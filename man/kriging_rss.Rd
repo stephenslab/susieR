@@ -7,8 +7,9 @@
 kriging_rss(
   z,
   R,
+  n,
   r_tol = 1e-08,
-  s = estimate_s_rss(z, R, r_tol, method = "null-mle")
+  s = estimate_s_rss(z, R, n, r_tol, method = "null-mle")
 )
 }
 \arguments{
@@ -16,6 +17,8 @@ kriging_rss(
 
 \item{R}{A p by p symmetric, positive semidefinite correlation
 matrix.}
+
+\item{n}{The sample size. (Optional, but highly recommended.)}
 
 \item{r_tol}{Tolerance level for eigenvalue check of positive
 semidefinite matrix of R.}
@@ -56,9 +59,9 @@ X = scale(X,center = TRUE,scale = TRUE)
 y = drop(X \%*\% beta + rnorm(n))
 ss = univariate_regression(X,y)
 R = cor(X)
-attr(R,"eigen") = eigen(R, symmetric = TRUE)
+attr(R,"eigen") = eigen(R,symmetric = TRUE)
 zhat = with(ss,betahat/sebetahat)
-cond_dist = kriging_rss(zhat, R)
+cond_dist = kriging_rss(zhat,R,n = n)
 cond_dist$plot
 
 }

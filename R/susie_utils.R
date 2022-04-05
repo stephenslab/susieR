@@ -255,7 +255,7 @@ susie_get_posterior_samples = function (susie_fit, num_samples) {
 #' @param use_rfast Use the Rfast package for the purity calculations.
 #'   By default \code{use_rfast = TRUE} if the Rfast package is
 #'   installed.
-#' 
+#'
 #' @importFrom crayon red
 #'
 #' @export
@@ -628,6 +628,8 @@ susie_prune_single_effects = function (s,L = 0,V = NULL) {
 #' @param R A p by p symmetric, positive semidefinite correlation
 #'   matrix.
 #'
+#' @param n The sample size. (Optional, but highly recommended.)
+#'
 #' @param r_tol Tolerance level for eigenvalue check of positive
 #'   semidefinite matrix of R.
 #'
@@ -647,16 +649,24 @@ susie_prune_single_effects = function (s,L = 0,V = NULL) {
 #' input_ss = compute_suff_stat(X,y,standardize = TRUE)
 #' ss = univariate_regression(X,y)
 #' R = cor(X)
-#' attr(R,"eigen") = eigen(R, symmetric = TRUE)
+#' attr(R,"eigen") = eigen(R,symmetric = TRUE)
 #' zhat = with(ss,betahat/sebetahat)
-#' s = estimate_s_rss(zhat, R)
+#'
+#' # Estimate s using the unadjusted z-scores.
+#' s0 = estimate_s_rss(zhat,R)
+#' 
+#' # Estimate s using the adjusted z-scores.
+#' s1 = estimate_s_rss(zhat,R,n)
 #'
 #' @importFrom stats dnorm
 #' @importFrom stats optim
 #'
 #' @export
 #'
-estimate_s_rss = function (z, R, r_tol = 1e-08, method = "null-mle") {
+estimate_s_rss = function (z, R, n, r_tol = 1e-08, method = "null-mle") {
+
+  # Check and process input arguments z, R.
+  z[is.na(z)] = 0
   if (is.null(attr(R,"eigen")))
     attr(R,"eigen") = eigen(R,symmetric = TRUE)
   eigenld = attr(R,"eigen")
@@ -664,6 +674,18 @@ estimate_s_rss = function (z, R, r_tol = 1e-08, method = "null-mle") {
     warning("The matrix R is not positive semidefinite. Negative ",
             "eigenvalues are set to zero")
   eigenld$values[eigenld$values < r_tol] = 0
+
+  # Check input n, and adjust the z-scores if n is provided.
+  if (missing(n))
+    warning("Providing the sample size (n), or even a rough estimate of n, ",
+            "is highly recommended. Without n, the implicit assumption is ",
+            "n is large (Inf) and the effect sizes are small (close to zero).")
+  else if (n <= 1)
+    stop("n must be greater than 1")
+  if (!missing(n)) {
+    sigma2 = (n-1)/(z^2 + n - 2)
+    z = sqrt(sigma2) * z
+  }
 
   if (method == "null-mle") {
     negloglikelihood = function(s, z, eigenld)
@@ -717,6 +739,8 @@ estimate_s_rss = function (z, R, r_tol = 1e-08, method = "null-mle") {
 #' @param R A p by p symmetric, positive semidefinite correlation
 #'   matrix.
 #'
+#' @param n The sample size. (Optional, but highly recommended.)
+#'
 #' @param r_tol Tolerance level for eigenvalue check of positive
 #'   semidefinite matrix of R.
 #'
@@ -753,15 +777,18 @@ estimate_s_rss = function (z, R, r_tol = 1e-08, method = "null-mle") {
 #' y = drop(X %*% beta + rnorm(n))
 #' ss = univariate_regression(X,y)
 #' R = cor(X)
-#' attr(R,"eigen") = eigen(R, symmetric = TRUE)
+#' attr(R,"eigen") = eigen(R,symmetric = TRUE)
 #' zhat = with(ss,betahat/sebetahat)
-#' cond_dist = kriging_rss(zhat, R)
+#' cond_dist = kriging_rss(zhat,R,n = n)
 #' cond_dist$plot
 #'
 #' @export
 #'
-kriging_rss = function (z, R, r_tol = 1e-08,
-                        s = estimate_s_rss(z,R,r_tol,method = "null-mle")) {
+kriging_rss = function (z, R, n, r_tol = 1e-08,
+                        s = estimate_s_rss(z,R,n,r_tol,method = "null-mle")) {
+
+  # Check and process input arguments z, R.
+  z[is.na(z)] = 0
   if (is.null(attr(R,"eigen")))
     attr(R,"eigen") = eigen(R,symmetric = TRUE)
   eigenld = attr(R,"eigen")
@@ -770,13 +797,26 @@ kriging_rss = function (z, R, r_tol = 1e-08,
             "eigenvalues are set to zero.")
   eigenld$values[eigenld$values < r_tol] = 0
 
+  # Check and progress input argument s.
+  force(s)
   if (s > 1) {
     warning("The given s is greater than 1. We replace it with 0.8.")
     s = 0.8
-  }
-  if (s < 0)
+  } else if (s < 0)
     stop("The s must be non-negative")
-
+  
+  # Check input n, and adjust the z-scores if n is provided.
+  if ((!missing(n)) && (n <= 1))
+    stop("n must be greater than 1")
+  if (missing(n))
+    warning("Providing the sample size (n), or even a rough estimate of n, ",
+            "is highly recommended. Without n, the implicit assumption is ",
+            "n is large (Inf) and the effect sizes are small (close to zero).")
+  else {
+    sigma2 = (n-1)/(z^2 + n - 2)
+    z = sqrt(sigma2) * z
+  }
+  
   dinv = 1/((1-s) * eigenld$values + s)
   dinv[is.infinite(dinv)] = 0
   precision = eigenld$vectors %*% (t(eigenld$vectors) * dinv)
@@ -814,7 +854,7 @@ kriging_rss = function (z, R, r_tol = 1e-08,
   lfactors    = apply(matrix_llik,1,max)
   matrix_llik = matrix_llik - lfactors
   logl1mix    = drop(log(exp(matrix_llik) %*% (w + 1e-15))) + lfactors
-  
+
   # Compute (log) likelihood ratios.
   logLRmix = logl1mix - logl0mix
 
