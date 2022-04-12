@@ -77,15 +77,15 @@ For this example the correlation matrix can be computed directly from data provi
 R <- cor(X)
 ```
 
-## Fine-mapping with `susieR` using sufficient statistics
+## Fine-mapping with `susieR` using summary statistics
 
 We assume there are at most 10 causal variables, i.e. set `L = 10`, although SuSiE is generally robust to the choice of `L`.
 
-Since the individual-level data is avialable for us, we have the in-sample LD matrix and the variance of $y$ is `r var(Y[,1])`. We fit SuSiE regression with sufficient statistics, $\hat{\beta}$, $SE(\hat{\beta})$, $R$, $n$, and var_y. We estimate the residual variance because we have the in-sample LD matrix.
+Since the individual-level data is avialable for us, we have the in-sample LD matrix and the variance of $y$ is `r var(Y[,1])`. We fit SuSiE regression with summary statistics, $\hat{\beta}$, $SE(\hat{\beta})$, $R$, $n$, and var_y (they are sufficient statistics). We estimate the residual variance because we have the in-sample LD matrix.
 
 ```{r}
-fitted_suff1 <- susie_rss(bhat = sumstats$betahat, shat = sumstats$sebetahat, n = n, R = R, var_y = var(Y[,1]), L = 10,
-                          estimate_residual_variance = TRUE)
+fitted_rss1 <- susie_rss(bhat = sumstats$betahat, shat = sumstats$sebetahat, n = n, R = R, var_y = var(Y[,1]), L = 10,
+                         estimate_residual_variance = TRUE)
 ```
 
 Using `summary` function, we can examine the posterior inclusion probability (PIP) for each variable, and the 95% credible sets. 
@@ -93,7 +93,7 @@ Using `summary` function, we can examine the posterior inclusion probability (PI
 Here, we are the 95% credible sets.
 
 ```{r}
-summary(fitted_suff1)$cs
+summary(fitted_rss1)$cs
 ```
 
 The 3 causal signals have been captured by the 3 CS reported here. The
@@ -103,7 +103,7 @@ The 3 causal signals have been captured by the 3 CS reported here. The
 We can also plot the posterior inclusion probability (PIP),
 
 ```{r}
-susie_plot(fitted_suff1, y="PIP", b=b)
+susie_plot(fitted_rss1, y="PIP", b=b)
 ```
 
 The true causal variables are colored red. The 95% CS identified are circled in different colors.
@@ -112,31 +112,31 @@ The result is exactly same as using the individual level data with `susie`.
 
 ```{r}
 fitted = susie(X, Y[,1], L = 10)
-all.equal(fitted$pip, fitted_suff1$pip)
-all.equal(coef(fitted)[-1], coef(fitted_suff1)[-1])
+all.equal(fitted$pip, fitted_rss1$pip)
+all.equal(coef(fitted)[-1], coef(fitted_rss1)[-1])
 ```
 
-If the varaince of y is unknown, we fit SuSiE regression with sufficient statistics, $\hat{\beta}$, $SE(\hat{\beta})$, $R$ and $n$ (or z-scores, $R$ and $n$). The output effect estimates are on the standardized $X$ and $y$ scale. Again, we estimate the residual variance because we have the in-sample LD matrix.
+If the variance of y is unknown, we fit SuSiE regression with summary statistics, $\hat{\beta}$, $SE(\hat{\beta})$, $R$ and $n$ (or z-scores, $R$ and $n$). The output effect estimates are on the standardized $X$ and $y$ scale. Again, we estimate the residual variance because we have the in-sample LD matrix.
 
 ```{r}
-fitted_suff2 = susie_rss(z = z_scores, R = R, n = n, L = 10, estimate_residual_variance = TRUE)
+fitted_rss2 = susie_rss(z = z_scores, R = R, n = n, L = 10, estimate_residual_variance = TRUE)
 ```
 
 The result is same as using the individual level data with `susie`, but the output effect estimates are on different scale.
 ```{r}
-all.equal(fitted$pip, fitted_suff2$pip)
-plot(coef(fitted)[-1], coef(fitted_suff2)[-1], xlab = 'effects from SuSiE', ylab = 'effects from SuSiE-suff', xlim=c(-1,1), ylim=c(-0.3,0.3))
+all.equal(fitted$pip, fitted_rss2$pip)
+plot(coef(fitted)[-1], coef(fitted_rss2)[-1], xlab = 'effects from SuSiE', ylab = 'effects from SuSiE-RSS', xlim=c(-1,1), ylim=c(-0.3,0.3))
 ```
 
-The output effect estimates are same as applying SuSiE on standardized $X$ and $y$.
+The output effect estimates are same as applying SuSiE on standardized $X$ and $y, i.e. $y$ and the columns of $X$ are each divided by the sample standard deviation so that they each have the same standard deviation.
 
 ```{r}
 fitted_standardize = susie(scale(X), scale(Y[,1]), L = 10)
-all.equal(coef(fitted_standardize)[-1], coef(fitted_suff2)[-1])
+all.equal(coef(fitted_standardize)[-1], coef(fitted_rss2)[-1])
 ```
 
 
-## Fine-mapping with `susieR` using non-sufficient summary statistics
+## Fine-mapping with `susieR` using LD matrix from reference panel
 
 When original genotype information is not available, one may use reference panel to estimate LD matrix.
 
@@ -153,26 +153,26 @@ R_ref = cor(X_ref)
 We fit the SuSiE regression using out-of sample LD matrix. The residual variance is fixed as 1, because estimating residual variance sometimes produces very inaccurate estimates with out-of-sample LD matrix. The output effect estimates are on the standardized $X$ and $y$ scale.
 
 ```{r}
-fitted_rss1 <- susie_rss(z_scores, R_ref, n=n, L = 10)
+fitted_rss3 <- susie_rss(z_scores, R_ref, n=n, L = 10)
 ```
 
 ```{r}
-susie_plot(fitted_rss1, y="PIP", b=b)
+susie_plot(fitted_rss3, y="PIP", b=b)
 ```
 The model identifies the true signals, and the result is very similar to using the in-sample LD matrix, as the out-of-sample LD matrix is similar to the in-sample LD matrix in this example.
 
 ```{r, fig.width=6,fig.height=6}
-plot(fitted_rss1$pip, fitted_suff1$pip, ylim=c(0,1), xlab='SuSiE-suff PIP', ylab='SuSiE-RSS PIP')
+plot(fitted_rss1$pip, fitted_rss3$pip, ylim=c(0,1), xlab='SuSiE PIP', ylab='SuSiE-RSS PIP')
 ```
 
 In some rare cases, the sample size $n$ is unknown. We assume the sample size is infinity and all the effects are small, so the estimated PVE for each variant is close to zero. We fit the model using z-scores and out-of-sample LD matrix. The output effect estimates are on the noncentrality parameter scale.
 
 ```{r}
-fitted_rss2 = susie_rss(z_scores, R_ref, L = 10)
+fitted_rss4 = susie_rss(z_scores, R_ref, L = 10)
 ```
 
 ```{r}
-susie_plot(fitted_rss2, y="PIP", b=b)
+susie_plot(fitted_rss4, y="PIP", b=b)
 ```
 
 ## Session information

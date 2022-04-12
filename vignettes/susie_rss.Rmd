@@ -69,7 +69,7 @@ Next let's compare the susie and susie_rss outputs when ${\bf X},
 y$ are *standardized* before computing the summary statistics (by
 "standardize", we mean that $y$ and the columns of ${\bf X}$ are each
 divided by the sample standard deviation so that they each have the
-same standard deviation.
+same standard deviation).
 
 ```{r sumstats-standardize-1}
 ss  <- univariate_regression(scale(X),scale(y))
