@@ -85,7 +85,7 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
   if (check_z) {
     proj = check_projection(R,z)
     if (!proj$status)
-      warning("Input z does not lie in the space of non-zero eigenvectors ",
+      warning_message("Input z does not lie in the space of non-zero eigenvectors ",
               "of R.")
     else
       message("Input z is in space spanned by the non-zero eigenvectors of ",

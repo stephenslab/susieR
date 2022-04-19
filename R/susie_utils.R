@@ -256,7 +256,6 @@ susie_get_posterior_samples = function (susie_fit, num_samples) {
 #'   By default \code{use_rfast = TRUE} if the Rfast package is
 #'   installed.
 #'
-#' @importFrom crayon red
 #'
 #' @export
 #'
@@ -267,8 +266,8 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
     stop("Only one of X or Xcorr should be specified")
   if (check_symmetric) {
     if (!is.null(Xcorr) && !is_symmetric_matrix(Xcorr)) {
-      message(red("Xcorr is not symmetric; forcing Xcorr to be symmetric",
-                  "by replacing Xcorr with (Xcorr + t(Xcorr))/2"))
+      warning_message("Xcorr is not symmetric; forcing Xcorr to be symmetric",
+                  "by replacing Xcorr with (Xcorr + t(Xcorr))/2")
       Xcorr = Xcorr + t(Xcorr)
       Xcorr = Xcorr/2
     }
@@ -369,8 +368,6 @@ susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
 #' @return A matrix of correlations between CSs, or the maximum
 #'   absolute correlation when \code{max = TRUE}.
 #'
-#' @importFrom crayon red
-#'
 #' @export
 #'
 get_cs_correlation = function (model, X = NULL, Xcorr = NULL, max = FALSE) {
@@ -380,8 +377,8 @@ get_cs_correlation = function (model, X = NULL, Xcorr = NULL, max = FALSE) {
   if (is.null(Xcorr) && is.null(X))
     stop("One of X or Xcorr must be specified")
   if (!is.null(Xcorr) && !is_symmetric_matrix(Xcorr)) {
-    message(red("Xcorr is not symmetric; forcing Xcorr to be symmetric",
-                "by replacing Xcorr with (Xcorr + t(Xcorr))/2"))
+    warning_message("Xcorr is not symmetric; forcing Xcorr to be symmetric",
+                "by replacing Xcorr with (Xcorr + t(Xcorr))/2")
     Xcorr = Xcorr + t(Xcorr)
     Xcorr = Xcorr/2
   }
@@ -977,4 +974,19 @@ check_projection = function (A, b) {
     return(list(status = TRUE,msg = NA))
   else
     return(list(status = FALSE,msg = msg))
+}
+
+# @title Utility function to display warning messages as they occur
+# @param ... warning message
+# @param style either "warning" or "hint"
+#'@importFrom crayon combine_styles
+warning_message = function(..., style=c("warning", "hint")) {
+  style = match.arg(style)
+  if (style=="warning") {
+    alert <- combine_styles("bold", "underline", "red")	
+    message(alert("WARNING:"), " ", ...)
+  } else {
+    alert <- combine_styles("bold", "underline", "magenta")	
+    message(alert("HINT:"), " ", ...)
+  }
 }

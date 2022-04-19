@@ -194,9 +194,9 @@ susie_rss = function (z, R, n, bhat, shat, var_y,
                       check_prior = TRUE, ...) {
 
   if (!estimate_residual_variance)
-    message("If the in-sample LD matrix is available, we recommend calling ",
+    warning_message("If the in-sample LD matrix is available, we recommend calling ",
             "susie_rss with the in-sample LD matrix, and setting ",
-            "estimate_residual_variance = TRUE")
+            "estimate_residual_variance = TRUE", style="hint")
 
   # Check input R.
   if (missing(z))
