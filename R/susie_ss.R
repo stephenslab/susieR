@@ -109,7 +109,7 @@ susie_suff_stat = function (XtX, Xty, yty, n,
 
   # Replace NAs in Xty with zeros.
   if (anyNA(Xty)) {
-    warning("NA values in Xty are replaced with 0")
+    warning_message("NA values in Xty are replaced with 0")
     Xty[is.na(Xty)] = 0
   }
 
@@ -123,7 +123,7 @@ susie_suff_stat = function (XtX, Xty, yty, n,
     # Check whether Xty in space spanned by the non-zero eigenvectors of XtX
     proj = check_projection(semi_pd$matrix,Xty)
     if (!proj$status)
-      warning("Xty does not lie in the space of the non-zero eigenvectors ",
+      warning_message("Xty does not lie in the space of the non-zero eigenvectors ",
               "of XtX")
   }
 
@@ -180,7 +180,7 @@ susie_suff_stat = function (XtX, Xty, yty, n,
     if(missing(L)){ # if L is not specified, we set it as in s_init.
       L = num_effects
     }else if(min(p, L) < num_effects){
-      warning(paste("Specified number of effects L =",min(p, L),
+      warning_message(paste("Specified number of effects L =",min(p, L),
                     "is smaller than the number of effects",num_effects,
                     "in input SuSiE model. The initialized SuSiE model will have",
                     num_effects,"effects."))

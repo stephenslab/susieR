@@ -399,7 +399,7 @@ susie = function (X,y,L = min(10,ncol(X)),
     if(missing(L)){
       L = num_effects
     }else if(min(p,L) < num_effects){
-      warning(paste("Specified number of effects L =",min(p,L),
+      warning_message(paste("Specified number of effects L =",min(p,L),
                     "is smaller than the number of effects",num_effects,
                     "in input SuSiE model. The SuSiE model will have",
                     num_effects,"effects."))

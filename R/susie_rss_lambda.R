@@ -51,7 +51,7 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
 
   # Replace NAs in z with zero.
   if (anyNA(z)) {
-    warning("NA values in z-scores are replaced with 0")
+    warning_message("NA values in z-scores are replaced with 0")
     z[is.na(z)] = 0
   }
 
@@ -118,7 +118,7 @@ susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
     if(missing(L)){
       L = num_effects
     }else if(L < num_effects){
-      warning(paste("Specified number of effects L =",L,
+      warning_message(paste("Specified number of effects L =",L,
                     "is smaller than the number of effects",num_effects,
                     "in input SuSiE model. It will have",num_effects,"effects."))
       L = num_effects

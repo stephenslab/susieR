@@ -74,7 +74,7 @@
 susie_trendfilter = function (y, order = 0, standardize = FALSE,
                               use_mad = TRUE, ...) {
   if (order > 0)
-    warning("order > 0 is not recommended")
+    warning_message("order > 0 is not recommended")
   n = length(y)
   X = sparseMatrix(i = NULL,j = NULL,dims = c(n,n))
   attr(X,"matrix.type") = "tfmatrix"

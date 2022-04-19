@@ -668,13 +668,13 @@ estimate_s_rss = function (z, R, n, r_tol = 1e-08, method = "null-mle") {
     attr(R,"eigen") = eigen(R,symmetric = TRUE)
   eigenld = attr(R,"eigen")
   if (any(eigenld$values < -r_tol))
-    warning("The matrix R is not positive semidefinite. Negative ",
+    warning_message("The matrix R is not positive semidefinite. Negative ",
             "eigenvalues are set to zero")
   eigenld$values[eigenld$values < r_tol] = 0
 
   # Check input n, and adjust the z-scores if n is provided.
   if (missing(n))
-    warning("Providing the sample size (n), or even a rough estimate of n, ",
+    warning_message("Providing the sample size (n), or even a rough estimate of n, ",
             "is highly recommended. Without n, the implicit assumption is ",
             "n is large (Inf) and the effect sizes are small (close to zero).")
   else if (n <= 1)
@@ -790,14 +790,14 @@ kriging_rss = function (z, R, n, r_tol = 1e-08,
     attr(R,"eigen") = eigen(R,symmetric = TRUE)
   eigenld = attr(R,"eigen")
   if (any(eigenld$values < -r_tol))
-    warning("The matrix R is not positive semidefinite. Negative ",
+    warning_message("The matrix R is not positive semidefinite. Negative ",
             "eigenvalues are set to zero.")
   eigenld$values[eigenld$values < r_tol] = 0
 
   # Check and progress input argument s.
   force(s)
   if (s > 1) {
-    warning("The given s is greater than 1. We replace it with 0.8.")
+    warning_message("The given s is greater than 1. We replace it with 0.8.")
     s = 0.8
   } else if (s < 0)
     stop("The s must be non-negative")
@@ -806,7 +806,7 @@ kriging_rss = function (z, R, n, r_tol = 1e-08,
   if ((!missing(n)) && (n <= 1))
     stop("n must be greater than 1")
   if (missing(n))
-    warning("Providing the sample size (n), or even a rough estimate of n, ",
+    warning_message("Providing the sample size (n), or even a rough estimate of n, ",
             "is highly recommended. Without n, the implicit assumption is ",
             "n is large (Inf) and the effect sizes are small (close to zero).")
   else {
@@ -982,7 +982,7 @@ check_projection = function (A, b) {
 #'@importFrom crayon combine_styles
 warning_message = function(..., style=c("warning", "hint")) {
   style = match.arg(style)
-  if (style=="warning") {
+  if (style=="warning" && getOption("warn")>=0) {
     alert <- combine_styles("bold", "underline", "red")	
     message(alert("WARNING:"), " ", ...)
   } else {

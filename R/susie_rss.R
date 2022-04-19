@@ -239,7 +239,7 @@ susie_rss = function (z, R, n, bhat, shat, var_y,
   # the column space of R contained z, but susie_suff_stat does not
   # require this, and is no longer recommended.
   if (z_ld_weight > 0) {
-    warning("As of version 0.11.0, use of non-zero z_ld_weight is no longer ",
+    warning_message("As of version 0.11.0, use of non-zero z_ld_weight is no longer ",
             "recommended")
     R = muffled_cov2cor((1-z_ld_weight)*R + z_ld_weight*tcrossprod(z))
     R = (R + t(R))/2
@@ -253,7 +253,7 @@ susie_rss = function (z, R, n, bhat, shat, var_y,
     # The choice of n=2, yty=1 is mostly arbitrary except in that it
     # ensures var(y) = yty/(n-1) = 1, and because of this
     # scaled_prior_variance = prior_variance.
-    warning("Providing the sample size (n), or even a rough estimate of n, ",
+    warning_message("Providing the sample size (n), or even a rough estimate of n, ",
             "is highly recommended. Without n, the implicit assumption is ",
             "n is large (Inf) and the effect sizes are small (close to zero).")
     s = susie_suff_stat(XtX = R,Xty = z,n = 2,yty = 1,
