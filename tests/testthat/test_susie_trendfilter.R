@@ -64,6 +64,6 @@ test_that("susie_trendfilter interface",{
     expect_error(susie_trendfilter(y,0,standardize=FALSE,intercept=FALSE,estimate_prior_variance = FALSE, use_mad=FALSE), NA)
     expect_error(susie_trendfilter(y,0,standardize=FALSE,intercept=TRUE,estimate_prior_variance = FALSE, use_mad=FALSE), NA)
     expect_error(susie_trendfilter(y,0,standardize=TRUE,intercept=FALSE,estimate_prior_variance = FALSE, use_mad=FALSE), NA)
-    expect_error(susie_trendfilter(y,0,standardize = TRUE, compute_univariate_zscore =TRUE,estimate_prior_variance = FALSE, use_mad=FALSE), NA)
+    expect_error(suppressWarnings(susie_trendfilter(y,0,standardize = TRUE, compute_univariate_zscore =TRUE,estimate_prior_variance = FALSE, use_mad=FALSE)), NA)
   })
 })
