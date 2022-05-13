@@ -492,6 +492,11 @@ susie = function (X,y,L = min(10,ncol(X)),
   }
   # report z-scores from univariate regression.
   if (compute_univariate_zscore) {
+    if (!is.matrix(X))
+      warning("Calculation of univariate regression z-scores is not ",
+              "implemented specifically for sparse or trend filtering ",
+              "matrices, so this step may be slow if the matrix is large; ",
+              "to skip this step set compute_univariate_zscore = FALSE")
     if (!is.null(null_weight) && null_weight != 0)
       X = X[,1:(ncol(X) - 1)]
     s$z = calc_z(X,y,center = intercept,scale = standardize)
