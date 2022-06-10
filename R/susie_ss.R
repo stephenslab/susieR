@@ -76,7 +76,7 @@ susie_suff_stat = function (XtX, Xty, yty, n,
     stop("Please provide all of XtX, Xty, yty, n")
 
   if (ncol(XtX) > 1000 & !requireNamespace("Rfast",quietly = TRUE))
-    warning_message("For large R or large XtX, consider installing the",
+    warning_message("For large R or large XtX, consider installing the ",
                     "Rfast package for better performance.", style="hint")
 
   # Check input XtX.
