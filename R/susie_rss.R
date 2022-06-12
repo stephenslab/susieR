@@ -193,10 +193,13 @@ susie_rss = function (z, R, n, bhat, shat, var_y,
                       prior_variance = 50,
                       check_prior = TRUE, ...) {
 
-  if (!estimate_residual_variance)
-    warning_message("If the in-sample LD matrix is available, we recommend calling ",
-            "susie_rss with the in-sample LD matrix, and setting ",
-            "estimate_residual_variance = TRUE", style="hint")
+  if (estimate_residual_variance)
+    warning_message("The estimate_residual_variance is TRUE, ",
+    "please check R is the in-sample LD matrix, which is computed from the exact same matrix `X` ",
+    "that is used to obtain the other statistics. ",
+    "If the covariate effects are removed from the genotypes in univariate regression, ",
+    "the in-sample LD matrix should compute from the genotype residuals ",
+    "where the covariate effects have been removed.", style="hint")
 
   # Check input R.
   if (missing(z))
@@ -261,10 +264,10 @@ susie_rss = function (z, R, n, bhat, shat, var_y,
                         estimate_residual_variance = estimate_residual_variance,
                         standardize = FALSE,check_prior = check_prior,...)
   } else {
-      
+
     # The sample size (n) is provided, so use PVE-adjusted z-scores.
     if (!missing(shat) & !missing(var_y)) {
-        
+
       # var_y, shat (and bhat) are provided, so the effects are on the
       # *original scale*.
       XtXdiag = var_y * adj/(shat^2)

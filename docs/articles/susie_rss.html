@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.12.06</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.12.07</span>
       </span>
     </div>
 
@@ -67,9 +67,10 @@
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>Compare susie_rss variants</h1>
-                        <h4 data-toc-skip class="author">Peter Carbonetto</h4>
+                        <h4 data-toc-skip class="author">Peter
+Carbonetto</h4>
             
-            <h4 data-toc-skip class="date">2022-04-12</h4>
+            <h4 data-toc-skip class="date">2022-06-11</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/HEAD/vignettes/susie_rss.Rmd" class="external-link"><code>vignettes/susie_rss.Rmd</code></a></small>
       <div class="hidden name"><code>susie_rss.Rmd</code></div>
@@ -78,10 +79,13 @@
 
     
     
-<p>In this vignette, we briefly illustrate the different ways <a href="https://stephenslab.github.io/susieR/reference/susie_rss.html" class="external-link">susie_rss</a> can be called, and draw connections between running susie_rss on summary data, and running susie on individual-level data.</p>
+<p>In this vignette, we briefly illustrate the different ways <a href="https://stephenslab.github.io/susieR/reference/susie_rss.html" class="external-link">susie_rss</a>
+can be called, and draw connections between running susie_rss on summary
+data, and running susie on individual-level data.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/stephenslab/susieR" class="external-link">susieR</a></span><span class="op">)</span></code></pre></div>
-<p>Simulate a data set with 200 samples and 1,000 variables, in which the only first 4 variables affect the outcome.</p>
+<p>Simulate a data set with 200 samples and 1,000 variables, in which
+the only first 4 variables affect the outcome.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span>
 <span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">200</span>
@@ -91,21 +95,37 @@
 <span class="va">X</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">*</span><span class="va">p</span><span class="op">)</span>,nrow <span class="op">=</span> <span class="va">n</span>,ncol <span class="op">=</span> <span class="va">p</span><span class="op">)</span>
 <span class="va">X</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/scale.html" class="external-link">scale</a></span><span class="op">(</span><span class="va">X</span>,center <span class="op">=</span> <span class="cn">TRUE</span>,scale <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span>
 <span class="va">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/drop.html" class="external-link">drop</a></span><span class="op">(</span><span class="va">X</span> <span class="op"><a href="https://rdrr.io/r/base/matmult.html" class="external-link">%*%</a></span> <span class="va">beta</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span><span class="op">)</span></code></pre></div>
-<p>Compute summary statistics <span class="math inline">\(\hat{b}_j, \hat{s}_j\)</span> and the correlation matrix, <span class="math inline">\({\bf R}\)</span>. These quantities will be provided as input to susie_rss.</p>
+<p>Compute summary statistics <span class="math inline">\(\hat{b}_j,
+\hat{s}_j\)</span> and the correlation matrix, <span class="math inline">\({\bf R}\)</span>. These quantities will be
+provided as input to susie_rss.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">ss</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/univariate_regression.html">univariate_regression</a></span><span class="op">(</span><span class="va">X</span>,<span class="va">y</span><span class="op">)</span>
 <span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_suff_stat.html">compute_suff_stat</a></span><span class="op">(</span><span class="va">X</span>,<span class="va">y</span>,standardize <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span>
 <span class="va">R</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cov2cor</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">XtX</span><span class="op">)</span></code></pre></div>
-<p>The susie and susie_rss analyses produce the exact same results when the summary statistics <code>bhat</code>, <code>shat</code>, <code>var_y</code> and <code>n</code> are provided to susie_rss (and when <code>R</code> is an “in sample” correlation estimate—that is, when it was computed from the same matrix <code>X</code> that was used to obtain the other statistics).</p>
+<p>The susie and susie_rss analyses produce the exact same results when
+the summary statistics <code>bhat</code>, <code>shat</code>,
+<code>var_y</code> and <code>n</code> are provided to susie_rss (and
+when <code>R</code> is an “in sample” correlation estimate—that is, when
+it was computed from the same matrix <code>X</code> that was used to
+obtain the other statistics). If the covariate effects are removed from
+the genotypes in univariate regression, the in-sample LD matrix should
+compute from the genotype residuals where the covariate effects have
+been removed.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">res1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/susie.html">susie</a></span><span class="op">(</span><span class="va">X</span>,<span class="va">y</span>,L <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>
 <span class="va">res2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/susie_rss.html">susie_rss</a></span><span class="op">(</span>bhat <span class="op">=</span> <span class="va">ss</span><span class="op">$</span><span class="va">betahat</span>,shat <span class="op">=</span> <span class="va">ss</span><span class="op">$</span><span class="va">sebetahat</span>,R <span class="op">=</span> <span class="va">R</span>,n <span class="op">=</span> <span class="va">n</span>,
                   var_y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">var</a></span><span class="op">(</span><span class="va">y</span><span class="op">)</span>,L <span class="op">=</span> <span class="fl">10</span>,estimate_residual_variance <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
+<span class="co"># <span style="color: #BB00BB; font-weight: bold; text-decoration: underline;">HINT:</span> The estimate_residual_variance is TRUE, please check R is the in-sample LD matrix, which is computed from the exact same matrix `X` that is used to obtain the other statistics. If the covariate effects are removed from the genotypes in univariate regression, the in-sample LD matrix should compute from the genotype residuals where the covariate effects have been removed.</span>
 <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">res1</span><span class="op">)</span>,<span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">res2</span><span class="op">)</span>,pch <span class="op">=</span> <span class="fl">20</span>,xlab <span class="op">=</span> <span class="st">"susie"</span>,ylab <span class="op">=</span> <span class="st">"susie_rss"</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>a <span class="op">=</span> <span class="fl">0</span>,b <span class="op">=</span> <span class="fl">1</span>,col <span class="op">=</span> <span class="st">"skyblue"</span>,lty <span class="op">=</span> <span class="st">"dashed"</span><span class="op">)</span></code></pre></div>
 <p><img src="susie_rss_files/figure-html/first-comparison-1.png" width="360" style="display: block; margin: auto;"></p>
-<p>When some but not all of these statistics are provided, the results should be similar, but not exactly the same.</p>
-<p>Next let’s compare the susie and susie_rss outputs when <span class="math inline">\({\bf X}, y\)</span> are <em>standardized</em> before computing the summary statistics (by “standardize”, we mean that <span class="math inline">\(y\)</span> and the columns of <span class="math inline">\({\bf X}\)</span> are each divided by the sample standard deviation so that they each have the same standard deviation).</p>
+<p>When some but not all of these statistics are provided, the results
+should be similar, but not exactly the same.</p>
+<p>Next let’s compare the susie and susie_rss outputs when <span class="math inline">\({\bf X}, y\)</span> are <em>standardized</em>
+before computing the summary statistics (by “standardize”, we mean that
+<span class="math inline">\(y\)</span> and the columns of <span class="math inline">\({\bf X}\)</span> are each divided by the sample
+standard deviation so that they each have the same standard
+deviation).</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">ss</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/univariate_regression.html">univariate_regression</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/scale.html" class="external-link">scale</a></span><span class="op">(</span><span class="va">X</span><span class="op">)</span>,<span class="fu"><a href="https://rdrr.io/r/base/scale.html" class="external-link">scale</a></span><span class="op">(</span><span class="va">y</span><span class="op">)</span><span class="op">)</span>
 <span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_suff_stat.html">compute_suff_stat</a></span><span class="op">(</span><span class="va">X</span>,<span class="va">y</span>,standardize <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
@@ -113,7 +133,10 @@
 <p>Then we compute the <em>z</em>-scores:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">zhat</span> <span class="op">&lt;-</span> <span class="va">ss</span><span class="op">$</span><span class="va">betahat</span><span class="op">/</span><span class="va">ss</span><span class="op">$</span><span class="va">sebetahat</span></code></pre></div>
-<p>When standardizing, providing susie_rss with summary data <code>z</code> (or <code>bhat</code>, <code>shat</code>), <code>R</code> and <code>n</code> is sufficient for susie_rss to recover the same results as susie:</p>
+<p>When standardizing, providing susie_rss with summary data
+<code>z</code> (or <code>bhat</code>, <code>shat</code>), <code>R</code>
+and <code>n</code> is sufficient for susie_rss to recover the same
+results as susie:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">res1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/susie.html">susie</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/scale.html" class="external-link">scale</a></span><span class="op">(</span><span class="va">X</span><span class="op">)</span>,<span class="fu"><a href="https://rdrr.io/r/base/scale.html" class="external-link">scale</a></span><span class="op">(</span><span class="va">y</span><span class="op">)</span>,L <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>
 <span class="va">res2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/susie_rss.html">susie_rss</a></span><span class="op">(</span>bhat <span class="op">=</span> <span class="va">ss</span><span class="op">$</span><span class="va">betahat</span>,shat <span class="op">=</span> <span class="va">ss</span><span class="op">$</span><span class="va">sebetahat</span>,R <span class="op">=</span> <span class="va">R</span>,n <span class="op">=</span> <span class="va">n</span>,
@@ -126,21 +149,27 @@
 <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">res1</span><span class="op">)</span>,<span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">res3</span><span class="op">)</span>,pch <span class="op">=</span> <span class="fl">20</span>,xlab <span class="op">=</span> <span class="st">"susie"</span>,ylab <span class="op">=</span> <span class="st">"susie_rss(z)"</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>a <span class="op">=</span> <span class="fl">0</span>,b <span class="op">=</span> <span class="fl">1</span>,col <span class="op">=</span> <span class="st">"skyblue"</span>,lty <span class="op">=</span> <span class="st">"dashed"</span><span class="op">)</span></code></pre></div>
 <p><img src="susie_rss_files/figure-html/second-comparison-1.png" width="720" style="display: block; margin: auto;"></p>
-<p>When the residual variance is not estimated in susie_rss, the susie_rss results may be close to susie, but may no longer be exactly the same:</p>
+<p>When the residual variance is not estimated in susie_rss, the
+susie_rss results may be close to susie, but may no longer be exactly
+the same:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">res4</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/susie_rss.html">susie_rss</a></span><span class="op">(</span><span class="va">zhat</span>,<span class="va">R</span>,n <span class="op">=</span> <span class="va">n</span>,L <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">res1</span><span class="op">)</span>,<span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">res4</span><span class="op">)</span>,pch <span class="op">=</span> <span class="fl">20</span>,xlab <span class="op">=</span> <span class="st">"susie"</span>,ylab <span class="op">=</span> <span class="st">"susie_rss"</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>a <span class="op">=</span> <span class="fl">0</span>,b <span class="op">=</span> <span class="fl">1</span>,col <span class="op">=</span> <span class="st">"skyblue"</span>,lty <span class="op">=</span> <span class="st">"dashed"</span><span class="op">)</span></code></pre></div>
 <p><img src="susie_rss_files/figure-html/third-comparison-1.png" width="360" style="display: block; margin: auto;"></p>
-<p>Whenever <code>R</code> is an “in sample” correlation matrix, we recommend estimating the residual variance.</p>
-<p>Without providing the sample size, <code>n</code>, the coefficients are interpreted as the “noncentrality parameters” (NCPs), and are (roughly) related to the susie parameters by a factor of <span class="math inline">\(\sqrt{n}\)</span>:</p>
+<p>Whenever <code>R</code> is an “in sample” correlation matrix, we
+recommend estimating the residual variance.</p>
+<p>Without providing the sample size, <code>n</code>, the coefficients
+are interpreted as the “noncentrality parameters” (NCPs), and are
+(roughly) related to the susie parameters by a factor of <span class="math inline">\(\sqrt{n}\)</span>:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">res5</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/susie_rss.html">susie_rss</a></span><span class="op">(</span><span class="va">zhat</span>,<span class="va">R</span>,L <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">res1</span><span class="op">)</span>,<span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">res5</span><span class="op">)</span><span class="op">/</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span>,pch <span class="op">=</span> <span class="fl">20</span>,xlab <span class="op">=</span> <span class="st">"susie"</span>,
 ylab <span class="op">=</span> <span class="st">"susie_rss/sqrt(n)"</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>a <span class="op">=</span> <span class="fl">0</span>,b <span class="op">=</span> <span class="fl">1</span>,col <span class="op">=</span> <span class="st">"skyblue"</span>,lty <span class="op">=</span> <span class="st">"dashed"</span><span class="op">)</span></code></pre></div>
 <p><img src="susie_rss_files/figure-html/fourth-comparison-1.png" width="360" style="display: block; margin: auto;"></p>
-<p>Whenever possible, the sample size, or a reasonable estimate of the sample size, should be provided.</p>
+<p>Whenever possible, the sample size, or a reasonable estimate of the
+sample size, should be provided.</p>
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
@@ -158,7 +187,7 @@ ylab <span class="op">=</span> <span class="st">"susie_rss/sqrt(n)"</span><span 
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
 </div>
 
       </footer>

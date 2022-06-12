@@ -81,7 +81,7 @@ R <- cor(X)
 
 We assume there are at most 10 causal variables, i.e. set `L = 10`, although SuSiE is generally robust to the choice of `L`.
 
-Since the individual-level data is avialable for us, we have the in-sample LD matrix and the variance of $y$ is `r var(Y[,1])`. We fit SuSiE regression with summary statistics, $\hat{\beta}$, $SE(\hat{\beta})$, $R$, $n$, and var_y (they are sufficient statistics). We estimate the residual variance because we have the in-sample LD matrix.
+Since the individual-level data is available for us, we have the in-sample LD matrix and the variance of $y$ is `r var(Y[,1])`. We fit SuSiE regression with summary statistics, $\hat{\beta}$, $SE(\hat{\beta})$, $R$, $n$, and var_y (they are sufficient statistics). We estimate the residual variance because we have the in-sample LD matrix ("in-sample" LD means it was computed from the exact same matrix `X` that was used to obtain the other statistics. If the covariate effects are removed from the genotypes in univariate regression, the "in-sample" LD matrix should compute from the genotype residuals where the covariate effects have been removed).
 
 ```{r}
 fitted_rss1 <- susie_rss(bhat = sumstats$betahat, shat = sumstats$sebetahat, n = n, R = R, var_y = var(Y[,1]), L = 10,

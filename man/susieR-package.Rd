@@ -6,19 +6,7 @@
 \alias{susieR-package}
 \title{susieR: Sum of Single Effects Linear Regression}
 \description{
-Implements methods for variable selection in linear
-    regression based on the "Sum of Single Effects" (SuSiE) model, as
-    described in Wang et al (2020) <DOI:10.1101/501114> and Zou et al
-    (2021) <DOI:10.1101/2021.11.03.467167>. These methods provide
-    simple summaries, called "Credible Sets", for accurately
-    quantifying uncertainty in which variables should be selected.
-    The methods are motivated by genetic fine-mapping applications,
-    and are particularly well-suited to settings where variables are
-    highly correlated and detectable effects are sparse. The fitting
-    algorithm, a Bayesian analogue of stepwise selection methods
-    called "Iterative Bayesian Stepwise Selection" (IBSS), is simple
-    and fast, allowing the SuSiE model be fit to large data sets
-    (thousands of samples and hundreds of thousands of variables).
+Implements methods for variable selection in linear regression based on the "Sum of Single Effects" (SuSiE) model, as described in Wang et al (2020) <DOI:10.1101/501114> and Zou et al (2021) <DOI:10.1101/2021.11.03.467167>. These methods provide simple summaries, called "Credible Sets", for accurately quantifying uncertainty in which variables should be selected. The methods are motivated by genetic fine-mapping applications, and are particularly well-suited to settings where variables are highly correlated and detectable effects are sparse. The fitting algorithm, a Bayesian analogue of stepwise selection methods called "Iterative Bayesian Stepwise Selection" (IBSS), is simple and fast, allowing the SuSiE model be fit to large data sets (thousands of samples and hundreds of thousands of variables).
 }
 \seealso{
 Useful links:

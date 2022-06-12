@@ -52,7 +52,10 @@ The susie and susie_rss analyses produce the exact same results when
 the summary statistics `bhat`, `shat`, `var_y` and `n` are provided to
 susie_rss (and when `R` is an "in sample" correlation estimate---that
 is, when it was computed from the same matrix `X` that was used to
-obtain the other statistics).
+obtain the other statistics). If the covariate effects are removed from 
+the genotypes in univariate regression, the in-sample LD matrix should 
+compute from the genotype residuals where the covariate effects have 
+been removed.
 
 ```{r first-comparison, fig.height=3.5, fig.width=3}
 res1 <- susie(X,y,L = 10)
