@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.12.00</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.12.10</span>
       </span>
     </div>
 
@@ -67,9 +67,10 @@
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>Trend filtering</h1>
-                        <h4 data-toc-skip class="author">Matthew Stephens</h4>
+                        <h4 data-toc-skip class="author">Matthew
+Stephens</h4>
             
-            <h4 data-toc-skip class="date">2022-03-30</h4>
+            <h4 data-toc-skip class="date">2022-06-13</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/HEAD/vignettes/trend_filtering.Rmd" class="external-link"><code>vignettes/trend_filtering.Rmd</code></a></small>
       <div class="hidden name"><code>trend_filtering.Rmd</code></div>
@@ -81,14 +82,48 @@
 <div class="section level2">
 <h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
 </h2>
-<p>Although we developed SuSiE primarily with the goal of performing variable selection in highly sparse settings – and, in particular, for genetic fine-mapping – the approach also has considerable potential for application to other large-scale regression problems. Here we briefly illustrate this potential by applying it to a non-parametric regression problem that at first sight seems to be ill-suited to our approach. In particular, it does not involve strict sparsity, and the underlying correlation structure of the explanatory variables is very different from the ``blocky" covariance structure of genetic data that SuSiE was designed for. Nonetheless, we will see that SuSiE performs well here despite this (partly due to its ability to capture non-sparse signals via Bayesian Model Averaging).</p>
-<p>Specifically, consider the non-parametric regression: <span class="math display">\[y_t = \mu_t + e_t \quad t=1,\dots,T\]</span> where the goal is to estimate the underlying mean, <span class="math inline">\(\mu_t\)</span>, under the assumption that it varies smoothly (or, more precisely, in a spatially-structured way) with <span class="math inline">\(t\)</span>. One very simple way to capture spatial structure in <span class="math inline">\(\mu\)</span> is to model it as a (sparse) linear combination of step functions: <span class="math display">\[\mu = Xb\]</span> where the <span class="math inline">\(j\)</span>th column of <span class="math inline">\(X\)</span> is the step function with a step at <span class="math inline">\(j\)</span> (<span class="math inline">\(j = 1,\dots,(T-1)\)</span>); that is <span class="math inline">\(x_{tj}=0\)</span> for <span class="math inline">\(t&lt;=j\)</span> and 1 for <span class="math inline">\(t&gt;j\)</span>. The <span class="math inline">\(j\)</span>th element of <span class="math inline">\(b\)</span> therefore determines the change in the mean <span class="math inline">\(|\mu_j-\mu_{j+1}|\)</span>, and an assumption that <span class="math inline">\(b\)</span> is sparse encapsulates an assumption that <span class="math inline">\(\mu\)</span> is spatially structured (indeed, piecewise constant).</p>
-<p>This very simple approach is essentially 0th-order trend filtering (Tibshirani, 2014, <em>Annals of Statistics</em> 42, 285–323). Note that higher-order trend filtering can be similarly implemented using different basis functions; here we use 0th order only for simplicity.</p>
+<p>Although we developed SuSiE primarily with the goal of performing
+variable selection in highly sparse settings – and, in particular, for
+genetic fine-mapping – the approach also has considerable potential for
+application to other large-scale regression problems. Here we briefly
+illustrate this potential by applying it to a non-parametric regression
+problem that at first sight seems to be ill-suited to our approach. In
+particular, it does not involve strict sparsity, and the underlying
+correlation structure of the explanatory variables is very different
+from the ``blocky” covariance structure of genetic data that SuSiE was
+designed for. Nonetheless, we will see that SuSiE performs well here
+despite this (partly due to its ability to capture non-sparse signals
+via Bayesian Model Averaging).</p>
+<p>Specifically, consider the non-parametric regression: <span class="math display">\[y_t = \mu_t + e_t \quad t=1,\dots,T\]</span>
+where the goal is to estimate the underlying mean, <span class="math inline">\(\mu_t\)</span>, under the assumption that it
+varies smoothly (or, more precisely, in a spatially-structured way) with
+<span class="math inline">\(t\)</span>. One very simple way to capture
+spatial structure in <span class="math inline">\(\mu\)</span> is to
+model it as a (sparse) linear combination of step functions: <span class="math display">\[\mu = Xb\]</span> where the <span class="math inline">\(j\)</span>th column of <span class="math inline">\(X\)</span> is the step function with a step at
+<span class="math inline">\(j\)</span> (<span class="math inline">\(j =
+1,\dots,(T-1)\)</span>); that is <span class="math inline">\(x_{tj}=0\)</span> for <span class="math inline">\(t&lt;=j\)</span> and 1 for <span class="math inline">\(t&gt;j\)</span>. The <span class="math inline">\(j\)</span>th element of <span class="math inline">\(b\)</span> therefore determines the change in the
+mean <span class="math inline">\(|\mu_j-\mu_{j+1}|\)</span>, and an
+assumption that <span class="math inline">\(b\)</span> is sparse
+encapsulates an assumption that <span class="math inline">\(\mu\)</span>
+is spatially structured (indeed, piecewise constant).</p>
+<p>This very simple approach is essentially 0th-order trend filtering
+(Tibshirani, 2014, <em>Annals of Statistics</em> 42, 285–323). Note that
+higher-order trend filtering can be similarly implemented using
+different basis functions; here we use 0th order only for
+simplicity.</p>
 </div>
 <div class="section level2">
 <h2 id="examples">Examples<a class="anchor" aria-label="anchor" href="#examples"></a>
 </h2>
-<p>Here we apply SuSiE to perform 0th order trend filtering in some simple simulated examples. We have implemented in <code>susieR</code> 0.6.0 a funciton <code>susie_trendfilter</code> which internally creates <span class="math inline">\(X\)</span> matrix with step functions in the columns to match input <span class="math inline">\(y\)</span>. The algebra have been optimized to work on such trendfiltering matrices. Here we simulate some data where <span class="math inline">\(\mu\)</span> is a step function with four steps, a 0th order trendfiltering problem. The regression is truly sparse and SuSiE should do well.</p>
+<p>Here we apply SuSiE to perform 0th order trend filtering in some
+simple simulated examples. We have implemented in <code>susieR</code>
+0.6.0 a funciton <code>susie_trendfilter</code> which internally creates
+<span class="math inline">\(X\)</span> matrix with step functions in the
+columns to match input <span class="math inline">\(y\)</span>. The
+algebra have been optimized to work on such trendfiltering matrices.
+Here we simulate some data where <span class="math inline">\(\mu\)</span> is a step function with four steps, a
+0th order trendfiltering problem. The regression is truly sparse and
+SuSiE should do well.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/stephenslab/susieR" class="external-link">susieR</a></span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span>
@@ -98,7 +133,7 @@
 <span class="va">s</span> <span class="op">=</span> <span class="fu"><a href="../reference/susie_trendfilter.html">susie_trendfilter</a></span><span class="op">(</span><span class="va">y</span>, <span class="fl">0</span>, L<span class="op">=</span><span class="fl">10</span><span class="op">)</span></code></pre></div>
 <p>Plot results: the truth is black, and susie estimate is red.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">y</span>,pch<span class="op">=</span><span class="st">"."</span><span class="op">)</span>
+<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/graphics/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">y</span>,pch<span class="op">=</span><span class="st">"."</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="va">mu</span>,col<span class="op">=</span><span class="fl">1</span>,lwd<span class="op">=</span><span class="fl">3</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">s</span><span class="op">)</span>,col<span class="op">=</span><span class="fl">2</span>,lwd<span class="op">=</span><span class="fl">2</span><span class="op">)</span></code></pre></div>
 <div class="figure" style="text-align: center">
@@ -109,13 +144,16 @@
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">s</span><span class="op">$</span><span class="va">sigma2</span>
 <span class="co"># [1] 1.076261</span></code></pre></div>
-<p>In the next example mu increases linearly. Thus we are approximating a linear function by step functions. Here the truth is not trully ``sparse", so we might expect performance to be poor, but it is not too bad.</p>
+<p>In the next example mu increases linearly. Thus we are approximating
+a linear function by step functions. Here the truth is not trully
+``sparse”, so we might expect performance to be poor, but it is not too
+bad.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span>
 <span class="va">mu</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">4</span>,length<span class="op">=</span><span class="fl">1000</span><span class="op">)</span>
 <span class="va">y</span> <span class="op">=</span> <span class="va">mu</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span>
 <span class="va">s</span> <span class="op">=</span> <span class="fu"><a href="../reference/susie_trendfilter.html">susie_trendfilter</a></span><span class="op">(</span><span class="va">y</span>,<span class="fl">0</span>,L<span class="op">=</span><span class="fl">10</span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">y</span>,pch<span class="op">=</span><span class="st">"."</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/graphics/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">y</span>,pch<span class="op">=</span><span class="st">"."</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="va">mu</span>,col<span class="op">=</span><span class="fl">1</span>,lwd<span class="op">=</span><span class="fl">3</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">s</span><span class="op">)</span>,col<span class="op">=</span><span class="fl">2</span>,lwd<span class="op">=</span><span class="fl">2</span><span class="op">)</span></code></pre></div>
 <div class="figure" style="text-align: center">
@@ -123,12 +161,13 @@
  
 </p>
 </div>
-<p>Compare with the genlasso (lasso-based) solution (blue). (This will require installation of the <code>genlasso</code> package.)</p>
+<p>Compare with the genlasso (lasso-based) solution (blue). (This will
+require installation of the <code>genlasso</code> package.)</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/glmgen/genlasso" class="external-link">genlasso</a></span><span class="op">)</span>
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/statsmaths/genlasso" class="external-link">genlasso</a></span><span class="op">)</span>
+<span class="co"># Loading required package: MASS</span>
 <span class="co"># Loading required package: Matrix</span>
 <span class="co"># Loading required package: igraph</span>
-<span class="co"># Warning: package 'igraph' was built under R version 4.1.2</span>
 <span class="co"># </span>
 <span class="co"># Attaching package: 'igraph'</span>
 <span class="co"># The following objects are masked from 'package:stats':</span>
@@ -141,7 +180,7 @@
 <span class="va">y.tf.cv</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/genlasso/man/cv.trendfilter.html" class="external-link">cv.trendfilter</a></span><span class="op">(</span><span class="va">y.tf</span><span class="op">)</span>
 <span class="co"># Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ...</span>
 
-<span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">y</span>,pch<span class="op">=</span><span class="st">"."</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/graphics/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">y</span>,pch<span class="op">=</span><span class="st">"."</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="va">mu</span>,col<span class="op">=</span><span class="fl">1</span>,lwd<span class="op">=</span><span class="fl">3</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">s</span><span class="op">)</span>,col<span class="op">=</span><span class="fl">2</span>,lwd<span class="op">=</span><span class="fl">2</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="va">y.tf</span><span class="op">$</span><span class="va">fit</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="va">y.tf</span><span class="op">$</span><span class="va">lambda</span><span class="op">==</span><span class="va">y.tf.cv</span><span class="op">$</span><span class="va">lambda.min</span><span class="op">)</span><span class="op">]</span>,col<span class="op">=</span><span class="fl">4</span>,lwd<span class="op">=</span><span class="fl">2</span><span class="op">)</span></code></pre></div>
@@ -161,7 +200,7 @@
 <span class="va">y.tf.cv</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/genlasso/man/cv.trendfilter.html" class="external-link">cv.trendfilter</a></span><span class="op">(</span><span class="va">y.tf</span><span class="op">)</span>
 <span class="co"># Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ...</span>
 
-<span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">y</span>,pch<span class="op">=</span><span class="st">"."</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/graphics/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">y</span>,pch<span class="op">=</span><span class="st">"."</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="va">mu</span>,col<span class="op">=</span><span class="fl">1</span>,lwd<span class="op">=</span><span class="fl">3</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">s</span><span class="op">)</span>,col<span class="op">=</span><span class="fl">2</span>,lwd<span class="op">=</span><span class="fl">2</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="va">y.tf</span><span class="op">$</span><span class="va">fit</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="va">y.tf</span><span class="op">$</span><span class="va">lambda</span><span class="op">==</span><span class="va">y.tf.cv</span><span class="op">$</span><span class="va">lambda.min</span><span class="op">)</span><span class="op">]</span>,col<span class="op">=</span><span class="fl">4</span>,lwd<span class="op">=</span><span class="fl">2</span><span class="op">)</span></code></pre></div>
@@ -170,7 +209,8 @@
  
 </p>
 </div>
-<p>The two fits seem similar in accuracy. We can check this numerically:</p>
+<p>The two fits seem similar in accuracy. We can check this
+numerically:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="op">(</span><span class="va">mu</span><span class="op">-</span><span class="va">y.tf</span><span class="op">$</span><span class="va">fit</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="va">y.tf</span><span class="op">$</span><span class="va">lambda</span><span class="op">==</span><span class="va">y.tf.cv</span><span class="op">$</span><span class="va">lambda.min</span><span class="op">)</span><span class="op">]</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span>
 <span class="co"># [1] 0.1413506</span>
@@ -191,12 +231,14 @@
 
       <footer><div class="copyright">
   <p></p>
-<p>Developed by Gao Wang, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto, Matthew Stephens.</p>
+<p>Developed by Gao Wang, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto,
+Matthew Stephens.</p>
 </div>
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a>
+2.0.2.</p>
 </div>
 
       </footer>

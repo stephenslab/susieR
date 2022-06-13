@@ -29,7 +29,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.12.00</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.12.10</span>
       </span>
     </div>
 
@@ -88,7 +88,7 @@
 <dd><p>A p by p symmetric, positive semidefinite correlation
 matrix.</p></dd>
 <dt>n</dt>
-<dd><p>The sample size.</p></dd>
+<dd><p>The sample size. (Optional, but highly recommended.)</p></dd>
 <dt>r_tol</dt>
 <dd><p>Tolerance level for eigenvalue check of positive
 semidefinite matrix of R.</p></dd>
@@ -113,9 +113,15 @@ semidefinite matrix of R.</p></dd>
 <span class="r-in"><span class="va">input_ss</span> <span class="op">=</span> <span class="fu"><a href="compute_suff_stat.html">compute_suff_stat</a></span><span class="op">(</span><span class="va">X</span>,<span class="va">y</span>,standardize <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span class="r-in"><span class="va">ss</span> <span class="op">=</span> <span class="fu"><a href="univariate_regression.html">univariate_regression</a></span><span class="op">(</span><span class="va">X</span>,<span class="va">y</span><span class="op">)</span></span>
 <span class="r-in"><span class="va">R</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></span><span class="op">(</span><span class="va">X</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">R</span>,<span class="st">"eigen"</span><span class="op">)</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/eigen.html" class="external-link">eigen</a></span><span class="op">(</span><span class="va">R</span>, symmetric <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">R</span>,<span class="st">"eigen"</span><span class="op">)</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/eigen.html" class="external-link">eigen</a></span><span class="op">(</span><span class="va">R</span>,symmetric <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span class="r-in"><span class="va">zhat</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/with.html" class="external-link">with</a></span><span class="op">(</span><span class="va">ss</span>,<span class="va">betahat</span><span class="op">/</span><span class="va">sebetahat</span><span class="op">)</span></span>
-<span class="r-in"><span class="va">s</span> <span class="op">=</span> <span class="fu">estimate_s_rss</span><span class="op">(</span><span class="va">zhat</span>, <span class="va">R</span>, n<span class="op">=</span><span class="va">n</span><span class="op">)</span></span>
+<span class="r-in"></span>
+<span class="r-in"><span class="co"># Estimate s using the unadjusted z-scores.</span></span>
+<span class="r-in"><span class="va">s0</span> <span class="op">=</span> <span class="fu">estimate_s_rss</span><span class="op">(</span><span class="va">zhat</span>,<span class="va">R</span><span class="op">)</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BB0000;font-weight: bold;text-decoration: underline;">WARNING:</span><span> Providing the sample size (n), or even a rough estimate of n, is highly recommended. Without n, the implicit assumption is n is large (Inf) and the effect sizes are small (close to zero).</span></span>
+<span class="r-in"></span>
+<span class="r-in"><span class="co"># Estimate s using the adjusted z-scores.</span></span>
+<span class="r-in"><span class="va">s1</span> <span class="op">=</span> <span class="fu">estimate_s_rss</span><span class="op">(</span><span class="va">zhat</span>,<span class="va">R</span>,<span class="va">n</span><span class="op">)</span></span>
 <span class="r-in"></span>
 </code></pre></div>
     </div>
@@ -127,11 +133,13 @@ semidefinite matrix of R.</p></dd>
 
 
       <footer><div class="copyright">
-  <p></p><p>Developed by Gao Wang, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto, Matthew Stephens.</p>
+  <p></p><p>Developed by Gao Wang, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto,
+Matthew Stephens.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a>
+2.0.2.</p>
 </div>
 
       </footer></div>

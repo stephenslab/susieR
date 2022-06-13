@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.12.07</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.12.10</span>
       </span>
     </div>
 
@@ -70,7 +70,7 @@
                         <h4 data-toc-skip class="author">Yuxin Zou and
 Gao Wang</h4>
             
-            <h4 data-toc-skip class="date">2022-06-11</h4>
+            <h4 data-toc-skip class="date">2022-06-13</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/HEAD/vignettes/finemapping_summary_statistics.Rmd" class="external-link"><code>vignettes/finemapping_summary_statistics.Rmd</code></a></small>
       <div class="hidden name"><code>finemapping_summary_statistics.Rmd</code></div>
@@ -82,11 +82,11 @@ Gao Wang</h4>
 <p>This vignette demonstrates how to use <code>susieR</code> with
 “summary statistics” in the context of genetic fine-mapping. We use the
 same simulated data as in <a href="finemapping.html">fine mapping
-vignette</a>. The simulated data is expression level of a gene (<span class="math inline">\(y\)</span>) in <span class="math inline">\(N
+vignette</a>. The simulated data are expression levels of a gene (<span class="math inline">\(y\)</span>) in <span class="math inline">\(N
 \approx 600\)</span> individuals. We want to identify with the genotype
 matrix <span class="math inline">\(X_{N\times P}\)</span> (<span class="math inline">\(P=1001\)</span>) the genetic variables that causes
-changes in expression level. The data-set is shipped with
-<code>susieR</code>. It is simulated to have exactly 3 non-zero
+changes in expression level. This data set is shipped with
+<code>susieR</code>. It is simulated to have exactly three non-zero
 effects.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/stephenslab/susieR" class="external-link">susieR</a></span><span class="op">)</span>
@@ -98,15 +98,15 @@ effects.</p>
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">N3finemapping</span><span class="op">)</span>
 <span class="kw"><a href="https://rdrr.io/r/base/attach.html" class="external-link">attach</a></span><span class="op">(</span><span class="va">N3finemapping</span><span class="op">)</span>
 <span class="va">n</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">X</span><span class="op">)</span></code></pre></div>
-<p>Notice that we’ve simulated 2 sets of <span class="math inline">\(Y\)</span> as 2 simulation replicates. Here we’ll
-focus on the first data-set.</p>
+<p>Notice that we’ve simulated two sets of <span class="math inline">\(Y\)</span> as two simulation replicates. Here
+we’ll focus on the first data-set.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">Y</span><span class="op">)</span>
 <span class="co"># [1] 574   2</span></code></pre></div>
-<p>Here are the 3 “true” signals in the first data-set:</p>
+<p>Here are the three true signals in the first data-set:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">b</span> <span class="op">&lt;-</span> <span class="va">true_coef</span><span class="op">[</span>,<span class="fl">1</span><span class="op">]</span>
-<span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">b</span>, pch<span class="op">=</span><span class="fl">16</span>, ylab<span class="op">=</span><span class="st">'effect size'</span><span class="op">)</span></code></pre></div>
+<span class="fu"><a href="https://rdrr.io/r/graphics/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">b</span>, pch<span class="op">=</span><span class="fl">16</span>, ylab<span class="op">=</span><span class="st">'effect size'</span><span class="op">)</span></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="finemapping_summary_statistics_files/figure-html/unnamed-chunk-4-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
  
@@ -121,20 +121,20 @@ focus on the first data-set.</p>
 <h2 id="summary-statistics-from-simple-regression">Summary statistics from simple regression<a class="anchor" aria-label="anchor" href="#summary-statistics-from-simple-regression"></a>
 </h2>
 <p>Summary statistics of genetic association studies typically contain
-effect size (<span class="math inline">\(\hat{\beta}\)</span>
-coefficient from regression), and p-value. These information can be used
+effect sizes (<span class="math inline">\(\hat{\beta}\)</span>
+coefficient from regression) and p-values. These statisticscan be used
 to perform fine-mapping with given an additional input of correlation
 matrix between variables. The correlation matrix in genetics is
-typically referred to as LD matrix (LD for linkage disequilibrium). One
-may use external reference panels to estimate it when this matrix cannot
-be obtained from samples directly. Caution that LD matrix here has to be
-correlation matrix <span class="math inline">\(r\)</span>, not <span class="math inline">\(r^2\)</span> or <span class="math inline">\(abs(r)\)</span>.</p>
-<p><code>univariate_regression</code> function can be used to compute
-summary statistics by fitting univariate simple regression variable by
-variable. The results are <span class="math inline">\(\hat{\beta}\)</span> and <span class="math inline">\(SE(\hat{\beta})\)</span> from which z-scores can
-be derived. Alternatively you can obtain z-scores from <span class="math inline">\(\hat{\beta}\)</span> and p-values if you are
-provided with those information. Again we focus only on results from the
-first data-set:</p>
+typically referred to as an “LD matrix” (LD is short for linkage
+disequilibrium). One may use external reference panels to estimate it
+when this matrix cannot be obtained from samples directly. Importantly,
+the LD matrix has to be a matrix containing estimates of the
+correlation, <span class="math inline">\(r\)</span>, and not <span class="math inline">\(r^2\)</span> or <span class="math inline">\(|r|\)</span>.</p>
+<p>The <code>univariate_regression</code> function can be used to
+compute summary statistics by fitting univariate simple regression
+variable by variable. The results are <span class="math inline">\(\hat{\beta}\)</span> and <span class="math inline">\(SE(\hat{\beta})\)</span> from which z-scores can
+be derived. Alternatively, you can obtain z-scores from <span class="math inline">\(\hat{\beta}\)</span> and p-values if you are
+provided with those information. For example,</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">sumstats</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/univariate_regression.html">univariate_regression</a></span><span class="op">(</span><span class="va">X</span>, <span class="va">Y</span><span class="op">[</span>,<span class="fl">1</span><span class="op">]</span><span class="op">)</span>
 <span class="va">z_scores</span> <span class="op">&lt;-</span> <span class="va">sumstats</span><span class="op">$</span><span class="va">betahat</span> <span class="op">/</span> <span class="va">sumstats</span><span class="op">$</span><span class="va">sebetahat</span>
@@ -144,34 +144,35 @@ first data-set:</p>
  
 </p>
 </div>
-<p>For this example the correlation matrix can be computed directly from
-data provide,</p>
+<p>For this example, the correlation matrix can be computed directly
+from data provided:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">R</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></span><span class="op">(</span><span class="va">X</span><span class="op">)</span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="fine-mapping-with-susier-using-summary-statistics">Fine-mapping with <code>susieR</code> using summary statistics<a class="anchor" aria-label="anchor" href="#fine-mapping-with-susier-using-summary-statistics"></a>
 </h2>
-<p>We assume there are at most 10 causal variables, i.e. set
-<code>L = 10</code>, although SuSiE is generally robust to the choice of
-<code>L</code>.</p>
-<p>Since the individual-level data is available for us, we have the
-in-sample LD matrix and the variance of <span class="math inline">\(y\)</span> is 7.8424088. We fit SuSiE regression
-with summary statistics, <span class="math inline">\(\hat{\beta}\)</span>, <span class="math inline">\(SE(\hat{\beta})\)</span>, <span class="math inline">\(R\)</span>, <span class="math inline">\(n\)</span>, and var_y (they are sufficient
-statistics). We estimate the residual variance because we have the
-in-sample LD matrix (“in-sample” LD means it was computed from the exact
-same matrix <code>X</code> that was used to obtain the other statistics.
-If the covariate effects are removed from the genotypes in univariate
-regression, the “in-sample” LD matrix should compute from the genotype
-residuals where the covariate effects have been removed).</p>
+<p>By default, SuSiE assumes at most 10 causal variables, with
+<code>L = 10</code>, although we note that SuSiE is generally robust to
+the choice of <code>L</code>.</p>
+<p>Since the individual-level data is available for us here, we can
+easily compute the “in-sample LD” matrix, as well as the variance of
+<span class="math inline">\(y\)</span>, which is 7.8424. (By
+“in-sample”, we means the LD was computed from the exact same matrix
+<code>X</code> that was used to obtain the other statistics.) When we
+fit SuSiE regression with summary statistics, <span class="math inline">\(\hat{\beta}\)</span>, <span class="math inline">\(SE(\hat{\beta})\)</span>, <span class="math inline">\(R\)</span>, <span class="math inline">\(n\)</span>, and var_y these are also the
+<em>sufficient statistics.</em> With an in-sample LD, we can also
+estimate the residual variance using these sufficient statistics. (Note
+that if the covariate effects are removed from the genotypes in the
+univariate regression, it is recommended that the “in-sample” LD matrix
+also be computed from the genotypes after the covariate effects have
+been removed.)</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">fitted_rss1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/susie_rss.html">susie_rss</a></span><span class="op">(</span>bhat <span class="op">=</span> <span class="va">sumstats</span><span class="op">$</span><span class="va">betahat</span>, shat <span class="op">=</span> <span class="va">sumstats</span><span class="op">$</span><span class="va">sebetahat</span>, n <span class="op">=</span> <span class="va">n</span>, R <span class="op">=</span> <span class="va">R</span>, var_y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">var</a></span><span class="op">(</span><span class="va">Y</span><span class="op">[</span>,<span class="fl">1</span><span class="op">]</span><span class="op">)</span>, L <span class="op">=</span> <span class="fl">10</span>,
                          estimate_residual_variance <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
-<span class="co"># <span style="color: #BB00BB; font-weight: bold; text-decoration: underline;">HINT:</span> The estimate_residual_variance is TRUE, please check R is the in-sample LD matrix, which is computed from the exact same matrix `X` that is used to obtain the other statistics. If the covariate effects are removed from the genotypes in univariate regression, the in-sample LD matrix should compute from the genotype residuals where the covariate effects have been removed.</span></code></pre></div>
-<p>Using <code>summary</code> function, we can examine the posterior
-inclusion probability (PIP) for each variable, and the 95% credible
-sets.</p>
-<p>Here, we are the 95% credible sets.</p>
+<span class="co"># <span style="color: #BB00BB;font-weight: bold;text-decoration: underline;">HINT:</span><span> For estimate_residual_variance = TRUE, please check that R is the "in-sample" LD matrix; that is, the correlation matrix obtained using the exact same data matrix X that was used for the other summary statistics. Also note, when covariates are included in the univariate regressions that produced the summary statistics, also consider removing these effects from X before computing R.</span></span></code></pre></div>
+<p>Using <code>summary</code>, we can examine the posterior inclusion
+probability (PIP) for each variable, and the 95% credible sets:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fitted_rss1</span><span class="op">)</span><span class="op">$</span><span class="va">cs</span>
 <span class="co">#   cs cs_log10bf cs_avg_r2 cs_min_r2</span>
@@ -182,10 +183,10 @@ sets.</p>
 <span class="co"># 1                                                                                                         653</span>
 <span class="co"># 2                                                                                                     773,777</span>
 <span class="co"># 3 362,365,372,373,374,379,381,383,384,386,387,388,389,391,392,396,397,398,399,400,401,403,404,405,407,408,415</span></code></pre></div>
-<p>The 3 causal signals have been captured by the 3 CS reported here.
-The 3rd CS contains many variables, including the true causal variable
+<p>The three causal signals have been captured by the three CSs. Note
+the third CS contains many variables, including the true causal variable
 403.</p>
-<p>We can also plot the posterior inclusion probability (PIP),</p>
+<p>We can also plot the posterior inclusion probabilities (PIPs):</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="../reference/susie_plots.html">susie_plot</a></span><span class="op">(</span><span class="va">fitted_rss1</span>, y<span class="op">=</span><span class="st">"PIP"</span>, b<span class="op">=</span><span class="va">b</span><span class="op">)</span></code></pre></div>
 <div class="figure" style="text-align: center">
@@ -193,38 +194,39 @@ The 3rd CS contains many variables, including the true causal variable
  
 </p>
 </div>
-<p>The true causal variables are colored red. The 95% CS identified are
-circled in different colors.</p>
-<p>The result is exactly same as using the individual level data with
-<code>susie</code>.</p>
+<p>The true causal variables are shown in red. The 95% CSs are shown by
+three different colours (green, purple, blue).</p>
+<p>Note this result is <em>exactly the same</em> as running
+<code>susie</code> on the original individual-level data:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">fitted</span> <span class="op">=</span> <span class="fu"><a href="../reference/susie.html">susie</a></span><span class="op">(</span><span class="va">X</span>, <span class="va">Y</span><span class="op">[</span>,<span class="fl">1</span><span class="op">]</span>, L <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/base/all.equal.html" class="external-link">all.equal</a></span><span class="op">(</span><span class="va">fitted</span><span class="op">$</span><span class="va">pip</span>, <span class="va">fitted_rss1</span><span class="op">$</span><span class="va">pip</span><span class="op">)</span>
 <span class="co"># [1] TRUE</span>
 <span class="fu"><a href="https://rdrr.io/r/base/all.equal.html" class="external-link">all.equal</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fitted</span><span class="op">)</span><span class="op">[</span><span class="op">-</span><span class="fl">1</span><span class="op">]</span>, <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fitted_rss1</span><span class="op">)</span><span class="op">[</span><span class="op">-</span><span class="fl">1</span><span class="op">]</span><span class="op">)</span>
 <span class="co"># [1] TRUE</span></code></pre></div>
-<p>If the variance of y is unknown, we fit SuSiE regression with summary
-statistics, <span class="math inline">\(\hat{\beta}\)</span>, <span class="math inline">\(SE(\hat{\beta})\)</span>, <span class="math inline">\(R\)</span> and <span class="math inline">\(n\)</span> (or z-scores, <span class="math inline">\(R\)</span> and <span class="math inline">\(n\)</span>). The output effect estimates are on
-the standardized <span class="math inline">\(X\)</span> and <span class="math inline">\(y\)</span> scale. Again, we estimate the residual
-variance because we have the in-sample LD matrix.</p>
+<p>If, on the other hand, the variance of &amp;y&amp; is unknown, we fit
+can SuSiE regression with summary statistics, <span class="math inline">\(\hat{\beta}\)</span>, <span class="math inline">\(SE(\hat{\beta})\)</span>, <span class="math inline">\(R\)</span> and <span class="math inline">\(n\)</span> (or <em>z</em>-scores, <span class="math inline">\(R\)</span> and <span class="math inline">\(n\)</span>). The outputted effect estimates are
+now on the standardized <span class="math inline">\(X\)</span> and <span class="math inline">\(y\)</span> scale. Still, we can estimate the
+residual variance because we have the in-sample LD matrix:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">fitted_rss2</span> <span class="op">=</span> <span class="fu"><a href="../reference/susie_rss.html">susie_rss</a></span><span class="op">(</span>z <span class="op">=</span> <span class="va">z_scores</span>, R <span class="op">=</span> <span class="va">R</span>, n <span class="op">=</span> <span class="va">n</span>, L <span class="op">=</span> <span class="fl">10</span>, estimate_residual_variance <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
-<span class="co"># <span style="color: #BB00BB; font-weight: bold; text-decoration: underline;">HINT:</span> The estimate_residual_variance is TRUE, please check R is the in-sample LD matrix, which is computed from the exact same matrix `X` that is used to obtain the other statistics. If the covariate effects are removed from the genotypes in univariate regression, the in-sample LD matrix should compute from the genotype residuals where the covariate effects have been removed.</span></code></pre></div>
-<p>The result is same as using the individual level data with
-<code>susie</code>, but the output effect estimates are on different
-scale.</p>
+<code class="sourceCode R"><span class="va">fitted_rss2</span> <span class="op">=</span> <span class="fu"><a href="../reference/susie_rss.html">susie_rss</a></span><span class="op">(</span>z <span class="op">=</span> <span class="va">z_scores</span>, R <span class="op">=</span> <span class="va">R</span>, n <span class="op">=</span> <span class="va">n</span>, L <span class="op">=</span> <span class="fl">10</span>,
+                        estimate_residual_variance <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
+<span class="co"># <span style="color: #BB00BB;font-weight: bold;text-decoration: underline;">HINT:</span><span> For estimate_residual_variance = TRUE, please check that R is the "in-sample" LD matrix; that is, the correlation matrix obtained using the exact same data matrix X that was used for the other summary statistics. Also note, when covariates are included in the univariate regressions that produced the summary statistics, also consider removing these effects from X before computing R.</span></span></code></pre></div>
+<p>The result is same as if we had run <code>susie</code> on the
+individual-level data, but the output effect estimates are on different
+scale:</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/all.equal.html" class="external-link">all.equal</a></span><span class="op">(</span><span class="va">fitted</span><span class="op">$</span><span class="va">pip</span>, <span class="va">fitted_rss2</span><span class="op">$</span><span class="va">pip</span><span class="op">)</span>
 <span class="co"># [1] TRUE</span>
-<span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fitted</span><span class="op">)</span><span class="op">[</span><span class="op">-</span><span class="fl">1</span><span class="op">]</span>, <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fitted_rss2</span><span class="op">)</span><span class="op">[</span><span class="op">-</span><span class="fl">1</span><span class="op">]</span>, xlab <span class="op">=</span> <span class="st">'effects from SuSiE'</span>, ylab <span class="op">=</span> <span class="st">'effects from SuSiE-RSS'</span>, xlim<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">)</span>, ylim<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">0.3</span>,<span class="fl">0.3</span><span class="op">)</span><span class="op">)</span></code></pre></div>
+<span class="fu"><a href="https://rdrr.io/r/graphics/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fitted</span><span class="op">)</span><span class="op">[</span><span class="op">-</span><span class="fl">1</span><span class="op">]</span>, <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fitted_rss2</span><span class="op">)</span><span class="op">[</span><span class="op">-</span><span class="fl">1</span><span class="op">]</span>, xlab <span class="op">=</span> <span class="st">'effects from SuSiE'</span>, ylab <span class="op">=</span> <span class="st">'effects from SuSiE-RSS'</span>, xlim<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">)</span>, ylim<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">0.3</span>,<span class="fl">0.3</span><span class="op">)</span><span class="op">)</span></code></pre></div>
 <div class="figure" style="text-align: center">
-<img src="finemapping_summary_statistics_files/figure-html/unnamed-chunk-13-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
+<img src="finemapping_summary_statistics_files/figure-html/unnamed-chunk-13-1.png" alt="&amp;nbsp;" width="420"><p class="caption">
  
 </p>
 </div>
-<p>The output effect estimates are same as applying SuSiE on
-standardized <span class="math inline">\(X\)</span> and $y, i.e. <span class="math inline">\(y\)</span> and the columns of <span class="math inline">\(X\)</span> are each divided by the sample standard
-deviation so that they each have the same standard deviation.</p>
+<p>Specifically, without the variance of <span class="math inline">\(y\)</span>, these estimates are same as if we had
+applied SuSiE to a standardized <span class="math inline">\(X\)</span>
+and <span class="math inline">\(y\)</span>; that is, as if <span class="math inline">\(y\)</span> and the columns of <span class="math inline">\(X\)</span> had been normalized so that <span class="math inline">\(y\)</span> and each column of <span class="math inline">\(X\)</span> had a standard deviation of 1.</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">fitted_standardize</span> <span class="op">=</span> <span class="fu"><a href="../reference/susie.html">susie</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/scale.html" class="external-link">scale</a></span><span class="op">(</span><span class="va">X</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/scale.html" class="external-link">scale</a></span><span class="op">(</span><span class="va">Y</span><span class="op">[</span>,<span class="fl">1</span><span class="op">]</span><span class="op">)</span>, L <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/base/all.equal.html" class="external-link">all.equal</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fitted_standardize</span><span class="op">)</span><span class="op">[</span><span class="op">-</span><span class="fl">1</span><span class="op">]</span>, <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fitted_rss2</span><span class="op">)</span><span class="op">[</span><span class="op">-</span><span class="fl">1</span><span class="op">]</span><span class="op">)</span>
@@ -234,12 +236,12 @@ deviation so that they each have the same standard deviation.</p>
 <h2 id="fine-mapping-with-susier-using-ld-matrix-from-reference-panel">Fine-mapping with <code>susieR</code> using LD matrix from reference
 panel<a class="anchor" aria-label="anchor" href="#fine-mapping-with-susier-using-ld-matrix-from-reference-panel"></a>
 </h2>
-<p>When original genotype information is not available, one may use
-reference panel to estimate LD matrix.</p>
-<p>We randomly generated 500 samples from <span class="math inline">\(N(0,R)\)</span> and treated them as reference
+<p>When the original genotypes are not available, one may use a separate
+reference panel to estimate the LD matrix.</p>
+<p>To illustrate this, we randomly generated 500 samples from <span class="math inline">\(N(0,R)\)</span> and treated them as reference
 panel genotype matrix <code>X_ref</code>.</p>
 <p>We fit the SuSiE regression using out-of sample LD matrix. The
-residual variance is fixed as 1, because estimating residual variance
+residual variance is fixed at 1 because estimating residual variance
 sometimes produces very inaccurate estimates with out-of-sample LD
 matrix. The output effect estimates are on the standardized <span class="math inline">\(X\)</span> and <span class="math inline">\(y\)</span> scale.</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
@@ -251,28 +253,27 @@ matrix. The output effect estimates are on the standardized <span class="math in
  
 </p>
 </div>
-<p>The model identifies the true signals, and the result is very similar
-to using the in-sample LD matrix, as the out-of-sample LD matrix is
-similar to the in-sample LD matrix in this example.</p>
+<p>In this particular example, the SuSiE result with out-of-sample LD is
+very similar to using the in-sample LD matrix because the LD matrices
+are quite similar.</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fitted_rss1</span><span class="op">$</span><span class="va">pip</span>, <span class="va">fitted_rss3</span><span class="op">$</span><span class="va">pip</span>, ylim<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">1</span><span class="op">)</span>, xlab<span class="op">=</span><span class="st">'SuSiE PIP'</span>, ylab<span class="op">=</span><span class="st">'SuSiE-RSS PIP'</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/graphics/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fitted_rss1</span><span class="op">$</span><span class="va">pip</span>, <span class="va">fitted_rss3</span><span class="op">$</span><span class="va">pip</span>, ylim<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">1</span><span class="op">)</span>, xlab<span class="op">=</span><span class="st">'SuSiE PIP'</span>, ylab<span class="op">=</span><span class="st">'SuSiE-RSS PIP'</span><span class="op">)</span></code></pre></div>
 <div class="figure" style="text-align: center">
-<img src="finemapping_summary_statistics_files/figure-html/unnamed-chunk-18-1.png" alt="&amp;nbsp;" width="720"><p class="caption">
+<img src="finemapping_summary_statistics_files/figure-html/unnamed-chunk-18-1.png" alt="&amp;nbsp;" width="420"><p class="caption">
  
 </p>
 </div>
-<p>In some rare cases, the sample size <span class="math inline">\(n\)</span> is unknown. We assume the sample size
-is infinity and all the effects are small, so the estimated PVE for each
-variant is close to zero. We fit the model using z-scores and
-out-of-sample LD matrix. The output effect estimates are on the
-noncentrality parameter scale.</p>
+<p>In some rare cases, the sample size <span class="math inline">\(n\)</span> is unknown. When the sampel size is not
+provided as input to <code>susie_rss</code>, this is in effect assuming
+the sample size is infinity and all the effects are small, and the
+estimated PVE for each variant will be close to zero. The outputted
+effect estimates are on the “noncentrality parameter” scale.</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">fitted_rss4</span> <span class="op">=</span> <span class="fu"><a href="../reference/susie_rss.html">susie_rss</a></span><span class="op">(</span><span class="va">z_scores</span>, <span class="va">R_ref</span>, L <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>
-<span class="co"># <span style="color: #BB0000; font-weight: bold; text-decoration: underline;">WARNING:</span> Providing the sample size (n), or even a rough estimate of n, is highly recommended. Without n, the implicit assumption is n is large (Inf) and the effect sizes are small (close to zero).</span></code></pre></div>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="../reference/susie_plots.html">susie_plot</a></span><span class="op">(</span><span class="va">fitted_rss4</span>, y<span class="op">=</span><span class="st">"PIP"</span>, b<span class="op">=</span><span class="va">b</span><span class="op">)</span></code></pre></div>
+<span class="co"># <span style="color: #BB0000;font-weight: bold;text-decoration: underline;">WARNING:</span><span> Providing the sample size (n), or even a rough estimate of n, is highly recommended. Without n, the implicit assumption is n is large (Inf) and the effect sizes are small (close to zero).</span></span>
+<span class="fu"><a href="../reference/susie_plots.html">susie_plot</a></span><span class="op">(</span><span class="va">fitted_rss4</span>, y<span class="op">=</span><span class="st">"PIP"</span>, b<span class="op">=</span><span class="va">b</span><span class="op">)</span></code></pre></div>
 <div class="figure" style="text-align: center">
-<img src="finemapping_summary_statistics_files/figure-html/unnamed-chunk-20-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
+<img src="finemapping_summary_statistics_files/figure-html/unnamed-chunk-19-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
  
 </p>
 </div>
@@ -282,15 +283,15 @@ noncentrality parameter scale.</p>
 </h2>
 <p>Here are some details about the computing environment, including the
 versions of R, and the R packages, used to generate these results.</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span>
-<span class="co"># R version 4.1.0 (2021-05-18)</span>
-<span class="co"># Platform: x86_64-apple-darwin17.0 (64-bit)</span>
-<span class="co"># Running under: macOS Big Sur 10.16</span>
+<span class="co"># R version 3.6.2 (2019-12-12)</span>
+<span class="co"># Platform: x86_64-apple-darwin15.6.0 (64-bit)</span>
+<span class="co"># Running under: macOS Catalina 10.15.7</span>
 <span class="co"># </span>
 <span class="co"># Matrix products: default</span>
-<span class="co"># BLAS:   /Library/Frameworks/R.framework/Versions/4.1/Resources/lib/libRblas.dylib</span>
-<span class="co"># LAPACK: /Library/Frameworks/R.framework/Versions/4.1/Resources/lib/libRlapack.dylib</span>
+<span class="co"># BLAS:   /Library/Frameworks/R.framework/Versions/3.6/Resources/lib/libRblas.0.dylib</span>
+<span class="co"># LAPACK: /Library/Frameworks/R.framework/Versions/3.6/Resources/lib/libRlapack.dylib</span>
 <span class="co"># </span>
 <span class="co"># locale:</span>
 <span class="co"># [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8</span>
@@ -299,25 +300,25 @@ versions of R, and the R packages, used to generate these results.</p>
 <span class="co"># [1] stats     graphics  grDevices utils     datasets  methods   base     </span>
 <span class="co"># </span>
 <span class="co"># other attached packages:</span>
-<span class="co"># [1] susieR_0.12.07</span>
+<span class="co"># [1] susieR_0.12.10</span>
 <span class="co"># </span>
 <span class="co"># loaded via a namespace (and not attached):</span>
-<span class="co">#  [1] tidyselect_1.1.2   xfun_0.30          bslib_0.3.1        purrr_0.3.4       </span>
-<span class="co">#  [5] lattice_0.20-44    colorspace_2.0-3   vctrs_0.4.1        generics_0.1.2    </span>
-<span class="co">#  [9] htmltools_0.5.2    yaml_2.3.5         utf8_1.2.2         rlang_1.0.2       </span>
-<span class="co"># [13] mixsqp_0.3-43      pkgdown_2.0.3      jquerylib_0.1.4    pillar_1.7.0      </span>
-<span class="co"># [17] glue_1.6.2         DBI_1.1.2          RcppZiggurat_0.1.6 plyr_1.8.7        </span>
-<span class="co"># [21] matrixStats_0.62.0 lifecycle_1.0.1    stringr_1.4.0      munsell_0.5.0     </span>
-<span class="co"># [25] gtable_0.3.0       ragg_1.2.2         memoise_2.0.1      evaluate_0.15     </span>
-<span class="co"># [29] knitr_1.39         fastmap_1.1.0      parallel_4.1.0     irlba_2.3.5       </span>
-<span class="co"># [33] fansi_1.0.3        Rfast_2.0.6        highr_0.9          Rcpp_1.0.8.3      </span>
-<span class="co"># [37] scales_1.2.0       cachem_1.0.6       desc_1.4.1         jsonlite_1.8.0    </span>
-<span class="co"># [41] systemfonts_1.0.4  fs_1.5.2           textshaping_0.3.6  ggplot2_3.3.6     </span>
-<span class="co"># [45] digest_0.6.29      stringi_1.7.6      dplyr_1.0.9        grid_4.1.0        </span>
-<span class="co"># [49] rprojroot_2.0.3    cli_3.3.0          tools_4.1.0        magrittr_2.0.3    </span>
-<span class="co"># [53] sass_0.4.1         tibble_3.1.7       crayon_1.5.1       pkgconfig_2.0.3   </span>
-<span class="co"># [57] ellipsis_0.3.2     Matrix_1.3-3       reshape_0.8.9      assertthat_0.2.1  </span>
-<span class="co"># [61] rmarkdown_2.14     rstudioapi_0.13    R6_2.5.1           compiler_4.1.0</span></code></pre></div>
+<span class="co">#  [1] tidyselect_1.1.1   xfun_0.29          bslib_0.3.1        purrr_0.3.4       </span>
+<span class="co">#  [5] lattice_0.20-38    colorspace_1.4-1   vctrs_0.3.8        generics_0.0.2    </span>
+<span class="co">#  [9] htmltools_0.5.2    yaml_2.2.0         utf8_1.1.4         rlang_0.4.11      </span>
+<span class="co"># [13] mixsqp_0.3-46      pkgdown_2.0.2      jquerylib_0.1.4    pillar_1.6.2      </span>
+<span class="co"># [17] glue_1.4.2         DBI_1.1.0          RcppZiggurat_0.1.5 matrixStats_0.61.0</span>
+<span class="co"># [21] lifecycle_1.0.0    plyr_1.8.5         stringr_1.4.0      munsell_0.5.0     </span>
+<span class="co"># [25] gtable_0.3.0       ragg_0.3.1         memoise_1.1.0      evaluate_0.14     </span>
+<span class="co"># [29] knitr_1.37         fastmap_1.1.0      parallel_3.6.2     irlba_2.3.3       </span>
+<span class="co"># [33] fansi_0.4.0        Rfast_2.0.3        highr_0.8          Rcpp_1.0.7        </span>
+<span class="co"># [37] scales_1.1.0       backports_1.1.5    desc_1.2.0         jsonlite_1.7.2    </span>
+<span class="co"># [41] systemfonts_1.0.2  fs_1.5.2           ggplot2_3.3.5      digest_0.6.23     </span>
+<span class="co"># [45] stringi_1.4.3      dplyr_1.0.7        grid_3.6.2         rprojroot_1.3-2   </span>
+<span class="co"># [49] tools_3.6.2        magrittr_2.0.1     sass_0.4.0         tibble_3.1.3      </span>
+<span class="co"># [53] crayon_1.4.1       pkgconfig_2.0.3    ellipsis_0.3.2     Matrix_1.2-18     </span>
+<span class="co"># [57] assertthat_0.2.1   rmarkdown_2.11     reshape_0.8.8      R6_2.4.1          </span>
+<span class="co"># [61] compiler_3.6.2</span></code></pre></div>
 </div>
   </div>
 
@@ -333,12 +334,14 @@ versions of R, and the R packages, used to generate these results.</p>
 
       <footer><div class="copyright">
   <p></p>
-<p>Developed by Gao Wang, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto, Matthew Stephens.</p>
+<p>Developed by Gao Wang, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto,
+Matthew Stephens.</p>
 </div>
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a>
+2.0.2.</p>
 </div>
 
       </footer>

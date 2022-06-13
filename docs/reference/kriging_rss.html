@@ -25,7 +25,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.12.00</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.12.10</span>
       </span>
     </div>
 
@@ -74,7 +74,7 @@
   <span class="va">R</span>,
   <span class="va">n</span>,
   r_tol <span class="op">=</span> <span class="fl">1e-08</span>,
-  s <span class="op">=</span> <span class="fu"><a href="estimate_s_rss.html">estimate_s_rss</a></span><span class="op">(</span><span class="va">z</span>, <span class="va">R</span>, <span class="va">r_tol</span>, method <span class="op">=</span> <span class="st">"null-mle"</span><span class="op">)</span>
+  s <span class="op">=</span> <span class="fu"><a href="estimate_s_rss.html">estimate_s_rss</a></span><span class="op">(</span><span class="va">z</span>, <span class="va">R</span>, <span class="va">n</span>, <span class="va">r_tol</span>, method <span class="op">=</span> <span class="st">"null-mle"</span><span class="op">)</span>
 <span class="op">)</span></code></pre></div>
     </div>
 
@@ -86,7 +86,7 @@
 <dd><p>A p by p symmetric, positive semidefinite correlation
 matrix.</p></dd>
 <dt>n</dt>
-<dd><p>The sample size.</p></dd>
+<dd><p>The sample size. (Optional, but highly recommended.)</p></dd>
 <dt>r_tol</dt>
 <dd><p>Tolerance level for eigenvalue check of positive
 semidefinite matrix of R.</p></dd>
@@ -119,9 +119,9 @@ semidefinite matrix of R.</p></dd>
 <span class="r-in"><span class="va">y</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/drop.html" class="external-link">drop</a></span><span class="op">(</span><span class="va">X</span> <span class="op"><a href="https://rdrr.io/r/base/matmult.html" class="external-link">%*%</a></span> <span class="va">beta</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span><span class="op">)</span></span>
 <span class="r-in"><span class="va">ss</span> <span class="op">=</span> <span class="fu"><a href="univariate_regression.html">univariate_regression</a></span><span class="op">(</span><span class="va">X</span>,<span class="va">y</span><span class="op">)</span></span>
 <span class="r-in"><span class="va">R</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></span><span class="op">(</span><span class="va">X</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">R</span>,<span class="st">"eigen"</span><span class="op">)</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/eigen.html" class="external-link">eigen</a></span><span class="op">(</span><span class="va">R</span>, symmetric <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">R</span>,<span class="st">"eigen"</span><span class="op">)</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/eigen.html" class="external-link">eigen</a></span><span class="op">(</span><span class="va">R</span>,symmetric <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span class="r-in"><span class="va">zhat</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/with.html" class="external-link">with</a></span><span class="op">(</span><span class="va">ss</span>,<span class="va">betahat</span><span class="op">/</span><span class="va">sebetahat</span><span class="op">)</span></span>
-<span class="r-in"><span class="va">cond_dist</span> <span class="op">=</span> <span class="fu">kriging_rss</span><span class="op">(</span><span class="va">zhat</span>, <span class="va">R</span>, n<span class="op">=</span><span class="va">n</span><span class="op">)</span></span>
+<span class="r-in"><span class="va">cond_dist</span> <span class="op">=</span> <span class="fu">kriging_rss</span><span class="op">(</span><span class="va">zhat</span>,<span class="va">R</span>,n <span class="op">=</span> <span class="va">n</span><span class="op">)</span></span>
 <span class="r-in"><span class="va">cond_dist</span><span class="op">$</span><span class="va">plot</span></span>
 <span class="r-plt img"><img src="kriging_rss-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"></span>
@@ -135,11 +135,13 @@ semidefinite matrix of R.</p></dd>
 
 
       <footer><div class="copyright">
-  <p></p><p>Developed by Gao Wang, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto, Matthew Stephens.</p>
+  <p></p><p>Developed by Gao Wang, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto,
+Matthew Stephens.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a>
+2.0.2.</p>
 </div>
 
       </footer></div>

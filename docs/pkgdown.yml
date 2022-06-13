@@ -1,4 +1,4 @@
-pandoc: 2.11.4
+pandoc: 2.17.1.1
 pkgdown: 2.0.2
 pkgdown_sha: ~
 articles:
@@ -8,7 +8,8 @@ articles:
   mwe: mwe.html
   sparse_susie_eval: sparse_susie_eval.html
   susie_refine: susie_refine.html
+  susie_rss: susie_rss.html
   susierss_diagnostic: susierss_diagnostic.html
   trend_filtering: trend_filtering.html
-last_built: 2022-03-30T14:36Z
+last_built: 2022-06-13T14:01Z
 

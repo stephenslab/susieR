@@ -15,9 +15,14 @@ knitr::opts_chunk$set(collapse = TRUE,comment = "#",fig.width = 5,
                       fig.cap = "&nbsp;",dpi = 120)
 ```
 
-This vignette demonstrates how to use `susieR` with "summary statistics" in the context of genetic fine-mapping. 
-We use the same simulated data as in [fine mapping vignette](finemapping.html). The simulated data is expression level of a gene ($y$) in $N \approx 600$ individuals. 
-We want to identify with the genotype matrix $X_{N\times P}$ ($P=1001$) the genetic variables that causes changes in expression level. The data-set is shipped with `susieR`. It is simulated to have exactly 3 non-zero effects.
+This vignette demonstrates how to use `susieR` with "summary
+statistics" in the context of genetic fine-mapping.  We use the same
+simulated data as in [fine mapping vignette](finemapping.html). The
+simulated data are expression levels of a gene ($y$) in $N \approx 600$
+individuals.  We want to identify with the genotype matrix $X_{N\times
+P}$ ($P=1001$) the genetic variables that causes changes in expression
+level. This data set is shipped with `susieR`. It is simulated to have
+exactly three non-zero effects.
 
 ```{r}
 library(susieR)
@@ -32,13 +37,14 @@ attach(N3finemapping)
 n = nrow(X)
 ```
 
-Notice that we've simulated 2 sets of $Y$ as 2 simulation replicates. Here we'll focus on the first data-set.
+Notice that we've simulated two sets of $Y$ as two simulation
+replicates. Here we'll focus on the first data-set.
 
 ```{r}
 dim(Y)
 ```
 
-Here are the 3 "true" signals in the first data-set:
+Here are the three true signals in the first data-set:
 
 ```{r}
 b <- true_coef[,1]
@@ -53,17 +59,23 @@ So the underlying causal variables are 403, 653 and 773.
 
 ## Summary statistics from simple regression
 
-Summary statistics of genetic association studies typically contain effect size ($\hat{\beta}$ coefficient from regression), and p-value. 
-These information can be used to perform fine-mapping with given an additional input of correlation matrix between variables.
-The correlation matrix in genetics is typically referred to as LD matrix (LD for linkage disequilibrium). 
-One may use external reference panels to estimate it when this matrix cannot be obtained from samples directly.
-Caution that LD matrix here has to be correlation matrix $r$, not $r^2$ or $abs(r)$.
+Summary statistics of genetic association studies typically contain
+effect sizes ($\hat{\beta}$ coefficient from regression) and p-values.
+These statisticscan be used to perform fine-mapping with given an
+additional input of correlation matrix between variables.  The
+correlation matrix in genetics is typically referred to as an "LD
+matrix" (LD is short for linkage disequilibrium).  One may use
+external reference panels to estimate it when this matrix cannot be
+obtained from samples directly. Importantly, the LD matrix has to be a
+matrix containing estimates of the correlation, $r$, and not $r^2$ or
+$|r|$.
 
-`univariate_regression` function can be used to compute 
-summary statistics by fitting univariate simple regression variable by variable.
-The results are $\hat{\beta}$ and $SE(\hat{\beta})$ from which z-scores can be derived. 
-Alternatively you can obtain z-scores from $\hat{\beta}$ and p-values if you are provided with those information.
-Again we focus only on results from the first data-set:
+The `univariate_regression` function can be used to compute summary
+statistics by fitting univariate simple regression variable by
+variable.  The results are $\hat{\beta}$ and $SE(\hat{\beta})$ from
+which z-scores can be derived. Alternatively, you can obtain z-scores
+from $\hat{\beta}$ and p-values if you are provided with those
+information. For example,
 
 ```{r}
 sumstats <- univariate_regression(X, Y[,1])
@@ -71,7 +83,8 @@ z_scores <- sumstats$betahat / sumstats$sebetahat
 susie_plot(z_scores, y = "z", b=b)
 ```
 
-For this example the correlation matrix can be computed directly from data provide,
+For this example, the correlation matrix can be computed directly from
+data provided:
 
 ```{r}
 R <- cor(X)
@@ -79,36 +92,50 @@ R <- cor(X)
 
 ## Fine-mapping with `susieR` using summary statistics
 
-We assume there are at most 10 causal variables, i.e. set `L = 10`, although SuSiE is generally robust to the choice of `L`.
+By default, SuSiE assumes at most 10 causal variables, with `L =
+10`, although we note that SuSiE is generally robust to the choice of
+`L`.
 
-Since the individual-level data is available for us, we have the in-sample LD matrix and the variance of $y$ is `r var(Y[,1])`. We fit SuSiE regression with summary statistics, $\hat{\beta}$, $SE(\hat{\beta})$, $R$, $n$, and var_y (they are sufficient statistics). We estimate the residual variance because we have the in-sample LD matrix ("in-sample" LD means it was computed from the exact same matrix `X` that was used to obtain the other statistics. If the covariate effects are removed from the genotypes in univariate regression, the "in-sample" LD matrix should compute from the genotype residuals where the covariate effects have been removed).
+Since the individual-level data is available for us here, we can
+easily compute the "in-sample LD" matrix, as well as the variance of
+$y$, which is `r round(var(Y[,1]),digits = 4)`.  (By "in-sample", we
+means the LD was computed from the exact same matrix `X` that was used
+to obtain the other statistics.) When we fit SuSiE regression with
+summary statistics, $\hat{\beta}$, $SE(\hat{\beta})$, $R$, $n$, and
+var_y these are also the *sufficient statistics.* With an in-sample
+LD, we can also estimate the residual variance using these sufficient
+statistics. (Note that if the covariate effects are removed from the
+genotypes in the univariate regression, it is recommended that the
+"in-sample" LD matrix also be computed from the genotypes after the
+covariate effects have been removed.)
 
 ```{r}
 fitted_rss1 <- susie_rss(bhat = sumstats$betahat, shat = sumstats$sebetahat, n = n, R = R, var_y = var(Y[,1]), L = 10,
                          estimate_residual_variance = TRUE)
 ```
 
-Using `summary` function, we can examine the posterior inclusion probability (PIP) for each variable, and the 95% credible sets. 
-
-Here, we are the 95% credible sets.
+Using `summary`, we can examine the posterior inclusion probability
+(PIP) for each variable, and the 95% credible sets:
 
 ```{r}
 summary(fitted_rss1)$cs
 ```
 
-The 3 causal signals have been captured by the 3 CS reported here. The
-3rd CS contains many variables, including the true causal variable
-403.
+The three causal signals have been captured by the three CSs. Note the
+third CS contains many variables, including the true causal
+variable 403.
 
-We can also plot the posterior inclusion probability (PIP),
+We can also plot the posterior inclusion probabilities (PIPs):
 
 ```{r}
 susie_plot(fitted_rss1, y="PIP", b=b)
 ```
 
-The true causal variables are colored red. The 95% CS identified are circled in different colors.
+The true causal variables are shown in red. The 95% CSs are
+shown by three different colours (green, purple, blue).
 
-The result is exactly same as using the individual level data with `susie`.
+Note this result is *exactly the same* as running `susie` on the
+original individual-level data:
 
 ```{r}
 fitted = susie(X, Y[,1], L = 10)
@@ -116,19 +143,29 @@ all.equal(fitted$pip, fitted_rss1$pip)
 all.equal(coef(fitted)[-1], coef(fitted_rss1)[-1])
 ```
 
-If the variance of y is unknown, we fit SuSiE regression with summary statistics, $\hat{\beta}$, $SE(\hat{\beta})$, $R$ and $n$ (or z-scores, $R$ and $n$). The output effect estimates are on the standardized $X$ and $y$ scale. Again, we estimate the residual variance because we have the in-sample LD matrix.
+If, on the other hand, the variance of &y& is unknown, we fit can SuSiE
+regression with summary statistics, $\hat{\beta}$, $SE(\hat{\beta})$,
+$R$ and $n$ (or *z*-scores, $R$ and $n$). The outputted effect estimates
+are now on the standardized $X$ and $y$ scale. Still, we can estimate the
+residual variance because we have the in-sample LD matrix:
 
 ```{r}
-fitted_rss2 = susie_rss(z = z_scores, R = R, n = n, L = 10, estimate_residual_variance = TRUE)
+fitted_rss2 = susie_rss(z = z_scores, R = R, n = n, L = 10,
+                        estimate_residual_variance = TRUE)
 ```
 
-The result is same as using the individual level data with `susie`, but the output effect estimates are on different scale.
-```{r}
+The result is same as if we had run `susie` on the individual-level
+data, but the output effect estimates are on different scale:
+
+```{r, fig.height=4, fig.width=3.5}
 all.equal(fitted$pip, fitted_rss2$pip)
 plot(coef(fitted)[-1], coef(fitted_rss2)[-1], xlab = 'effects from SuSiE', ylab = 'effects from SuSiE-RSS', xlim=c(-1,1), ylim=c(-0.3,0.3))
 ```
 
-The output effect estimates are same as applying SuSiE on standardized $X$ and $y, i.e. $y$ and the columns of $X$ are each divided by the sample standard deviation so that they each have the same standard deviation.
+Specifically, without the variance of $y$, these estimates are same as
+if we had applied SuSiE to a standardized $X$ and $y$; that is, as if
+$y$ and the columns of $X$ had been normalized so that $y$ and each
+column of $X$ had a standard deviation of 1.
 
 ```{r}
 fitted_standardize = susie(scale(X), scale(Y[,1]), L = 10)
@@ -138,9 +175,12 @@ all.equal(coef(fitted_standardize)[-1], coef(fitted_rss2)[-1])
 
 ## Fine-mapping with `susieR` using LD matrix from reference panel
 
-When original genotype information is not available, one may use reference panel to estimate LD matrix.
+When the original genotypes are not available, one may use a separate
+reference panel to estimate the LD matrix.
 
-We randomly generated 500 samples from $N(0,R)$ and treated them as reference panel genotype matrix `X_ref`.
+To illustrate this, we randomly generated 500 samples from $N(0,R)$
+and treated them as reference panel genotype matrix `X_ref`.
+
 ```{r echo=F}
 set.seed(1)
 tmp = matrix(rnorm(500*1001), 500, 1001)
@@ -150,7 +190,11 @@ X_ref = tmp %*% (sqrt(eigenR$values) * t(eigenR$vectors))
 R_ref = cor(X_ref)
 ```
 
-We fit the SuSiE regression using out-of sample LD matrix. The residual variance is fixed as 1, because estimating residual variance sometimes produces very inaccurate estimates with out-of-sample LD matrix. The output effect estimates are on the standardized $X$ and $y$ scale.
+We fit the SuSiE regression using out-of sample LD matrix. The
+residual variance is fixed at 1 because estimating residual variance
+sometimes produces very inaccurate estimates with out-of-sample LD
+matrix. The output effect estimates are on the standardized $X$ and
+$y$ scale.
 
 ```{r}
 fitted_rss3 <- susie_rss(z_scores, R_ref, n=n, L = 10)
@@ -159,19 +203,23 @@ fitted_rss3 <- susie_rss(z_scores, R_ref, n=n, L = 10)
 ```{r}
 susie_plot(fitted_rss3, y="PIP", b=b)
 ```
-The model identifies the true signals, and the result is very similar to using the in-sample LD matrix, as the out-of-sample LD matrix is similar to the in-sample LD matrix in this example.
 
-```{r, fig.width=6,fig.height=6}
+In this particular example, the SuSiE result with out-of-sample LD is
+very similar to using the in-sample LD matrix because the LD matrices
+are quite similar.
+
+```{r, fig.width=3.5,fig.height=4}
 plot(fitted_rss1$pip, fitted_rss3$pip, ylim=c(0,1), xlab='SuSiE PIP', ylab='SuSiE-RSS PIP')
 ```
 
-In some rare cases, the sample size $n$ is unknown. We assume the sample size is infinity and all the effects are small, so the estimated PVE for each variant is close to zero. We fit the model using z-scores and out-of-sample LD matrix. The output effect estimates are on the noncentrality parameter scale.
+In some rare cases, the sample size $n$ is unknown. When the sampel
+size is not provided as input to `susie_rss`, this is in effect
+assuming the sample size is infinity and all the effects are small,
+and the estimated PVE for each variant will be close to zero. The
+outputted effect estimates are on the "noncentrality parameter" scale.
 
 ```{r}
 fitted_rss4 = susie_rss(z_scores, R_ref, L = 10)
-```
-
-```{r}
 susie_plot(fitted_rss4, y="PIP", b=b)
 ```
 

@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.12.00</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.12.10</span>
       </span>
     </div>
 
@@ -67,9 +67,10 @@
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>SuSiE with L0Learn initialization example</h1>
-                        <h4 data-toc-skip class="author">Kaiqian Zhang</h4>
+                        <h4 data-toc-skip class="author">Kaiqian
+Zhang</h4>
             
-            <h4 data-toc-skip class="date">2022-03-30</h4>
+            <h4 data-toc-skip class="date">2022-06-13</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/HEAD/vignettes/l0_initialization.Rmd" class="external-link"><code>vignettes/l0_initialization.Rmd</code></a></small>
       <div class="hidden name"><code>l0_initialization.Rmd</code></div>
@@ -78,10 +79,12 @@
 
     
     
-<p><code>susieR</code> allows for a customized initialization. In this vignette we deomonstrate how to use <a href="https://github.com/hazimehh/L0Learn" class="external-link"><code>L0Learn</code></a> fit to initialize susieR.</p>
+<p><code>susieR</code> allows for a customized initialization. In this
+vignette we deomonstrate how to use <a href="https://github.com/hazimehh/L0Learn" class="external-link"><code>L0Learn</code></a> fit
+to initialize susieR.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/stephenslab/susieR" class="external-link">susieR</a></span><span class="op">)</span>
-<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://pubsonline.informs.org/doi/10.1287/opre.2019.1919" class="external-link">L0Learn</a></span><span class="op">)</span></code></pre></div>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://arxiv.org/abs/1803.01454" class="external-link">L0Learn</a></span><span class="op">)</span></code></pre></div>
 <div class="section level2">
 <h2 id="simulate-data">Simulate data<a class="anchor" aria-label="anchor" href="#simulate-data"></a>
 </h2>
@@ -98,11 +101,13 @@
 <div class="section level2">
 <h2 id="fit-l0learn">Fit L0Learn<a class="anchor" aria-label="anchor" href="#fit-l0learn"></a>
 </h2>
-<p>We start with fitting a L0-regularized model to the simulated data.</p>
+<p>We start with fitting a L0-regularized model to the simulated
+data.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span>
 <span class="va">L0fit</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/L0Learn/man/L0Learn.cvfit.html" class="external-link">L0Learn.cvfit</a></span><span class="op">(</span><span class="va">X</span>, <span class="va">y</span>, penalty <span class="op">=</span> <span class="st">"L0"</span><span class="op">)</span></code></pre></div>
-<p>Let’s choose the penalty strength parameter that minimizes the cross-validation error.</p>
+<p>Let’s choose the penalty strength parameter that minimizes the
+cross-validation error.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">lambdaIndex</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/which.min.html" class="external-link">which.min</a></span><span class="op">(</span><span class="va">L0fit</span><span class="op">$</span><span class="va">cvMeans</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span> 
 <span class="va">L0coef</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">L0fit</span><span class="op">$</span><span class="va">fit</span>, lambda <span class="op">=</span> <span class="va">L0fit</span><span class="op">$</span><span class="va">fit</span><span class="op">$</span><span class="va">lambda</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">[</span><span class="va">lambdaIndex</span><span class="op">]</span><span class="op">)</span><span class="op">)</span>
@@ -111,16 +116,18 @@
 <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">effect.beta</span><span class="op">)</span>
 <span class="co"># [1] 5</span>
 <span class="va">effect.beta</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">]</span>
-<span class="co">#  [1]  1.0630320  1.0199838  0.9825592  1.0071015 -0.1124103         NA</span>
+<span class="co">#  [1]  1.0630345  1.0199835  0.9825537  1.0071008 -0.1124102         NA</span>
 <span class="co">#  [7]         NA         NA         NA         NA</span>
 <span class="va">effect.index</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">]</span>
 <span class="co">#  [1]   1   2 300 400 555  NA  NA  NA  NA  NA</span></code></pre></div>
-<p>The L0Learn model finds 5 effects, which will be used to initialize susie.</p>
+<p>The L0Learn model finds 5 effects, which will be used to initialize
+susie.</p>
 </div>
 <div class="section level2">
 <h2 id="build-an-initialization-object">Build an initialization object<a class="anchor" aria-label="anchor" href="#build-an-initialization-object"></a>
 </h2>
-<p>We create an initialization from <code>l0learn</code> coefficients using <code>susie_init_coef</code> function,</p>
+<p>We create an initialization from <code>l0learn</code> coefficients
+using <code>susie_init_coef</code> function,</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span>
 <span class="va">s.init</span> <span class="op">=</span> <span class="fu"><a href="../reference/susie_init_coef.html">susie_init_coef</a></span><span class="op">(</span><span class="va">effect.index</span>, <span class="va">effect.beta</span>, <span class="va">p</span><span class="op">)</span></code></pre></div>
@@ -128,7 +135,9 @@
 <div class="section level2">
 <h2 id="run-susier-with-initialization">Run susieR with initialization<a class="anchor" aria-label="anchor" href="#run-susier-with-initialization"></a>
 </h2>
-<p>Now, we use <code>effect.index</code> and <code>effect.beta</code> obtained from L0Learn fit to create an <code>s.init</code> object. We then run susie with this initialization.</p>
+<p>Now, we use <code>effect.index</code> and <code>effect.beta</code>
+obtained from L0Learn fit to create an <code>s.init</code> object. We
+then run susie with this initialization.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">susieL0.fit</span> <span class="op">=</span> <span class="fu"><a href="../reference/susie.html">susie</a></span><span class="op">(</span><span class="va">X</span>,<span class="va">y</span>,s_init<span class="op">=</span><span class="va">s.init</span><span class="op">)</span>
 <span class="va">susieL0.fit</span><span class="op">$</span><span class="va">sets</span><span class="op">$</span><span class="va">cs</span>
@@ -148,7 +157,9 @@
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
 <ol style="list-style-type: decimal">
-<li>Hussein Hazimeh and Rahul Mazumder. (2018). Fast Best Subset Selection: Coordinate Descent and Local Combinatorial Optimization Algorithms.</li>
+<li>Hussein Hazimeh and Rahul Mazumder. (2018). Fast Best Subset
+Selection: Coordinate Descent and Local Combinatorial Optimization
+Algorithms.</li>
 </ol>
 </div>
   </div>
@@ -165,12 +176,14 @@
 
       <footer><div class="copyright">
   <p></p>
-<p>Developed by Gao Wang, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto, Matthew Stephens.</p>
+<p>Developed by Gao Wang, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto,
+Matthew Stephens.</p>
 </div>
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a>
+2.0.2.</p>
 </div>
 
       </footer>

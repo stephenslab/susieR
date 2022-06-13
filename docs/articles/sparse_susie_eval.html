@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.12.00</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.12.10</span>
       </span>
     </div>
 
@@ -67,9 +67,10 @@
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>Evaluation of sparse version of SuSiE</h1>
-                        <h4 data-toc-skip class="author">Kaiqian Zhang</h4>
+                        <h4 data-toc-skip class="author">Kaiqian
+Zhang</h4>
             
-            <h4 data-toc-skip class="date">2022-03-30</h4>
+            <h4 data-toc-skip class="date">2022-06-13</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/HEAD/vignettes/sparse_susie_eval.Rmd" class="external-link"><code>vignettes/sparse_susie_eval.Rmd</code></a></small>
       <div class="hidden name"><code>sparse_susie_eval.Rmd</code></div>
@@ -89,13 +90,18 @@
 <div class="section level2">
 <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
-<p>In this vignette, we provide line profiles for revised version SuSiE, which allows for a sparse matrix structure. We compare speed performance when the form of the matrix <code>X</code> is dense and sparse.</p>
-<p>In this minimal example, we observe that given a large sparse matrix, if it is in the dense form, the speed is around <code>40%</code> slower than that in a sparse form.</p>
+<p>In this vignette, we provide line profiles for revised version SuSiE,
+which allows for a sparse matrix structure. We compare speed performance
+when the form of the matrix <code>X</code> is dense and sparse.</p>
+<p>In this minimal example, we observe that given a large sparse matrix,
+if it is in the dense form, the speed is around <code>40%</code> slower
+than that in a sparse form.</p>
 </div>
 <div class="section level2">
 <h2 id="simulate-data">Simulate data<a class="anchor" aria-label="anchor" href="#simulate-data"></a>
 </h2>
-<p>We randomly simulate a <code>n=1000</code> by <code>p=1000</code> dense matrix and a sparse matrix at sparsity <span class="math inline">\(99\%\)</span>, i.e. <span class="math inline">\(99\%\)</span> entries are zeros.</p>
+<p>We randomly simulate a <code>n=1000</code> by <code>p=1000</code>
+dense matrix and a sparse matrix at sparsity <span class="math inline">\(99\%\)</span>, i.e. <span class="math inline">\(99\%\)</span> entries are zeros.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">create_sparsity_mat</span> <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">sparsity</span>, <span class="va">n</span>, <span class="va">p</span><span class="op">)</span> <span class="op">{</span>
   <span class="va">nonzero</span>          <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">n</span><span class="op">*</span><span class="va">p</span><span class="op">*</span><span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="va">sparsity</span><span class="op">)</span><span class="op">)</span>
@@ -131,7 +137,8 @@
 <div class="section level2">
 <h2 id="further-step">Further step<a class="anchor" aria-label="anchor" href="#further-step"></a>
 </h2>
-<p>We encourage people who are insterested in improving SuSiE can get insights from those line profiles provided.</p>
+<p>We encourage people who are insterested in improving SuSiE can get
+insights from those line profiles provided.</p>
 </div>
   </div>
 
@@ -147,12 +154,14 @@
 
       <footer><div class="copyright">
   <p></p>
-<p>Developed by Gao Wang, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto, Matthew Stephens.</p>
+<p>Developed by Gao Wang, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto,
+Matthew Stephens.</p>
 </div>
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a>
+2.0.2.</p>
 </div>
 
       </footer>

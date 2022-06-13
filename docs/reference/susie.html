@@ -34,7 +34,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.12.00</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.12.10</span>
       </span>
     </div>
 
@@ -426,12 +426,12 @@ and/or if \(X'X\) is already computed, then
     <p>G. Wang, A. Sarkar, P. Carbonetto and M. Stephens (2020). A simple
   new approach to variable selection in regression, with application
   to genetic fine-mapping. <em>Journal of the Royal Statistical
-  Society, Series B</em> <b>82</b>, 1273-1300 doi: <a href="https://doi.org/10.1101/501114" class="external-link">10.1101/501114</a>
-.</p>
+  Society, Series B</em> <b>82</b>, 1273-1300
+  <a href="https://doi.org/10.1101/501114" class="external-link">https://doi.org/10.1101/501114</a>.</p>
 <p>Y. Zou, P. Carbonetto, G. Wang and M. Stephens (2021).
   Fine-mapping from summary data with the “Sum of Single Effects”
-  model. <em>bioRxiv</em> doi: <a href="https://doi.org/10.1101/2021.11.03.467167" class="external-link">10.1101/2021.11.03.467167</a>
-.</p>
+  model. <em>bioRxiv</em>
+  <a href="https://doi.org/10.1101/2021.11.03.467167" class="external-link">https://doi.org/10.1101/2021.11.03.467167</a>.</p>
     </div>
     <div id="see-also">
     <h2>See also</h2>
@@ -476,10 +476,10 @@ and/or if \(X'X\) is already computed, then
 <span class="r-out co"><span class="r-pr">#&gt;</span> $requested_coverage</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.95</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">beta</span>,<span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">res1</span><span class="op">)</span><span class="op">[</span><span class="op">-</span><span class="fl">1</span><span class="op">]</span><span class="op">)</span></span>
+<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/graphics/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">beta</span>,<span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">res1</span><span class="op">)</span><span class="op">[</span><span class="op">-</span><span class="fl">1</span><span class="op">]</span><span class="op">)</span></span>
 <span class="r-in"><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>a <span class="op">=</span> <span class="fl">0</span>,b <span class="op">=</span> <span class="fl">1</span>,col <span class="op">=</span> <span class="st">"skyblue"</span>,lty <span class="op">=</span> <span class="st">"dashed"</span><span class="op">)</span></span>
 <span class="r-plt img"><img src="susie-1.png" alt="" width="700" height="433"></span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">y</span>,<span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">res1</span><span class="op">)</span><span class="op">)</span></span>
+<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/graphics/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">y</span>,<span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">res1</span><span class="op">)</span><span class="op">)</span></span>
 <span class="r-in"><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>a <span class="op">=</span> <span class="fl">0</span>,b <span class="op">=</span> <span class="fl">1</span>,col <span class="op">=</span> <span class="st">"skyblue"</span>,lty <span class="op">=</span> <span class="st">"dashed"</span><span class="op">)</span></span>
 <span class="r-plt img"><img src="susie-2.png" alt="" width="700" height="433"></span>
 <span class="r-in"></span>
@@ -488,7 +488,7 @@ and/or if \(X'X\) is already computed, then
 <span class="r-in"><span class="va">res2</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/with.html" class="external-link">with</a></span><span class="op">(</span><span class="va">input_ss</span>,</span>
 <span class="r-in">            <span class="fu">susie_suff_stat</span><span class="op">(</span>XtX <span class="op">=</span> <span class="va">XtX</span>,Xty <span class="op">=</span> <span class="va">Xty</span>,yty <span class="op">=</span> <span class="va">yty</span>,n <span class="op">=</span> <span class="va">n</span>,</span>
 <span class="r-in">                            X_colmeans <span class="op">=</span> <span class="va">X_colmeans</span>,y_mean <span class="op">=</span> <span class="va">y_mean</span>,L <span class="op">=</span> <span class="fl">10</span><span class="op">)</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">res1</span><span class="op">)</span>,<span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">res2</span><span class="op">)</span><span class="op">)</span></span>
+<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/graphics/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">res1</span><span class="op">)</span>,<span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">res2</span><span class="op">)</span><span class="op">)</span></span>
 <span class="r-in"><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>a <span class="op">=</span> <span class="fl">0</span>,b <span class="op">=</span> <span class="fl">1</span>,col <span class="op">=</span> <span class="st">"skyblue"</span>,lty <span class="op">=</span> <span class="st">"dashed"</span><span class="op">)</span></span>
 <span class="r-plt img"><img src="susie-3.png" alt="" width="700" height="433"></span>
 <span class="r-in"></span>
@@ -502,11 +502,13 @@ and/or if \(X'X\) is already computed, then
 
 
       <footer><div class="copyright">
-  <p></p><p>Developed by Gao Wang, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto, Matthew Stephens.</p>
+  <p></p><p>Developed by Gao Wang, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto,
+Matthew Stephens.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a>
+2.0.2.</p>
 </div>
 
       </footer></div>

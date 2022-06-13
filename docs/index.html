@@ -45,7 +45,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.12.00</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.12.10</span>
       </span>
     </div>
 
@@ -81,41 +81,83 @@
 <div class="page-header"><h1 id="susier">susieR<a class="anchor" aria-label="anchor" href="#susier"></a>
 </h1></div>
 
-<p>The <code>susieR</code> package implements a simple new way to perform variable selection in multiple regression (<span class="math inline"><em>y</em> = <em>X</em><em>b</em> + <em>e</em></span>). The methods implemented here are particularly well-suited to settings where some of the X variables are highly correlated, and the true effects are highly sparse (e.g. &lt;20 non-zero effects in the vector <span class="math inline"><em>b</em></span>). One example of this is genetic fine-mapping applications, and this application was a major motivation for developing these methods. However, the methods should also be useful more generally.</p>
-<p>The methods are based on a new model for sparse multiple regression, which we call the “Sum of Single Effects” (SuSiE) model. This model, which will be described in a manuscript in preparation (Wang et al), lends itself to a particularly simple and intuitive fitting procedure – effectively a Bayesian modification of simple forward selection, which we call “Iterative Bayesian Step-wise Selection”.</p>
-<p>The output of the fitting procedure is a number of “Credible Sets” (CSs), which are each designed to have high probability to contain a variable with non-zero effect, while at the same time being as small as possible. You can think of the CSs as being a set of “highly correlated” variables that are each associated with the response: you can be confident that one of the variables has a non-zero coefficient, but they are too correlated to be sure which one.</p>
-<p>The package is developed by Gao Wang, Peter Carbonetto, Yuxin Zou, Kaiqian Zhang, and Matthew Stephens from the <a href="https://stephenslab.uchicago.edu" class="external-link">Stephens Lab</a> at the University of Chicago.</p>
-<p>Please <a href="https://github.com/stephenslab/susieR/issues" class="external-link">post issues</a> to ask questions, get our support or provide us feedback; please <a href="https://github.com/stephenslab/susieR/pulls" class="external-link">send pull requests</a> if you have helped fixing bugs or making improvements to the source code.</p>
+<p>The <code>susieR</code> package implements a simple new way to
+perform variable selection in multiple regression (<span class="math inline"><em>y</em> = <em>X</em><em>b</em> + <em>e</em></span>).
+The methods implemented here are particularly well-suited to settings
+where some of the X variables are highly correlated, and the true
+effects are highly sparse (e.g. &lt;20 non-zero effects in the vector
+<span class="math inline"><em>b</em></span>). One example of this is
+genetic fine-mapping applications, and this application was a major
+motivation for developing these methods. However, the methods should
+also be useful more generally.</p>
+<p>The methods are based on a new model for sparse multiple regression,
+which we call the “Sum of Single Effects” (SuSiE) model. This model,
+which will be described in a manuscript in preparation (Wang et al),
+lends itself to a particularly simple and intuitive fitting procedure –
+effectively a Bayesian modification of simple forward selection, which
+we call “Iterative Bayesian Step-wise Selection”.</p>
+<p>The output of the fitting procedure is a number of “Credible Sets”
+(CSs), which are each designed to have high probability to contain a
+variable with non-zero effect, while at the same time being as small as
+possible. You can think of the CSs as being a set of “highly correlated”
+variables that are each associated with the response: you can be
+confident that one of the variables has a non-zero coefficient, but they
+are too correlated to be sure which one.</p>
+<p>The package is developed by Gao Wang, Peter Carbonetto, Yuxin Zou,
+Kaiqian Zhang, and Matthew Stephens from the <a href="https://stephenslab.uchicago.edu" class="external-link">Stephens Lab</a> at the
+University of Chicago.</p>
+<p>Please <a href="https://github.com/stephenslab/susieR/issues" class="external-link">post
+issues</a> to ask questions, get our support or provide us feedback;
+please <a href="https://github.com/stephenslab/susieR/pulls" class="external-link">send pull
+requests</a> if you have helped fixing bugs or making improvements to
+the source code.</p>
 <div class="section level2">
 <h2 id="quick-start">Quick Start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
 <p>Install susieR from <a href="https://cran.r-project.org/package=susieR" class="external-link">CRAN</a>:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"susieR"</span><span class="op">)</span></code></pre></div>
-<p>Alternatively, install the latest development version of <code>susieR</code> from GitHub:</p>
+<p>Alternatively, install the latest development version of
+<code>susieR</code> from GitHub:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># install.packages("remotes")</span>
 <span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"stephenslab/susieR"</span><span class="op">)</span></code></pre></div>
-<p>See <a href="https://stephenslab.github.io/susieR/articles/mwe.html" class="external-link">here</a> for a brief illustration of <code>susieR</code>. For more documentation and examples please visit <a href="https://stephenslab.github.io/susieR" class="external-link uri">https://stephenslab.github.io/susieR</a></p>
+<p>See <a href="https://stephenslab.github.io/susieR/articles/mwe.html" class="external-link">here</a>
+for a brief illustration of <code>susieR</code>. For more documentation
+and examples please visit <a href="https://stephenslab.github.io/susieR" class="external-link uri">https://stephenslab.github.io/susieR</a></p>
 </div>
 <div class="section level2">
 <h2 id="citing-this-work">Citing this work<a class="anchor" aria-label="anchor" href="#citing-this-work"></a>
 </h2>
-<p>If you find the <code>susieR</code> package or any of the source code in this repository useful for your work, please cite:</p>
+<p>If you find the <code>susieR</code> package or any of the source code
+in this repository useful for your work, please cite:</p>
 <blockquote>
-<p>Wang, G., Sarkar, A., Carbonetto, P. &amp; Stephens, M. (2020). A simple new approach to variable selection in regression, with application to genetic fine mapping. <em>Journal of the Royal Statistical Society, Series B</em> <strong>82</strong>, 1273–1300. <a href="https://doi.org/10.1111/rssb.12388" class="external-link uri">https://doi.org/10.1111/rssb.12388</a></p>
+<p>Wang, G., Sarkar, A., Carbonetto, P. &amp; Stephens, M. (2020). A
+simple new approach to variable selection in regression, with
+application to genetic fine mapping. <em>Journal of the Royal
+Statistical Society, Series B</em> <strong>82</strong>, 1273–1300. <a href="https://doi.org/10.1111/rssb.12388" class="external-link uri">https://doi.org/10.1111/rssb.12388</a></p>
 </blockquote>
-<p>If you use any of the summary data methods—<code>susie_suff_stat</code> or <code>susie_rss</code>—please also cite:</p>
+<p>If you use any of the summary data
+methods—<code>susie_suff_stat</code> or <code>susie_rss</code>—please
+also cite:</p>
 <blockquote>
-<p>Zou, Y., Carbonetto, P., Wang, G. &amp; Stephens, M. (2021). Fine-mapping from summary data with the “Sum of Single Effects” model. <em>bioRxiv</em> <a href="https://doi.org/10.1101/2021.11.03.467167" class="external-link uri">https://doi.org/10.1101/2021.11.03.467167</a></p>
+<p>Zou, Y., Carbonetto, P., Wang, G. &amp; Stephens, M. (2021).
+Fine-mapping from summary data with the “Sum of Single Effects” model.
+<em>bioRxiv</em> <a href="https://doi.org/10.1101/2021.11.03.467167" class="external-link uri">https://doi.org/10.1101/2021.11.03.467167</a></p>
 </blockquote>
 </div>
 <div class="section level2">
 <h2 id="developer-notes">Developer notes<a class="anchor" aria-label="anchor" href="#developer-notes"></a>
 </h2>
 <ul>
-<li><p>When any changes are made to <code>roxygen2</code> markup, run <code><a href="https://devtools.r-lib.org/reference/document.html" class="external-link">devtools::document()</a></code> to update package <code>NAMESPACE</code> and documentation files.</p></li>
-<li><p>Run <code><a href="https://pkgdown.r-lib.org/reference/build_site.html" class="external-link">pkgdown::build_site()</a></code> to build the website. Getting <code>pkgdown</code> to work properly can be frustrating due to numerous &amp; fragile dependencies. If <code>pkgdown</code> does not work for you out of the box you can use this <code>docker</code> command to run all vignettes and build the site:</p></li>
+<li><p>When any changes are made to <code>roxygen2</code> markup, run
+<code><a href="https://rdrr.io/pkg/devtools/man/document.html" class="external-link">devtools::document()</a></code> to update package
+<code>NAMESPACE</code> and documentation files.</p></li>
+<li><p>Run <code><a href="https://pkgdown.r-lib.org/reference/build_site.html" class="external-link">pkgdown::build_site()</a></code> to build the website.
+Getting <code>pkgdown</code> to work properly can be frustrating due to
+numerous &amp; fragile dependencies. If <code>pkgdown</code> does not
+work for you out of the box you can use this <code>docker</code> command
+to run all vignettes and build the site:</p></li>
 </ul>
 <div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> run <span class="at">--rm</span> <span class="at">--security-opt</span> label:disable <span class="at">-t</span> <span class="at">-P</span> <span class="at">-w</span> <span class="va">$PWD</span> <span class="at">-v</span> <span class="va">$PWD</span>:<span class="va">$PWD</span> <span class="dt">\</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-u</span> <span class="va">$UID</span>:<span class="va">${GROUPS</span><span class="op">[</span><span class="dv">0</span><span class="op">]</span><span class="va">}</span> <span class="at">-e</span> HOME=/home/<span class="va">$USER</span> <span class="at">-e</span> USER=<span class="va">$USER</span> gaow/susie <span class="dt">\</span></span>
@@ -178,12 +220,14 @@
 
       <footer><div class="copyright">
   <p></p>
-<p>Developed by Gao Wang, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto, Matthew Stephens.</p>
+<p>Developed by Gao Wang, Yuxin Zou, Kaiqian Zhang, Peter Carbonetto,
+Matthew Stephens.</p>
 </div>
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a>
+2.0.2.</p>
 </div>
 
       </footer>
