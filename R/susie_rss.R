@@ -194,12 +194,14 @@ susie_rss = function (z, R, n, bhat, shat, var_y,
                       check_prior = TRUE, ...) {
 
   if (estimate_residual_variance)
-    warning_message("The estimate_residual_variance is TRUE, ",
-    "please check R is the in-sample LD matrix, which is computed from the exact same matrix `X` ",
-    "that is used to obtain the other statistics. ",
-    "If the covariate effects are removed from the genotypes in univariate regression, ",
-    "the in-sample LD matrix should compute from the genotype residuals ",
-    "where the covariate effects have been removed.", style="hint")
+    warning_message("For estimate_residual_variance = TRUE, please check ",
+                    "that R is the \"in-sample\" LD matrix; that is, the ",
+                    "correlation matrix obtained using the exact same data ",
+                    "matrix X that was used for the other summary ",
+                    "statistics. Also note, when covariates are included in ",
+                    "the univariate regressions that produced the summary ",
+                    "statistics, also consider removing these effects from ",
+                    "X before computing R.",style = "hint")
 
   # Check input R.
   if (missing(z))
