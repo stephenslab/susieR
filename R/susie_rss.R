@@ -143,12 +143,11 @@
 #' G. Wang, A. Sarkar, P. Carbonetto and M. Stephens (2020). A simple
 #'   new approach to variable selection in regression, with application
 #'   to genetic fine-mapping. \emph{Journal of the Royal Statistical
-#'   Society, Series B} \bold{82}, 1273-1300
-#'   \url{https://doi.org/10.1101/501114}.
+#'   Society, Series B} \bold{82}, 1273-1300 \doi{10.1101/501114}.
 #'
 #'   Y. Zou, P. Carbonetto, G. Wang and M. Stephens (2021).
 #'   Fine-mapping from summary data with the \dQuote{Sum of Single Effects}
-#'   model. \emph{bioRxiv} \url{https://doi.org/10.1101/2021.11.03.467167}.
+#'   model. \emph{bioRxiv} \doi{10.1101/2021.11.03.467167}.
 #'
 #' @examples
 #' set.seed(1)
