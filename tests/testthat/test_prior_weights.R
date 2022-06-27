@@ -23,7 +23,7 @@ test_that("Sufficient stat (beta): prior weights specification agrees with defau
   res2 = susie_rss(bhat = ss$betahat, shat = ss$sebetahat, R = R, n = n, var_y = var(y),
                    estimate_prior_variance = TRUE,
                    prior_weights = rep(1/ncol(R), ncol(R)))
-  expect_equal_susie_suff_stat(res1,res2,tolerance = 1e-6)
+  expect_equal_susie_suff_stat(res1,res2,tolerance = 0.001)
 }))
 
 test_that("RSS: prior weights specification agrees with default", with(simulate(200,500), {
