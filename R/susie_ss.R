@@ -41,6 +41,8 @@
 #' @param n_purity Passed as argument \code{n_purity} to
 #'   \code{\link{susie_get_cs}}.
 #'
+#' @param ... Additional arguments to provide backward compatibility
+#'   with earlier versions of \code{susie_suff_stat}.
 #'
 #' @export
 #'
@@ -59,8 +61,14 @@ susie_suff_stat = function (XtX, Xty, yty, n,
                             min_abs_corr = 0.5, tol = 1e-3,
                             verbose = FALSE, track_fit = FALSE,
                             check_input = FALSE, refine = FALSE,
-                            check_prior = FALSE, n_purity = 100) {
+                            check_prior = FALSE, n_purity = 100, ...) {
 
+  # Check for use of arguments that are now deprecated.
+  args <- list(...)
+  if (any(is.element(names(args),c("bhat","shat","R","var_y"))))
+    stop("susie_suff_stat no longer accepts inputs bhat, shat, R or var_y; ",
+         "these inputs are now accepted by susie_rss instead")
+    
   # Process input estimate_prior_method.
   estimate_prior_method = match.arg(estimate_prior_method)
 

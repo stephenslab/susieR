@@ -66,7 +66,8 @@ susie_suff_stat(
   check_input = FALSE,
   refine = FALSE,
   check_prior = FALSE,
-  n_purity = 100
+  n_purity = 100,
+  ...
 )
 }
 \arguments{
@@ -233,6 +234,9 @@ the non-zero eigenvectors of \code{XtX}.}
 \item{check_prior}{If \code{check_prior = TRUE}, it checks if the
 estimated prior variance becomes unreasonably large (comparing with
 10 * max(abs(z))^2).}
+
+\item{...}{Additional arguments to provide backward compatibility
+with earlier versions of \code{susie_suff_stat}.}
 }
 \value{
 A \code{"susie"} object with some or all of the following
