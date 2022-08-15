@@ -14,3 +14,5 @@
 ^inst/code/susie_data\.RData$
 ^inst/code/susie_rss_data\.RData
 ^LICENSE\.md$
+^NOTES\.txt$
+^\.Renviron$

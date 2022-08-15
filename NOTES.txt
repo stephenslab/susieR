@@ -1,0 +1,4 @@
+export R_BUILD_ENVIRON=$HOME/git/susieR/.Renviron
+export R_CHECK_ENVIRON=$HOME/git/susieR/.Renviron
+R CMD build --no-build-vignettes susieR
+R CMD check --ignore-vignettes susieR_0.12.19.tar.gz

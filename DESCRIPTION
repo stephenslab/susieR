@@ -32,7 +32,7 @@ Imports:
     graphics,
     grDevices,
     stats,
-    Matrix,
+    Matrix (>= 1.4-2),
     matrixStats,
     mixsqp,
     reshape,
