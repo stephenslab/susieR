@@ -7,7 +7,6 @@
 ^\.Rproj\.user$
 ^\.travis\.yml$
 ^.*\.Rproj$
-^vignettes/trend_filtering\.Rmd$
 ^tests/testthat/full_data_1_sim_gaussian_null_1\.rds$
 ^inst/datafiles/FinemappingConvergence1k\.RData$
 ^inst/datafiles/SummaryConsistency1k\.RData$
