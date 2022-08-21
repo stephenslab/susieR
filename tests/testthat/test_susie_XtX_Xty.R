@@ -17,7 +17,7 @@ test_that(paste("compute_ss XtX calculations are correct with",
   expect_equal(out2$XtX,crossprod(Y2),scale = 1,tolerance = 1e-14)
 
   # Run the same checks again, but with X now being a sparse matrix.
-  X    <- as(X,"dgCMatrix")
+  X    <- as(X,"CsparseMatrix")
   out1 <- compute_suff_stat(X,y,standardize = FALSE)
   out2 <- compute_suff_stat(X,y,standardize = TRUE)
   dimnames(out1$XtX) <- NULL

@@ -924,20 +924,12 @@ compute_colstats = function (X, center = TRUE, scale = TRUE) {
 # @param X an n by p matrix of any type, e.g. sparse, dense.
 # @return a p vector of column standard deviations.
 #
-#' @importFrom Matrix rowSums
-#' @importFrom Matrix colSums
-#' @importFrom Matrix rowMeans
 #' @importFrom matrixStats colSds
 compute_colSds = function(X) {
-  if (is.matrix(X))
-    y = colSds(X)
-  else {
-    n = nrow(X)
-    X = t(X)
-    X = X - rowMeans(X)
-    y = sqrt(rowSums(X^2)/(n-1))
-  }
-  return(y)
+  # Ah, very inefficient because the matrix becomes dense!
+  if (!is.matrix(X))
+    X = as.matrix(X)
+  return(colSds(X))
 }
 
 # @title Check whether A is positive semidefinite
