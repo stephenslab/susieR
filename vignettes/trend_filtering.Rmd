@@ -17,18 +17,18 @@ knitr::opts_chunk$set(collapse = TRUE,comment = "#",fig.width = 4.5,
 
 # Introduction
 
-Although we developed SuSiE primarily with the goal
-of performing variable selection
-in highly sparse settings -- and, in particular, for genetic fine-mapping --
-the approach also has considerable potential
-for application to other large-scale regression problems. Here
-we briefly illustrate this potential by applying it to a non-parametric
-regression problem that at first sight seems to be ill-suited to our approach. In particular, it does not involve
-strict sparsity, and the underlying correlation 
-structure of the explanatory variables
-is very different from the ``blocky" covariance structure of genetic data
-that SuSiE was designed for. Nonetheless, we will see that SuSiE performs
-well here despite this (partly due to its ability to capture non-sparse signals via Bayesian Model Averaging).
+Although we developed SuSiE primarily with the goal of performing
+variable selection in highly sparse settings -- and, in particular,
+for genetic fine-mapping -- the approach also has considerable
+potential for application to other large-scale regression
+problems. Here we briefly illustrate this potential by applying it to
+a non-parametric regression problem that at first sight seems to be
+ill-suited to our approach. In particular, it does not involve strict
+sparsity, and the underlying correlation structure of the explanatory
+variables is very different from the "blocky" covariance structure of
+genetic data that SuSiE was designed for. Nonetheless, we will see
+that SuSiE performs well here despite this (partly due to its ability
+to capture non-sparse signals via Bayesian Model Averaging).
 
 Specifically, consider the non-parametric regression:
 $$y_t = \mu_t + e_t \quad t=1,\dots,T$$
@@ -67,7 +67,10 @@ lines(predict(s),col=2,lwd=2)
 s$sigma2
 ```
 
-In the next example mu increases linearly. Thus we are approximating a linear function by step functions. Here the truth is not trully ``sparse", so we might expect performance to be poor, but it is not too bad.
+In the next example mu increases linearly. Thus we are approximating a
+linear function by step functions. Here the truth is not trully
+"sparse", so we might expect performance to be poor, but it is not too
+bad.
 
 ```{r}
 set.seed(1)
@@ -79,14 +82,15 @@ lines(mu,col=1,lwd=3)
 lines(predict(s),col=2,lwd=2)
 ```
 
-Compare with the genlasso (lasso-based) solution (blue). (This will require installation
-of the `genlasso` package.)
+Compare with the genlasso (lasso-based) solution (blue). (This will
+require installation of the `genlasso` package, which is not available
+on CRAN, but can be installed from GitHub.)
 
-```{r}
-library(genlasso)
+```{r, eval=FALSE}
+# install.packages("remotes")
+# remotes::install_github("glmgen/genlasso")
 y.tf = trendfilter(y,ord=0)
 y.tf.cv = cv.trendfilter(y.tf)
-
 plot(y,pch=".")
 lines(mu,col=1,lwd=3)
 lines(predict(s),col=2,lwd=2)
@@ -95,7 +99,7 @@ lines(y.tf$fit[,which(y.tf$lambda==y.tf.cv$lambda.min)],col=4,lwd=2)
 
 What happens if we have linear trend plus a sudden change.
 
-```{r}
+```{r, eval=FALSE}
 set.seed(1)
 mu = seq(0,4,length=1000)
 mu = mu + c(rep(0,500),rep(4,500))
@@ -103,7 +107,6 @@ y = mu + rnorm(n)
 s = susie_trendfilter(y,0,L=10)
 y.tf = trendfilter(y,ord=0)
 y.tf.cv = cv.trendfilter(y.tf)
-
 plot(y,pch=".")
 lines(mu,col=1,lwd=3)
 lines(predict(s),col=2,lwd=2)
@@ -111,7 +114,7 @@ lines(y.tf$fit[,which(y.tf$lambda==y.tf.cv$lambda.min)],col=4,lwd=2)
 ```
 
 The two fits seem similar in accuracy. We can check this numerically:
-```{r}
+```{r, eval=FALSE}
 sqrt(mean((mu-y.tf$fit[,which(y.tf$lambda==y.tf.cv$lambda.min)])^2))
 sqrt(mean((mu-predict(s))^2))
 ```
