@@ -45,7 +45,7 @@ set_X_attributes = function (X, center = TRUE, scale = TRUE) {
     if (!scale) 
       csd = rep(1,length = length(cm))
 
-    # Ah, very inefficient when X is sparse!
+    # Ah, very inefficient because the matrix becomes dense!
     X.std = as.matrix(X)
     X.std = (t(X.std) - cm)/csd
     
