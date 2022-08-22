@@ -55,7 +55,7 @@ p <- 1000
 beta <- rep(0,p)
 beta[c(1,300,400,1000)] <- 10 
 X.dense  <- create_sparsity_mat(0.99,n,p)
-X.sparse <- as(X.dense,"dgCMatrix")
+X.sparse <- as(X.dense,"CsparseMatrix")
 y <- c(X.dense %*% beta + rnorm(n))
 ```
 
