@@ -179,8 +179,7 @@ remove.covariate.effects <- function (X, Z, y) {
 }
 
 out = remove.covariate.effects(X, Z, Y[,1])
-fitted_adjusted = susie(out$X, out$y,
-               L = 10) ,
+fitted_adjusted = susie(out$X, out$y, L = 10)
 ```
 
 Note that the covariates `Z` should have a column of ones as the first column. If not, the above function `remove.covariate.effects`
