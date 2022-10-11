@@ -15,15 +15,27 @@ knitr::opts_chunk$set(collapse = TRUE,comment = "#",fig.width = 5,
                       fig.cap = "&nbsp;",dpi = 120)
 ```
 
-This vignette demonstrates diagnostic plot for consistency between summary statistics and reference LD matrix. 
+This vignette demonstrates the use of the diagnostic plot for
+assessing consistency of the summary statistics and the reference LD
+matrix.
 
-The `susie_rss` assumes the LD matrix accurately estimate the correlations among SNPs from the original GWAS genotype data. Typically, the LD matrix comes from some public database of genotypes in a suitable reference population. The inaccurate LD information leads to unreliable fine-mapping result.
+The `susie_rss` assumes the LD matrix accurately estimate the
+correlations among SNPs from the original GWAS genotype
+data. Typically, the LD matrix comes from some public database of
+genotypes in a suitable reference population. The inaccurate LD
+information leads to unreliable fine-mapping result.
 
-The diagnostic for consistency between summary statistics and refenrence LD matrix is based on the RSS model under the null with regularized LD matrix.
+The diagnostic for consistency between summary statistics and
+refenrence LD matrix is based on the RSS model under the null with
+regularized LD matrix.
 $$
 \hat{z} | R, \lambda \sim N(0, (1-\lambda)R + \lambda I), 0<\lambda<1
 $$
-The parameter $\lambda$ is estimated by maximum likelihood. A larger $\lambda$ means a greater inconsistency between summary statistics and the LD matrix. The expected z score is computed for each SNP, $E(\hat{z}_j | \hat{z}_{-j})$, and plotted against the observed z scores.
+The parameter $\lambda$ is estimated by maximum likelihood. A larger
+$\lambda$ means a greater inconsistency between summary statistics and
+the LD matrix. The expected z score is computed for each SNP,
+$E(\hat{z}_j | \hat{z}_{-j})$, and plotted against the observed z
+scores.
 
 ```{r}
 library(susieR)
@@ -32,7 +44,13 @@ library(curl)
 
 ## LD information from the original genotype data
 
-We demonstrate the diagnostic plot in a simple case, the LD matrix is estimated from the original genotype data. We use the same simulated data as in [fine mapping vignette](finemapping.html). 
+We demonstrate the diagnostic plot in a simple case, the LD matrix is
+estimated from the original genotype data. In this case, we expect the
+diagnostic plot to confirm that the LD matrix is consistent with the
+z scores.
+
+We use the same simulated data as in
+[fine mapping vignette](finemapping.html).
 
 ```{r}
 data("N3finemapping")
@@ -65,7 +83,18 @@ susie_plot(fit,y = "PIP", b=b)
 
 ## LD information from the reference panel
 
-We use another simulated data where the LD matrix is estimated from a reference panel. There is one signal in the simulated data (red point). There is one SNP with mismatched reference and alternative allele between summary statistics and the reference panel (yellow point).
+We use another simulated data where the LD matrix is estimated from a
+reference panel. In this example data set, there is one association
+signal in the simulated data (red point), and there is one SNP with
+mismatched reference and alternative allele between summary statistics
+and the reference panel (yellow point).
+
+**Note:** In some versions of [PLINK][plink], these mismatches can
+occur when [PLINK automatically flips the alleles to make the minor
+allele be the effect
+allele](https://github.com/stephenslab/susieR/issues/148), leading to
+different allele encodings in the z scores and LD matrix. Adding the
+flag `--keep-allele-order` will disable this behaviour in PLINK.
 
 ```{r}
 data_file <- tempfile(fileext = ".RData")
@@ -117,6 +146,8 @@ susie_plot(fit, y='PIP', b=b)
 Here are some details about the computing environment, including the
 versions of R, and the R packages, used to generate these results.
 
-```{r}
+```{r session-info}
 sessionInfo()
 ```
+
+[plink]: https://www.cog-genomics.org/plink

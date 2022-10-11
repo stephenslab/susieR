@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.12.10</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.12.27</span>
       </span>
     </div>
 
@@ -70,7 +70,7 @@
 statistics</h1>
                         <h4 data-toc-skip class="author">Yuxin Zou</h4>
             
-            <h4 data-toc-skip class="date">2022-06-13</h4>
+            <h4 data-toc-skip class="date">2022-10-11</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/HEAD/vignettes/susierss_diagnostic.Rmd" class="external-link"><code>vignettes/susierss_diagnostic.Rmd</code></a></small>
       <div class="hidden name"><code>susierss_diagnostic.Rmd</code></div>
@@ -79,8 +79,9 @@ statistics</h1>
 
     
     
-<p>This vignette demonstrates diagnostic plot for consistency between
-summary statistics and reference LD matrix.</p>
+<p>This vignette demonstrates the use of the diagnostic plot for
+assessing consistency of the summary statistics and the reference LD
+matrix.</p>
 <p>The <code>susie_rss</code> assumes the LD matrix accurately estimate
 the correlations among SNPs from the original GWAS genotype data.
 Typically, the LD matrix comes from some public database of genotypes in
@@ -103,8 +104,11 @@ computed for each SNP, <span class="math inline">\(E(\hat{z}_j |
 <h2 id="ld-information-from-the-original-genotype-data">LD information from the original genotype data<a class="anchor" aria-label="anchor" href="#ld-information-from-the-original-genotype-data"></a>
 </h2>
 <p>We demonstrate the diagnostic plot in a simple case, the LD matrix is
-estimated from the original genotype data. We use the same simulated
-data as in <a href="finemapping.html">fine mapping vignette</a>.</p>
+estimated from the original genotype data. In this case, we expect the
+diagnostic plot to confirm that the LD matrix is consistent with the z
+scores.</p>
+<p>We use the same simulated data as in <a href="finemapping.html">fine
+mapping vignette</a>.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"N3finemapping"</span><span class="op">)</span>
 <span class="va">n</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">N3finemapping</span><span class="op">$</span><span class="va">X</span><span class="op">)</span>
@@ -148,9 +152,16 @@ data as in <a href="finemapping.html">fine mapping vignette</a>.</p>
 <h2 id="ld-information-from-the-reference-panel">LD information from the reference panel<a class="anchor" aria-label="anchor" href="#ld-information-from-the-reference-panel"></a>
 </h2>
 <p>We use another simulated data where the LD matrix is estimated from a
-reference panel. There is one signal in the simulated data (red point).
-There is one SNP with mismatched reference and alternative allele
-between summary statistics and the reference panel (yellow point).</p>
+reference panel. In this example data set, there is one association
+signal in the simulated data (red point), and there is one SNP with
+mismatched reference and alternative allele between summary statistics
+and the reference panel (yellow point).</p>
+<p><strong>Note:</strong> In some versions of <a href="https://www.cog-genomics.org/plink" class="external-link">PLINK</a>, these mismatches
+can occur when <a href="https://github.com/stephenslab/susieR/issues/148" class="external-link">PLINK
+automatically flips the alleles to make the minor allele be the effect
+allele</a>, leading to different allele encodings in the z scores and LD
+matrix. Adding the flag <code>--keep-allele-order</code> will disable
+this behaviour in PLINK.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">data_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span>fileext <span class="op">=</span> <span class="st">".RData"</span><span class="op">)</span>
 <span class="va">data_url</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"https://raw.githubusercontent.com/stephenslab/susieR/"</span>,
@@ -235,7 +246,7 @@ versions of R, and the R packages, used to generate these results.</p>
 <span class="co"># [1] stats     graphics  grDevices utils     datasets  methods   base     </span>
 <span class="co"># </span>
 <span class="co"># other attached packages:</span>
-<span class="co"># [1] curl_4.3       susieR_0.12.10</span>
+<span class="co"># [1] curl_4.3       susieR_0.12.11</span>
 <span class="co"># </span>
 <span class="co"># loaded via a namespace (and not attached):</span>
 <span class="co">#  [1] tidyselect_1.1.1   xfun_0.29          bslib_0.3.1        purrr_0.3.4       </span>
@@ -247,12 +258,12 @@ versions of R, and the R packages, used to generate these results.</p>
 <span class="co"># [25] gtable_0.3.0       ragg_0.3.1         memoise_1.1.0      evaluate_0.14     </span>
 <span class="co"># [29] labeling_0.3       knitr_1.37         fastmap_1.1.0      parallel_3.6.2    </span>
 <span class="co"># [33] irlba_2.3.3        fansi_0.4.0        Rfast_2.0.3        highr_0.8         </span>
-<span class="co"># [37] Rcpp_1.0.7         scales_1.1.0       backports_1.1.5    desc_1.2.0        </span>
+<span class="co"># [37] Rcpp_1.0.8         scales_1.1.0       backports_1.1.5    desc_1.2.0        </span>
 <span class="co"># [41] jsonlite_1.7.2     farver_2.0.1       systemfonts_1.0.2  fs_1.5.2          </span>
-<span class="co"># [45] ggplot2_3.3.5      digest_0.6.23      stringi_1.4.3      dplyr_1.0.7       </span>
+<span class="co"># [45] ggplot2_3.3.6      digest_0.6.23      stringi_1.4.3      dplyr_1.0.7       </span>
 <span class="co"># [49] grid_3.6.2         rprojroot_1.3-2    tools_3.6.2        magrittr_2.0.1    </span>
 <span class="co"># [53] sass_0.4.0         tibble_3.1.3       crayon_1.4.1       pkgconfig_2.0.3   </span>
-<span class="co"># [57] ellipsis_0.3.2     Matrix_1.2-18      assertthat_0.2.1   rmarkdown_2.11    </span>
+<span class="co"># [57] ellipsis_0.3.2     Matrix_1.4-2       assertthat_0.2.1   rmarkdown_2.11    </span>
 <span class="co"># [61] reshape_0.8.8      R6_2.4.1           compiler_3.6.2</span></code></pre></div>
 </div>
   </div>

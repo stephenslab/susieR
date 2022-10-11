@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.12.10</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.12.27</span>
       </span>
     </div>
 
@@ -70,7 +70,7 @@
                         <h4 data-toc-skip class="author">Yuxin Zou and
 Gao Wang</h4>
             
-            <h4 data-toc-skip class="date">2022-06-13</h4>
+            <h4 data-toc-skip class="date">2022-10-11</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/HEAD/vignettes/finemapping_summary_statistics.Rmd" class="external-link"><code>vignettes/finemapping_summary_statistics.Rmd</code></a></small>
       <div class="hidden name"><code>finemapping_summary_statistics.Rmd</code></div>
@@ -127,9 +127,11 @@ to perform fine-mapping with given an additional input of correlation
 matrix between variables. The correlation matrix in genetics is
 typically referred to as an “LD matrix” (LD is short for linkage
 disequilibrium). One may use external reference panels to estimate it
-when this matrix cannot be obtained from samples directly. Importantly,
-the LD matrix has to be a matrix containing estimates of the
-correlation, <span class="math inline">\(r\)</span>, and not <span class="math inline">\(r^2\)</span> or <span class="math inline">\(|r|\)</span>.</p>
+when this matrix cannot be obtained from samples directly.
+<em>Importantly, the LD matrix has to be a matrix containing estimates
+of the correlation, <span class="math inline">\(r\)</span>, and not
+<span class="math inline">\(r^2\)</span> or <span class="math inline">\(|r|\)</span>.</em> See also <a href="susierss_diagnostic.html">this vignette</a> for how to check the
+consistency of the LD matrix with the summary statistics.</p>
 <p>The <code>univariate_regression</code> function can be used to
 compute summary statistics by fitting univariate simple regression
 variable by variable. The results are <span class="math inline">\(\hat{\beta}\)</span> and <span class="math inline">\(SE(\hat{\beta})\)</span> from which z-scores can
@@ -204,8 +206,8 @@ three different colours (green, purple, blue).</p>
 <span class="co"># [1] TRUE</span>
 <span class="fu"><a href="https://rdrr.io/r/base/all.equal.html" class="external-link">all.equal</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fitted</span><span class="op">)</span><span class="op">[</span><span class="op">-</span><span class="fl">1</span><span class="op">]</span>, <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fitted_rss1</span><span class="op">)</span><span class="op">[</span><span class="op">-</span><span class="fl">1</span><span class="op">]</span><span class="op">)</span>
 <span class="co"># [1] TRUE</span></code></pre></div>
-<p>If, on the other hand, the variance of &amp;y&amp; is unknown, we fit
-can SuSiE regression with summary statistics, <span class="math inline">\(\hat{\beta}\)</span>, <span class="math inline">\(SE(\hat{\beta})\)</span>, <span class="math inline">\(R\)</span> and <span class="math inline">\(n\)</span> (or <em>z</em>-scores, <span class="math inline">\(R\)</span> and <span class="math inline">\(n\)</span>). The outputted effect estimates are
+<p>If, on the other hand, the variance of <span class="math inline">\(y\)</span> is unknown, we fit can SuSiE regression
+with summary statistics, <span class="math inline">\(\hat{\beta}\)</span>, <span class="math inline">\(SE(\hat{\beta})\)</span>, <span class="math inline">\(R\)</span> and <span class="math inline">\(n\)</span> (or <em>z</em>-scores, <span class="math inline">\(R\)</span> and <span class="math inline">\(n\)</span>). The outputted effect estimates are
 now on the standardized <span class="math inline">\(X\)</span> and <span class="math inline">\(y\)</span> scale. Still, we can estimate the
 residual variance because we have the in-sample LD matrix:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
@@ -263,7 +265,7 @@ are quite similar.</p>
  
 </p>
 </div>
-<p>In some rare cases, the sample size <span class="math inline">\(n\)</span> is unknown. When the sampel size is not
+<p>In some rare cases, the sample size <span class="math inline">\(n\)</span> is unknown. When the sample size is not
 provided as input to <code>susie_rss</code>, this is in effect assuming
 the sample size is infinity and all the effects are small, and the
 estimated PVE for each variant will be close to zero. The outputted
@@ -300,7 +302,7 @@ versions of R, and the R packages, used to generate these results.</p>
 <span class="co"># [1] stats     graphics  grDevices utils     datasets  methods   base     </span>
 <span class="co"># </span>
 <span class="co"># other attached packages:</span>
-<span class="co"># [1] susieR_0.12.10</span>
+<span class="co"># [1] susieR_0.12.11</span>
 <span class="co"># </span>
 <span class="co"># loaded via a namespace (and not attached):</span>
 <span class="co">#  [1] tidyselect_1.1.1   xfun_0.29          bslib_0.3.1        purrr_0.3.4       </span>
@@ -311,12 +313,12 @@ versions of R, and the R packages, used to generate these results.</p>
 <span class="co"># [21] lifecycle_1.0.0    plyr_1.8.5         stringr_1.4.0      munsell_0.5.0     </span>
 <span class="co"># [25] gtable_0.3.0       ragg_0.3.1         memoise_1.1.0      evaluate_0.14     </span>
 <span class="co"># [29] knitr_1.37         fastmap_1.1.0      parallel_3.6.2     irlba_2.3.3       </span>
-<span class="co"># [33] fansi_0.4.0        Rfast_2.0.3        highr_0.8          Rcpp_1.0.7        </span>
+<span class="co"># [33] fansi_0.4.0        Rfast_2.0.3        highr_0.8          Rcpp_1.0.8        </span>
 <span class="co"># [37] scales_1.1.0       backports_1.1.5    desc_1.2.0         jsonlite_1.7.2    </span>
-<span class="co"># [41] systemfonts_1.0.2  fs_1.5.2           ggplot2_3.3.5      digest_0.6.23     </span>
+<span class="co"># [41] systemfonts_1.0.2  fs_1.5.2           ggplot2_3.3.6      digest_0.6.23     </span>
 <span class="co"># [45] stringi_1.4.3      dplyr_1.0.7        grid_3.6.2         rprojroot_1.3-2   </span>
 <span class="co"># [49] tools_3.6.2        magrittr_2.0.1     sass_0.4.0         tibble_3.1.3      </span>
-<span class="co"># [53] crayon_1.4.1       pkgconfig_2.0.3    ellipsis_0.3.2     Matrix_1.2-18     </span>
+<span class="co"># [53] crayon_1.4.1       pkgconfig_2.0.3    ellipsis_0.3.2     Matrix_1.4-2      </span>
 <span class="co"># [57] assertthat_0.2.1   rmarkdown_2.11     reshape_0.8.8      R6_2.4.1          </span>
 <span class="co"># [61] compiler_3.6.2</span></code></pre></div>
 </div>

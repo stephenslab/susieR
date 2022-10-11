@@ -11,7 +11,7 @@ vignette: >
 
 In this vignette, we briefly illustrate the different ways
 [susie_rss][susie_rss] can be called, and draw connections between
-running susie_rss on summary data, and running susie on
+running `susie_rss` on summary data, and running `susie` on
 individual-level data.
 
 ```{r setup, include=FALSE}

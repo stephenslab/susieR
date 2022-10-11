@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.12.10</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.12.27</span>
       </span>
     </div>
 
@@ -70,7 +70,7 @@
                         <h4 data-toc-skip class="author">Matthew
 Stephens</h4>
             
-            <h4 data-toc-skip class="date">2022-06-13</h4>
+            <h4 data-toc-skip class="date">2022-10-11</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/HEAD/vignettes/trend_filtering.Rmd" class="external-link"><code>vignettes/trend_filtering.Rmd</code></a></small>
       <div class="hidden name"><code>trend_filtering.Rmd</code></div>
@@ -90,7 +90,7 @@ illustrate this potential by applying it to a non-parametric regression
 problem that at first sight seems to be ill-suited to our approach. In
 particular, it does not involve strict sparsity, and the underlying
 correlation structure of the explanatory variables is very different
-from the ``blocky” covariance structure of genetic data that SuSiE was
+from the “blocky” covariance structure of genetic data that SuSiE was
 designed for. Nonetheless, we will see that SuSiE performs well here
 despite this (partly due to its ability to capture non-sparse signals
 via Bayesian Model Averaging).</p>
@@ -146,7 +146,7 @@ SuSiE should do well.</p>
 <span class="co"># [1] 1.076261</span></code></pre></div>
 <p>In the next example mu increases linearly. Thus we are approximating
 a linear function by step functions. Here the truth is not trully
-``sparse”, so we might expect performance to be poor, but it is not too
+“sparse”, so we might expect performance to be poor, but it is not too
 bad.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span>
@@ -162,33 +162,17 @@ bad.</p>
 </p>
 </div>
 <p>Compare with the genlasso (lasso-based) solution (blue). (This will
-require installation of the <code>genlasso</code> package.)</p>
+require installation of the <code>genlasso</code> package, which is not
+available on CRAN, but can be installed from GitHub.)</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/statsmaths/genlasso" class="external-link">genlasso</a></span><span class="op">)</span>
-<span class="co"># Loading required package: MASS</span>
-<span class="co"># Loading required package: Matrix</span>
-<span class="co"># Loading required package: igraph</span>
-<span class="co"># </span>
-<span class="co"># Attaching package: 'igraph'</span>
-<span class="co"># The following objects are masked from 'package:stats':</span>
-<span class="co"># </span>
-<span class="co">#     decompose, spectrum</span>
-<span class="co"># The following object is masked from 'package:base':</span>
-<span class="co"># </span>
-<span class="co">#     union</span>
-<span class="va">y.tf</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/genlasso/man/trendfilter.html" class="external-link">trendfilter</a></span><span class="op">(</span><span class="va">y</span>,ord<span class="op">=</span><span class="fl">0</span><span class="op">)</span>
-<span class="va">y.tf.cv</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/genlasso/man/cv.trendfilter.html" class="external-link">cv.trendfilter</a></span><span class="op">(</span><span class="va">y.tf</span><span class="op">)</span>
-<span class="co"># Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ...</span>
-
+<code class="sourceCode R"><span class="co"># install.packages("remotes")</span>
+<span class="co"># remotes::install_github("glmgen/genlasso")</span>
+<span class="va">y.tf</span> <span class="op">=</span> <span class="fu">trendfilter</span><span class="op">(</span><span class="va">y</span>,ord<span class="op">=</span><span class="fl">0</span><span class="op">)</span>
+<span class="va">y.tf.cv</span> <span class="op">=</span> <span class="fu">cv.trendfilter</span><span class="op">(</span><span class="va">y.tf</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/graphics/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">y</span>,pch<span class="op">=</span><span class="st">"."</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="va">mu</span>,col<span class="op">=</span><span class="fl">1</span>,lwd<span class="op">=</span><span class="fl">3</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">s</span><span class="op">)</span>,col<span class="op">=</span><span class="fl">2</span>,lwd<span class="op">=</span><span class="fl">2</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="va">y.tf</span><span class="op">$</span><span class="va">fit</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="va">y.tf</span><span class="op">$</span><span class="va">lambda</span><span class="op">==</span><span class="va">y.tf.cv</span><span class="op">$</span><span class="va">lambda.min</span><span class="op">)</span><span class="op">]</span>,col<span class="op">=</span><span class="fl">4</span>,lwd<span class="op">=</span><span class="fl">2</span><span class="op">)</span></code></pre></div>
-<div class="figure" style="text-align: center">
-<img src="trend_filtering_files/figure-html/unnamed-chunk-4-1.png" alt="&amp;nbsp;" width="540"><p class="caption">
- 
-</p>
-</div>
 <p>What happens if we have linear trend plus a sudden change.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span>
@@ -196,26 +180,17 @@ require installation of the <code>genlasso</code> package.)</p>
 <span class="va">mu</span> <span class="op">=</span> <span class="va">mu</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">500</span><span class="op">)</span>,<span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">4</span>,<span class="fl">500</span><span class="op">)</span><span class="op">)</span>
 <span class="va">y</span> <span class="op">=</span> <span class="va">mu</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span>
 <span class="va">s</span> <span class="op">=</span> <span class="fu"><a href="../reference/susie_trendfilter.html">susie_trendfilter</a></span><span class="op">(</span><span class="va">y</span>,<span class="fl">0</span>,L<span class="op">=</span><span class="fl">10</span><span class="op">)</span>
-<span class="va">y.tf</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/genlasso/man/trendfilter.html" class="external-link">trendfilter</a></span><span class="op">(</span><span class="va">y</span>,ord<span class="op">=</span><span class="fl">0</span><span class="op">)</span>
-<span class="va">y.tf.cv</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/genlasso/man/cv.trendfilter.html" class="external-link">cv.trendfilter</a></span><span class="op">(</span><span class="va">y.tf</span><span class="op">)</span>
-<span class="co"># Fold 1 ... Fold 2 ... Fold 3 ... Fold 4 ... Fold 5 ...</span>
-
+<span class="va">y.tf</span> <span class="op">=</span> <span class="fu">trendfilter</span><span class="op">(</span><span class="va">y</span>,ord<span class="op">=</span><span class="fl">0</span><span class="op">)</span>
+<span class="va">y.tf.cv</span> <span class="op">=</span> <span class="fu">cv.trendfilter</span><span class="op">(</span><span class="va">y.tf</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/graphics/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">y</span>,pch<span class="op">=</span><span class="st">"."</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="va">mu</span>,col<span class="op">=</span><span class="fl">1</span>,lwd<span class="op">=</span><span class="fl">3</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">s</span><span class="op">)</span>,col<span class="op">=</span><span class="fl">2</span>,lwd<span class="op">=</span><span class="fl">2</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="va">y.tf</span><span class="op">$</span><span class="va">fit</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="va">y.tf</span><span class="op">$</span><span class="va">lambda</span><span class="op">==</span><span class="va">y.tf.cv</span><span class="op">$</span><span class="va">lambda.min</span><span class="op">)</span><span class="op">]</span>,col<span class="op">=</span><span class="fl">4</span>,lwd<span class="op">=</span><span class="fl">2</span><span class="op">)</span></code></pre></div>
-<div class="figure" style="text-align: center">
-<img src="trend_filtering_files/figure-html/unnamed-chunk-5-1.png" alt="&amp;nbsp;" width="540"><p class="caption">
- 
-</p>
-</div>
 <p>The two fits seem similar in accuracy. We can check this
 numerically:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="op">(</span><span class="va">mu</span><span class="op">-</span><span class="va">y.tf</span><span class="op">$</span><span class="va">fit</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="va">y.tf</span><span class="op">$</span><span class="va">lambda</span><span class="op">==</span><span class="va">y.tf.cv</span><span class="op">$</span><span class="va">lambda.min</span><span class="op">)</span><span class="op">]</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span>
-<span class="co"># [1] 0.1413506</span>
-<span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="op">(</span><span class="va">mu</span><span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">s</span><span class="op">)</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span>
-<span class="co"># [1] 0.1832637</span></code></pre></div>
+<span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="op">(</span><span class="va">mu</span><span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">s</span><span class="op">)</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span></code></pre></div>
 </div>
   </div>
 

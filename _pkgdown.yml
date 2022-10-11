@@ -20,10 +20,10 @@ articles:
     - mwe
     - finemapping
     - finemapping_summary_statistics
+    - susie_rss
+    - susierss_diagnostic
     - l0_initialization
     - trend_filtering
     - sparse_susie_eval
     - susie_refine
-    - susie_rss
-    - susierss_diagnostic
 

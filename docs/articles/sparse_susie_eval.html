@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">susieR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.12.10</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.12.27</span>
       </span>
     </div>
 
@@ -70,7 +70,7 @@
                         <h4 data-toc-skip class="author">Kaiqian
 Zhang</h4>
             
-            <h4 data-toc-skip class="date">2022-06-13</h4>
+            <h4 data-toc-skip class="date">2022-10-11</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/HEAD/vignettes/sparse_susie_eval.Rmd" class="external-link"><code>vignettes/sparse_susie_eval.Rmd</code></a></small>
       <div class="hidden name"><code>sparse_susie_eval.Rmd</code></div>
@@ -83,7 +83,7 @@ Zhang</h4>
 <h2 id="set-up-environment">Set up environment<a class="anchor" aria-label="anchor" href="#set-up-environment"></a>
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://Matrix.R-forge.R-project.org/" class="external-link">Matrix</a></span><span class="op">)</span>
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://Matrix.R-forge.R-project.org/" class="external-link">Matrix</a></span><span class="op">)</span>
 <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/stephenslab/susieR" class="external-link">susieR</a></span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></code></pre></div>
 </div>
@@ -117,7 +117,7 @@ dense matrix and a sparse matrix at sparsity <span class="math inline">\(99\%\)<
 <span class="va">beta</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>,<span class="va">p</span><span class="op">)</span>
 <span class="va">beta</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">300</span>,<span class="fl">400</span>,<span class="fl">1000</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">10</span> 
 <span class="va">X.dense</span>  <span class="op">&lt;-</span> <span class="fu">create_sparsity_mat</span><span class="op">(</span><span class="fl">0.99</span>,<span class="va">n</span>,<span class="va">p</span><span class="op">)</span>
-<span class="va">X.sparse</span> <span class="op">&lt;-</span> <span class="fu">as</span><span class="op">(</span><span class="va">X.dense</span>,<span class="st">"dgCMatrix"</span><span class="op">)</span>
+<span class="va">X.sparse</span> <span class="op">&lt;-</span> <span class="fu">as</span><span class="op">(</span><span class="va">X.dense</span>,<span class="st">"CsparseMatrix"</span><span class="op">)</span>
 <span class="va">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">X.dense</span> <span class="op"><a href="https://rdrr.io/pkg/Matrix/man/matrix-products.html" class="external-link">%*%</a></span> <span class="va">beta</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span><span class="op">)</span></code></pre></div>
 </div>
 <div class="section level2">
@@ -132,7 +132,8 @@ dense matrix and a sparse matrix at sparsity <span class="math inline">\(99\%\)<
 <code>X</code> in a sparse form<a class="anchor" aria-label="anchor" href="#x-in-a-sparse-form"></a>
 </h2>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">susie.sparse</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/susie.html">susie</a></span><span class="op">(</span><span class="va">X.sparse</span>,<span class="va">y</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span class="va">susie.sparse</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/susie.html">susie</a></span><span class="op">(</span><span class="va">X.sparse</span>,<span class="va">y</span><span class="op">)</span>
+<span class="co"># as(&lt;matrix&gt;, "dgeMatrix") is deprecated since Matrix 1.4-2; do as(as(as(., "dMatrix"), "generalMatrix"), "unpackedMatrix") instead</span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="further-step">Further step<a class="anchor" aria-label="anchor" href="#further-step"></a>

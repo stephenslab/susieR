@@ -64,11 +64,12 @@ effect sizes ($\hat{\beta}$ coefficient from regression) and p-values.
 These statisticscan be used to perform fine-mapping with given an
 additional input of correlation matrix between variables.  The
 correlation matrix in genetics is typically referred to as an "LD
-matrix" (LD is short for linkage disequilibrium).  One may use
-external reference panels to estimate it when this matrix cannot be
-obtained from samples directly. Importantly, the LD matrix has to be a
-matrix containing estimates of the correlation, $r$, and not $r^2$ or
-$|r|$.
+matrix" (LD is short for linkage disequilibrium). One may use external
+reference panels to estimate it when this matrix cannot be obtained
+from samples directly. *Importantly, the LD matrix has to be a matrix
+containing estimates of the correlation, $r$, and not $r^2$ or $|r|$.*
+See also [this vignette](susierss_diagnostic.html) for how to check the
+consistency of the LD matrix with the summary statistics.
 
 The `univariate_regression` function can be used to compute summary
 statistics by fitting univariate simple regression variable by
@@ -143,7 +144,7 @@ all.equal(fitted$pip, fitted_rss1$pip)
 all.equal(coef(fitted)[-1], coef(fitted_rss1)[-1])
 ```
 
-If, on the other hand, the variance of &y& is unknown, we fit can SuSiE
+If, on the other hand, the variance of $y$ is unknown, we fit can SuSiE
 regression with summary statistics, $\hat{\beta}$, $SE(\hat{\beta})$,
 $R$ and $n$ (or *z*-scores, $R$ and $n$). The outputted effect estimates
 are now on the standardized $X$ and $y$ scale. Still, we can estimate the
@@ -212,7 +213,7 @@ are quite similar.
 plot(fitted_rss1$pip, fitted_rss3$pip, ylim=c(0,1), xlab='SuSiE PIP', ylab='SuSiE-RSS PIP')
 ```
 
-In some rare cases, the sample size $n$ is unknown. When the sampel
+In some rare cases, the sample size $n$ is unknown. When the sample
 size is not provided as input to `susie_rss`, this is in effect
 assuming the sample size is infinity and all the effects are small,
 and the estimated PVE for each variant will be close to zero. The
