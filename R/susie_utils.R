@@ -856,10 +856,15 @@ kriging_rss = function (z, R, n, r_tol = 1e-08,
   # Compute (log) likelihood ratios.
   logLRmix = logl1mix - logl0mix
 
-  res = data.frame(z = z,condmean = condmean,condvar = condvar,
-                   z_std_diff = z_std_diff,logLR = logLRmix)
-
-  p = ggplot(res) + geom_point(aes(y = z, x = condmean)) +
+  z          = drop(z)
+  z_std_diff = drop(z_std_diff)
+  res = data.frame(z = z,
+                   condmean = condmean,
+                   condvar = condvar,
+                   z_std_diff = z_std_diff,
+                   logLR = logLRmix)
+  p = ggplot(res,aes_string(y = "z",x = "condmean")) +
+        geom_point(aes(y = z, x = condmean)) +
         labs(y = "Observed z scores", x = "Expected value") +
         geom_abline(intercept = 0, slope = 1) +
         theme_bw()
