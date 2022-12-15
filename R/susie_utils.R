@@ -759,7 +759,7 @@ estimate_s_rss = function (z, R, n, r_tol = 1e-08, method = "null-mle") {
 #' @importFrom ggplot2 geom_abline
 #' @importFrom ggplot2 theme_bw
 #' @importFrom ggplot2 labs
-#' @importFrom ggplot2 aes
+#' @importFrom ggplot2 aes_string
 #' @importFrom mixsqp mixsqp
 #'
 #' @examples
