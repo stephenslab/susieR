@@ -864,14 +864,14 @@ kriging_rss = function (z, R, n, r_tol = 1e-08,
                    z_std_diff = z_std_diff,
                    logLR = logLRmix)
   p = ggplot(res,aes_string(y = "z",x = "condmean")) +
-        geom_point(aes(y = z, x = condmean)) +
+        geom_point() +
         labs(y = "Observed z scores", x = "Expected value") +
         geom_abline(intercept = 0, slope = 1) +
         theme_bw()
   idx = which(logLRmix > 2 & abs(z) > 2)
   if (length(idx) > 0)
     p = p + geom_point(data = res[idx,],
-                       aes(y = z, x = condmean),col = "red")
+                       aes_string(y = "z", x = "condmean"),col = "red")
   return(list(plot = p,conditional_dist = res))
 }
 
