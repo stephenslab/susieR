@@ -66,7 +66,7 @@ please visit https://stephenslab.github.io/susieR
 If you find the `susieR` package or any of the source code in this
 repository useful for your work, please cite:
 
-> Wang, G., Sarkar, A., Carbonetto, P. & Stephens, M. (2020). A
+> G. Wang, G., Sarkar, A., Carbonetto, P. & Stephens, M. (2020). A
 > simple new approach to variable selection in regression, with
 > application to genetic fine mapping. *Journal of the Royal
 > Statistical Society, Series B* **82**, 1273--1300.
@@ -75,9 +75,9 @@ repository useful for your work, please cite:
 If you use any of the summary data methods---`susie_suff_stat` or
 `susie_rss`---please also cite:
 
-> Zou, Y., Carbonetto, P., Wang, G. & Stephens, M. (2021).
-> Fine-mapping from summary data with the "Sum of Single Effects"
-> model. *bioRxiv* https://doi.org/10.1101/2021.11.03.467167 
+> Zou, Y., Carbonetto, P., Wang, G., & Stephens, M. (2022). Fine-mapping
+> from summary data with the "Sum of Single Effects" model. *PLOS
+> Genetics*, **18**, e1010299. https://doi.org/10.1371/journal.pgen.1010299
 
 ## Developer notes
 
