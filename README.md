@@ -69,15 +69,15 @@ repository useful for your work, please cite:
 > G. Wang, G., Sarkar, A., Carbonetto, P. & Stephens, M. (2020). A
 > simple new approach to variable selection in regression, with
 > application to genetic fine mapping. *Journal of the Royal
-> Statistical Society, Series B* **82**, 1273--1300.
+> Statistical Society, Series B* **82**, 1273–1300.
 > https://doi.org/10.1111/rssb.12388
 
-If you use any of the summary data methods---`susie_suff_stat` or
-`susie_rss`---please also cite:
+If you use any of the summary data methods such as `susie_suff_stat`
+or `susie_rss`, please also cite:
 
-> Zou, Y., Carbonetto, P., Wang, G., & Stephens, M. (2022). Fine-mapping
-> from summary data with the "Sum of Single Effects" model. *PLOS
-> Genetics*, **18**, e1010299. https://doi.org/10.1371/journal.pgen.1010299
+> Zou, Y., Carbonetto, P., Wang, G. & Stephens, M. (2022). Fine-mapping
+> from summary data with the "Sum of Single Effects" model. *PLoS
+> Genetics* **18**, e1010299. https://doi.org/10.1371/journal.pgen.1010299
 
 ## Developer notes
 
