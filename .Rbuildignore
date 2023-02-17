@@ -16,3 +16,4 @@
 ^LICENSE\.md$
 ^NOTES\.txt$
 ^\.Renviron$
+^vignettes/l0_initialization\.Rmd$

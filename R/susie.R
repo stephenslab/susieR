@@ -432,6 +432,7 @@ susie = function (X,y,L = min(10,ncol(X)),
       s$converged = TRUE
       break
     }
+
     if (estimate_residual_variance) {
       s$sigma2 = pmax(residual_variance_lowerbound,
                       estimate_residual_variance(X,y,s))

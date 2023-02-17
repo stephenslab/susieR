@@ -1,13 +1,13 @@
 citHeader("To cite the susieR package, please use:")
 
-citEntry(entry = "Article",
+bibentry(bibtype = "Article",
          title = paste("A simple new approach to variable selection in",
                        "regression, with application to genetic fine",
                        "mapping"),
-         author = personList(as.person("Gao Wang"),
-                             as.person("Abhishek Sarkar"),
-                             as.person("Peter Carbonetto"),             
-                             as.person("Matthew Stephens")),
+         author = personList(c(as.person("Gao Wang"),
+                               as.person("Abhishek Sarkar"),
+                               as.person("Peter Carbonetto"),             
+                               as.person("Matthew Stephens"))),
          journal = "Journal of the Royal Statistical Society, Series B",
          year    = "2020",
          pages   = "forthcoming",
