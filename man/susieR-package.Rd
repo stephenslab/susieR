@@ -8,8 +8,8 @@
 \description{
 Implements methods for variable selection in linear
     regression based on the "Sum of Single Effects" (SuSiE) model, as
-    described in Wang et al (2020) \doi{10.1101/501114} and Zou et al
-    (2021) \doi{10.1101/2021.11.03.467167}. These methods provide
+    described in Wang et al (2020) <DOI:10.1101/501114> and Zou et al
+    (2021) <DOI:10.1101/2021.11.03.467167>. These methods provide
     simple summaries, called "Credible Sets", for accurately
     quantifying uncertainty in which variables should be selected.
     The methods are motivated by genetic fine-mapping applications,

@@ -98,7 +98,7 @@ susie_suff_stat = function (XtX, Xty, yty, n,
     XtX = XtX + t(XtX)
     XtX = XtX/2
   }
-
+  
   # MAF filter.
   if (!is.null(maf)) {
     if (length(maf) != length(Xty))

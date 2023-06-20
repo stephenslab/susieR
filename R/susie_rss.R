@@ -232,6 +232,8 @@ susie_rss = function (z, R, n, bhat, shat, var_y,
       stop("shat cannot have zero or negative elements")
     z = bhat/shat
   }
+  if (!(length(z) > 1))
+    stop("Input vector z should have at least one element")
   z[is.na(z)] = 0
 
   # When n is provided, compute the PVE-adjusted z-scores.
