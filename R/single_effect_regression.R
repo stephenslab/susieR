@@ -87,20 +87,26 @@ single_effect_regression =
         alpha = NULL,post_mean2 = NULL,V_init = V,
         check_null_threshold = check_null_threshold)
 
-  # log(bf) for each SNP
+  # log(po) = log(BF * prior) for each SNP
   lbf = dnorm(betahat,0,sqrt(V + shat2),log = TRUE) -
         dnorm(betahat,0,sqrt(shat2),log = TRUE)
+  lpo = lbf + log(prior_weights + sqrt(.Machine$double.eps))
 
   # Deal with special case of infinite shat2 (e.g., happens if X does
   # not vary).
   lbf[is.infinite(shat2)] = 0
+  lpo[is.infinite(shat2)] = 0
   maxlbf = max(lbf)
-
-  # w is proportional to BF, but subtract max for numerical stability.
-  w = exp(lbf - maxlbf)
+  maxlpo = max(lpo)
+  
+  # w is proportional to
+  #
+  #   posterior odds = BF * prior,
+  #
+  # but subtract max for numerical stability.
+  w_weighted = exp(lpo - maxlpo)
 
   # Posterior prob for each SNP.
-  w_weighted = w * prior_weights
   weighted_sum_w = sum(w_weighted)
   alpha = w_weighted / weighted_sum_w
   post_var = (1/V + attr(X,"d")/residual_variance)^(-1) # Posterior variance.
@@ -166,7 +172,6 @@ optimize_prior_variance = function (optimize_V, betahat, shat2, prior_weights,
   if (loglik(0,betahat,shat2,prior_weights) +
       check_null_threshold >= loglik(V,betahat,shat2,prior_weights))
     V = 0
-
   return(V)
 }
 
