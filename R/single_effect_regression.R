@@ -96,7 +96,6 @@ single_effect_regression =
   # not vary).
   lbf[is.infinite(shat2)] = 0
   lpo[is.infinite(shat2)] = 0
-  maxlbf = max(lbf)
   maxlpo = max(lpo)
   
   # w is proportional to
@@ -114,7 +113,7 @@ single_effect_regression =
   post_mean2 = post_var + post_mean^2 # Second moment.
 
   # BF for single effect model.
-  lbf_model = maxlbf + log(weighted_sum_w)
+  lbf_model = maxlpo + log(weighted_sum_w)
   loglik = lbf_model + sum(dnorm(y,0,sqrt(residual_variance),log = TRUE))
 
   if(optimize_V == "EM")
@@ -195,11 +194,10 @@ loglik = function (V, betahat, shat2, prior_weights) {
   lbf[is.infinite(shat2)] = 0
   lpo[is.infinite(shat2)] = 0
 
-  maxlbf = max(lbf)
   maxlpo = max(lpo)
   w_weighted = exp(lpo - maxlpo)
   weighted_sum_w = sum(w_weighted)
-  return(log(weighted_sum_w) + maxlbf)
+  return(log(weighted_sum_w) + maxlpo)
 }
 
 neg.loglik.logscale = function(lV,betahat,shat2,prior_weights)
@@ -219,7 +217,6 @@ loglik.grad = function(V, betahat, shat2, prior_weights) {
   lbf[is.infinite(shat2)] = 0
   lpo[is.infinite(shat2)] = 0
 
-  maxlbf = max(lbf)
   maxlpo = max(lpo)
   w_weighted = exp(lpo - maxlpo)
   weighted_sum_w = sum(w_weighted)

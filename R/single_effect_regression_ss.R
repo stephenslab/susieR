@@ -34,7 +34,6 @@ single_effect_regression_ss =
   # not vary).
   lbf[is.infinite(shat2)] = 0 
   lpo[is.infinite(shat2)] = 0
-  maxlbf = max(lbf)
   maxlpo = max(lpo)
 
   # w is proportional to
@@ -48,7 +47,7 @@ single_effect_regression_ss =
   post_var = (1/V + dXtX/residual_variance)^(-1) # Posterior variance.
   post_mean = (1/residual_variance) * post_var * Xty
   post_mean2 = post_var + post_mean^2 # Second moment.
-  lbf_model = maxlbf + log(weighted_sum_w) # Analogue of loglik in the
+  lbf_model = maxlpo + log(weighted_sum_w) # Analogue of loglik in the
                                            # non-summary case.
 
   if (optimize_V == "EM")

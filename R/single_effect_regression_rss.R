@@ -31,7 +31,6 @@ single_effect_regression_rss =
   # vary).
   lbf[is.infinite(shat2)] = 0 
   lpo[is.infinite(shat2)] = 0
-  maxlbf = max(lbf)
   maxlpo = max(lpo)
 
   # w is proportional to
@@ -46,7 +45,7 @@ single_effect_regression_rss =
   post_mean = sapply(1:p,function(j) (post_var[j]) *
               sum(attr(Sigma,"SinvRj")[,j] * z))
   post_mean2 = post_var + post_mean^2 # Second moment.
-  lbf_model = maxlbf + log(weighted_sum_w) # Analogue of loglik in the
+  lbf_model = maxlpo + log(weighted_sum_w) # Analogue of loglik in the
                                            # non-summary case.
 
   if (optimize_V=="EM") 
@@ -71,11 +70,10 @@ loglik_rss = function (V, z, Sigma, prior_weights) {
   # not vary).
   lbf[is.infinite(shat2)] = 0 
   lpo[is.infinite(shat2)] = 0
-  maxlbf = max(lbf)
   maxlpo = max(lpo)
   w_weighted = exp(lpo - maxlpo)
   weighted_sum_w = sum(w_weighted)
-  return(log(weighted_sum_w) + maxlbf)
+  return(log(weighted_sum_w) + maxlpo)
 }
 
 neg.loglik_z.logscale_rss = function (lV, z, Sigma, prior_weights)
