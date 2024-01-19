@@ -686,11 +686,11 @@ estimate_s_rss = function (z, R, n, r_tol = 1e-08, method = "null-mle") {
   }
 
   if (method == "null-mle") {
-    negloglikelihood = function(s, z, eigenld)
-      0.5 * sum(log((1-s)*eigenld$values + s)) +
-      0.5 * sum(z * eigenld$vectors %*% ((t(eigenld$vectors) *
-               (1/((1-s)*eigenld$values + s))) %*% z))
-    s = optim(0.5,fn = negloglikelihood,z = z,eigenld = eigenld,
+    negloglikelihood = function(s, ztv, d) {
+      0.5 * sum(log((1 - s) * d + s)) +
+      0.5 * tcrossprod(ztv * (1 /((1 - s) * d + s)), ztv)
+    }
+    s = optim(0.5,fn = negloglikelihood,ztv = crossprod(z, eigenld$vectors),d = eigenld$values,
               method = "Brent",lower = 0,upper = 1)$par
   } else if (method == "null-partialmle") {
     colspace = which(eigenld$values > 0)
