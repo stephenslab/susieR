@@ -536,8 +536,8 @@ muffled_cov2cor = function (x)
 is_symmetric_matrix = function (x) {
   if (requireNamespace("Rfast",quietly = TRUE))
     return(Rfast::is.symmetric(x))
-  else
-    return(isSymmetric(x))
+  else 
+    return(Matrix::isSymmetric(x))
 }
 
 # Compute standard error for regression coef.
