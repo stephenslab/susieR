@@ -157,13 +157,10 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
     end = max(max(model[[pos$attr]]),pos$end)
 
     # Add zeros to alpha and p.
-    alpha = matrix(0,nrow(model$alpha),end - start + 1)
-    new_p = rep(min(p),end - start + 1)
+    new_p = rep(NA,end - start + 1)
     pos_with_value = model[[pos$attr]] - start + 1
     new_p[pos_with_value] = p
-    alpha[,pos_with_value] = model$alpha
     p = new_p
-    model$alpha = alpha
 
     # Adjust model$cs.
     if (!is.null(model$sets$cs)) {
@@ -178,6 +175,7 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
   } else {
     if (!all(pos %in% 1:length(p))) 
       stop("Provided position is outside the range of variables")
+    pos_with_value = 1:length(p)
   }
   legend_text = list(col = vector(),purity = vector(),size = vector())
   # scipen0 = options()$scipen
@@ -199,7 +197,7 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
         y1 = p[x0]
       } else if (n_in_CS(model, model$sets$requested_coverage)[i] < max_cs) {
         x0 = intersect(pos,
-               which(in_CS(model,model$sets$requested_coverage)[i,] > 0))
+               pos[pos_with_value][which(in_CS(model,model$sets$requested_coverage)[i,] > 0)])
         y1 = p[x0]
       } else {
         x0 = NULL
