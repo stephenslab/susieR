@@ -175,6 +175,7 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
   } else {
     if (!all(pos %in% 1:length(p))) 
       stop("Provided position is outside the range of variables")
+    pos_with_value = 1:length(p)
   }
   legend_text = list(col = vector(),purity = vector(),size = vector())
   # scipen0 = options()$scipen
