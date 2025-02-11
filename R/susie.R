@@ -352,7 +352,7 @@ susie = function (X,y,L = min(10,ncol(X)),
     if (na.rm) {
       samples_kept = which(!is.na(y))
       y = y[samples_kept]
-      X = X[samples_kept,]
+      X = X[samples_kept,,drop=F]
     } else
       stop("Input y must not contain missing values")
   }
