@@ -29,4 +29,4 @@ get_ER2_ss = function (XtX, Xty, s, yty) {
 # @param Eb the posterior mean of b (p vector) (alpha * mu)
 # @param Eb2 the posterior second moment of b (p vector) (alpha * mu2)
 SER_posterior_e_loglik_ss = function (dXtX, Xty, s2, Eb, Eb2)
-  -0.5/s2 * (-2*sum(Eb*Xty) + sum(dXtX * as.vector(Eb2)))
+  -0.5/s2 * (-2*sum(Eb*as.vector(Xty)) + sum(dXtX * as.vector(Eb2)))

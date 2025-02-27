@@ -27,7 +27,7 @@ update_each_effect_ss = function (XtX, Xty, s_init,
       s$XtXr = s$XtXr - XtX %*% (s$alpha[l,] * s$mu[l,])
 
       # Compute residuals.
-      XtR = Xty - s$XtXr
+      XtR = Xty - as.vector(s$XtXr)
       res = single_effect_regression_ss(as.matrix(XtR),attr(XtX,"d"),s$V[l],
               s$sigma2,s$pi,estimate_prior_method,check_null_threshold)
       
