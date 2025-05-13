@@ -51,9 +51,10 @@ susie_init_coef = function (coef_index, coef_value, p) {
 # Set default susie initialization.
 init_setup = function (n, p, L, scaled_prior_variance, residual_variance,
                        prior_weights, null_weight, varY, standardize) {
-  if (!is.numeric(scaled_prior_variance) || scaled_prior_variance < 0)
+  if (!is.numeric(scaled_prior_variance) ||
+      any(scaled_prior_variance < 0))
     stop("Scaled prior variance should be positive number")
-  if (scaled_prior_variance > 1 && standardize)
+  if (any(scaled_prior_variance > 1) && standardize)
     stop("Scaled prior variance should be no greater than 1 when ",
          "standardize = TRUE")
   if(is.null(residual_variance))
