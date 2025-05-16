@@ -1,0 +1,166 @@
+# susie_rss_constructor
+# susie_sparse_constructor
+
+# susie individual-level data constructor
+susie_constructor <- function(X, y,
+                              intercept   = TRUE,
+                              standardize = TRUE,
+                              na.rm       = FALSE) {
+  # Check input X.
+  if (!(is.double(X) & is.matrix(X)) &
+      !inherits(X,"CsparseMatrix") &
+      is.null(attr(X,"matrix.type")))
+    stop("Input X must be a double-precision matrix, or a sparse matrix, or ",
+         "a trend filtering matrix")
+
+  if (anyNA(X))
+    stop("X contains NA values")
+
+  # Check input y.
+  if (anyNA(y)) {
+    if (na.rm) {
+      samples_kept = which(!is.na(y))
+      y = y[samples_kept]
+      X = X[samples_kept,]
+    } else
+      stop("Input y must not contain missing values")
+  }
+  mean_y <- mean(y)
+
+  # Store n & p.
+  n <- nrow(X);  p <- ncol(X)
+  if (p > 1000 & !requireNamespace("Rfast",quietly = TRUE))
+    warning_message("For an X with many columns, please consider installing",
+                    "the Rfast package for more efficient credible set (CS)",
+                    "calculations.", style='hint')
+
+  # Center and scale input.
+  if (intercept)
+    y <- y - mean_y
+
+  # Set three attributes for matrix X: attr(X,'scaled:center') is a
+  # p-vector of column means of X if center=TRUE, a p vector of zeros
+  # otherwise; 'attr(X,'scaled:scale') is a p-vector of column
+  # standard deviations of X if scale=TRUE, a p vector of ones
+  # otherwise; 'attr(X,'d') is a p-vector of column sums of
+  # X.standardized^2,' where X.standardized is the matrix X centered
+  # by attr(X,'scaled:center') and scaled by attr(X,'scaled:scale').
+  out = susieR:::compute_colstats(X,center = intercept,scale = standardize)
+  attr(X,"scaled:center") = out$cm
+  attr(X,"scaled:scale") = out$csd
+  attr(X,"d") = out$d
+
+  # Assemble data object
+  return(structure(list(
+    X      = X,
+    y      = y,
+    mean_y = mean_y,
+    n      = n,
+    p      = p),
+    class = "individual"))
+}
+
+# susie ss constructor
+susie_ss_constructor <- function(XtX, Xty, yty, n,
+                                 X_colmeans = NA, y_mean = NA, maf = NULL,
+                                 maf_thresh = 0, standardize = TRUE,
+                                 r_tol = 1e-8, check_input = FALSE) {
+
+  # Check sample size
+  if (missing(n))
+    stop("n must be provided")
+  if (n <= 1)
+    stop("n must be greater than 1")
+
+  # Check XtX, Xty, and yty
+  if (missing(XtX) || missing(Xty) || missing(yty))
+    stop("XtX, Xty, yty must all be provided")
+
+  if (!(is.double(XtX) && is.matrix(XtX)) &&
+      !inherits(XtX, "CsparseMatrix"))
+    stop("XtX must be a numeric dense or sparse matrix")
+
+  if (ncol(XtX) != length(Xty))
+    stop(paste0("The dimension of XtX (",nrow(XtX)," by ",ncol(XtX),
+                ") does not agree with expected (",length(Xty)," by ",
+                length(Xty),")"))
+
+  if (ncol(XtX) > 1000 & !requireNamespace("Rfast",quietly = TRUE))
+    warning_message("For large R or large XtX, consider installing the ",
+                    "Rfast package for better performance.", style="hint")
+
+  # Ensure XtX is symmetric
+  if (!susieR:::is_symmetric_matrix(XtX)) {
+    warning("XtX not symmetric; using (XtX + t(XtX))/2")
+    XtX <- (XtX + t(XtX))/2
+  }
+
+  ## MAF Filter
+  if (!is.null(maf)) {
+    if (length(maf) != length(Xty))
+      stop(paste("The length of maf does not agree with expected",length(Xty)))
+    id = which(maf > maf_thresh)
+    XtX = XtX[id,id]
+    Xty = Xty[id]
+  }
+
+  # Check for infinites and matrix type
+  if (any(is.infinite(Xty)))
+    stop("Input Xty contains infinite values")
+  if (!(is.double(XtX) & is.matrix(XtX)) & !inherits(XtX,"CsparseMatrix"))
+    stop("Input XtX must be a double-precision matrix, or a sparse matrix")
+  if (anyNA(XtX))
+    stop("Input XtX matrix contains NAs")
+
+  # Replace NAs in Xty with zeros.
+  if (anyNA(Xty)) {
+    warning_message("NA values in Xty are replaced with 0")
+    Xty[is.na(Xty)] = 0
+  }
+
+  ## Positive-semidefinite check
+  if (check_input) {
+    semi_pd = susieR:::check_semi_pd(XtX,r_tol)
+    if (!semi_pd$status)
+      stop("XtX is not a positive semidefinite matrix")
+
+    # Check whether Xty in space spanned by the non-zero eigenvectors of XtX
+    proj = susieR:::check_projection(semi_pd$matrix,Xty)
+    if (!proj$status)
+      warning_message("Xty does not lie in the space of the non-zero eigenvectors ",
+                      "of XtX")
+  }
+
+  # Define p
+  p <- ncol(XtX)
+
+  # Standardize
+  if (standardize) {
+    dXtX = diag(XtX)
+    csd = sqrt(dXtX/(n-1))
+    csd[csd == 0] = 1
+    XtX = t((1/csd) * XtX) / csd
+    Xty = Xty / csd
+  } else
+    csd = rep(1,length = p)
+
+  attr(XtX,"d") = diag(XtX)
+  attr(XtX,"scaled:scale") = csd
+
+  if (length(X_colmeans) == 1)
+    X_colmeans <- rep(X_colmeans, p)
+  if (length(X_colmeans) != p)
+    stop("`X_colmeans` length (", length(X_colmeans),
+         ") does not match number of variables (", p, ")")
+
+  # Assemble data object
+  return(structure(list(
+    XtX        = XtX,
+    Xty        = Xty,
+    yty        = yty,
+    n          = n,
+    p          = p,
+    X_colmeans = X_colmeans,
+    y_mean     = y_mean),
+    class = "ss"))
+}
