@@ -12,9 +12,8 @@ susie_engine = function(data,
                         residual_variance_upperbound,
                         max_iter, tol, verbose, track_fit,
                         coverage, min_abs_corr,
-                        #median_abs_corr,
-                        prior_tol, n_purity, compute_univariate_zscore = FALSE
-                        ){
+                        prior_tol, n_purity, compute_univariate_zscore = FALSE,
+                        check_prior = FALSE){
 
   # Prior Variance Method
   estimate_prior_method <- match.arg(estimate_prior_method)
@@ -46,8 +45,15 @@ susie_engine = function(data,
                       estimate_prior_method   = estimate_prior_method,
                       check_null_threshold    = check_null_threshold)
 
+    # Validate prior variance is reasonable
+    validate_prior(data, model, check_prior)
+
+    # SS has a force iterate option. It appears this is used when IBSS is
+    # still resolving zR discrepency. Since we no longer include that, seems
+    # like we don't need.
+
     # Get Objective & Check Convergence
-    elbo[iter + 1] <- get_objective(data, model) # Need to create this generic + indiv/ss backend
+    elbo[iter + 1] <- get_objective(data, model)
 
     if (elbo[iter + 1] - elbo[iter] < tol) {
       model$converged <- TRUE

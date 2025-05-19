@@ -1,14 +1,24 @@
 ### SuSiE Individual-level data backend functions ###
 
+# Initialize Fitted Values
+initialize_fitted.individual <- function(data, alpha, mu){
+  return(list(Xr = compute_Xb(data$X, colSums(alpha * mu))))
+}
+
+# Validate Prior Variance
+validate_prior.individual <- function(data, model, check_prior, ...) {
+  invisible(TRUE)
+}
+
 # Posterior expected log-likelihood for a single effect regression
 SER_posterior_e_loglik.individual <- function (data, model, R, Eb, Eb2) {
   return(-0.5*data$n*log(2*pi*model$sigma2) - 0.5/model$sigma2*(sum(R*R)
-                                                                - 2*sum(R*susieR:::compute_Xb(data$X,Eb))
+                                                                - 2*sum(R*compute_Xb(data$X,Eb))
                                                                 + sum(attr(data$X,"d") * Eb2)))}
 
 # Expected Squared Residuals
 get_ER2.individual <- function (data, model) {
-  Xr_L = susieR:::compute_MXt(model$alpha * model$mu, data$X) # L by N matrix
+  Xr_L = compute_MXt(model$alpha * model$mu, data$X) # L by N matrix
   postb2 = model$alpha * model$mu2 # Posterior second moment.
   return(sum((data$y - model$Xr)^2) - sum(Xr_L^2) + sum(attr(data$X,"d") * t(postb2)))
 }
@@ -21,12 +31,20 @@ Eloglik.individual <- function (data, model) {
 
 # Get Objective
 get_objective.individual <- function (data, model) {
-  return(Eloglik(data,model) - sum(model$KL))
+  objective <- Eloglik(data,model) - sum(model$KL)
+  if(is.infinite(objective)){
+    stop("get_objective.individual() produced an infinite ELBO value")
+  }
+  return(objective)
 }
 
 # Estimate Residual Variance
 est_residual_variance.individual <- function(data, model){
-  return((1/data$n)*get_ER2(data,model))
+  resid_var <- (1/data$n)*get_ER2(data,model)
+  if(resid_var < 0){
+    stop("est_residual_variance.individual() failed: the estimated value is negative")
+  }
+  return(resid_var)
 }
 
 # Single Effect Update
@@ -35,7 +53,7 @@ single_effect_update.individual <- function(
     optimize_V, check_null_threshold) {
 
   # Remove lth effect
-  model$Xr <- model$Xr - susieR:::compute_Xb(data$X, model$alpha[l, ] * model$mu[l, ])
+  model$Xr <- model$Xr - compute_Xb(data$X, model$alpha[l, ] * model$mu[l, ])
 
   # Compute Residuals
   R <- data$y - model$Xr
@@ -69,7 +87,7 @@ single_effect_update.individual <- function(
   model$lbf_variable[l, ] <- res$lbf
   model$KL[l]             <- res$KL
 
-  model$Xr <- model$Xr + susieR:::compute_Xb(data$X, model$alpha[l, ] * model$mu[l, ])
+  model$Xr <- model$Xr + compute_Xb(data$X, model$alpha[l, ] * model$mu[l, ])
 
   return(model)
 }
@@ -108,9 +126,8 @@ get_cs.individual <- function(data, model, coverage, min_abs_corr, n_purity){
 
   if (is.null(coverage) || is.null(min_abs_corr)) return(NULL)
 
-  return(susieR:::susie_get_cs(model,coverage = coverage,X = data$X,
+  return(susie_get_cs(model,coverage = coverage,X = data$X,
                       min_abs_corr = min_abs_corr,
-                      #median_abs_corr = median_abs_corr,
                       n_purity = n_purity))
 }
 
@@ -119,7 +136,7 @@ get_pip.individual <- function(data, model, coverage, min_abs_corr, prior_tol){
 
   if (is.null(coverage) || is.null(min_abs_corr)) return(NULL)
 
-  return(susieR:::susie_get_pip(model,prune_by_cs = FALSE,prior_tol = prior_tol))
+  return(susie_get_pip(model,prune_by_cs = FALSE,prior_tol = prior_tol))
 
 }
 
@@ -157,6 +174,6 @@ get_zscore.individual <- function(data, model, compute_univariate_zscore,
   if (!is.null(null_weight) && null_weight != 0)
     X = X[,1:(ncol(X) - 1)]
 
-  return(susieR:::calc_z(X,data$y,center = intercept,scale = standardize))
+  return(calc_z(X,data$y,center = intercept,scale = standardize))
 
 }

@@ -3,9 +3,11 @@
 
 # susie individual-level data constructor
 susie_constructor <- function(X, y,
-                              intercept   = TRUE,
-                              standardize = TRUE,
-                              na.rm       = FALSE) {
+                              intercept     = TRUE,
+                              standardize   = TRUE,
+                              na.rm         = FALSE,
+                              prior_weights = NULL,
+                              null_weight   = 0) {
   # Check input X.
   if (!(is.double(X) & is.matrix(X)) &
       !inherits(X,"CsparseMatrix") &
@@ -27,6 +29,24 @@ susie_constructor <- function(X, y,
   }
   mean_y <- mean(y)
 
+  # Handle null weights
+  if (is.numeric(null_weight) && null_weight == 0)
+    null_weight <- NULL
+
+  if (!is.null(null_weight)) {
+    if (!is.numeric(null_weight) || null_weight <= 0 || null_weight >= 1)
+      stop("null_weight must be between 0 and 1 (exclusive)")
+
+    if (is.null(prior_weights))
+      prior_weights <- rep(1 / ncol(X), ncol(X))
+
+    # rescale existing prior_weights and append null weight
+    prior_weights <- c(prior_weights * (1 - null_weight), null_weight)
+
+    # add the extra 0 column to X
+    X <- cbind(X, 0)
+  }
+
   # Store n & p.
   n <- nrow(X);  p <- ncol(X)
   if (p > 1000 & !requireNamespace("Rfast",quietly = TRUE))
@@ -45,7 +65,7 @@ susie_constructor <- function(X, y,
   # otherwise; 'attr(X,'d') is a p-vector of column sums of
   # X.standardized^2,' where X.standardized is the matrix X centered
   # by attr(X,'scaled:center') and scaled by attr(X,'scaled:scale').
-  out = susieR:::compute_colstats(X,center = intercept,scale = standardize)
+  out = compute_colstats(X,center = intercept,scale = standardize)
   attr(X,"scaled:center") = out$cm
   attr(X,"scaled:scale") = out$csd
   attr(X,"d") = out$d
@@ -64,7 +84,8 @@ susie_constructor <- function(X, y,
 susie_ss_constructor <- function(XtX, Xty, yty, n,
                                  X_colmeans = NA, y_mean = NA, maf = NULL,
                                  maf_thresh = 0, standardize = TRUE,
-                                 r_tol = 1e-8, check_input = FALSE) {
+                                 r_tol = 1e-8, check_input = FALSE,
+                                 prior_weights = NULL, null_weight = 0) {
 
   # Check sample size
   if (missing(n))
@@ -90,7 +111,7 @@ susie_ss_constructor <- function(XtX, Xty, yty, n,
                     "Rfast package for better performance.", style="hint")
 
   # Ensure XtX is symmetric
-  if (!susieR:::is_symmetric_matrix(XtX)) {
+  if (!is_symmetric_matrix(XtX)) {
     warning("XtX not symmetric; using (XtX + t(XtX))/2")
     XtX <- (XtX + t(XtX))/2
   }
@@ -120,15 +141,36 @@ susie_ss_constructor <- function(XtX, Xty, yty, n,
 
   ## Positive-semidefinite check
   if (check_input) {
-    semi_pd = susieR:::check_semi_pd(XtX,r_tol)
+    semi_pd = check_semi_pd(XtX,r_tol)
     if (!semi_pd$status)
       stop("XtX is not a positive semidefinite matrix")
 
     # Check whether Xty in space spanned by the non-zero eigenvectors of XtX
-    proj = susieR:::check_projection(semi_pd$matrix,Xty)
+    proj = check_projection(semi_pd$matrix,Xty)
     if (!proj$status)
       warning_message("Xty does not lie in the space of the non-zero eigenvectors ",
                       "of XtX")
+  }
+
+  # Handle null weights
+  if (is.numeric(null_weight) && null_weight == 0)
+    null_weight = NULL
+
+  if (!is.null(null_weight)) {
+    if (!is.numeric(null_weight))
+      stop("Null weight must be numeric")
+    if (null_weight < 0 || null_weight >= 1)
+      stop("Null weight must be between 0 and 1")
+    if (is.null(prior_weights))
+      prior_weights = c(rep(1/ncol(XtX)*(1-null_weight),ncol(XtX)),null_weight)
+    else
+      prior_weights = c(prior_weights*(1 - null_weight),null_weight)
+    XtX = cbind(rbind(XtX,0),0)
+    Xty = c(Xty,0)
+    if (length(X_colmeans) == 1)
+      X_colmeans = rep(X_colmeans,p)
+    if (length(X_colmeans) != p)
+      stop("The length of X_colmeans does not agree with number of variables")
   }
 
   # Define p

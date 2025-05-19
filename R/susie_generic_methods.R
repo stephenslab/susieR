@@ -74,3 +74,15 @@ get_zscore <- function(data, model, ...)
   UseMethod("get_zscore")
 get_zscore.default <- function(data, model, ...)
   stop("get_zscore: no method for class '", class(data)[1], "'")
+
+# Initialize fitted values
+initialize_fitted <- function(data, alpha, mu)
+  UseMethod("initialize_fitted")
+initialize_fitted.default <- function(data, alpha, mu, ...)
+  stop("initialize_fitted: no method for class '", class(data)[1], "'")
+
+# Validate Prior Variance
+validate_prior <- function(data, model, check_prior, ...)
+  UseMethod("validate_prior")
+validate_prior.default <- function(ddata, model, check_prior, ...)
+  stop("validate_prior: no method for class '", class(data)[1], "'")

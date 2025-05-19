@@ -8,7 +8,7 @@
 # This function initializes the SuSiE model object
 
 ibss_initialize <- function(data,
-                            L                     = min(10, ncol(data$X)),
+                            L                     = min(10, data$p),
                             scaled_prior_variance = 0.2,
                             residual_variance     = NULL,
                             prior_weights         = NULL,
@@ -78,26 +78,21 @@ ibss_initialize <- function(data,
            "input object")
   }
 
-  Xr   <- if (inherits(data, "individual"))
-    susieR:::compute_Xb(data$X, colSums(alpha * mu)) else NULL
-
-  XtXr <- if (inherits(data, "ss"))
-    data$XtX %*% colSums(alpha * mu) else NULL
+  fitted <- initialize_fitted(data, alpha, mu)
 
 
   # Return Initialized Model
-  model <- list(alpha        = alpha,
-                mu           = mu,
-                mu2          = mu2,
-                Xr           = Xr,
-                XtXr         = XtXr,
-                KL           = rep(as.numeric(NA), L),
-                lbf          = rep(as.numeric(NA), L),
-                lbf_variable = matrix(as.numeric(NA), L, p),
-                sigma2       = residual_variance,
-                V            = V,
-                pi           = prior_weights
-  )
+  model <- c(
+    list(alpha        = alpha,
+         mu           = mu,
+         mu2          = mu2,
+         KL           = rep(as.numeric(NA), L),
+         lbf          = rep(as.numeric(NA), L),
+         lbf_variable = matrix(as.numeric(NA), L, p),
+         sigma2       = residual_variance,
+         V            = V,
+         pi           = prior_weights),
+         fitted)
 
   class(model) <- "susie"
 
@@ -152,7 +147,8 @@ ibss_finalize <- function(data,
                           tracking               = NULL) {
 
   # Append ELBO & iteration count to model output
-  model$elbo  <- elbo[2:(iter + 1)]
+  model$elbo  <- elbo[2:(iter + 1)] # consider changing this to (susie_ss.R L262 format)
+                                    # this would instead remove infinite values + NA
   model$niter <- iter
 
   # Intercept & Fitted Values
