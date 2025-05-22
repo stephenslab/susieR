@@ -5,7 +5,7 @@ susie_engine = function(data,
                         scaled_prior_variance, residual_variance,
                         prior_weights, null_weight, model_init = NULL,
                         estimate_prior_variance,
-                        estimate_prior_method = "optim",
+                        estimate_prior_method = c("optim", "EM", "simple"),
                         check_null_threshold,
                         estimate_residual_variance,
                         residual_variance_lowerbound,
@@ -13,7 +13,8 @@ susie_engine = function(data,
                         max_iter, tol, verbose, track_fit,
                         coverage, min_abs_corr,
                         prior_tol, n_purity, compute_univariate_zscore = FALSE,
-                        check_prior = FALSE){
+                        check_prior = FALSE,
+                        refine = FALSE){
 
   # Prior Variance Method
   estimate_prior_method <- match.arg(estimate_prior_method)
@@ -30,27 +31,24 @@ susie_engine = function(data,
   # Initialize ELBO & Tracking
   elbo <- rep(as.numeric(NA), max_iter + 1)
   elbo[1] <- -Inf
-  tracking <- vector("list", max_iter)
+  tracking <- list()
 
   # IBSS Loop
   for(iter in seq_len(max_iter)){
 
-    # Save alpha, prior variance, and residual variance if tracking
-    # if (track_fit) tracking[[iter]] <- susie_slim(model)
-    # TODO: Needs to adjust util function. It calls res$...
+    # Save core values for each iteration
+
+    # This could be absorbed into ibss_fit, but i dont believe it should. I think
+    # it makes sense to absorb the various checks but when we are adding additional
+    # features to the model output it should remain more transparent.
+    tracking <- susie_extract_core(data, model, tracking, iter, track_fit)
 
     # Update all L effects
     model <- ibss_fit(data, model,
                       estimate_prior_variance = estimate_prior_variance,
                       estimate_prior_method   = estimate_prior_method,
-                      check_null_threshold    = check_null_threshold)
-
-    # Validate prior variance is reasonable
-    validate_prior(data, model, check_prior)
-
-    # SS has a force iterate option. It appears this is used when IBSS is
-    # still resolving zR discrepency. Since we no longer include that, seems
-    # like we don't need.
+                      check_null_threshold    = check_null_threshold,
+                      check_prior             = check_prior)
 
     # Get Objective & Check Convergence
     elbo[iter + 1] <- get_objective(data, model)
@@ -71,6 +69,41 @@ susie_engine = function(data,
   if (is.null(model$converged)) {
     warning(paste("IBSS algorithm did not converge in",max_iter,"iterations!"))
     model$converged = FALSE
+  }
+
+  model$elbo <- elbo[2:(iter + 1)]
+
+  rerun <- function(prior_weights, model_init = NULL) {
+    susie_engine(data                      = data,
+                 L                         = L,
+                 intercept                 = intercept,
+                 standardize               = standardize,
+                 scaled_prior_variance     = scaled_prior_variance,
+                 residual_variance         = residual_variance,
+                 prior_weights             = prior_weights,
+                 null_weight               = null_weight,
+                 model_init                = model_init,
+                 estimate_prior_variance   = estimate_prior_variance,
+                 estimate_prior_method     = estimate_prior_method,
+                 check_null_threshold      = check_null_threshold,
+                 estimate_residual_variance = estimate_residual_variance,
+                 residual_variance_lowerbound = residual_variance_lowerbound,
+                 residual_variance_upperbound = residual_variance_upperbound,
+                 max_iter                  = max_iter,
+                 tol                       = tol,
+                 verbose                   = verbose,
+                 track_fit                 = FALSE,
+                 coverage                  = coverage,
+                 min_abs_corr              = min_abs_corr,
+                 prior_tol                 = prior_tol,
+                 n_purity                  = n_purity,
+                 compute_univariate_zscore = compute_univariate_zscore,
+                 check_prior               = check_prior,
+                 refine                    = FALSE)
+  }
+
+  if (refine) {
+    model <- run_refine(data, model, rerun)
   }
 
   model <- ibss_finalize(data, model,

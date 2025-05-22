@@ -536,7 +536,7 @@ muffled_cov2cor = function (x)
 is_symmetric_matrix = function (x) {
   if (requireNamespace("Rfast",quietly = TRUE))
     return(Rfast::is.symmetric(x))
-  else 
+  else
     return(Matrix::isSymmetric(x))
 }
 
@@ -652,7 +652,7 @@ susie_prune_single_effects = function (s,L = 0,V = NULL) {
 #'
 #' # Estimate s using the unadjusted z-scores.
 #' s0 = estimate_s_rss(zhat,R)
-#' 
+#'
 #' # Estimate s using the adjusted z-scores.
 #' s1 = estimate_s_rss(zhat,R,n)
 #'
@@ -802,7 +802,7 @@ kriging_rss = function (z, R, n, r_tol = 1e-08,
     s = 0.8
   } else if (s < 0)
     stop("The s must be non-negative")
-  
+
   # Check input n, and adjust the z-scores if n is provided.
   if ((!missing(n)) && (n <= 1))
     stop("n must be greater than 1")
@@ -814,7 +814,7 @@ kriging_rss = function (z, R, n, r_tol = 1e-08,
     sigma2 = (n-1)/(z^2 + n - 2)
     z = sqrt(sigma2) * z
   }
-  
+
   dinv = 1/((1-s) * eigenld$values + s)
   dinv[is.infinite(dinv)] = 0
   precision = eigenld$vectors %*% (t(eigenld$vectors) * dinv)
@@ -986,10 +986,10 @@ check_projection = function (A, b) {
 warning_message = function(..., style=c("warning", "hint")) {
   style = match.arg(style)
   if (style=="warning" && getOption("warn")>=0) {
-    alert <- combine_styles("bold", "underline", "red")	
+    alert <- combine_styles("bold", "underline", "red")
     message(alert("WARNING:"), " ", ...)
   } else {
-    alert <- combine_styles("bold", "underline", "magenta")	
+    alert <- combine_styles("bold", "underline", "magenta")
     message(alert("HINT:"), " ", ...)
   }
 }
@@ -997,8 +997,170 @@ warning_message = function(..., style=c("warning", "hint")) {
 # Apply operation f to all nonzeros of a sparse matrix.
 #
 #' @importFrom Matrix sparseMatrix
-#' 
+#'
 apply_nonzeros <- function (X, f) {
   d <- summary(X)
   return(sparseMatrix(i = d$i,j = d$j,x = f(d$x),dims = dim(X)))
+}
+
+# Validate Model Initialization Object
+validate_init <- function(model_init, L, null_weight){
+
+  # Check if model_init is a susie object
+  if (!inherits(model_init, "susie"))
+    stop("model_init must be a 'susie' object")
+
+  alpha   <- model_init$alpha
+  mu      <- model_init$mu
+  mu2     <- model_init$mu2
+  V       <- model_init$V
+  sigma2  <- model_init$sigma2
+  pi_w    <- model_init$pi
+  null_id <- model_init$null_index
+
+
+  # TODO: Fix this check
+  # if(null_id > 0 && is.null(null_weight) || null_weight == 0)
+  #   stop("There is a mistmatch in null_weight between the initalization object",
+  #        " and the current call. Please make them consistent.")
+
+  # Verify no NA/Inf values in alpha
+  if (any(!is.finite(alpha)))
+    stop("model_init$alpha contains NA/Inf values")
+
+  # Verify no NA/Inf values in mu
+  if (any(!is.finite(mu)))
+    stop("model_init$mu contains NA/Inf values")
+
+  # Verify no NA/Inf values in mu2
+  if (any(!is.finite(mu2)))
+    stop("model_init$mu2 contains NA/Inf values")
+
+  # Verify no NA/Inf values in V
+  if (any(!is.finite(V)))
+    stop("model_init$V contains NA/Inf values")
+
+  # Verify no NA/Inf values in sigma2
+  if (any(!is.finite(sigma2)))
+    stop("model_init$sigma2 contains NA/Inf")
+
+  # Verify no NA/Inf values in prior weights
+  if (any(!is.finite(pi_w)))
+    stop("model_init$pi contains NA/Inf")
+
+  # Verify alpha is matrix
+  if (!is.matrix(alpha))
+    stop("model_init$alpha must be a matrix")
+
+  # Verify alpha values are between [0,1]
+  if (max(model_init$alpha) > 1 || min(model_init$alpha) < 0)
+    stop("model_init$alpha has invalid values outside range [0,1]; please ",
+         "check your input")
+
+  # Verify alpha dimensions for number of requested effects
+  if (nrow(model_init$alpha) > L)
+    stop("model_init has more effects than requested L")
+
+  # Verify mu & mu2 dimensions match alpha
+  if (!all(dim(mu)  == dim(alpha)))
+    stop("model_init$mu and model_init$alpha dimensions do not match")
+  if (!all(dim(mu2) == dim(alpha)))
+    stop("model_init$mu2 and model_init$alpha dimensions do not match")
+
+  # Verify V & alpha dimensions agree
+  if (length(V) != nrow(alpha))
+    stop("length(model_init$V) (", length(V), ") does not equal nrow(model_init$alpha) (",
+         nrow(alpha), ")")
+
+  # Verify V is numeric and non-negative
+  if(!is.numeric(V))
+    stop("model_init$V must be numeric")
+  if(any(V < 0))
+    stop("model_init$V has at least one negative value")
+
+  # Verify sigma2 is numeric and non-negative
+  if(!is.numeric(sigma2))
+    stop("model_init$sigma2 must be numeric")
+  if(sigma2 < 0)
+    stop("model_init$sigma2 is negative")
+
+  # Verify prior weight properties
+  if(length(pi_w) != ncol(alpha))
+    stop("model_init$pi should have the same length as the number of columns",
+         " in model_init$alpha")
+  # TODO: fix this check. is this a floating point difference ? maybe set a tol ?
+  # if (sum(pi_w) != 1)
+  #   stop("model_init$pi must sum to one")
+
+  invisible(model_init)
+}
+
+# Adjust the number of effects
+adjust_L <- function(model_init, L, V) {
+  num_effects <- nrow(model_init$alpha)
+  if (num_effects > L) {
+    warning(paste0("Requested L = ", L,
+                   " is smaller than the ", num_effects,
+                   " effects in model_init after pruning; ",
+                   "using L = ", num_effects, " instead."))
+    L <- num_effects
+  }
+
+  model_init <- susie_prune_single_effects(model_init, L = L, V = V)
+
+  return(list(model_init = model_init, L = L))
+}
+
+# Initialize Null Index
+initialize_null_index <- function(null_weight, p){
+  if(is.null(null_weight) || null_weight == 0){
+    null_idx = 0
+  }else{
+    null_idx = p
+  }
+  return(null_idx)
+}
+
+run_refine <- function(data, best_model, rerun, tol_improve = 0) {
+
+  cs_list <- susie_get_cs(best_model, X = data$X)$cs
+  if (is.null(cs_list) || length(cs_list) == 0) {
+    warning("The base model produced no credible sets; skipping refinement.")
+    return(best_model)
+  }
+
+  improved <- TRUE
+  while (improved) {
+
+    improved  <- FALSE
+    cs_list   <- susie_get_cs(best_model, X = data$X)$cs
+    elbo_best <- best_model$elbo[length(best_model$elbo)]
+
+    for (cs in cs_list) {
+
+      ## 1. Side run with CS variables zeroed out
+      pw <- best_model$pi
+      pw[cs] <- 0
+      if (all(pw == 0)) next
+      pw <- pw / sum(pw)
+
+      side_model   <- rerun(pw, model_init = NULL)
+
+      ## 2. Warm-start full prior run
+      init_object           <- side_model[c("alpha", "mu", "mu2", "V", "sigma2")] # TODO: check on this does it make sense to use the already estimated sigma2?
+      init_object$pi        <- best_model$pi
+      class(init_object)    <- "susie"
+      candidate             <- rerun(best_model$pi, model_init = init_object)
+
+      ## 3. Compare ELBOs
+      elbo_cand <- candidate$elbo[length(candidate$elbo)]
+      if (elbo_cand - elbo_best > tol_improve) {
+        best_model <- candidate
+        elbo_best  <- elbo_cand
+        improved   <- TRUE
+        break
+      }
+    }
+  }
+  best_model
 }

@@ -5,6 +5,22 @@ initialize_fitted.ss <- function(data, alpha, mu){
   return(list(XtXr = data$XtX %*% colSums(alpha * mu)))
 }
 
+# Get variance of y
+get_var_y.ss <- function(data, ...) {
+  return(data$yty / (data$n - 1))
+}
+
+# Extract core parameters of a susie fit across iterations
+susie_extract_core.ss <- function(data, model, tracking, iter, track_fit, ...){
+  if (isTRUE(track_fit)) {
+    tracking[[iter]] <- list(alpha = model$alpha,
+                             niter = iter,
+                             V = model$V,
+                             sigma2 = model$sigma2)
+  }
+  return(tracking)
+}
+
 # Validate Prior Variance
 validate_prior.ss <- function(data, model, check_prior, ...) {
   if (isTRUE(check_prior)) {
@@ -124,7 +140,7 @@ get_cs.ss <- function(data, model, coverage, min_abs_corr, n_purity){
 
   if (is.null(coverage) || is.null(min_abs_corr)) return(NULL)
 
-  if(any(!(diag(XtX) %in% c(0,1)))){
+  if(any(!(diag(data$XtX) %in% c(0,1)))){
     return(susie_get_cs(model,coverage = coverage,
                         Xcorr = muffled_cov2cor(data$XtX),
                         min_abs_corr = min_abs_corr,

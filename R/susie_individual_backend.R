@@ -5,6 +5,22 @@ initialize_fitted.individual <- function(data, alpha, mu){
   return(list(Xr = compute_Xb(data$X, colSums(alpha * mu))))
 }
 
+# Get variance of y
+get_var_y.individual <- function(data, ...) {
+  return(var(drop(data$y)))
+}
+
+# Extract core parameters of a susie fit across iterations
+susie_extract_core.individual <- function(data, model, tracking, iter, track_fit, ...){
+  if (isTRUE(track_fit)) {
+    tracking[[iter]] <- list(alpha = model$alpha,
+                             niter = iter,
+                             V = model$V,
+                             sigma2 = model$sigma2)
+  }
+  return(tracking)
+}
+
 # Validate Prior Variance
 validate_prior.individual <- function(data, model, check_prior, ...) {
   invisible(TRUE)
@@ -44,7 +60,7 @@ est_residual_variance.individual <- function(data, model){
   if(resid_var < 0){
     stop("est_residual_variance.individual() failed: the estimated value is negative")
   }
-  return(resid_var)
+  return(resid_var) #TODO: Instead of stopping, we could give warning() and run MoM estimator instead.
 }
 
 # Single Effect Update

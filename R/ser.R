@@ -46,7 +46,6 @@ single_effect_regression =
 
     # BF for single effect model.
     lbf_model = maxlbf + log(weighted_sum_w)
-    #loglik = lbf_model + sum(dnorm(y,0,sqrt(residual_variance),log = TRUE))
 
     if(optimize_V == "EM")
       V = optimize_prior_variance(optimize_V,betahat,shat2,prior_weights,
@@ -59,7 +58,7 @@ single_effect_regression =
                 lbf = lbf,
                 lbf_model = lbf_model,
                 V = V))
-                #loglik = loglik)) this will be moved outside of SER and computed sep because it is only in indivudal-level.
+
   }
 
 # Estimate prior variance.

@@ -81,8 +81,20 @@ initialize_fitted <- function(data, alpha, mu)
 initialize_fitted.default <- function(data, alpha, mu, ...)
   stop("initialize_fitted: no method for class '", class(data)[1], "'")
 
+# Get variance of y
+get_var_y <- function(data)
+  UseMethod("get_var_y")
+get_var_y.default <- function(data, ...)
+  stop("get_var_y: no method for class '", class(data)[1], "'")
+
 # Validate Prior Variance
 validate_prior <- function(data, model, check_prior, ...)
   UseMethod("validate_prior")
-validate_prior.default <- function(ddata, model, check_prior, ...)
+validate_prior.default <- function(data, model, check_prior, ...)
   stop("validate_prior: no method for class '", class(data)[1], "'")
+
+# Extract core parameters of a susie fit across iterations
+susie_extract_core <- function(data, model, tracking, iter, track_fit, ...)
+  UseMethod("susie_extract_core")
+susie_extract_core.default <- function(data, model, tracking, iter, track_fit, ...)
+  stop("susie_extract_core: no method for class '", class(data)[1], "'")
