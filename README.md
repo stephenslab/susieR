@@ -1,7 +1,7 @@
 # susieR
 
 [![CRAN status badge](https://www.r-pkg.org/badges/version/susieR)](https://cran.r-project.org/package=susieR)
-[![Travis Build Status](https://travis-ci.org/stephenslab/susieR.svg?branch=master)](https://travis-ci.org/stephenslab/susieR)
+[![Travis Build Status](https://travis-ci.org/stephenslab/susieR.svg?branch=master)](https://app.travis-ci.com/stephenslab/susieR)
 [![Appveyor Build status](https://ci.appveyor.com/api/projects/status/tcgeqxd8q8krija6?svg=true)](https://ci.appveyor.com/project/pcarbo/susier)
 [![CircleCI](https://dl.circleci.com/status-badge/img/gh/stephenslab/susieR/tree/master.svg?style=svg)](https://app.circleci.com/pipelines/github/stephenslab/susieR?branch=master)
 [![codecov](https://codecov.io/gh/stephenslab/susieR/branch/master/graph/badge.svg)](https://app.codecov.io/gh/stephenslab/susieR)
