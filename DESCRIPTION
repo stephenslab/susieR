@@ -20,6 +20,7 @@ Version: 0.14.2
 Authors@R: c(person("Gao","Wang",role="aut",email="wang.gao@columbia.edu"),
              person("Yuxin","Zou",role="aut"),
              person("Kaiqian","Zhang",role="aut"),
+             person("William","R.P. Denault",role="aut"),
              person("Peter","Carbonetto",role=c("aut","cre"),
                     email="peter.carbonetto@gmail.com"),
 	     person("Matthew","Stephens",role="aut"))
@@ -49,5 +50,5 @@ Suggests:
 LazyData: yes
 LazyDataCompression: xz
 NeedsCompilation: no
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2
 VignetteBuilder: knitr

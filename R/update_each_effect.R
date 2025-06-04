@@ -6,9 +6,21 @@
 #   estimate prior variance
 # @param check_null_threshold float a threshold on the log scale to
 #   compare likelihood between current estimate and zero the null
+# @param small Logical. Useful when fitting susie on data with a limited sample size.
+#     If set to TRUE, susie is fitted using single-effect regression with the Servin and Stephens prior
+#     instead of the default Gaussian prior. This improves the calibration of credible sets.
+#     Default is FALSE.
+#   @param alpha  numerical parameter for the NIG prior when using Servin
+#   and Stephens SER
+#
+#   @param beta  numerical parameter for the NIG prior when using Servin
+#   and Stephens SER
 update_each_effect = function (X, y, s, estimate_prior_variance = FALSE,
                                estimate_prior_method = "optim",
-                               check_null_threshold) {
+                               check_null_threshold,
+                               small=FALSE,
+                               alpha=0,
+                               beta=0) {
   if (!estimate_prior_variance)
     estimate_prior_method = "none"
 
@@ -25,7 +37,10 @@ update_each_effect = function (X, y, s, estimate_prior_variance = FALSE,
 
       res = single_effect_regression(R,X,s$V[l],s$sigma2,s$pi,
                                      estimate_prior_method,
-                                     check_null_threshold)
+                                     check_null_threshold,
+                                     small = small,
+                                     alpha = alpha,
+                                     beta  = beta)
       # Update the variational estimate of the posterior mean.
       s$mu[l,]    = res$mu
       s$alpha[l,] = res$alpha

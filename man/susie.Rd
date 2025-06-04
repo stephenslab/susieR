@@ -9,6 +9,7 @@ susie(
   X,
   y,
   L = min(10, ncol(X)),
+  small = FALSE,
   scaled_prior_variance = 0.2,
   residual_variance = NULL,
   prior_weights = NULL,
@@ -32,7 +33,9 @@ susie(
   track_fit = FALSE,
   residual_variance_lowerbound = var(drop(y))/10000,
   refine = FALSE,
-  n_purity = 100
+  n_purity = 100,
+  alpha = 0,
+  beta = 0
 )
 
 susie_suff_stat(
@@ -78,6 +81,11 @@ susie_suff_stat(
 \item{L}{Maximum number of non-zero effects in the susie
 regression model. If L is larger than the number of covariates, p,
 L is set to p.}
+
+\item{small}{Logical. Useful when fitting susie on data with a limited sample size.
+If set to TRUE, susie is fitted using single-effect regression with the Servin and Stephens prior
+instead of the default Gaussian prior. This improves the calibration of credible sets.
+Default is FALSE.}
 
 \item{scaled_prior_variance}{The prior variance, divided by
 \code{var(y)} (or by \code{(1/(n-1))yty} for
@@ -134,7 +142,9 @@ value supplied to \code{scaled_prior_variance}.}
 variance. When \code{estimate_prior_method = "simple"} is used, the
 likelihood at the specified prior variance is compared to the
 likelihood at a variance of zero, and the setting with the larger
-likelihood is retained.}
+likelihood is retained. The option "EM" is selected by default  when
+ setting small=TRUE, i.e., using SuSiE with Servin and Stephens
+SER}
 
 \item{check_null_threshold}{When the prior variance is estimated,
 compare the estimate with the null, and set the prior variance to

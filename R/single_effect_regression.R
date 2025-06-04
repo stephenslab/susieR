@@ -41,6 +41,15 @@
 #' @param check_null_threshold Scalar specifying threshold on the
 #'   log-scale to compare likelihood between current estimate and zero
 #'   the null.
+#' @param small Logical. Useful when fitting susie on data with a limited sample size.
+#'     If set to TRUE, susie is fitted using single-effect regression with the Servin and Stephens prior
+#'     instead of the default Gaussian prior. This improves the calibration of credible sets.
+#'     Default is FALSE.
+#'   @param alpha  numerical parameter for the NIG prior when using Servin
+#'   and Stephens SER
+#'
+#'   @param beta  numerical parameter for the NIG prior when using Servin
+#'   and Stephens SER
 #'
 #' @return A list with the following elements:
 #'
@@ -73,56 +82,138 @@
 #' @keywords internal
 #'
 single_effect_regression =
-  function (y, X, V, residual_variance = 1, prior_weights = NULL,
-            optimize_V = c("none", "optim", "uniroot", "EM", "simple"),
-            check_null_threshold = 0) {
+  function (y, X, V,
+            residual_variance = 1,
+            prior_weights     = NULL,
+            optimize_V        = c("none", "optim", "uniroot", "EM", "simple"),
+            check_null_threshold = 0,
+            small             =FALSE,
+            alpha             = 0,
+            beta              = 0) {
+
   optimize_V = match.arg(optimize_V)
   Xty = compute_Xty(X,y)
   betahat = (1/attr(X,"d")) * Xty
   shat2 = residual_variance/attr(X,"d")
   if (is.null(prior_weights))
+
     prior_weights = rep(1/ncol(X),ncol(X))
-  if (optimize_V != "EM" && optimize_V != "none")
+
+  if (optimize_V != "EM" && optimize_V != "none"){
+
     V = optimize_prior_variance(optimize_V,betahat,shat2,prior_weights,
-        alpha = NULL,post_mean2 = NULL,V_init = V,
-        check_null_threshold = check_null_threshold)
-
-  # log(po) = log(BF * prior) for each SNP
-  lbf = dnorm(betahat,0,sqrt(V + shat2),log = TRUE) -
-        dnorm(betahat,0,sqrt(shat2),log = TRUE)
-  lpo = lbf + log(prior_weights + sqrt(.Machine$double.eps))
-
-  # Deal with special case of infinite shat2 (e.g., happens if X does
-  # not vary).
-  lbf[is.infinite(shat2)] = 0
-  lpo[is.infinite(shat2)] = 0
-  maxlpo = max(lpo)
-  
-  # w is proportional to
-  #
-  #   posterior odds = BF * prior,
-  #
-  # but subtract max for numerical stability.
-  w_weighted = exp(lpo - maxlpo)
-
-  # Posterior prob for each SNP.
-  weighted_sum_w = sum(w_weighted)
-  alpha = w_weighted / weighted_sum_w
-  post_var = (1/V + attr(X,"d")/residual_variance)^(-1) # Posterior variance.
-  post_mean = (1/residual_variance) * post_var * Xty
-  post_mean2 = post_var + post_mean^2 # Second moment.
-
-  # BF for single effect model.
-  lbf_model = maxlpo + log(weighted_sum_w)
-  loglik = lbf_model + sum(dnorm(y,0,sqrt(residual_variance),log = TRUE))
-
-  if(optimize_V == "EM")
-    V = optimize_prior_variance(optimize_V,betahat,shat2,prior_weights,
-                                alpha,post_mean2,
+                                alpha = NULL,post_mean2 = NULL,V_init = V,
                                 check_null_threshold = check_null_threshold)
 
-  return(list(alpha = alpha,mu = post_mean,mu2 = post_mean2,lbf = lbf,
-              lbf_model = lbf_model,V = V,loglik = loglik))
+  }
+
+
+  if(!small){
+    # log(po) = log(BF * prior) for each SNP
+    lbf = dnorm(betahat,0,sqrt(V + shat2),log = TRUE) -
+      dnorm(betahat,0,sqrt(shat2),log = TRUE)
+    lpo = lbf + log(prior_weights + sqrt(.Machine$double.eps))
+
+    # Deal with special case of infinite shat2 (e.g., happens if X does
+    # not vary).
+    lbf[is.infinite(shat2)] = 0
+    lpo[is.infinite(shat2)] = 0
+    maxlpo = max(lpo)
+
+    # w is proportional to
+    #
+    #   posterior odds = BF * prior,
+    #
+    # but subtract max for numerical stability.
+    w_weighted = exp(lpo - maxlpo)
+
+    # Posterior prob for each SNP.
+    weighted_sum_w = sum(w_weighted)
+    alpha = w_weighted / weighted_sum_w
+    post_var = (1/V + attr(X,"d")/residual_variance)^(-1) # Posterior variance.
+    post_mean = (1/residual_variance) * post_var * Xty
+    post_mean2 = post_var + post_mean^2 # Second moment.
+
+    # BF for single effect model.
+    lbf_model = maxlpo + log(weighted_sum_w)
+    loglik = lbf_model + sum(dnorm(y,0,sqrt(residual_variance),log = TRUE))
+
+    if(optimize_V == "EM")
+      V = optimize_prior_variance(optimize_V,betahat,shat2,prior_weights,
+                                  alpha,post_mean2,
+                                  check_null_threshold = check_null_threshold)
+
+    return(list(alpha = alpha,mu = post_mean,mu2 = post_mean2,lbf = lbf,
+                lbf_model = lbf_model,V = V,loglik = loglik))
+  }
+  if(small){
+
+    lbf  = do.call(c, lapply(1:ncol(X), function(j){
+      compute_log_ssbf (x=X[,j],y=y,
+                        s0 =sqrt(V))
+    }))
+
+    lpo = lbf + log(prior_weights + sqrt(.Machine$double.eps))
+
+    # Deal with special case of infinite shat2 (e.g., happens if X does
+    # not vary).
+    lbf[is.infinite(shat2)] = 0
+    lpo[is.infinite(shat2)] = 0
+    maxlpo = max(lpo)
+
+    # w is proportional to
+    #
+    #   posterior odds = BF * prior,
+    #
+    # but subtract max for numerical stability.
+    w_weighted = exp(lpo - maxlpo)
+
+    # Posterior prob for each SNP.
+    weighted_sum_w = sum(w_weighted)
+    alpha = w_weighted / weighted_sum_w
+
+
+    if(V <=0){
+      post_mean  = rep(0, ncol(X))
+      post_mean2 = rep(0, ncol(X))
+      beta_1     = rep(0, ncol(X))
+    }else{
+
+
+      post_mean=do.call(c, lapply(1:ncol(X), function(i){
+        posterior_mean_SS_suff((attr(X,"d")[i]) , Xty[i], s0_t=V)
+      }))
+      yty=t(y)%*%y
+
+
+
+      tt= do.call(rbind, lapply(1:ncol(X), function(i){
+        posterior_var_SS_suff(xtx=(attr(X,"d")[i]) , xty= Xty[i],yty=yty,n= nrow(X), s0_t=V)
+      }))
+
+      beta_1=tt[,2]
+      post_var=tt[,1]
+      post_mean2=  post_mean^2+post_var
+    }
+
+
+    # BF for single effect model.
+    lbf_model = maxlpo + log(weighted_sum_w)
+    loglik = lbf_model + sum(dnorm(y,0,sqrt(residual_variance),log = TRUE))
+
+    if(optimize_V == "EM"){
+
+      V =  sqrt(sum(alpha * (betahat^2 + ( beta_1/(nrow(X)-2))* shat2 )))
+    }
+
+    #    post_mean2 =post_mean^2+ post_var
+    return(list(alpha = alpha,mu = post_mean,mu2 =   post_mean2 ,lbf = lbf,
+                lbf_model = lbf_model,V = V,loglik = loglik))
+  }
+
+
+
+
 }
 
 # Estimate prior variance.
@@ -173,6 +264,44 @@ optimize_prior_variance = function (optimize_V, betahat, shat2, prior_weights,
     V = 0
   return(V)
 }
+
+posterior_moment_SS <- function (x,y,
+                                 s0_t=1,
+                                 alpha=0,
+                                 beta=0){
+
+
+  x   <- x - mean(x)
+  y   <- y - mean(y)
+  n   <- length(x)
+  xx  <- sum(x*x)
+  xy  <- sum(x*y)
+  yy  <- sum(y*y)
+  r0  <- s0_t/(s0_t+ 1/xx)
+  sxy <- xy/sqrt(xx*yy)
+
+  s1= r0^2/(xx
+  )
+
+  beta1=  beta+yy*(1 - r0*sxy^2)
+  alpha1=alpha+n
+  omega <- (( 1/s0_t^2)+crossprod(x))^-1
+  b_bar<- omega%*%(crossprod(x,y))
+
+  post_var_up <- 0.5*(crossprod(y)  -  b_bar *(omega ^(-1))*b_bar) +beta
+  post_var_down <- 0.5*(length(y)*(1/omega )) +alpha
+  post_var <- (post_var_up/post_var_down)* length(y)/(length(y)-2+alpha)
+  post_moment2=  post_var+b_bar^2
+
+
+
+  out= c(b_bar,  post_moment2, alpha1, beta1, s1)
+  names( out) =c("b_bar",  "post_moment2", "alpha1", "beta1", "s1")
+  return(out)
+}
+
+
+
 
 # In these functions, s2 represents residual_variance, and shat2 is an
 # estimate of it.
@@ -241,4 +370,42 @@ lbf = function (V, shat2, T2) {
   l = 0.5*log(shat2/(V + shat2)) + 0.5*T2*(V/(V + shat2))
   l[is.nan(l)] = 0
   return(l)
+}
+
+
+
+posterior_mean_SS_suff <- function(xtx,xty, s0_t=1){
+  omega <- (( 1/s0_t^2)+xtx)^-1
+  b_bar<- omega%*%(xty)
+  return( b_bar)
+}
+
+
+posterior_var_SS_suff <- function (xtx,xty,yty, n,s0_t=1){
+  if(s0_t <0.00001){
+    return(c(0,0))
+  }
+  omega <- (( 1/s0_t^2)+xtx)^-1
+  b_bar<- omega%*%(xty)
+  beta1=(yty  -  b_bar *(omega ^(-1))*b_bar)
+  post_var_up <- 0.5*(yty  -  b_bar *(omega ^(-1))*b_bar)
+  post_var_down <- 0.5*(n*(1/omega ))
+  post_var <- omega*(post_var_up/post_var_down)* n/(n-2)
+  return( c( post_var,beta1))
+}
+
+
+compute_log_ssbf <- function (x, y, s0,
+                              alpha=0,
+                              beta=0) {
+  x   <- x - mean(x)
+  y   <- y - mean(y)
+  n   <- length(x)
+  xx  <- sum(x*x)
+  xy  <- sum(x*y)
+  yy  <- sum(y*y)
+  r0  <- s0/(s0 + 1/xx)
+  sxy <- xy/sqrt(xx*yy)
+  ratio= (beta+ yy*(1 - r0*sxy^2))/(beta+ yy)
+  return((log(1 - r0) - (n+alpha)*log(ratio))/2)
 }
