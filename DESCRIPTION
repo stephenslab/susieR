@@ -20,6 +20,7 @@ Version: 0.14.1
 Authors@R: c(person("Gao","Wang",role="aut",email="wang.gao@columbia.edu"),
              person("Yuxin","Zou",role="aut"),
              person("Kaiqian","Zhang",role="aut"),
+             person("William","Denault",role="aut"),
              person("Peter","Carbonetto",role=c("aut","cre"),
                     email="peter.carbonetto@gmail.com"),
 	     person("Matthew","Stephens",role="aut"))

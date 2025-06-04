@@ -89,6 +89,11 @@
 #'   \code{L}. If \code{estimate_prior_variance = TRUE}, this provides
 #'   initial estimates of the prior variances.
 #'
+#' @param small Logical. Useful when fitting susie on data with a limited sample size.
+#'    If set to TRUE, susie is fitted using single-effect regression with the Servin and Stephens prior
+#'    instead of the default Gaussian prior. This improves the calibration of credible sets.
+#'    Default is FALSE.
+#'
 #' @param residual_variance Variance of the residual. If
 #'   \code{estimate_residual_variance = TRUE}, this value provides the
 #'   initial estimate of the residual variance. By default, it is set to
@@ -299,6 +304,7 @@
 #' @export
 #'
 susie = function (X,y,L = min(10,ncol(X)),
+                   small=FALSE,
                    scaled_prior_variance = 0.2,
                    residual_variance = NULL,
                    prior_weights = NULL,
@@ -364,6 +370,13 @@ susie = function (X,y,L = min(10,ncol(X)),
 
   # Check input y.
   n = nrow(X)
+  if( (n <80) & !small ){
+    warning_message("The dataset contains fewer than 80 individuals.
+    Credible sets may be poorly calibrated when using the default Gaussian prior with limited data.
+      Consider setting the argument `small = TRUE` to use the Servin and Stephens prior,
+                    which provides better calibration in small sample sizes.")
+
+  }
   mean_y = mean(y)
 
   # Center and scale input.
