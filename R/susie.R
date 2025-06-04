@@ -141,7 +141,9 @@
 #'   variance. When \code{estimate_prior_method = "simple"} is used, the
 #'   likelihood at the specified prior variance is compared to the
 #'   likelihood at a variance of zero, and the setting with the larger
-#'   likelihood is retained.
+#'   likelihood is retained. The option "EM" is selected by default  when
+#'    setting small=TRUE, i.e., using SuSiE with Servin and Stephens
+#'   SER
 #'
 #' @param check_null_threshold When the prior variance is estimated,
 #'   compare the estimate with the null, and set the prior variance to
@@ -203,6 +205,12 @@
 #'
 #' @param n_purity Passed as argument \code{n_purity} to
 #'   \code{\link{susie_get_cs}}.
+#'
+#'  @param alpha  numerical parameter for the NIG prior when using Servin
+#'  and Stephens SER
+#'
+#'  @param beta  numerical parameter for the NIG prior when using Servin
+#'  and Stephens SER
 #'
 #' @return A \code{"susie"} object with some or all of the following
 #'   elements:
@@ -328,7 +336,9 @@ susie = function (X,y,L = min(10,ncol(X)),
                    track_fit = FALSE,
                    residual_variance_lowerbound = var(drop(y))/1e4,
                    refine = FALSE,
-                   n_purity = 100) {
+                   n_purity = 100,
+                   alpha=0,
+                   beta=0 ) {
 
   # Process input estimate_prior_method.
   estimate_prior_method = match.arg(estimate_prior_method)
@@ -361,6 +371,9 @@ susie = function (X,y,L = min(10,ncol(X)),
       X = X[samples_kept,,drop = FALSE]
     } else
       stop("Input y must not contain missing values")
+  }
+  if(small){
+    estimate_prior_method= "EM"
   }
   p = ncol(X)
   if (p > 1000 & !requireNamespace("Rfast",quietly = TRUE))
@@ -434,18 +447,24 @@ susie = function (X,y,L = min(10,ncol(X)),
     if (track_fit)
       tracking[[i]] = susie_slim(s)
     s = update_each_effect(X,y,s,estimate_prior_variance,estimate_prior_method,
-                           check_null_threshold)
+                           check_null_threshold,
+                           small=small,
+                           alpha=alpha,
+                           beta=beta)
     if (verbose)
       print(paste0("objective:",get_objective(X,y,s)))
 
     # Compute objective before updating residual variance because part
     # of the objective s$kl has already been computed under the
     # residual variance before the update.
-    elbo[i+1] = get_objective(X,y,s)
-    if ((elbo[i+1] - elbo[i]) < tol) {
-      s$converged = TRUE
-      break
+    if(!small){
+      elbo[i+1] = get_objective(X,y,s)
+      if ((elbo[i+1] - elbo[i]) < tol) {
+        s$converged = TRUE
+        break
+      }
     }
+
 
     if (estimate_residual_variance) {
       s$sigma2 = pmax(residual_variance_lowerbound,
