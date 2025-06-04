@@ -206,11 +206,11 @@
 #' @param n_purity Passed as argument \code{n_purity} to
 #'   \code{\link{susie_get_cs}}.
 #'
-#'  @param alpha  numerical parameter for the NIG prior when using Servin
-#'  and Stephens SER
+#' @param alpha Numerical parameter for the NIG prior when using Servin
+#'   and Stephens SER
 #'
-#'  @param beta  numerical parameter for the NIG prior when using Servin
-#'  and Stephens SER
+#' @param beta Numerical parameter for the NIG prior when using Servin
+#'   and Stephens SER.
 #'
 #' @return A \code{"susie"} object with some or all of the following
 #'   elements:
