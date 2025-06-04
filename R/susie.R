@@ -240,6 +240,8 @@
 #' \item{elbo}{The value of the variational lower bound, or
 #'   \dQuote{ELBO} (objective function to be maximized), achieved at
 #'   each iteration of the IBSS fitting procedure.}
+#' \item{cv_criterion}{The value of the maximum difference between alpha value
+#' each iteration between, only returned when argument small set to TRUE}
 #'
 #' \item{fitted}{Vector of length n containing the fitted values of
 #'   the outcome.}
@@ -373,7 +375,15 @@ susie = function (X,y,L = min(10,ncol(X)),
       stop("Input y must not contain missing values")
   }
   if(small){
+
+    warning_message("Option 'small' is set to TRUE: SuSiE will be fitted using
+    the general IBSS algorithm. Note that the ELBO is not defined in this
+    setting; convergence is determined based on the numerical stability of
+    the estimated parameters across iterations. The tolerance is set to 1e-4,
+    and the prior optimizer is set to EM.")
+
     estimate_prior_method= "EM"
+    tol= 1e-4
   }
   p = ncol(X)
   if (p > 1000 & !requireNamespace("Rfast",quietly = TRUE))
@@ -442,15 +452,25 @@ susie = function (X,y,L = min(10,ncol(X)),
   elbo = rep(as.numeric(NA),max_iter + 1)
   elbo[1] = -Inf;
   tracking = list()
+  if(small ){
+    cv_criterion= rep(as.numeric(NA),max_iter + 1)
+    cv_criterion[1]=1
+  }
 
   for (i in 1:max_iter) {
     if (track_fit)
       tracking[[i]] = susie_slim(s)
+    if(small & i >1){
+     alpha_old= c(s$alpha)
+    }
     s = update_each_effect(X,y,s,estimate_prior_variance,estimate_prior_method,
                            check_null_threshold,
                            small=small,
                            alpha=alpha,
                            beta=beta)
+    if(small & i >1){
+      cv_criterion[i]=  ( max(abs(c(alpha_old)- c(s$alpha))))
+    }
     if (verbose)
       print(paste0("objective:",get_objective(X,y,s)))
 
@@ -464,7 +484,15 @@ susie = function (X,y,L = min(10,ncol(X)),
         break
       }
     }
+    if(small & i>2){
 
+      if (0.5*(cv_criterion[i ] +  cv_criterion[i-1] ) < tol) {
+        #this force to have at least 3 consecutive iteration with small
+        #variation in terms of alpha
+        s$converged = TRUE
+        break
+      }
+    }
 
     if (estimate_residual_variance) {
       s$sigma2 = pmax(residual_variance_lowerbound,
@@ -479,6 +507,10 @@ susie = function (X,y,L = min(10,ncol(X)),
   # Remove first (infinite) entry, and trailing NAs.
   elbo = elbo[2:(i+1)]
   s$elbo = elbo
+  if(small){
+    s$cv_criterion=cv_criterion[2:i]
+  }
+
   s$niter = i
 
   if (is.null(s$converged)) {
