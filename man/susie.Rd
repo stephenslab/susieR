@@ -277,6 +277,8 @@ A \code{"susie"} object with some or all of the following
 \item{elbo}{The value of the variational lower bound, or
   \dQuote{ELBO} (objective function to be maximized), achieved at
   each iteration of the IBSS fitting procedure.}
+\item{cv_criterion}{The value of the maximum difference between alpha value
+each iteration between, only returned when argument small set to TRUE}
 
 \item{fitted}{Vector of length n containing the fitted values of
   the outcome.}
