@@ -266,11 +266,12 @@ optimize_prior_variance = function (optimize_V, betahat, shat2, prior_weights,
     V = 0
   return(V)
 }
+#posterior momentsfor Servin and Stephens prior using sufficient statisitics
 
 posterior_moment_SS <- function (x,y,
                                  s0_t=1,
-                                 alpha=0,
-                                 beta=0){
+                                 alpha0=0,
+                                 beta0=0){
 
 
   x   <- x - mean(x)
@@ -285,14 +286,14 @@ posterior_moment_SS <- function (x,y,
   s1= r0^2/(xx
   )
 
-  beta1=  beta+yy*(1 - r0*sxy^2)
-  alpha1=alpha+n
+  beta1=  beta0+yy*(1 - r0*sxy^2)
+  alpha1=alpha0+n
   omega <- (( 1/s0_t^2)+crossprod(x))^-1
   b_bar<- omega%*%(crossprod(x,y))
 
-  post_var_up <- 0.5*(crossprod(y)  -  b_bar *(omega ^(-1))*b_bar) +beta
-  post_var_down <- 0.5*(length(y)*(1/omega )) +alpha
-  post_var <- (post_var_up/post_var_down)* length(y)/(length(y)-2+alpha)
+  post_var_up <- 0.5*(crossprod(y)  -  b_bar *(omega ^(-1))*b_bar) +beta0
+  post_var_down <- 0.5*(length(y)*(1/omega )) +alpha0
+  post_var <- (post_var_up/post_var_down)* length(y)/(length(y)-2+alpha0)
   post_moment2=  post_var+b_bar^2
 
 
@@ -375,13 +376,14 @@ lbf = function (V, shat2, T2) {
 }
 
 
-
+#posterior mean for Servin and Stephens prior using sufficient statisitics
 posterior_mean_SS_suff <- function(xtx,xty, s0_t=1){
   omega <- (( 1/s0_t^2)+xtx)^-1
   b_bar<- omega%*%(xty)
   return( b_bar)
 }
 
+#posterior variance for Servin and Stephens prior using sufficient statisitics
 
 posterior_var_SS_suff <- function (xtx,xty,yty, n,s0_t=1){
   if(s0_t <0.00001){
