@@ -206,10 +206,10 @@
 #' @param n_purity Passed as argument \code{n_purity} to
 #'   \code{\link{susie_get_cs}}.
 #'
-#'  @param alpha  numerical parameter for the NIG prior when using Servin
+#'  @param alpha0  numerical parameter for the NIG prior when using Servin
 #'  and Stephens SER
 #'
-#'  @param beta  numerical parameter for the NIG prior when using Servin
+#'  @param beta0  numerical parameter for the NIG prior when using Servin
 #'  and Stephens SER
 #'
 #' @return A \code{"susie"} object with some or all of the following
@@ -339,8 +339,8 @@ susie = function (X,y,L = min(10,ncol(X)),
                    residual_variance_lowerbound = var(drop(y))/1e4,
                    refine = FALSE,
                    n_purity = 100,
-                   alpha=0,
-                   beta=0 ) {
+                   alpha0=0,
+                   beta0=0 ) {
 
   # Process input estimate_prior_method.
   estimate_prior_method = match.arg(estimate_prior_method)

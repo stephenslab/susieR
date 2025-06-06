@@ -45,10 +45,10 @@
 #'     If set to TRUE, susie is fitted using single-effect regression with the Servin and Stephens prior
 #'     instead of the default Gaussian prior. This improves the calibration of credible sets.
 #'     Default is FALSE.
-#'   @param alpha  numerical parameter for the NIG prior when using Servin
+#'   @param alpha0  numerical parameter for the NIG prior when using Servin
 #'   and Stephens SER
 #'
-#'   @param beta  numerical parameter for the NIG prior when using Servin
+#'   @param beta0  numerical parameter for the NIG prior when using Servin
 #'   and Stephens SER
 #'
 #' @return A list with the following elements:
@@ -88,8 +88,8 @@ single_effect_regression =
             optimize_V        = c("none", "optim", "uniroot", "EM", "simple"),
             check_null_threshold = 0,
             small             =FALSE,
-            alpha             = 0,
-            beta              = 0) {
+            alpha0             = 0,
+            beta0              = 0) {
 
   optimize_V = match.arg(optimize_V)
   Xty = compute_Xty(X,y)
@@ -150,7 +150,9 @@ single_effect_regression =
 
     lbf  = do.call(c, lapply(1:ncol(X), function(j){
       compute_log_ssbf (x=X[,j],y=y,
-                        s0 =sqrt(V))
+                        s0 =sqrt(V),
+                        alpha0=alpha0,
+                        beta0=beta0)
     }))
 
     lpo = lbf + log(prior_weights + sqrt(.Machine$double.eps))
@@ -396,8 +398,8 @@ posterior_var_SS_suff <- function (xtx,xty,yty, n,s0_t=1){
 
 
 compute_log_ssbf <- function (x, y, s0,
-                              alpha=0,
-                              beta=0) {
+                              alpha0=0,
+                              beta0=0) {
   x   <- x - mean(x)
   y   <- y - mean(y)
   n   <- length(x)
@@ -406,6 +408,6 @@ compute_log_ssbf <- function (x, y, s0,
   yy  <- sum(y*y)
   r0  <- s0/(s0 + 1/xx)
   sxy <- xy/sqrt(xx*yy)
-  ratio= (beta+ yy*(1 - r0*sxy^2))/(beta+ yy)
-  return((log(1 - r0) - (n+alpha)*log(ratio))/2)
+  ratio= (beta+ yy*(1 - r0*sxy^2))/(beta0+ yy)
+  return((log(1 - r0) - (n+alpha0)*log(ratio))/2)
 }
