@@ -207,6 +207,12 @@ to check and escape from local optima (see details).}
 \item{n_purity}{Passed as argument \code{n_purity} to
 \code{\link{susie_get_cs}}.}
 
+\item{alpha0}{Numerical parameter for the NIG prior when using Servin
+and Stephens SER.}
+
+\item{beta0}{Mumerical parameter for the NIG prior when using Servin
+and Stephens SER.}
+
 \item{XtX}{A p by p matrix \eqn{X'X} in which the columns of X
 are centered to have mean zero.}
 
