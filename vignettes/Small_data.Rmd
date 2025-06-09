@@ -1,0 +1,90 @@
+---
+  title: "Small data example"
+output: html_document
+date: "2025-01-23"
+---
+
+  ```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This is vignette allow reproducing the example from Denault et al. Accounting for uncertainty in residual variances improves
+calibration of the “Sum of Single Effects” model
+for small sample sizes.
+
+
+The anonymized data can be loaded as follow, the y contains  the normalized gene expression where the original SuSiE procedure display sign of heavy misscalibration. The X contains the scaled gene expression.
+
+
+```{r cars}
+rm(list=ls())
+library(susieR)
+load("C:/Document/Serieux/Travail/Package/susieR/data/data_small.RData")
+
+y = data_small$y
+X = data_small$X
+res_susie =susieR::susie(X = X,y=y,L=20   )
+res_susie$sets
+```
+
+This result is highly suspicious has we find 9 credible sets in such a limited sample.
+
+Further, we observe a clear overfitting of the standard susie approach on this data.
+As the genotype expalin over 99.8 % of the observed variance
+
+```{r }
+
+plot(y , predict(res_susie , X) )
+
+plot( res_susie$pip)
+1- res_susie$sigma2/var(y) #proportion of variance explained
+```
+
+
+
+However, this problem is easily mitigated using the small option and setting it to TRUE (using the S&S prior)
+
+
+```{r} 
+
+res_susie_small = susie(X = X,y=y,L=10, small=TRUE)
+res_susie_small$sets
+```
+The results are much more plausible as this version of SuSiE only outputs a a single credible (yet explainning about 60% of the observed variance).
+
+
+```{r}
+
+h2_Gaussian = 100*(1-res_susie$sigma2/var(y))
+
+h2_SS = 100*(1-res_susie_small$sigma2/var(y))
+par(mfrow=c(1,2))
+susie_plot( res_susie, y="PIP",
+            main=paste( "SuSiE Gaussian SER "))
+
+susie_plot( res_susie_small, y="PIP",
+            main=paste( "SuSiE Servin Stephens SER "))
+par(mfrow=c(1,1))
+```
+
+
+
+
+
+
+
+
+
+```{r}
+plot( exp(res_susie_small$lbf_variable[1,])/sum(exp(res_susie_small$lbf_variable[1,])))
+```
+
+```{r}
+plot( exp(res_susie_small$lbf_variable[4,])/sum(exp(res_susie_small$lbf_variable[4,])))
+```
+
+
+
+
+
+

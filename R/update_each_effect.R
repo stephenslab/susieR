@@ -19,8 +19,8 @@ update_each_effect = function (X, y, s, estimate_prior_variance = FALSE,
                                estimate_prior_method = "optim",
                                check_null_threshold,
                                small=FALSE,
-                               alpha=0,
-                               beta=0) {
+                               alpha0=0,
+                               beta0=0) {
   if (!estimate_prior_variance)
     estimate_prior_method = "none"
 
