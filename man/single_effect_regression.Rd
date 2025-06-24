@@ -16,8 +16,8 @@ single_effect_regression(
   optimize_V = c("none", "optim", "uniroot", "EM", "simple"),
   check_null_threshold = 0,
   small = FALSE,
-  alpha = 0,
-  beta = 0
+  alpha0 = 0,
+  beta0 = 0
 )
 
 single_effect_regression_rss(
@@ -61,10 +61,10 @@ the null.}
     If set to TRUE, susie is fitted using single-effect regression with the Servin and Stephens prior
     instead of the default Gaussian prior. This improves the calibration of credible sets.
     Default is FALSE.
-  @param alpha  numerical parameter for the NIG prior when using Servin
+  @param alpha0  numerical parameter for the NIG prior when using Servin
   and Stephens SER
 
-  @param beta  numerical parameter for the NIG prior when using Servin
+  @param beta0  numerical parameter for the NIG prior when using Servin
   and Stephens SER}
 
 \item{z}{A p-vector of z scores.}
