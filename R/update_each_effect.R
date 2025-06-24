@@ -39,8 +39,8 @@ update_each_effect = function (X, y, s, estimate_prior_variance = FALSE,
                                      estimate_prior_method,
                                      check_null_threshold,
                                      small = small,
-                                     alpha = alpha,
-                                     beta  = beta)
+                                     alpha0 = alpha0,
+                                     beta0  = beta0)
       # Update the variational estimate of the posterior mean.
       s$mu[l,]    = res$mu
       s$alpha[l,] = res$alpha

@@ -410,6 +410,6 @@ compute_log_ssbf <- function (x, y, s0,
   yy  <- sum(y*y)
   r0  <- s0/(s0 + 1/xx)
   sxy <- xy/sqrt(xx*yy)
-  ratio= (beta+ yy*(1 - r0*sxy^2))/(beta0+ yy)
+  ratio= (beta0+ yy*(1 - r0*sxy^2))/(beta0+ yy)
   return((log(1 - r0) - (n+alpha0)*log(ratio))/2)
 }

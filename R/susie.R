@@ -467,8 +467,8 @@ susie = function (X,y,L = min(10,ncol(X)),
                            estimate_prior_variance,estimate_prior_method,
                            check_null_threshold,
                            small=small,
-                           alpha=alpha,
-                           beta=beta)
+                           alpha0=alpha0,
+                           beta0=beta0)
     if(small & i >1){
       cv_criterion[i]=  ( max(abs(c(alpha_old)- c(s$alpha))))
     }
