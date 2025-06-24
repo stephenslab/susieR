@@ -58,14 +58,15 @@ log-scale to compare likelihood between current estimate and zero
 the null.}
 
 \item{small}{Logical. Useful when fitting susie on data with a limited sample size.
-    If set to TRUE, susie is fitted using single-effect regression with the Servin and Stephens prior
-    instead of the default Gaussian prior. This improves the calibration of credible sets.
-    Default is FALSE.
-  @param alpha0  numerical parameter for the NIG prior when using Servin
-  and Stephens SER
+If set to TRUE, susie is fitted using single-effect regression with the Servin and Stephens prior
+instead of the default Gaussian prior. This improves the calibration of credible sets.
+Default is FALSE.}
 
-  @param beta0  numerical parameter for the NIG prior when using Servin
-  and Stephens SER}
+\item{alpha0}{Numerical parameter for the NIG prior when using Servin
+and Stephens SER.}
+
+\item{beta0}{Numerical parameter for the NIG prior when using Servin
+and Stephens SER.}
 
 \item{z}{A p-vector of z scores.}
 
