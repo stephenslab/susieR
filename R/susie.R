@@ -89,10 +89,11 @@
 #'   \code{L}. If \code{estimate_prior_variance = TRUE}, this provides
 #'   initial estimates of the prior variances.
 #'
-#' @param small Logical. Useful when fitting susie on data with a limited sample size.
-#'    If set to TRUE, susie is fitted using single-effect regression with the Servin and Stephens prior
-#'    instead of the default Gaussian prior. This improves the calibration of credible sets.
-#'    Default is FALSE.
+#' @param small Logical. Useful when fitting susie on data with a
+#'   limited sample size. If set to TRUE, susie is fitted using
+#'   single-effect regression with the Servin and Stephens prior
+#'   instead of the default Gaussian prior. This improves the
+#'   calibration of credible sets.  Default is FALSE.
 #'
 #' @param residual_variance Variance of the residual. If
 #'   \code{estimate_residual_variance = TRUE}, this value provides the
@@ -376,11 +377,7 @@ susie = function (X,y,L = min(10,ncol(X)),
   }
   if(small){
 
-    warning_message("Option 'small' is set to TRUE: SuSiE will be fitted using
-    the general IBSS algorithm. Note that the ELBO is not defined in this
-    setting; convergence is determined based on the numerical stability of
-    the estimated parameters across iterations. The tolerance is set to 1e-4,
-    and the prior optimizer is set to EM.")
+    warning_message("Option 'small' is set to TRUE: SuSiE will be fitted using the general IBSS algorithm. Note that the ELBO is not defined in this setting; convergence is determined based on the numerical stability of the estimated parameters across iterations. The tolerance is set to 1e-4, and the prior optimizer is set to EM.",style = "hint")
 
     estimate_prior_method= "EM"
     tol= 1e-4
@@ -389,15 +386,12 @@ susie = function (X,y,L = min(10,ncol(X)),
   if (p > 1000 & !requireNamespace("Rfast",quietly = TRUE))
     warning_message("For an X with many columns, please consider installing",
                     "the Rfast package for more efficient credible set (CS)",
-                    "calculations.", style='hint')
+                    "calculations.", style="hint")
 
   # Check input y.
   n = nrow(X)
   if( (n <80) & !small ){
-    warning_message("The dataset contains fewer than 80 individuals.
-    Credible sets may be poorly calibrated when using the default Gaussian prior with limited data.
-      Consider setting the argument `small = TRUE` to use the Servin and Stephens prior,
-                    which provides better calibration in small sample sizes.")
+    warning_message("The dataset contains fewer than 80 individuals. Credible sets may be poorly calibrated when using the default Gaussian prior with limited data. Consider setting small = TRUE to use the Servin and Stephens prior, which provides better calibration in small sample sizes.",style = "hint")
 
   }
   mean_y = mean(y)
