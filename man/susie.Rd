@@ -34,8 +34,8 @@ susie(
   residual_variance_lowerbound = var(drop(y))/10000,
   refine = FALSE,
   n_purity = 100,
-  alpha = 0,
-  beta = 0
+  alpha0 = 0,
+  beta0 = 0
 )
 
 susie_suff_stat(
@@ -207,10 +207,10 @@ to check and escape from local optima (see details).}
 \item{n_purity}{Passed as argument \code{n_purity} to
 \code{\link{susie_get_cs}}.}
 
-\item{alpha}{Numerical parameter for the NIG prior when using Servin
-and Stephens SER}
+\item{alpha0}{Numerical parameter for the NIG prior when using Servin
+and Stephens SER.}
 
-\item{beta}{Numerical parameter for the NIG prior when using Servin
+\item{beta0}{Mumerical parameter for the NIG prior when using Servin
 and Stephens SER.}
 
 \item{XtX}{A p by p matrix \eqn{X'X} in which the columns of X

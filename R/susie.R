@@ -211,11 +211,11 @@
 #' @param n_purity Passed as argument \code{n_purity} to
 #'   \code{\link{susie_get_cs}}.
 #'
-#'  @param alpha0  numerical parameter for the NIG prior when using Servin
-#'  and Stephens SER
+#' @param alpha0 Numerical parameter for the NIG prior when using Servin
+#'   and Stephens SER.
 #'
-#'  @param beta0  numerical parameter for the NIG prior when using Servin
-#'  and Stephens SER
+#' @param beta0 Mumerical parameter for the NIG prior when using Servin
+#'   and Stephens SER.
 #'
 #' @return A \code{"susie"} object with some or all of the following
 #'   elements:
@@ -480,7 +480,8 @@ susie = function (X,y,L = min(10,ncol(X)),
     if(small & i >1){
      alpha_old= c(s$alpha)
     }
-    s = update_each_effect(X,y,s,estimate_prior_variance,estimate_prior_method,
+    s = update_each_effect(X,y,s,
+                           estimate_prior_variance,estimate_prior_method,
                            check_null_threshold,
                            small=small,
                            alpha0=alpha0,
