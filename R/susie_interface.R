@@ -8,6 +8,7 @@ susie_new <- function(X, y, L = min(10,ncol(X)),
                   estimate_residual_variance = TRUE,
                   estimate_prior_variance = TRUE,
                   estimate_prior_method = c("optim", "EM", "simple"),
+                  non_sparse_method = c("none", "inf", "ash"),
                   check_null_threshold = 0,
                   prior_tol = 1e-9,
                   residual_variance_upperbound = Inf,
@@ -25,9 +26,13 @@ susie_new <- function(X, y, L = min(10,ncol(X)),
                   n_purity = 100,
                   check_prior = FALSE) {
 
+  # Estimate Non-sparse Effects Method
+  non_sparse_method <- match.arg(non_sparse_method)
+
   # Construct Data Object
   data <- susie_constructor(X, y, intercept, standardize,
-                            na.rm, prior_weights, null_weight)
+                            na.rm, prior_weights, null_weight,
+                            non_sparse_method = non_sparse_method)
 
   # Estimate Prior Variance Method
   estimate_prior_method <- match.arg(estimate_prior_method)
@@ -68,6 +73,7 @@ susie_ss <- function(XtX, Xty, yty, n,
                      residual_variance_upperbound = Inf,
                      estimate_prior_variance    = TRUE,
                      estimate_prior_method      = c("optim","EM","simple"),
+                     non_sparse_method          = c("none", "inf", "ash"),
                      check_null_threshold       = 0,
                      prior_tol                  = 1e-9,
                      max_iter                   = 100,
@@ -80,6 +86,10 @@ susie_ss <- function(XtX, Xty, yty, n,
                      check_prior                = FALSE,
                      refine                     = FALSE, ...) {
 
+  # Estimate Non-sparse Effects Method
+  non_sparse_method <- match.arg(non_sparse_method)
+
+  # Create data object
   data <- susie_ss_constructor(XtX, Xty, yty, n,
                                X_colmeans    = X_colmeans,
                                y_mean        = y_mean,
@@ -89,7 +99,8 @@ susie_ss <- function(XtX, Xty, yty, n,
                                r_tol         = r_tol,
                                check_input   = check_input,
                                prior_weights = prior_weights,
-                               null_weight   = null_weight)
+                               null_weight   = null_weight,
+                               non_sparse_method = non_sparse_method)
 
   # Estimate Prior Variance Method
   estimate_prior_method <- match.arg(estimate_prior_method)
@@ -110,30 +121,3 @@ susie_ss <- function(XtX, Xty, yty, n,
 
 
 }
-
-##### For testing purposes only #####
-source("/Users/alexmccreight/susieR/R/sparse_multiplication.R")
-source("/Users/alexmccreight/susieR/R/susie_utils.R")
-source("/Users/alexmccreight/susieR/R/univariate_regression.R")
-library(matrixStats)
-# Individual data works (with base parameters)!
-dat <- readRDS("/Users/alexmccreight/Columbia/Research/SuSiE-ASH/simple_data.rds")
-res <- susie_new(X = dat$X, y = dat$y, L = 10, refine = T)
-str(res)
-res$V
-
-# Testing model_init
-# init <- susie_new(X = dat$X, y = dat$y, L = 10, max_iter = 2)
-# res <- susie_new(X = dat$X, y = dat$y, L = 10, model_init = init)
-
-
-#
-# # SS data works (with base parameters)!
-dat <- readRDS("/Users/alexmccreight/Columbia/Research/SuSiE-ASH/simple_data.rds")
-X <- dat$X
-y <- dat$y
-XtX <- crossprod(X)
-Xty <- crossprod(X, y)
-yty <- as.numeric(crossprod(y))
-n   <- length(y)
-res <- susie_ss(XtX = XtX, Xty = Xty, yty = yty, n = n, L = 10, check_prior = T)

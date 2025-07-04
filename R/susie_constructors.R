@@ -1,13 +1,13 @@
-# susie_rss_constructor
-# susie_sparse_constructor
+# TODO: add susie_rss_constructor & susie_sparse_constructor
 
-# susie individual-level data constructor
+# Individual-level Data Constructor
 susie_constructor <- function(X, y,
                               intercept     = TRUE,
                               standardize   = TRUE,
                               na.rm         = FALSE,
                               prior_weights = NULL,
-                              null_weight   = 0) {
+                              null_weight   = 0,
+                              non_sparse_method = "none") {
   # Check input X.
   if (!(is.double(X) & is.matrix(X)) &
       !inherits(X,"CsparseMatrix") &
@@ -70,22 +70,27 @@ susie_constructor <- function(X, y,
   attr(X,"scaled:scale") = out$csd
   attr(X,"d") = out$d
 
-  # Assemble data object
-  return(structure(list(
+  data_object <- structure(list(
     X      = X,
     y      = y,
     mean_y = mean_y,
     n      = n,
     p      = p),
-    class = "individual"))
+    class = "individual")
+
+  # Enhance with non-sparse components (if applicable)
+  data_object <- add_non_sparse_components(data_object, non_sparse_method)
+
+  return(data_object)
 }
 
-# susie ss constructor
+# Sufficient statistic Data Constructor
 susie_ss_constructor <- function(XtX, Xty, yty, n,
                                  X_colmeans = NA, y_mean = NA, maf = NULL,
                                  maf_thresh = 0, standardize = TRUE,
                                  r_tol = 1e-8, check_input = FALSE,
-                                 prior_weights = NULL, null_weight = 0) {
+                                 prior_weights = NULL, null_weight = 0,
+                                 non_sparse_method = "none") {
 
   # Check sample size
   if (missing(n))
@@ -196,7 +201,7 @@ susie_ss_constructor <- function(XtX, Xty, yty, n,
          ") does not match number of variables (", p, ")")
 
   # Assemble data object
-  return(structure(list(
+  data_object <- structure(list(
     XtX        = XtX,
     Xty        = Xty,
     yty        = yty,
@@ -204,5 +209,10 @@ susie_ss_constructor <- function(XtX, Xty, yty, n,
     p          = p,
     X_colmeans = X_colmeans,
     y_mean     = y_mean),
-    class = "ss"))
+    class = "ss")
+
+  # Enhance with non-sparse components (if applicable)
+  data_object <- add_non_sparse_components(data_object, non_sparse_method)
+
+  return(data_object)
 }

@@ -98,3 +98,46 @@ susie_extract_core <- function(data, model, tracking, iter, track_fit, ...)
   UseMethod("susie_extract_core")
 susie_extract_core.default <- function(data, model, tracking, iter, track_fit, ...)
   stop("susie_extract_core: no method for class '", class(data)[1], "'")
+
+# Initialize Matrices
+initialize_matrices <- function(data, ...)
+  UseMethod("initialize_matrices")
+initialize_matrices.default <- function(data, ...)
+  stop("initialize_matrices: no method for class '", class(data)[1], "'")
+
+# Add non-sparse components to data objects
+add_non_sparse_components <- function(data, non_sparse_method)
+  UseMethod("add_non_sparse_components")
+add_non_sparse_components.default <- function(data, non_sparse_method)
+  stop("add_non_sparse_components: no method for class '", class(data)[1], "'")
+
+# Add eigen decomposition to data objects
+add_eigen_decomposition <- function(data)
+  UseMethod("add_eigen_decomposition")
+add_eigen_decomposition.default <- function(data)
+  stop("add_eigen_decomposition: no method for class '", class(data)[1], "'")
+
+# Update variance components (generic for all data types)
+update_variance_components <- function(data, model)
+  UseMethod("update_variance_components")
+update_variance_components.default <- function(data, model)
+  stop("update_variance_components: no method for class '", class(data)[1], "'")
+
+# Update derived quantities after variance component changes
+update_derived_quantities <- function(data, model)
+  UseMethod("update_derived_quantities")
+update_derived_quantities.default <- function(data, model)
+  stop("update_derived_quantities: no method for class '", class(data)[1], "'")
+
+# Check convergence (generic for different convergence criteria)
+check_convergence <- function(data, model_prev, model_current, elbo_prev, elbo_current, tol)
+  UseMethod("check_convergence")
+check_convergence.default <- function(data, model_prev, model_current, elbo_prev, elbo_current, tol)
+  stop("check_convergence: no method for class '", class(data)[1], "'")
+
+# Check if variance should be updated before convergence check
+update_variance_before_convergence <- function(data)
+  UseMethod("update_variance_before_convergence")
+update_variance_before_convergence.default <- function(data)
+  stop("update_variance_before_convergence: no method for class '", class(data)[1], "'")
+

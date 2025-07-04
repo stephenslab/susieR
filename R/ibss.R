@@ -53,45 +53,42 @@ ibss_initialize <- function(data,
   }
 
   # Build blank matrices
-  alpha <- matrix(1 / p, L, p)
-  mu    <- matrix(0,     L, p)
-  mu2   <- matrix(0,     L, p)
-  V     <- rep(scaled_prior_variance * var_y, L)
+  # alpha <- matrix(1 / p, L, p)
+  # mu    <- matrix(0,     L, p)
+  # mu2   <- matrix(0,     L, p)
+  # V     <- rep(scaled_prior_variance * var_y, L)
+
+  mat_init <- initialize_matrices(data, L,
+                                  scaled_prior_variance, var_y,
+                                  residual_variance, prior_weights)
 
   # Overwrite blank rows if we used an initialized model
   if (!missing(model_init) && !is.null(model_init)) {
-    idx               <- seq_len(nrow(model_init$alpha))
-    alpha[idx, ]      <- model_init$alpha
-    mu[idx, ]         <- model_init$mu
-    mu2[idx, ]        <- model_init$mu2
-    V[idx]            <- model_init$V[idx]
-    residual_variance <- model_init$sigma2
-    prior_weights     <- model_init$pi
+    idx                        <- seq_len(nrow(model_init$alpha))
+    mat_init$alpha[idx, ]      <- model_init$alpha
+    mat_init$mu[idx, ]         <- model_init$mu
+    mat_init$mu2[idx, ]        <- model_init$mu2
+    mat_init$V[idx]            <- model_init$V[idx]
+    mat_init$residual_variance <- model_init$sigma2
+    mat_init$prior_weights     <- model_init$pi
   }
 
   # Initialize fitted values
-  fitted <- initialize_fitted(data, alpha, mu)
+  fitted <- initialize_fitted(data, mat_init$alpha, mat_init$mu)
 
   # Set null index (for refine step)
   null_index <- initialize_null_index(null_weight, p)
 
-  # Return assembled SuSiE object
+  # TODO: Make generic function for nonsparse methods (inf/ash)
+
+  # Return assembled SuSiE object (this can be cleaned up later -- works for now)
   model <- c(
-    list(alpha        = alpha,
-         mu           = mu,
-         mu2          = mu2,
-         KL           = rep(as.numeric(NA), L),
-         lbf          = rep(as.numeric(NA), L),
-         lbf_variable = matrix(as.numeric(NA), L, p),
-         sigma2       = residual_variance,
-         V            = V,
-         pi           = prior_weights,
-         null_index   = null_index),
-         fitted)
+    mat_init,
+    list(null_index = null_index),
+    fitted
+  )
 
   class(model) <- "susie"
-
-
 
   return(model)
 }

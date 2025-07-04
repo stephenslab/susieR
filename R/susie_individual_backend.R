@@ -5,9 +5,82 @@ initialize_fitted.individual <- function(data, alpha, mu){
   return(list(Xr = compute_Xb(data$X, colSums(alpha * mu))))
 }
 
+# Initialize Matrices
+initialize_matrices.individual <- function(data, L, scaled_prior_variance, var_y,
+                                           residual_variance, prior_weights, ...){
+  p <- data$p
+
+  mat_init <- list(
+    alpha        = matrix(1 / p, L, p),
+    mu           = matrix(0,     L, p),
+    mu2          = matrix(0,     L, p),
+    V            = rep(scaled_prior_variance * var_y, L),
+    KL           = rep(as.numeric(NA), L),
+    lbf          = rep(as.numeric(NA), L),
+    lbf_variable = matrix(as.numeric(NA), L, p),
+    sigma2       = residual_variance,
+    pi           = prior_weights
+  )
+
+  return(mat_init)
+}
+
 # Get variance of y
 get_var_y.individual <- function(data, ...) {
   return(var(drop(data$y)))
+}
+
+# Add non-sparse components to individual data
+add_non_sparse_components.individual <- function(data, non_sparse_method) {
+  if (non_sparse_method == "none") {
+    return(data)  # No changes needed for standard individual data
+  } else {
+    # Convert individual data to sufficient statistics with non-sparse enhancements
+    warning("Individual-level data converted to sufficient statistics for non-sparse methods")
+    return(convert_individual_to_ss_non_sparse(data, non_sparse_method))
+  }
+}
+
+# Convert individual data to ss with non-sparse components.
+convert_individual_to_ss_non_sparse <- function(individual_data, non_sparse_method) {
+
+  # Extract components from individual data
+  X <- individual_data$X
+  y <- individual_data$y
+  n <- individual_data$n
+  p <- individual_data$p
+  mean_y <- individual_data$mean_y
+
+  # Compute sufficient statistics
+  XtX <- crossprod(X)
+  Xty <- crossprod(X, y)
+  yty <- sum(y^2)
+
+  # Get column means and scaling from attributes
+  X_colmeans <- attr(X, "scaled:center")
+
+  # Create sufficient statistics data object with multiple classes
+  class_vector <- c(paste0("ss_", non_sparse_method), "ss")
+
+  ss_data <- structure(list(
+    XtX        = XtX,
+    Xty        = Xty,
+    yty        = yty,
+    n          = n,
+    p          = p,
+    X_colmeans = X_colmeans,
+    y_mean     = mean_y),
+    class = class_vector)
+
+  # Copy important attributes from X to XtX
+  # TODO: check this
+  attr(ss_data$XtX, "d") <- attr(X, "d")
+  attr(ss_data$XtX, "scaled:scale") <- attr(X, "scaled:scale")
+
+  # Add eigen decomposition for non-sparse methods
+  ss_data <- add_eigen_decomposition(ss_data)
+
+  return(ss_data)
 }
 
 # Extract core parameters of a susie fit across iterations
@@ -193,3 +266,27 @@ get_zscore.individual <- function(data, model, compute_univariate_zscore,
   return(calc_z(X,data$y,center = intercept,scale = standardize))
 
 }
+
+# Update variance components for individual data (standard approach)
+update_variance_components.individual <- function(data, model) {
+  sigma2 <- est_residual_variance(data, model)
+  return(list(sigma2 = sigma2, tausq = NULL))
+}
+
+# Update derived quantities for individual data (no-op for standard)
+update_derived_quantities.individual <- function(data, model) {
+  return(data)  # No changes needed for individual data
+}
+
+# Check convergence for individual data (uses ELBO)
+check_convergence.individual <- function(data, model_prev, model_current, elbo_prev, elbo_current, tol) {
+  # Standard ELBO-based convergence (uses pre-computed ELBO values)
+  return(elbo_current - elbo_prev < tol)
+}
+
+# Update variance before convergence check for individual data
+update_variance_before_convergence.individual <- function(data) {
+  # Standard behavior: Check convergence first, then update variance
+  return(FALSE)
+}
+

@@ -43,6 +43,9 @@ susie_engine = function(data,
     # features to the model output it should remain more transparent.
     tracking <- susie_extract_core(data, model, tracking, iter, track_fit)
 
+    # Store previous model for convergence check
+    model_prev <- model
+
     # Update all L effects
     model <- ibss_fit(data, model,
                       estimate_prior_variance = estimate_prior_variance,
@@ -50,21 +53,75 @@ susie_engine = function(data,
                       check_null_threshold    = check_null_threshold,
                       check_prior             = check_prior)
 
-    # Get Objective & Check Convergence
+    # Get Objective (for tracking)
     elbo[iter + 1] <- get_objective(data, model)
 
-    if (elbo[iter + 1] - elbo[iter] < tol) {
-      model$converged <- TRUE
-      break
-    }
-
-    # Update Residual Variance
-    if (estimate_residual_variance) {
-      model$sigma2 <- max(residual_variance_lowerbound,
-                          est_residual_variance(data, model))
-      model$sigma2 <- min(model$sigma2, residual_variance_upperbound)
+    # Handle convergence and variance updates based on method type
+    if (update_variance_before_convergence(data)) {
+      # Non-sparse: Update variance first, then check convergence
+      if (estimate_residual_variance) {
+        variance_result <- update_variance_components(data, model)
+        model$sigma2 <- max(residual_variance_lowerbound, variance_result$sigma2)
+        model$sigma2 <- min(model$sigma2, residual_variance_upperbound)
+        
+        # Update additional variance components if they exist
+        if (!is.null(variance_result$tausq)) {
+          model$tausq <- variance_result$tausq
+        }
+        
+        # Update derived quantities after variance component changes
+        data <- update_derived_quantities(data, model)
+        
+        # Transfer theta from data to model if computed (for non-sparse methods)
+        if (!is.null(data$theta)) {
+          model$theta <- data$theta
+          
+          # Update fitted values to include theta: XtXr = XtX %*% (b + theta)
+          b <- colSums(model$alpha * model$mu)
+          model$XtXr <- data$XtX %*% (b + model$theta)
+        }
+      }
+      
+      # Check convergence after variance update
+      if (check_convergence(data, model_prev, model, elbo[iter], elbo[iter + 1], tol)) {
+        model$converged <- TRUE
+        break
+      }
+    } else {
+      # Standard: Check convergence first, then update variance
+      if (check_convergence(data, model_prev, model, elbo[iter], elbo[iter + 1], tol)) {
+        model$converged <- TRUE
+        break
+      }
+      
+      # Update variance components after convergence check
+      if (estimate_residual_variance) {
+        variance_result <- update_variance_components(data, model)
+        model$sigma2 <- max(residual_variance_lowerbound, variance_result$sigma2)
+        model$sigma2 <- min(model$sigma2, residual_variance_upperbound)
+        
+        # Update additional variance components if they exist
+        if (!is.null(variance_result$tausq)) {
+          model$tausq <- variance_result$tausq
+        }
+        
+        # Update derived quantities after variance component changes
+        data <- update_derived_quantities(data, model)
+        
+        # Transfer theta from data to model if computed (for non-sparse methods)
+        if (!is.null(data$theta)) {
+          model$theta <- data$theta
+          
+          # Update fitted values to include theta: XtXr = XtX %*% (b + theta)
+          b <- colSums(model$alpha * model$mu)
+          model$XtXr <- data$XtX %*% (b + model$theta)
+        }
+      }
     }
   }
+
+  # Update non-sparse
+  #mr.ash()....
 
   if (is.null(model$converged)) {
     warning(paste("IBSS algorithm did not converge in",max_iter,"iterations!"))

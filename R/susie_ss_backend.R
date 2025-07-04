@@ -5,6 +5,26 @@ initialize_fitted.ss <- function(data, alpha, mu){
   return(list(XtXr = data$XtX %*% colSums(alpha * mu)))
 }
 
+# Initialize Matrices
+initialize_matrices.ss <- function(data, L, scaled_prior_variance, var_y,
+                                   residual_variance, prior_weights, ...){
+  p <- data$p
+
+  mat_init <- list(
+    alpha        = matrix(1 / p, L, p),
+    mu           = matrix(0,     L, p),
+    mu2          = matrix(0,     L, p),
+    V            = rep(scaled_prior_variance * var_y, L),
+    KL           = rep(as.numeric(NA), L),
+    lbf          = rep(as.numeric(NA), L),
+    lbf_variable = matrix(as.numeric(NA), L, p),
+    sigma2       = residual_variance,
+    pi           = prior_weights
+  )
+
+  return(mat_init)
+}
+
 # Get variance of y
 get_var_y.ss <- function(data, ...) {
   return(data$yty / (data$n - 1))
@@ -186,3 +206,61 @@ get_variable_names.ss <- function(data, model, null_weight){
 get_zscore.ss <- function(data, model, ...) {
   return(NULL)
 }
+
+# Add non-sparse components to ss data
+add_non_sparse_components.ss <- function(data, non_sparse_method) {
+  if (non_sparse_method == "none") {
+    return(data)  # No changes needed
+  } else {
+    # Add non-sparse class and eigen decomposition
+    class(data) <- c(paste0("ss_", non_sparse_method), "ss")
+    data <- add_eigen_decomposition(data)
+    return(data)
+  }
+}
+
+# Add eigen decomposition to ss objects (for non-sparse methods)
+add_eigen_decomposition.ss <- function(data) {
+  # Compute eigen decomposition of correlation matrix
+  eigen_decomp <- compute_eigen_decomposition(data$XtX, data$n)
+
+  # Add eigen components to data object
+  data$eigen_vectors <- eigen_decomp$V
+  data$eigen_values  <- eigen_decomp$Dsq
+  data$VtXty         <- t(eigen_decomp$V) %*% data$Xty  # Compute VtXty
+
+  # Initialize derived quantities for non-sparse methods
+  # These will be updated when variance components change
+  sigmasq <- 1  # Default initial value
+  tausq <- 0    # Default initial value
+  var <- tausq * data$eigen_values + sigmasq
+  data$var <- var
+  data$diagXtOmegaX <- rowSums(sweep(data$eigen_vectors^2, 2, (data$eigen_values / var), `*`))
+  data$XtOmegay <- data$eigen_vectors %*% (data$VtXty / var)
+
+  return(data)
+}
+
+# Update variance components for ss data (standard approach)
+update_variance_components.ss <- function(data, model) {
+  sigma2 <- est_residual_variance(data, model)
+  return(list(sigma2 = sigma2, tausq = NULL))
+}
+
+# Update derived quantities for ss data (no-op for standard)
+update_derived_quantities.ss <- function(data, model) {
+  return(data)  # No changes needed for standard ss data
+}
+
+# Check convergence for ss data (uses ELBO)
+check_convergence.ss <- function(data, model_prev, model_current, elbo_prev, elbo_current, tol) {
+  # Standard ELBO-based convergence (uses pre-computed ELBO values)
+  return(elbo_current - elbo_prev < tol)
+}
+
+# Update variance before convergence check for ss data
+update_variance_before_convergence.ss <- function(data) {
+  # Standard behavior: Check convergence first, then update variance
+  return(FALSE)
+}
+

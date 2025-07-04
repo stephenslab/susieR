@@ -177,3 +177,14 @@ lbf = function (V, shat2, T2) {
   l[is.nan(l)] = 0
   return(l)
 }
+
+# Need to adjust this for later
+single_effect_regression_non_sparse <- function(XtR, eigen_vectors, eigen_values,
+                                                V, residual_variance = 1,
+                                                prior_weights = NULL,
+                                                optimize_V = c("none", "optim", "uniroot", "EM", "simple"),
+                                                check_null_threshold = 0) {
+
+  # PLACEHOLDER - will be implemented in Phase 2
+  stop("single_effect_regression_non_sparse not yet implemented")
+}
