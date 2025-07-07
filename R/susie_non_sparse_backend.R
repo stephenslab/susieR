@@ -1,31 +1,20 @@
-### Non-sparse specific backend methods ###
+### Non-sparse backend methods ###
+# Implements infinitesimal (ss_inf) and adaptive shrinkage (ss_ash) methods
 
-# TODO: determine whether these first three functions should be in utils or here.
-
-# Non-sparse methods now use L×p format (same as susieR 2.0)
-# No conversion functions needed
-
-# Helper function for eigen decomposition
+# Compute eigenvalue decomposition for non-sparse methods
 compute_eigen_decomposition <- function(XtX, n) {
-  # Compute LD matrix
   LD <- XtX / n
-
-  # Eigen decomposition
   eig <- eigen(LD, symmetric = TRUE)
-
-  # Order eigenvalues
   idx <- order(eig$values, decreasing = TRUE)
 
-  # Return components in decreasing eigenvalue order
   list(
-    V    = eig$vectors[, idx],                    # p×p eigenvectors
-    Dsq  = pmax(eig$values[idx] * n, 0),         # p-vector eigenvalues (descending)
-    VtXty = NULL  # initialize value to NULL
+    V = eig$vectors[, idx],
+    Dsq = pmax(eig$values[idx] * n, 0),
+    VtXty = NULL
   )
 }
 
-# Method of Moments variance estimation
-# TODO: determine whether this should be in utils
+# Method of Moments variance estimation for non-sparse methods
 MoM <- function(alpha, mu, omega, sigma2, tau2, n, V, Dsq, VtXty, Xty, yty,
                 est_sigma2, est_tau2, verbose) {
   # Subroutine to estimate sigma^2, tau^2 using MoM
@@ -193,39 +182,18 @@ single_effect_update.ss_ash <- single_effect_update.ss_inf
 
 # Initialize matrices for ss_inf (includes tau2 and theta)
 initialize_matrices.ss_inf <- function(data, L, scaled_prior_variance, var_y,
-                                       residual_variance, prior_weights, ...){
-  p <- data$p
-
-  mat_init <- list(
-    alpha        = matrix(1 / p, L, p),
-    mu           = matrix(0,     L, p),
-    mu2          = matrix(0,     L, p),
-    V            = rep(scaled_prior_variance * var_y, L),
-    KL           = rep(as.numeric(NA), L),
-    lbf          = rep(as.numeric(NA), L),
-    lbf_variable = matrix(as.numeric(NA), L, p),
-    sigma2       = residual_variance,
-    tau2         = 0,  # Initialize infinitesimal variance to 0
-    theta        = rep(0, p),  # Initialize random effects to 0
-    pi           = prior_weights
-  )
-
-  return(mat_init)
+                                       residual_variance, prior_weights, ...) {
+  return(create_matrix_initialization(data$p, L, scaled_prior_variance, var_y, 
+                                      residual_variance, prior_weights, include_non_sparse = TRUE))
 }
 
 # Initialize matrices for ss_ash (same as ss_inf)
 initialize_matrices.ss_ash <- initialize_matrices.ss_inf
 
-# Initialize fitted values for ss_inf (includes random effects theta)
+# Initialize fitted values for ss_inf
 initialize_fitted.ss_inf <- function(data, alpha, mu) {
-  # Main effects: b = colSums(alpha * mu)
   b <- colSums(alpha * mu)
-  
-  # For infinitesimal model: fitted = X(b + theta)
-  # Since we're working with sufficient statistics, we compute XtXr = XtX %*% (b + theta)
-  # Initially theta = 0, so this reduces to the standard calculation
   XtXr <- data$XtX %*% b
-  
   return(list(XtXr = XtXr))
 }
 

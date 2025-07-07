@@ -1,28 +1,15 @@
-### SuSiE sufficient statistic data backend functions ###
+### Sufficient statistics data backend methods ###
 
-# Initialize Fitted Values
-initialize_fitted.ss <- function(data, alpha, mu){
+# Initialize fitted values
+initialize_fitted.ss <- function(data, alpha, mu) {
   return(list(XtXr = data$XtX %*% colSums(alpha * mu)))
 }
 
-# Initialize Matrices
+# Initialize matrices
 initialize_matrices.ss <- function(data, L, scaled_prior_variance, var_y,
-                                   residual_variance, prior_weights, ...){
-  p <- data$p
-
-  mat_init <- list(
-    alpha        = matrix(1 / p, L, p),
-    mu           = matrix(0,     L, p),
-    mu2          = matrix(0,     L, p),
-    V            = rep(scaled_prior_variance * var_y, L),
-    KL           = rep(as.numeric(NA), L),
-    lbf          = rep(as.numeric(NA), L),
-    lbf_variable = matrix(as.numeric(NA), L, p),
-    sigma2       = residual_variance,
-    pi           = prior_weights
-  )
-
-  return(mat_init)
+                                   residual_variance, prior_weights, ...) {
+  return(create_matrix_initialization(data$p, L, scaled_prior_variance, var_y, 
+                                      residual_variance, prior_weights))
 }
 
 # Get variance of y
@@ -30,8 +17,8 @@ get_var_y.ss <- function(data, ...) {
   return(data$yty / (data$n - 1))
 }
 
-# Extract core parameters of a susie fit across iterations
-susie_extract_core.ss <- function(data, model, tracking, iter, track_fit, ...){
+# Extract core parameters across iterations
+susie_extract_core.ss <- function(data, model, tracking, iter, track_fit, ...) {
   if (isTRUE(track_fit)) {
     tracking[[iter]] <- list(alpha = model$alpha,
                              niter = iter,

@@ -1,28 +1,15 @@
-### SuSiE Individual-level data backend functions ###
+### Individual-level data backend methods ###
 
-# Initialize Fitted Values
-initialize_fitted.individual <- function(data, alpha, mu){
+# Initialize fitted values
+initialize_fitted.individual <- function(data, alpha, mu) {
   return(list(Xr = compute_Xb(data$X, colSums(alpha * mu))))
 }
 
-# Initialize Matrices
+# Initialize matrices
 initialize_matrices.individual <- function(data, L, scaled_prior_variance, var_y,
-                                           residual_variance, prior_weights, ...){
-  p <- data$p
-
-  mat_init <- list(
-    alpha        = matrix(1 / p, L, p),
-    mu           = matrix(0,     L, p),
-    mu2          = matrix(0,     L, p),
-    V            = rep(scaled_prior_variance * var_y, L),
-    KL           = rep(as.numeric(NA), L),
-    lbf          = rep(as.numeric(NA), L),
-    lbf_variable = matrix(as.numeric(NA), L, p),
-    sigma2       = residual_variance,
-    pi           = prior_weights
-  )
-
-  return(mat_init)
+                                           residual_variance, prior_weights, ...) {
+  return(create_matrix_initialization(data$p, L, scaled_prior_variance, var_y, 
+                                      residual_variance, prior_weights))
 }
 
 # Get variance of y
@@ -33,9 +20,9 @@ get_var_y.individual <- function(data, ...) {
 # Configure individual data for specified method
 configure_data.individual <- function(data, non_sparse_method) {
   if (non_sparse_method == "none") {
-    return(data)  # No changes needed for standard individual data
+    return(data)
   } else {
-    # Convert individual data to sufficient statistics with non-sparse enhancements
+    # Convert to sufficient statistics for non-sparse methods
     warning("Individual-level data converted to sufficient statistics for non-sparse methods")
     return(convert_individual_to_ss_non_sparse(data, non_sparse_method))
   }
@@ -83,8 +70,8 @@ convert_individual_to_ss_non_sparse <- function(individual_data, non_sparse_meth
   return(ss_data)
 }
 
-# Extract core parameters of a susie fit across iterations
-susie_extract_core.individual <- function(data, model, tracking, iter, track_fit, ...){
+# Extract core parameters across iterations
+susie_extract_core.individual <- function(data, model, tracking, iter, track_fit, ...) {
   if (isTRUE(track_fit)) {
     tracking[[iter]] <- list(alpha = model$alpha,
                              niter = iter,
@@ -94,34 +81,35 @@ susie_extract_core.individual <- function(data, model, tracking, iter, track_fit
   return(tracking)
 }
 
-# Validate Prior Variance
+# Validate prior variance
 validate_prior.individual <- function(data, model, check_prior, ...) {
   invisible(TRUE)
 }
 
-# Posterior expected log-likelihood for a single effect regression
-SER_posterior_e_loglik.individual <- function (data, model, R, Eb, Eb2) {
-  return(-0.5*data$n*log(2*pi*model$sigma2) - 0.5/model$sigma2*(sum(R*R)
-                                                                - 2*sum(R*compute_Xb(data$X,Eb))
-                                                                + sum(attr(data$X,"d") * Eb2)))}
-
-# Expected Squared Residuals
-get_ER2.individual <- function (data, model) {
-  Xr_L = compute_MXt(model$alpha * model$mu, data$X) # L by N matrix
-  postb2 = model$alpha * model$mu2 # Posterior second moment.
-  return(sum((data$y - model$Xr)^2) - sum(Xr_L^2) + sum(attr(data$X,"d") * t(postb2)))
+# Posterior expected log-likelihood for single effect regression
+SER_posterior_e_loglik.individual <- function(data, model, R, Eb, Eb2) {
+  return(-0.5 * data$n * log(2 * pi * model$sigma2) - 
+         0.5 / model$sigma2 * (sum(R * R) - 2 * sum(R * compute_Xb(data$X, Eb)) + 
+                               sum(attr(data$X, "d") * Eb2)))
 }
 
-
-# Expected loglikelihood for a susie fit.
-Eloglik.individual <- function (data, model) {
-  return(-(data$n/2) * log(2*pi*model$sigma2) - (1/(2*model$sigma2)) * get_ER2(data, model))
+# Expected squared residuals
+get_ER2.individual <- function(data, model) {
+  Xr_L <- compute_MXt(model$alpha * model$mu, data$X)
+  postb2 <- model$alpha * model$mu2
+  return(sum((data$y - model$Xr)^2) - sum(Xr_L^2) + sum(attr(data$X, "d") * t(postb2)))
 }
 
-# Get Objective
-get_objective.individual <- function (data, model) {
-  objective <- Eloglik(data,model) - sum(model$KL)
-  if(is.infinite(objective)){
+# Expected log-likelihood
+Eloglik.individual <- function(data, model) {
+  return(-(data$n / 2) * log(2 * pi * model$sigma2) - 
+         (1 / (2 * model$sigma2)) * get_ER2(data, model))
+}
+
+# Objective function (ELBO)
+get_objective.individual <- function(data, model) {
+  objective <- Eloglik(data, model) - sum(model$KL)
+  if (is.infinite(objective)) {
     stop("get_objective.individual() produced an infinite ELBO value")
   }
   return(objective)

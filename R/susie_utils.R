@@ -1190,3 +1190,27 @@ update_model_variance <- function(data, model, lowerbound, upperbound) {
   
   return(list(data = data, model = model))
 }
+
+# Create standard matrix initialization (shared by all backends)
+create_matrix_initialization <- function(p, L, scaled_prior_variance, var_y, residual_variance, 
+                                         prior_weights, include_non_sparse = FALSE) {
+  mat_init <- list(
+    alpha = matrix(1 / p, L, p),
+    mu = matrix(0, L, p),
+    mu2 = matrix(0, L, p),
+    V = rep(scaled_prior_variance * var_y, L),
+    KL = rep(as.numeric(NA), L),
+    lbf = rep(as.numeric(NA), L),
+    lbf_variable = matrix(as.numeric(NA), L, p),
+    sigma2 = residual_variance,
+    pi = prior_weights
+  )
+  
+  # Add non-sparse specific components
+  if (include_non_sparse) {
+    mat_init$tau2 <- 0
+    mat_init$theta <- rep(0, p)
+  }
+  
+  return(mat_init)
+}
