@@ -264,3 +264,19 @@ update_variance_before_convergence.ss <- function(data) {
   return(FALSE)
 }
 
+# Handle convergence and variance updates for ss data (standard behavior)
+handle_convergence_and_variance.ss <- function(data, model, model_prev, elbo_prev, elbo_current, 
+                                                tol, estimate_residual_variance, 
+                                                residual_variance_lowerbound, residual_variance_upperbound) {
+  # Standard: Check convergence first, then update variance
+  converged <- check_convergence(data, model_prev, model, elbo_prev, elbo_current, tol)
+  
+  if (!converged && estimate_residual_variance) {
+    result <- update_model_variance(data, model, residual_variance_lowerbound, residual_variance_upperbound)
+    data <- result$data
+    model <- result$model
+  }
+  
+  return(list(data = data, model = model, converged = converged))
+}
+

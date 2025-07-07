@@ -141,3 +141,13 @@ update_variance_before_convergence <- function(data)
 update_variance_before_convergence.default <- function(data)
   stop("update_variance_before_convergence: no method for class '", class(data)[1], "'")
 
+# Handle convergence and variance updates in one step
+handle_convergence_and_variance <- function(data, model, model_prev, elbo_prev, elbo_current, 
+                                            tol, estimate_residual_variance, 
+                                            residual_variance_lowerbound, residual_variance_upperbound)
+  UseMethod("handle_convergence_and_variance")
+handle_convergence_and_variance.default <- function(data, model, model_prev, elbo_prev, elbo_current, 
+                                                    tol, estimate_residual_variance, 
+                                                    residual_variance_lowerbound, residual_variance_upperbound)
+  stop("handle_convergence_and_variance: no method for class '", class(data)[1], "'")
+

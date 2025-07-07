@@ -305,6 +305,25 @@ update_variance_before_convergence.ss_inf <- function(data) {
 # Update variance before convergence check for ss_ash (same as ss_inf)
 update_variance_before_convergence.ss_ash <- update_variance_before_convergence.ss_inf
 
+# Handle convergence and variance updates for ss_inf (non-sparse behavior)
+handle_convergence_and_variance.ss_inf <- function(data, model, model_prev, elbo_prev, elbo_current, 
+                                                    tol, estimate_residual_variance, 
+                                                    residual_variance_lowerbound, residual_variance_upperbound) {
+  # Non-sparse: Update variance first, then check convergence
+  if (estimate_residual_variance) {
+    result <- update_model_variance(data, model, residual_variance_lowerbound, residual_variance_upperbound)
+    data <- result$data
+    model <- result$model
+  }
+  
+  converged <- check_convergence(data, model_prev, model, elbo_prev, elbo_current, tol)
+  
+  return(list(data = data, model = model, converged = converged))
+}
+
+# Handle convergence and variance updates for ss_ash (same as ss_inf)
+handle_convergence_and_variance.ss_ash <- handle_convergence_and_variance.ss_inf
+
 # Compute theta (random effects) using BLUP for non-sparse methods
 compute_theta_blup <- function(data, model) {
   # Use L×p format directly (same as susieR 2.0)

@@ -1164,3 +1164,29 @@ run_refine <- function(data, best_model, rerun, tol_improve = 0) {
   }
   best_model
 }
+
+# Helper function to update variance components and derived quantities
+update_model_variance <- function(data, model, lowerbound, upperbound) {
+  variance_result <- update_variance_components(data, model)
+  model$sigma2 <- max(lowerbound, variance_result$sigma2)
+  model$sigma2 <- min(model$sigma2, upperbound)
+  
+  # Update additional variance components if they exist
+  if (!is.null(variance_result$tau2)) {
+    model$tau2 <- variance_result$tau2
+  }
+  
+  # Update derived quantities after variance component changes
+  data <- update_derived_quantities(data, model)
+  
+  # Transfer theta from data to model if computed (for non-sparse methods)
+  if (!is.null(data$theta)) {
+    model$theta <- data$theta
+    
+    # Update fitted values to include theta: XtXr = XtX %*% (b + theta)
+    b <- colSums(model$alpha * model$mu)
+    model$XtXr <- data$XtX %*% (b + model$theta)
+  }
+  
+  return(list(data = data, model = model))
+}
