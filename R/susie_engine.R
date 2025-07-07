@@ -65,8 +65,8 @@ susie_engine = function(data,
         model$sigma2 <- min(model$sigma2, residual_variance_upperbound)
         
         # Update additional variance components if they exist
-        if (!is.null(variance_result$tausq)) {
-          model$tausq <- variance_result$tausq
+        if (!is.null(variance_result$tau2)) {
+          model$tau2 <- variance_result$tau2
         }
         
         # Update derived quantities after variance component changes
@@ -101,8 +101,8 @@ susie_engine = function(data,
         model$sigma2 <- min(model$sigma2, residual_variance_upperbound)
         
         # Update additional variance components if they exist
-        if (!is.null(variance_result$tausq)) {
-          model$tausq <- variance_result$tausq
+        if (!is.null(variance_result$tau2)) {
+          model$tau2 <- variance_result$tau2
         }
         
         # Update derived quantities after variance component changes
