@@ -105,11 +105,11 @@ initialize_matrices <- function(data, ...)
 initialize_matrices.default <- function(data, ...)
   stop("initialize_matrices: no method for class '", class(data)[1], "'")
 
-# Add non-sparse components to data objects
-add_non_sparse_components <- function(data, non_sparse_method)
-  UseMethod("add_non_sparse_components")
-add_non_sparse_components.default <- function(data, non_sparse_method)
-  stop("add_non_sparse_components: no method for class '", class(data)[1], "'")
+# Configure data object for specified method
+configure_data <- function(data, non_sparse_method)
+  UseMethod("configure_data")
+configure_data.default <- function(data, non_sparse_method)
+  stop("configure_data: no method for class '", class(data)[1], "'")
 
 # Add eigen decomposition to data objects
 add_eigen_decomposition <- function(data)

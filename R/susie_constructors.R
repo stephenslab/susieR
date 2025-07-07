@@ -1,31 +1,30 @@
-# TODO: add susie_rss_constructor & susie_sparse_constructor
-
-# Individual-level Data Constructor
+# Individual-level data constructor
 susie_constructor <- function(X, y,
-                              intercept     = TRUE,
-                              standardize   = TRUE,
-                              na.rm         = FALSE,
+                              intercept = TRUE,
+                              standardize = TRUE,
+                              na.rm = FALSE,
                               prior_weights = NULL,
-                              null_weight   = 0,
+                              null_weight = 0,
                               non_sparse_method = "none") {
-  # Check input X.
+  # Validate input X
   if (!(is.double(X) & is.matrix(X)) &
-      !inherits(X,"CsparseMatrix") &
-      is.null(attr(X,"matrix.type")))
+      !inherits(X, "CsparseMatrix") &
+      is.null(attr(X, "matrix.type")))
     stop("Input X must be a double-precision matrix, or a sparse matrix, or ",
          "a trend filtering matrix")
 
   if (anyNA(X))
     stop("X contains NA values")
 
-  # Check input y.
+  # Handle missing values in y
   if (anyNA(y)) {
     if (na.rm) {
-      samples_kept = which(!is.na(y))
-      y = y[samples_kept]
-      X = X[samples_kept,]
-    } else
+      samples_kept <- which(!is.na(y))
+      y <- y[samples_kept]
+      X <- X[samples_kept, ]
+    } else {
       stop("Input y must not contain missing values")
+    }
   }
   mean_y <- mean(y)
 
@@ -47,44 +46,39 @@ susie_constructor <- function(X, y,
     X <- cbind(X, 0)
   }
 
-  # Store n & p.
-  n <- nrow(X);  p <- ncol(X)
-  if (p > 1000 & !requireNamespace("Rfast",quietly = TRUE))
-    warning_message("For an X with many columns, please consider installing",
-                    "the Rfast package for more efficient credible set (CS)",
-                    "calculations.", style='hint')
+  # Store dimensions
+  n <- nrow(X)
+  p <- ncol(X)
+  if (p > 1000 & !requireNamespace("Rfast", quietly = TRUE))
+    warning_message("For an X with many columns, please consider installing ",
+                    "the Rfast package for more efficient credible set (CS) ",
+                    "calculations.", style = "hint")
 
-  # Center and scale input.
+  # Center y if intercept is included
   if (intercept)
     y <- y - mean_y
 
-  # Set three attributes for matrix X: attr(X,'scaled:center') is a
-  # p-vector of column means of X if center=TRUE, a p vector of zeros
-  # otherwise; 'attr(X,'scaled:scale') is a p-vector of column
-  # standard deviations of X if scale=TRUE, a p vector of ones
-  # otherwise; 'attr(X,'d') is a p-vector of column sums of
-  # X.standardized^2,' where X.standardized is the matrix X centered
-  # by attr(X,'scaled:center') and scaled by attr(X,'scaled:scale').
-  out = compute_colstats(X,center = intercept,scale = standardize)
-  attr(X,"scaled:center") = out$cm
-  attr(X,"scaled:scale") = out$csd
-  attr(X,"d") = out$d
+  # Compute and set X matrix attributes
+  out <- compute_colstats(X, center = intercept, scale = standardize)
+  attr(X, "scaled:center") <- out$cm
+  attr(X, "scaled:scale") <- out$csd
+  attr(X, "d") <- out$d
 
   data_object <- structure(list(
-    X      = X,
-    y      = y,
+    X = X,
+    y = y,
     mean_y = mean_y,
-    n      = n,
-    p      = p),
+    n = n,
+    p = p),
     class = "individual")
 
-  # Enhance with non-sparse components (if applicable)
-  data_object <- add_non_sparse_components(data_object, non_sparse_method)
+  # Configure data object for specified non-sparse method
+  data_object <- configure_data(data_object, non_sparse_method)
 
   return(data_object)
 }
 
-# Sufficient statistic Data Constructor
+# Sufficient statistics data constructor
 susie_ss_constructor <- function(XtX, Xty, yty, n,
                                  X_colmeans = NA, y_mean = NA, maf = NULL,
                                  maf_thresh = 0, standardize = TRUE,
@@ -92,13 +86,11 @@ susie_ss_constructor <- function(XtX, Xty, yty, n,
                                  prior_weights = NULL, null_weight = 0,
                                  non_sparse_method = "none") {
 
-  # Check sample size
+  # Validate required inputs
   if (missing(n))
     stop("n must be provided")
   if (n <= 1)
     stop("n must be greater than 1")
-
-  # Check XtX, Xty, and yty
   if (missing(XtX) || missing(Xty) || missing(yty))
     stop("XtX, Xty, yty must all be provided")
 
@@ -111,9 +103,9 @@ susie_ss_constructor <- function(XtX, Xty, yty, n,
                 ") does not agree with expected (",length(Xty)," by ",
                 length(Xty),")"))
 
-  if (ncol(XtX) > 1000 & !requireNamespace("Rfast",quietly = TRUE))
+  if (ncol(XtX) > 1000 & !requireNamespace("Rfast", quietly = TRUE))
     warning_message("For large R or large XtX, consider installing the ",
-                    "Rfast package for better performance.", style="hint")
+                    "Rfast package for better performance.", style = "hint")
 
   # Ensure XtX is symmetric
   if (!is_symmetric_matrix(XtX)) {
@@ -121,37 +113,37 @@ susie_ss_constructor <- function(XtX, Xty, yty, n,
     XtX <- (XtX + t(XtX))/2
   }
 
-  ## MAF Filter
+  # Apply MAF filter if provided
   if (!is.null(maf)) {
     if (length(maf) != length(Xty))
-      stop(paste("The length of maf does not agree with expected",length(Xty)))
-    id = which(maf > maf_thresh)
-    XtX = XtX[id,id]
-    Xty = Xty[id]
+      stop(paste("The length of maf does not agree with expected", length(Xty)))
+    id <- which(maf > maf_thresh)
+    XtX <- XtX[id, id]
+    Xty <- Xty[id]
   }
 
-  # Check for infinites and matrix type
+  # Additional validation
   if (any(is.infinite(Xty)))
     stop("Input Xty contains infinite values")
-  if (!(is.double(XtX) & is.matrix(XtX)) & !inherits(XtX,"CsparseMatrix"))
+  if (!(is.double(XtX) & is.matrix(XtX)) & !inherits(XtX, "CsparseMatrix"))
     stop("Input XtX must be a double-precision matrix, or a sparse matrix")
   if (anyNA(XtX))
     stop("Input XtX matrix contains NAs")
 
-  # Replace NAs in Xty with zeros.
+  # Replace NAs in Xty with zeros
   if (anyNA(Xty)) {
     warning_message("NA values in Xty are replaced with 0")
-    Xty[is.na(Xty)] = 0
+    Xty[is.na(Xty)] <- 0
   }
 
-  ## Positive-semidefinite check
+  # Positive-semidefinite check
   if (check_input) {
-    semi_pd = check_semi_pd(XtX,r_tol)
+    semi_pd <- check_semi_pd(XtX, r_tol)
     if (!semi_pd$status)
       stop("XtX is not a positive semidefinite matrix")
 
-    # Check whether Xty in space spanned by the non-zero eigenvectors of XtX
-    proj = check_projection(semi_pd$matrix,Xty)
+    # Check whether Xty lies in space spanned by non-zero eigenvectors of XtX
+    proj <- check_projection(semi_pd$matrix, Xty)
     if (!proj$status)
       warning_message("Xty does not lie in the space of the non-zero eigenvectors ",
                       "of XtX")
@@ -159,7 +151,7 @@ susie_ss_constructor <- function(XtX, Xty, yty, n,
 
   # Handle null weights
   if (is.numeric(null_weight) && null_weight == 0)
-    null_weight = NULL
+    null_weight <- NULL
 
   if (!is.null(null_weight)) {
     if (!is.numeric(null_weight))
@@ -167,13 +159,13 @@ susie_ss_constructor <- function(XtX, Xty, yty, n,
     if (null_weight < 0 || null_weight >= 1)
       stop("Null weight must be between 0 and 1")
     if (is.null(prior_weights))
-      prior_weights = c(rep(1/ncol(XtX)*(1-null_weight),ncol(XtX)),null_weight)
+      prior_weights <- c(rep(1/ncol(XtX)*(1-null_weight), ncol(XtX)), null_weight)
     else
-      prior_weights = c(prior_weights*(1 - null_weight),null_weight)
-    XtX = cbind(rbind(XtX,0),0)
-    Xty = c(Xty,0)
+      prior_weights <- c(prior_weights*(1 - null_weight), null_weight)
+    XtX <- cbind(rbind(XtX, 0), 0)
+    Xty <- c(Xty, 0)
     if (length(X_colmeans) == 1)
-      X_colmeans = rep(X_colmeans,p)
+      X_colmeans <- rep(X_colmeans, p)
     if (length(X_colmeans) != p)
       stop("The length of X_colmeans does not agree with number of variables")
   }
@@ -181,18 +173,19 @@ susie_ss_constructor <- function(XtX, Xty, yty, n,
   # Define p
   p <- ncol(XtX)
 
-  # Standardize
+  # Standardize if requested
   if (standardize) {
-    dXtX = diag(XtX)
-    csd = sqrt(dXtX/(n-1))
-    csd[csd == 0] = 1
-    XtX = t((1/csd) * XtX) / csd
-    Xty = Xty / csd
-  } else
-    csd = rep(1,length = p)
+    dXtX <- diag(XtX)
+    csd <- sqrt(dXtX/(n-1))
+    csd[csd == 0] <- 1
+    XtX <- t((1/csd) * XtX) / csd
+    Xty <- Xty / csd
+  } else {
+    csd <- rep(1, length = p)
+  }
 
-  attr(XtX,"d") = diag(XtX)
-  attr(XtX,"scaled:scale") = csd
+  attr(XtX, "d") <- diag(XtX)
+  attr(XtX, "scaled:scale") <- csd
 
   if (length(X_colmeans) == 1)
     X_colmeans <- rep(X_colmeans, p)
@@ -202,17 +195,17 @@ susie_ss_constructor <- function(XtX, Xty, yty, n,
 
   # Assemble data object
   data_object <- structure(list(
-    XtX        = XtX,
-    Xty        = Xty,
-    yty        = yty,
-    n          = n,
-    p          = p,
+    XtX = XtX,
+    Xty = Xty,
+    yty = yty,
+    n = n,
+    p = p,
     X_colmeans = X_colmeans,
-    y_mean     = y_mean),
+    y_mean = y_mean),
     class = "ss")
 
-  # Enhance with non-sparse components (if applicable)
-  data_object <- add_non_sparse_components(data_object, non_sparse_method)
+  # Configure data object for specified non-sparse method
+  data_object <- configure_data(data_object, non_sparse_method)
 
   return(data_object)
 }

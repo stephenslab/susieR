@@ -207,8 +207,8 @@ get_zscore.ss <- function(data, model, ...) {
   return(NULL)
 }
 
-# Add non-sparse components to ss data
-add_non_sparse_components.ss <- function(data, non_sparse_method) {
+# Configure ss data for specified method  
+configure_data.ss <- function(data, non_sparse_method) {
   if (non_sparse_method == "none") {
     return(data)  # No changes needed
   } else {

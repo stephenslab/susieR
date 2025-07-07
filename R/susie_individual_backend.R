@@ -30,8 +30,8 @@ get_var_y.individual <- function(data, ...) {
   return(var(drop(data$y)))
 }
 
-# Add non-sparse components to individual data
-add_non_sparse_components.individual <- function(data, non_sparse_method) {
+# Configure individual data for specified method
+configure_data.individual <- function(data, non_sparse_method) {
   if (non_sparse_method == "none") {
     return(data)  # No changes needed for standard individual data
   } else {
