@@ -33,14 +33,15 @@ susie_constructor <- function(X, y,
     null_weight <- NULL
 
   if (!is.null(null_weight)) {
-    if (!is.numeric(null_weight) || null_weight <= 0 || null_weight >= 1)
-      stop("null_weight must be between 0 and 1 (exclusive)")
-
+    if (!is.numeric(null_weight))
+      stop("Null weight must be numeric")
+    if (null_weight < 0 || null_weight >= 1)
+      stop("Null weight must be between 0 and 1")
+    
     if (is.null(prior_weights))
-      prior_weights <- rep(1 / ncol(X), ncol(X))
-
-    # rescale existing prior_weights and append null weight
-    prior_weights <- c(prior_weights * (1 - null_weight), null_weight)
+      prior_weights <- c(rep(1/ncol(X) * (1 - null_weight), ncol(X)), null_weight)
+    else
+      prior_weights <- c(prior_weights * (1 - null_weight), null_weight)
 
     # add the extra 0 column to X
     X <- cbind(X, 0)
@@ -69,7 +70,9 @@ susie_constructor <- function(X, y,
     y = y,
     mean_y = mean_y,
     n = n,
-    p = p),
+    p = p,
+    prior_weights = prior_weights,
+    null_weight = null_weight),
     class = "individual")
 
   # Configure data object for specified non-sparse method
@@ -201,7 +204,9 @@ susie_ss_constructor <- function(XtX, Xty, yty, n,
     n = n,
     p = p,
     X_colmeans = X_colmeans,
-    y_mean = y_mean),
+    y_mean = y_mean,
+    prior_weights = prior_weights,
+    null_weight = null_weight),
     class = "ss")
 
   # Configure data object for specified non-sparse method

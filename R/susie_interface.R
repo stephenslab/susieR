@@ -34,9 +34,9 @@ susie_new <- function(X, y, L = min(10, ncol(X)),
   data <- susie_constructor(X, y, intercept, standardize, na.rm,
                             prior_weights, null_weight, non_sparse_method)
 
-  # Run SuSiE engine
+  # Run SuSiE engine (use updated prior_weights and null_weight from data object)
   model <- susie_engine(data, L, intercept, standardize, scaled_prior_variance,
-                        residual_variance, prior_weights, null_weight,
+                        residual_variance, data$prior_weights, data$null_weight,
                         model_init, estimate_prior_variance, estimate_prior_method,
                         check_null_threshold, estimate_residual_variance,
                         residual_variance_lowerbound, residual_variance_upperbound,
@@ -86,9 +86,9 @@ susie_ss <- function(XtX, Xty, yty, n,
                                maf, maf_thresh, standardize, r_tol, check_input,
                                prior_weights, null_weight, non_sparse_method)
 
-  # Run SuSiE engine
+  # Run SuSiE engine (use updated prior_weights and null_weight from data object)
   model <- susie_engine(data, L, intercept = FALSE, standardize, scaled_prior_variance,
-                        residual_variance, prior_weights, null_weight,
+                        residual_variance, data$prior_weights, data$null_weight,
                         model_init, estimate_prior_variance, estimate_prior_method,
                         check_null_threshold, estimate_residual_variance,
                         residual_variance_lowerbound, residual_variance_upperbound,
