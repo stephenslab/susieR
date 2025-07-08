@@ -17,6 +17,14 @@ susie_engine <- function(data,
 
   # Validate method argument
   estimate_prior_method <- match.arg(estimate_prior_method)
+  
+  # Validate prior_tol
+  if (!is.numeric(prior_tol) || length(prior_tol) != 1)
+    stop("prior_tol must be a numeric scalar")
+  if (prior_tol < 0)
+    stop("prior_tol must be non-negative")
+  if (prior_tol > 1)
+    stop("prior_tol cannot exceed 1 (a single effect cannot account for more than 100% of outcome variance)")
 
   # Initialize model object
   model <- ibss_initialize(data = data, L = L,
