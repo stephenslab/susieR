@@ -114,6 +114,10 @@ ibss_fit = function(data, model,
                     check_null_threshold    = 0,
                     check_prior             = FALSE){
   estimate_prior_method <- match.arg(estimate_prior_method)
+  
+  # Set optimization method based on estimate_prior_variance flag
+  if (!estimate_prior_variance)
+    estimate_prior_method <- "none"
 
   # Repeat for each effect to update
   L <- nrow(model$alpha)
