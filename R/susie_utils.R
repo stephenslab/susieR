@@ -492,8 +492,10 @@ get_purity = function (pos, X, Xcorr, squared = FALSE, n = 100,
   else {
 
     # Subsample the columns if necessary.
-    if (length(pos) > n)
+    if (length(pos) > n) {
+      set.seed(123)
       pos = sample(pos,n)
+    }
 
     if (is.null(Xcorr)) {
       X_sub = X[,pos]
