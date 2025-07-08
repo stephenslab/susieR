@@ -34,6 +34,16 @@ ibss_initialize <- function(data,
   if (is.null(residual_variance)) {
     residual_variance <- var_y
   }
+  
+  # Validate residual variance
+  if (!is.numeric(residual_variance))
+    stop("Input residual variance sigma2 must be numeric")
+  
+  residual_variance <- as.numeric(residual_variance)
+  if (length(residual_variance) != 1)
+    stop("Input residual variance sigma2 must be a scalar")
+  if (residual_variance <= 0)
+    stop("Residual variance sigma2 must be positive (is your var(Y) zero?)")
 
   # Check for pre-initialized model
   if (!missing(model_init) && !is.null(model_init)) {
