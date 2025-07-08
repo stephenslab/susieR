@@ -19,9 +19,9 @@ Eloglik.default <- function(data, model)
   stop("Eloglik: no method for class '", class(data)[1], "'")
 
 # Objective function (ELBO)
-get_objective <- function(data, model)
+get_objective <- function(data, model, verbose = FALSE)
   UseMethod("get_objective")
-get_objective.default <- function(data, model)
+get_objective.default <- function(data, model, verbose = FALSE)
   stop("get_objective: no method for class '", class(data)[1], "'")
 
 # Estimate residual variance

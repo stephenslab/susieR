@@ -49,7 +49,7 @@ susie_engine <- function(data,
                       check_prior = check_prior)
 
     # Calculate objective for tracking
-    elbo[iter + 1] <- get_objective(data, model)
+    elbo[iter + 1] <- get_objective(data, model, verbose = verbose)
 
     # Handle convergence and variance updates
     result <- handle_convergence_and_variance(data, model, model_prev, elbo[iter], elbo[iter + 1],

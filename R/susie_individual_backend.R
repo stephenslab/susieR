@@ -107,10 +107,13 @@ Eloglik.individual <- function(data, model) {
 }
 
 # Objective function (ELBO)
-get_objective.individual <- function(data, model) {
+get_objective.individual <- function(data, model, verbose = FALSE) {
   objective <- Eloglik(data, model) - sum(model$KL)
   if (is.infinite(objective)) {
     stop("get_objective.individual() produced an infinite ELBO value")
+  }
+  if (verbose) {
+    print(paste0("objective:", objective))
   }
   return(objective)
 }
