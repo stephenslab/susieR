@@ -13,10 +13,26 @@ ibss_initialize <- function(data,
                             residual_variance     = NULL,
                             prior_weights         = NULL,
                             null_weight           = NULL,
-                            model_init            = NULL){
+                            model_init            = NULL,
+                            prior_tol             = 1e-9,
+                            residual_variance_upperbound = Inf){
   # Define p and var_y
   p <- data$p
   var_y <- get_var_y(data)
+
+  # Validate prior_tol
+  if (!is.numeric(prior_tol) || length(prior_tol) != 1)
+    stop("prior_tol must be a numeric scalar")
+  if (prior_tol < 0)
+    stop("prior_tol must be non-negative")
+  if (prior_tol > 1)
+    stop("prior_tol cannot exceed 1 (a single effect cannot account for more than 100% of outcome variance)")
+  
+  # Validate residual_variance_upperbound
+  if (!is.numeric(residual_variance_upperbound) || length(residual_variance_upperbound) != 1)
+    stop("residual_variance_upperbound must be a numeric scalar")
+  if (residual_variance_upperbound <= 0)
+    stop("residual_variance_upperbound must be positive")
 
   # Check prior variance
   if (!is.numeric(scaled_prior_variance) || scaled_prior_variance < 0)

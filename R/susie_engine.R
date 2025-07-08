@@ -17,20 +17,6 @@ susie_engine <- function(data,
 
   # Validate method argument
   estimate_prior_method <- match.arg(estimate_prior_method)
-  
-  # Validate prior_tol
-  if (!is.numeric(prior_tol) || length(prior_tol) != 1)
-    stop("prior_tol must be a numeric scalar")
-  if (prior_tol < 0)
-    stop("prior_tol must be non-negative")
-  if (prior_tol > 1)
-    stop("prior_tol cannot exceed 1 (a single effect cannot account for more than 100% of outcome variance)")
-  
-  # Validate residual_variance_upperbound
-  if (!is.numeric(residual_variance_upperbound) || length(residual_variance_upperbound) != 1)
-    stop("residual_variance_upperbound must be a numeric scalar")
-  if (residual_variance_upperbound <= 0)
-    stop("residual_variance_upperbound must be positive")
 
   # Initialize model object
   model <- ibss_initialize(data = data, L = L,
@@ -38,7 +24,9 @@ susie_engine <- function(data,
                            residual_variance = residual_variance,
                            prior_weights = prior_weights,
                            null_weight = null_weight,
-                           model_init = model_init)
+                           model_init = model_init,
+                           prior_tol = prior_tol,
+                           residual_variance_upperbound = residual_variance_upperbound)
 
   # Initialize tracking
   elbo <- rep(as.numeric(NA), max_iter + 1)
