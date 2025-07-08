@@ -25,6 +25,12 @@ susie_engine <- function(data,
     stop("prior_tol must be non-negative")
   if (prior_tol > 1)
     stop("prior_tol cannot exceed 1 (a single effect cannot account for more than 100% of outcome variance)")
+  
+  # Validate residual_variance_upperbound
+  if (!is.numeric(residual_variance_upperbound) || length(residual_variance_upperbound) != 1)
+    stop("residual_variance_upperbound must be a numeric scalar")
+  if (residual_variance_upperbound <= 0)
+    stop("residual_variance_upperbound must be positive")
 
   # Initialize model object
   model <- ibss_initialize(data = data, L = L,
