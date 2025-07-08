@@ -27,17 +27,18 @@ single_effect_regression =
     # log(bf) for each SNP
     lbf = dnorm(betahat,0,sqrt(V + shat2),log = TRUE) -
       dnorm(betahat,0,sqrt(shat2),log = TRUE)
+    lpo = lbf + log(prior_weights + sqrt(.Machine$double.eps))
 
     # Deal with special case of infinite shat2 (e.g., happens if X does
     # not vary).
     lbf[is.infinite(shat2)] = 0
-    maxlbf = max(lbf)
+    lpo[is.infinite(shat2)] = 0
+    maxlpo = max(lpo)
 
     # w is proportional to BF, but subtract max for numerical stability.
-    w = exp(lbf - maxlbf)
+    w_weighted = exp(lpo - maxlpo)
 
     # Posterior prob for each SNP.
-    w_weighted = w * prior_weights
     weighted_sum_w = sum(w_weighted)
     alpha = w_weighted / weighted_sum_w
     post_var = (1/V + dXtX/residual_variance)^(-1) # Posterior variance.
@@ -45,7 +46,7 @@ single_effect_regression =
     post_mean2 = post_var + post_mean^2 # Second moment.
 
     # BF for single effect model.
-    lbf_model = maxlbf + log(weighted_sum_w)
+    lbf_model = maxlpo + log(weighted_sum_w)
 
     if(optimize_V == "EM")
       V = optimize_prior_variance(optimize_V,betahat,shat2,prior_weights,
@@ -124,16 +125,17 @@ loglik = function (V, betahat, shat2, prior_weights) {
   #log(bf) for each SNP
   lbf = dnorm(betahat,0,sqrt(V+shat2),log = TRUE) -
     dnorm(betahat,0,sqrt(shat2),log = TRUE)
+  lpo = lbf + log(prior_weights + sqrt(.Machine$double.eps))
 
   # Deal with special case of infinite shat2 (e.g., happens if X does
   # not vary).
   lbf[is.infinite(shat2)] = 0
+  lpo[is.infinite(shat2)] = 0
 
-  maxlbf = max(lbf)
-  w = exp(lbf - maxlbf) # w = BF/BFmax
-  w_weighted = w * prior_weights
+  maxlpo = max(lpo)
+  w_weighted = exp(lpo - maxlpo)
   weighted_sum_w = sum(w_weighted)
-  return(log(weighted_sum_w) + maxlbf)
+  return(log(weighted_sum_w) + maxlpo)
 }
 
 neg.loglik.logscale = function(lV,betahat,shat2,prior_weights)
@@ -146,14 +148,15 @@ loglik.grad = function(V, betahat, shat2, prior_weights) {
   # log(bf) for each SNP.
   lbf = dnorm(betahat,0,sqrt(V + shat2),log = TRUE) -
     dnorm(betahat,0,sqrt(shat2),log = TRUE)
+  lpo = lbf + log(prior_weights + sqrt(.Machine$double.eps))
 
   # Deal with special case of infinite shat2 (e.g., happens if X does
   # not vary).
   lbf[is.infinite(shat2)] = 0
+  lpo[is.infinite(shat2)] = 0
 
-  maxlbf = max(lbf)
-  w = exp(lbf - maxlbf) # w = BF/BFmax
-  w_weighted = w * prior_weights
+  maxlpo = max(lpo)
+  w_weighted = exp(lpo - maxlpo)
   weighted_sum_w = sum(w_weighted)
   alpha = w_weighted / weighted_sum_w
   return(sum(alpha * lbf.grad(V,shat2,betahat^2/shat2)))
