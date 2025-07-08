@@ -23,8 +23,7 @@ susie_new <- function(X, y, L = min(10, ncol(X)),
                       track_fit = FALSE,
                       residual_variance_lowerbound = var(drop(y))/1e4,
                       refine = FALSE,
-                      n_purity = 100,
-                      check_prior = FALSE) {
+                      n_purity = 100) {
 
   # Validate method arguments
   non_sparse_method <- match.arg(non_sparse_method)
@@ -42,7 +41,7 @@ susie_new <- function(X, y, L = min(10, ncol(X)),
                         residual_variance_lowerbound, residual_variance_upperbound,
                         max_iter, tol, verbose, track_fit, coverage, min_abs_corr,
                         prior_tol, n_purity, compute_univariate_zscore,
-                        check_prior, refine)
+                        check_prior = FALSE, refine)
 
   return(model)
 }
