@@ -79,24 +79,30 @@ ibss_initialize <- function(data,
   }
 
   # Build blank matrices
-  # alpha <- matrix(1 / p, L, p)
-  # mu    <- matrix(0,     L, p)
-  # mu2   <- matrix(0,     L, p)
-  # V     <- rep(scaled_prior_variance * var_y, L)
-
   mat_init <- initialize_matrices(data, L,
                                   scaled_prior_variance, var_y,
                                   residual_variance, prior_weights)
 
-  # Overwrite blank rows if we used an initialized model
+  # Handle model initialization using modifyList
   if (!missing(model_init) && !is.null(model_init)) {
-    idx                        <- seq_len(nrow(model_init$alpha))
-    mat_init$alpha[idx, ]      <- model_init$alpha
-    mat_init$mu[idx, ]         <- model_init$mu
-    mat_init$mu2[idx, ]        <- model_init$mu2
-    mat_init$V[idx]            <- model_init$V[idx]
-    mat_init$residual_variance <- model_init$sigma2
-    mat_init$prior_weights     <- model_init$pi
+    mat_init_list <- as.list(mat_init)
+    model_init_list <- as.list(model_init)
+    
+    # Map field names between old and new conventions
+    if (!is.null(model_init_list$sigma2)) {
+      model_init_list$residual_variance <- model_init_list$sigma2
+    }
+    if (!is.null(model_init_list$pi)) {
+      model_init_list$prior_weights <- model_init_list$pi
+      model_init_list$pi <- NULL
+    }
+    
+    mat_init_list <- modifyList(mat_init_list, model_init_list)
+    mat_init <- mat_init_list
+    
+    # Reset KL and lbf to NA
+    mat_init$KL <- rep(as.numeric(NA), L)
+    mat_init$lbf <- rep(as.numeric(NA), L)
   }
 
   # Initialize fitted values
