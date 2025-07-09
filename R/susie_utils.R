@@ -493,7 +493,6 @@ get_purity = function (pos, X, Xcorr, squared = FALSE, n = 100,
 
     # Subsample the columns if necessary.
     if (length(pos) > n) {
-      set.seed(123)
       pos = sample(pos,n)
     }
 
