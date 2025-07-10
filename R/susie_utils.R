@@ -1122,49 +1122,6 @@ initialize_null_index <- function(null_weight, p){
   return(null_idx)
 }
 
-run_refine <- function(data, best_model, rerun, tol_improve = 0) {
-
-  cs_list <- susie_get_cs(best_model, X = data$X)$cs
-  if (is.null(cs_list) || length(cs_list) == 0) {
-    warning("The base model produced no credible sets; skipping refinement.")
-    return(best_model)
-  }
-
-  improved <- TRUE
-  while (improved) {
-
-    improved  <- FALSE
-    cs_list   <- susie_get_cs(best_model, X = data$X)$cs
-    elbo_best <- best_model$elbo[length(best_model$elbo)]
-
-    for (cs in cs_list) {
-
-      ## 1. Side run with CS variables zeroed out
-      pw <- best_model$pi
-      pw[cs] <- 0
-      if (all(pw == 0)) next
-      pw <- pw / sum(pw)
-
-      side_model   <- rerun(pw, model_init = NULL)
-
-      ## 2. Warm-start full prior run
-      init_object           <- side_model[c("alpha", "mu", "mu2", "V", "sigma2")] # TODO: check on this does it make sense to use the already estimated sigma2?
-      init_object$pi        <- best_model$pi
-      class(init_object)    <- "susie"
-      candidate             <- rerun(best_model$pi, model_init = init_object)
-
-      ## 3. Compare ELBOs
-      elbo_cand <- candidate$elbo[length(candidate$elbo)]
-      if (elbo_cand - elbo_best > tol_improve) {
-        best_model <- candidate
-        elbo_best  <- elbo_cand
-        improved   <- TRUE
-        break
-      }
-    }
-  }
-  best_model
-}
 
 # Helper function to update variance components and derived quantities
 update_model_variance <- function(data, model, lowerbound, upperbound) {

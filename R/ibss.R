@@ -197,6 +197,11 @@ ibss_finalize <- function(data,
   # Posterior Inclusion Probabilities
   model$pip <- get_pip(data, model, coverage, min_abs_corr, prior_tol)
 
+  # Set pi field from prior_weights
+  if (is.null(model$pi)) {
+    model$pi <- model$prior_weights
+  }
+
   # Assign Variable Names
   model <- get_variable_names(data, model, null_weight)
 

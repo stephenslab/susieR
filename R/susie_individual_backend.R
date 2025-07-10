@@ -59,8 +59,7 @@ convert_individual_to_ss_non_sparse <- function(individual_data, non_sparse_meth
     y_mean     = mean_y),
     class = class_vector)
 
-  # Copy important attributes from X to XtX
-  # TODO: check this
+  # Copy attributes from X to XtX
   attr(ss_data$XtX, "d") <- attr(X, "d")
   attr(ss_data$XtX, "scaled:scale") <- attr(X, "scaled:scale")
 
@@ -124,7 +123,7 @@ est_residual_variance.individual <- function(data, model){
   if(resid_var < 0){
     stop("est_residual_variance.individual() failed: the estimated value is negative")
   }
-  return(resid_var) #TODO: Instead of stopping, we could give warning() and run MoM estimator instead.
+  return(resid_var)
 }
 
 # Single Effect Update
@@ -272,6 +271,10 @@ update_derived_quantities.individual <- function(data, model) {
 # Check convergence for individual data (uses ELBO)
 check_convergence.individual <- function(data, model_prev, model_current, elbo_prev, elbo_current, tol) {
   # Standard ELBO-based convergence (uses pre-computed ELBO values)
+  # Handle case where elbo_prev is NA (first iteration)
+  if (is.na(elbo_prev)) {
+    return(FALSE)  # Cannot converge on first iteration
+  }
   return(elbo_current - elbo_prev < tol)
 }
 

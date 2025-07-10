@@ -22,7 +22,6 @@ susie_new <- function(X, y, L = min(10, ncol(X)),
                       verbose = FALSE,
                       track_fit = FALSE,
                       residual_variance_lowerbound = var(drop(y))/1e4,
-                      refine = FALSE,
                       n_purity = 100) {
 
   # Validate method arguments
@@ -33,7 +32,7 @@ susie_new <- function(X, y, L = min(10, ncol(X)),
   data <- susie_constructor(X, y, intercept, standardize, na.rm,
                             prior_weights, null_weight, non_sparse_method)
 
-  # Run SuSiE engine (use updated prior_weights and null_weight from data object)
+  # Run SuSiE engine
   model <- susie_engine(data, L, intercept, standardize, scaled_prior_variance,
                         residual_variance, data$prior_weights, data$null_weight,
                         model_init, estimate_prior_variance, estimate_prior_method,
@@ -41,7 +40,7 @@ susie_new <- function(X, y, L = min(10, ncol(X)),
                         residual_variance_lowerbound, residual_variance_upperbound,
                         max_iter, tol, verbose, track_fit, coverage, min_abs_corr,
                         prior_tol, n_purity, compute_univariate_zscore,
-                        check_prior = FALSE, refine)
+                        check_prior = FALSE)
 
   return(model)
 }
@@ -73,8 +72,7 @@ susie_ss <- function(XtX, Xty, yty, n,
                      n_purity = 100,
                      verbose = FALSE,
                      track_fit = FALSE,
-                     check_prior = FALSE,
-                     refine = FALSE, ...) {
+                     check_prior = FALSE, ...) {
 
   # Validate method arguments
   non_sparse_method <- match.arg(non_sparse_method)
@@ -85,7 +83,7 @@ susie_ss <- function(XtX, Xty, yty, n,
                                maf, maf_thresh, standardize, r_tol, check_input,
                                prior_weights, null_weight, non_sparse_method)
 
-  # Run SuSiE engine (use updated prior_weights and null_weight from data object)
+  # Run SuSiE engine
   model <- susie_engine(data, L, intercept = FALSE, standardize, scaled_prior_variance,
                         residual_variance, data$prior_weights, data$null_weight,
                         model_init, estimate_prior_variance, estimate_prior_method,
@@ -93,7 +91,7 @@ susie_ss <- function(XtX, Xty, yty, n,
                         residual_variance_lowerbound, residual_variance_upperbound,
                         max_iter, tol, verbose, track_fit, coverage, min_abs_corr,
                         prior_tol, n_purity, compute_univariate_zscore = FALSE,
-                        check_prior, refine)
+                        check_prior)
 
   return(model)
 }
