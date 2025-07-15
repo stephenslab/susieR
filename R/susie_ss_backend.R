@@ -50,23 +50,23 @@ validate_prior.ss <- function(data, model, check_prior, ...) {
 }
 
 # Posterior expected log-likelihood for a single effect regression
-SER_posterior_e_loglik.ss = function (data, model, XtR, Eb, Eb2)
-  return(-0.5/model$sigma2 * (-2*sum(Eb*XtR) + sum(attr(data$XtX,"d") * as.vector(Eb2))))
+SER_posterior_e_loglik.ss <- function (data, model, XtR, Eb, Eb2)
+  return(-0.5 / model$sigma2 * (-2 * sum(Eb * XtR) + sum(attr(data$XtX, "d") * as.vector(Eb2))))
 
 # Expected Squared Residuals
 get_ER2.ss <- function (data, model) {
-  B = model$alpha * model$mu
-  XB2 = sum((B %*% data$XtX) * B)
-  betabar = colSums(B)
-  d = attr(data$XtX,"d")
-  postb2 = model$alpha * model$mu2 # Posterior second moment.
-  return(data$yty - 2*sum(betabar * data$Xty) + sum(betabar * (data$XtX %*% betabar)) -
+  B <- model$alpha * model$mu
+  XB2 <- sum((B %*% data$XtX) * B)
+  betabar <- colSums(B)
+  d <- attr(data$XtX, "d")
+  postb2 <- model$alpha * model$mu2 # Posterior second moment.
+  return(data$yty - 2 * sum(betabar * data$Xty) + sum(betabar * (data$XtX %*% betabar)) -
            XB2 + sum(d * t(postb2)))
 }
 
 # Expected loglikelihood for a susie fit.
 Eloglik.ss <- function (data, model) {
-  return(-data$n/2*log(2*pi*model$sigma2) - 1/(2*model$sigma2) * get_ER2(data, model))
+  return(-data$n / 2 * log(2 * pi * model$sigma2) - 1 / (2 * model$sigma2) * get_ER2(data, model))
 }
 
 # Get Objective
@@ -83,7 +83,7 @@ get_objective.ss <- function (data, model, verbose = FALSE) {
 
 # Estimate Residual Variance
 est_residual_variance.ss <- function(data, model){
-  resid_var <- (1/data$n)*get_ER2(data,model)
+  resid_var <- (1 / data$n) * get_ER2(data, model)
   if(resid_var < 0){
     stop("est_residual_variance.ss() failed: the estimated value is negative")
   }

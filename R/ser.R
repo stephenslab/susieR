@@ -1,7 +1,7 @@
 # dXtX = attr(data$X, "d")
 # Xty = compute_Xty(data$X,R) we will compute this outside of SER and then plug in Xty into SER
 
-single_effect_regression =
+single_effect_regression <-
   function (Xty,
             dXtX,
             V,
@@ -10,47 +10,47 @@ single_effect_regression =
             optimize_V = c("none", "optim", "uniroot", "EM", "simple"),
             check_null_threshold = 0) {
 
-    optimize_V = match.arg(optimize_V)
-    betahat = (1/dXtX) * Xty
-    shat2 = residual_variance/dXtX
+    optimize_V <- match.arg(optimize_V)
+    betahat <- (1 / dXtX) * Xty
+    shat2 <- residual_variance / dXtX
 
     # Check prior weights
     if (is.null(prior_weights))
-      prior_weights = rep(1/length(dXtX),length(dXtX))
+      prior_weights <- rep(1 / length(dXtX), length(dXtX))
 
     # Optimize Prior Variance of lth effect
     if (optimize_V != "EM" && optimize_V != "none")
-      V = optimize_prior_variance(optimize_V,betahat,shat2,prior_weights,
-                                  alpha = NULL,post_mean2 = NULL,V_init = V,
+      V <- optimize_prior_variance(optimize_V, betahat, shat2, prior_weights,
+                                  alpha = NULL, post_mean2 = NULL, V_init = V,
                                   check_null_threshold = check_null_threshold)
 
     # log(bf) for each SNP
-    lbf = dnorm(betahat,0,sqrt(V + shat2),log = TRUE) -
-      dnorm(betahat,0,sqrt(shat2),log = TRUE)
-    lpo = lbf + log(prior_weights + sqrt(.Machine$double.eps))
+    lbf <- dnorm(betahat, 0, sqrt(V + shat2), log = TRUE) -
+      dnorm(betahat, 0, sqrt(shat2), log = TRUE)
+    lpo <- lbf + log(prior_weights + sqrt(.Machine$double.eps))
 
     # Deal with special case of infinite shat2 (e.g., happens if X does
     # not vary).
-    lbf[is.infinite(shat2)] = 0
-    lpo[is.infinite(shat2)] = 0
-    maxlpo = max(lpo)
+    lbf[is.infinite(shat2)] <- 0
+    lpo[is.infinite(shat2)] <- 0
+    maxlpo <- max(lpo)
 
     # w is proportional to BF, but subtract max for numerical stability.
-    w_weighted = exp(lpo - maxlpo)
+    w_weighted <- exp(lpo - maxlpo)
 
     # Posterior prob for each SNP.
-    weighted_sum_w = sum(w_weighted)
-    alpha = w_weighted / weighted_sum_w
-    post_var = (1/V + dXtX/residual_variance)^(-1) # Posterior variance.
-    post_mean = (1/residual_variance) * post_var * Xty
-    post_mean2 = post_var + post_mean^2 # Second moment.
+    weighted_sum_w <- sum(w_weighted)
+    alpha <- w_weighted / weighted_sum_w
+    post_var <- (1 / V + dXtX / residual_variance)^(-1) # Posterior variance.
+    post_mean <- (1 / residual_variance) * post_var * Xty
+    post_mean2 <- post_var + post_mean^2 # Second moment.
 
     # BF for single effect model.
-    lbf_model = maxlpo + log(weighted_sum_w)
+    lbf_model <- maxlpo + log(weighted_sum_w)
 
     if(optimize_V == "EM")
-      V = optimize_prior_variance(optimize_V,betahat,shat2,prior_weights,
-                                  alpha,post_mean2,
+      V <- optimize_prior_variance(optimize_V, betahat, shat2, prior_weights,
+                                  alpha, post_mean2,
                                   check_null_threshold = check_null_threshold)
 
     return(list(alpha = alpha,
@@ -63,33 +63,33 @@ single_effect_regression =
   }
 
 # Estimate prior variance.
-est_V_uniroot = function (betahat, shat2, prior_weights) {
-  V.u = uniroot(negloglik.grad.logscale,c(-10,10),extendInt = "upX",
-                betahat = betahat,shat2 = shat2,prior_weights = prior_weights)
+est_V_uniroot <- function (betahat, shat2, prior_weights) {
+  V.u <- uniroot(negloglik.grad.logscale, c(-10, 10), extendInt = "upX",
+                betahat = betahat, shat2 = shat2, prior_weights = prior_weights)
   return(exp(V.u$root))
 }
 
-optimize_prior_variance = function (optimize_V, betahat, shat2, prior_weights,
+optimize_prior_variance <- function (optimize_V, betahat, shat2, prior_weights,
                                     alpha = NULL, post_mean2 = NULL,
                                     V_init = NULL, check_null_threshold = 0) {
-  V = V_init
+  V <- V_init
   if (optimize_V != "simple") {
     if(optimize_V == "optim") {
-      lV = optim(par = log(max(c(betahat^2-shat2,1),na.rm = TRUE)),
-                 fn = neg.loglik.logscale,betahat = betahat,shat2 = shat2,
-                 prior_weights = prior_weights,method = "Brent",lower = -30,
+      lV <- optim(par = log(max(c(betahat^2 - shat2, 1), na.rm = TRUE)),
+                 fn = neg.loglik.logscale, betahat = betahat, shat2 = shat2,
+                 prior_weights = prior_weights, method = "Brent", lower = -30,
                  upper = 15)$par
       ## if the estimated one is worse than current one, don't change it.
-      if(neg.loglik.logscale(lV, betahat = betahat,shat2 = shat2,prior_weights = prior_weights) >
+      if(neg.loglik.logscale(lV, betahat = betahat, shat2 = shat2, prior_weights = prior_weights) >
          neg.loglik.logscale(log(V), betahat = betahat,
-                             shat2 = shat2,prior_weights = prior_weights)){
-        lV = log(V)
+                             shat2 = shat2, prior_weights = prior_weights)){
+        lV <- log(V)
       }
-      V = exp(lV)
+      V <- exp(lV)
     } else if (optimize_V == "uniroot")
-      V = est_V_uniroot(betahat,shat2,prior_weights)
+      V <- est_V_uniroot(betahat, shat2, prior_weights)
     else if (optimize_V == "EM")
-      V = sum(alpha * post_mean2)
+      V <- sum(alpha * post_mean2)
     else
       stop("Invalid option for optimize_V method")
   }
@@ -105,9 +105,9 @@ optimize_prior_variance = function (optimize_V, betahat, shat2, prior_weights,
   # non-zeros estimates unless they are indeed small enough to be
   # neglible. See more intuition at
   # https://stephens999.github.io/fiveMinuteStats/LR_and_BF.html
-  if (loglik(0,betahat,shat2,prior_weights) +
-      check_null_threshold >= loglik(V,betahat,shat2,prior_weights))
-    V = 0
+  if (loglik(0, betahat, shat2, prior_weights) +
+      check_null_threshold >= loglik(V, betahat, shat2, prior_weights))
+    V <- 0
 
   return(V)
 }
@@ -120,63 +120,63 @@ optimize_prior_variance = function (optimize_V, betahat, shat2, prior_weights,
 #
 #' @importFrom Matrix colSums
 #' @importFrom stats dnorm
-loglik = function (V, betahat, shat2, prior_weights) {
+loglik <- function (V, betahat, shat2, prior_weights) {
 
   #log(bf) for each SNP
-  lbf = dnorm(betahat,0,sqrt(V+shat2),log = TRUE) -
-    dnorm(betahat,0,sqrt(shat2),log = TRUE)
-  lpo = lbf + log(prior_weights + sqrt(.Machine$double.eps))
+  lbf <- dnorm(betahat, 0, sqrt(V + shat2), log = TRUE) -
+    dnorm(betahat, 0, sqrt(shat2), log = TRUE)
+  lpo <- lbf + log(prior_weights + sqrt(.Machine$double.eps))
 
   # Deal with special case of infinite shat2 (e.g., happens if X does
   # not vary).
-  lbf[is.infinite(shat2)] = 0
-  lpo[is.infinite(shat2)] = 0
+  lbf[is.infinite(shat2)] <- 0
+  lpo[is.infinite(shat2)] <- 0
 
-  maxlpo = max(lpo)
-  w_weighted = exp(lpo - maxlpo)
-  weighted_sum_w = sum(w_weighted)
+  maxlpo <- max(lpo)
+  w_weighted <- exp(lpo - maxlpo)
+  weighted_sum_w <- sum(w_weighted)
   return(log(weighted_sum_w) + maxlpo)
 }
 
-neg.loglik.logscale = function(lV,betahat,shat2,prior_weights)
-  -loglik(exp(lV),betahat,shat2,prior_weights)
+neg.loglik.logscale <- function(lV, betahat, shat2, prior_weights)
+  -loglik(exp(lV), betahat, shat2, prior_weights)
 
 #' @importFrom Matrix colSums
 #' @importFrom stats dnorm
-loglik.grad = function(V, betahat, shat2, prior_weights) {
+loglik.grad <- function(V, betahat, shat2, prior_weights) {
 
   # log(bf) for each SNP.
-  lbf = dnorm(betahat,0,sqrt(V + shat2),log = TRUE) -
-    dnorm(betahat,0,sqrt(shat2),log = TRUE)
-  lpo = lbf + log(prior_weights + sqrt(.Machine$double.eps))
+  lbf <- dnorm(betahat, 0, sqrt(V + shat2), log = TRUE) -
+    dnorm(betahat, 0, sqrt(shat2), log = TRUE)
+  lpo <- lbf + log(prior_weights + sqrt(.Machine$double.eps))
 
   # Deal with special case of infinite shat2 (e.g., happens if X does
   # not vary).
-  lbf[is.infinite(shat2)] = 0
-  lpo[is.infinite(shat2)] = 0
+  lbf[is.infinite(shat2)] <- 0
+  lpo[is.infinite(shat2)] <- 0
 
-  maxlpo = max(lpo)
-  w_weighted = exp(lpo - maxlpo)
-  weighted_sum_w = sum(w_weighted)
-  alpha = w_weighted / weighted_sum_w
-  return(sum(alpha * lbf.grad(V,shat2,betahat^2/shat2)))
+  maxlpo <- max(lpo)
+  w_weighted <- exp(lpo - maxlpo)
+  weighted_sum_w <- sum(w_weighted)
+  alpha <- w_weighted / weighted_sum_w
+  return(sum(alpha * lbf.grad(V, shat2, betahat^2 / shat2)))
 }
 
 # Define loglikelihood and gradient as function of lV:=log(V)
 # to improve numerical optimization
-negloglik.grad.logscale = function (lV, betahat, shat2, prior_weights)
-  -exp(lV) * loglik.grad(exp(lV),betahat,shat2,prior_weights)
+negloglik.grad.logscale <- function (lV, betahat, shat2, prior_weights)
+  -exp(lV) * loglik.grad(exp(lV), betahat, shat2, prior_weights)
 
 # Vector of gradients of logBF_j for each j, with respect to prior
 # variance V.
-lbf.grad = function (V, shat2, T2) {
-  l = 0.5*(1/(V + shat2)) * ((shat2/(V + shat2))*T2 - 1)
-  l[is.nan(l)] = 0
+lbf.grad <- function (V, shat2, T2) {
+  l <- 0.5 * (1 / (V + shat2)) * ((shat2 / (V + shat2)) * T2 - 1)
+  l[is.nan(l)] <- 0
   return(l)
 }
 
-lbf = function (V, shat2, T2) {
-  l = 0.5*log(shat2/(V + shat2)) + 0.5*T2*(V/(V + shat2))
-  l[is.nan(l)] = 0
+lbf <- function (V, shat2, T2) {
+  l <- 0.5 * log(shat2 / (V + shat2)) + 0.5 * T2 * (V / (V + shat2))
+  l[is.nan(l)] <- 0
   return(l)
 }

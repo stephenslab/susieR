@@ -39,7 +39,7 @@ susie_constructor <- function(X, y,
       stop("Null weight must be between 0 and 1")
     
     if (is.null(prior_weights))
-      prior_weights <- c(rep(1/ncol(X) * (1 - null_weight), ncol(X)), null_weight)
+      prior_weights <- c(rep(1 / ncol(X) * (1 - null_weight), ncol(X)), null_weight)
     else
       prior_weights <- c(prior_weights * (1 - null_weight), null_weight)
 
@@ -111,9 +111,9 @@ susie_ss_constructor <- function(XtX, Xty, yty, n,
     stop("XtX must be a numeric dense or sparse matrix")
 
   if (ncol(XtX) != length(Xty))
-    stop(paste0("The dimension of XtX (",nrow(XtX)," by ",ncol(XtX),
-                ") does not agree with expected (",length(Xty)," by ",
-                length(Xty),")"))
+    stop(paste0("The dimension of XtX (", nrow(XtX), " by ", ncol(XtX),
+                ") does not agree with expected (", length(Xty), " by ",
+                length(Xty), ")"))
 
   if (ncol(XtX) > 1000 & !requireNamespace("Rfast", quietly = TRUE))
     warning_message("For large R or large XtX, consider installing the ",
@@ -122,7 +122,7 @@ susie_ss_constructor <- function(XtX, Xty, yty, n,
   # Ensure XtX is symmetric
   if (!is_symmetric_matrix(XtX)) {
     warning("XtX not symmetric; using (XtX + t(XtX))/2")
-    XtX <- (XtX + t(XtX))/2
+    XtX <- (XtX + t(XtX)) / 2
   }
 
   # Apply MAF filter if provided
@@ -171,9 +171,9 @@ susie_ss_constructor <- function(XtX, Xty, yty, n,
     if (null_weight < 0 || null_weight >= 1)
       stop("Null weight must be between 0 and 1")
     if (is.null(prior_weights))
-      prior_weights <- c(rep(1/ncol(XtX)*(1-null_weight), ncol(XtX)), null_weight)
+      prior_weights <- c(rep(1 / ncol(XtX) * (1 - null_weight), ncol(XtX)), null_weight)
     else
-      prior_weights <- c(prior_weights*(1 - null_weight), null_weight)
+      prior_weights <- c(prior_weights * (1 - null_weight), null_weight)
     XtX <- cbind(rbind(XtX, 0), 0)
     Xty <- c(Xty, 0)
     if (length(X_colmeans) == 1)
@@ -197,9 +197,9 @@ susie_ss_constructor <- function(XtX, Xty, yty, n,
   # Standardize if requested
   if (standardize) {
     dXtX <- diag(XtX)
-    csd <- sqrt(dXtX/(n-1))
+    csd <- sqrt(dXtX / (n - 1))
     csd[csd == 0] <- 1
-    XtX <- t((1/csd) * XtX) / csd
+    XtX <- t((1 / csd) * XtX) / csd
     Xty <- Xty / csd
   } else {
     csd <- rep(1, length = p)

@@ -153,4 +153,3 @@ handle_convergence_and_variance.default <- function(data, model, model_prev, elb
                                                     tol, estimate_residual_variance,
                                                     residual_variance_lowerbound, residual_variance_upperbound)
   stop("handle_convergence_and_variance: no method for class '", class(data)[1], "'")
-

@@ -119,7 +119,7 @@ get_objective.individual <- function(data, model, verbose = FALSE) {
 
 # Estimate Residual Variance
 est_residual_variance.individual <- function(data, model){
-  resid_var <- (1/data$n)*get_ER2(data,model)
+  resid_var <- (1 / data$n) * get_ER2(data, model)
   if(resid_var < 0){
     stop("est_residual_variance.individual() failed: the estimated value is negative")
   }
@@ -179,8 +179,8 @@ get_scale_factors.individual <- function(data){
 # Get intercept
 get_intercept.individual <- function(data, model, intercept){
   if (intercept) {
-    return(data$mean_y - sum(attr(data$X,"scaled:center") *
-                                 (colSums(model$alpha * model$mu)/attr(data$X,"scaled:scale"))))
+    return(data$mean_y - sum(attr(data$X, "scaled:center") *
+                                 (colSums(model$alpha * model$mu) / attr(data$X, "scaled:scale"))))
   } else {
     return(0)
   }
