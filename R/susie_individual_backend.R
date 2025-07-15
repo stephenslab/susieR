@@ -69,16 +69,6 @@ convert_individual_to_ss_non_sparse <- function(individual_data, non_sparse_meth
   return(ss_data)
 }
 
-# Extract core parameters across iterations
-susie_extract_core.individual <- function(data, model, tracking, iter, track_fit, ...) {
-  if (isTRUE(track_fit)) {
-    tracking[[iter]] <- list(alpha = model$alpha,
-                             niter = iter,
-                             V = model$V,
-                             sigma2 = model$sigma2)
-  }
-  return(tracking)
-}
 
 # Validate prior variance
 validate_prior.individual <- function(data, model, check_prior, ...) {

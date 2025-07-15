@@ -1172,3 +1172,14 @@ create_matrix_initialization <- function(p, L, scaled_prior_variance, var_y, res
   
   return(mat_init)
 }
+
+# Extract and save core model parameters for tracking across iterations
+susie_extract_core <- function(data, model, tracking, iter, track_fit, ...) {
+  if (isTRUE(track_fit)) {
+    tracking[[iter]] <- list(alpha = model$alpha,
+                             niter = iter,
+                             V = model$V,
+                             sigma2 = model$sigma2)
+  }
+  return(tracking)
+}

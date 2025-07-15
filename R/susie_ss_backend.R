@@ -17,16 +17,6 @@ get_var_y.ss <- function(data, ...) {
   return(data$yty / (data$n - 1))
 }
 
-# Extract core parameters across iterations
-susie_extract_core.ss <- function(data, model, tracking, iter, track_fit, ...) {
-  if (isTRUE(track_fit)) {
-    tracking[[iter]] <- list(alpha = model$alpha,
-                             niter = iter,
-                             V = model$V,
-                             sigma2 = model$sigma2)
-  }
-  return(tracking)
-}
 
 # Validate Prior Variance
 validate_prior.ss <- function(data, model, check_prior, ...) {
