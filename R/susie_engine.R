@@ -1,4 +1,3 @@
-
 susie_engine <- function(data,
                          L, intercept = TRUE, standardize = TRUE,
                          scaled_prior_variance, residual_variance,

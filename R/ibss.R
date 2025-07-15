@@ -1,11 +1,4 @@
-# This file contains the three core functions for SuSiE (and its modifications):
-# 1) ibss_initialize(), 2) ibss_fit(), and 3) ibss_finalize(). All of these
-# functions make up the main workhorse "susie_engine()" function.
-
-
-### Initialization ###
-
-# This function initializes the SuSiE model object
+# Core IBSS functions: ibss_initialize(), ibss_fit(), and ibss_finalize()
 
 ibss_initialize <- function(data,
                             L                     = min(10, data$p),
@@ -111,9 +104,7 @@ ibss_initialize <- function(data,
   # Set null index (for refine step)
   null_index <- initialize_null_index(null_weight, p)
 
-  # TODO: Make generic function for nonsparse methods (inf/ash)
-
-  # Return assembled SuSiE object (this can be cleaned up later -- works for now)
+  # Return assembled SuSiE object
   model <- c(
     mat_init,
     list(null_index = null_index),
@@ -124,11 +115,6 @@ ibss_initialize <- function(data,
 
   return(model)
 }
-
-
-### Fitting ###
-
-# This function updates each of the L effects
 
 ibss_fit = function(data, model,
                     estimate_prior_variance = TRUE,
@@ -156,11 +142,6 @@ ibss_fit = function(data, model,
   return(model)
 }
 
-### Finalize ###
-
-# This function takes the final SuSiE model object and appends credible sets,
-# posterior inclusion probabilities, and runs other post-processing steps.
-
 ibss_finalize <- function(data,
                           model,
                           coverage               = 0.95,
@@ -178,8 +159,6 @@ ibss_finalize <- function(data,
                           tracking               = NULL) {
 
   # Append ELBO & iteration count to model output
-  #model$elbo  <- elbo[2:(iter + 1)] # consider changing this to (susie_ss.R L262 format)
-                                    # this would instead remove infinite values + NA
   model$niter <- iter
 
   # Intercept & Fitted Values
@@ -192,7 +171,7 @@ ibss_finalize <- function(data,
     model$trace = tracking
 
   # Credible Sets
-  model$sets <- get_cs(data, model, coverage, min_abs_corr, n_purity) # TODO: Check on median_abs_corr parameter
+  model$sets <- get_cs(data, model, coverage, min_abs_corr, n_purity)
 
   # Posterior Inclusion Probabilities
   model$pip <- get_pip(data, model, coverage, min_abs_corr, prior_tol)
@@ -211,4 +190,3 @@ ibss_finalize <- function(data,
 
   return(model)
 }
-

@@ -1,4 +1,4 @@
-### Individual-level data backend methods ###
+# Individual-level data backend methods
 
 # Initialize fitted values
 initialize_fitted.individual <- function(data, alpha, mu) {
@@ -299,4 +299,3 @@ handle_convergence_and_variance.individual <- function(data, model, model_prev, 
   
   return(list(data = data, model = model, converged = converged))
 }
-

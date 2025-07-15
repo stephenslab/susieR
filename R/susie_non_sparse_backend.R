@@ -1,5 +1,4 @@
-### Non-sparse backend methods ###
-# Implements infinitesimal (ss_inf) and adaptive shrinkage (ss_ash) methods
+# Non-sparse backend methods: infinitesimal (ss_inf) and adaptive shrinkage (ss_ash)
 
 # Compute eigenvalue decomposition for non-sparse methods
 compute_eigen_decomposition <- function(XtX, n) {
@@ -17,12 +16,9 @@ compute_eigen_decomposition <- function(XtX, n) {
 # Method of Moments variance estimation for non-sparse methods
 MoM <- function(alpha, mu, omega, sigma2, tau2, n, V, Dsq, VtXty, Xty, yty,
                 est_sigma2, est_tau2, verbose) {
-  # Subroutine to estimate sigma^2, tau^2 using MoM
-  L <- nrow(mu)  # Note: mu is L×p format
+  L <- nrow(mu)
   p <- ncol(mu)
 
-  ### Compute A. corresponds to the matrix in equation (37) of the supplement:
-  ### where Tr(X'X) = sum(Dsq) and Tr(X'X)^2 = sum(Dsq^2)
   A <- matrix(0, nrow = 2, ncol = 2)
   A[1, 1] <- n
   A[1, 2] <- sum(Dsq)
@@ -30,9 +26,9 @@ MoM <- function(alpha, mu, omega, sigma2, tau2, n, V, Dsq, VtXty, Xty, yty,
   A[2, 2] <- sum(Dsq^2)
 
   # Compute diag(V'MV)
-  b <- colSums(mu * alpha)  # equation 48
+  b <- colSums(mu * alpha)
   Vtb <- t(V) %*% b
-  diagVtMV <- Vtb^2  # portion of equation 51 + 52
+  diagVtMV <- Vtb^2
   tmpD <- rep(0, p)
 
   for (l in seq_len(L)) {
@@ -46,10 +42,9 @@ MoM <- function(alpha, mu, omega, sigma2, tau2, n, V, Dsq, VtXty, Xty, yty,
 
   # Compute x
   x <- rep(0, 2)
-  x[1] <- yty - 2 * sum(b * Xty) + sum(Dsq * diagVtMV)  # equation 51
-  x[2] <- sum(Xty^2) - 2 * sum(Vtb * VtXty * Dsq) + sum(Dsq^2 * diagVtMV)  # equation 52
+  x[1] <- yty - 2 * sum(b * Xty) + sum(Dsq * diagVtMV)
+  x[2] <- sum(Xty^2) - 2 * sum(Vtb * VtXty * Dsq) + sum(Dsq^2 * diagVtMV)
 
-  # Solves system of equations from equation 37
   if (est_tau2) {
     sol <- solve(A, x)
     if (sol[1] > 0 && sol[2] > 0) {
@@ -72,97 +67,81 @@ MoM <- function(alpha, mu, omega, sigma2, tau2, n, V, Dsq, VtXty, Xty, yty,
 }
 
 # Optimize prior variance for non-sparse methods
-# Non-sparse methods use a fundamentally different objective that operates
-# directly on Omega-weighted quantities with log-sum-exp formulation
 optimize_prior_variance_non_sparse <- function(V_init, XtOmegar, diagXtOmegaX, prior_weights, 
                                                bounds = c(0, 1)) {
   p <- length(XtOmegar)
   
-  # Prior log probabilities
   logpi0 <- if (!is.null(prior_weights)) {
     log(prior_weights + sqrt(.Machine$double.eps))
   } else {
     rep(log(1/p), p)
   }
   
-  # Objective function: negative log marginal likelihood
-  # Uses log-sum-exp of Omega-weighted quantities
   objective <- function(V) {
     -matrixStats::logSumExp(-0.5 * log(1 + V * diagXtOmegaX) +
                               V * XtOmegar^2 / (2 * (1 + V * diagXtOmegaX)) +
                               logpi0)
   }
   
-  # Optimize on original scale with specified bounds
   res <- optim(par = V_init,
                fn = objective,
                method = "Brent",
                lower = bounds[1],
                upper = bounds[2])
   
-  # Return optimized value if convergence succeeded
   if (!is.null(res$par) && res$convergence == 0) {
     return(res$par)
   } else {
-    return(V_init)  # Return initial value if optimization failed
+    return(V_init)
   }
 }
 
-# Single Effect Update for ss_inf (MATHEMATICAL EQUIVALENT to existing implementation)
+# Single Effect Update for ss_inf
 single_effect_update.ss_inf <- function(data, model, l,
                                        optimize_V, check_null_threshold) {
   
-  # Use L×p format directly (same as susieR 2.0)
-  alpha <- model$alpha   # L×p matrix (posterior inclusion probabilities)
-  mu <- model$mu         # L×p matrix
+  alpha <- model$alpha
+  mu <- model$mu
   
-  # Extract data components (use derived quantities if available)
-  V <- data$eigen_vectors    # p×p matrix
-  Dsq <- data$eigen_values   # p-vector
-  VtXty <- data$VtXty        # p-vector
-  Xty <- data$Xty            # p-vector
+  V <- data$eigen_vectors
+  Dsq <- data$eigen_values
+  VtXty <- data$VtXty
+  Xty <- data$Xty
   n <- data$n
   p <- data$p
   L <- nrow(alpha)
   
-  # Current variance components
   sigma2 <- model$sigma2
   tau2 <- if (is.null(model$tau2)) 0 else model$tau2
   
-  # Use precomputed derived quantities if available, otherwise compute
   if (!is.null(data$diagXtOmegaX) && !is.null(data$XtOmegay)) {
     diagXtOmegaX <- data$diagXtOmegaX
     XtOmegay <- data$XtOmegay
   } else {
-    # Compute variance and precision matrices
     var <- tau2 * Dsq + sigma2
     diagXtOmegaX <- rowSums(sweep(V^2, 2, (Dsq / var), `*`))
     XtOmegay <- V %*% (VtXty / var)
   }
   
-  # Single Effect Regression for effect l (EXACT algorithm from susie_inf.R)
   b <- colSums(mu * alpha) - mu[l, ] * alpha[l, ]
   XtOmegaXb <- V %*% ((t(V) %*% b) * Dsq / (tau2 * Dsq + sigma2))
   XtOmegar <- XtOmegay - XtOmegaXb
   
-  # Optimize prior variance if requested
   V_l <- model$V[l]
   if (!is.null(optimize_V) && optimize_V == "optim") {
     V_l <- optimize_prior_variance_non_sparse(V_l, XtOmegar, diagXtOmegaX, model$pi)
   }
   
-  # Call standard single_effect_regression with transformed inputs
   res <- single_effect_regression(
     Xty                  = XtOmegar,
     dXtX                 = diagXtOmegaX,
     V                    = V_l,
-    residual_variance    = 1,  # Key: set to 1 for non-sparse
+    residual_variance    = 1,
     prior_weights        = model$pi,
-    optimize_V           = "none",  # Optimization handled above
+    optimize_V           = "none",
     check_null_threshold = check_null_threshold
   )
   
-  # Update model components using results from single_effect_regression
   model$alpha[l, ]         <- res$alpha
   model$mu[l, ]            <- res$mu
   model$mu2[l, ]           <- res$mu2
@@ -170,18 +149,15 @@ single_effect_update.ss_inf <- function(data, model, l,
   model$lbf[l]             <- res$lbf_model
   model$lbf_variable[l, ]  <- res$lbf
   
-  # Calculate KL divergence (same as standard ss)
   model$KL[l] <- -res$lbf_model + SER_posterior_e_loglik(data, model, XtOmegar,
                                                           Eb  = model$alpha[l, ] * model$mu[l, ],
                                                           Eb2 = model$alpha[l, ] * model$mu2[l, ])
   
-  # Update fitted values to include current theta (if available)
-  # For infinitesimal model: XtXr = XtX %*% (b + theta)
   b <- colSums(model$alpha * model$mu)
   if (!is.null(model$theta)) {
     model$XtXr <- data$XtX %*% (b + model$theta)
   } else {
-    model$XtXr <- data$XtX %*% b  # Fallback to main effects only
+    model$XtXr <- data$XtX %*% b
   }
   
   return(model)
@@ -212,25 +188,19 @@ initialize_fitted.ss_ash <- initialize_fitted.ss_inf
 
 # Update variance components for ss_inf (Method of Moments)
 update_variance_components.ss_inf <- function(data, model) {
-  # Use L×p format directly
-  alpha <- model$alpha   # L×p matrix (posterior inclusion probabilities)
-  mu <- model$mu         # L×p matrix
-  
-  # Initialize omega matrix (needed for MoM)
+  alpha <- model$alpha
+  mu <- model$mu
   p <- data$p
   L <- nrow(alpha)
   
-  # Current variance components
   sigma2 <- model$sigma2
   tau2 <- if (is.null(model$tau2)) 0 else model$tau2
   
-  # Compute omega matrix
   var <- tau2 * data$eigen_values + sigma2
   diagXtOmegaX <- rowSums(sweep(data$eigen_vectors^2, 2, (data$eigen_values / var), `*`))
   omega <- matrix(rep(diagXtOmegaX, L), nrow = L, ncol = p, byrow = TRUE) + 
            matrix(rep(1 / model$V, p), nrow = L, ncol = p, byrow = FALSE)
   
-  # Method of Moments variance estimation
   mom_result <- MoM(alpha, mu, omega, sigma2, tau2, data$n, 
                     data$eigen_vectors, data$eigen_values, data$VtXty, 
                     data$Xty, data$yty, 
@@ -242,19 +212,16 @@ update_variance_components.ss_inf <- function(data, model) {
 # Update variance components for ss_ash (same as ss_inf for now)
 update_variance_components.ss_ash <- update_variance_components.ss_inf
 
-# Update derived quantities for ss_inf (recompute var, diagXtOmegaX, XtOmegay, theta)
+# Update derived quantities for ss_inf
 update_derived_quantities.ss_inf <- function(data, model) {
-  # Update variance-dependent quantities after variance component changes
   sigma2 <- model$sigma2
   tau2 <- if (is.null(model$tau2)) 0 else model$tau2
   
-  # Recompute derived quantities
   var <- tau2 * data$eigen_values + sigma2
   data$var <- var
   data$diagXtOmegaX <- rowSums(sweep(data$eigen_vectors^2, 2, (data$eigen_values / var), `*`))
   data$XtOmegay <- data$eigen_vectors %*% (data$VtXty / var)
   
-  # Compute theta (random effects) using BLUP and store in data for transfer to model
   data$theta <- compute_theta_blup(data, model)
   
   return(data)
@@ -265,8 +232,6 @@ update_derived_quantities.ss_ash <- update_derived_quantities.ss_inf
 
 # Check convergence for ss_inf (uses PIP differences, not ELBO)
 check_convergence.ss_inf <- function(data, model_prev, model_current, elbo_prev, elbo_current, tol) {
-  # Non-sparse convergence based on maximum change in PIP (alpha) values
-  # This matches the original susie_inf convergence criterion
   PIP_diff <- max(abs(model_prev$alpha - model_current$alpha))
   return(PIP_diff < tol)
 }
@@ -276,18 +241,16 @@ check_convergence.ss_ash <- check_convergence.ss_inf
 
 # Update variance before convergence check for ss_inf
 update_variance_before_convergence.ss_inf <- function(data) {
-  # Non-sparse behavior: Update variance first, then check convergence
   return(TRUE)
 }
 
 # Update variance before convergence check for ss_ash (same as ss_inf)
 update_variance_before_convergence.ss_ash <- update_variance_before_convergence.ss_inf
 
-# Handle convergence and variance updates for ss_inf (non-sparse behavior)
+# Handle convergence and variance updates for ss_inf
 handle_convergence_and_variance.ss_inf <- function(data, model, model_prev, elbo_prev, elbo_current, 
                                                     tol, estimate_residual_variance, 
                                                     residual_variance_lowerbound, residual_variance_upperbound) {
-  # Non-sparse: Update variance first, then check convergence
   if (estimate_residual_variance) {
     result <- update_model_variance(data, model, residual_variance_lowerbound, residual_variance_upperbound)
     data <- result$data
@@ -304,45 +267,35 @@ handle_convergence_and_variance.ss_ash <- handle_convergence_and_variance.ss_inf
 
 # Compute theta (random effects) using BLUP for non-sparse methods
 compute_theta_blup <- function(data, model) {
-  # Use L×p format directly (same as susieR 2.0)
-  alpha <- model$alpha   # L×p matrix (posterior inclusion probabilities)
-  mu <- model$mu         # L×p matrix
-  
-  # Current variance components
+  alpha <- model$alpha
+  mu <- model$mu
   sigma2 <- model$sigma2
   tau2 <- if (is.null(model$tau2)) 0 else model$tau2
   
-  # Compute posterior means of main effects: b = colSums(mu * alpha)
   b <- colSums(mu * alpha)
   
-  # Compute XtOmegaXb using eigen decomposition
   var <- tau2 * data$eigen_values + sigma2
   XtOmegaXb <- data$eigen_vectors %*% ((t(data$eigen_vectors) %*% b) * data$eigen_values / var)
   
-  # Compute residual: XtOmegar = XtOmegay - XtOmegaXb
   XtOmegar <- data$XtOmegay - XtOmegaXb
   
-  # Compute theta using BLUP: theta = tau2 * XtOmegar
   theta <- tau2 * XtOmegar
   
   return(theta)
 }
 
-# Credible Sets for non-sparse methods (uses standard susie_get_cs format)
+# Credible Sets for non-sparse methods
 get_cs.ss_inf <- function(data, model, coverage, min_abs_corr, n_purity) {
   
   if (is.null(coverage) || is.null(min_abs_corr)) return(NULL)
   
-  # For non-sparse methods, we need to construct correlation matrix from eigen decomposition
   if (!is.null(data$XtX)) {
-    # Use XtX if available
     if (any(!(diag(data$XtX) %in% c(0,1)))) {
       Xcorr <- muffled_cov2cor(data$XtX)
     } else {
       Xcorr <- data$XtX
     }
   } else {
-    # Reconstruct correlation matrix from eigen decomposition
     LD <- (data$eigen_vectors %*% diag(data$eigen_values)) %*% t(data$eigen_vectors) / data$n
     if (any(!(diag(LD) %in% c(0,1)))) {
       Xcorr <- muffled_cov2cor(LD)
@@ -351,7 +304,6 @@ get_cs.ss_inf <- function(data, model, coverage, min_abs_corr, n_purity) {
     }
   }
   
-  # Use standard susie_get_cs function to ensure consistent output format
   return(susie_get_cs(model, coverage = coverage,
                       Xcorr = Xcorr,
                       min_abs_corr = min_abs_corr,
@@ -362,12 +314,11 @@ get_cs.ss_inf <- function(data, model, coverage, min_abs_corr, n_purity) {
 # Credible Sets for ss_ash (same as ss_inf)
 get_cs.ss_ash <- get_cs.ss_inf
 
-# Get marginal PIP for non-sparse methods (uses standard susie_get_pip format)
+# Get marginal PIP for non-sparse methods
 get_pip.ss_inf <- function(data, model, coverage, min_abs_corr, prior_tol) {
   
   if (is.null(coverage) || is.null(min_abs_corr)) return(NULL)
   
-  # Use standard susie_get_pip function to ensure consistent output format
   return(susie_get_pip(model, prune_by_cs = FALSE, prior_tol = prior_tol))
 }
 

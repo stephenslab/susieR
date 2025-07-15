@@ -1,4 +1,4 @@
-### Sufficient statistics data backend methods ###
+# Sufficient statistics data backend methods
 
 # Initialize fitted values
 initialize_fitted.ss <- function(data, alpha, mu) {
@@ -269,4 +269,3 @@ handle_convergence_and_variance.ss <- function(data, model, model_prev, elbo_pre
   
   return(list(data = data, model = model, converged = converged))
 }
-
