@@ -71,6 +71,43 @@ MoM <- function(alpha, mu, omega, sigma2, tau2, n, V, Dsq, VtXty, Xty, yty,
   return(list(sigma2 = sigma2, tau2 = tau2))
 }
 
+# Optimize prior variance for non-sparse methods
+# Non-sparse methods use a fundamentally different objective that operates
+# directly on Omega-weighted quantities with log-sum-exp formulation
+optimize_prior_variance_non_sparse <- function(V_init, XtOmegar, diagXtOmegaX, prior_weights, 
+                                               bounds = c(0, 1)) {
+  p <- length(XtOmegar)
+  
+  # Prior log probabilities
+  logpi0 <- if (!is.null(prior_weights)) {
+    log(prior_weights + sqrt(.Machine$double.eps))
+  } else {
+    rep(log(1/p), p)
+  }
+  
+  # Objective function: negative log marginal likelihood
+  # Uses log-sum-exp of Omega-weighted quantities
+  objective <- function(V) {
+    -matrixStats::logSumExp(-0.5 * log(1 + V * diagXtOmegaX) +
+                              V * XtOmegar^2 / (2 * (1 + V * diagXtOmegaX)) +
+                              logpi0)
+  }
+  
+  # Optimize on original scale with specified bounds
+  res <- optim(par = V_init,
+               fn = objective,
+               method = "Brent",
+               lower = bounds[1],
+               upper = bounds[2])
+  
+  # Return optimized value if convergence succeeded
+  if (!is.null(res$par) && res$convergence == 0) {
+    return(res$par)
+  } else {
+    return(V_init)  # Return initial value if optimization failed
+  }
+}
+
 # Single Effect Update for ss_inf (MATHEMATICAL EQUIVALENT to existing implementation)
 single_effect_update.ss_inf <- function(data, model, l,
                                        optimize_V, check_null_threshold) {
@@ -108,62 +145,35 @@ single_effect_update.ss_inf <- function(data, model, l,
   XtOmegaXb <- V %*% ((t(V) %*% b) * Dsq / (tau2 * Dsq + sigma2))
   XtOmegar <- XtOmegay - XtOmegaXb
   
-  # Get current effect size variance
+  # Optimize prior variance if requested
   V_l <- model$V[l]
-  
-  # Update Prior Variance V[l] using optimization (susie-inf only supports "optim")
-  # This corresponds to est_ssq = TRUE in the original susie_inf implementation
   if (!is.null(optimize_V) && optimize_V == "optim") {
-    # Prior probabilities (uniform for now)
-    logpi0 <- rep(log(1 / p), p)
-    
-    # Objective function for prior variance optimization
-    f <- function(x) {
-      -matrixStats::logSumExp(-0.5 * log(1 + x * diagXtOmegaX) +
-                                x * XtOmegar^2 / (2 * (1 + x * diagXtOmegaX)) +
-                                logpi0)
-    }
-    
-    # Optimize with bounds (equivalent to V_range in original)
-    res <- optim(par = V_l,
-                 fn = f,
-                 method = "Brent",
-                 lower = 0,      # V_range[1]
-                 upper = 1)      # V_range[2]
-    
-    if (!is.null(res$par) && res$convergence == 0) {
-      V_l <- res$par
-    }
+    V_l <- optimize_prior_variance_non_sparse(V_l, XtOmegar, diagXtOmegaX, model$pi)
   }
   
-  # Update omega, mu, and alpha for effect l
-  omega_l <- diagXtOmegaX + 1 / V_l
-  mu[l, ] <- XtOmegar / omega_l
+  # Call standard single_effect_regression with transformed inputs
+  res <- single_effect_regression(
+    Xty                  = XtOmegar,
+    dXtX                 = diagXtOmegaX,
+    V                    = V_l,
+    residual_variance    = 1,  # Key: set to 1 for non-sparse
+    prior_weights        = model$pi,
+    optimize_V           = "none",  # Optimization handled above
+    check_null_threshold = check_null_threshold
+  )
   
-  # Compute log Bayes factors
-  lbf_variable_l <- XtOmegar^2 / (2 * omega_l) - 0.5 * log(omega_l * V_l)
-  
-  # Prior probabilities (uniform for now)
-  logpi0 <- rep(log(1 / p), p)
-  log_alpha <- lbf_variable_l + logpi0
-  lbf_l <- matrixStats::logSumExp(log_alpha)
-  alpha[l, ] <- exp(log_alpha - lbf_l)
-  
-  # Compute second moment (mu2) properly 
-  mu2 <- mu[l, ]^2 + 1 / omega_l  # Second moment = E[B^2] = Var[B] + E[B]^2
-  
-  # Update model components (already in L×p format)
-  model$alpha[l, ]         <- alpha[l, ]
-  model$mu[l, ]            <- mu[l, ]
-  model$mu2[l, ]           <- mu2  # Proper second moment
-  model$V[l]               <- V_l  # Updated prior variance
-  model$lbf[l]            <- lbf_l
-  model$lbf_variable[l, ] <- lbf_variable_l
+  # Update model components using results from single_effect_regression
+  model$alpha[l, ]         <- res$alpha
+  model$mu[l, ]            <- res$mu
+  model$mu2[l, ]           <- res$mu2
+  model$V[l]               <- res$V
+  model$lbf[l]             <- res$lbf_model
+  model$lbf_variable[l, ]  <- res$lbf
   
   # Calculate KL divergence (same as standard ss)
-  model$KL[l] <- -lbf_l + SER_posterior_e_loglik(data, model, XtOmegar,
-                                                 Eb  = model$alpha[l, ] * model$mu[l, ],
-                                                 Eb2 = model$alpha[l, ] * model$mu2[l, ])
+  model$KL[l] <- -res$lbf_model + SER_posterior_e_loglik(data, model, XtOmegar,
+                                                          Eb  = model$alpha[l, ] * model$mu[l, ],
+                                                          Eb2 = model$alpha[l, ] * model$mu2[l, ])
   
   # Update fitted values to include current theta (if available)
   # For infinitesimal model: XtXr = XtX %*% (b + theta)
