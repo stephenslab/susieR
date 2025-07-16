@@ -64,31 +64,8 @@ get_ER2.ss <- function (data, model) {
            XB2 + sum(d * t(postb2)))
 }
 
-# Expected loglikelihood for a susie fit.
-Eloglik.ss <- function (data, model) {
-  return(-data$n / 2 * log(2 * pi * model$sigma2) - 1 / (2 * model$sigma2) * get_ER2(data, model))
-}
 
-# Get Objective
-get_objective.ss <- function (data, model, verbose = FALSE) {
-  objective <- Eloglik(data, model) - sum(model$KL)
-  if(is.infinite(objective)){
-    stop("get_objective.ss() produced an infinite ELBO value")
-  }
-  if (verbose) {
-    print(paste0("objective:", objective))
-  }
-  return(objective)
-}
 
-# Estimate Residual Variance
-est_residual_variance.ss <- function(data, model){
-  resid_var <- (1 / data$n) * get_ER2(data, model)
-  if(resid_var < 0){
-    stop("est_residual_variance.ss() failed: the estimated value is negative")
-  }
-  return(resid_var)
-}
 
 # Single Effect Update
 single_effect_update.ss <- function(

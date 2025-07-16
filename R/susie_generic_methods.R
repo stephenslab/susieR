@@ -12,24 +12,6 @@ get_ER2 <- function(data, model)
 get_ER2.default <- function(data, model)
   stop("get_ER2: no method for class '", class(data)[1], "'")
 
-# Expected log-likelihood
-Eloglik <- function(data, model)
-  UseMethod("Eloglik")
-Eloglik.default <- function(data, model)
-  stop("Eloglik: no method for class '", class(data)[1], "'")
-
-# Objective function (ELBO)
-get_objective <- function(data, model, verbose = FALSE)
-  UseMethod("get_objective")
-get_objective.default <- function(data, model, verbose = FALSE)
-  stop("get_objective: no method for class '", class(data)[1], "'")
-
-# Estimate residual variance
-est_residual_variance <- function(data, model)
-  UseMethod("est_residual_variance")
-est_residual_variance.default <- function(data, model)
-  stop("est_residual_variance: no method for class '", class(data)[1], "'")
-
 # Single effect update
 single_effect_update <- function(data, model, l, ...)
   UseMethod("single_effect_update")

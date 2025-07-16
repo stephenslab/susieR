@@ -99,32 +99,8 @@ get_ER2.individual <- function(data, model) {
   return(sum((data$y - model$Xr)^2) - sum(Xr_L^2) + sum(attr(data$X, "d") * t(postb2)))
 }
 
-# Expected log-likelihood
-Eloglik.individual <- function(data, model) {
-  return(-(data$n / 2) * log(2 * pi * model$sigma2) - 
-         (1 / (2 * model$sigma2)) * get_ER2(data, model))
-}
 
-# Objective function (ELBO)
-get_objective.individual <- function(data, model, verbose = FALSE) {
-  objective <- Eloglik(data, model) - sum(model$KL)
-  if (is.infinite(objective)) {
-    stop("get_objective.individual() produced an infinite ELBO value")
-  }
-  if (verbose) {
-    print(paste0("objective:", objective))
-  }
-  return(objective)
-}
 
-# Estimate Residual Variance
-est_residual_variance.individual <- function(data, model){
-  resid_var <- (1 / data$n) * get_ER2(data, model)
-  if(resid_var < 0){
-    stop("est_residual_variance.individual() failed: the estimated value is negative")
-  }
-  return(resid_var)
-}
 
 # Single Effect Update
 single_effect_update.individual <- function(

@@ -1172,6 +1172,33 @@ get_pip <- function(data, model, coverage, min_abs_corr, prior_tol) {
   return(susie_get_pip(model, prune_by_cs = FALSE, prior_tol = prior_tol))
 }
 
+# Expected log-likelihood
+Eloglik <- function(data, model) {
+  return(-data$n / 2 * log(2 * pi * model$sigma2) - 
+         1 / (2 * model$sigma2) * get_ER2(data, model))
+}
+
+# Objective function (ELBO)
+get_objective <- function(data, model, verbose = FALSE) {
+  objective <- Eloglik(data, model) - sum(model$KL)
+  if (is.infinite(objective)) {
+    stop("get_objective() produced an infinite ELBO value")
+  }
+  if (verbose) {
+    print(paste0("objective:", objective))
+  }
+  return(objective)
+}
+
+# Estimate residual variance
+est_residual_variance <- function(data, model) {
+  resid_var <- (1 / data$n) * get_ER2(data, model)
+  if(resid_var < 0) {
+    stop("est_residual_variance() failed: the estimated value is negative")
+  }
+  return(resid_var)
+}
+
 # Initialize core susie model object with default parameter matrices
 initialize_susie_model <- function(p, L, scaled_prior_variance, var_y, residual_variance, 
                                    prior_weights, include_non_sparse = FALSE) {
