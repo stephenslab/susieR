@@ -13,14 +13,14 @@ ibss_initialize <- function(data,
   p <- data$p
   var_y <- get_var_y(data)
 
-  # Validate prior_tol
+  # Validate prior tolerance threshold
   if (!is.numeric(prior_tol) || length(prior_tol) != 1)
     stop("prior_tol must be a numeric scalar")
   if (prior_tol < 0)
     stop("prior_tol must be non-negative")
   if (prior_tol > 1)
     stop("prior_tol cannot exceed 1 (a single effect cannot account for more than 100% of outcome variance)")
-  
+
   # Validate residual_variance_upperbound
   if (!is.numeric(residual_variance_upperbound) || length(residual_variance_upperbound) != 1)
     stop("residual_variance_upperbound must be a numeric scalar")
@@ -39,15 +39,11 @@ ibss_initialize <- function(data,
   if (p < L)
     L = p
 
-  # Check residual variance
-  if (is.null(residual_variance)) {
+  # Check & validate residual variance
+  if (is.null(residual_variance))
     residual_variance <- var_y
-  }
-  
-  # Validate residual variance
   if (!is.numeric(residual_variance))
     stop("Input residual variance sigma2 must be numeric")
-  
   residual_variance <- as.numeric(residual_variance)
   if (length(residual_variance) != 1)
     stop("Input residual variance sigma2 must be a scalar")
@@ -80,7 +76,7 @@ ibss_initialize <- function(data,
   if (!missing(model_init) && !is.null(model_init)) {
     mat_init_list <- as.list(mat_init)
     model_init_list <- as.list(model_init)
-    
+
     # Map field names between old and new conventions
     if (!is.null(model_init_list$sigma2)) {
       model_init_list$residual_variance <- model_init_list$sigma2
@@ -89,10 +85,10 @@ ibss_initialize <- function(data,
       model_init_list$prior_weights <- model_init_list$pi
       model_init_list$pi <- NULL
     }
-    
+
     mat_init_list <- modifyList(mat_init_list, model_init_list)
     mat_init <- mat_init_list
-    
+
     # Reset KL and lbf to NA
     mat_init$KL <- rep(as.numeric(NA), L)
     mat_init$lbf <- rep(as.numeric(NA), L)
@@ -122,8 +118,8 @@ ibss_fit = function(data, model,
                     check_null_threshold    = 0,
                     check_prior             = FALSE){
   estimate_prior_method <- match.arg(estimate_prior_method)
-  
-  # Set optimization method based on estimate_prior_variance flag
+
+  # Set prior variance estimation if NA
   if (!estimate_prior_variance)
     estimate_prior_method <- "none"
 
