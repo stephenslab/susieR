@@ -210,14 +210,6 @@ get_cs.individual <- function(data, model, coverage, min_abs_corr, n_purity){
                       n_purity = n_purity))
 }
 
-# Get PIP
-get_pip.individual <- function(data, model, coverage, min_abs_corr, prior_tol){
-
-  if (is.null(coverage) || is.null(min_abs_corr)) return(NULL)
-
-  return(susie_get_pip(model,prune_by_cs = FALSE,prior_tol = prior_tol))
-
-}
 
 # Get Variable Names
 get_variable_names.individual <- function(data, model, null_weight){

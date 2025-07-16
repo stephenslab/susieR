@@ -292,11 +292,4 @@ get_cs.ss_inf <- function(data, model, coverage, min_abs_corr, n_purity) {
                       check_symmetric = FALSE,
                       n_purity = n_purity))
 }
-# Get marginal PIP for non-sparse methods
-get_pip.ss_inf <- function(data, model, coverage, min_abs_corr, prior_tol) {
-
-  if (is.null(coverage) || is.null(min_abs_corr)) return(NULL)
-
-  return(susie_get_pip(model, prune_by_cs = FALSE, prior_tol = prior_tol))
-}
 

@@ -1166,6 +1166,12 @@ update_model_variance <- function(data, model, lowerbound, upperbound) {
   return(list(data = data, model = model))
 }
 
+# Get posterior inclusion probabilities
+get_pip <- function(data, model, coverage, min_abs_corr, prior_tol) {
+  if (is.null(coverage) || is.null(min_abs_corr)) return(NULL)
+  return(susie_get_pip(model, prune_by_cs = FALSE, prior_tol = prior_tol))
+}
+
 # Initialize core susie model object with default parameter matrices
 initialize_susie_model <- function(p, L, scaled_prior_variance, var_y, residual_variance, 
                                    prior_weights, include_non_sparse = FALSE) {

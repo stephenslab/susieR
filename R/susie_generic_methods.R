@@ -60,12 +60,6 @@ get_cs <- function(data, model, ...)
 get_cs.default <- function(data, model, ...)
   stop("get_cs: no method for class '", class(data)[1], "'")
 
-# Get posterior inclusion probabilities
-get_pip <- function(data, model, ...)
-  UseMethod("get_pip")
-get_pip.default <- function(data, model, ...)
-  stop("get_pip: no method for class '", class(data)[1], "'")
-
 # Get variable names
 get_variable_names <- function(data, model, ...)
   UseMethod("get_variable_names")
