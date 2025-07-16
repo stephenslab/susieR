@@ -5,10 +5,10 @@ initialize_fitted.individual <- function(data, alpha, mu) {
   return(list(Xr = compute_Xb(data$X, colSums(alpha * mu))))
 }
 
-# Initialize matrices
-initialize_matrices.individual <- function(data, L, scaled_prior_variance, var_y,
+# Initialize susie model
+initialize_susie_model.individual <- function(data, L, scaled_prior_variance, var_y,
                                            residual_variance, prior_weights, ...) {
-  return(initialize_susie_model(data$p, L, scaled_prior_variance, var_y, 
+  return(initialize_matrices(data$p, L, scaled_prior_variance, var_y,
                                 residual_variance, prior_weights))
 }
 
@@ -87,8 +87,8 @@ validate_prior.individual <- function(data, model, check_prior, ...) {
 
 # Posterior expected log-likelihood for single effect regression
 SER_posterior_e_loglik.individual <- function(data, model, R, Eb, Eb2) {
-  return(-0.5 * data$n * log(2 * pi * model$sigma2) - 
-         0.5 / model$sigma2 * (sum(R * R) - 2 * sum(R * compute_Xb(data$X, Eb)) + 
+  return(-0.5 * data$n * log(2 * pi * model$sigma2) -
+         0.5 / model$sigma2 * (sum(R * R) - 2 * sum(R * compute_Xb(data$X, Eb)) +
                                sum(attr(data$X, "d") * Eb2)))
 }
 
@@ -98,9 +98,6 @@ get_ER2.individual <- function(data, model) {
   postb2 <- model$alpha * model$mu2
   return(sum((data$y - model$Xr)^2) - sum(Xr_L^2) + sum(attr(data$X, "d") * t(postb2)))
 }
-
-
-
 
 # Single Effect Update
 single_effect_update.individual <- function(
@@ -241,17 +238,17 @@ update_variance_before_convergence.individual <- function(data) {
 }
 
 # Handle convergence and variance updates for individual data (standard behavior)
-handle_convergence_and_variance.individual <- function(data, model, model_prev, elbo_prev, elbo_current, 
-                                                       tol, estimate_residual_variance, 
+handle_convergence_and_variance.individual <- function(data, model, model_prev, elbo_prev, elbo_current,
+                                                       tol, estimate_residual_variance,
                                                        residual_variance_lowerbound, residual_variance_upperbound) {
   # Standard: Check convergence first, then update variance
   converged <- check_convergence(data, model_prev, model, elbo_prev, elbo_current, tol)
-  
+
   if (!converged && estimate_residual_variance) {
     result <- update_model_variance(data, model, residual_variance_lowerbound, residual_variance_upperbound)
     data <- result$data
     model <- result$model
   }
-  
+
   return(list(data = data, model = model, converged = converged))
 }

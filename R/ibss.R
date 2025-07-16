@@ -63,7 +63,7 @@ ibss_initialize <- function(data,
     L <- adjustment$L
 
     # Create base model with all required fields
-    mat_init <- initialize_matrices(data, L,
+    mat_init <- initialize_susie_model(data, L,
                                     scaled_prior_variance, var_y,
                                     residual_variance, prior_weights)
 
@@ -76,7 +76,7 @@ ibss_initialize <- function(data,
 
   } else {
     # Create fresh model
-    mat_init <- initialize_matrices(data, L,
+    mat_init <- initialize_susie_model(data, L,
                                     scaled_prior_variance, var_y,
                                     residual_variance, prior_weights)
   }
@@ -84,7 +84,7 @@ ibss_initialize <- function(data,
   # Initialize fitted values
   fitted <- initialize_fitted(data, mat_init$alpha, mat_init$mu)
 
-  # Set null index (for refine step)
+  # Set null index
   null_index <- initialize_null_index(null_weight, p)
 
   # Return assembled SuSiE object

@@ -5,10 +5,10 @@ initialize_fitted.ss <- function(data, alpha, mu) {
   return(list(XtXr = data$XtX %*% colSums(alpha * mu)))
 }
 
-# Initialize matrices
-initialize_matrices.ss <- function(data, L, scaled_prior_variance, var_y,
+# Initialize susie model
+initialize_susie_model.ss <- function(data, L, scaled_prior_variance, var_y,
                                    residual_variance, prior_weights, ...) {
-  return(initialize_susie_model(data$p, L, scaled_prior_variance, var_y, 
+  return(initialize_matrices(data$p, L, scaled_prior_variance, var_y,
                                 residual_variance, prior_weights))
 }
 
@@ -63,9 +63,6 @@ get_ER2.ss <- function (data, model) {
   return(data$yty - 2 * sum(betabar * data$Xty) + sum(betabar * (data$XtX %*% betabar)) -
            XB2 + sum(d * t(postb2)))
 }
-
-
-
 
 # Single Effect Update
 single_effect_update.ss <- function(
@@ -154,7 +151,7 @@ get_zscore.ss <- function(data, model, ...) {
   return(NULL)
 }
 
-# Configure ss data for specified method  
+# Configure ss data for specified method
 configure_data.ss <- function(data, non_sparse_method) {
   if (non_sparse_method == "none") {
     return(data)  # No changes needed
@@ -212,17 +209,17 @@ update_variance_before_convergence.ss <- function(data) {
 }
 
 # Handle convergence and variance updates for ss data (standard behavior)
-handle_convergence_and_variance.ss <- function(data, model, model_prev, elbo_prev, elbo_current, 
-                                                tol, estimate_residual_variance, 
+handle_convergence_and_variance.ss <- function(data, model, model_prev, elbo_prev, elbo_current,
+                                                tol, estimate_residual_variance,
                                                 residual_variance_lowerbound, residual_variance_upperbound) {
   # Standard: Check convergence first, then update variance
   converged <- check_convergence(data, model_prev, model, elbo_prev, elbo_current, tol)
-  
+
   if (!converged && estimate_residual_variance) {
     result <- update_model_variance(data, model, residual_variance_lowerbound, residual_variance_upperbound)
     data <- result$data
     model <- result$model
   }
-  
+
   return(list(data = data, model = model, converged = converged))
 }

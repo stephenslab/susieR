@@ -165,10 +165,10 @@ single_effect_update.ss_inf <- function(data, model, l,
   return(model)
 }
 
-# Initialize matrices for ss_inf (includes tau2 and theta)
-initialize_matrices.ss_inf <- function(data, L, scaled_prior_variance, var_y,
+# Initialize susie model for ss_inf (includes tau2 and theta)
+initialize_susie_model.ss_inf <- function(data, L, scaled_prior_variance, var_y,
                                        residual_variance, prior_weights, ...) {
-  return(initialize_susie_model(data$p, L, scaled_prior_variance, var_y,
+  return(initialize_matrices(data$p, L, scaled_prior_variance, var_y,
                                 residual_variance, prior_weights, include_non_sparse = TRUE))
 }
 # Initialize fitted values for ss_inf

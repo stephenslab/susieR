@@ -78,11 +78,11 @@ susie_extract_core <- function(data, model, tracking, iter, track_fit, ...)
 susie_extract_core.default <- function(data, model, tracking, iter, track_fit, ...)
   stop("susie_extract_core: no method for class '", class(data)[1], "'")
 
-# Initialize matrices
-initialize_matrices <- function(data, ...)
-  UseMethod("initialize_matrices")
-initialize_matrices.default <- function(data, ...)
-  stop("initialize_matrices: no method for class '", class(data)[1], "'")
+# Initialize susie model
+initialize_susie_model <- function(data, ...)
+  UseMethod("initialize_susie_model")
+initialize_susie_model.default <- function(data, ...)
+  stop("initialize_susie_model: no method for class '", class(data)[1], "'")
 
 # Configure data object for specified method
 configure_data <- function(data, non_sparse_method)

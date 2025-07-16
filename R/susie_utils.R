@@ -1200,7 +1200,7 @@ est_residual_variance <- function(data, model) {
 }
 
 # Initialize core susie model object with default parameter matrices
-initialize_susie_model <- function(p, L, scaled_prior_variance, var_y, residual_variance, 
+initialize_matrices <- function(p, L, scaled_prior_variance, var_y, residual_variance, 
                                    prior_weights, include_non_sparse = FALSE) {
   mat_init <- list(
     alpha = matrix(1 / p, L, p),
