@@ -164,29 +164,18 @@ single_effect_update.ss_inf <- function(data, model, l,
   return(model)
 }
 
-# Single Effect Update for ss_ash (same implementation as ss_inf for now)
-single_effect_update.ss_ash <- single_effect_update.ss_inf
-
 # Initialize matrices for ss_inf (includes tau2 and theta)
 initialize_matrices.ss_inf <- function(data, L, scaled_prior_variance, var_y,
                                        residual_variance, prior_weights, ...) {
   return(initialize_susie_model(data$p, L, scaled_prior_variance, var_y,
                                 residual_variance, prior_weights, include_non_sparse = TRUE))
 }
-
-# Initialize matrices for ss_ash (same as ss_inf)
-initialize_matrices.ss_ash <- initialize_matrices.ss_inf
-
 # Initialize fitted values for ss_inf
 initialize_fitted.ss_inf <- function(data, alpha, mu) {
   b <- colSums(alpha * mu)
   XtXr <- data$XtX %*% b
   return(list(XtXr = XtXr))
 }
-
-# Initialize fitted values for ss_ash (same as ss_inf)
-initialize_fitted.ss_ash <- initialize_fitted.ss_inf
-
 # Extract core parameters across iterations for ss_inf (includes tau2)
 susie_extract_core.ss_inf <- function(data, model, tracking, iter, track_fit, ...) {
   if (isTRUE(track_fit)) {
@@ -198,10 +187,6 @@ susie_extract_core.ss_inf <- function(data, model, tracking, iter, track_fit, ..
   }
   return(tracking)
 }
-
-# Extract core parameters across iterations for ss_ash (same as ss_inf)
-susie_extract_core.ss_ash <- susie_extract_core.ss_inf
-
 # Update variance components for ss_inf (Method of Moments)
 update_variance_components.ss_inf <- function(data, model) {
   alpha <- model$alpha
@@ -224,10 +209,6 @@ update_variance_components.ss_inf <- function(data, model) {
 
   return(list(sigma2 = mom_result$sigma2, tau2 = mom_result$tau2))
 }
-
-# Update variance components for ss_ash (same as ss_inf for now)
-update_variance_components.ss_ash <- update_variance_components.ss_inf
-
 # Update derived quantities for ss_inf
 update_derived_quantities.ss_inf <- function(data, model) {
   sigma2 <- model$sigma2
@@ -242,27 +223,15 @@ update_derived_quantities.ss_inf <- function(data, model) {
 
   return(data)
 }
-
-# Update derived quantities for ss_ash (same as ss_inf)
-update_derived_quantities.ss_ash <- update_derived_quantities.ss_inf
-
 # Check convergence for ss_inf (uses PIP differences, not ELBO)
 check_convergence.ss_inf <- function(data, model_prev, model_current, elbo_prev, elbo_current, tol) {
   PIP_diff <- max(abs(model_prev$alpha - model_current$alpha))
   return(PIP_diff < tol)
 }
-
-# Check convergence for ss_ash (same as ss_inf)
-check_convergence.ss_ash <- check_convergence.ss_inf
-
 # Update variance before convergence check for ss_inf
 update_variance_before_convergence.ss_inf <- function(data) {
   return(TRUE)
 }
-
-# Update variance before convergence check for ss_ash (same as ss_inf)
-update_variance_before_convergence.ss_ash <- update_variance_before_convergence.ss_inf
-
 # Handle convergence and variance updates for ss_inf
 handle_convergence_and_variance.ss_inf <- function(data, model, model_prev, elbo_prev, elbo_current,
                                                     tol, estimate_residual_variance,
@@ -277,10 +246,6 @@ handle_convergence_and_variance.ss_inf <- function(data, model, model_prev, elbo
 
   return(list(data = data, model = model, converged = converged))
 }
-
-# Handle convergence and variance updates for ss_ash (same as ss_inf)
-handle_convergence_and_variance.ss_ash <- handle_convergence_and_variance.ss_inf
-
 # Compute theta (random effects) using BLUP for non-sparse methods
 compute_theta_blup <- function(data, model) {
   alpha <- model$alpha
@@ -326,10 +291,6 @@ get_cs.ss_inf <- function(data, model, coverage, min_abs_corr, n_purity) {
                       check_symmetric = FALSE,
                       n_purity = n_purity))
 }
-
-# Credible Sets for ss_ash (same as ss_inf)
-get_cs.ss_ash <- get_cs.ss_inf
-
 # Get marginal PIP for non-sparse methods
 get_pip.ss_inf <- function(data, model, coverage, min_abs_corr, prior_tol) {
 
@@ -338,5 +299,3 @@ get_pip.ss_inf <- function(data, model, coverage, min_abs_corr, prior_tol) {
   return(susie_get_pip(model, prune_by_cs = FALSE, prior_tol = prior_tol))
 }
 
-# Get marginal PIP for ss_ash (same as ss_inf)
-get_pip.ss_ash <- get_pip.ss_inf
