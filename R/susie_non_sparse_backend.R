@@ -150,6 +150,7 @@ single_effect_update.ss_inf <- function(data, model, l,
   model$lbf[l]             <- res$lbf_model
   model$lbf_variable[l, ]  <- res$lbf
 
+  # TODO: KL and mu2 for infinitesimal model is not properly implemented at the moment.
   model$KL[l] <- -res$lbf_model + SER_posterior_e_loglik(data, model, XtOmegar,
                                                           Eb  = model$alpha[l, ] * model$mu[l, ],
                                                           Eb2 = model$alpha[l, ] * model$mu2[l, ])
