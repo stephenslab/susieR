@@ -1123,6 +1123,23 @@ initialize_null_index <- function(null_weight, p){
 }
 
 
+# Helper function to assign variable names to model components
+assign_names <- function(model, variable_names, null_weight, p) {
+  if (!is.null(variable_names)) {
+    if (!is.null(null_weight)) {
+      variable_names[length(variable_names)] <- "null"
+      names(model$pip) <- variable_names[-p]
+    } else {
+      names(model$pip) <- variable_names
+    }
+    colnames(model$alpha) <- variable_names
+    colnames(model$mu) <- variable_names
+    colnames(model$mu2) <- variable_names
+    colnames(model$lbf_variable) <- variable_names
+  }
+  return(model)
+}
+
 # Helper function to update variance components and derived quantities
 update_model_variance <- function(data, model, lowerbound, upperbound) {
   variance_result <- update_variance_components(data, model)

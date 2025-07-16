@@ -221,20 +221,8 @@ get_pip.individual <- function(data, model, coverage, min_abs_corr, prior_tol){
 
 # Get Variable Names
 get_variable_names.individual <- function(data, model, null_weight){
-  if (!is.null(colnames(data$X))) {
-    variable_names = colnames(data$X)
-    if (!is.null(null_weight)) {
-      variable_names[length(variable_names)] = "null"
-      names(model$pip) = variable_names[-data$p]
-    } else{
-    names(model$pip)             = variable_names
-    }
-    colnames(model$alpha)        = variable_names
-    colnames(model$mu)           = variable_names
-    colnames(model$mu2)          = variable_names
-    colnames(model$lbf_variable) = variable_names
-  }
-  return(model)
+  variable_names <- colnames(data$X)
+  return(assign_names(model, variable_names, null_weight, data$p))
 }
 
 # Get univariate z-score
