@@ -8,8 +8,8 @@ initialize_fitted.individual <- function(data, alpha, mu) {
 # Initialize matrices
 initialize_matrices.individual <- function(data, L, scaled_prior_variance, var_y,
                                            residual_variance, prior_weights, ...) {
-  return(create_matrix_initialization(data$p, L, scaled_prior_variance, var_y, 
-                                      residual_variance, prior_weights))
+  return(initialize_susie_model(data$p, L, scaled_prior_variance, var_y, 
+                                residual_variance, prior_weights))
 }
 
 # Get variance of y
@@ -69,6 +69,16 @@ convert_individual_to_ss_non_sparse <- function(individual_data, non_sparse_meth
   return(ss_data)
 }
 
+# Extract core parameters across iterations
+susie_extract_core.individual <- function(data, model, tracking, iter, track_fit, ...) {
+  if (isTRUE(track_fit)) {
+    tracking[[iter]] <- list(alpha = model$alpha,
+                             niter = iter,
+                             V = model$V,
+                             sigma2 = model$sigma2)
+  }
+  return(tracking)
+}
 
 # Validate prior variance
 validate_prior.individual <- function(data, model, check_prior, ...) {

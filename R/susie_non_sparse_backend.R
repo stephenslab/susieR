@@ -169,8 +169,8 @@ single_effect_update.ss_ash <- single_effect_update.ss_inf
 # Initialize matrices for ss_inf (includes tau2 and theta)
 initialize_matrices.ss_inf <- function(data, L, scaled_prior_variance, var_y,
                                        residual_variance, prior_weights, ...) {
-  return(create_matrix_initialization(data$p, L, scaled_prior_variance, var_y, 
-                                      residual_variance, prior_weights, include_non_sparse = TRUE))
+  return(initialize_susie_model(data$p, L, scaled_prior_variance, var_y, 
+                                residual_variance, prior_weights, include_non_sparse = TRUE))
 }
 
 # Initialize matrices for ss_ash (same as ss_inf)
@@ -185,6 +185,21 @@ initialize_fitted.ss_inf <- function(data, alpha, mu) {
 
 # Initialize fitted values for ss_ash (same as ss_inf)
 initialize_fitted.ss_ash <- initialize_fitted.ss_inf
+
+# Extract core parameters across iterations for ss_inf (includes tau2)
+susie_extract_core.ss_inf <- function(data, model, tracking, iter, track_fit, ...) {
+  if (isTRUE(track_fit)) {
+    tracking[[iter]] <- list(alpha = model$alpha,
+                             niter = iter,
+                             V = model$V,
+                             sigma2 = model$sigma2,
+                             tau2 = model$tau2)
+  }
+  return(tracking)
+}
+
+# Extract core parameters across iterations for ss_ash (same as ss_inf)
+susie_extract_core.ss_ash <- susie_extract_core.ss_inf
 
 # Update variance components for ss_inf (Method of Moments)
 update_variance_components.ss_inf <- function(data, model) {

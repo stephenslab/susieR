@@ -1149,9 +1149,9 @@ update_model_variance <- function(data, model, lowerbound, upperbound) {
   return(list(data = data, model = model))
 }
 
-# Create standard matrix initialization (shared by all backends)
-create_matrix_initialization <- function(p, L, scaled_prior_variance, var_y, residual_variance, 
-                                         prior_weights, include_non_sparse = FALSE) {
+# Initialize core susie model object with default parameter matrices
+initialize_susie_model <- function(p, L, scaled_prior_variance, var_y, residual_variance, 
+                                   prior_weights, include_non_sparse = FALSE) {
   mat_init <- list(
     alpha = matrix(1 / p, L, p),
     mu = matrix(0, L, p),
@@ -1171,15 +1171,4 @@ create_matrix_initialization <- function(p, L, scaled_prior_variance, var_y, res
   }
   
   return(mat_init)
-}
-
-# Extract and save core model parameters for tracking across iterations
-susie_extract_core <- function(data, model, tracking, iter, track_fit, ...) {
-  if (isTRUE(track_fit)) {
-    tracking[[iter]] <- list(alpha = model$alpha,
-                             niter = iter,
-                             V = model$V,
-                             sigma2 = model$sigma2)
-  }
-  return(tracking)
 }
