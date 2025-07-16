@@ -50,9 +50,8 @@ ibss_initialize <- function(data,
   if (residual_variance <= 0)
     stop("Residual variance sigma2 must be positive (is your var(Y) zero?)")
 
-  # Check for pre-initialized model
+  # Handle model initialization
   if (!missing(model_init) && !is.null(model_init)) {
-
     # Validate the contents of model_init
     validate_init(model_init, L, null_weight)
 
@@ -61,37 +60,25 @@ ibss_initialize <- function(data,
 
     # Adjust the number of effects
     adjustment <- adjust_L(model_init, L, V = rep(scaled_prior_variance * var_y, L))
+    L <- adjustment$L
 
-    # Return adjusted initialized model and number of effects
-    model_init <- adjustment$model_init
-    L          <- adjustment$L
-  }
+    # Create base model with all required fields
+    mat_init <- initialize_matrices(data, L,
+                                    scaled_prior_variance, var_y,
+                                    residual_variance, prior_weights)
 
-  # Build blank matrices
-  mat_init <- initialize_matrices(data, L,
-                                  scaled_prior_variance, var_y,
-                                  residual_variance, prior_weights)
+    # Merge with adjusted model_init
+    mat_init <- modifyList(mat_init, adjustment$model_init)
 
-  # Handle model initialization using modifyList
-  if (!missing(model_init) && !is.null(model_init)) {
-    mat_init_list <- as.list(mat_init)
-    model_init_list <- as.list(model_init)
-
-    # Map field names between old and new conventions
-    if (!is.null(model_init_list$sigma2)) {
-      model_init_list$residual_variance <- model_init_list$sigma2
-    }
-    if (!is.null(model_init_list$pi)) {
-      model_init_list$prior_weights <- model_init_list$pi
-      model_init_list$pi <- NULL
-    }
-
-    mat_init_list <- modifyList(mat_init_list, model_init_list)
-    mat_init <- mat_init_list
-
-    # Reset KL and lbf to NA
+    # Reset iteration-specific values
     mat_init$KL <- rep(as.numeric(NA), L)
     mat_init$lbf <- rep(as.numeric(NA), L)
+
+  } else {
+    # Create fresh model
+    mat_init <- initialize_matrices(data, L,
+                                    scaled_prior_variance, var_y,
+                                    residual_variance, prior_weights)
   }
 
   # Initialize fitted values
