@@ -28,7 +28,7 @@ ibss_initialize <- function(data,
     stop("residual_variance_upperbound must be positive")
 
   # Check prior variance
-  if (!is.numeric(scaled_prior_variance) || scaled_prior_variance < 0)
+  if (!is.numeric(scaled_prior_variance) || any(scaled_prior_variance < 0))
     stop("Scaled prior variance should be positive number")
 
   # Check prior weights
