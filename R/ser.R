@@ -69,6 +69,36 @@ est_V_uniroot <- function (betahat, shat2, prior_weights) {
   return(exp(V.u$root))
 }
 
+# Optimize prior variance for unmappable effects methods
+optimize_prior_variance_unmappable <- function(V_init, XtOmegar, diagXtOmegaX, prior_weights,
+                                               bounds = c(0, 1)) {
+  p <- length(XtOmegar)
+
+  logpi0 <- if (!is.null(prior_weights)) {
+    log(prior_weights + sqrt(.Machine$double.eps))
+  } else {
+    rep(log(1/p), p)
+  }
+
+  objective <- function(V) {
+    -matrixStats::logSumExp(-0.5 * log(1 + V * diagXtOmegaX) +
+                              V * XtOmegar^2 / (2 * (1 + V * diagXtOmegaX)) +
+                              logpi0)
+  }
+
+  res <- optim(par = V_init,
+               fn = objective,
+               method = "Brent",
+               lower = bounds[1],
+               upper = bounds[2])
+
+  if (!is.null(res$par) && res$convergence == 0) {
+    return(res$par)
+  } else {
+    return(V_init)
+  }
+}
+
 optimize_prior_variance <- function (optimize_V, betahat, shat2, prior_weights,
                                     alpha = NULL, post_mean2 = NULL,
                                     V_init = NULL, check_null_threshold = 0) {
