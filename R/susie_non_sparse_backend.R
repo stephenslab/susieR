@@ -1,71 +1,5 @@
 # Non-sparse backend methods: infinitesimal (ss_inf) and adaptive shrinkage (ss_ash)
 
-# Compute eigenvalue decomposition for non-sparse methods
-compute_eigen_decomposition <- function(XtX, n) {
-  LD <- XtX / n
-  eig <- eigen(LD, symmetric = TRUE)
-  idx <- order(eig$values, decreasing = TRUE)
-
-  list(
-    V = eig$vectors[, idx],
-    Dsq = pmax(eig$values[idx] * n, 0),
-    VtXty = NULL
-  )
-}
-
-# Method of Moments variance estimation for non-sparse methods
-MoM <- function(alpha, mu, omega, sigma2, tau2, n, V, Dsq, VtXty, Xty, yty,
-                est_sigma2, est_tau2, verbose) {
-  L <- nrow(mu)
-  p <- ncol(mu)
-
-  A <- matrix(0, nrow = 2, ncol = 2)
-  A[1, 1] <- n
-  A[1, 2] <- sum(Dsq)
-  A[2, 1] <- A[1, 2]
-  A[2, 2] <- sum(Dsq^2)
-
-  # Compute diag(V'MV)
-  b <- colSums(mu * alpha)
-  Vtb <- t(V) %*% b
-  diagVtMV <- Vtb^2
-  tmpD <- rep(0, p)
-
-  for (l in seq_len(L)) {
-    bl <- mu[l, ] * alpha[l, ]
-    Vtbl <- t(V) %*% bl
-    diagVtMV <- diagVtMV - Vtbl^2
-    tmpD <- tmpD + alpha[l, ] * (mu[l, ]^2 + 1 / omega[l, ])
-  }
-
-  diagVtMV <- diagVtMV + rowSums(sweep(t(V)^2, 2, tmpD, `*`))
-
-  # Compute x
-  x <- rep(0, 2)
-  x[1] <- yty - 2 * sum(b * Xty) + sum(Dsq * diagVtMV)
-  x[2] <- sum(Xty^2) - 2 * sum(Vtb * VtXty * Dsq) + sum(Dsq^2 * diagVtMV)
-
-  if (est_tau2) {
-    sol <- solve(A, x)
-    if (sol[1] > 0 && sol[2] > 0) {
-      sigma2 <- sol[1]
-      tau2 <- sol[2]
-    } else {
-      sigma2 <- x[1] / n
-      tau2 <- 0
-    }
-    if (verbose) {
-      cat(sprintf("Update (sigma^2,tau^2) to (%f,%e)\n", sigma2, tau2))
-    }
-  } else if (est_sigma2) {
-    sigma2 <- (x[1] - A[1, 2] * tau2) / n
-    if (verbose) {
-      cat(sprintf("Update sigma^2 to %f\n", sigma2))
-    }
-  }
-  return(list(sigma2 = sigma2, tau2 = tau2))
-}
-
 # Optimize prior variance for non-sparse methods
 optimize_prior_variance_non_sparse <- function(V_init, XtOmegar, diagXtOmegaX, prior_weights,
                                                bounds = c(0, 1)) {
@@ -247,24 +181,6 @@ handle_convergence_and_variance.ss_inf <- function(data, model, model_prev, elbo
 
   return(list(data = data, model = model, converged = converged))
 }
-# Compute theta (random effects) using BLUP for non-sparse methods
-compute_theta_blup <- function(data, model) {
-  alpha <- model$alpha
-  mu <- model$mu
-  sigma2 <- model$sigma2
-  tau2 <- if (is.null(model$tau2)) 0 else model$tau2
-
-  b <- colSums(mu * alpha)
-
-  var <- tau2 * data$eigen_values + sigma2
-  XtOmegaXb <- data$eigen_vectors %*% ((t(data$eigen_vectors) %*% b) * data$eigen_values / var)
-
-  XtOmegar <- data$XtOmegay - XtOmegaXb
-
-  theta <- tau2 * XtOmegar
-
-  return(theta)
-}
 
 # Credible Sets for non-sparse methods
 get_cs.ss_inf <- function(data, model, coverage, min_abs_corr, n_purity) {
@@ -292,4 +208,3 @@ get_cs.ss_inf <- function(data, model, coverage, min_abs_corr, n_purity) {
                       check_symmetric = FALSE,
                       n_purity = n_purity))
 }
-
