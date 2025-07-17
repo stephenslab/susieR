@@ -81,11 +81,12 @@ individual_data_constructor <- function(X, y,
     n = n,
     p = p,
     prior_weights = prior_weights,
-    null_weight = null_weight),
+    null_weight = null_weight,
+    unmappable_effects = unmappable_effects),
     class = "individual")
 
   # Configure data object for specified unmappable effects method
-  data_object <- configure_data(data_object, unmappable_effects)
+  data_object <- configure_data(data_object)
 
   return(data_object)
 }
@@ -224,11 +225,12 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
     X_colmeans = X_colmeans,
     y_mean = y_mean,
     prior_weights = prior_weights,
-    null_weight = null_weight),
+    null_weight = null_weight,
+    unmappable_effects = unmappable_effects),
     class = "ss")
 
   # Configure data object for specified unmappable effects method
-  data_object <- configure_data(data_object, unmappable_effects)
+  data_object <- configure_data(data_object)
 
   return(data_object)
 }

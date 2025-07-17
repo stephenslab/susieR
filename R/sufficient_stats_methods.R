@@ -152,12 +152,11 @@ get_zscore.ss <- function(data, model, ...) {
 }
 
 # Configure ss data for specified method
-configure_data.ss <- function(data, unmappable_effects) {
-  if (unmappable_effects == "none") {
+configure_data.ss <- function(data) {
+  if (data$unmappable_effects == "none") {
     return(data)  # No changes needed
   } else {
-    # Add unmappable effects class and eigen decomposition
-    class(data) <- c(paste0("ss_", unmappable_effects), "ss")
+    # Add eigen decomposition for unmappable effects
     data <- add_eigen_decomposition(data)
     return(data)
   }

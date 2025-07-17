@@ -85,9 +85,9 @@ initialize_susie_model.default <- function(data, ...)
   stop("initialize_susie_model: no method for class '", class(data)[1], "'")
 
 # Configure data object for specified method
-configure_data <- function(data, unmappable_effects)
+configure_data <- function(data)
   UseMethod("configure_data")
-configure_data.default <- function(data, unmappable_effects)
+configure_data.default <- function(data)
   stop("configure_data: no method for class '", class(data)[1], "'")
 
 # Add eigenvalue decomposition to data objects

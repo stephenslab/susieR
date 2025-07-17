@@ -18,13 +18,13 @@ get_var_y.individual <- function(data, ...) {
 }
 
 # Configure individual data for specified method
-configure_data.individual <- function(data, unmappable_effects) {
-  if (unmappable_effects == "none") {
+configure_data.individual <- function(data) {
+  if (data$unmappable_effects == "none") {
     return(data)
   } else {
     # Convert to sufficient statistics for unmappable effects methods
     warning("Individual-level data converted to sufficient statistics for unmappable effects methods")
-    return(convert_individual_to_ss_unmappable(data, unmappable_effects))
+    return(convert_individual_to_ss_unmappable(data, data$unmappable_effects))
   }
 }
 
@@ -46,9 +46,7 @@ convert_individual_to_ss_unmappable <- function(individual_data, unmappable_effe
   # Get column means and scaling from attributes
   X_colmeans <- attr(X, "scaled:center")
 
-  # Create sufficient statistics data object with multiple classes
-  class_vector <- c(paste0("ss_", unmappable_effects), "ss")
-
+  # Create sufficient statistics data object
   ss_data <- structure(list(
     XtX        = XtX,
     Xty        = Xty,
@@ -56,8 +54,11 @@ convert_individual_to_ss_unmappable <- function(individual_data, unmappable_effe
     n          = n,
     p          = p,
     X_colmeans = X_colmeans,
-    y_mean     = mean_y),
-    class = class_vector)
+    y_mean     = mean_y,
+    prior_weights = individual_data$prior_weights,
+    null_weight = individual_data$null_weight,
+    unmappable_effects = unmappable_effects),
+    class = "ss")
 
   # Copy attributes from X to XtX
   attr(ss_data$XtX, "d") <- attr(X, "d")
