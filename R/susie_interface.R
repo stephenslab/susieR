@@ -29,7 +29,7 @@ susie <- function(X, y, L = min(10, ncol(X)),
   estimate_prior_method <- match.arg(estimate_prior_method)
 
   # Construct data object
-  data <- susie_constructor(X, y, intercept, standardize, na.rm,
+  data <- individual_data_constructor(X, y, intercept, standardize, na.rm,
                             prior_weights, null_weight, non_sparse_method)
 
   # Run SuSiE engine
@@ -79,7 +79,7 @@ susie_ss <- function(XtX, Xty, yty, n,
   estimate_prior_method <- match.arg(estimate_prior_method)
 
   # Create sufficient statistics data object
-  data <- susie_ss_constructor(XtX, Xty, yty, n, X_colmeans, y_mean,
+  data <- sufficient_stats_constructor(XtX, Xty, yty, n, X_colmeans, y_mean,
                                maf, maf_thresh, standardize, r_tol, check_input,
                                prior_weights, null_weight, non_sparse_method)
 

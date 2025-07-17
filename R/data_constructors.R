@@ -1,5 +1,5 @@
 # Individual-level data constructor
-susie_constructor <- function(X, y,
+individual_data_constructor <- function(X, y,
                               intercept = TRUE,
                               standardize = TRUE,
                               na.rm = FALSE,
@@ -91,7 +91,7 @@ susie_constructor <- function(X, y,
 }
 
 # Sufficient statistics data constructor
-susie_ss_constructor <- function(XtX, Xty, yty, n,
+sufficient_stats_constructor <- function(XtX, Xty, yty, n,
                                  X_colmeans = NA, y_mean = NA, maf = NULL,
                                  maf_thresh = 0, standardize = TRUE,
                                  r_tol = 1e-8, check_input = FALSE,
