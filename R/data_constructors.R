@@ -5,7 +5,7 @@ individual_data_constructor <- function(X, y,
                               na.rm = FALSE,
                               prior_weights = NULL,
                               null_weight = 0,
-                              non_sparse_method = "none") {
+                              unmappable_effects = "none") {
   # Validate input X
   if (!(is.double(X) & is.matrix(X)) &
       !inherits(X, "CsparseMatrix") &
@@ -84,8 +84,8 @@ individual_data_constructor <- function(X, y,
     null_weight = null_weight),
     class = "individual")
 
-  # Configure data object for specified non-sparse method
-  data_object <- configure_data(data_object, non_sparse_method)
+  # Configure data object for specified unmappable effects method
+  data_object <- configure_data(data_object, unmappable_effects)
 
   return(data_object)
 }
@@ -96,7 +96,7 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
                                  maf_thresh = 0, standardize = TRUE,
                                  r_tol = 1e-8, check_input = FALSE,
                                  prior_weights = NULL, null_weight = 0,
-                                 non_sparse_method = "none") {
+                                 unmappable_effects = "none") {
 
   # Validate required inputs
   if (missing(n))
@@ -227,8 +227,8 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
     null_weight = null_weight),
     class = "ss")
 
-  # Configure data object for specified non-sparse method
-  data_object <- configure_data(data_object, non_sparse_method)
+  # Configure data object for specified unmappable effects method
+  data_object <- configure_data(data_object, unmappable_effects)
 
   return(data_object)
 }

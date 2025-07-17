@@ -8,7 +8,7 @@ susie <- function(X, y, L = min(10, ncol(X)),
                       estimate_residual_variance = TRUE,
                       estimate_prior_variance = TRUE,
                       estimate_prior_method = c("optim", "EM", "simple"),
-                      non_sparse_method = c("none", "inf", "ash"),
+                      unmappable_effects = c("none", "inf", "ash"),
                       check_null_threshold = 0,
                       prior_tol = 1e-9,
                       residual_variance_upperbound = Inf,
@@ -25,12 +25,12 @@ susie <- function(X, y, L = min(10, ncol(X)),
                       n_purity = 100) {
 
   # Validate method arguments
-  non_sparse_method <- match.arg(non_sparse_method)
+  unmappable_effects <- match.arg(unmappable_effects)
   estimate_prior_method <- match.arg(estimate_prior_method)
 
   # Construct data object
   data <- individual_data_constructor(X, y, intercept, standardize, na.rm,
-                            prior_weights, null_weight, non_sparse_method)
+                            prior_weights, null_weight, unmappable_effects)
 
   # Run SuSiE engine
   model <- susie_engine(data, L, intercept, standardize, scaled_prior_variance,
@@ -62,7 +62,7 @@ susie_ss <- function(XtX, Xty, yty, n,
                      residual_variance_upperbound = Inf,
                      estimate_prior_variance = TRUE,
                      estimate_prior_method = c("optim", "EM", "simple"),
-                     non_sparse_method = c("none", "inf", "ash"),
+                     unmappable_effects = c("none", "inf", "ash"),
                      check_null_threshold = 0,
                      prior_tol = 1e-9,
                      max_iter = 100,
@@ -75,13 +75,13 @@ susie_ss <- function(XtX, Xty, yty, n,
                      check_prior = FALSE, ...) {
 
   # Validate method arguments
-  non_sparse_method <- match.arg(non_sparse_method)
+  unmappable_effects <- match.arg(unmappable_effects)
   estimate_prior_method <- match.arg(estimate_prior_method)
 
   # Create sufficient statistics data object
   data <- sufficient_stats_constructor(XtX, Xty, yty, n, X_colmeans, y_mean,
                                maf, maf_thresh, standardize, r_tol, check_input,
-                               prior_weights, null_weight, non_sparse_method)
+                               prior_weights, null_weight, unmappable_effects)
 
   # Run SuSiE engine
   model <- susie_engine(data, L, intercept = FALSE, standardize, scaled_prior_variance,

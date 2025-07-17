@@ -152,18 +152,18 @@ get_zscore.ss <- function(data, model, ...) {
 }
 
 # Configure ss data for specified method
-configure_data.ss <- function(data, non_sparse_method) {
-  if (non_sparse_method == "none") {
+configure_data.ss <- function(data, unmappable_effects) {
+  if (unmappable_effects == "none") {
     return(data)  # No changes needed
   } else {
-    # Add non-sparse class and eigen decomposition
-    class(data) <- c(paste0("ss_", non_sparse_method), "ss")
+    # Add unmappable effects class and eigen decomposition
+    class(data) <- c(paste0("ss_", unmappable_effects), "ss")
     data <- add_eigen_decomposition(data)
     return(data)
   }
 }
 
-# Add eigen decomposition to ss objects (for non-sparse methods)
+# Add eigen decomposition to ss objects (for unmappable effects methods)
 add_eigen_decomposition.ss <- function(data) {
   # Compute eigen decomposition of correlation matrix
   eigen_decomp <- compute_eigen_decomposition(data$XtX, data$n)
@@ -173,7 +173,7 @@ add_eigen_decomposition.ss <- function(data) {
   data$eigen_values  <- eigen_decomp$Dsq
   data$VtXty         <- t(eigen_decomp$V) %*% data$Xty  # Compute VtXty
 
-  # Initialize derived quantities for non-sparse methods
+  # Initialize derived quantities for unmappable effects methods
   # These will be updated when variance components change
   sigmasq <- 1  # Default initial value
   tausq <- 0    # Default initial value

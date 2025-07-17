@@ -1,6 +1,6 @@
 # internal utility functions
 
-# Compute eigenvalue decomposition for non-sparse methods
+# Compute eigenvalue decomposition for unmappable effects methods
 compute_eigen_decomposition <- function(XtX, n) {
   LD <- XtX / n
   eig <- eigen(LD, symmetric = TRUE)
@@ -13,7 +13,7 @@ compute_eigen_decomposition <- function(XtX, n) {
   )
 }
 
-# Method of Moments variance estimation for non-sparse methods
+# Method of Moments variance estimation for unmappable effects methods
 MoM <- function(alpha, mu, omega, sigma2, tau2, n, V, Dsq, VtXty, Xty, yty,
                 est_sigma2, est_tau2, verbose) {
   L <- nrow(mu)
@@ -484,7 +484,7 @@ update_model_variance <- function(data, model, lowerbound, upperbound) {
   # Update derived quantities after variance component changes
   data <- update_derived_quantities(data, model)
   
-  # Transfer theta from data to model if computed (for non-sparse methods)
+  # Transfer theta from data to model if computed (for unmappable effects methods)
   if (!is.null(data$theta)) {
     model$theta <- data$theta
     
@@ -531,7 +531,7 @@ est_residual_variance <- function(data, model) {
 
 # Initialize core susie model object with default parameter matrices
 initialize_matrices <- function(p, L, scaled_prior_variance, var_y, residual_variance, 
-                                   prior_weights, include_non_sparse = FALSE) {
+                                   prior_weights, include_unmappable = FALSE) {
   mat_init <- list(
     alpha = matrix(1 / p, L, p),
     mu = matrix(0, L, p),
@@ -544,8 +544,8 @@ initialize_matrices <- function(p, L, scaled_prior_variance, var_y, residual_var
     pi = prior_weights
   )
   
-  # Add non-sparse specific components
-  if (include_non_sparse) {
+  # Add unmappable effects specific components
+  if (include_unmappable) {
     mat_init$tau2 <- 0
     mat_init$theta <- rep(0, p)
   }

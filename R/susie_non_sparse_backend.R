@@ -1,7 +1,7 @@
-# Non-sparse backend methods: infinitesimal (ss_inf) and adaptive shrinkage (ss_ash)
+# Unmappable effects backend methods: infinitesimal (ss_inf) and adaptive shrinkage (ss_ash)
 
-# Optimize prior variance for non-sparse methods
-optimize_prior_variance_non_sparse <- function(V_init, XtOmegar, diagXtOmegaX, prior_weights,
+# Optimize prior variance for unmappable effects methods
+optimize_prior_variance_unmappable <- function(V_init, XtOmegar, diagXtOmegaX, prior_weights,
                                                bounds = c(0, 1)) {
   p <- length(XtOmegar)
 
@@ -63,7 +63,7 @@ single_effect_update.ss_inf <- function(data, model, l,
 
   V_l <- model$V[l]
   if (!is.null(optimize_V) && optimize_V == "optim") {
-    V_l <- optimize_prior_variance_non_sparse(V_l, XtOmegar, diagXtOmegaX, model$pi)
+    V_l <- optimize_prior_variance_unmappable(V_l, XtOmegar, diagXtOmegaX, model$pi)
   }
 
   res <- single_effect_regression(
@@ -103,7 +103,7 @@ single_effect_update.ss_inf <- function(data, model, l,
 initialize_susie_model.ss_inf <- function(data, L, scaled_prior_variance, var_y,
                                        residual_variance, prior_weights, ...) {
   return(initialize_matrices(data$p, L, scaled_prior_variance, var_y,
-                                residual_variance, prior_weights, include_non_sparse = TRUE))
+                                residual_variance, prior_weights, include_unmappable = TRUE))
 }
 # Initialize fitted values for ss_inf
 initialize_fitted.ss_inf <- function(data, alpha, mu) {
@@ -182,7 +182,7 @@ handle_convergence_and_variance.ss_inf <- function(data, model, model_prev, elbo
   return(list(data = data, model = model, converged = converged))
 }
 
-# Credible Sets for non-sparse methods
+# Credible Sets for unmappable effects methods
 get_cs.ss_inf <- function(data, model, coverage, min_abs_corr, n_purity) {
 
   if (is.null(coverage) || is.null(min_abs_corr)) return(NULL)

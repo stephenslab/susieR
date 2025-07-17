@@ -18,18 +18,18 @@ get_var_y.individual <- function(data, ...) {
 }
 
 # Configure individual data for specified method
-configure_data.individual <- function(data, non_sparse_method) {
-  if (non_sparse_method == "none") {
+configure_data.individual <- function(data, unmappable_effects) {
+  if (unmappable_effects == "none") {
     return(data)
   } else {
-    # Convert to sufficient statistics for non-sparse methods
-    warning("Individual-level data converted to sufficient statistics for non-sparse methods")
-    return(convert_individual_to_ss_non_sparse(data, non_sparse_method))
+    # Convert to sufficient statistics for unmappable effects methods
+    warning("Individual-level data converted to sufficient statistics for unmappable effects methods")
+    return(convert_individual_to_ss_unmappable(data, unmappable_effects))
   }
 }
 
-# Convert individual data to ss with non-sparse components.
-convert_individual_to_ss_non_sparse <- function(individual_data, non_sparse_method) {
+# Convert individual data to ss with unmappable effects components.
+convert_individual_to_ss_unmappable <- function(individual_data, unmappable_effects) {
 
   # Extract components from individual data
   X <- individual_data$X
@@ -47,7 +47,7 @@ convert_individual_to_ss_non_sparse <- function(individual_data, non_sparse_meth
   X_colmeans <- attr(X, "scaled:center")
 
   # Create sufficient statistics data object with multiple classes
-  class_vector <- c(paste0("ss_", non_sparse_method), "ss")
+  class_vector <- c(paste0("ss_", unmappable_effects), "ss")
 
   ss_data <- structure(list(
     XtX        = XtX,
@@ -63,7 +63,7 @@ convert_individual_to_ss_non_sparse <- function(individual_data, non_sparse_meth
   attr(ss_data$XtX, "d") <- attr(X, "d")
   attr(ss_data$XtX, "scaled:scale") <- attr(X, "scaled:scale")
 
-  # Add eigen decomposition for non-sparse methods
+  # Add eigen decomposition for unmappable effects methods
   ss_data <- add_eigen_decomposition(ss_data)
 
   return(ss_data)
