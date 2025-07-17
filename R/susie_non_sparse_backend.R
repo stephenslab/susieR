@@ -178,7 +178,7 @@ initialize_fitted.ss_inf <- function(data, alpha, mu) {
   return(list(XtXr = XtXr))
 }
 # Extract core parameters across iterations for ss_inf (includes tau2)
-susie_extract_core.ss_inf <- function(data, model, tracking, iter, track_fit, ...) {
+extract_core.ss_inf <- function(data, model, tracking, iter, track_fit, ...) {
   if (isTRUE(track_fit)) {
     tracking[[iter]] <- list(alpha = model$alpha,
                              niter = iter,

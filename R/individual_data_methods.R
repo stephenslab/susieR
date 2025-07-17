@@ -70,7 +70,7 @@ convert_individual_to_ss_non_sparse <- function(individual_data, non_sparse_meth
 }
 
 # Extract core parameters across iterations
-susie_extract_core.individual <- function(data, model, tracking, iter, track_fit, ...) {
+extract_core.individual <- function(data, model, tracking, iter, track_fit, ...) {
   if (isTRUE(track_fit)) {
     tracking[[iter]] <- list(alpha = model$alpha,
                              niter = iter,

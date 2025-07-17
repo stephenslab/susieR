@@ -35,7 +35,7 @@ susie_engine <- function(data,
   # Main IBSS iteration loop
   for (iter in seq_len(max_iter)) {
     # Track iteration progress
-    tracking <- susie_extract_core(data, model, tracking, iter, track_fit)
+    tracking <- extract_core(data, model, tracking, iter, track_fit)
 
     # Store previous model for convergence check
     model_prev <- model

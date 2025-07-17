@@ -73,10 +73,10 @@ validate_prior.default <- function(data, model, check_prior, ...)
   stop("validate_prior: no method for class '", class(data)[1], "'")
 
 # Extract core parameters of a susie fit across iterations
-susie_extract_core <- function(data, model, tracking, iter, track_fit, ...)
-  UseMethod("susie_extract_core")
-susie_extract_core.default <- function(data, model, tracking, iter, track_fit, ...)
-  stop("susie_extract_core: no method for class '", class(data)[1], "'")
+extract_core <- function(data, model, tracking, iter, track_fit, ...)
+  UseMethod("extract_core")
+extract_core.default <- function(data, model, tracking, iter, track_fit, ...)
+  stop("extract_core: no method for class '", class(data)[1], "'")
 
 # Initialize susie model
 initialize_susie_model <- function(data, ...)

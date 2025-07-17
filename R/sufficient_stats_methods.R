@@ -18,7 +18,7 @@ get_var_y.ss <- function(data, ...) {
 }
 
 # Extract core parameters across iterations
-susie_extract_core.ss <- function(data, model, tracking, iter, track_fit, ...) {
+extract_core.ss <- function(data, model, tracking, iter, track_fit, ...) {
   if (isTRUE(track_fit)) {
     tracking[[iter]] <- list(alpha = model$alpha,
                              niter = iter,
