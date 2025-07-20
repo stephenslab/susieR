@@ -1,4 +1,31 @@
-# Individual-level data constructor
+#' Individual-level Data Constructor
+#'
+#' Constructs a data object for SuSiE from individual-level data (X, y).
+#' This internal function prepares and validates the input data for use
+#' in the SuSiE algorithm.
+#'
+#' @param X An n by p matrix of covariates (or sparse matrix, or trend filtering matrix)
+#' @param y An n-vector of response values
+#' @param intercept If TRUE, center X and y (default TRUE)
+#' @param standardize If TRUE, scale X to have unit variance (default TRUE)
+#' @param na.rm If TRUE, remove samples with missing values in y (default FALSE)
+#' @param prior_weights A p-vector of prior inclusion probabilities (default NULL for uniform)
+#' @param null_weight Weight for the null component (default 0, no null)
+#' @param unmappable_effects Method for handling unmappable effects: "none", "inf", or "ash"
+#'
+#' @return A list with class "individual" containing:
+#' \item{X}{The (possibly centered/scaled) covariate matrix}
+#' \item{y}{The (possibly centered) response vector}
+#' \item{mean_y}{Original mean of y}
+#' \item{n}{Number of samples}
+#' \item{p}{Number of variables}
+#' \item{prior_weights}{Normalized prior weights}
+#' \item{null_weight}{Weight for null component}
+#' \item{unmappable_effects}{Method for unmappable effects}
+#' Plus additional fields added by configure_data()
+#'
+#' @keywords internal
+#' @noRd
 individual_data_constructor <- function(X, y,
                               intercept = TRUE,
                               standardize = TRUE,
@@ -91,7 +118,40 @@ individual_data_constructor <- function(X, y,
   return(data_object)
 }
 
-# Sufficient statistics data constructor
+#' Sufficient Statistics Data Constructor
+#'
+#' Constructs a data object for SuSiE from sufficient statistics.
+#' This internal function prepares and validates sufficient statistics
+#' for use in the SuSiE algorithm without requiring individual-level data.
+#'
+#' @param XtX A p by p matrix of X'X
+#' @param Xty A p-vector of X'y  
+#' @param yty A scalar of y'y
+#' @param n Sample size
+#' @param X_colmeans Column means of X (default NA)
+#' @param y_mean Mean of y (default NA)
+#' @param maf Minor allele frequencies (for genetic data, default NULL)
+#' @param maf_thresh MAF threshold for filtering (default 0)
+#' @param standardize If TRUE, standardize variables (default TRUE)
+#' @param r_tol Tolerance for positive semi-definite check (default 1e-8)
+#' @param check_input If TRUE, perform additional input validation (default FALSE)
+#' @param prior_weights A p-vector of prior inclusion probabilities (default NULL for uniform)
+#' @param null_weight Weight for the null component (default 0, no null)
+#' @param unmappable_effects Method for handling unmappable effects: "none", "inf", or "ash"
+#'
+#' @return A list with class "ss" containing:
+#' \item{XtX}{The (possibly standardized) X'X matrix}
+#' \item{Xty}{The (possibly standardized) X'y vector}
+#' \item{yty}{The y'y value}
+#' \item{n}{Sample size}
+#' \item{p}{Number of variables}
+#' \item{prior_weights}{Normalized prior weights}
+#' \item{null_weight}{Weight for null component}
+#' \item{unmappable_effects}{Method for unmappable effects}
+#' Plus additional fields added by configure_data()
+#'
+#' @keywords internal
+#' @noRd
 sufficient_stats_constructor <- function(XtX, Xty, yty, n,
                                  X_colmeans = NA, y_mean = NA, maf = NULL,
                                  maf_thresh = 0, standardize = TRUE,
