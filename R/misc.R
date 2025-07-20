@@ -1,6 +1,7 @@
 # internal utility functions
 
-# Compute eigenvalue decomposition for unmappable effects methods
+# Compute eigenvalue decomposition
+#' @keywords internal
 compute_eigen_decomposition <- function(XtX, n) {
   LD <- XtX / n
   eig <- eigen(LD, symmetric = TRUE)
@@ -14,6 +15,10 @@ compute_eigen_decomposition <- function(XtX, n) {
 }
 
 # Method of Moments variance estimation for unmappable effects methods
+# NOTE: Ultimately, this will be implemented for both regular and inf,
+# not sure about the correct implementation quite yet, but after Gao's
+# approval this will be in the upcoming TODOs.
+#' @keywords internal
 MoM <- function(alpha, mu, omega, sigma2, tau2, n, V, Dsq, VtXty, Xty, yty,
                 est_sigma2, est_tau2, verbose) {
   L <- nrow(mu)
@@ -67,6 +72,7 @@ MoM <- function(alpha, mu, omega, sigma2, tau2, n, V, Dsq, VtXty, Xty, yty,
 }
 
 # Compute theta using BLUP
+#' @keywords internal
 compute_theta_blup <- function(data, model) {
   alpha <- model$alpha
   mu <- model$mu
@@ -87,11 +93,13 @@ compute_theta_blup <- function(data, model) {
 
 # Find how many variables in the CS.
 # x is a probability vector.
+#' @keywords internal
 n_in_CS_x = function (x, coverage = 0.9)
   sum(cumsum(sort(x,decreasing = TRUE)) < coverage) + 1
 
 # Return binary vector indicating if each point is in CS.
 # x is a probability vector.
+#' @keywords internal
 in_CS_x = function (x, coverage = 0.9) {
   n = n_in_CS_x(x,coverage)
   o = order(x,decreasing = TRUE)
@@ -102,12 +110,14 @@ in_CS_x = function (x, coverage = 0.9) {
 
 # Returns an l-by-p binary matrix indicating which variables are in
 # susie credible sets.
+#' @keywords internal
 in_CS = function (res, coverage = 0.9) {
   if (inherits(res,"susie"))
     res = res$alpha
   return(t(apply(res,1,function(x) in_CS_x(x,coverage))))
 }
 
+#' @keywords internal
 n_in_CS = function(res, coverage = 0.9) {
   if (inherits(res,"susie"))
     res = res$alpha
@@ -115,6 +125,8 @@ n_in_CS = function(res, coverage = 0.9) {
 }
 
 # Subsample and compute min, mean, median and max abs corr.
+#' @importFrom stats median
+#' @keywords internal
 get_purity = function (pos, X, Xcorr, squared = FALSE, n = 100,
                        use_rfast) {
   if (missing(use_rfast))
@@ -150,6 +162,8 @@ get_purity = function (pos, X, Xcorr, squared = FALSE, n = 100,
 }
 
 # Correlation function with specified warning muffled.
+#' @importFrom stats cor
+#' @keywords internal
 muffled_corr = function (x)
   withCallingHandlers(cor(x),
                       warning = function(w) {
@@ -158,6 +172,8 @@ muffled_corr = function (x)
                       })
 
 # cov2cor function with specified warning muffled.
+#' @importFrom stats cov2cor
+#' @keywords internal
 muffled_cov2cor = function (x)
   withCallingHandlers(cov2cor(x),
     warning = function(w) {
@@ -167,6 +183,7 @@ muffled_cov2cor = function (x)
       })
 
 # Check for symmetric matrix.
+#' @keywords internal
 is_symmetric_matrix = function (x) {
   if (requireNamespace("Rfast",quietly = TRUE))
     return(Rfast::is.symmetric(x))
@@ -176,19 +193,24 @@ is_symmetric_matrix = function (x) {
 
 # Compute standard error for regression coef.
 # S = (X'X)^-1 \Sigma
+#' @keywords internal
 calc_stderr = function (X, residuals)
   sqrt(diag(sum(residuals^2)/(nrow(X) - 2) * chol2inv(chol(crossprod(X)))))
 
 # Return residuals of Y after removing the linear effects of the susie
 # model.
+#' @importFrom stats coef
+#' @keywords internal
 get_R = function (X, Y, s)
   Y - X %*% coef(s)
 
 # Slim the result of fitted susie model.
+#' @keywords internal
 susie_slim = function (res)
   list(alpha = res$alpha,niter = res$niter,V = res$V,sigma2 = res$sigma2)
 
 # Prune single effects to given number L in susie model object.
+#' @keywords internal
 susie_prune_single_effects = function (s,L = 0,V = NULL) {
   num_effects = nrow(s$alpha)
   if (L == 0) {
@@ -233,8 +255,13 @@ susie_prune_single_effects = function (s,L = 0,V = NULL) {
   return(s)
 }
 
-# Compute column statistics: means, standard deviations and the quantity
-# d = colSums(Y^2) when Y is the centered or scaled matrix.
+# Compute the column means of X, the column standard deviations of X,
+# and rowSums(Y^2), where Y is the centered and/or scaled version of
+# X.
+#
+#' @importFrom Matrix rowSums
+#' @importFrom Matrix colMeans
+#' @keywords internal
 compute_colstats = function (X, center = TRUE, scale = TRUE) {
   n = nrow(X)
   p = ncol(X)
@@ -280,6 +307,9 @@ compute_colstats = function (X, center = TRUE, scale = TRUE) {
 # computes column standard deviations for any type of matrix
 # This should give the same result as matrixStats::colSds(X),
 # but allows for sparse matrices as well as dense ones.
+#' @importFrom matrixStats colSds
+#' @importFrom Matrix summary
+#' @keywords internal
 compute_colSds = function(X) {
   if (is.matrix(X))
     return(colSds(X))
@@ -292,6 +322,7 @@ compute_colSds = function(X) {
 }
 
 # Check whether A is positive semidefinite
+#' @keywords internal
 check_semi_pd = function (A, tol) {
   attr(A,"eigen") = eigen(A,symmetric = TRUE)
   v = attr(A,"eigen")$values
@@ -303,6 +334,7 @@ check_semi_pd = function (A, tol) {
 
 # Check whether b is in space spanned by the non-zero eigenvectors
 # of A
+#' @keywords internal
 check_projection = function (A, b) {
   if (is.null(attr(A,"eigen")))
     attr(A,"eigen") = eigen(A,symmetric = TRUE)
@@ -317,6 +349,8 @@ check_projection = function (A, b) {
 }
 
 # Utility function to display warning messages as they occur
+#' @importFrom crayon combine_styles
+#' @keywords internal
 warning_message = function(..., style=c("warning", "hint")) {
   style = match.arg(style)
   if (style=="warning" && getOption("warn")>=0) {
@@ -329,12 +363,16 @@ warning_message = function(..., style=c("warning", "hint")) {
 }
 
 # Apply operation f to all nonzeros of a sparse matrix.
+#' @importFrom Matrix sparseMatrix
+#' @importFrom Matrix summary
+#' @keywords internal
 apply_nonzeros <- function (X, f) {
   d <- summary(X)
   return(sparseMatrix(i = d$i,j = d$j,x = f(d$x),dims = dim(X)))
 }
 
 # Validate Model Initialization Object
+#' @keywords internal
 validate_init <- function(model_init, L, null_weight){
 
   # Check if model_init is a susie object
@@ -427,6 +465,7 @@ validate_init <- function(model_init, L, null_weight){
 }
 
 # Adjust the number of effects
+#' @keywords internal
 adjust_L <- function(model_init, L, V) {
   num_effects <- nrow(model_init$alpha)
   if (num_effects > L) {
@@ -443,6 +482,7 @@ adjust_L <- function(model_init, L, V) {
 }
 
 # Initialize Null Index
+#' @keywords internal
 initialize_null_index <- function(null_weight, p){
   if(is.null(null_weight) || null_weight == 0){
     null_idx = 0
@@ -454,6 +494,7 @@ initialize_null_index <- function(null_weight, p){
 
 
 # Helper function to assign variable names to model components
+#' @keywords internal
 assign_names <- function(model, variable_names, null_weight, p) {
   if (!is.null(variable_names)) {
     if (!is.null(null_weight)) {
@@ -471,44 +512,48 @@ assign_names <- function(model, variable_names, null_weight, p) {
 }
 
 # Helper function to update variance components and derived quantities
+#' @keywords internal
 update_model_variance <- function(data, model, lowerbound, upperbound) {
   variance_result <- update_variance_components(data, model)
   model$sigma2 <- max(lowerbound, variance_result$sigma2)
   model$sigma2 <- min(model$sigma2, upperbound)
-  
+
   # Update additional variance components if they exist
   if (!is.null(variance_result$tau2)) {
     model$tau2 <- variance_result$tau2
   }
-  
+
   # Update derived quantities after variance component changes
   data <- update_derived_quantities(data, model)
-  
+
   # Transfer theta from data to model if computed (for unmappable effects methods)
   if (!is.null(data$theta)) {
     model$theta <- data$theta
-    
+
     # Update fitted values to include theta: XtXr = XtX %*% (b + theta)
     b <- colSums(model$alpha * model$mu)
     model$XtXr <- data$XtX %*% (b + model$theta)
   }
-  
+
   return(list(data = data, model = model))
 }
 
 # Get posterior inclusion probabilities
+#' @keywords internal
 get_pip <- function(data, model, coverage, min_abs_corr, prior_tol) {
   if (is.null(coverage) || is.null(min_abs_corr)) return(NULL)
   return(susie_get_pip(model, prune_by_cs = FALSE, prior_tol = prior_tol))
 }
 
 # Expected log-likelihood
+#' @keywords internal
 Eloglik <- function(data, model) {
-  return(-data$n / 2 * log(2 * pi * model$sigma2) - 
+  return(-data$n / 2 * log(2 * pi * model$sigma2) -
          1 / (2 * model$sigma2) * get_ER2(data, model))
 }
 
 # Objective function (ELBO)
+#' @keywords internal
 get_objective <- function(data, model, verbose = FALSE) {
   objective <- Eloglik(data, model) - sum(model$KL)
   if (is.infinite(objective)) {
@@ -521,6 +566,7 @@ get_objective <- function(data, model, verbose = FALSE) {
 }
 
 # Estimate residual variance
+#' @keywords internal
 est_residual_variance <- function(data, model) {
   resid_var <- (1 / data$n) * get_ER2(data, model)
   if(resid_var < 0) {
@@ -530,7 +576,8 @@ est_residual_variance <- function(data, model) {
 }
 
 # Initialize core susie model object with default parameter matrices
-initialize_matrices <- function(p, L, scaled_prior_variance, var_y, residual_variance, 
+#' @keywords internal
+initialize_matrices <- function(p, L, scaled_prior_variance, var_y, residual_variance,
                                    prior_weights, include_unmappable = FALSE) {
   mat_init <- list(
     alpha = matrix(1 / p, L, p),
@@ -543,12 +590,12 @@ initialize_matrices <- function(p, L, scaled_prior_variance, var_y, residual_var
     sigma2 = residual_variance,
     pi = prior_weights
   )
-  
+
   # Add unmappable effects specific components
   if (include_unmappable) {
     mat_init$tau2 <- 0
     mat_init$theta <- rep(0, p)
   }
-  
+
   return(mat_init)
 }
