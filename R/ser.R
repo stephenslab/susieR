@@ -1,6 +1,26 @@
-# dXtX = attr(data$X, "d")
-# Xty = compute_Xty(data$X,R) we will compute this outside of SER and then plug in Xty into SER
-
+#' Single Effect Regression
+#'
+#' Performs single effect regression (SER) on sufficient statistics.
+#' This is an internal function that fits a single effect in the SuSiE model.
+#'
+#' @param Xty A p-vector of X'y values (sufficient statistics)
+#' @param dXtX A p-vector of diagonal elements of X'X (sufficient statistics)
+#' @param V Prior variance for the single effect
+#' @param residual_variance The residual variance (sigma^2)
+#' @param prior_weights A p-vector of prior weights for each variable (default NULL for uniform)
+#' @param optimize_V Method for optimizing prior variance: "none", "optim", "uniroot", "EM", or "simple"
+#' @param check_null_threshold Threshold for setting V to zero for numerical stability
+#'
+#' @return A list containing:
+#' \item{alpha}{Posterior inclusion probabilities}
+#' \item{mu}{Posterior means}
+#' \item{mu2}{Posterior second moments}
+#' \item{lbf}{Log Bayes factors}
+#' \item{V}{Optimized prior variance}
+#' \item{lbf_model}{Model log Bayes factor}
+#' 
+#' @keywords internal
+#' @noRd
 single_effect_regression <-
   function (Xty,
             dXtX,
