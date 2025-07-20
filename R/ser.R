@@ -18,7 +18,7 @@
 #' \item{lbf}{Log Bayes factors}
 #' \item{V}{Optimized prior variance}
 #' \item{lbf_model}{Model log Bayes factor}
-#' 
+#'
 #' @keywords internal
 #' @noRd
 single_effect_regression <-
@@ -28,7 +28,8 @@ single_effect_regression <-
             residual_variance = 1,
             prior_weights = NULL,
             optimize_V = c("none", "optim", "uniroot", "EM", "simple"),
-            check_null_threshold = 0) {
+            check_null_threshold = 0,
+            unmappable_effects = FALSE) {
 
     optimize_V <- match.arg(optimize_V)
     betahat <- (1 / dXtX) * Xty
@@ -39,10 +40,15 @@ single_effect_regression <-
       prior_weights <- rep(1 / length(dXtX), length(dXtX))
 
     # Optimize Prior Variance of lth effect
-    if (optimize_V != "EM" && optimize_V != "none")
-      V <- optimize_prior_variance(optimize_V, betahat, shat2, prior_weights,
-                                  alpha = NULL, post_mean2 = NULL, V_init = V,
-                                  check_null_threshold = check_null_threshold)
+    if (optimize_V != "EM" && optimize_V != "none") {
+      if (unmappable_effects && optimize_V == "optim") {
+        V <- optimize_prior_variance_unmappable(V, Xty, dXtX, prior_weights)
+      } else {
+        V <- optimize_prior_variance(optimize_V, betahat, shat2, prior_weights,
+                                    alpha = NULL, post_mean2 = NULL, V_init = V,
+                                    check_null_threshold = check_null_threshold)
+      }
+    }
 
     # log(bf) for each SNP
     lbf <- dnorm(betahat, 0, sqrt(V + shat2), log = TRUE) -
@@ -89,7 +95,6 @@ est_V_uniroot <- function (betahat, shat2, prior_weights) {
   return(exp(V.u$root))
 }
 
-# Optimize prior variance for unmappable effects methods
 optimize_prior_variance_unmappable <- function(V_init, XtOmegar, diagXtOmegaX, prior_weights,
                                                bounds = c(0, 1)) {
   p <- length(XtOmegar)

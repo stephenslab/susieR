@@ -92,7 +92,7 @@ single_effect_update.ss <- function(
     # Unmappable effects implementation
     alpha <- model$alpha
     mu <- model$mu
-    
+
     V <- data$eigen_vectors
     Dsq <- data$eigen_values
     VtXty <- data$VtXty
@@ -100,10 +100,10 @@ single_effect_update.ss <- function(
     n <- data$n
     p <- data$p
     L <- nrow(alpha)
-    
+
     sigma2 <- model$sigma2
     tau2 <- if (is.null(model$tau2)) 0 else model$tau2
-    
+
     if (!is.null(data$diagXtOmegaX) && !is.null(data$XtOmegay)) {
       diagXtOmegaX <- data$diagXtOmegaX
       XtOmegay <- data$XtOmegay
@@ -112,45 +112,44 @@ single_effect_update.ss <- function(
       diagXtOmegaX <- rowSums(sweep(V^2, 2, (Dsq / var), `*`))
       XtOmegay <- V %*% (VtXty / var)
     }
-    
+
+    # Remove lth effect
     b <- colSums(mu * alpha) - mu[l, ] * alpha[l, ]
+
+    # Compute Residuals
     XtOmegaXb <- V %*% ((t(V) %*% b) * Dsq / (tau2 * Dsq + sigma2))
     XtOmegar <- XtOmegay - XtOmegaXb
-    
-    V_l <- model$V[l]
-    if (!is.null(optimize_V) && optimize_V == "optim") {
-      V_l <- optimize_prior_variance_unmappable(V_l, XtOmegar, diagXtOmegaX, model$pi)
-    }
-    
+
     res <- single_effect_regression(
       Xty                  = XtOmegar,
       dXtX                 = diagXtOmegaX,
-      V                    = V_l,
+      V                    = model$V[l],
       residual_variance    = 1,  # Already incorporated in Omega
       prior_weights        = model$pi,
-      optimize_V           = "none",
-      check_null_threshold = check_null_threshold
+      optimize_V           = optimize_V,
+      check_null_threshold = check_null_threshold,
+      unmappable_effects   = TRUE
     )
-    
+
     model$alpha[l,]         <- res$alpha
     model$mu[l, ]           <- res$mu
     model$mu2[l, ]          <- res$mu2
     model$V[l]              <- res$V
     model$lbf[l]            <- res$lbf_model
     model$lbf_variable[l, ] <- res$lbf
-    
+
     # TODO: KL and mu2 for infinitesimal model is not properly implemented at the moment.
     model$KL[l] <- -res$lbf_model + SER_posterior_e_loglik(data, model, XtOmegar,
                                                             Eb  = model$alpha[l, ] * model$mu[l, ],
                                                             Eb2 = model$alpha[l, ] * model$mu2[l, ])
-    
+
     b <- colSums(model$alpha * model$mu)
     if (!is.null(model$theta)) {
       model$XtXr <- data$XtX %*% (b + model$theta)
     } else {
       model$XtXr <- data$XtX %*% b
     }
-    
+
   } else {
     # Standard approach
     # Remove lth effect
@@ -167,7 +166,8 @@ single_effect_update.ss <- function(
       residual_variance    = model$sigma2,
       prior_weights        = model$pi,
       optimize_V           = optimize_V,
-      check_null_threshold = check_null_threshold)
+      check_null_threshold = check_null_threshold,
+      unmappable_effects   = FALSE)
 
     res$KL <- -res$lbf_model +
       SER_posterior_e_loglik(data, model, XtR,
@@ -293,20 +293,20 @@ update_variance_components.ss <- function(data, model) {
     mu <- model$mu
     p <- data$p
     L <- nrow(alpha)
-    
+
     sigma2 <- model$sigma2
     tau2 <- if (is.null(model$tau2)) 0 else model$tau2
-    
+
     var <- tau2 * data$eigen_values + sigma2
     diagXtOmegaX <- rowSums(sweep(data$eigen_vectors^2, 2, (data$eigen_values / var), `*`))
     omega <- matrix(rep(diagXtOmegaX, L), nrow = L, ncol = p, byrow = TRUE) +
              matrix(rep(1 / model$V, p), nrow = L, ncol = p, byrow = FALSE)
-    
+
     mom_result <- MoM(alpha, mu, omega, sigma2, tau2, data$n,
                       data$eigen_vectors, data$eigen_values, data$VtXty,
                       data$Xty, data$yty,
                       est_sigma2 = TRUE, est_tau2 = TRUE, verbose = FALSE)
-    
+
     return(list(sigma2 = mom_result$sigma2, tau2 = mom_result$tau2))
   } else {
     # Standard approach
@@ -320,14 +320,14 @@ update_derived_quantities.ss <- function(data, model) {
   if (data$unmappable_effects == "inf") {
     sigma2 <- model$sigma2
     tau2 <- if (is.null(model$tau2)) 0 else model$tau2
-    
+
     var <- tau2 * data$eigen_values + sigma2
     data$var <- var
     data$diagXtOmegaX <- rowSums(sweep(data$eigen_vectors^2, 2, (data$eigen_values / var), `*`))
     data$XtOmegay <- data$eigen_vectors %*% (data$VtXty / var)
-    
+
     data$theta <- compute_theta_blup(data, model)
-    
+
     return(data)
   } else {
     return(data)  # No changes needed for standard ss data
@@ -367,12 +367,12 @@ handle_convergence_and_variance.ss <- function(data, model, model_prev, elbo_pre
       data <- result$data
       model <- result$model
     }
-    
+
     converged <- check_convergence(data, model_prev, model, elbo_prev, elbo_current, tol)
   } else {
     # Standard: Check convergence first, then update variance
     converged <- check_convergence(data, model_prev, model, elbo_prev, elbo_current, tol)
-    
+
     if (!converged && estimate_residual_variance) {
       result <- update_model_variance(data, model, residual_variance_lowerbound, residual_variance_upperbound)
       data <- result$data

@@ -120,7 +120,8 @@ single_effect_update.individual <- function(
     residual_variance    = model$sigma2,
     prior_weights        = model$pi,
     optimize_V           = optimize_V,
-    check_null_threshold = check_null_threshold)
+    check_null_threshold = check_null_threshold,
+    unmappable_effects   = FALSE)
 
   # log-likelihood term using current residual vector (not available in ss)
   res$loglik <- res$lbf_model +
