@@ -294,3 +294,139 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
 
   return(data_object)
 }
+
+#' Summary Statistics (RSS) Data Constructor
+#'
+#' Constructs a data object for SuSiE from summary statistics (RSS format).
+#' This internal function converts z-scores and correlation matrix to sufficient
+#' statistics format for use in the SuSiE algorithm.
+#'
+#' @param z A p-vector of z-scores
+#' @param R A p by p correlation matrix
+#' @param n Sample size (optional but highly recommended)
+#' @param bhat Alternative summary data giving estimated effects (length p)
+#' @param shat Alternative summary data giving standard errors (length p)
+#' @param var_y Sample variance of y, defined as y'y/(n-1)
+#' @param z_ld_weight Deprecated parameter for backwards compatibility
+#' @param prior_weights A p-vector of prior inclusion probabilities (default NULL for uniform)
+#' @param null_weight Weight for the null component (default 0, no null)
+#' @param unmappable_effects Method for handling unmappable effects: "none", "inf", or "ash"
+#' @param standardize If TRUE, scale to unit variance (default TRUE)
+#' @param check_input If TRUE, perform additional input validation (default FALSE)
+#' @param r_tol Tolerance for positive semi-definite check (default 1e-8)
+#'
+#' @return A list with class "ss" containing sufficient statistics
+#'
+#' @keywords internal
+#' @noRd
+summary_stats_constructor <- function(z = NULL, R, n = NULL,
+                                      bhat = NULL, shat = NULL, var_y = NULL,
+                                      z_ld_weight = 0,
+                                      prior_weights = NULL, null_weight = 0,
+                                      unmappable_effects = "none",
+                                      standardize = TRUE,
+                                      check_input = FALSE,
+                                      r_tol = 1e-8,
+                                      prior_variance = 50,
+                                      scaled_prior_variance = 0.2) {
+  
+  # Check input R
+  if (is.null(z) && !is.null(bhat))
+    p <- length(bhat)
+  else if (!is.null(z))
+    p <- length(z)
+  else
+    stop("Please provide either z or (bhat, shat)")
+    
+  if (nrow(R) != p)
+    stop(paste0("The dimension of R (", nrow(R), " x ", ncol(R), ") does not ",
+                "agree with expected (", p, " x ", p, ")"))
+  
+  # Check input n
+  if (!is.null(n))
+    if (n <= 1)
+      stop("n must be greater than 1")
+  
+  # Check inputs z, bhat and shat
+  if (sum(c(is.null(z), is.null(bhat) || is.null(shat))) != 1)
+    stop("Please provide either z or (bhat, shat), but not both")
+  if (is.null(z)) {
+    if (length(shat) == 1)
+      shat <- rep(shat, length(bhat))
+    if (length(bhat) != length(shat))
+      stop("The lengths of bhat and shat do not agree")
+    if (anyNA(bhat) || anyNA(shat))
+      stop("bhat, shat cannot have missing values")
+    if (any(shat <= 0))
+      stop("shat cannot have zero or negative elements")
+    z <- bhat / shat
+  }
+  if (length(z) < 1)
+    stop("Input vector z should have at least one element")
+  z[is.na(z)] <- 0
+  
+  # When n is provided, compute the PVE-adjusted z-scores
+  if (!is.null(n)) {
+    adj <- (n - 1) / (z^2 + n - 2)
+    z <- sqrt(adj) * z
+  }
+  
+  # Modify R by z_ld_weight (deprecated but maintained for compatibility)
+  if (z_ld_weight > 0) {
+    warning_message("As of version 0.11.0, use of non-zero z_ld_weight is no longer ",
+                    "recommended")
+    R <- muffled_cov2cor((1 - z_ld_weight) * R + z_ld_weight * tcrossprod(z))
+    R <- (R + t(R)) / 2
+  }
+  
+  # Convert to sufficient statistics format
+  if (is.null(n)) {
+    # Sample size not provided - use unadjusted z-scores
+    warning_message("Providing the sample size (n), or even a rough estimate of n, ",
+                    "is highly recommended. Without n, the implicit assumption is ",
+                    "n is large (Inf) and the effect sizes are small (close to zero).")
+    XtX <- R
+    Xty <- z
+    yty <- 1
+    n <- 2  # Arbitrary choice to ensure var(y) = yty/(n-1) = 1
+  } else {
+    # Sample size provided - use PVE-adjusted z-scores
+    if (!is.null(shat) && !is.null(var_y)) {
+      # var_y and shat provided - effects on original scale
+      XtXdiag <- var_y * adj / (shat^2)
+      XtX <- t(R * sqrt(XtXdiag)) * sqrt(XtXdiag)
+      XtX <- (XtX + t(XtX)) / 2
+      Xty <- z * sqrt(adj) * var_y / shat
+      yty <- (n - 1) * var_y
+    } else {
+      # Effects on standardized X, y scale
+      XtX <- (n - 1) * R
+      Xty <- sqrt(n - 1) * z
+      yty <- (n - 1) * (if (!is.null(var_y)) var_y else 1)
+    }
+  }
+  
+  # Use sufficient_stats_constructor to handle the rest
+  data_object <- sufficient_stats_constructor(
+    XtX = XtX,
+    Xty = Xty,
+    yty = yty,
+    n = n,
+    X_colmeans = NA,
+    y_mean = NA,
+    standardize = standardize,
+    r_tol = r_tol,
+    check_input = check_input,
+    prior_weights = prior_weights,
+    null_weight = null_weight,
+    unmappable_effects = unmappable_effects
+  )
+  
+  # Add RSS-specific prior variance handling
+  # When n is not provided, prior_variance should be used as scaled_prior_variance
+  data_object$rss_prior_variance <- prior_variance
+  data_object$rss_scaled_prior_variance <- scaled_prior_variance
+  data_object$rss_n_provided <- !is.null(n)
+  
+  return(data_object)
+}

@@ -95,3 +95,79 @@ susie_ss <- function(XtX, Xty, yty, n,
 
   return(model)
 }
+
+susie_rss <- function(z = NULL, R, n = NULL, bhat = NULL, shat = NULL, var_y = NULL,
+                      L = min(10, ncol(R)),
+                      z_ld_weight = 0,
+                      prior_variance = 50,
+                      scaled_prior_variance = 0.2,
+                      residual_variance = NULL,
+                      prior_weights = NULL,
+                      null_weight = 0,
+                      standardize = TRUE,
+                      estimate_residual_variance = FALSE,
+                      estimate_prior_variance = TRUE,
+                      estimate_prior_method = c("optim", "EM", "simple"),
+                      unmappable_effects = c("none", "inf", "ash"),
+                      check_null_threshold = 0,
+                      prior_tol = 1e-9,
+                      residual_variance_lowerbound = 0,
+                      residual_variance_upperbound = Inf,
+                      s_init = NULL,
+                      coverage = 0.95,
+                      min_abs_corr = 0.5,
+                      max_iter = 100,
+                      tol = 1e-3,
+                      verbose = FALSE,
+                      track_fit = FALSE,
+                      check_input = FALSE,
+                      check_prior = TRUE,
+                      n_purity = 100,
+                      r_tol = 1e-8) {
+  
+  # Issue warning for estimate_residual_variance if TRUE
+  if (estimate_residual_variance)
+    warning_message("For estimate_residual_variance = TRUE, please check ",
+                    "that R is the \"in-sample\" LD matrix; that is, the ",
+                    "correlation matrix obtained using the exact same data ",
+                    "matrix X that was used for the other summary ",
+                    "statistics. Also note, when covariates are included in ",
+                    "the univariate regressions that produced the summary ",
+                    "statistics, also consider removing these effects from ",
+                    "X before computing R.", style = "hint")
+  
+  # Validate method arguments
+  unmappable_effects <- match.arg(unmappable_effects)
+  estimate_prior_method <- match.arg(estimate_prior_method)
+  
+  # Create data object using summary_stats_constructor
+  data <- summary_stats_constructor(
+    z = z,
+    R = R,
+    n = n,
+    bhat = bhat,
+    shat = shat,
+    var_y = var_y,
+    z_ld_weight = z_ld_weight,
+    prior_weights = prior_weights,
+    null_weight = null_weight,
+    unmappable_effects = unmappable_effects,
+    standardize = standardize,
+    check_input = check_input,
+    r_tol = r_tol,
+    prior_variance = prior_variance,
+    scaled_prior_variance = scaled_prior_variance
+  )
+  
+  # Run SuSiE engine
+  model <- susie_engine(data, L, intercept = FALSE, standardize, scaled_prior_variance,
+                        residual_variance, data$prior_weights, data$null_weight,
+                        s_init, estimate_prior_variance, estimate_prior_method,
+                        check_null_threshold, estimate_residual_variance,
+                        residual_variance_lowerbound, residual_variance_upperbound,
+                        max_iter, tol, verbose, track_fit, coverage, min_abs_corr,
+                        prior_tol, n_purity, compute_univariate_zscore = FALSE,
+                        check_prior)
+  
+  return(model)
+}

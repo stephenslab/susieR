@@ -30,6 +30,12 @@ ibss_initialize <- function(data,
   # Check prior variance
   if (!is.numeric(scaled_prior_variance) || any(scaled_prior_variance < 0))
     stop("Scaled prior variance should be positive number")
+  
+  # Handle RSS-specific prior variance logic
+  # When n is not provided in RSS, use prior_variance as scaled_prior_variance
+  if (!is.null(data$rss_n_provided) && !data$rss_n_provided) {
+    scaled_prior_variance <- data$rss_prior_variance
+  }
 
   # Check prior weights
   if (is.null(prior_weights))
