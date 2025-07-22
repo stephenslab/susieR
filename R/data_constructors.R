@@ -373,8 +373,8 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL,
   
   # Modify R by z_ld_weight (deprecated but maintained for compatibility)
   if (z_ld_weight > 0) {
-    warning_message("As of version 0.11.0, use of non-zero z_ld_weight is no longer ",
-                    "recommended")
+    warning("As of version 0.11.0, use of non-zero z_ld_weight is no longer ",
+            "recommended")
     R <- muffled_cov2cor((1 - z_ld_weight) * R + z_ld_weight * tcrossprod(z))
     R <- (R + t(R)) / 2
   }
@@ -382,9 +382,9 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL,
   # Convert to sufficient statistics format
   if (is.null(n)) {
     # Sample size not provided - use unadjusted z-scores
-    warning_message("Providing the sample size (n), or even a rough estimate of n, ",
-                    "is highly recommended. Without n, the implicit assumption is ",
-                    "n is large (Inf) and the effect sizes are small (close to zero).")
+    warning("Providing the sample size (n), or even a rough estimate of n, ",
+            "is highly recommended. Without n, the implicit assumption is ",
+            "n is large (Inf) and the effect sizes are small (close to zero).")
     XtX <- R
     Xty <- z
     yty <- 1

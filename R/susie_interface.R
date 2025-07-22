@@ -127,14 +127,14 @@ susie_rss <- function(z = NULL, R, n = NULL, bhat = NULL, shat = NULL, var_y = N
   
   # Issue warning for estimate_residual_variance if TRUE
   if (estimate_residual_variance)
-    warning_message("For estimate_residual_variance = TRUE, please check ",
-                    "that R is the \"in-sample\" LD matrix; that is, the ",
-                    "correlation matrix obtained using the exact same data ",
-                    "matrix X that was used for the other summary ",
-                    "statistics. Also note, when covariates are included in ",
-                    "the univariate regressions that produced the summary ",
-                    "statistics, also consider removing these effects from ",
-                    "X before computing R.", style = "hint")
+    warning("For estimate_residual_variance = TRUE, please check ",
+            "that R is the \"in-sample\" LD matrix; that is, the ",
+            "correlation matrix obtained using the exact same data ",
+            "matrix X that was used for the other summary ",
+            "statistics. Also note, when covariates are included in ",
+            "the univariate regressions that produced the summary ",
+            "statistics, also consider removing these effects from ",
+            "X before computing R.")
   
   # Validate method arguments
   unmappable_effects <- match.arg(unmappable_effects)
