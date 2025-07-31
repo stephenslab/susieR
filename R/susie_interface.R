@@ -78,7 +78,7 @@ susie_ss <- function(XtX, Xty, yty, n,
   unmappable_effects <- match.arg(unmappable_effects)
   estimate_prior_method <- match.arg(estimate_prior_method)
 
-  # Create sufficient statistics data object
+  # Construct data object
   data <- sufficient_stats_constructor(XtX, Xty, yty, n, X_colmeans, y_mean,
                                maf, maf_thresh, standardize, r_tol, check_input,
                                prior_weights, null_weight, unmappable_effects)
@@ -124,7 +124,7 @@ susie_rss <- function(z = NULL, R, n = NULL, bhat = NULL, shat = NULL, var_y = N
                       check_prior = TRUE,
                       n_purity = 100,
                       r_tol = 1e-8) {
-  
+
   # Issue warning for estimate_residual_variance if TRUE
   if (estimate_residual_variance)
     warning("For estimate_residual_variance = TRUE, please check ",
@@ -135,12 +135,12 @@ susie_rss <- function(z = NULL, R, n = NULL, bhat = NULL, shat = NULL, var_y = N
             "the univariate regressions that produced the summary ",
             "statistics, also consider removing these effects from ",
             "X before computing R.")
-  
+
   # Validate method arguments
   unmappable_effects <- match.arg(unmappable_effects)
   estimate_prior_method <- match.arg(estimate_prior_method)
-  
-  # Create data object using summary_stats_constructor
+
+  # Construct data object
   data <- summary_stats_constructor(
     z = z,
     R = R,
@@ -158,7 +158,7 @@ susie_rss <- function(z = NULL, R, n = NULL, bhat = NULL, shat = NULL, var_y = N
     prior_variance = prior_variance,
     scaled_prior_variance = scaled_prior_variance
   )
-  
+
   # Run SuSiE engine
   model <- susie_engine(data, L, intercept = FALSE, standardize, scaled_prior_variance,
                         residual_variance, data$prior_weights, data$null_weight,
@@ -168,6 +168,54 @@ susie_rss <- function(z = NULL, R, n = NULL, bhat = NULL, shat = NULL, var_y = N
                         max_iter, tol, verbose, track_fit, coverage, min_abs_corr,
                         prior_tol, n_purity, compute_univariate_zscore = FALSE,
                         check_prior)
-  
+
+  return(model)
+}
+
+susie_rss_lambda <- function(z, R, maf = NULL, maf_thresh = 0,
+                             L = 10, lambda = 0,
+                             prior_variance = 50, residual_variance = NULL,
+                             r_tol = 1e-08, prior_weights = NULL,
+                             null_weight = 0,
+                             estimate_residual_variance = TRUE,
+                             estimate_prior_variance = TRUE,
+                             estimate_prior_method = c("optim", "EM", "simple"),
+                             check_null_threshold = 0, prior_tol = 1e-9,
+                             max_iter = 100, s_init = NULL, intercept_value = 0,
+                             coverage = 0.95, min_abs_corr = 0.5,
+                             tol = 1e-3, verbose = FALSE, track_fit = FALSE,
+                             check_R = TRUE, check_z = FALSE) {
+
+  # Validate method arguments
+  estimate_prior_method <- match.arg(estimate_prior_method)
+
+  # Construct data object
+  data <- rss_lambda_constructor(
+    z = z,
+    R = R,
+    maf = maf,
+    maf_thresh = maf_thresh,
+    lambda = lambda,
+    prior_weights = prior_weights,
+    null_weight = null_weight,
+    check_R = check_R,
+    check_z = check_z,
+    r_tol = r_tol,
+    prior_variance = prior_variance,
+    intercept_value = intercept_value
+  )
+
+  # Run SuSiE engine
+  model <- susie_engine(data, L, intercept = FALSE, standardize = FALSE,
+                        scaled_prior_variance = prior_variance,
+                        residual_variance, data$prior_weights, data$null_weight,
+                        s_init, estimate_prior_variance, estimate_prior_method,
+                        check_null_threshold, estimate_residual_variance,
+                        residual_variance_lowerbound = 0,
+                        residual_variance_upperbound = 1,  # RSS constraint
+                        max_iter, tol, verbose, track_fit, coverage, min_abs_corr,
+                        prior_tol, n_purity = 100, compute_univariate_zscore = FALSE,
+                        check_prior = FALSE)
+
   return(model)
 }
