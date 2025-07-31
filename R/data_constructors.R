@@ -64,7 +64,7 @@ individual_data_constructor <- function(X, y,
       stop("Null weight must be numeric")
     if (null_weight < 0 || null_weight >= 1)
       stop("Null weight must be between 0 and 1")
-    
+
     if (is.null(prior_weights))
       prior_weights <- c(rep(1 / ncol(X) * (1 - null_weight), ncol(X)), null_weight)
     else
@@ -77,7 +77,7 @@ individual_data_constructor <- function(X, y,
   # Store dimensions
   n <- nrow(X)
   p <- ncol(X)
-  
+
   # Validate and normalize prior_weights
   if (!is.null(prior_weights)) {
     if (length(prior_weights) != p)
@@ -125,7 +125,7 @@ individual_data_constructor <- function(X, y,
 #' for use in the SuSiE algorithm without requiring individual-level data.
 #'
 #' @param XtX A p by p matrix of X'X
-#' @param Xty A p-vector of X'y  
+#' @param Xty A p-vector of X'y
 #' @param yty A scalar of y'y
 #' @param n Sample size
 #' @param X_colmeans Column means of X (default NA)
@@ -245,7 +245,7 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
 
   # Define p
   p <- ncol(XtX)
-  
+
   # Validate and normalize prior_weights
   if (!is.null(prior_weights)) {
     if (length(prior_weights) != p)
@@ -329,7 +329,7 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL,
                                       r_tol = 1e-8,
                                       prior_variance = 50,
                                       scaled_prior_variance = 0.2) {
-  
+
   # Check input R
   if (is.null(z) && !is.null(bhat))
     p <- length(bhat)
@@ -337,16 +337,16 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL,
     p <- length(z)
   else
     stop("Please provide either z or (bhat, shat)")
-    
+
   if (nrow(R) != p)
     stop(paste0("The dimension of R (", nrow(R), " x ", ncol(R), ") does not ",
                 "agree with expected (", p, " x ", p, ")"))
-  
+
   # Check input n
   if (!is.null(n))
     if (n <= 1)
       stop("n must be greater than 1")
-  
+
   # Check inputs z, bhat and shat
   if (sum(c(is.null(z), is.null(bhat) || is.null(shat))) != 1)
     stop("Please provide either z or (bhat, shat), but not both")
@@ -364,13 +364,13 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL,
   if (length(z) < 1)
     stop("Input vector z should have at least one element")
   z[is.na(z)] <- 0
-  
+
   # When n is provided, compute the PVE-adjusted z-scores
   if (!is.null(n)) {
     adj <- (n - 1) / (z^2 + n - 2)
     z <- sqrt(adj) * z
   }
-  
+
   # Modify R by z_ld_weight (deprecated but maintained for compatibility)
   if (z_ld_weight > 0) {
     warning("As of version 0.11.0, use of non-zero z_ld_weight is no longer ",
@@ -378,7 +378,7 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL,
     R <- muffled_cov2cor((1 - z_ld_weight) * R + z_ld_weight * tcrossprod(z))
     R <- (R + t(R)) / 2
   }
-  
+
   # Convert to sufficient statistics format
   if (is.null(n)) {
     # Sample size not provided - use unadjusted z-scores
@@ -405,7 +405,7 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL,
       yty <- (n - 1) * (if (!is.null(var_y)) var_y else 1)
     }
   }
-  
+
   # Use sufficient_stats_constructor to handle the rest
   data_object <- sufficient_stats_constructor(
     XtX = XtX,
@@ -421,12 +421,134 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL,
     null_weight = null_weight,
     unmappable_effects = unmappable_effects
   )
-  
+
   # Add RSS-specific prior variance handling
   # When n is not provided, prior_variance should be used as scaled_prior_variance
   data_object$rss_prior_variance <- prior_variance
   data_object$rss_scaled_prior_variance <- scaled_prior_variance
   data_object$rss_n_provided <- !is.null(n)
-  
+
+  return(data_object)
+}
+
+#' Constructor for RSS Lambda Data
+#' TODO: Add parameter descriptions
+#' @keywords internal
+#' @noRd
+rss_lambda_constructor <- function(z, R, maf = NULL, maf_thresh = 0,
+                                   lambda = 0,
+                                   prior_weights = NULL, null_weight = 0,
+                                   check_R = TRUE, check_z = FALSE,
+                                   r_tol = 1e-8,
+                                   prior_variance = 50,
+                                   intercept_value = 0) {
+
+  # Check input R
+  if (nrow(R) != length(z))
+    stop(paste0("The dimension of correlation matrix (", nrow(R), " by ",
+                ncol(R), ") does not agree with expected (", length(z), " by ",
+                length(z), ")"))
+  if (!isSymmetric(R))
+    stop("R is not a symmetric matrix")
+  if (!(is.double(R) & is.matrix(R)) & !inherits(R, "CsparseMatrix"))
+    stop("Input R must be a double-precision matrix or a sparse matrix")
+
+  # MAF filter
+  if (!is.null(maf)) {
+    if (length(maf) != length(z))
+      stop(paste0("The length of maf does not agree with expected ", length(z)))
+    id <- which(maf > maf_thresh)
+    R <- R[id, id]
+    z <- z[id]
+  }
+
+  if (any(is.infinite(z)))
+    stop("z contains infinite values")
+
+  # Check for NAs in R
+  if (anyNA(R))
+    stop("R matrix contains missing values")
+
+  # Replace NAs in z with zero
+  if (anyNA(z)) {
+    warning("NA values in z-scores are replaced with 0")
+    z[is.na(z)] <- 0
+  }
+
+  # Handle null weight
+  if (is.numeric(null_weight) && null_weight == 0)
+    null_weight <- NULL
+  if (!is.null(null_weight)) {
+    if (!is.numeric(null_weight))
+      stop("Null weight must be numeric")
+    if (null_weight < 0 || null_weight >= 1)
+      stop("Null weight must be between 0 and 1")
+    if (is.null(prior_weights))
+      prior_weights <- c(rep(1/ncol(R) * (1 - null_weight), ncol(R)), null_weight)
+    else
+      prior_weights <- c(prior_weights * (1 - null_weight), null_weight)
+    R <- cbind(rbind(R, 0), 0)
+    z <- c(z, 0)
+  }
+
+  # Eigen decomposition for R
+  p <- ncol(R)
+  eigen_R <- eigen(R, symmetric = TRUE)
+
+  if (check_R && any(eigen_R$values < -r_tol))
+    stop(paste0("The correlation matrix (", nrow(R), " by ", ncol(R),
+                ") is not a positive semidefinite matrix. ",
+                "The smallest eigenvalue is ", min(eigen_R$values),
+                ". You can bypass this by \"check_R = FALSE\" which instead ",
+                "sets negative eigenvalues to 0 to allow for continued ",
+                "computations."))
+
+  # Check whether z in space spanned by the non-zero eigenvectors of R
+  if (check_z) {
+    # Project z onto null space of R
+    colspace <- which(eigen_R$values > r_tol)
+    if (length(colspace) < length(z)) {
+      znull <- crossprod(eigen_R$vectors[, -colspace], z)
+      if (sum(znull^2) > r_tol * sum(z^2))
+        warning("Input z does not lie in the space of non-zero eigenvectors of R.")
+      else
+        message("Input z is in space spanned by the non-zero eigenvectors of R.")
+    }
+  }
+
+  # Set negative eigenvalues to zero
+  eigen_R$values[eigen_R$values < r_tol] <- 0
+
+  # Handle lambda estimation
+  if (identical(lambda, "estimate")) {
+    colspace <- which(eigen_R$values > 0)
+    if (length(colspace) == length(z))
+      lambda <- 0
+    else {
+      znull <- crossprod(eigen_R$vectors[, -colspace], z)  # U2^T z
+      lambda <- sum(znull^2) / length(znull)
+    }
+  }
+
+  # Create data object with only immutable data
+  data_object <- list(
+    z = z,
+    R = R,
+    n = length(z),
+    p = length(z),
+    prior_weights = prior_weights,
+    null_weight = null_weight,
+    lambda = lambda,
+    intercept_value = intercept_value,
+    r_tol = r_tol,
+    prior_variance = prior_variance,
+
+    # Eigen decomposition (computed once, never changes)
+    eigen_R = eigen_R,
+
+    # Class assignment
+    class = "rss_lambda"
+  )
+
   return(data_object)
 }
