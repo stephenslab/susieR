@@ -530,8 +530,8 @@ rss_lambda_constructor <- function(z, R, maf = NULL, maf_thresh = 0,
     }
   }
 
-  # Create data object with only immutable data
-  data_object <- list(
+  # Create data object
+  data_object <- structure(list(
     z = z,
     R = R,
     n = length(z),
@@ -542,11 +542,7 @@ rss_lambda_constructor <- function(z, R, maf = NULL, maf_thresh = 0,
     intercept_value = intercept_value,
     r_tol = r_tol,
     prior_variance = prior_variance,
-
-    # Eigen decomposition (computed once, never changes)
-    eigen_R = eigen_R,
-
-    # Class assignment
+    eigen_R = eigen_R),
     class = "rss_lambda"
   )
 
