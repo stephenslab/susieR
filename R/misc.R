@@ -545,12 +545,6 @@ get_pip <- function(data, model, coverage, min_abs_corr, prior_tol) {
   return(susie_get_pip(model, prune_by_cs = FALSE, prior_tol = prior_tol))
 }
 
-# Expected log-likelihood
-#' @keywords internal
-Eloglik <- function(data, model) {
-  return(-data$n / 2 * log(2 * pi * model$sigma2) -
-         1 / (2 * model$sigma2) * get_ER2(data, model))
-}
 
 # Objective function (ELBO)
 #' @keywords internal
@@ -599,3 +593,4 @@ initialize_matrices <- function(p, L, scaled_prior_variance, var_y, residual_var
 
   return(mat_init)
 }
+
