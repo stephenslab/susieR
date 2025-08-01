@@ -254,3 +254,9 @@ handle_convergence_and_variance.individual <- function(data, model, model_prev, 
 
   return(list(data = data, model = model, converged = converged))
 }
+
+# Expected log-likelihood
+Eloglik.individual <- function(data, model) {
+  return(-data$n / 2 * log(2 * pi * model$sigma2) -
+         1 / (2 * model$sigma2) * get_ER2(data, model))
+}

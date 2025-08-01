@@ -382,3 +382,9 @@ handle_convergence_and_variance.ss <- function(data, model, model_prev, elbo_pre
 
   return(list(data = data, model = model, converged = converged))
 }
+
+# Expected log-likelihood
+Eloglik.ss <- function(data, model) {
+  return(-data$n / 2 * log(2 * pi * model$sigma2) -
+         1 / (2 * model$sigma2) * get_ER2(data, model))
+}
