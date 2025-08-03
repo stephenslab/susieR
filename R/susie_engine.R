@@ -16,6 +16,7 @@ susie_engine <- function(data,
   # Validate method argument
   estimate_prior_method <- match.arg(estimate_prior_method)
 
+
   # Initialize model object
   model <- ibss_initialize(data = data, L = L,
                            scaled_prior_variance = scaled_prior_variance,
