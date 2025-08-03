@@ -432,7 +432,29 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL,
 }
 
 #' Constructor for RSS Lambda Data
-#' TODO: Add parameter descriptions
+#'
+#' Constructs a data object for RSS data with lambda regularization.
+#'
+#' @param z A p-vector of z-scores
+#' @param R A p by p correlation matrix
+#' @param maf A p-vector of minor allele frequencies
+#' @param maf_thresh MAF threshold for filtering (default 0)
+#' @param lambda Regularization parameter for correlated errors (default 0)
+#' @param prior_weights A p-vector of prior inclusion probabilities (default NULL for uniform)
+#' @param null_weight Weight for the null component (default 0, no null)
+#' @param check_R If TRUE, check that R is positive semi-definite (default TRUE)
+#' @param check_z If TRUE, check that z lies in column space of R (default FALSE)
+#' @param r_tol Tolerance for eigenvalue checks (default 1e-8)
+#' @param prior_variance Prior variance on effect sizes (default 50)
+#' @param intercept_value Intercept value for the model (default 0)
+#'
+#' @return A list with class "rss_lambda" containing:
+#' \item{z}{The z-scores}
+#' \item{R}{The correlation matrix}
+#' \item{lambda}{The regularization parameter}
+#' \item{eigen_R}{Eigen decomposition of R}
+#' Plus additional fields for the model
+#'
 #' @keywords internal
 #' @noRd
 rss_lambda_constructor <- function(z, R, maf = NULL, maf_thresh = 0,
