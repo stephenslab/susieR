@@ -15,9 +15,6 @@ compute_eigen_decomposition <- function(XtX, n) {
 }
 
 # Method of Moments variance estimation for unmappable effects methods
-# NOTE: Ultimately, this will be implemented for both regular and inf,
-# not sure about the correct implementation quite yet, but after Gao's
-# approval this will be in the upcoming TODOs.
 #' @keywords internal
 MoM <- function(alpha, mu, omega, sigma2, tau2, n, V, Dsq, VtXty, Xty, yty,
                 est_sigma2, est_tau2, verbose) {
