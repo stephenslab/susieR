@@ -236,59 +236,52 @@ lbf <- function (V, shat2, T2) {
   return(l)
 }
 
-# Temporary RSS-specific single effect regression
-# TODO: Eventually integrate this into main single_effect_regression function
-single_effect_regression_rss <- function(z, SinvRj, RjSinvRj, V = 1, 
+# Single effect regression for RSS with correlated errors
+single_effect_regression_rss <- function(z, SinvRj, RjSinvRj, V = 1,
                                          prior_weights = NULL,
                                          optimize_V = "none",
                                          check_null_threshold = 0) {
   p <- length(z)
-  
-  # Debug checks
-  if (!is.numeric(RjSinvRj)) stop("RjSinvRj is not numeric")
-  if (!is.matrix(SinvRj)) stop("SinvRj is not a matrix")
-  if (ncol(SinvRj) != p || nrow(SinvRj) != p) 
-    stop("SinvRj dimensions don't match: ", nrow(SinvRj), "x", ncol(SinvRj), " vs p=", p)
-  
+
   shat2 <- 1 / RjSinvRj
-  
+
   if (is.null(prior_weights))
     prior_weights <- rep(1/p, p)
-  
+
   if (optimize_V != "EM" && optimize_V != "none") {
     V <- optimize_prior_variance_rss(optimize_V, z, SinvRj, RjSinvRj, shat2,
                                      prior_weights, alpha = NULL, post_mean2 = NULL,
                                      V_init = V, check_null_threshold = check_null_threshold)
   }
-  
+
   # Compute log Bayes factors
   lbf <- numeric(p)
   for (j in 1:p) {
     lbf[j] <- -0.5 * log(1 + (V/shat2[j])) +
               0.5 * (V/(1 + (V/shat2[j]))) * sum(SinvRj[,j] * z)^2
   }
-  
+
   # Handle infinite shat2
   lbf[is.infinite(shat2)] <- 0
-  
+
   # Compute posterior weights
   lpo <- lbf + log(prior_weights + sqrt(.Machine$double.eps))
   maxlpo <- max(lpo)
   w_weighted <- exp(lpo - maxlpo)
   weighted_sum_w <- sum(w_weighted)
   alpha <- w_weighted / weighted_sum_w
-  
+
   # Compute posterior mean and variance
   post_var <- (RjSinvRj + 1/V)^(-1)
   post_mean <- sapply(1:p, function(j) post_var[j] * sum(SinvRj[,j] * z))
   post_mean2 <- post_var + post_mean^2
-  
+
   lbf_model <- maxlpo + log(weighted_sum_w)
-  
+
   if (optimize_V == "EM") {
     V <- sum(alpha * post_mean2)
   }
-  
+
   return(list(
     alpha = alpha,
     mu = post_mean,
@@ -305,72 +298,68 @@ optimize_prior_variance_rss <- function(method, z, SinvRj, RjSinvRj, shat2,
                                         prior_weights, alpha, post_mean2,
                                         V_init, check_null_threshold) {
   V <- V_init
-  
+
   if (method != "simple") {
     if (method == "optim") {
-      # Compute initial value based on RSS likelihood
-      # This is max((z^T Sigma^{-1} R_j)^2 - 1/RjSinvRj, 1e-6)
-      # Use vectorized calculation to match old implementation
-      # SinvRj is p x p, z is p x 1, need to replicate z to match matrix dimensions
+      # Compute initial value: max((z^T Sigma^{-1} R_j)^2 - 1/RjSinvRj, 1e-6)
       init_vals <- sapply(1:length(z), function(j) sum(SinvRj[,j] * z)^2) - (1/RjSinvRj)
       init_val <- max(c(init_vals, 1e-6), na.rm = TRUE)
-      
-      # Define negative log-likelihood function for optimization
+
+      # Define negative log-likelihood function
       neg_loglik_rss_logscale <- function(lV) {
         return(-loglik_rss(exp(lV), z, SinvRj, RjSinvRj, shat2, prior_weights))
       }
-      
-      # Optimize log(V) using optim with Brent method to match old implementation
+
+      # Optimize log(V) using Brent method
       lV <- optim(par = log(init_val),
                   fn = neg_loglik_rss_logscale,
                   method = "Brent",
                   lower = -30,
                   upper = 15)$par
-      
+
       # Check if new estimate improves likelihood
       if (neg_loglik_rss_logscale(lV) > neg_loglik_rss_logscale(log(V))) {
         lV <- log(V)
       }
       V <- exp(lV)
-      
+
     } else if (method == "EM") {
       V <- sum(alpha * post_mean2)
     } else {
       stop("Invalid option for optimize_V")
     }
   }
-  
+
   # Check if V=0 gives better likelihood (null check)
-  # This check should happen for all methods, not just when check_null_threshold > 0
-  if (loglik_rss(0, z, SinvRj, RjSinvRj, shat2, prior_weights) + check_null_threshold >= 
+  if (loglik_rss(0, z, SinvRj, RjSinvRj, shat2, prior_weights) + check_null_threshold >=
       loglik_rss(V, z, SinvRj, RjSinvRj, shat2, prior_weights)) {
     V <- 0
   }
-  
+
   return(V)
 }
 
 # Log-likelihood for RSS with given prior variance
 loglik_rss <- function(V, z, SinvRj, RjSinvRj, shat2, prior_weights) {
   p <- length(z)
-  
-  # Compute log Bayes factors using sapply to match old implementation
-  lbf <- sapply(1:p, function(j) 
+
+  # Compute log Bayes factors
+  lbf <- sapply(1:p, function(j)
     -0.5 * log(1 + (V/shat2[j])) +
      0.5 * (V/(1 + (V/shat2[j]))) * sum(SinvRj[,j] * z)^2
   )
-  
+
   # Add log prior weights
   lpo <- lbf + log(prior_weights + sqrt(.Machine$double.eps))
-  
+
   # Deal with special case of infinite shat2 (e.g., happens if X does not vary)
   lbf[is.infinite(shat2)] <- 0
   lpo[is.infinite(shat2)] <- 0
-  
+
   # Compute log-sum-exp of weighted lbf
   maxlpo <- max(lpo)
   w_weighted <- exp(lpo - maxlpo)
   weighted_sum_w <- sum(w_weighted)
-  
+
   return(log(weighted_sum_w) + maxlpo)
 }
