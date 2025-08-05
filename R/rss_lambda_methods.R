@@ -105,7 +105,8 @@ single_effect_update.rss_lambda <- function(data, model, l,
 
   r <- data$z - model$Rz
 
-  res <- single_effect_regression_rss(
+  res <- single_effect_regression(
+    data = data,
     z = r,
     SinvRj = model$SinvRj,
     RjSinvRj = model$RjSinvRj,

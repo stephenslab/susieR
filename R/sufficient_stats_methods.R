@@ -121,6 +121,7 @@ single_effect_update.ss <- function(
     XtOmegar <- XtOmegay - XtOmegaXb
 
     res <- single_effect_regression(
+      data                 = data,
       Xty                  = XtOmegar,
       dXtX                 = diagXtOmegaX,
       V                    = model$V[l],
@@ -160,6 +161,7 @@ single_effect_update.ss <- function(
     d <- attr(data$XtX, "d")
 
     res <- single_effect_regression(
+      data                 = data,
       Xty                  = XtR,
       dXtX                 = d,
       V                    = model$V[l],

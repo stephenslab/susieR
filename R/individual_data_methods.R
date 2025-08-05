@@ -114,6 +114,7 @@ single_effect_update.individual <- function(
   d <- attr(data$X, "d")
 
   res <- single_effect_regression(
+    data                 = data,
     Xty                  = XtR,
     dXtX                 = d,
     V                    = model$V[l],
