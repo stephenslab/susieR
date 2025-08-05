@@ -96,8 +96,12 @@ susie_ss <- function(XtX, Xty, yty, n,
   return(model)
 }
 
-susie_rss <- function(z = NULL, R, n = NULL, bhat = NULL, shat = NULL, var_y = NULL,
+susie_rss <- function(z = NULL, R, n = NULL,
+                      bhat = NULL, shat = NULL, var_y = NULL,
                       L = min(10, ncol(R)),
+                      lambda = 0,
+                      maf = NULL,
+                      maf_thresh = 0,
                       z_ld_weight = 0,
                       prior_variance = 50,
                       scaled_prior_variance = 0.2,
@@ -105,6 +109,7 @@ susie_rss <- function(z = NULL, R, n = NULL, bhat = NULL, shat = NULL, var_y = N
                       prior_weights = NULL,
                       null_weight = 0,
                       standardize = TRUE,
+                      intercept_value = 0,
                       estimate_residual_variance = FALSE,
                       estimate_prior_variance = TRUE,
                       estimate_prior_method = c("optim", "EM", "simple"),
@@ -122,42 +127,30 @@ susie_rss <- function(z = NULL, R, n = NULL, bhat = NULL, shat = NULL, var_y = N
                       track_fit = FALSE,
                       check_input = FALSE,
                       check_prior = TRUE,
+                      check_R = TRUE,
+                      check_z = FALSE,
                       n_purity = 100,
                       r_tol = 1e-8) {
-
-  # Issue warning for estimate_residual_variance if TRUE
-  if (estimate_residual_variance)
-    warning("For estimate_residual_variance = TRUE, please check ",
-            "that R is the \"in-sample\" LD matrix; that is, the ",
-            "correlation matrix obtained using the exact same data ",
-            "matrix X that was used for the other summary ",
-            "statistics. Also note, when covariates are included in ",
-            "the univariate regressions that produced the summary ",
-            "statistics, also consider removing these effects from ",
-            "X before computing R.")
 
   # Validate method arguments
   unmappable_effects <- match.arg(unmappable_effects)
   estimate_prior_method <- match.arg(estimate_prior_method)
 
   # Construct data object
-  data <- summary_stats_constructor(
-    z = z,
-    R = R,
-    n = n,
-    bhat = bhat,
-    shat = shat,
-    var_y = var_y,
-    z_ld_weight = z_ld_weight,
-    prior_weights = prior_weights,
-    null_weight = null_weight,
-    unmappable_effects = unmappable_effects,
-    standardize = standardize,
-    check_input = check_input,
-    r_tol = r_tol,
-    prior_variance = prior_variance,
-    scaled_prior_variance = scaled_prior_variance
-  )
+  data <- summary_stats_constructor(z = z, R = R, n = n, bhat = bhat, shat = shat,
+                                    var_y = var_y, lambda = lambda,
+                                    maf = maf, maf_thresh = maf_thresh,
+                                    z_ld_weight = z_ld_weight,
+                                    prior_weights = prior_weights,
+                                    null_weight = null_weight,
+                                    unmappable_effects = unmappable_effects,
+                                    standardize = standardize,
+                                    check_input = check_input,
+                                    check_R = check_R, check_z = check_z, r_tol = r_tol,
+                                    prior_variance = prior_variance,
+                                    scaled_prior_variance = scaled_prior_variance,
+                                    intercept_value = intercept_value,
+                                    estimate_residual_variance = estimate_residual_variance)
 
   # Run SuSiE engine
   model <- susie_engine(data, L, intercept = FALSE, standardize, scaled_prior_variance,
@@ -172,50 +165,3 @@ susie_rss <- function(z = NULL, R, n = NULL, bhat = NULL, shat = NULL, var_y = N
   return(model)
 }
 
-susie_rss_lambda <- function(z, R, maf = NULL, maf_thresh = 0,
-                             L = 10, lambda = 0,
-                             prior_variance = 50, residual_variance = NULL,
-                             r_tol = 1e-08, prior_weights = NULL,
-                             null_weight = 0,
-                             estimate_residual_variance = TRUE,
-                             estimate_prior_variance = TRUE,
-                             estimate_prior_method = c("optim", "EM", "simple"),
-                             check_null_threshold = 0, prior_tol = 1e-9,
-                             max_iter = 100, s_init = NULL, intercept_value = 0,
-                             coverage = 0.95, min_abs_corr = 0.5,
-                             tol = 1e-3, verbose = FALSE, track_fit = FALSE,
-                             check_R = TRUE, check_z = FALSE) {
-
-  # Validate method arguments
-  estimate_prior_method <- match.arg(estimate_prior_method)
-
-  # Construct data object
-  data <- rss_lambda_constructor(
-    z = z,
-    R = R,
-    maf = maf,
-    maf_thresh = maf_thresh,
-    lambda = lambda,
-    prior_weights = prior_weights,
-    null_weight = null_weight,
-    check_R = check_R,
-    check_z = check_z,
-    r_tol = r_tol,
-    prior_variance = prior_variance,
-    intercept_value = intercept_value
-  )
-
-  # Run SuSiE engine
-  model <- susie_engine(data, L, intercept = FALSE, standardize = FALSE,
-                        scaled_prior_variance = prior_variance,
-                        residual_variance, data$prior_weights, data$null_weight,
-                        s_init, estimate_prior_variance, estimate_prior_method,
-                        check_null_threshold, estimate_residual_variance,
-                        residual_variance_lowerbound = 0,
-                        residual_variance_upperbound = 1,  # RSS constraint
-                        max_iter, tol, verbose, track_fit, coverage, min_abs_corr,
-                        prior_tol, n_purity = 100, compute_univariate_zscore = FALSE,
-                        check_prior = FALSE)
-
-  return(model)
-}

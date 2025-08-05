@@ -321,14 +321,65 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
 #' @noRd
 summary_stats_constructor <- function(z = NULL, R, n = NULL,
                                       bhat = NULL, shat = NULL, var_y = NULL,
+                                      lambda = 0,
+                                      maf = NULL, maf_thresh = 0,
                                       z_ld_weight = 0,
                                       prior_weights = NULL, null_weight = 0,
                                       unmappable_effects = "none",
                                       standardize = TRUE,
                                       check_input = FALSE,
+                                      check_R = TRUE,
+                                      check_z = FALSE,
                                       r_tol = 1e-8,
                                       prior_variance = 50,
-                                      scaled_prior_variance = 0.2) {
+                                      scaled_prior_variance = 0.2,
+                                      intercept_value = 0,
+                                      estimate_residual_variance = FALSE) {
+
+  # Check if this should use RSS-lambda path
+  if (lambda != 0) {
+    # Parameter validation for RSS-lambda
+    if (!is.null(bhat) || !is.null(shat))
+      stop("Parameters 'bhat' and 'shat' are not supported when lambda != 0. ",
+           "Please provide z-scores directly.")
+    
+    if (!is.null(var_y))
+      stop("Parameter 'var_y' is not supported when lambda != 0.")
+    
+    if (z_ld_weight != 0)
+      stop("Parameter 'z_ld_weight' is not supported when lambda != 0.")
+    
+    if (!is.null(n))
+      warning("Parameter 'n' is ignored when lambda != 0.")
+    
+    # Delegate to rss_lambda_constructor
+    return(rss_lambda_constructor(
+      z = z, R = R, maf = maf, maf_thresh = maf_thresh,
+      lambda = lambda, prior_weights = prior_weights,
+      null_weight = null_weight, check_R = check_R,
+      check_z = check_z, r_tol = r_tol,
+      prior_variance = prior_variance,
+      intercept_value = intercept_value
+    ))
+  }
+  
+  # Parameter validation for standard RSS (lambda = 0)
+  if (!is.null(maf) || maf_thresh != 0)
+    stop("Parameters 'maf' and 'maf_thresh' are only supported when lambda != 0.")
+  
+  if (intercept_value != 0)
+    stop("Parameter 'intercept_value' is only supported when lambda != 0.")
+
+  # Issue warning for estimate_residual_variance if TRUE
+  if (estimate_residual_variance && lambda == 0)
+    warning("For estimate_residual_variance = TRUE, please check ",
+            "that R is the \"in-sample\" LD matrix; that is, the ",
+            "correlation matrix obtained using the exact same data ",
+            "matrix X that was used for the other summary ",
+            "statistics. Also note, when covariates are included in ",
+            "the univariate regressions that produced the summary ",
+            "statistics, also consider removing these effects from ",
+            "X before computing R.")
 
   # Check input R
   if (is.null(z) && !is.null(bhat))
@@ -564,7 +615,12 @@ rss_lambda_constructor <- function(z, R, maf = NULL, maf_thresh = 0,
     intercept_value = intercept_value,
     r_tol = r_tol,
     prior_variance = prior_variance,
-    eigen_R = eigen_R),
+    eigen_R = eigen_R,
+    # Engine parameter overrides for RSS-lambda
+    engine_scaled_prior_variance = prior_variance,  # Use unscaled
+    engine_standardize = FALSE,  # Never standardize
+    engine_residual_variance_upperbound = 1,  # RSS constraint
+    engine_check_prior = FALSE),  # RSS-lambda always uses check_prior = FALSE
     class = "rss_lambda"
   )
 

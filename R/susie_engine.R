@@ -16,6 +16,15 @@ susie_engine <- function(data,
   # Validate method argument
   estimate_prior_method <- match.arg(estimate_prior_method)
 
+  # Apply any engine parameter overrides from data constructor
+  if (!is.null(data$engine_scaled_prior_variance))
+    scaled_prior_variance <- data$engine_scaled_prior_variance
+  if (!is.null(data$engine_standardize))
+    standardize <- data$engine_standardize
+  if (!is.null(data$engine_residual_variance_upperbound))
+    residual_variance_upperbound <- data$engine_residual_variance_upperbound
+  if (!is.null(data$engine_check_prior))
+    check_prior <- data$engine_check_prior
 
   # Initialize model object
   model <- ibss_initialize(data = data, L = L,
