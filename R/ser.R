@@ -3,13 +3,18 @@
 #' Performs single effect regression (SER) on sufficient statistics.
 #' This is an internal function that fits a single effect in the SuSiE model.
 #'
+#' @param data Data object for class checking (determines standard vs RSS computation)
 #' @param Xty A p-vector of X'y values (sufficient statistics)
 #' @param dXtX A p-vector of diagonal elements of X'X (sufficient statistics)
+#' @param z A p-vector of z-scores (RSS-specific)
+#' @param SinvRj A p×p matrix where column j is Σ^(-1)R_j (RSS-specific)
+#' @param RjSinvRj A p-vector where element j is R_j'Σ^(-1)R_j (RSS-specific)
 #' @param V Prior variance for the single effect
 #' @param residual_variance The residual variance (sigma^2)
 #' @param prior_weights A p-vector of prior weights for each variable (default NULL for uniform)
 #' @param optimize_V Method for optimizing prior variance: "none", "optim", "uniroot", "EM", or "simple"
 #' @param check_null_threshold Threshold for setting V to zero for numerical stability
+#' @param unmappable_effects Whether to use unmappable effects optimization
 #'
 #' @return A list containing:
 #' \item{alpha}{Posterior inclusion probabilities}
@@ -22,8 +27,12 @@
 #' @keywords internal
 #' @noRd
 single_effect_regression <-
-  function (Xty,
-            dXtX,
+  function (data = NULL,
+            Xty = NULL,
+            dXtX = NULL,
+            z = NULL,
+            SinvRj = NULL,
+            RjSinvRj = NULL,
             V,
             residual_variance = 1,
             prior_weights = NULL,
@@ -32,52 +41,99 @@ single_effect_regression <-
             unmappable_effects = FALSE) {
 
     optimize_V <- match.arg(optimize_V)
-    betahat <- (1 / dXtX) * Xty
-    shat2 <- residual_variance / dXtX
-
-    # Check prior weights
-    if (is.null(prior_weights))
-      prior_weights <- rep(1 / length(dXtX), length(dXtX))
-
-    # Optimize Prior Variance of lth effect
-    if (optimize_V != "EM" && optimize_V != "none") {
-      if (unmappable_effects && optimize_V == "optim") {
-        V <- optimize_prior_variance_unmappable(V, Xty, dXtX, prior_weights)
-      } else {
-        V <- optimize_prior_variance(optimize_V, betahat, shat2, prior_weights,
-                                    alpha = NULL, post_mean2 = NULL, V_init = V,
-                                    check_null_threshold = check_null_threshold)
+    
+    # Check if this is RSS data
+    if (!is.null(data) && inherits(data, "rss_lambda")) {
+      # RSS-specific computation path
+      p <- length(z)
+      shat2 <- 1 / RjSinvRj
+      
+      if (is.null(prior_weights))
+        prior_weights <- rep(1/p, p)
+      
+      if (optimize_V != "EM" && optimize_V != "none") {
+        V <- optimize_prior_variance_rss(optimize_V, z, SinvRj, RjSinvRj, shat2,
+                                         prior_weights, alpha = NULL, post_mean2 = NULL,
+                                         V_init = V, check_null_threshold = check_null_threshold)
       }
+      
+      # Compute log Bayes factors
+      lbf <- numeric(p)
+      for (j in 1:p) {
+        lbf[j] <- -0.5 * log(1 + (V/shat2[j])) +
+                  0.5 * (V/(1 + (V/shat2[j]))) * sum(SinvRj[,j] * z)^2
+      }
+      
+      # Handle infinite shat2
+      lbf[is.infinite(shat2)] <- 0
+      
+      # Compute posterior weights
+      lpo <- lbf + log(prior_weights + sqrt(.Machine$double.eps))
+      maxlpo <- max(lpo)
+      w_weighted <- exp(lpo - maxlpo)
+      weighted_sum_w <- sum(w_weighted)
+      alpha <- w_weighted / weighted_sum_w
+      
+      # Compute posterior mean and variance
+      post_var <- (RjSinvRj + 1/V)^(-1)
+      post_mean <- sapply(1:p, function(j) post_var[j] * sum(SinvRj[,j] * z))
+      post_mean2 <- post_var + post_mean^2
+      
+      lbf_model <- maxlpo + log(weighted_sum_w)
+      
+      if (optimize_V == "EM") {
+        V <- sum(alpha * post_mean2)
+      }
+      
+    } else {
+      # Standard computation path
+      betahat <- (1 / dXtX) * Xty
+      shat2 <- residual_variance / dXtX
+
+      # Check prior weights
+      if (is.null(prior_weights))
+        prior_weights <- rep(1 / length(dXtX), length(dXtX))
+
+      # Optimize Prior Variance of lth effect
+      if (optimize_V != "EM" && optimize_V != "none") {
+        if (unmappable_effects && optimize_V == "optim") {
+          V <- optimize_prior_variance_unmappable(V, Xty, dXtX, prior_weights)
+        } else {
+          V <- optimize_prior_variance(optimize_V, betahat, shat2, prior_weights,
+                                      alpha = NULL, post_mean2 = NULL, V_init = V,
+                                      check_null_threshold = check_null_threshold)
+        }
+      }
+
+      # log(bf) for each SNP
+      lbf <- dnorm(betahat, 0, sqrt(V + shat2), log = TRUE) -
+        dnorm(betahat, 0, sqrt(shat2), log = TRUE)
+      lpo <- lbf + log(prior_weights + sqrt(.Machine$double.eps))
+
+      # Deal with special case of infinite shat2 (e.g., happens if X does
+      # not vary).
+      lbf[is.infinite(shat2)] <- 0
+      lpo[is.infinite(shat2)] <- 0
+      maxlpo <- max(lpo)
+
+      # w is proportional to BF, but subtract max for numerical stability.
+      w_weighted <- exp(lpo - maxlpo)
+
+      # Posterior prob for each SNP.
+      weighted_sum_w <- sum(w_weighted)
+      alpha <- w_weighted / weighted_sum_w
+      post_var <- (1 / V + dXtX / residual_variance)^(-1) # Posterior variance.
+      post_mean <- (1 / residual_variance) * post_var * Xty
+      post_mean2 <- post_var + post_mean^2 # Second moment.
+
+      # BF for single effect model.
+      lbf_model <- maxlpo + log(weighted_sum_w)
+
+      if(optimize_V == "EM")
+        V <- optimize_prior_variance(optimize_V, betahat, shat2, prior_weights,
+                                    alpha, post_mean2,
+                                    check_null_threshold = check_null_threshold)
     }
-
-    # log(bf) for each SNP
-    lbf <- dnorm(betahat, 0, sqrt(V + shat2), log = TRUE) -
-      dnorm(betahat, 0, sqrt(shat2), log = TRUE)
-    lpo <- lbf + log(prior_weights + sqrt(.Machine$double.eps))
-
-    # Deal with special case of infinite shat2 (e.g., happens if X does
-    # not vary).
-    lbf[is.infinite(shat2)] <- 0
-    lpo[is.infinite(shat2)] <- 0
-    maxlpo <- max(lpo)
-
-    # w is proportional to BF, but subtract max for numerical stability.
-    w_weighted <- exp(lpo - maxlpo)
-
-    # Posterior prob for each SNP.
-    weighted_sum_w <- sum(w_weighted)
-    alpha <- w_weighted / weighted_sum_w
-    post_var <- (1 / V + dXtX / residual_variance)^(-1) # Posterior variance.
-    post_mean <- (1 / residual_variance) * post_var * Xty
-    post_mean2 <- post_var + post_mean^2 # Second moment.
-
-    # BF for single effect model.
-    lbf_model <- maxlpo + log(weighted_sum_w)
-
-    if(optimize_V == "EM")
-      V <- optimize_prior_variance(optimize_V, betahat, shat2, prior_weights,
-                                  alpha, post_mean2,
-                                  check_null_threshold = check_null_threshold)
 
     return(list(alpha = alpha,
                 mu = post_mean,
@@ -236,62 +292,6 @@ lbf <- function (V, shat2, T2) {
   return(l)
 }
 
-# Single effect regression for RSS with correlated errors
-single_effect_regression_rss <- function(z, SinvRj, RjSinvRj, V = 1,
-                                         prior_weights = NULL,
-                                         optimize_V = "none",
-                                         check_null_threshold = 0) {
-  p <- length(z)
-
-  shat2 <- 1 / RjSinvRj
-
-  if (is.null(prior_weights))
-    prior_weights <- rep(1/p, p)
-
-  if (optimize_V != "EM" && optimize_V != "none") {
-    V <- optimize_prior_variance_rss(optimize_V, z, SinvRj, RjSinvRj, shat2,
-                                     prior_weights, alpha = NULL, post_mean2 = NULL,
-                                     V_init = V, check_null_threshold = check_null_threshold)
-  }
-
-  # Compute log Bayes factors
-  lbf <- numeric(p)
-  for (j in 1:p) {
-    lbf[j] <- -0.5 * log(1 + (V/shat2[j])) +
-              0.5 * (V/(1 + (V/shat2[j]))) * sum(SinvRj[,j] * z)^2
-  }
-
-  # Handle infinite shat2
-  lbf[is.infinite(shat2)] <- 0
-
-  # Compute posterior weights
-  lpo <- lbf + log(prior_weights + sqrt(.Machine$double.eps))
-  maxlpo <- max(lpo)
-  w_weighted <- exp(lpo - maxlpo)
-  weighted_sum_w <- sum(w_weighted)
-  alpha <- w_weighted / weighted_sum_w
-
-  # Compute posterior mean and variance
-  post_var <- (RjSinvRj + 1/V)^(-1)
-  post_mean <- sapply(1:p, function(j) post_var[j] * sum(SinvRj[,j] * z))
-  post_mean2 <- post_var + post_mean^2
-
-  lbf_model <- maxlpo + log(weighted_sum_w)
-
-  if (optimize_V == "EM") {
-    V <- sum(alpha * post_mean2)
-  }
-
-  return(list(
-    alpha = alpha,
-    mu = post_mean,
-    mu2 = post_mean2,
-    lbf = lbf,
-    lbf_model = lbf_model,
-    V = V,
-    prior_weights = prior_weights
-  ))
-}
 
 # Optimize prior variance for RSS
 optimize_prior_variance_rss <- function(method, z, SinvRj, RjSinvRj, shat2,
