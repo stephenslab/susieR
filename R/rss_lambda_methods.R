@@ -296,9 +296,17 @@ loglik.rss_lambda <- function(data, V, z, SinvRj, RjSinvRj, shat2, prior_weights
   maxlpo <- max(lpo)
   w_weighted <- exp(lpo - maxlpo)
   weighted_sum_w <- sum(w_weighted)
+  alpha <- w_weighted / weighted_sum_w
   
-  return(log(weighted_sum_w) + maxlpo)
+  return(list(
+    lbf_model = log(weighted_sum_w) + maxlpo,
+    lbf = lbf,
+    alpha = alpha,
+    gradient = NA  # Gradient not computed for RSS
+  ))
 }
 
-neg_loglik_logscale.rss_lambda <- function(data, lV, z, SinvRj, RjSinvRj, shat2, prior_weights)
-  -loglik.rss_lambda(data, exp(lV), z, SinvRj, RjSinvRj, shat2, prior_weights)
+neg_loglik_logscale.rss_lambda <- function(data, lV, z, SinvRj, RjSinvRj, shat2, prior_weights) {
+  res <- loglik.rss_lambda(data, exp(lV), z, SinvRj, RjSinvRj, shat2, prior_weights)
+  return(-res$lbf_model)
+}

@@ -279,8 +279,23 @@ loglik.individual <- function(data, V, betahat, shat2, prior_weights) {
   maxlpo <- max(lpo)
   w_weighted <- exp(lpo - maxlpo)
   weighted_sum_w <- sum(w_weighted)
-  return(log(weighted_sum_w) + maxlpo)
+  alpha <- w_weighted / weighted_sum_w
+  
+  # Compute gradient
+  T2 <- betahat^2 / shat2
+  grad_components <- 0.5 * (1 / (V + shat2)) * ((shat2 / (V + shat2)) * T2 - 1)
+  grad_components[is.nan(grad_components)] <- 0
+  gradient <- sum(alpha * grad_components)
+  
+  return(list(
+    lbf_model = log(weighted_sum_w) + maxlpo,
+    lbf = lbf,
+    alpha = alpha,
+    gradient = gradient
+  ))
 }
 
-neg_loglik_logscale.individual <- function(data, lV, betahat, shat2, prior_weights)
-  -loglik.individual(data, exp(lV), betahat, shat2, prior_weights)
+neg_loglik_logscale.individual <- function(data, lV, betahat, shat2, prior_weights) {
+  res <- loglik.individual(data, exp(lV), betahat, shat2, prior_weights)
+  return(-res$lbf_model)
+}
