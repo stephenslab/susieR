@@ -52,7 +52,7 @@ single_effect_regression <-
         prior_weights <- rep(1/p, p)
       
       if (optimize_V != "EM" && optimize_V != "none") {
-        V <- optimize_prior_variance_rss(optimize_V, z, SinvRj, RjSinvRj, shat2,
+        V <- optimize_prior_variance_rss(optimize_V, data, z, SinvRj, RjSinvRj, shat2,
                                          prior_weights, alpha = NULL, post_mean2 = NULL,
                                          V_init = V, check_null_threshold = check_null_threshold)
       }
@@ -99,7 +99,7 @@ single_effect_regression <-
         if (unmappable_effects && optimize_V == "optim") {
           V <- optimize_prior_variance_unmappable(V, Xty, dXtX, prior_weights)
         } else {
-          V <- optimize_prior_variance(optimize_V, betahat, shat2, prior_weights,
+          V <- optimize_prior_variance(optimize_V, data, betahat, shat2, prior_weights,
                                       alpha = NULL, post_mean2 = NULL, V_init = V,
                                       check_null_threshold = check_null_threshold)
         }
@@ -130,7 +130,7 @@ single_effect_regression <-
       lbf_model <- maxlpo + log(weighted_sum_w)
 
       if(optimize_V == "EM")
-        V <- optimize_prior_variance(optimize_V, betahat, shat2, prior_weights,
+        V <- optimize_prior_variance(optimize_V, data, betahat, shat2, prior_weights,
                                     alpha, post_mean2,
                                     check_null_threshold = check_null_threshold)
     }
@@ -145,9 +145,9 @@ single_effect_regression <-
   }
 
 # Estimate prior variance.
-est_V_uniroot <- function (betahat, shat2, prior_weights) {
+est_V_uniroot <- function (data, betahat, shat2, prior_weights) {
   V.u <- uniroot(negloglik.grad.logscale, c(-10, 10), extendInt = "upX",
-                betahat = betahat, shat2 = shat2, prior_weights = prior_weights)
+                data = data, betahat = betahat, shat2 = shat2, prior_weights = prior_weights)
   return(exp(V.u$root))
 }
 
@@ -180,25 +180,25 @@ optimize_prior_variance_unmappable <- function(V_init, XtOmegar, diagXtOmegaX, p
   }
 }
 
-optimize_prior_variance <- function (optimize_V, betahat, shat2, prior_weights,
+optimize_prior_variance <- function (optimize_V, data, betahat, shat2, prior_weights,
                                     alpha = NULL, post_mean2 = NULL,
                                     V_init = NULL, check_null_threshold = 0) {
   V <- V_init
   if (optimize_V != "simple") {
     if(optimize_V == "optim") {
       lV <- optim(par = log(max(c(betahat^2 - shat2, 1), na.rm = TRUE)),
-                 fn = neg.loglik.logscale, betahat = betahat, shat2 = shat2,
+                 fn = neg_loglik_logscale, data = data, betahat = betahat, shat2 = shat2,
                  prior_weights = prior_weights, method = "Brent", lower = -30,
                  upper = 15)$par
       ## if the estimated one is worse than current one, don't change it.
-      if(neg.loglik.logscale(lV, betahat = betahat, shat2 = shat2, prior_weights = prior_weights) >
-         neg.loglik.logscale(log(V), betahat = betahat,
+      if(neg_loglik_logscale(data, lV, betahat = betahat, shat2 = shat2, prior_weights = prior_weights) >
+         neg_loglik_logscale(data, log(V), betahat = betahat,
                              shat2 = shat2, prior_weights = prior_weights)){
         lV <- log(V)
       }
       V <- exp(lV)
     } else if (optimize_V == "uniroot")
-      V <- est_V_uniroot(betahat, shat2, prior_weights)
+      V <- est_V_uniroot(data, betahat, shat2, prior_weights)
     else if (optimize_V == "EM")
       V <- sum(alpha * post_mean2)
     else
@@ -216,8 +216,8 @@ optimize_prior_variance <- function (optimize_V, betahat, shat2, prior_weights,
   # non-zeros estimates unless they are indeed small enough to be
   # neglible. See more intuition at
   # https://stephens999.github.io/fiveMinuteStats/LR_and_BF.html
-  if (loglik(0, betahat, shat2, prior_weights) +
-      check_null_threshold >= loglik(V, betahat, shat2, prior_weights))
+  if (loglik(data, 0, betahat, shat2, prior_weights) +
+      check_null_threshold >= loglik(data, V, betahat, shat2, prior_weights))
     V <- 0
 
   return(V)
@@ -226,35 +226,9 @@ optimize_prior_variance <- function (optimize_V, betahat, shat2, prior_weights,
 # In these functions, s2 represents residual_variance, and shat2 is an
 # estimate of it.
 
-# The log likelihood function for SER model (based on summary data
-# betahat, shat2) as a function of prior variance V.
-#
 #' @importFrom Matrix colSums
 #' @importFrom stats dnorm
-loglik <- function (V, betahat, shat2, prior_weights) {
-
-  #log(bf) for each SNP
-  lbf <- dnorm(betahat, 0, sqrt(V + shat2), log = TRUE) -
-    dnorm(betahat, 0, sqrt(shat2), log = TRUE)
-  lpo <- lbf + log(prior_weights + sqrt(.Machine$double.eps))
-
-  # Deal with special case of infinite shat2 (e.g., happens if X does
-  # not vary).
-  lbf[is.infinite(shat2)] <- 0
-  lpo[is.infinite(shat2)] <- 0
-
-  maxlpo <- max(lpo)
-  w_weighted <- exp(lpo - maxlpo)
-  weighted_sum_w <- sum(w_weighted)
-  return(log(weighted_sum_w) + maxlpo)
-}
-
-neg.loglik.logscale <- function(lV, betahat, shat2, prior_weights)
-  -loglik(exp(lV), betahat, shat2, prior_weights)
-
-#' @importFrom Matrix colSums
-#' @importFrom stats dnorm
-loglik.grad <- function(V, betahat, shat2, prior_weights) {
+loglik.grad <- function(V, data, betahat, shat2, prior_weights) {
 
   # log(bf) for each SNP.
   lbf <- dnorm(betahat, 0, sqrt(V + shat2), log = TRUE) -
@@ -275,8 +249,8 @@ loglik.grad <- function(V, betahat, shat2, prior_weights) {
 
 # Define loglikelihood and gradient as function of lV:=log(V)
 # to improve numerical optimization
-negloglik.grad.logscale <- function (lV, betahat, shat2, prior_weights)
-  -exp(lV) * loglik.grad(exp(lV), betahat, shat2, prior_weights)
+negloglik.grad.logscale <- function (lV, data, betahat, shat2, prior_weights)
+  -exp(lV) * loglik.grad(exp(lV), data, betahat, shat2, prior_weights)
 
 # Vector of gradients of logBF_j for each j, with respect to prior
 # variance V.
@@ -294,7 +268,7 @@ lbf <- function (V, shat2, T2) {
 
 
 # Optimize prior variance for RSS
-optimize_prior_variance_rss <- function(method, z, SinvRj, RjSinvRj, shat2,
+optimize_prior_variance_rss <- function(method, data, z, SinvRj, RjSinvRj, shat2,
                                         prior_weights, alpha, post_mean2,
                                         V_init, check_null_threshold) {
   V <- V_init
@@ -305,20 +279,22 @@ optimize_prior_variance_rss <- function(method, z, SinvRj, RjSinvRj, shat2,
       init_vals <- sapply(1:length(z), function(j) sum(SinvRj[,j] * z)^2) - (1/RjSinvRj)
       init_val <- max(c(init_vals, 1e-6), na.rm = TRUE)
 
-      # Define negative log-likelihood function
-      neg_loglik_rss_logscale <- function(lV) {
-        return(-loglik_rss(exp(lV), z, SinvRj, RjSinvRj, shat2, prior_weights))
-      }
-
       # Optimize log(V) using Brent method
       lV <- optim(par = log(init_val),
-                  fn = neg_loglik_rss_logscale,
+                  fn = neg_loglik_logscale,
+                  data = data,
+                  z = z,
+                  SinvRj = SinvRj,
+                  RjSinvRj = RjSinvRj,
+                  shat2 = shat2,
+                  prior_weights = prior_weights,
                   method = "Brent",
                   lower = -30,
                   upper = 15)$par
 
       # Check if new estimate improves likelihood
-      if (neg_loglik_rss_logscale(lV) > neg_loglik_rss_logscale(log(V))) {
+      if (neg_loglik_logscale(data, lV, z, SinvRj, RjSinvRj, shat2, prior_weights) > 
+          neg_loglik_logscale(data, log(V), z, SinvRj, RjSinvRj, shat2, prior_weights)) {
         lV <- log(V)
       }
       V <- exp(lV)
@@ -331,35 +307,11 @@ optimize_prior_variance_rss <- function(method, z, SinvRj, RjSinvRj, shat2,
   }
 
   # Check if V=0 gives better likelihood (null check)
-  if (loglik_rss(0, z, SinvRj, RjSinvRj, shat2, prior_weights) + check_null_threshold >=
-      loglik_rss(V, z, SinvRj, RjSinvRj, shat2, prior_weights)) {
+  if (loglik(data, 0, z, SinvRj, RjSinvRj, shat2, prior_weights) + check_null_threshold >=
+      loglik(data, V, z, SinvRj, RjSinvRj, shat2, prior_weights)) {
     V <- 0
   }
 
   return(V)
 }
 
-# Log-likelihood for RSS with given prior variance
-loglik_rss <- function(V, z, SinvRj, RjSinvRj, shat2, prior_weights) {
-  p <- length(z)
-
-  # Compute log Bayes factors
-  lbf <- sapply(1:p, function(j)
-    -0.5 * log(1 + (V/shat2[j])) +
-     0.5 * (V/(1 + (V/shat2[j]))) * sum(SinvRj[,j] * z)^2
-  )
-
-  # Add log prior weights
-  lpo <- lbf + log(prior_weights + sqrt(.Machine$double.eps))
-
-  # Deal with special case of infinite shat2 (e.g., happens if X does not vary)
-  lbf[is.infinite(shat2)] <- 0
-  lpo[is.infinite(shat2)] <- 0
-
-  # Compute log-sum-exp of weighted lbf
-  maxlpo <- max(lpo)
-  w_weighted <- exp(lpo - maxlpo)
-  weighted_sum_w <- sum(w_weighted)
-
-  return(log(weighted_sum_w) + maxlpo)
-}

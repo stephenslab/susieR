@@ -135,3 +135,15 @@ Eloglik <- function(data, model)
   UseMethod("Eloglik")
 Eloglik.default <- function(data, model)
   stop("Eloglik: no method for class '", class(data)[1], "'")
+
+# Log-likelihood for prior variance optimization
+loglik <- function(data, ...)
+  UseMethod("loglik")
+loglik.default <- function(data, ...)
+  stop("loglik: no method for class '", class(data)[1], "'")
+
+# Negative log-likelihood in log scale for optimization
+neg_loglik_logscale <- function(data, ...)
+  UseMethod("neg_loglik_logscale")
+neg_loglik_logscale.default <- function(data, ...)
+  stop("neg_loglik_logscale: no method for class '", class(data)[1], "'")

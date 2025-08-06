@@ -390,3 +390,26 @@ Eloglik.ss <- function(data, model) {
   return(-data$n / 2 * log(2 * pi * model$sigma2) -
          1 / (2 * model$sigma2) * get_ER2(data, model))
 }
+
+#' @importFrom Matrix colSums
+#' @importFrom stats dnorm
+loglik.ss <- function(data, V, betahat, shat2, prior_weights) {
+  
+  #log(bf) for each SNP
+  lbf <- dnorm(betahat, 0, sqrt(V + shat2), log = TRUE) -
+    dnorm(betahat, 0, sqrt(shat2), log = TRUE)
+  lpo <- lbf + log(prior_weights + sqrt(.Machine$double.eps))
+  
+  # Deal with special case of infinite shat2 (e.g., happens if X does
+  # not vary).
+  lbf[is.infinite(shat2)] <- 0
+  lpo[is.infinite(shat2)] <- 0
+  
+  maxlpo <- max(lpo)
+  w_weighted <- exp(lpo - maxlpo)
+  weighted_sum_w <- sum(w_weighted)
+  return(log(weighted_sum_w) + maxlpo)
+}
+
+neg_loglik_logscale.ss <- function(data, lV, betahat, shat2, prior_weights)
+  -loglik.ss(data, exp(lV), betahat, shat2, prior_weights)

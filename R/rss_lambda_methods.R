@@ -274,3 +274,31 @@ Eloglik.rss_lambda <- function(data, model) {
   }
   return(result)
 }
+
+# Log-likelihood for RSS
+loglik.rss_lambda <- function(data, V, z, SinvRj, RjSinvRj, shat2, prior_weights) {
+  p <- length(z)
+  
+  # Compute log Bayes factors
+  lbf <- sapply(1:p, function(j)
+    -0.5 * log(1 + (V/shat2[j])) +
+     0.5 * (V/(1 + (V/shat2[j]))) * sum(SinvRj[,j] * z)^2
+  )
+  
+  # Add log prior weights
+  lpo <- lbf + log(prior_weights + sqrt(.Machine$double.eps))
+  
+  # Deal with special case of infinite shat2 (e.g., happens if X does not vary)
+  lbf[is.infinite(shat2)] <- 0
+  lpo[is.infinite(shat2)] <- 0
+  
+  # Compute log-sum-exp of weighted lbf
+  maxlpo <- max(lpo)
+  w_weighted <- exp(lpo - maxlpo)
+  weighted_sum_w <- sum(w_weighted)
+  
+  return(log(weighted_sum_w) + maxlpo)
+}
+
+neg_loglik_logscale.rss_lambda <- function(data, lV, z, SinvRj, RjSinvRj, shat2, prior_weights)
+  -loglik.rss_lambda(data, exp(lV), z, SinvRj, RjSinvRj, shat2, prior_weights)
