@@ -531,6 +531,14 @@ update_model_variance <- function(data, model, lowerbound, upperbound) {
     b <- colSums(model$alpha * model$mu)
     model$XtXr <- data$XtX %*% (b + model$theta)
   }
+  
+  # Transfer RSS lambda specific updates from data to model
+  if (!is.null(data$SinvRj_temp)) {
+    model$SinvRj <- data$SinvRj_temp
+    model$RjSinvRj <- data$RjSinvRj_temp
+    data$SinvRj_temp <- NULL
+    data$RjSinvRj_temp <- NULL
+  }
 
   return(list(data = data, model = model))
 }

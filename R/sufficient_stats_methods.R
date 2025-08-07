@@ -348,42 +348,6 @@ check_convergence.ss <- function(data, model_prev, model_current, elbo_prev, elb
   }
 }
 
-# Update variance before convergence check for ss data
-update_variance_before_convergence.ss <- function(data) {
-  if (data$unmappable_effects == "inf") {
-    return(TRUE)  # Update variance before convergence check
-  } else {
-    # Standard behavior: Check convergence first, then update variance
-    return(FALSE)
-  }
-}
-
-# Handle convergence and variance updates for ss data
-handle_convergence_and_variance.ss <- function(data, model, model_prev, elbo_prev, elbo_current,
-                                                tol, estimate_residual_variance,
-                                                residual_variance_lowerbound, residual_variance_upperbound) {
-  if (data$unmappable_effects == "inf") {
-    # Unmappable effects: Update variance first, then check convergence
-    if (estimate_residual_variance) {
-      result <- update_model_variance(data, model, residual_variance_lowerbound, residual_variance_upperbound)
-      data <- result$data
-      model <- result$model
-    }
-
-    converged <- check_convergence(data, model_prev, model, elbo_prev, elbo_current, tol)
-  } else {
-    # Standard: Check convergence first, then update variance
-    converged <- check_convergence(data, model_prev, model, elbo_prev, elbo_current, tol)
-
-    if (!converged && estimate_residual_variance) {
-      result <- update_model_variance(data, model, residual_variance_lowerbound, residual_variance_upperbound)
-      data <- result$data
-      model <- result$model
-    }
-  }
-
-  return(list(data = data, model = model, converged = converged))
-}
 
 # Expected log-likelihood
 Eloglik.ss <- function(data, model) {

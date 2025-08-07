@@ -234,27 +234,6 @@ check_convergence.individual <- function(data, model_prev, model_current, elbo_p
   return(elbo_current - elbo_prev < tol)
 }
 
-# Update variance before convergence check for individual data
-update_variance_before_convergence.individual <- function(data) {
-  # Standard behavior: Check convergence first, then update variance
-  return(FALSE)
-}
-
-# Handle convergence and variance updates for individual data (standard behavior)
-handle_convergence_and_variance.individual <- function(data, model, model_prev, elbo_prev, elbo_current,
-                                                       tol, estimate_residual_variance,
-                                                       residual_variance_lowerbound, residual_variance_upperbound) {
-  # Standard: Check convergence first, then update variance
-  converged <- check_convergence(data, model_prev, model, elbo_prev, elbo_current, tol)
-
-  if (!converged && estimate_residual_variance) {
-    result <- update_model_variance(data, model, residual_variance_lowerbound, residual_variance_upperbound)
-    data <- result$data
-    model <- result$model
-  }
-
-  return(list(data = data, model = model, converged = converged))
-}
 
 # Expected log-likelihood
 Eloglik.individual <- function(data, model) {

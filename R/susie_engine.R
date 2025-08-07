@@ -60,18 +60,19 @@ susie_engine <- function(data,
     # Calculate objective for tracking
     elbo[iter + 1] <- get_objective(data, model, verbose = verbose)
 
-    # Handle convergence and variance updates. I chose this way because susie-inf
-    # updates variance parameters then checks for convergence vs original susie
-    # which checks for convergence then updates residual variance.
-    result <- handle_convergence_and_variance(data, model, model_prev, elbo[iter], elbo[iter + 1],
-                                               tol, estimate_residual_variance,
-                                               residual_variance_lowerbound, residual_variance_upperbound)
-    data <- result$data
-    model <- result$model
-
-    if (result$converged) {
+    # Check for convergence
+    converged <- check_convergence(data, model_prev, model, elbo[iter], elbo[iter + 1], tol)
+    
+    if (converged) {
       model$converged <- TRUE
       break
+    }
+    
+    # Update variance components if not converged and estimation is requested
+    if (estimate_residual_variance) {
+      result <- update_model_variance(data, model, residual_variance_lowerbound, residual_variance_upperbound)
+      data <- result$data
+      model <- result$model
     }
   }
 

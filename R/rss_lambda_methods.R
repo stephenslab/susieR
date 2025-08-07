@@ -15,10 +15,15 @@ initialize_susie_model.rss_lambda <- function(data, L, scaled_prior_variance, va
   model$lambda <- data$lambda
   model$intercept <- data$intercept_value
 
-  model$SinvRj <- NULL
-  model$RjSinvRj <- NULL
+  # Initialize SinvRj and RjSinvRj based on initial sigma2
+  eigenS_values <- model$sigma2 * data$eigen_R$values + data$lambda
+  Dinv <- 1 / eigenS_values
+  Dinv[is.infinite(Dinv)] <- 0
 
-  model <- update_variance_components.rss_lambda(data, model)
+  model$SinvRj <- data$eigen_R$vectors %*% (Dinv * data$eigen_R$values * t(data$eigen_R$vectors))
+  
+  tmp <- t(data$eigen_R$vectors)
+  model$RjSinvRj <- colSums(tmp * (Dinv * (data$eigen_R$values^2) * tmp))
 
   return(model)
 }
@@ -70,11 +75,7 @@ get_ER2.rss_lambda <- function(data, model, sigma2 = NULL) {
   zSinvz <- sum(Utz * (Dinv * Utz))
 
   Z <- model$alpha * model$mu
-  if (data$lambda == 0) {
-    RSinvR <- data$R / sigma2
-  } else {
-    RSinvR <- data$R %*% SinvR
-  }
+  RSinvR <- data$R %*% SinvR
   RZ2 <- sum((Z %*% RSinvR) * Z)
 
   zbar <- colSums(Z)
@@ -171,25 +172,51 @@ get_zscore.rss_lambda <- function(data, model, ...) {
 
 # Update variance components
 update_variance_components.rss_lambda <- function(data, model) {
-  eigenS_values <- model$sigma2 * data$eigen_R$values + data$lambda
-  Dinv <- 1 / eigenS_values
-  Dinv[is.infinite(Dinv)] <- 0
-
-  model$SinvRj <- data$eigen_R$vectors %*% (Dinv * data$eigen_R$values * t(data$eigen_R$vectors))
-
-  if (data$lambda == 0) {
-    model$RjSinvRj <- diag(data$R) / model$sigma2
-  } else {
+  # For lambda != 0, use optimization to estimate sigma2
+  upper_bound <- 1 - data$lambda
+  
+  Eloglik <- function(sigma2) {
+    model_temp <- model
+    model_temp$sigma2 <- sigma2
+    
+    eigenS_values <- sigma2 * data$eigen_R$values + data$lambda
+    Dinv <- 1 / eigenS_values
+    Dinv[is.infinite(Dinv)] <- 0
+    
+    model_temp$SinvRj <- data$eigen_R$vectors %*% (Dinv * data$eigen_R$values * t(data$eigen_R$vectors))
     tmp <- t(data$eigen_R$vectors)
-    model$RjSinvRj <- colSums(tmp * (Dinv * (data$eigen_R$values^2) * tmp))
+    model_temp$RjSinvRj <- colSums(tmp * (Dinv * (data$eigen_R$values^2) * tmp))
+    
+    log_det_Sigma <- sum(log(eigenS_values[eigenS_values > 0]))
+    ER2_term <- get_ER2.rss_lambda(data, model_temp, sigma2 = sigma2)
+    
+    return(-0.5 * log_det_Sigma - 0.5 * ER2_term)
+  }
+  
+  opt_result <- optimize(Eloglik, interval = c(1e-4, upper_bound), maximum = TRUE)
+  est_sigma2 <- opt_result$maximum
+  
+  if (Eloglik(est_sigma2) < Eloglik(upper_bound)) {
+    est_sigma2 <- upper_bound
   }
 
-  return(model)
+  # Return just the sigma2 value - RSS lambda doesn't use tau2
+  return(list(sigma2 = est_sigma2, tau2 = NULL))
 }
 
 # Update derived quantities
 update_derived_quantities.rss_lambda <- function(data, model) {
-  return(model)
+  # Calculate updated SinvRj and RjSinvRj based on new sigma2
+  eigenS_values <- model$sigma2 * data$eigen_R$values + data$lambda
+  Dinv <- 1 / eigenS_values
+  Dinv[is.infinite(Dinv)] <- 0
+
+  data$SinvRj_temp <- data$eigen_R$vectors %*% (Dinv * data$eigen_R$values * t(data$eigen_R$vectors))
+  
+  tmp <- t(data$eigen_R$vectors)
+  data$RjSinvRj_temp <- colSums(tmp * (Dinv * (data$eigen_R$values^2) * tmp))
+  
+  return(data)
 }
 
 # Check convergence
@@ -198,80 +225,11 @@ check_convergence.rss_lambda <- function(data, model_prev, model_current,
   return((elbo_current - elbo_prev) < tol)
 }
 
-# Update variance before convergence check
-update_variance_before_convergence.rss_lambda <- function(data) {
-  return(TRUE)
-}
-
-# Handle convergence and variance updates
-handle_convergence_and_variance.rss_lambda <- function(data, model, model_prev,
-                                                       elbo_prev, elbo_current, tol,
-                                                       estimate_residual_variance,
-                                                       residual_variance_lowerbound,
-                                                       residual_variance_upperbound) {
-
-  converged <- FALSE
-
-  # Check convergence first
-  if ((elbo_current - elbo_prev) < tol) {
-    converged <- TRUE
-  }
-
-  if (estimate_residual_variance && !converged) {
-    if (data$lambda == 0) {
-      num_nonzero_eigenvals <- sum(data$eigen_R$values != 0)
-      est_sigma2 <- (1/num_nonzero_eigenvals) * get_ER2.rss_lambda(data, model, sigma2 = 1)
-
-      if (est_sigma2 < 0) {
-        stop("Estimating residual variance failed: the estimated value is negative")
-      }
-
-      if (est_sigma2 > 1) {
-        est_sigma2 <- 1
-      }
-
-      est_sigma2 <- max(residual_variance_lowerbound,
-                        min(residual_variance_upperbound, est_sigma2))
-    } else {
-      upper_bound <- min(residual_variance_upperbound, 1 - data$lambda)
-
-      Eloglik <- function(sigma2) {
-        model_temp <- model
-        model_temp$sigma2 <- sigma2
-        model_temp <- update_variance_components.rss_lambda(data, model_temp)
-
-        eigenS_values <- sigma2 * data$eigen_R$values + data$lambda
-        log_det_Sigma <- sum(log(eigenS_values[eigenS_values > 0]))
-
-        ER2_term <- get_ER2.rss_lambda(data, model_temp, sigma2 = sigma2)
-
-        return(-0.5 * log_det_Sigma - 0.5 * ER2_term)
-      }
-
-      opt_result <- optimize(Eloglik, interval = c(residual_variance_lowerbound, upper_bound),
-                             maximum = TRUE)
-      est_sigma2 <- opt_result$maximum
-
-      if (Eloglik(est_sigma2) < Eloglik(upper_bound)) {
-        est_sigma2 <- upper_bound
-      }
-    }
-
-    model$sigma2 <- est_sigma2
-    model <- update_variance_components.rss_lambda(data, model)
-  }
-
-  return(list(data = data, model = model, converged = converged))
-}
 
 # Expected log-likelihood
 Eloglik.rss_lambda <- function(data, model) {
   d <- model$sigma2 * data$eigen_R$values + data$lambda
-  if (data$lambda == 0) {
-    result <- -(sum(d != 0)/2) * log(2*pi*model$sigma2) - 0.5*get_ER2.rss_lambda(data, model)
-  } else {
-    result <- -(length(data$z)/2)*log(2*pi) - 0.5*sum(log(d)) - 0.5*get_ER2.rss_lambda(data, model)
-  }
+  result <- -(length(data$z)/2)*log(2*pi) - 0.5*sum(log(d)) - 0.5*get_ER2.rss_lambda(data, model)
   return(result)
 }
 
