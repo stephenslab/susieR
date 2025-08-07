@@ -337,9 +337,24 @@ update_derived_quantities.ss <- function(data, model) {
 }
 
 # Check convergence for ss data
-check_convergence.ss <- function(data, model_prev, model_current, elbo_prev, elbo_current, tol) {
+check_convergence.ss <- function(data, model_prev, model_current, elbo_prev, elbo_current, tol, convergence_method) {
+  # Special handling for unmappable_effects = "inf"
   if (data$unmappable_effects == "inf") {
-    # PIP-based convergence for unmappable effects
+    if (convergence_method == "elbo") {
+      # TODO: Implement ELBO-based convergence for unmappable_effects = "inf"
+      # For now, silently fall back to PIP-based convergence
+      PIP_diff <- max(abs(model_prev$alpha - model_current$alpha))
+      return(PIP_diff < tol)
+    } else {
+      # PIP-based convergence for unmappable effects
+      PIP_diff <- max(abs(model_prev$alpha - model_current$alpha))
+      return(PIP_diff < tol)
+    }
+  }
+  
+  # For other cases, use the specified convergence method
+  if (convergence_method == "pip") {
+    # PIP-based convergence
     PIP_diff <- max(abs(model_prev$alpha - model_current$alpha))
     return(PIP_diff < tol)
   } else {

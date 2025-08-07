@@ -109,9 +109,9 @@ update_derived_quantities.default <- function(data, model)
   stop("update_derived_quantities: no method for class '", class(data)[1], "'")
 
 # Check convergence
-check_convergence <- function(data, model_prev, model_current, elbo_prev, elbo_current, tol)
+check_convergence <- function(data, model_prev, model_current, elbo_prev, elbo_current, tol, convergence_method)
   UseMethod("check_convergence")
-check_convergence.default <- function(data, model_prev, model_current, elbo_prev, elbo_current, tol)
+check_convergence.default <- function(data, model_prev, model_current, elbo_prev, elbo_current, tol, convergence_method)
   stop("check_convergence: no method for class '", class(data)[1], "'")
 
 

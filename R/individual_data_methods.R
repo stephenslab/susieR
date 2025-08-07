@@ -224,14 +224,20 @@ update_derived_quantities.individual <- function(data, model) {
   return(data)  # No changes needed for individual data
 }
 
-# Check convergence for individual data (uses ELBO)
-check_convergence.individual <- function(data, model_prev, model_current, elbo_prev, elbo_current, tol) {
-  # Standard ELBO-based convergence (uses pre-computed ELBO values)
-  # Handle case where elbo_prev is NA (first iteration)
-  if (is.na(elbo_prev)) {
-    return(FALSE)  # Cannot converge on first iteration
+# Check convergence for individual data
+check_convergence.individual <- function(data, model_prev, model_current, elbo_prev, elbo_current, tol, convergence_method) {
+  if (convergence_method == "pip") {
+    # PIP-based convergence
+    PIP_diff <- max(abs(model_prev$alpha - model_current$alpha))
+    return(PIP_diff < tol)
+  } else {
+    # Standard ELBO-based convergence (uses pre-computed ELBO values)
+    # Handle case where elbo_prev is NA (first iteration)
+    if (is.na(elbo_prev)) {
+      return(FALSE)  # Cannot converge on first iteration
+    }
+    return(elbo_current - elbo_prev < tol)
   }
-  return(elbo_current - elbo_prev < tol)
 }
 
 
