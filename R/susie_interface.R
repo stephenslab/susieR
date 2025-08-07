@@ -9,6 +9,7 @@ susie <- function(X, y, L = min(10, ncol(X)),
                       estimate_prior_variance = TRUE,
                       estimate_prior_method = c("optim", "EM", "simple"),
                       unmappable_effects = c("none", "inf", "ash"),
+                      convergence_method = c("elbo", "pip"),
                       check_null_threshold = 0,
                       prior_tol = 1e-9,
                       residual_variance_upperbound = Inf,
@@ -27,6 +28,7 @@ susie <- function(X, y, L = min(10, ncol(X)),
   # Validate method arguments
   unmappable_effects <- match.arg(unmappable_effects)
   estimate_prior_method <- match.arg(estimate_prior_method)
+  convergence_method <- match.arg(convergence_method)
 
   # Construct data object
   data <- individual_data_constructor(X, y, intercept, standardize, na.rm,
@@ -40,7 +42,7 @@ susie <- function(X, y, L = min(10, ncol(X)),
                         residual_variance_lowerbound, residual_variance_upperbound,
                         max_iter, tol, verbose, track_fit, coverage, min_abs_corr,
                         prior_tol, n_purity, compute_univariate_zscore,
-                        check_prior = FALSE)
+                        check_prior = FALSE, convergence_method = convergence_method)
 
   return(model)
 }
@@ -63,6 +65,7 @@ susie_ss <- function(XtX, Xty, yty, n,
                      estimate_prior_variance = TRUE,
                      estimate_prior_method = c("optim", "EM", "simple"),
                      unmappable_effects = c("none", "inf", "ash"),
+                     convergence_method = c("elbo", "pip"),
                      check_null_threshold = 0,
                      prior_tol = 1e-9,
                      max_iter = 100,
@@ -77,6 +80,7 @@ susie_ss <- function(XtX, Xty, yty, n,
   # Validate method arguments
   unmappable_effects <- match.arg(unmappable_effects)
   estimate_prior_method <- match.arg(estimate_prior_method)
+  convergence_method <- match.arg(convergence_method)
 
   # Construct data object
   data <- sufficient_stats_constructor(XtX, Xty, yty, n, X_colmeans, y_mean,
@@ -91,7 +95,7 @@ susie_ss <- function(XtX, Xty, yty, n,
                         residual_variance_lowerbound, residual_variance_upperbound,
                         max_iter, tol, verbose, track_fit, coverage, min_abs_corr,
                         prior_tol, n_purity, compute_univariate_zscore = FALSE,
-                        check_prior)
+                        check_prior, convergence_method = convergence_method)
 
   return(model)
 }
@@ -114,6 +118,7 @@ susie_rss <- function(z = NULL, R, n = NULL,
                       estimate_prior_variance = TRUE,
                       estimate_prior_method = c("optim", "EM", "simple"),
                       unmappable_effects = c("none", "inf", "ash"),
+                      convergence_method = c("elbo", "pip"),
                       check_null_threshold = 0,
                       prior_tol = 1e-9,
                       residual_variance_lowerbound = 0,
@@ -135,6 +140,7 @@ susie_rss <- function(z = NULL, R, n = NULL,
   # Validate method arguments
   unmappable_effects <- match.arg(unmappable_effects)
   estimate_prior_method <- match.arg(estimate_prior_method)
+  convergence_method <- match.arg(convergence_method)
 
   # Construct data object
   data <- summary_stats_constructor(z = z, R = R, n = n, bhat = bhat, shat = shat,
@@ -160,7 +166,7 @@ susie_rss <- function(z = NULL, R, n = NULL,
                         residual_variance_lowerbound, residual_variance_upperbound,
                         max_iter, tol, verbose, track_fit, coverage, min_abs_corr,
                         prior_tol, n_purity, compute_univariate_zscore = FALSE,
-                        check_prior)
+                        check_prior, convergence_method = convergence_method)
 
   return(model)
 }
