@@ -11,7 +11,7 @@ susie_engine <- function(data,
                          max_iter, tol, verbose, track_fit,
                          coverage, min_abs_corr,
                          prior_tol, n_purity, compute_univariate_zscore = FALSE,
-                         check_prior = FALSE) {
+                         check_prior = FALSE, convergence_method = "elbo") {
 
   # Validate method argument
   estimate_prior_method <- match.arg(estimate_prior_method)
@@ -61,7 +61,7 @@ susie_engine <- function(data,
     elbo[iter + 1] <- get_objective(data, model, verbose = verbose)
 
     # Check for convergence
-    converged <- check_convergence(data, model_prev, model, elbo[iter], elbo[iter + 1], tol)
+    converged <- check_convergence(data, model_prev, model, elbo[iter], elbo[iter + 1], tol, convergence_method)
     
     if (converged) {
       model$converged <- TRUE
