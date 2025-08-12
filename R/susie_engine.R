@@ -6,6 +6,7 @@ susie_engine <- function(data,
                          estimate_prior_method = c("optim", "EM", "simple"),
                          check_null_threshold,
                          estimate_residual_variance,
+                         estimate_residual_method = "MLE",
                          residual_variance_lowerbound,
                          residual_variance_upperbound,
                          max_iter, tol, verbose, track_fit,
@@ -70,7 +71,8 @@ susie_engine <- function(data,
     
     # Update variance components if not converged and estimation is requested
     if (estimate_residual_variance) {
-      result <- update_model_variance(data, model, residual_variance_lowerbound, residual_variance_upperbound)
+      result <- update_model_variance(data, model, residual_variance_lowerbound, 
+                                     residual_variance_upperbound, estimate_residual_method)
       data <- result$data
       model <- result$model
     }

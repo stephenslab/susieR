@@ -16,8 +16,8 @@ compute_eigen_decomposition <- function(XtX, n) {
 
 # Method of Moments variance estimation for unmappable effects methods
 #' @keywords internal
-MoM <- function(alpha, mu, omega, sigma2, tau2, n, V, Dsq, VtXty, Xty, yty,
-                est_sigma2, est_tau2, verbose) {
+mom_unmappable <- function(alpha, mu, omega, sigma2, tau2, n, V, Dsq, VtXty, Xty, yty,
+                          est_sigma2, est_tau2, verbose) {
   L <- nrow(mu)
   p <- ncol(mu)
 
@@ -510,8 +510,8 @@ assign_names <- function(model, variable_names, null_weight, p) {
 
 # Helper function to update variance components and derived quantities
 #' @keywords internal
-update_model_variance <- function(data, model, lowerbound, upperbound) {
-  variance_result <- update_variance_components(data, model)
+update_model_variance <- function(data, model, lowerbound, upperbound, estimate_method = "MLE") {
+  variance_result <- update_variance_components(data, model, estimate_method)
   model$sigma2 <- max(lowerbound, variance_result$sigma2)
   model$sigma2 <- min(model$sigma2, upperbound)
 
@@ -554,7 +554,30 @@ get_pip <- function(data, model, coverage, min_abs_corr, prior_tol) {
 # Objective function (ELBO)
 #' @keywords internal
 get_objective <- function(data, model, verbose = FALSE) {
-  objective <- Eloglik(data, model) - sum(model$KL)
+  if (data$unmappable_effects == "inf") {
+    # For infinitesimal effects, compute the full ELBO
+    p <- data$p
+    L <- nrow(model$alpha)
+    tau2 <- if (is.null(model$tau2)) 0 else model$tau2
+    
+    # Compute omega matrix
+    var <- tau2 * data$eigen_values + model$sigma2
+    diagXtOmegaX <- rowSums(sweep(data$eigen_vectors^2, 2, (data$eigen_values / var), `*`))
+    omega <- matrix(0, L, p)
+    for (l in seq_len(L)) {
+      omega[l, ] <- diagXtOmegaX + 1 / model$V[l]
+    }
+    
+    # Compute total ELBO for infinitesimal effects model
+    objective <- compute_elbo_inf(model$alpha, model$mu, omega, model$lbf,
+                                 model$sigma2, tau2, data$n, data$p,
+                                 data$eigen_vectors, data$eigen_values,
+                                 data$VtXty, data$yty)
+  } else {
+    # Standard ELBO computation
+    objective <- Eloglik(data, model) - sum(model$KL)
+  }
+  
   if (is.infinite(objective)) {
     stop("get_objective() produced an infinite ELBO value")
   }
@@ -597,5 +620,135 @@ initialize_matrices <- function(p, L, scaled_prior_variance, var_y, residual_var
   }
 
   return(mat_init)
+}
+
+# MLE variance estimation for unmappable effects
+#' @keywords internal
+mle_unmappable <- function(alpha, mu, omega, sigma2, tau2, n, 
+                          eigen_vectors, eigen_values, VtXty, yty,
+                          est_sigma2 = TRUE, est_tau2 = TRUE,
+                          sigma2_range = NULL, tau2_range = NULL,
+                          verbose = FALSE) {
+  L <- nrow(mu)
+  p <- ncol(mu)
+  
+  # Set default ranges if not provided
+  if (is.null(sigma2_range)) {
+    sigma2_range <- c(0.2 * yty / n, 1.2 * yty / n)
+  }
+  if (is.null(tau2_range)) {
+    tau2_range <- c(1e-12, 1.2 * yty / (n * p))
+  }
+  
+  # Compute diag(V'MV)
+  b <- colSums(mu * alpha)
+  Vtb <- t(eigen_vectors) %*% b
+  diagVtMV <- Vtb^2
+  tmpD <- rep(0, p)
+  
+  for (l in seq_len(L)) {
+    bl <- mu[l, ] * alpha[l, ]
+    Vtbl <- t(eigen_vectors) %*% bl
+    diagVtMV <- diagVtMV - Vtbl^2
+    tmpD <- tmpD + alpha[l, ] * (mu[l, ]^2 + 1 / omega[l, ])
+  }
+  
+  diagVtMV <- diagVtMV + rowSums(sweep(t(eigen_vectors)^2, 2, tmpD, `*`))
+  
+  # Negative ELBO as function of x = (sigma^2, tau^2)
+  f <- function(x) {
+    sigma2_val <- x[1]
+    tau2_val <- x[2]
+    var_val <- tau2_val * eigen_values + sigma2_val
+    
+    0.5 * (n - p) * log(sigma2_val) + 0.5 / sigma2_val * yty +
+      sum(0.5 * log(var_val) -
+          0.5 * tau2_val / sigma2_val * VtXty^2 / var_val -
+          Vtb * VtXty / var_val + 
+          0.5 * eigen_values / var_val * diagVtMV)
+  }
+  
+  # Negative ELBO for sigma^2 only (when tau^2 is fixed)
+  g <- function(sigma2_val) {
+    f(c(sigma2_val, tau2))
+  }
+  
+  if (est_tau2) {
+    # Optimize both sigma^2 and tau^2
+    res <- optim(par = c(sigma2, tau2),
+                 fn = f,
+                 method = "L-BFGS-B",
+                 lower = c(sigma2_range[1], tau2_range[1]),
+                 upper = c(sigma2_range[2], tau2_range[2]))
+    
+    if (res$convergence == 0) {
+      sigma2 <- res$par[1]
+      tau2 <- res$par[2]
+      if (verbose) {
+        cat(sprintf("Update (sigma^2,tau^2) to (%f,%e)\n", sigma2, tau2))
+      }
+    } else {
+      warning("MLE optimization failed to converge; keeping previous parameters")
+    }
+  } else if (est_sigma2) {
+    # Optimize only sigma^2
+    res <- optim(par = sigma2,
+                 fn = g,
+                 method = "L-BFGS-B",
+                 lower = sigma2_range[1],
+                 upper = sigma2_range[2])
+    
+    if (res$convergence == 0) {
+      sigma2 <- res$par
+      if (verbose) {
+        cat(sprintf("Update sigma^2 to %f\n", sigma2))
+      }
+    } else {
+      warning("MLE optimization failed to converge; keeping previous parameters")
+    }
+  }
+  
+  return(list(sigma2 = sigma2, tau2 = tau2))
+}
+
+# Compute ELBO for infinitesimal effects model
+#' @keywords internal
+compute_elbo_inf <- function(alpha, mu, omega, lbf, sigma2, tau2, n, p,
+                            eigen_vectors, eigen_values, VtXty, yty) {
+  L <- nrow(mu)
+  
+  # Compute b = sum_l alpha_l * mu_l
+  b <- colSums(mu * alpha)
+  Vtb <- t(eigen_vectors) %*% b
+  
+  # Compute E[theta'theta] diagonal
+  diagVtMV <- Vtb^2
+  tmpD <- rep(0, p)
+  
+  for (l in seq_len(L)) {
+    bl <- mu[l, ] * alpha[l, ]
+    Vtbl <- t(eigen_vectors) %*% bl
+    diagVtMV <- diagVtMV - Vtbl^2
+    tmpD <- tmpD + alpha[l, ] * (mu[l, ]^2 + 1 / omega[l, ])
+  }
+  
+  diagVtMV <- diagVtMV + rowSums(sweep(t(eigen_vectors)^2, 2, tmpD, `*`))
+  
+  # Compute variance
+  var <- tau2 * eigen_values + sigma2
+  
+  # Compute negative ELBO (matching original formulation)
+  neg_elbo <- 0.5 * (n - p) * log(sigma2) + 0.5 / sigma2 * yty +
+              sum(0.5 * log(var) -
+                  0.5 * tau2 / sigma2 * VtXty^2 / var -
+                  Vtb * VtXty / var +
+                  0.5 * eigen_values / var * diagVtMV)
+  
+  # Total ELBO includes both infinitesimal and sparse components
+  elbo_infinitesimal <- -neg_elbo
+  elbo_sparse <- sum(lbf)
+  elbo_total <- elbo_infinitesimal + elbo_sparse
+  
+  return(elbo_total)
 }
 

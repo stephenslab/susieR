@@ -334,7 +334,8 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL,
                                       prior_variance = 50,
                                       scaled_prior_variance = 0.2,
                                       intercept_value = 0,
-                                      estimate_residual_variance = FALSE) {
+                                      estimate_residual_variance = FALSE,
+                                      estimate_residual_method = "MLE") {
 
   # Check if this should use RSS-lambda path
   if (lambda != 0) {
@@ -359,7 +360,8 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL,
       null_weight = null_weight, check_R = check_R,
       check_z = check_z, r_tol = r_tol,
       prior_variance = prior_variance,
-      intercept_value = intercept_value
+      intercept_value = intercept_value,
+      estimate_residual_method = estimate_residual_method
     ))
   }
   
@@ -514,7 +516,14 @@ rss_lambda_constructor <- function(z, R, maf = NULL, maf_thresh = 0,
                                    check_R = TRUE, check_z = FALSE,
                                    r_tol = 1e-8,
                                    prior_variance = 50,
-                                   intercept_value = 0) {
+                                   intercept_value = 0,
+                                   estimate_residual_method = "MLE") {
+
+  # Validate that MoM is not requested for RSS with lambda != 0
+  if (estimate_residual_method == "MoM") {
+    stop("Method of Moments (MoM) variance estimation is not implemented for RSS with lambda != 0. ",
+         "Please use estimate_residual_method = 'MLE' instead.")
+  }
 
   # Check input R
   if (nrow(R) != length(z))

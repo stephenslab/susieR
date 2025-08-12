@@ -213,13 +213,14 @@ get_zscore.individual <- function(data, model, compute_univariate_zscore,
 
 }
 
-# Update variance components for individual data (standard approach)
-update_variance_components.individual <- function(data, model) {
+# Update variance components for individual data
+update_variance_components.individual <- function(data, model, estimate_method = "MLE") {
+  # For standard SuSiE w/ individual data, MLE and MoM are equivalent
   sigma2 <- est_residual_variance(data, model)
   return(list(sigma2 = sigma2, tausq = NULL))
 }
 
-# Update derived quantities for individual data (no-op for standard)
+# Update derived quantities for individual data
 update_derived_quantities.individual <- function(data, model) {
   return(data)  # No changes needed for individual data
 }
@@ -231,8 +232,7 @@ check_convergence.individual <- function(data, model_prev, model_current, elbo_p
     PIP_diff <- max(abs(model_prev$alpha - model_current$alpha))
     return(PIP_diff < tol)
   } else {
-    # Standard ELBO-based convergence (uses pre-computed ELBO values)
-    # Handle case where elbo_prev is NA (first iteration)
+    # ELBO-based convergence
     if (is.na(elbo_prev)) {
       return(FALSE)  # Cannot converge on first iteration
     }
@@ -250,28 +250,28 @@ Eloglik.individual <- function(data, model) {
 #' @importFrom Matrix colSums
 #' @importFrom stats dnorm
 loglik.individual <- function(data, V, betahat, shat2, prior_weights) {
-  
+
   #log(bf) for each SNP
   lbf <- dnorm(betahat, 0, sqrt(V + shat2), log = TRUE) -
     dnorm(betahat, 0, sqrt(shat2), log = TRUE)
   lpo <- lbf + log(prior_weights + sqrt(.Machine$double.eps))
-  
+
   # Deal with special case of infinite shat2 (e.g., happens if X does
   # not vary).
   lbf[is.infinite(shat2)] <- 0
   lpo[is.infinite(shat2)] <- 0
-  
+
   maxlpo <- max(lpo)
   w_weighted <- exp(lpo - maxlpo)
   weighted_sum_w <- sum(w_weighted)
   alpha <- w_weighted / weighted_sum_w
-  
+
   # Compute gradient
   T2 <- betahat^2 / shat2
   grad_components <- 0.5 * (1 / (V + shat2)) * ((shat2 / (V + shat2)) * T2 - 1)
   grad_components[is.nan(grad_components)] <- 0
   gradient <- sum(alpha * grad_components)
-  
+
   return(list(
     lbf_model = log(weighted_sum_w) + maxlpo,
     lbf = lbf,

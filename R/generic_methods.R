@@ -97,9 +97,9 @@ add_eigen_decomposition.default <- function(data)
   stop("add_eigen_decomposition: no method for class '", class(data)[1], "'")
 
 # Update variance components
-update_variance_components <- function(data, model)
+update_variance_components <- function(data, model, estimate_method = "MLE")
   UseMethod("update_variance_components")
-update_variance_components.default <- function(data, model)
+update_variance_components.default <- function(data, model, estimate_method = "MLE")
   stop("update_variance_components: no method for class '", class(data)[1], "'")
 
 # Update derived quantities after variance component changes

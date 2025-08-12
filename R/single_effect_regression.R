@@ -41,37 +41,37 @@ single_effect_regression <-
             unmappable_effects = FALSE) {
 
     optimize_V <- match.arg(optimize_V)
-    
+
     # Check if this is RSS data
     if (!is.null(data) && inherits(data, "rss_lambda")) {
       # RSS-specific computation path
       p <- length(z)
       shat2 <- 1 / RjSinvRj
-      
+
       if (is.null(prior_weights))
         prior_weights <- rep(1/p, p)
-      
+
       if (optimize_V != "EM" && optimize_V != "none") {
         V <- optimize_prior_variance_rss(optimize_V, data, z, SinvRj, RjSinvRj, shat2,
                                          prior_weights, alpha = NULL, post_mean2 = NULL,
                                          V_init = V, check_null_threshold = check_null_threshold)
       }
-      
+
       # Use loglik to compute log Bayes factors and alpha
       loglik_res <- loglik(data, V, z, SinvRj, RjSinvRj, shat2, prior_weights)
       lbf <- loglik_res$lbf
       alpha <- loglik_res$alpha
       lbf_model <- loglik_res$lbf_model
-      
+
       # Compute posterior mean and variance
       post_var <- (RjSinvRj + 1/V)^(-1)
       post_mean <- sapply(1:p, function(j) post_var[j] * sum(SinvRj[,j] * z))
       post_mean2 <- post_var + post_mean^2
-      
+
       if (optimize_V == "EM") {
         V <- sum(alpha * post_mean2)
       }
-      
+
     } else {
       # Standard computation path
       betahat <- (1 / dXtX) * Xty
@@ -86,6 +86,11 @@ single_effect_regression <-
         if (unmappable_effects && optimize_V == "optim") {
           V <- optimize_prior_variance_unmappable(V, Xty, dXtX, prior_weights)
         } else {
+          # TODO: look into consolidating prior variance into singular function.
+          # We for unmappable effects = "inf", we could input dXtX (which is really dXtOmegaX) as shat2
+          # as it is already weighted by the effective residual. Then, we set beta = XtOmegar / XtOmegaX.
+          # besides the additional features within the prior variance functions (i.e. null threshold check) and
+          # the bounds for optimization and numerical stability tricks, the two are equivalent.
           V <- optimize_prior_variance(optimize_V, data, betahat, shat2, prior_weights,
                                       alpha = NULL, post_mean2 = NULL, V_init = V,
                                       check_null_threshold = check_null_threshold)
@@ -143,6 +148,8 @@ optimize_prior_variance <- function (optimize_V, data, betahat, shat2, prior_wei
       stop("Invalid option for optimize_V method")
   }
 
+  # TODO: Need to formally test the effect of this on a larger scale.
+
   # Set V exactly 0 if that beats the numerical value by
   # check_null_threshold in loglik. check_null_threshold = 0.1 is
   # exp(0.1) = 1.1 on likelihood scale; it means that for parsimony
@@ -187,7 +194,7 @@ optimize_prior_variance_rss <- function(optimize_V, data, z, SinvRj, RjSinvRj, s
                   upper = 15)$par
 
       # Check if new estimate improves likelihood
-      if (neg_loglik_logscale(data, lV, z, SinvRj, RjSinvRj, shat2, prior_weights) > 
+      if (neg_loglik_logscale(data, lV, z, SinvRj, RjSinvRj, shat2, prior_weights) >
           neg_loglik_logscale(data, log(V), z, SinvRj, RjSinvRj, shat2, prior_weights)) {
         lV <- log(V)
       }

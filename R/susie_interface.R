@@ -6,10 +6,10 @@ susie <- function(X, y, L = min(10, ncol(X)),
                       standardize = TRUE,
                       intercept = TRUE,
                       estimate_residual_variance = TRUE,
+                      estimate_residual_method = c("MLE", "MoM"),
                       estimate_prior_variance = TRUE,
                       estimate_prior_method = c("optim", "EM", "simple"),
                       unmappable_effects = c("none", "inf", "ash"),
-                      convergence_method = c("elbo", "pip"),
                       check_null_threshold = 0,
                       prior_tol = 1e-9,
                       residual_variance_upperbound = Inf,
@@ -20,6 +20,7 @@ susie <- function(X, y, L = min(10, ncol(X)),
                       na.rm = FALSE,
                       max_iter = 100,
                       tol = 1e-3,
+                      convergence_method = c("elbo", "pip"),
                       verbose = FALSE,
                       track_fit = FALSE,
                       residual_variance_lowerbound = var(drop(y))/1e4,
@@ -28,6 +29,7 @@ susie <- function(X, y, L = min(10, ncol(X)),
   # Validate method arguments
   unmappable_effects <- match.arg(unmappable_effects)
   estimate_prior_method <- match.arg(estimate_prior_method)
+  estimate_residual_method <- match.arg(estimate_residual_method)
   convergence_method <- match.arg(convergence_method)
 
   # Construct data object
@@ -39,6 +41,7 @@ susie <- function(X, y, L = min(10, ncol(X)),
                         residual_variance, data$prior_weights, data$null_weight,
                         model_init, estimate_prior_variance, estimate_prior_method,
                         check_null_threshold, estimate_residual_variance,
+                        estimate_residual_method,
                         residual_variance_lowerbound, residual_variance_upperbound,
                         max_iter, tol, verbose, track_fit, coverage, min_abs_corr,
                         prior_tol, n_purity, compute_univariate_zscore,
@@ -60,16 +63,17 @@ susie_ss <- function(XtX, Xty, yty, n,
                      null_weight = 0,
                      model_init = NULL,
                      estimate_residual_variance = TRUE,
+                     estimate_residual_method = c("MLE", "MoM"),
                      residual_variance_lowerbound = 0,
                      residual_variance_upperbound = Inf,
                      estimate_prior_variance = TRUE,
                      estimate_prior_method = c("optim", "EM", "simple"),
                      unmappable_effects = c("none", "inf", "ash"),
-                     convergence_method = c("elbo", "pip"),
                      check_null_threshold = 0,
                      prior_tol = 1e-9,
                      max_iter = 100,
                      tol = 1e-3,
+                     convergence_method = c("elbo", "pip"),
                      coverage = 0.95,
                      min_abs_corr = 0.5,
                      n_purity = 100,
@@ -80,6 +84,7 @@ susie_ss <- function(XtX, Xty, yty, n,
   # Validate method arguments
   unmappable_effects <- match.arg(unmappable_effects)
   estimate_prior_method <- match.arg(estimate_prior_method)
+  estimate_residual_method <- match.arg(estimate_residual_method)
   convergence_method <- match.arg(convergence_method)
 
   # Construct data object
@@ -92,6 +97,7 @@ susie_ss <- function(XtX, Xty, yty, n,
                         residual_variance, data$prior_weights, data$null_weight,
                         model_init, estimate_prior_variance, estimate_prior_method,
                         check_null_threshold, estimate_residual_variance,
+                        estimate_residual_method,
                         residual_variance_lowerbound, residual_variance_upperbound,
                         max_iter, tol, verbose, track_fit, coverage, min_abs_corr,
                         prior_tol, n_purity, compute_univariate_zscore = FALSE,
@@ -115,10 +121,10 @@ susie_rss <- function(z = NULL, R, n = NULL,
                       standardize = TRUE,
                       intercept_value = 0,
                       estimate_residual_variance = FALSE,
+                      estimate_residual_method = c("MLE", "MoM"),
                       estimate_prior_variance = TRUE,
                       estimate_prior_method = c("optim", "EM", "simple"),
                       unmappable_effects = c("none", "inf", "ash"),
-                      convergence_method = c("elbo", "pip"),
                       check_null_threshold = 0,
                       prior_tol = 1e-9,
                       residual_variance_lowerbound = 0,
@@ -128,6 +134,7 @@ susie_rss <- function(z = NULL, R, n = NULL,
                       min_abs_corr = 0.5,
                       max_iter = 100,
                       tol = 1e-3,
+                      convergence_method = c("elbo", "pip"),
                       verbose = FALSE,
                       track_fit = FALSE,
                       check_input = FALSE,
@@ -140,6 +147,7 @@ susie_rss <- function(z = NULL, R, n = NULL,
   # Validate method arguments
   unmappable_effects <- match.arg(unmappable_effects)
   estimate_prior_method <- match.arg(estimate_prior_method)
+  estimate_residual_method <- match.arg(estimate_residual_method)
   convergence_method <- match.arg(convergence_method)
 
   # Construct data object
@@ -156,13 +164,15 @@ susie_rss <- function(z = NULL, R, n = NULL,
                                     prior_variance = prior_variance,
                                     scaled_prior_variance = scaled_prior_variance,
                                     intercept_value = intercept_value,
-                                    estimate_residual_variance = estimate_residual_variance)
+                                    estimate_residual_variance = estimate_residual_variance,
+                                    estimate_residual_method = estimate_residual_method)
 
   # Run SuSiE engine
   model <- susie_engine(data, L, intercept = FALSE, standardize, scaled_prior_variance,
                         residual_variance, data$prior_weights, data$null_weight,
                         s_init, estimate_prior_variance, estimate_prior_method,
                         check_null_threshold, estimate_residual_variance,
+                        estimate_residual_method,
                         residual_variance_lowerbound, residual_variance_upperbound,
                         max_iter, tol, verbose, track_fit, coverage, min_abs_corr,
                         prior_tol, n_purity, compute_univariate_zscore = FALSE,

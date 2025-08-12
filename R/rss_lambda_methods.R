@@ -171,7 +171,7 @@ get_zscore.rss_lambda <- function(data, model, ...) {
 }
 
 # Update variance components
-update_variance_components.rss_lambda <- function(data, model) {
+update_variance_components.rss_lambda <- function(data, model, estimate_method = "MLE") {
   # For lambda != 0, use optimization to estimate sigma2
   upper_bound <- 1 - data$lambda
   
