@@ -489,18 +489,33 @@ susie = function (X,y,L = min(10,ncol(X)),
     if(small & i >1){
       cv_criterion[i]=  ( max(abs(c(alpha_old)- c(s$alpha))))
     }
-    if (verbose)
+    if (verbose & L==1){
       print(paste0("objective:",get_objective(X,y,s)))
-print( compute_elbo_L1_susie( y=y,X=X,
-                              alpha= s$alpha,
-                              mu= s$mu,
-                              s2= s$mu2-s$mu^2,
-                              a=max (alpha0,0.1 )+n,
-                              b=  (s$V[1]) + max (beta0,0.1 ), # here the pb #X%*%res_susie_small$mu
-                              a0= max (alpha0,0.1 ),
-
-                              b0= max (beta0,0.1 )),
-                              pi= s$pi)
+      print( compute_elbo_L1_susie( y=y,X=X,
+                                    alpha= s$alpha,
+                                    mu= s$mu,
+                                    s2= s$mu2-s$mu^2,
+                                    a=max (alpha0,0.1 )+n,
+                                    b=  (s$V[1]) + max (beta0,0.1 ), # here the pb #X%*%res_susie_small$mu
+                                    a0= max (alpha0,0.1 ),
+                                    
+                                    b0= max (beta0,0.1 ),
+                                    pi= s$pi)
+             )
+    }
+    if(L==1){
+      elbo[i+1]=compute_elbo_L1_susie( y=y,X=X,
+                                       alpha= s$alpha,
+                                       mu= s$mu,
+                                       s2= s$mu2-s$mu^2,
+                                       a=max (alpha0,0.1 )+n,
+                                       b=  (s$V[1]) + max (beta0,0.1 ), # here the pb #X%*%res_susie_small$mu
+                                       a0= max (alpha0,0.1 ),
+                                       
+                                       b0= max (beta0,0.1 ),
+                                       pi= s$pi)
+      s$elbo = elbo
+    }
     # Compute objective before updating residual variance because part
     # of the objective s$kl has already been computed under the
     # residual variance before the update.
