@@ -29,6 +29,7 @@ susie(
   na.rm = FALSE,
   max_iter = 100,
   tol = 0.001,
+  tol_small = 0.0001,
   verbose = FALSE,
   track_fit = FALSE,
   residual_variance_lowerbound = var(drop(y))/10000,
@@ -82,10 +83,11 @@ susie_suff_stat(
 regression model. If L is larger than the number of covariates, p,
 L is set to p.}
 
-\item{small}{Logical. Useful when fitting susie on data with a limited sample size.
-If set to TRUE, susie is fitted using single-effect regression with the Servin and Stephens prior
-instead of the default Gaussian prior. This improves the calibration of credible sets.
-Default is FALSE.}
+\item{small}{Logical. Useful when fitting susie on data with a
+limited sample size. If set to TRUE, susie is fitted using
+single-effect regression with the Servin and Stephens prior
+instead of the default Gaussian prior. This improves the
+calibration of credible sets.  Default is FALSE.}
 
 \item{scaled_prior_variance}{The prior variance, divided by
 \code{var(y)} (or by \code{(1/(n-1))yty} for
@@ -183,10 +185,15 @@ variable.}
 \item{max_iter}{Maximum number of IBSS iterations to perform.}
 
 \item{tol}{A small, non-negative number specifying the convergence
-tolerance for the IBSS fitting procedure. The fitting procedure
-will halt when the difference in the variational lower bound, or
-\dQuote{ELBO} (the objective function to be maximized), is
-less than \code{tol}.}
+  tolerance for the IBSS fitting procedure. The fitting procedure
+  will halt when the difference in the variational lower bound, or
+  \dQuote{ELBO} (the objective function to be maximized), is
+  less than \code{tol}.
+
+ @param  tol_small used for small =TRUE only. Small, non-negative number specifying the convergence
+  tolerance for the GIBSS fitting procedure. The fitting procedure
+  will halt when the difference in the estimated posterior inclusion probability is
+  less than \code{tol}.}
 
 \item{verbose}{If \code{verbose = TRUE}, the algorithm's progress,
 and a summary of the optimization settings, are printed to the
