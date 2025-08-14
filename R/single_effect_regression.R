@@ -245,8 +245,6 @@ optimize_prior_variance_unmappable <- function(V_init, XtOmegar, diagXtOmegaX, p
   }
 }
 
-# Helper/utility functions
-
 # Estimate prior variance.
 est_V_uniroot <- function (data, betahat, shat2, prior_weights) {
   V.u <- uniroot(negloglik.grad.logscale, c(-10, 10), extendInt = "upX",

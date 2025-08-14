@@ -32,7 +32,7 @@ The SuSiE model represents the response as a sum of L "single effects" plus nois
    - `ibss_fit()`: Main iteration loop that updates each effect sequentially via `single_effect_update()`
    - `ibss_finalize()`: Post-processing to compute credible sets, PIPs, and format output
 
-3. **`susie_engine.R`**: Main orchestration layer
+3. **`susie_workhorse.R`**: Main orchestration layer
    - Manages the complete fitting pipeline: initialize → iterate → finalize
    - Handles convergence checking (ELBO-based for standard, PIP-based for non-sparse)
    - Updates variance components between iterations
@@ -55,7 +55,7 @@ The backend system allows the same high-level algorithm to work with different d
 - **`susie()`** - Fits SuSiE model with individual-level data (X, y)
 - **`susie_ss()`** - Fits SuSiE model with summary statistics (XtX, Xty, yty, n)
 
-Both functions support all algorithm options and call the same underlying `susie_engine()`.
+Both functions support all algorithm options and call the same underlying `susie_workhorse()`.
 
 ## A note on S3 classes
 

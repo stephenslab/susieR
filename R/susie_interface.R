@@ -36,8 +36,8 @@ susie <- function(X, y, L = min(10, ncol(X)),
   data <- individual_data_constructor(X, y, intercept, standardize, na.rm,
                             prior_weights, null_weight, unmappable_effects)
 
-  # Run SuSiE engine
-  model <- susie_engine(data, L, intercept, standardize, scaled_prior_variance,
+  # Run SuSiE workhorse
+  model <- susie_workhorse(data, L, intercept, standardize, scaled_prior_variance,
                         residual_variance, data$prior_weights, data$null_weight,
                         model_init, estimate_prior_variance, estimate_prior_method,
                         check_null_threshold, estimate_residual_variance,
@@ -92,8 +92,8 @@ susie_ss <- function(XtX, Xty, yty, n,
                                maf, maf_thresh, standardize, r_tol, check_input,
                                prior_weights, null_weight, unmappable_effects)
 
-  # Run SuSiE engine
-  model <- susie_engine(data, L, intercept = FALSE, standardize, scaled_prior_variance,
+  # Run SuSiE workhorse
+  model <- susie_workhorse(data, L, intercept = FALSE, standardize, scaled_prior_variance,
                         residual_variance, data$prior_weights, data$null_weight,
                         model_init, estimate_prior_variance, estimate_prior_method,
                         check_null_threshold, estimate_residual_variance,
@@ -167,8 +167,8 @@ susie_rss <- function(z = NULL, R, n = NULL,
                                     estimate_residual_variance = estimate_residual_variance,
                                     estimate_residual_method = estimate_residual_method)
 
-  # Run SuSiE engine
-  model <- susie_engine(data, L, intercept = FALSE, standardize, scaled_prior_variance,
+  # Run SuSiE workhorse
+  model <- susie_workhorse(data, L, intercept = FALSE, standardize, scaled_prior_variance,
                         residual_variance, data$prior_weights, data$null_weight,
                         s_init, estimate_prior_variance, estimate_prior_method,
                         check_null_threshold, estimate_residual_variance,
@@ -180,4 +180,3 @@ susie_rss <- function(z = NULL, R, n = NULL,
 
   return(model)
 }
-

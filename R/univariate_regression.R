@@ -104,3 +104,9 @@ calc_z = function (X, Y, center = FALSE, scale = FALSE) {
                                                          center = center,
                                                          scale = scale))))
 }
+
+# Compute standard error for regression coef.
+# S = (X'X)^-1 \Sigma
+#' @keywords internal
+calc_stderr = function (X, residuals)
+  sqrt(diag(sum(residuals^2)/(nrow(X) - 2) * chol2inv(chol(crossprod(X)))))

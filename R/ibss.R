@@ -162,8 +162,8 @@ ibss_finalize <- function(data,
   # Credible Sets
   model$sets <- get_cs(data, model, coverage, min_abs_corr, n_purity)
 
-  # Posterior Inclusion Probabilities
-  model$pip <- get_pip(data, model, coverage, min_abs_corr, prior_tol)
+  # Posterior Inclusion Probabilities]
+  model$pip <- susie_get_pip(model, prune_by_cs = FALSE, prior_tol = prior_tol)
 
   # Set pi field from prior_weights
   if (is.null(model$pi)) {

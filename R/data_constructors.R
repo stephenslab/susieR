@@ -625,11 +625,11 @@ rss_lambda_constructor <- function(z, R, maf = NULL, maf_thresh = 0,
     r_tol = r_tol,
     prior_variance = prior_variance,
     eigen_R = eigen_R,
-    # Engine parameter overrides for RSS-lambda
-    engine_scaled_prior_variance = prior_variance,  # Use unscaled
-    engine_standardize = FALSE,  # Never standardize
-    engine_residual_variance_upperbound = 1,  # RSS constraint
-    engine_check_prior = FALSE),  # RSS-lambda always uses check_prior = FALSE
+    # workhorse parameter overrides for RSS-lambda
+    workhorse_scaled_prior_variance = prior_variance,  # Use unscaled
+    workhorse_standardize = FALSE,  # Never standardize
+    workhorse_residual_variance_upperbound = 1,  # RSS constraint
+    workhorse_check_prior = FALSE),  # RSS-lambda always uses check_prior = FALSE
     class = "rss_lambda"
   )
 
