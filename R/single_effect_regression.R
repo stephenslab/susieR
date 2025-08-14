@@ -268,8 +268,7 @@ est_V_uniroot <- function(data, betahat, shat2, prior_weights) {
     -exp(lV) * loglik(data, exp(lV), betahat, shat2, prior_weights)$gradient
   }
 
-
-  V.u <- uniroot(neglog_lik_grad_logscale, c(-10, 10),
+  V.u <- uniroot(neg_loglik_grad_logscale, c(-10, 10),
     extendInt = "upX",
     data = data, betahat = betahat, shat2 = shat2, prior_weights = prior_weights
   )
