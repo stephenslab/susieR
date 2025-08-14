@@ -45,11 +45,12 @@
 #'     If set to TRUE, susie is fitted using single-effect regression with the Servin and Stephens prior
 #'     instead of the default Gaussian prior. This improves the calibration of credible sets.
 #'     Default is FALSE.
-#'   @param alpha0  numerical parameter for the NIG prior when using Servin
-#'   and Stephens SER
+#' 
+#' @param alpha0 Numerical parameter for the NIG prior when using Servin
+#'   and Stephens SER.
 #'
-#'   @param beta0  numerical parameter for the NIG prior when using Servin
-#'   and Stephens SER
+#' @param beta0 Numerical parameter for the NIG prior when using Servin
+#'   and Stephens SER.
 #'
 #' @return A list with the following elements:
 #'
