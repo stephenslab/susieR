@@ -440,170 +440,13 @@ susie_get_pip = function (res, prune_by_cs = FALSE, prior_tol = 1e-9) {
   return(as.vector(1 - apply(1 - res,2,prod)))
 }
 
-# Find how many variables in the CS.
-# x is a probability vector.
-#' @keywords internal
-n_in_CS_x = function (x, coverage = 0.9)
-  sum(cumsum(sort(x,decreasing = TRUE)) < coverage) + 1
 
-# Return binary vector indicating if each point is in CS.
-# x is a probability vector.
-#' @keywords internal
-in_CS_x = function (x, coverage = 0.9) {
-  n = n_in_CS_x(x,coverage)
-  o = order(x,decreasing = TRUE)
-  result = rep(0,length(x))
-  result[o[1:n]] = 1
-  return(result)
-}
 
-# Returns an l-by-p binary matrix indicating which variables are in
-# susie credible sets.
-#' @keywords internal
-in_CS = function (res, coverage = 0.9) {
-  if (inherits(res,"susie"))
-    res = res$alpha
-  return(t(apply(res,1,function(x) in_CS_x(x,coverage))))
-}
 
-#' @keywords internal
-n_in_CS = function(res, coverage = 0.9) {
-  if (inherits(res,"susie"))
-    res = res$alpha
-  return(apply(res,1,function(x) n_in_CS_x(x,coverage)))
-}
 
-# Subsample and compute min, mean, median and max abs corr.
-#
-#' @importFrom stats median
-get_purity = function (pos, X, Xcorr, squared = FALSE, n = 100,
-                       use_rfast) {
-  if (missing(use_rfast))
-    use_rfast = requireNamespace("Rfast",quietly = TRUE)
-  if (use_rfast) {
-    get_upper_tri = Rfast::upper_tri
-    get_median    = Rfast::med
-  } else {
-    get_upper_tri = function (R) R[upper.tri(R)]
-    get_median    = stats::median
-  }
-  if (length(pos) == 1)
-    return(c(1,1,1))
-  else {
 
-    # Subsample the columns if necessary.
-    if (length(pos) > n)
-      pos = sample(pos,n)
 
-    if (is.null(Xcorr)) {
-      X_sub = X[,pos]
-      X_sub = as.matrix(X_sub)
-      value = abs(get_upper_tri(muffled_corr(X_sub)))
-    } else
-      value = abs(get_upper_tri(Xcorr[pos,pos]))
-    if (squared)
-      value = value^2
-    return(c(min(value),
-             sum(value)/length(value),
-             get_median(value)))
-  }
-}
 
-# Correlation function with specified warning muffled.
-#
-#' @importFrom stats cor
-muffled_corr = function (x)
-  withCallingHandlers(cor(x),
-                      warning = function(w) {
-                        if (grepl("the standard deviation is zero",w$message))
-                          invokeRestart("muffleWarning")
-                      })
-
-# cov2cor function with specified warning muffled.
-#
-#' @importFrom stats cov2cor
-#' @keywords internal
-muffled_cov2cor = function (x)
-  withCallingHandlers(cov2cor(x),
-    warning = function(w) {
-      if (grepl("had 0 or NA entries; non-finite result is doubtful",
-                w$message))
-          invokeRestart("muffleWarning")
-      })
-
-# Check for symmetric matrix.
-#' @keywords internal
-is_symmetric_matrix = function (x) {
-  if (requireNamespace("Rfast",quietly = TRUE))
-    return(Rfast::is.symmetric(x))
-  else 
-    return(Matrix::isSymmetric(x))
-}
-
-# Compute standard error for regression coef.
-# S = (X'X)^-1 \Sigma
-#' @keywords internal
-calc_stderr = function (X, residuals)
-  sqrt(diag(sum(residuals^2)/(nrow(X) - 2) * chol2inv(chol(crossprod(X)))))
-
-# Return residuals of Y after removing the linear effects of the susie
-# model.
-#
-#' @importFrom stats coef
-#' @keywords internal
-get_R = function (X, Y, s)
-  Y - X %*% coef(s)
-
-# Slim the result of fitted susie model.
-#' @keywords internal
-susie_slim = function (res)
-  list(alpha = res$alpha,niter = res$niter,V = res$V,sigma2 = res$sigma2)
-
-# Prune single effects to given number L in susie model object.
-#' @keywords internal
-susie_prune_single_effects = function (s,L = 0,V = NULL) {
-  num_effects = nrow(s$alpha)
-  if (L == 0) {
-    # Filtering will be based on non-zero elements in s$V.
-    if (!is.null(s$V))
-      L = length(which(s$V > 0))
-    else
-      L = num_effects
-  }
-  if (L == num_effects) {
-    s$sets = NULL
-    return(s)
-  }
-  if (!is.null(s$sets$cs_index))
-    effects_rank = c(s$sets$cs_index,setdiff(1:num_effects,s$sets$cs_index))
-  else
-    effects_rank = 1:num_effects
-
-  if (L > num_effects) {
-    message(paste("Specified number of effects L =",L,
-                  "is greater the number of effects",num_effects,
-                  "in input SuSiE model. The SuSiE model will be expanded",
-                  "to have",L,"effects."))
-
-    s$alpha = rbind(s$alpha[effects_rank,],
-                    matrix(1/ncol(s$alpha),L - num_effects,ncol(s$alpha)))
-    for (n in c("mu","mu2","lbf_variable"))
-      if (!is.null(s[[n]]))
-        s[[n]] = rbind(s[[n]][effects_rank,],
-                       matrix(0,L - num_effects,ncol(s[[n]])))
-    for (n in c("KL", "lbf"))
-      if (!is.null(s[[n]]))
-        s[[n]] = c(s[[n]][effects_rank],rep(NA, L-num_effects))
-    if (!is.null(V)) {
-      if (length(V) > 1)
-        V[1:num_effects] = s$V[effects_rank]
-      else V = rep(V,L)
-    }
-    s$V = V
-  }
-  s$sets = NULL
-  return(s)
-}
 
 #' @title Estimate s in \code{susie_rss} Model Using Regularized LD
 #'
@@ -652,7 +495,7 @@ susie_prune_single_effects = function (s,L = 0,V = NULL) {
 #'
 #' # Estimate s using the unadjusted z-scores.
 #' s0 = estimate_s_rss(zhat,R)
-#' 
+#'
 #' # Estimate s using the adjusted z-scores.
 #' s1 = estimate_s_rss(zhat,R,n)
 #'
@@ -802,7 +645,7 @@ kriging_rss = function (z, R, n, r_tol = 1e-08,
     s = 0.8
   } else if (s < 0)
     stop("The s must be non-negative")
-  
+
   # Check input n, and adjust the z-scores if n is provided.
   if ((!missing(n)) && (n <= 1))
     stop("n must be greater than 1")
@@ -814,7 +657,7 @@ kriging_rss = function (z, R, n, r_tol = 1e-08,
     sigma2 = (n-1)/(z^2 + n - 2)
     z = sqrt(sigma2) * z
   }
-  
+
   dinv = 1/((1-s) * eigenld$values + s)
   dinv[is.infinite(dinv)] = 0
   precision = eigenld$vectors %*% (t(eigenld$vectors) * dinv)
@@ -876,129 +719,3 @@ kriging_rss = function (z, R, n, r_tol = 1e-08,
 }
 
 # Compute the column means of X, the column standard deviations of X,
-# and rowSums(Y^2), where Y is the centered and/or scaled version of
-# X.
-#
-#' @importFrom Matrix rowSums
-#' @importFrom Matrix colMeans
-compute_colstats = function (X, center = TRUE, scale = TRUE) {
-  n = nrow(X)
-  p = ncol(X)
-  if (!is.null(attr(X,"matrix.type"))) {
-
-    # X is a trend filtering matrix.
-    cm  = compute_tf_cm(attr(X,"order"),p)
-    csd = compute_tf_csd(attr(X,"order"),p)
-    d   = compute_tf_d(attr(X,"order"),p,cm,csd,scale,center)
-    if (!center)
-      cm = rep(0,p)
-    if (!scale)
-      csd = rep(1,p)
-  } else {
-
-    # X is an ordinary dense or sparse matrix. Set sd = 1 when the
-    # column has variance 0.
-    if (center)
-      cm = colMeans(X,na.rm = TRUE)
-    else
-      cm = rep(0,p)
-    if (scale) {
-      csd = compute_colSds(X)
-      csd[csd == 0] = 1
-    } else
-      csd = rep(1,p)
-
-    # These two lines of code should give the same result as
-    #
-    #   Y = (t(X) - cm)/csd
-    #   d = rowSums(Y^2)
-    #
-    # for all four combinations of "center" and "scale", but do so
-    # without having to modify X, or create copies of X in memory. In
-    # particular the first line should be equivalent to colSums(X^2).
-    d = n*colMeans(X)^2 + (n-1)*compute_colSds(X)^2
-    d = (d - n*cm^2)/csd^2
-  }
-
-  return(list(cm = cm,csd = csd,d = d))
-}
-
-# @title computes column standard deviations for any type of matrix
-# @details This should give the same result as matrixStats::colSds(X),
-#   but allows for sparse matrices as well as dense ones.
-# @param X an n by p matrix of any type, e.g. sparse, dense.
-# @return a p vector of column standard deviations.
-#
-#' @importFrom matrixStats colSds
-#' @importFrom Matrix summary
-compute_colSds = function(X) {
-  if (is.matrix(X))
-    return(colSds(X))
-  else {
-    n = nrow(X)
-    Y = apply_nonzeros(X,function (u) u^2)
-    d = colMeans(Y) - colMeans(X)^2
-    return(sqrt(d*n/(n-1)))
-  }
-}
-
-# @title Check whether A is positive semidefinite
-# @param A a symmetric matrix
-# @return a list of result:
-# \item{matrix}{The matrix with eigen decomposition}
-# \item{status}{whether A is positive semidefinite}
-# \item{eigenvalues}{eigenvalues of A truncated by r_tol}
-check_semi_pd = function (A, tol) {
-  attr(A,"eigen") = eigen(A,symmetric = TRUE)
-  v = attr(A,"eigen")$values
-  v[abs(v) < tol] = 0
-  return(list(matrix      = A,
-              status      = !any(v < 0),
-              eigenvalues = v))
-}
-
-# @title Check whether b is in space spanned by the non-zero eigenvectors
-#   of A
-# @param A a p by p matrix
-# @param b a length p vector
-# @return a list of result:
-# \item{status}{whether b in space spanned by the non-zero
-#  eigenvectors of A}
-# \item{msg}{msg gives the difference between the projected b and b if
-#   status is FALSE}
-check_projection = function (A, b) {
-  if (is.null(attr(A,"eigen")))
-    attr(A,"eigen") = eigen(A,symmetric = TRUE)
-  v = attr(A,"eigen")$values
-  B = attr(A,"eigen")$vectors[,v > .Machine$double.eps]
-  msg = all.equal(as.vector(B %*% crossprod(B,b)),as.vector(b),
-                  check.names = FALSE)
-  if (!is.character(msg))
-    return(list(status = TRUE,msg = NA))
-  else
-    return(list(status = FALSE,msg = msg))
-}
-
-# @title Utility function to display warning messages as they occur
-# @param ... warning message
-# @param style either "warning" or "hint"
-#'@importFrom crayon combine_styles
-warning_message = function(..., style=c("warning", "hint")) {
-  style = match.arg(style)
-  if (style=="warning" && getOption("warn")>=0) {
-    alert <- combine_styles("bold", "underline", "red")	
-    message(alert("WARNING:"), " ", ...)
-  } else {
-    alert <- combine_styles("bold", "underline", "magenta")	
-    message(alert("HINT:"), " ", ...)
-  }
-}
-
-# Apply operation f to all nonzeros of a sparse matrix.
-#
-#' @importFrom Matrix sparseMatrix
-#' 
-apply_nonzeros <- function (X, f) {
-  d <- summary(X)
-  return(sparseMatrix(i = d$i,j = d$j,x = f(d$x),dims = dim(X)))
-}
