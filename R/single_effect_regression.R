@@ -247,18 +247,16 @@ optimize_prior_variance_unmappable <- function(V_init, XtOmegar, diagXtOmegaX, p
 
 # Estimate prior variance.
 est_V_uniroot <- function (data, betahat, shat2, prior_weights) {
-  V.u <- uniroot(negloglik.grad.logscale, c(-10, 10), extendInt = "upX",
+# Define loglikelihood and gradient as function of lV:=log(V)
+# to improve numerical optimization
+neg_loglik_grad_logscale <- function (lV, data, betahat, shat2, prior_weights)
+  -exp(lV) * loglik(data, exp(lV), betahat, shat2, prior_weights)$gradient
+
+
+  V.u <- uniroot(neglog_lik_grad_logscale, c(-10, 10), extendInt = "upX",
                 data = data, betahat = betahat, shat2 = shat2, prior_weights = prior_weights)
   return(exp(V.u$root))
 }
-
-# In these functions, s2 represents residual_variance, and shat2 is an
-# estimate of it.
-
-# Define loglikelihood and gradient as function of lV:=log(V)
-# to improve numerical optimization
-negloglik.grad.logscale <- function (lV, data, betahat, shat2, prior_weights)
-  -exp(lV) * loglik(data, exp(lV), betahat, shat2, prior_weights)$gradient
 
 # Vector of gradients of logBF_j for each j, with respect to prior
 # variance V.
