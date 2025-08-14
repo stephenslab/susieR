@@ -11,14 +11,14 @@
 #' @importFrom stats coef
 #'
 #' @method coef susie
-#' 
+#'
 #' @export coef.susie
-#' 
+#'
 #' @export
 #'
-coef.susie = function (object, ...) {
-  s = object
-  return(c(s$intercept,colSums(s$alpha*s$mu)/s$X_column_scale_factors))
+coef.susie <- function(object, ...) {
+  s <- object
+  return(c(s$intercept, colSums(s$alpha * s$mu) / s$X_column_scale_factors))
 }
 
 #' @title Predict outcomes or extract coefficients from susie fit.
@@ -44,25 +44,28 @@ coef.susie = function (object, ...) {
 #' @importFrom stats coef
 #'
 #' @method predict susie
-#' 
+#'
 #' @export predict.susie
-#' 
+#'
 #' @export
 #'
-predict.susie = function (object, newx = NULL,
-                          type = c("response","coefficients"), ...) {
-  s = object
-  type = match.arg(type)
+predict.susie <- function(object, newx = NULL,
+                          type = c("response", "coefficients"), ...) {
+  s <- object
+  type <- match.arg(type)
   if (type == "coefficients") {
-    if (!missing(newx))
+    if (!missing(newx)) {
       stop("Do not supply newx when predicting coefficients")
+    }
     return(coef(s))
   }
-  if (missing(newx))
+  if (missing(newx)) {
     return(s$fitted)
+  }
   if (is.na(s$intercept)) {
     warning("The prediction assumes intercept = 0")
     return(drop(newx %*% coef(s)[-1]))
-  } else
+  } else {
     return(drop(s$intercept + newx %*% coef(s)[-1]))
+  }
 }

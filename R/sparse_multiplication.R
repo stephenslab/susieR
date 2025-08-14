@@ -3,25 +3,26 @@
 # attr(X,"scaled:center"), attr(X,"scaled:scale") and attr(X,"d")
 # @param b a p vector
 # @return an n vector
-# 
+#
 #' @importFrom Matrix t
 #' @importFrom Matrix tcrossprod
-compute_Xb = function (X, b) {
-  cm = attr(X,"scaled:center")
-  csd = attr(X,"scaled:scale")
-  
+compute_Xb <- function(X, b) {
+  cm <- attr(X, "scaled:center")
+  csd <- attr(X, "scaled:scale")
+
   # Scale Xb.
-  if (!is.null(attr(X,"matrix.type")))
+  if (!is.null(attr(X, "matrix.type"))) {
 
     # When X is a trend filtering matrix.
-    scaled.Xb = compute_tf_Xb(attr(X,"order"),b/csd)
-  else
-      
+    scaled.Xb <- compute_tf_Xb(attr(X, "order"), b / csd)
+  } else {
+
     # When X is an ordinary sparse/dense matrix.
-    scaled.Xb = tcrossprod(X,t(b/csd))
-  
+    scaled.Xb <- tcrossprod(X, t(b / csd))
+  }
+
   # Center Xb.
-  Xb = scaled.Xb - sum(cm*b/csd)
+  Xb <- scaled.Xb - sum(cm * b / csd)
   return(as.numeric(Xb))
 }
 
@@ -30,26 +31,27 @@ compute_Xb = function (X, b) {
 # attr(X,"scaled:center"), attr(X,"scaled:scale") and attr(X,"d")
 # @param y an n vector
 # @return a p vector
-# 
+#
 #' @importFrom Matrix t
 #' @importFrom Matrix crossprod
-compute_Xty = function (X, y) {
-  cm = attr(X,"scaled:center")
-  csd = attr(X,"scaled:scale")
-  ytX = crossprod(y,X)
-  
+compute_Xty <- function(X, y) {
+  cm <- attr(X, "scaled:center")
+  csd <- attr(X, "scaled:scale")
+  ytX <- crossprod(y, X)
+
   # Scale Xty.
-  if (!is.null(attr(X,"matrix.type")))
+  if (!is.null(attr(X, "matrix.type"))) {
 
     # When X is a trend filtering matrix.
-    scaled.Xty = compute_tf_Xty(attr(X,"order"),y)/csd
-  else
+    scaled.Xty <- compute_tf_Xty(attr(X, "order"), y) / csd
+  } else {
 
     # When X is an ordinary sparse/dense matrix.
-    scaled.Xty = t(ytX/csd)
-  
+    scaled.Xty <- t(ytX / csd)
+  }
+
   # Center Xty.
-  centered.scaled.Xty = scaled.Xty - cm/csd * sum(y)
+  centered.scaled.Xty <- scaled.Xty - cm / csd * sum(y)
   return(as.numeric(centered.scaled.Xty))
 }
 
@@ -58,20 +60,21 @@ compute_Xty = function (X, y) {
 # @param X an n by p unstandardized matrix with three attributes:
 # attr(X,"scaled:center"), attr(X,"scaled:scale") and attr(X,"d")
 # @return a L by n matrix
-# 
+#
 #' @importFrom Matrix t
-compute_MXt = function (M, X) {
-  cm = attr(X,"scaled:center")
-  csd = attr(X,"scaled:scale")
-  
-  if (!is.null(attr(X,"matrix.type")))
+compute_MXt <- function(M, X) {
+  cm <- attr(X, "scaled:center")
+  csd <- attr(X, "scaled:scale")
+
+  if (!is.null(attr(X, "matrix.type"))) {
 
     # When X is a trend filtering matrix.
-    return(as.matrix(t(apply(M,1,function(b) compute_Xb(X,b)))))
-  else
-    
+    return(as.matrix(t(apply(M, 1, function(b) compute_Xb(X, b)))))
+  } else {
+
     # When X is an ordinary sparse/dense matrix.
-    return(as.matrix(t(X %*% (t(M)/csd)) - drop(M %*% (cm/csd))))
+    return(as.matrix(t(X %*% (t(M) / csd)) - drop(M %*% (cm / csd))))
+  }
 
   # This should be the same as
   #

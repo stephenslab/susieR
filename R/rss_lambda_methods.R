@@ -10,7 +10,9 @@ initialize_fitted.rss_lambda <- function(data, alpha, mu) {
 initialize_susie_model.rss_lambda <- function(data, L, scaled_prior_variance, var_y,
                                               residual_variance, prior_weights, ...) {
   model <- initialize_matrices(data$p, L, scaled_prior_variance, var_y,
-                               residual_variance, prior_weights, include_unmappable = FALSE)
+    residual_variance, prior_weights,
+    include_unmappable = FALSE
+  )
 
   model$lambda <- data$lambda
   model$intercept <- data$intercept_value
@@ -21,7 +23,7 @@ initialize_susie_model.rss_lambda <- function(data, L, scaled_prior_variance, va
   Dinv[is.infinite(Dinv)] <- 0
 
   model$SinvRj <- data$eigen_R$vectors %*% (Dinv * data$eigen_R$values * t(data$eigen_R$vectors))
-  
+
   tmp <- t(data$eigen_R$vectors)
   model$RjSinvRj <- colSums(tmp * (Dinv * (data$eigen_R$values^2) * tmp))
 
@@ -46,10 +48,12 @@ add_eigen_decomposition.rss_lambda <- function(data) {
 # Extract core parameters for tracking
 extract_core.rss_lambda <- function(data, model, tracking, iter, track_fit, ...) {
   if (isTRUE(track_fit)) {
-    tracking[[iter]] <- list(alpha = model$alpha,
-                             niter = iter,
-                             V = model$V,
-                             sigma2 = model$sigma2)
+    tracking[[iter]] <- list(
+      alpha = model$alpha,
+      niter = iter,
+      V = model$V,
+      sigma2 = model$sigma2
+    )
   }
   return(tracking)
 }
@@ -66,11 +70,11 @@ get_ER2.rss_lambda <- function(data, model, sigma2 = NULL) {
   }
 
   d <- sigma2 * data$eigen_R$values + data$lambda
-  Dinv <- 1/d
+  Dinv <- 1 / d
   Dinv[is.infinite(Dinv)] <- 0
 
   SinvR <- data$eigen_R$vectors %*%
-          ((Dinv * data$eigen_R$values) * t(data$eigen_R$vectors))
+    ((Dinv * data$eigen_R$values) * t(data$eigen_R$vectors))
   Utz <- crossprod(data$eigen_R$vectors, data$z)
   zSinvz <- sum(Utz * (Dinv * Utz))
 
@@ -81,9 +85,9 @@ get_ER2.rss_lambda <- function(data, model, sigma2 = NULL) {
   zbar <- colSums(Z)
   postb2 <- model$alpha * model$mu2
 
-  return(zSinvz - 2*sum((SinvR %*% data$z) * zbar) +
-         sum(zbar * (RSinvR %*% zbar)) -
-         RZ2 + sum(diag(RSinvR) * t(postb2)))
+  return(zSinvz - 2 * sum((SinvR %*% data$z) * zbar) +
+    sum(zbar * (RSinvR %*% zbar)) -
+    RZ2 + sum(diag(RSinvR) * t(postb2)))
 }
 
 # SER posterior expected log-likelihood
@@ -91,7 +95,7 @@ SER_posterior_e_loglik.rss_lambda <- function(data, model, r, Eb, Eb2) {
   rR <- data$R %*% r
 
   d <- model$sigma2 * data$eigen_R$values + data$lambda
-  Dinv <- 1/d
+  Dinv <- 1 / d
   Dinv[is.infinite(Dinv)] <- 0
   SinvEb <- data$eigen_R$vectors %*% (Dinv * crossprod(data$eigen_R$vectors, Eb))
 
@@ -101,8 +105,7 @@ SER_posterior_e_loglik.rss_lambda <- function(data, model, r, Eb, Eb2) {
 # Single effect update
 single_effect_update.rss_lambda <- function(data, model, l,
                                             optimize_V, check_null_threshold) {
-
-  model$Rz <- model$Rz - data$R %*% (model$alpha[l,] * model$mu[l,])
+  model$Rz <- model$Rz - data$R %*% (model$alpha[l, ] * model$mu[l, ])
 
   r <- data$z - model$Rz
 
@@ -117,18 +120,20 @@ single_effect_update.rss_lambda <- function(data, model, l,
     check_null_threshold = check_null_threshold
   )
 
-  model$mu[l,] <- res$mu
-  model$alpha[l,] <- res$alpha
-  model$mu2[l,] <- res$mu2
+  model$mu[l, ] <- res$mu
+  model$alpha[l, ] <- res$alpha
+  model$mu2[l, ] <- res$mu2
   model$V[l] <- res$V
   model$lbf[l] <- res$lbf_model
-  model$lbf_variable[l,] <- res$lbf
+  model$lbf_variable[l, ] <- res$lbf
 
   model$KL[l] <- -res$lbf_model +
-    SER_posterior_e_loglik.rss_lambda(data, model, r,
-                                      res$alpha * res$mu, res$alpha * res$mu2)
+    SER_posterior_e_loglik.rss_lambda(
+      data, model, r,
+      res$alpha * res$mu, res$alpha * res$mu2
+    )
 
-  model$Rz <- model$Rz + data$R %*% (model$alpha[l,] * model$mu[l,])
+  model$Rz <- model$Rz + data$R %*% (model$alpha[l, ] * model$mu[l, ])
 
   return(model)
 }
@@ -150,13 +155,17 @@ get_fitted.rss_lambda <- function(data, model, ...) {
 
 # Get credible sets
 get_cs.rss_lambda <- function(data, model, coverage, min_abs_corr, n_purity) {
-  if (is.null(coverage) || is.null(min_abs_corr)) return(NULL)
+  if (is.null(coverage) || is.null(min_abs_corr)) {
+    return(NULL)
+  }
 
-  return(susie_get_cs(model, coverage = coverage,
-                      Xcorr = data$R,
-                      min_abs_corr = min_abs_corr,
-                      check_symmetric = FALSE,
-                      n_purity = n_purity))
+  return(susie_get_cs(model,
+    coverage = coverage,
+    Xcorr = data$R,
+    min_abs_corr = min_abs_corr,
+    check_symmetric = FALSE,
+    n_purity = n_purity
+  ))
 }
 
 # Get variable names
@@ -174,28 +183,28 @@ get_zscore.rss_lambda <- function(data, model, ...) {
 update_variance_components.rss_lambda <- function(data, model, estimate_method = "MLE") {
   # For lambda != 0, use optimization to estimate sigma2
   upper_bound <- 1 - data$lambda
-  
+
   Eloglik <- function(sigma2) {
     model_temp <- model
     model_temp$sigma2 <- sigma2
-    
+
     eigenS_values <- sigma2 * data$eigen_R$values + data$lambda
     Dinv <- 1 / eigenS_values
     Dinv[is.infinite(Dinv)] <- 0
-    
+
     model_temp$SinvRj <- data$eigen_R$vectors %*% (Dinv * data$eigen_R$values * t(data$eigen_R$vectors))
     tmp <- t(data$eigen_R$vectors)
     model_temp$RjSinvRj <- colSums(tmp * (Dinv * (data$eigen_R$values^2) * tmp))
-    
+
     log_det_Sigma <- sum(log(eigenS_values[eigenS_values > 0]))
     ER2_term <- get_ER2.rss_lambda(data, model_temp, sigma2 = sigma2)
-    
+
     return(-0.5 * log_det_Sigma - 0.5 * ER2_term)
   }
-  
+
   opt_result <- optimize(Eloglik, interval = c(1e-4, upper_bound), maximum = TRUE)
   est_sigma2 <- opt_result$maximum
-  
+
   if (Eloglik(est_sigma2) < Eloglik(upper_bound)) {
     est_sigma2 <- upper_bound
   }
@@ -212,10 +221,10 @@ update_derived_quantities.rss_lambda <- function(data, model) {
   Dinv[is.infinite(Dinv)] <- 0
 
   data$SinvRj_temp <- data$eigen_R$vectors %*% (Dinv * data$eigen_R$values * t(data$eigen_R$vectors))
-  
+
   tmp <- t(data$eigen_R$vectors)
   data$RjSinvRj_temp <- colSums(tmp * (Dinv * (data$eigen_R$values^2) * tmp))
-  
+
   return(data)
 }
 
@@ -236,38 +245,38 @@ check_convergence.rss_lambda <- function(data, model_prev, model_current,
 # Expected log-likelihood
 Eloglik.rss_lambda <- function(data, model) {
   d <- model$sigma2 * data$eigen_R$values + data$lambda
-  result <- -(length(data$z)/2)*log(2*pi) - 0.5*sum(log(d)) - 0.5*get_ER2.rss_lambda(data, model)
+  result <- -(length(data$z) / 2) * log(2 * pi) - 0.5 * sum(log(d)) - 0.5 * get_ER2.rss_lambda(data, model)
   return(result)
 }
 
 # Log-likelihood for RSS
 loglik.rss_lambda <- function(data, V, z, SinvRj, RjSinvRj, shat2, prior_weights) {
   p <- length(z)
-  
+
   # Compute log Bayes factors
-  lbf <- sapply(1:p, function(j)
-    -0.5 * log(1 + (V/shat2[j])) +
-     0.5 * (V/(1 + (V/shat2[j]))) * sum(SinvRj[,j] * z)^2
-  )
-  
+  lbf <- sapply(1:p, function(j) {
+    -0.5 * log(1 + (V / shat2[j])) +
+      0.5 * (V / (1 + (V / shat2[j]))) * sum(SinvRj[, j] * z)^2
+  })
+
   # Add log prior weights
   lpo <- lbf + log(prior_weights + sqrt(.Machine$double.eps))
-  
+
   # Deal with special case of infinite shat2 (e.g., happens if X does not vary)
   lbf[is.infinite(shat2)] <- 0
   lpo[is.infinite(shat2)] <- 0
-  
+
   # Compute log-sum-exp of weighted lbf
   maxlpo <- max(lpo)
   w_weighted <- exp(lpo - maxlpo)
   weighted_sum_w <- sum(w_weighted)
   alpha <- w_weighted / weighted_sum_w
-  
+
   return(list(
     lbf_model = log(weighted_sum_w) + maxlpo,
     lbf = lbf,
     alpha = alpha,
-    gradient = NA  # Gradient not computed for RSS
+    gradient = NA # Gradient not computed for RSS
   ))
 }
 

@@ -1,36 +1,42 @@
 # Core IBSS functions: ibss_initialize(), ibss_fit(), and ibss_finalize()
 
 ibss_initialize <- function(data,
-                            L                     = min(10, data$p),
+                            L = min(10, data$p),
                             scaled_prior_variance = 0.2,
-                            residual_variance     = NULL,
-                            prior_weights         = NULL,
-                            null_weight           = NULL,
-                            model_init            = NULL,
-                            prior_tol             = 1e-9,
-                            residual_variance_upperbound = Inf){
+                            residual_variance = NULL,
+                            prior_weights = NULL,
+                            null_weight = NULL,
+                            model_init = NULL,
+                            prior_tol = 1e-9,
+                            residual_variance_upperbound = Inf) {
   # Define p and var_y
   p <- data$p
   var_y <- get_var_y(data)
 
   # Validate prior tolerance threshold
-  if (!is.numeric(prior_tol) || length(prior_tol) != 1)
+  if (!is.numeric(prior_tol) || length(prior_tol) != 1) {
     stop("prior_tol must be a numeric scalar")
-  if (prior_tol < 0)
+  }
+  if (prior_tol < 0) {
     stop("prior_tol must be non-negative")
-  if (prior_tol > 1)
+  }
+  if (prior_tol > 1) {
     stop("prior_tol cannot exceed 1 (a single effect cannot account for more than 100% of outcome variance)")
+  }
 
   # Validate residual_variance_upperbound
-  if (!is.numeric(residual_variance_upperbound) || length(residual_variance_upperbound) != 1)
+  if (!is.numeric(residual_variance_upperbound) || length(residual_variance_upperbound) != 1) {
     stop("residual_variance_upperbound must be a numeric scalar")
-  if (residual_variance_upperbound <= 0)
+  }
+  if (residual_variance_upperbound <= 0) {
     stop("residual_variance_upperbound must be positive")
+  }
 
   # Check prior variance
-  if (!is.numeric(scaled_prior_variance) || any(scaled_prior_variance < 0))
+  if (!is.numeric(scaled_prior_variance) || any(scaled_prior_variance < 0)) {
     stop("Scaled prior variance should be positive number")
-  
+  }
+
   # Handle RSS-specific prior variance logic
   # When n is not provided in RSS, use prior_variance as scaled_prior_variance
   if (!is.null(data$rss_n_provided) && !data$rss_n_provided) {
@@ -38,23 +44,29 @@ ibss_initialize <- function(data,
   }
 
   # Check prior weights
-  if (is.null(prior_weights))
+  if (is.null(prior_weights)) {
     prior_weights <- rep(1 / p, p)
+  }
 
   # Check number of single effects
-  if (p < L)
-    L = p
+  if (p < L) {
+    L <- p
+  }
 
   # Check & validate residual variance
-  if (is.null(residual_variance))
+  if (is.null(residual_variance)) {
     residual_variance <- var_y
-  if (!is.numeric(residual_variance))
+  }
+  if (!is.numeric(residual_variance)) {
     stop("Input residual variance sigma2 must be numeric")
+  }
   residual_variance <- as.numeric(residual_variance)
-  if (length(residual_variance) != 1)
+  if (length(residual_variance) != 1) {
     stop("Input residual variance sigma2 must be a scalar")
-  if (residual_variance <= 0)
+  }
+  if (residual_variance <= 0) {
     stop("Residual variance sigma2 must be positive (is your var(Y) zero?)")
+  }
 
   # Handle model initialization
   if (!missing(model_init) && !is.null(model_init)) {
@@ -69,9 +81,11 @@ ibss_initialize <- function(data,
     L <- adjustment$L
 
     # Create base model with all required fields
-    mat_init <- initialize_susie_model(data, L,
-                                    scaled_prior_variance, var_y,
-                                    residual_variance, prior_weights)
+    mat_init <- initialize_susie_model(
+      data, L,
+      scaled_prior_variance, var_y,
+      residual_variance, prior_weights
+    )
 
     # Merge with adjusted model_init
     mat_init <- modifyList(mat_init, adjustment$model_init)
@@ -79,12 +93,13 @@ ibss_initialize <- function(data,
     # Reset iteration-specific values
     mat_init$KL <- rep(as.numeric(NA), L)
     mat_init$lbf <- rep(as.numeric(NA), L)
-
   } else {
     # Create fresh model
-    mat_init <- initialize_susie_model(data, L,
-                                    scaled_prior_variance, var_y,
-                                    residual_variance, prior_weights)
+    mat_init <- initialize_susie_model(
+      data, L,
+      scaled_prior_variance, var_y,
+      residual_variance, prior_weights
+    )
   }
 
   # Initialize fitted values
@@ -105,25 +120,28 @@ ibss_initialize <- function(data,
   return(model)
 }
 
-ibss_fit = function(data, model,
-                    estimate_prior_variance = TRUE,
-                    estimate_prior_method   = c("optim","EM","simple"),
-                    check_null_threshold    = 0,
-                    check_prior             = FALSE){
+ibss_fit <- function(data, model,
+                     estimate_prior_variance = TRUE,
+                     estimate_prior_method = c("optim", "EM", "simple"),
+                     check_null_threshold = 0,
+                     check_prior = FALSE) {
   estimate_prior_method <- match.arg(estimate_prior_method)
 
   # Set prior variance estimation if NA
-  if (!estimate_prior_variance)
+  if (!estimate_prior_variance) {
     estimate_prior_method <- "none"
+  }
 
   # Repeat for each effect to update
   L <- nrow(model$alpha)
-  if (L > 0)
-    for (l in seq_len(L)){
+  if (L > 0) {
+    for (l in seq_len(L)) {
       model <- single_effect_update(data, model, l,
-                                  optimize_V = estimate_prior_method,
-                                  check_null_threshold = check_null_threshold)
+        optimize_V = estimate_prior_method,
+        check_null_threshold = check_null_threshold
+      )
     }
+  }
 
   # Validate prior variance is reasonable
   validate_prior(data, model, check_prior)
@@ -133,31 +151,31 @@ ibss_fit = function(data, model,
 
 ibss_finalize <- function(data,
                           model,
-                          coverage               = 0.95,
-                          min_abs_corr           = 0.50,
-                          median_abs_corr        = NULL,
-                          prior_tol              = 1e-9,
-                          n_purity               = 100,
+                          coverage = 0.95,
+                          min_abs_corr = 0.50,
+                          median_abs_corr = NULL,
+                          prior_tol = 1e-9,
+                          n_purity = 100,
                           compute_univariate_zscore = FALSE,
-                          intercept              = TRUE,
-                          standardize            = TRUE,
-                          elbo                   = NULL,
-                          iter                   = NA_integer_,
-                          null_weight            = NULL,
-                          track_fit              = FALSE,
-                          tracking               = NULL) {
-
+                          intercept = TRUE,
+                          standardize = TRUE,
+                          elbo = NULL,
+                          iter = NA_integer_,
+                          null_weight = NULL,
+                          track_fit = FALSE,
+                          tracking = NULL) {
   # Append ELBO & iteration count to model output
   model$niter <- iter
 
   # Intercept & Fitted Values
   model$X_column_scale_factors <- get_scale_factors(data)
-  model$intercept              <- get_intercept(data, model, intercept)
-  model$fitted                 <- get_fitted(data, model, intercept)
+  model$intercept <- get_intercept(data, model, intercept)
+  model$fitted <- get_fitted(data, model, intercept)
 
   # Tracking Across Iterations
-  if (track_fit)
-    model$trace = tracking
+  if (track_fit) {
+    model$trace <- tracking
+  }
 
   # Credible Sets
   model$sets <- get_cs(data, model, coverage, min_abs_corr, n_purity)
@@ -174,8 +192,10 @@ ibss_finalize <- function(data,
   model <- get_variable_names(data, model, null_weight)
 
   # Compute z-scores
-  model$z <- get_zscore(data, model, compute_univariate_zscore,
-                        intercept, standardize, null_weight)
+  model$z <- get_zscore(
+    data, model, compute_univariate_zscore,
+    intercept, standardize, null_weight
+  )
 
   return(model)
 }

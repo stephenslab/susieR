@@ -7,9 +7,11 @@ initialize_fitted.individual <- function(data, alpha, mu) {
 
 # Initialize susie model
 initialize_susie_model.individual <- function(data, L, scaled_prior_variance, var_y,
-                                           residual_variance, prior_weights, ...) {
-  return(initialize_matrices(data$p, L, scaled_prior_variance, var_y,
-                                residual_variance, prior_weights))
+                                              residual_variance, prior_weights, ...) {
+  return(initialize_matrices(
+    data$p, L, scaled_prior_variance, var_y,
+    residual_variance, prior_weights
+  ))
 }
 
 # Get variance of y
@@ -30,7 +32,6 @@ configure_data.individual <- function(data) {
 
 # Convert individual data to ss with unmappable effects components.
 convert_individual_to_ss_unmappable <- function(individual_data, unmappable_effects) {
-
   # Extract components from individual data
   X <- individual_data$X
   y <- individual_data$y
@@ -47,18 +48,21 @@ convert_individual_to_ss_unmappable <- function(individual_data, unmappable_effe
   X_colmeans <- attr(X, "scaled:center")
 
   # Create sufficient statistics data object
-  ss_data <- structure(list(
-    XtX        = XtX,
-    Xty        = Xty,
-    yty        = yty,
-    n          = n,
-    p          = p,
-    X_colmeans = X_colmeans,
-    y_mean     = mean_y,
-    prior_weights = individual_data$prior_weights,
-    null_weight = individual_data$null_weight,
-    unmappable_effects = unmappable_effects),
-    class = "ss")
+  ss_data <- structure(
+    list(
+      XtX = XtX,
+      Xty = Xty,
+      yty = yty,
+      n = n,
+      p = p,
+      X_colmeans = X_colmeans,
+      y_mean = mean_y,
+      prior_weights = individual_data$prior_weights,
+      null_weight = individual_data$null_weight,
+      unmappable_effects = unmappable_effects
+    ),
+    class = "ss"
+  )
 
   # Copy attributes from X to XtX
   attr(ss_data$XtX, "d") <- attr(X, "d")
@@ -73,10 +77,12 @@ convert_individual_to_ss_unmappable <- function(individual_data, unmappable_effe
 # Extract core parameters across iterations
 extract_core.individual <- function(data, model, tracking, iter, track_fit, ...) {
   if (isTRUE(track_fit)) {
-    tracking[[iter]] <- list(alpha = model$alpha,
-                             niter = iter,
-                             V = model$V,
-                             sigma2 = model$sigma2)
+    tracking[[iter]] <- list(
+      alpha = model$alpha,
+      niter = iter,
+      V = model$V,
+      sigma2 = model$sigma2
+    )
   }
   return(tracking)
 }
@@ -89,8 +95,8 @@ validate_prior.individual <- function(data, model, check_prior, ...) {
 # Posterior expected log-likelihood for single effect regression
 SER_posterior_e_loglik.individual <- function(data, model, R, Eb, Eb2) {
   return(-0.5 * data$n * log(2 * pi * model$sigma2) -
-         0.5 / model$sigma2 * (sum(R * R) - 2 * sum(R * compute_Xb(data$X, Eb)) +
-                               sum(attr(data$X, "d") * Eb2)))
+    0.5 / model$sigma2 * (sum(R * R) - 2 * sum(R * compute_Xb(data$X, Eb)) +
+      sum(attr(data$X, "d") * Eb2)))
 }
 
 # Expected squared residuals
@@ -104,7 +110,6 @@ get_ER2.individual <- function(data, model) {
 single_effect_update.individual <- function(
     data, model, l,
     optimize_V, check_null_threshold) {
-
   # Remove lth effect
   model$Xr <- model$Xr - compute_Xb(data$X, model$alpha[l, ] * model$mu[l, ])
 
@@ -122,7 +127,8 @@ single_effect_update.individual <- function(
     prior_weights        = model$pi,
     optimize_V           = optimize_V,
     check_null_threshold = check_null_threshold,
-    unmappable_effects   = FALSE)
+    unmappable_effects   = FALSE
+  )
 
   # log-likelihood term using current residual vector (not available in ss)
   res$loglik <- res$lbf_model +
@@ -130,17 +136,18 @@ single_effect_update.individual <- function(
 
   res$KL <- -res$loglik +
     SER_posterior_e_loglik(data, model, R,
-                           Eb  = res$alpha * res$mu,
-                           Eb2 = res$alpha * res$mu2)
+      Eb  = res$alpha * res$mu,
+      Eb2 = res$alpha * res$mu2
+    )
 
   # Update alpha and mu for adding effect back
-  model$alpha[l,]         <- res$alpha
-  model$mu[l, ]           <- res$mu
-  model$mu2[l, ]          <- res$mu2
-  model$V[l]              <- res$V
-  model$lbf[l]            <- res$lbf_model
+  model$alpha[l, ] <- res$alpha
+  model$mu[l, ] <- res$mu
+  model$mu2[l, ] <- res$mu2
+  model$V[l] <- res$V
+  model$lbf[l] <- res$lbf_model
   model$lbf_variable[l, ] <- res$lbf
-  model$KL[l]             <- res$KL
+  model$KL[l] <- res$KL
 
   model$Xr <- model$Xr + compute_Xb(data$X, model$alpha[l, ] * model$mu[l, ])
 
@@ -148,69 +155,76 @@ single_effect_update.individual <- function(
 }
 
 # Get column scale factors
-get_scale_factors.individual <- function(data){
-  return(attr(data$X,"scaled:scale"))
+get_scale_factors.individual <- function(data) {
+  return(attr(data$X, "scaled:scale"))
 }
 
 # Get intercept
-get_intercept.individual <- function(data, model, intercept){
+get_intercept.individual <- function(data, model, intercept) {
   if (intercept) {
     return(data$mean_y - sum(attr(data$X, "scaled:center") *
-                                 (colSums(model$alpha * model$mu) / attr(data$X, "scaled:scale"))))
+      (colSums(model$alpha * model$mu) / attr(data$X, "scaled:scale"))))
   } else {
     return(0)
   }
 }
 
 # Get Fitted Values
-get_fitted.individual <- function(data, model, intercept){
-  if(intercept) {
-    fitted = model$Xr + data$mean_y
-  } else{
-    fitted = model$Xr
+get_fitted.individual <- function(data, model, intercept) {
+  if (intercept) {
+    fitted <- model$Xr + data$mean_y
+  } else {
+    fitted <- model$Xr
   }
 
-  fitted = drop(fitted)
-  names(fitted) = `if`(is.null(names(data$y)),rownames(data$X),names(data$y))
+  fitted <- drop(fitted)
+  names(fitted) <- `if`(is.null(names(data$y)), rownames(data$X), names(data$y))
 
   return(fitted)
 }
 
 # Get Credible Sets
-get_cs.individual <- function(data, model, coverage, min_abs_corr, n_purity){
+get_cs.individual <- function(data, model, coverage, min_abs_corr, n_purity) {
+  if (is.null(coverage) || is.null(min_abs_corr)) {
+    return(NULL)
+  }
 
-  if (is.null(coverage) || is.null(min_abs_corr)) return(NULL)
-
-  return(susie_get_cs(model,coverage = coverage,X = data$X,
-                      min_abs_corr = min_abs_corr,
-                      n_purity = n_purity))
+  return(susie_get_cs(model,
+    coverage = coverage, X = data$X,
+    min_abs_corr = min_abs_corr,
+    n_purity = n_purity
+  ))
 }
 
 
 # Get Variable Names
-get_variable_names.individual <- function(data, model, null_weight){
+get_variable_names.individual <- function(data, model, null_weight) {
   variable_names <- colnames(data$X)
   return(assign_names(model, variable_names, null_weight, data$p))
 }
 
 # Get univariate z-score
 get_zscore.individual <- function(data, model, compute_univariate_zscore,
-                                  intercept, standardize, null_weight){
-
-  if(isFALSE(compute_univariate_zscore)) return(NULL)
+                                  intercept, standardize, null_weight) {
+  if (isFALSE(compute_univariate_zscore)) {
+    return(NULL)
+  }
 
   X <- data$X
 
-  if (!is.matrix(X))
-    warning("Calculation of univariate regression z-scores is not ",
-            "implemented specifically for sparse or trend filtering ",
-            "matrices, so this step may be slow if the matrix is large; ",
-            "to skip this step set compute_univariate_zscore = FALSE")
-  if (!is.null(null_weight) && null_weight != 0)
-    X = X[,1:(ncol(X) - 1)]
+  if (!is.matrix(X)) {
+    warning(
+      "Calculation of univariate regression z-scores is not ",
+      "implemented specifically for sparse or trend filtering ",
+      "matrices, so this step may be slow if the matrix is large; ",
+      "to skip this step set compute_univariate_zscore = FALSE"
+    )
+  }
+  if (!is.null(null_weight) && null_weight != 0) {
+    X <- X[, 1:(ncol(X) - 1)]
+  }
 
-  return(calc_z(X,data$y,center = intercept,scale = standardize))
-
+  return(calc_z(X, data$y, center = intercept, scale = standardize))
 }
 
 # Update variance components for individual data
@@ -222,7 +236,7 @@ update_variance_components.individual <- function(data, model, estimate_method =
 
 # Update derived quantities for individual data
 update_derived_quantities.individual <- function(data, model) {
-  return(data)  # No changes needed for individual data
+  return(data) # No changes needed for individual data
 }
 
 # Check convergence for individual data
@@ -234,7 +248,7 @@ check_convergence.individual <- function(data, model_prev, model_current, elbo_p
   } else {
     # ELBO-based convergence
     if (is.na(elbo_prev)) {
-      return(FALSE)  # Cannot converge on first iteration
+      return(FALSE) # Cannot converge on first iteration
     }
     return(elbo_current - elbo_prev < tol)
   }
@@ -244,14 +258,13 @@ check_convergence.individual <- function(data, model_prev, model_current, elbo_p
 # Expected log-likelihood
 Eloglik.individual <- function(data, model) {
   return(-data$n / 2 * log(2 * pi * model$sigma2) -
-         1 / (2 * model$sigma2) * get_ER2(data, model))
+    1 / (2 * model$sigma2) * get_ER2(data, model))
 }
 
 #' @importFrom Matrix colSums
 #' @importFrom stats dnorm
 loglik.individual <- function(data, V, betahat, shat2, prior_weights) {
-
-  #log(bf) for each SNP
+  # log(bf) for each SNP
   lbf <- dnorm(betahat, 0, sqrt(V + shat2), log = TRUE) -
     dnorm(betahat, 0, sqrt(shat2), log = TRUE)
   lpo <- lbf + log(prior_weights + sqrt(.Machine$double.eps))

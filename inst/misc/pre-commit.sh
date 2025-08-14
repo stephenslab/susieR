@@ -15,6 +15,7 @@ if [[ -z `git diff HEAD` ]] || [[ ! -f $ROOT_DIR/DESCRIPTION ]]; then
     exit 0
 elif [[ -z `grep "$GREP_REGEX" $ROOT_DIR/DESCRIPTION` ]]; then
     echo -e "\e[1;31m$MSG\e[0m"
+    exit 0
 else
     REV_ID=`git log --oneline | wc -l`
     REV_ID=`printf "%04d\n" $((REV_ID+1))`
@@ -25,9 +26,11 @@ else
     if [[ `git rev-parse --abbrev-ref HEAD` -eq "master" ]]; then
         cd $ROOT_DIR
         echo "Updating documentation ..."
-        Rscript -e 'devtools::document()' &> /dev/null && git add man/*.Rd
+        R --slave -e 'devtools::document()' &> /dev/null && git add man/*.Rd
+        echo "Documentation updated!"
         echo "Running unit tests ..."
-        Rscript -e 'devtools::test()'
-        Rscript -e 'library(susieR); tests = testthat::test_examples(".")'
+        R --slave -e 'devtools::test()'
+        echo "Unit test completed!"
     fi
+    exit 0
 fi

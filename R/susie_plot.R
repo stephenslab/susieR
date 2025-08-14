@@ -15,7 +15,7 @@
 #'   z-scores or PIPs.
 #'
 #' @param y A string indicating what to plot: either \code{"z_original"} for
-#'   z-scores, \code{"z"} for z-score derived p-values on (base-10) log-scale, 
+#'   z-scores, \code{"z"} for z-score derived p-values on (base-10) log-scale,
 #'   \code{"PIP"} for posterior inclusion probabilities,
 #'   \code{"log10PIP"} for posterior inclusion probabiliities on the
 #'   (base-10) log-scale. For any other setting, the data are plotted as
@@ -49,29 +49,31 @@
 #'   \code{\link[graphics]{plot}}.
 #'
 #' @return Invisibly returns \code{NULL}.
-#' 
+#'
 #' @seealso \code{\link{susie_plot_changepoint}}
-#' 
+#'
 #' @examples
 #' set.seed(1)
-#' n = 1000
-#' p = 1000
-#' beta = rep(0,p)
-#' beta[sample(1:1000,4)] = 1
-#' X = matrix(rnorm(n*p),nrow = n,ncol = p)
-#' X = scale(X,center = TRUE,scale = TRUE)
-#' y = drop(X %*% beta + rnorm(n))
-#' res = susie(X,y,L = 10)
-#' susie_plot(res,"PIP")
-#' susie_plot(res,"PIP",add_bar = TRUE)
-#' susie_plot(res,"PIP",add_legend = TRUE)
-#' susie_plot(res,"PIP", pos=1:500, add_legend = TRUE)
+#' n <- 1000
+#' p <- 1000
+#' beta <- rep(0, p)
+#' beta[sample(1:1000, 4)] <- 1
+#' X <- matrix(rnorm(n * p), nrow = n, ncol = p)
+#' X <- scale(X, center = TRUE, scale = TRUE)
+#' y <- drop(X %*% beta + rnorm(n))
+#' res <- susie(X, y, L = 10)
+#' susie_plot(res, "PIP")
+#' susie_plot(res, "PIP", add_bar = TRUE)
+#' susie_plot(res, "PIP", add_legend = TRUE)
+#' susie_plot(res, "PIP", pos = 1:500, add_legend = TRUE)
 #' # Plot selected regions with adjusted x-axis position label
-#' res$genomic_position = 1000 + (1:length(res$pip))
-#' susie_plot(res,"PIP",add_legend = TRUE,
-#'            pos = list(attr = "genomic_position",start = 1000,end = 1500))
+#' res$genomic_position <- 1000 + (1:length(res$pip))
+#' susie_plot(res, "PIP",
+#'   add_legend = TRUE,
+#'   pos = list(attr = "genomic_position", start = 1000, end = 1500)
+#' )
 #' # True effects are shown in red.
-#' susie_plot(res,"PIP",b = beta,add_legend = TRUE)
+#' susie_plot(res, "PIP", b = beta, add_legend = TRUE)
 #'
 #' @importFrom utils head
 #' @importFrom stats pnorm
@@ -83,11 +85,11 @@
 #'
 #' @export
 #'
-susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
+susie_plot <- function(model, y, add_bar = FALSE, pos = NULL, b = NULL,
                        max_cs = 400, add_legend = NULL, ...) {
-  is_susie = inherits(model,"susie")
-  ylab = y
-  color = c(
+  is_susie <- inherits(model, "susie")
+  ylab <- y
+  color <- c(
     "dodgerblue2",
     "green4",
     "#6A3D9A", # purple
@@ -104,141 +106,166 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
   )
   if (y == "z") {
     if (is_susie) {
-      if (is.null(model$z))
-        stop("z-scores are not available from SuSiE fit; please set ",
-             "compute_univariate_zscore = TRUE in susie() call")
-      zneg = -abs(model$z)
+      if (is.null(model$z)) {
+        stop(
+          "z-scores are not available from SuSiE fit; please set ",
+          "compute_univariate_zscore = TRUE in susie() call"
+        )
+      }
+      zneg <- -abs(model$z)
+    } else {
+      zneg <- -abs(model)
     }
-    else
-      zneg = -abs(model)
-    p = -log10(2*pnorm(zneg))
-    ylab = "-log10(p)"
+    p <- -log10(2 * pnorm(zneg))
+    ylab <- "-log10(p)"
   } else if (y == "z_original") {
     if (is_susie) {
-      if (is.null(model$z))
-        stop("z-scores are not available from SuSiE fit; please set ",
-             "compute_univariate_zscore = TRUE in susie() call")
-      p = model$z
+      if (is.null(model$z)) {
+        stop(
+          "z-scores are not available from SuSiE fit; please set ",
+          "compute_univariate_zscore = TRUE in susie() call"
+        )
+      }
+      p <- model$z
     } else {
-      p = model
+      p <- model
     }
-    ylab = "z score"
+    ylab <- "z score"
   } else if (y == "PIP") {
-    if (is_susie)
-      p = model$pip
-    else
-      p = model
+    if (is_susie) {
+      p <- model$pip
+    } else {
+      p <- model
+    }
   } else if (y == "log10PIP") {
-    if (is_susie)
-      p = log10(model$pip)
-    else
-     p = log10(model)
-    ylab = "log10(PIP)"
+    if (is_susie) {
+      p <- log10(model$pip)
+    } else {
+      p <- log10(model)
+    }
+    ylab <- "log10(PIP)"
   } else {
-    if (is_susie)
+    if (is_susie) {
       stop("Need to specify z_original, z, PIP or log10PIP for SuSiE fits")
-    p = model
+    }
+    p <- model
   }
-  if(is.null(b))
-    b = rep(0,length(p))
-  if(is.null(pos))
-    pos = 1:length(p)
-  start = 0
-  if (inherits(pos,"list")) {
-
+  if (is.null(b)) {
+    b <- rep(0, length(p))
+  }
+  if (is.null(pos)) {
+    pos <- 1:length(p)
+  }
+  start <- 0
+  if (inherits(pos, "list")) {
     # Check input.
-    if (is.null(pos$attr) || is.null(pos$start) || is.null(pos$end))
+    if (is.null(pos$attr) || is.null(pos$start) || is.null(pos$end)) {
       stop("pos argument should be a list of list(attr=,start=,end=)")
-    if (!(pos$attr %in% names(model)))
-      stop(paste("Cannot find attribute",pos$attr,"in input model object"))
-    if (pos$start >= pos$end)
+    }
+    if (!(pos$attr %in% names(model))) {
+      stop(paste("Cannot find attribute", pos$attr, "in input model object"))
+    }
+    if (pos$start >= pos$end) {
       stop("Position start should be smaller than end")
-    start = min(min(model[[pos$attr]]),pos$start)
-    end = max(max(model[[pos$attr]]),pos$end)
+    }
+    start <- min(min(model[[pos$attr]]), pos$start)
+    end <- max(max(model[[pos$attr]]), pos$end)
 
     # Add zeros to alpha and p.
-    new_p = rep(NA,end - start + 1)
-    pos_with_value = model[[pos$attr]] - start + 1
-    new_p[pos_with_value] = p
-    p = new_p
+    new_p <- rep(NA, end - start + 1)
+    pos_with_value <- model[[pos$attr]] - start + 1
+    new_p[pos_with_value] <- p
+    p <- new_p
 
     # Adjust model$cs.
     if (!is.null(model$sets$cs)) {
-      for (i in 1:length(model$sets$cs))
-        model$sets$cs[[i]] = pos_with_value[model$sets$cs[[i]]]
+      for (i in 1:length(model$sets$cs)) {
+        model$sets$cs[[i]] <- pos_with_value[model$sets$cs[[i]]]
+      }
     }
 
     # Change "pos" object to be indices.
-    start_adj = -min(min(model[[pos$attr]]) - pos$start,0)
-    end_adj = max(max(model[[pos$attr]]) - pos$end,0)
-    pos = (1 + start_adj):(length(p) - end_adj)
+    start_adj <- -min(min(model[[pos$attr]]) - pos$start, 0)
+    end_adj <- max(max(model[[pos$attr]]) - pos$end, 0)
+    pos <- (1 + start_adj):(length(p) - end_adj)
   } else {
-    if (!all(pos %in% 1:length(p))) 
+    if (!all(pos %in% 1:length(p))) {
       stop("Provided position is outside the range of variables")
-    pos_with_value = 1:length(p)
+    }
+    pos_with_value <- 1:length(p)
   }
-  legend_text = list(col = vector(),purity = vector(),size = vector())
+  legend_text <- list(col = vector(), purity = vector(), size = vector())
   # scipen0 = options()$scipen
   # options(scipen = 10)
-  args = list(...)
-  if (!exists("xlab", args)) args$xlab = "variable"
-  if (!exists("ylab", args)) args$ylab = ylab
-  if (!exists("pch", args)) args$pch = 16
-  args$x = pos + start
-  args$y = p[pos]
+  args <- list(...)
+  if (!exists("xlab", args)) args$xlab <- "variable"
+  if (!exists("ylab", args)) args$ylab <- ylab
+  if (!exists("pch", args)) args$pch <- 16
+  args$x <- pos + start
+  args$y <- p[pos]
   do.call(plot, args)
   if (is_susie && !is.null(model$sets$cs)) {
-    for(i in rev(1:nrow(model$alpha))){
-      if (!is.null(model$sets$cs_index) && !(i %in% model$sets$cs_index))
+    for (i in rev(1:nrow(model$alpha))) {
+      if (!is.null(model$sets$cs_index) && !(i %in% model$sets$cs_index)) {
         next
-      purity = model$sets$purity[which(model$sets$cs_index == i),1]
+      }
+      purity <- model$sets$purity[which(model$sets$cs_index == i), 1]
       if (!is.null(model$sets$purity) && max_cs < 1 && purity >= max_cs) {
-        x0 = intersect(pos,model$sets$cs[[which(model$sets$cs_index == i)]])
-        y1 = p[x0]
+        x0 <- intersect(pos, model$sets$cs[[which(model$sets$cs_index == i)]])
+        y1 <- p[x0]
       } else if (n_in_CS(model, model$sets$requested_coverage)[i] < max_cs) {
-        x0 = intersect(pos,
-               pos[pos_with_value][which(in_CS(model,model$sets$requested_coverage)[i,] > 0)])
-        y1 = p[x0]
+        x0 <- intersect(
+          pos,
+          pos[pos_with_value][which(in_CS(model, model$sets$requested_coverage)[i, ] > 0)]
+        )
+        y1 <- p[x0]
       } else {
-        x0 = NULL
-        y1 = NULL
+        x0 <- NULL
+        y1 <- NULL
       }
-      if (is.null(x0))
+      if (is.null(x0)) {
         next
-      if (add_bar) {
-        y0 = rep(0,length(x0))
-        x1 = x0
-        segments(x0+start,y0,x1+start,y1,lwd = 1.5,col = "gray")
       }
-      points(x0+start,y1,col = head(color,1),cex = 1.5,lwd = 2.5)
-      legend_text$col = append(head(color,1), legend_text$col)
+      if (add_bar) {
+        y0 <- rep(0, length(x0))
+        x1 <- x0
+        segments(x0 + start, y0, x1 + start, y1, lwd = 1.5, col = "gray")
+      }
+      points(x0 + start, y1, col = head(color, 1), cex = 1.5, lwd = 2.5)
+      legend_text$col <- append(head(color, 1), legend_text$col)
 
       # Rotate color.
-      color = c(color[-1],color[1])
-      legend_text$purity = append(round(purity,4),legend_text$purity)
-      legend_text$size = append(length(x0),legend_text$size)
+      color <- c(color[-1], color[1])
+      legend_text$purity <- append(round(purity, 4), legend_text$purity)
+      legend_text$size <- append(length(x0), legend_text$size)
     }
     if (length(legend_text$col) > 0 && !is.null(add_legend) &&
-        !identical(add_legend, FALSE)) {
-
+      !identical(add_legend, FALSE)) {
       # Plot legend.
-      text = vector()
+      text <- vector()
       for (i in 1:length(legend_text$col)) {
-        if (legend_text$size[i] == 1)
-          text[i] = paste0("L",i,": C=1")
-        else
-          text[i] = paste0("L",i,": C=",legend_text$size[i],"/R=",
-                           legend_text$purity[i])
-      }
-      if (!(add_legend %in% c("bottomright", "bottom", "bottomleft", "left", 
-        "topleft", "top", "topright", "right", "center"))) {
-          add_legend = "topright"
+        if (legend_text$size[i] == 1) {
+          text[i] <- paste0("L", i, ": C=1")
+        } else {
+          text[i] <- paste0(
+            "L", i, ": C=", legend_text$size[i], "/R=",
+            legend_text$purity[i]
+          )
         }
-      legend(add_legend,text,bty = "n",col = legend_text$col,cex = 0.65,
-             pch = 15)
+      }
+      if (!(add_legend %in% c(
+        "bottomright", "bottom", "bottomleft", "left",
+        "topleft", "top", "topright", "right", "center"
+      ))) {
+        add_legend <- "topright"
+      }
+      legend(add_legend, text,
+        bty = "n", col = legend_text$col, cex = 0.65,
+        pch = 15
+      )
     }
   }
-  points(pos[b != 0] + start,p[b != 0] + start,col = 2,pch = 16)
+  points(pos[b != 0] + start, p[b != 0] + start, col = 2, pch = 16)
   # options(scipen = scipen0)
   return(invisible())
 }
@@ -256,15 +283,15 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
 #'
 #' @examples
 #' set.seed(1)
-#' n = 1000
-#' p = 1000
-#' beta = rep(0,p)
-#' beta[sample(1:1000,4)] = 1
-#' X = matrix(rnorm(n*p),nrow = n,ncol = p)
-#' X = scale(X,center = TRUE,scale = TRUE)
-#' y = drop(X %*% beta + rnorm(n))
-#' res = susie(X,y,L = 10)
-#' susie_plot_iteration(res, L=10)
+#' n <- 1000
+#' p <- 1000
+#' beta <- rep(0, p)
+#' beta[sample(1:1000, 4)] <- 1
+#' X <- matrix(rnorm(n * p), nrow = n, ncol = p)
+#' X <- scale(X, center = TRUE, scale = TRUE)
+#' y <- drop(X %*% beta + rnorm(n))
+#' res <- susie(X, y, L = 10)
+#' susie_plot_iteration(res, L = 10)
 #'
 #' @importFrom grDevices pdf
 #' @importFrom grDevices dev.off
@@ -277,103 +304,115 @@ susie_plot = function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
 #'
 #' @export
 #'
-susie_plot_iteration = function (model, L, file_prefix, pos = NULL) {
-  get_layer = function (obj, k, idx, vars) {
-    alpha = melt(obj$alpha[1:k,vars,drop = FALSE])
-    colnames(alpha) = c("L","variables","alpha")
-    alpha$L = as.factor(alpha$L)
-    ggplot(alpha,aes_string("variables","alpha",group = "L")) +
+susie_plot_iteration <- function(model, L, file_prefix, pos = NULL) {
+  get_layer <- function(obj, k, idx, vars) {
+    alpha <- melt(obj$alpha[1:k, vars, drop = FALSE])
+    colnames(alpha) <- c("L", "variables", "alpha")
+    alpha$L <- as.factor(alpha$L)
+    ggplot(alpha, aes_string("variables", "alpha", group = "L")) +
       geom_col(aes_string(fill = "L")) +
-      ggtitle(paste("Iteration",idx)) +
+      ggtitle(paste("Iteration", idx)) +
       theme_classic()
   }
-  k = min(nrow(model$alpha),L)
-  if (is.null(pos))
-    vars = 1:ncol(model$alpha)
-  else
-    vars = pos
-  if (missing(file_prefix))
-    file_prefix = file.path(tempdir(),"susie_plot")
-  pdf(paste0(file_prefix,".pdf"),8,3)
-  if (is.null(model$trace))
-    print(get_layer(model,k,model$niter,vars))
-  else {
-    for (i in 2:length(model$trace))
-      print(get_layer(model$trace[[i]],k,i-1,vars))
+  k <- min(nrow(model$alpha), L)
+  if (is.null(pos)) {
+    vars <- 1:ncol(model$alpha)
+  } else {
+    vars <- pos
+  }
+  if (missing(file_prefix)) {
+    file_prefix <- file.path(tempdir(), "susie_plot")
+  }
+  pdf(paste0(file_prefix, ".pdf"), 8, 3)
+  if (is.null(model$trace)) {
+    print(get_layer(model, k, model$niter, vars))
+  } else {
+    for (i in 2:length(model$trace)) {
+      print(get_layer(model$trace[[i]], k, i - 1, vars))
+    }
   }
   dev.off()
-  format = ".pdf"
+  format <- ".pdf"
   if (!is.null(model$trace)) {
-    cmd = paste("convert -delay 30 -loop 0 -density 300 -dispose previous",
-                paste0(file_prefix,".pdf"),
-                "\\( -clone 0 -set delay 300 \\) -swap 0 +delete",
-                "\\( +clone -set delay 300 \\) +swap +delete -coalesce",
-                "-layers optimize",paste0(file_prefix,".gif"))
+    cmd <- paste(
+      "convert -delay 30 -loop 0 -density 300 -dispose previous",
+      paste0(file_prefix, ".pdf"),
+      "\\( -clone 0 -set delay 300 \\) -swap 0 +delete",
+      "\\( +clone -set delay 300 \\) +swap +delete -coalesce",
+      "-layers optimize", paste0(file_prefix, ".gif")
+    )
     message("Creating GIF animation...")
-    if (file.exists(paste0(file_prefix,".gif")))
-      file.remove(paste0(file_prefix,".gif"))
-    output = try(system(cmd))
-    if (inherits(output,"try-error"))
+    if (file.exists(paste0(file_prefix, ".gif"))) {
+      file.remove(paste0(file_prefix, ".gif"))
+    }
+    output <- try(system(cmd))
+    if (inherits(output, "try-error")) {
       stop("Cannot create GIF animation because convert command failed")
-    else
-      format = ".gif"
+    } else {
+      format <- ".gif"
+    }
   }
-  message(paste0("Iterplot saved to ",file_prefix,format,"\n"))
+  message(paste0("Iterplot saved to ", file_prefix, format, "\n"))
   return(invisible())
 }
 
 #' @title Plot changepoint data and susie fit using ggplot2
-#' 
+#'
 #' @description Plots original data, y, overlaid with line showing
 #'   susie fitted value and shaded rectangles showing credible sets for
 #'   changepoint locations.
-#' 
+#'
 #' @param y An n-vector of observations that are ordered in time or
 #'   space (assumed equally-spaced).
-#' 
+#'
 #' @param s A susie fit generated by
 #'   \code{susie_trendfilter(y,order = 0)}.
-#' 
+#'
 #' @param line_col Color for the line showing fitted values.
-#' 
+#'
 #' @param line_size Size of the lines showing fitted values
-#' 
+#'
 #' @param cs_col Color of the shaded rectangles showing credible
 #'   sets.
-#' 
+#'
 #' @return A ggplot2 plot object.
-#' 
+#'
 #' @examples
 #' set.seed(1)
-#' mu = c(rep(0,50),rep(1,50),rep(3,50),rep(-2,50),rep(0,300))
-#' y = mu + rnorm(500)
+#' mu <- c(rep(0, 50), rep(1, 50), rep(3, 50), rep(-2, 50), rep(0, 300))
+#' y <- mu + rnorm(500)
 #' # Here we use a less sensitive tolerance so that the example takes
 #' # less time; in practice you will likely want to use a more stringent
 #' # setting such as tol = 0.001.
-#' s = susie_trendfilter(y,tol = 0.1)
+#' s <- susie_trendfilter(y, tol = 0.1)
 #'
 #' # Produces ggplot with credible sets for changepoints.
-#' susie_plot_changepoint(s,y) 
+#' susie_plot_changepoint(s, y)
 #'
 #' @importFrom ggplot2 ggplot
 #' @importFrom ggplot2 aes_string
 #' @importFrom ggplot2 geom_point
 #' @importFrom ggplot2 geom_line
 #' @importFrom ggplot2 annotate
-#' 
+#'
 #' @export
-#' 
-susie_plot_changepoint = function (s, y, line_col = "blue", line_size = 1.5,
+#'
+susie_plot_changepoint <- function(s, y, line_col = "blue", line_size = 1.5,
                                    cs_col = "red") {
-  df = data.frame(x = 1:length(y),y = y,mu = predict.susie(s))
-  CS = susie_get_cs(s)$cs
-  p = ggplot(df) +
-    geom_point(data = df,aes_string(x = "x",y = "y")) +
-    geom_line(color = line_col,data = df,aes_string(x = "x",y = "mu"),
-              size = line_size)
-  for(i in 1:length(CS)) 
-    p = p + annotate("rect",fill = cs_col,alpha = 0.5,
-                     xmin = min(CS[[i]]) - 0.5,xmax = max(CS[[i]]) + 0.5,
-                     ymin = -Inf,ymax = Inf)
+  df <- data.frame(x = 1:length(y), y = y, mu = predict.susie(s))
+  CS <- susie_get_cs(s)$cs
+  p <- ggplot(df) +
+    geom_point(data = df, aes_string(x = "x", y = "y")) +
+    geom_line(
+      color = line_col, data = df, aes_string(x = "x", y = "mu"),
+      size = line_size
+    )
+  for (i in 1:length(CS)) {
+    p <- p + annotate("rect",
+      fill = cs_col, alpha = 0.5,
+      xmin = min(CS[[i]]) - 0.5, xmax = max(CS[[i]]) + 0.5,
+      ymin = -Inf, ymax = Inf
+    )
+  }
   return(p)
 }
