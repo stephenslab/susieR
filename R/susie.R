@@ -478,9 +478,9 @@ susie = function (X,y,L = min(10,ncol(X)),
                            alpha0=alpha0,
                            beta0=beta0)
     if(small & i >1){
-      cv_criterion[i]=  ( max(abs(c(alpha_old)- c(s$alpha))))
+      cv_criterion[i] = max(abs(c(alpha_old) - c(s$alpha)))
     }
-    if (verbose & L==1 & small){
+    if (verbose & L == 1 & small) {
       print(paste0("objective:",objective_L1_SER(X,y,s)))
 
       # print( compute_elbo_L1_susie( y=y,X=X,
@@ -495,26 +495,28 @@ susie = function (X,y,L = min(10,ncol(X)),
       #                            pi= s$pi)
       #       )
     }
-    if(L==1){
+    if (L==1) {
       elbo[i+1]=objective_L1_SER(X,y,s)
       s$elbo = elbo
     }
     # Compute objective before updating residual variance because part
     # of the objective s$kl has already been computed under the
     # residual variance before the update.
-    if(!small){
+    if (!small) {
       elbo[i+1] = get_objective(X,y,s)
       if ((elbo[i+1] - elbo[i]) < tol) {
         s$converged = TRUE
         break
       }
     }
-    if(small & i>2){
-
-      if (0.5*(cv_criterion[i ] +  cv_criterion[i-1] ) < tol) {
-        #this force to have at least 3 consecutive iteration with small
-        #variation in terms of alpha
-        s$converged = TRUE
+    if (small & i > 2) {
+        d <- (cv_criterion[i] + cv_criterion[i-1])/2
+      if (verbose) 
+        print(paste0("max change in alpha: ",d))
+      if (d < tol) {
+        # this force to have at least 3 consecutive iteration with small
+        # variation in terms of alpha
+        s$converged <- TRUE
         break
       }
     }
