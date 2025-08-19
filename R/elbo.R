@@ -32,3 +32,41 @@ SER_posterior_e_loglik = function (X, Y, s2, Eb, Eb2) {
                                        - 2*sum(Y*compute_Xb(X,Eb))
                                        + sum(attr(X,"d") * Eb2)))
 }
+
+
+
+
+kl_L1_SS_SER <- function(alpha, m, s2, pi, tau2,
+                               sigma2 = NULL,
+                               E_inv_sigma2 = NULL, E_log_sigma2 = NULL) {
+  eps <- .Machine$double.eps
+  v <- pmax(s2 - m^2, eps)  # posterior variance when gamma=1
+
+  # KL for gamma
+  KL_gamma <- sum(alpha * (log(pmax(alpha, eps)) - log(pmax(pi, eps))))
+
+  if (!is.null(sigma2)) {
+    # Known sigma^2
+    KL_norm <- 0.5 * sum(alpha * ( log((sigma2 * tau2) / v) + (v + m^2) / (sigma2 * tau2) - 1 ))
+  } else {
+    # Integrated sigma^2: need expectations
+    if (is.null(E_inv_sigma2) || is.null(E_log_sigma2))
+      stop("Provide either sigma2, or both E_inv_sigma2 and E_log_sigma2.")
+    KL_norm <- 0.5 * sum(alpha * ( E_log_sigma2 + log(tau2) - log(v) +
+                                     E_inv_sigma2 * (v + m^2) / tau2 - 1 ))
+  }
+
+  list(KL = as.numeric(KL_gamma + KL_norm),
+       components = list(KL_gamma = KL_gamma, KL_beta = KL_norm))
+}
+
+
+objective_L1_SER= function(X,y,s){
+ out=  Eloglik(X,y,s)-kl_L1_SS_SER (alpha = s$alpha,
+                                     m=s$mu, s2= s$mu^2 -s$mu2,
+                                     pi=rep( 1/ncol(s$alpha),ncol(s$alpha)) ,
+                                     tau2= s$sigma2,
+                                     sigma2 = s$sigma2
+  )$KL
+ return(out)
+}

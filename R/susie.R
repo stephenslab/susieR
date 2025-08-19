@@ -383,11 +383,9 @@ susie = function (X,y,L = min(10,ncol(X)),
       stop("Input y must not contain missing values")
   }
   if(small){
-
-    warning_message("Option 'small' is set to TRUE: SuSiE will be fitted using the general IBSS algorithm. Note that the ELBO is not defined in this setting; convergence is determined based on the numerical stability of the estimated parameters across iterations. The tolerance parameter is now 'tol_small'. Also note that the 'scaled_prior_variance' option is ignored and estimate_prior_method = \"EM\".")
-
+    warning_message("Option 'small' is set to TRUE: SuSiE will be fitted using the general IBSS algorithm. Note that the ELBO only defined in this setting for L=1; convergence is determined based on the numerical stability of the estimated parameters across iterations. The tolerance parameter is now 'tol_small', the estimate_prior_method option  is set to 'EM'. and 'scaled_prior_variance' is ignored ")
     estimate_prior_method <- "EM"
-    tol= tol_small
+    tol <- tol_small
     if( !(residual_variance_upperbound ==Inf )){
       warning_message("residual_variance_upperbound set to a different value than default,
                       when setting small=TRUE this argument is ignored")
@@ -482,31 +480,23 @@ susie = function (X,y,L = min(10,ncol(X)),
     if(small & i >1){
       cv_criterion[i]=  ( max(abs(c(alpha_old)- c(s$alpha))))
     }
-    if (verbose & L==1){
-      print(paste0("objective:",get_objective(X,y,s)))
-      print( compute_elbo_L1_susie( y=y,X=X,
-                                    alpha= s$alpha,
-                                    mu= s$mu,
-                                    s2= s$mu2-s$mu^2,
-                                    a=max (alpha0,0.1 )+n,
-                                    b=  (s$V[1]) + max (beta0,0.1 ), # here the pb #X%*%res_susie_small$mu
-                                    a0= max (alpha0,0.1 ),
-                                    
-                                    b0= max (beta0,0.1 ),
-                                    pi= s$pi)
-             )
+    if (verbose & L==1 & small){
+      print(paste0("objective:",objective_L1_SER(X,y,s)))
+
+      # print( compute_elbo_L1_susie( y=y,X=X,
+      #                               alpha= s$alpha,
+      #                              mu= s$mu,
+      #                              s2= s$mu2-s$mu^2,
+                                   # a=max (alpha0,0.1 )+n,
+                                  # b=  (s$V[1]) + max (beta0,0.1 ), # here the pb #X%*%res_susie_small$mu
+      #                             a0= max (alpha0,0.1 ),
+
+      #                             b0= max (beta0,0.1 ),
+      #                            pi= s$pi)
+      #       )
     }
     if(L==1){
-      elbo[i+1]=compute_elbo_L1_susie( y=y,X=X,
-                                       alpha= s$alpha,
-                                       mu= s$mu,
-                                       s2= s$mu2-s$mu^2,
-                                       a=max (alpha0,0.1 )+n,
-                                       b=  (s$V[1]) + max (beta0,0.1 ), # here the pb #X%*%res_susie_small$mu
-                                       a0= max (alpha0,0.1 ),
-                                       
-                                       b0= max (beta0,0.1 ),
-                                       pi= s$pi)
+      elbo[i+1]=objective_L1_SER(X,y,s)
       s$elbo = elbo
     }
     # Compute objective before updating residual variance because part
@@ -676,70 +666,3 @@ susie = function (X,y,L = min(10,ncol(X)),
   }
   return(s)
 }
-
-
-
-
-compute_elbo_L1_susie <- function(y, X, alpha, mu, s2,
-                                  a0 = 1, b0 = 1, a = 1, b = 1,
-                                  tau2 = 1, pi = NULL) {
-  # Inputs:
-  # y: vector of length n
-  # X: matrix of size n x p
-  # alpha: posterior inclusion probabilities (length p)
-  # mu: posterior means for beta_j (length p)
-  # s2: posterior variances for beta_j (length p)
-  # a0, b0: hyperparameters for IG prior on sigma^2
-  # a, b: variational parameters for q(sigma^2)
-  # tau2: prior variance scale
-  # pi: prior probabilities for inclusion (length p), default uniform
-
-  n <- length(y)
-  p <- ncol(X)
-
-  if (is.null(pi)) {
-    pi <- rep(1 / p, p)
-  }
-
-  # Useful expectations
-  E_log_sigma2 <- digamma(a) - log(b)
-  E_inv_sigma2 <- a / b
-
-  # Compute expected squared residuals for each effect
-  residual_terms <- numeric(p)
-  for (j in 1:p) {
-    Xj <- X[, j]
-    rj <- y - Xj * mu[j]
-    residual_terms[j] <- sum(rj^2) + s2[j] * sum(Xj^2)
-  }
-  E_sq_residuals <- sum(alpha * residual_terms)
-
-  # Likelihood term
-  elbo_lik <- -0.5 * n * E_log_sigma2 - 0.5 * E_inv_sigma2 * E_sq_residuals
-
-  # Prior on beta
-  prior_beta <- -0.5 * sum(alpha * (log(2 * pi * tau2) + E_log_sigma2 +
-                                      E_inv_sigma2 * (mu^2 + s2) / tau2))
-
-  # Prior on gamma
-  prior_gamma <- sum(alpha * log(pi + 1e-12))  # add epsilon to avoid log(0)
-
-  # Prior on sigma^2
-  prior_sigma2 <- a0 * log(b0) - lgamma(a0) - (a0 + 1) * E_log_sigma2 - b0 * E_inv_sigma2
-
-  # Entropy of q(gamma)
-  entropy_gamma <- -sum(alpha * log(alpha + 1e-12))
-
-  # Entropy of q(beta)
-  entropy_beta <- 0.5 * sum(alpha * (1 + log(2 * pi * s2)))
-
-  # Entropy of q(sigma^2)
-  entropy_sigma2 <- a + log(b) + lgamma(a) + (1 - a) * digamma(a)
-
-  # Final ELBO
-  elbo <- elbo_lik + prior_beta + prior_gamma + prior_sigma2 +
-    entropy_gamma + entropy_beta + entropy_sigma2
-
-  return(elbo)
-}
-
