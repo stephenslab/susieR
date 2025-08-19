@@ -16,6 +16,7 @@ susie_workhorse <- function(data,
   # Validate method argument
   estimate_prior_method <- match.arg(estimate_prior_method)
 
+  # TODO: throw these into ibss initialization
   # Apply any workhorse parameter overrides from data constructor
   if (!is.null(data$workhorse_scaled_prior_variance)) {
     scaled_prior_variance <- data$workhorse_scaled_prior_variance

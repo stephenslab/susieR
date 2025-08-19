@@ -23,10 +23,12 @@ get_var_y.individual <- function(data, ...) {
 configure_data.individual <- function(data) {
   if (data$unmappable_effects == "none") {
     return(data)
-  } else {
+  } else if (data$unmappable_effects %in% c("inf", "ash")) {
     # Convert to sufficient statistics for unmappable effects methods
     warning("Individual-level data converted to sufficient statistics for unmappable effects methods")
     return(convert_individual_to_ss_unmappable(data, data$unmappable_effects))
+  } else {
+    stop("Unsupported unmappable effects method: ", data$unmappable_effects)
   }
 }
 
@@ -70,6 +72,13 @@ convert_individual_to_ss_unmappable <- function(individual_data, unmappable_effe
 
   # Add eigen decomposition for unmappable effects methods
   ss_data <- add_eigen_decomposition(ss_data)
+
+  # susie.ash requires the original X and y matrices as well as VtXt
+  if (unmappable_effects == "ash") {
+    ss_data$X <- X
+    ss_data$y <- y
+    ss_data$VtXt <- t(ss_data$eigen_vectors) %*% t(X)
+  }
 
   return(ss_data)
 }

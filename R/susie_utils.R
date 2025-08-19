@@ -12,6 +12,61 @@ compute_eigen_decomposition <- function(XtX, n) {
   )
 }
 
+# Call mr.ash for adaptive shrinkage unmappable effects
+#' @keywords internal
+call_mr_ash <- function(X, y, sigma2, tau2, alpha, mu,
+                        V, Dsq, VtXt,
+                        K_length = 10,
+                        update_ash_sigma = FALSE,
+                        custom_est_sa2 = NULL) {
+
+  # Create variance grid for mr.ash
+  if (is.null(custom_est_sa2)) {
+    est_sa2 <- 100 * tau2 * (seq(0, 1, length.out = K_length))^2
+  } else {
+    est_sa2 <- custom_est_sa2
+  }
+
+  # Compute required quantities for mr.ash
+  var <- tau2 * Dsq + sigma2
+  diagXtOmegaX <- rowSums(sweep(V^2, 2, Dsq / var, `*`))
+
+  # Compute XtOmega for mr.ash
+  # TODO: This will become a bottleneck for larger matrices. Switch to Rcpp.
+  XtOmega <- V %*% sweep(VtXt, 1, 1/var, `*`)
+
+  # Call mr.ash. Kept hard coded for now to show this is a modified version of the
+  # original mr.ash package.
+  mrash_output <- mr.ash.alpha.mccreight::mr.ash(
+    X = X,
+    y = y,
+    sa2 = est_sa2,
+    intercept = FALSE,
+    standardize = FALSE,
+    sigma2 = sigma2,
+    update.sigma2 = update_ash_sigma,
+    diagXtOmegaX = diagXtOmegaX,
+    XtOmega = XtOmega,
+    V = V,
+    tausq = tau2,
+    sum_Dsq = sum(Dsq),
+    Dsq = Dsq,
+    VtXt = VtXt
+  )
+
+  # Extract updated variance components
+  sigma2_new <- mrash_output$sigma2
+  tau2_new <- sum(est_sa2 * mrash_output$pi)
+
+  return(list(
+    sigma2 = sigma2_new,
+    tau2 = tau2_new,
+    theta = mrash_output$beta,
+    pi = mrash_output$pi,
+    est_sa2 = est_sa2
+  ))
+}
+
 # Method of Moments variance estimation for unmappable effects methods
 #' @keywords internal
 mom_unmappable <- function(alpha, mu, omega, sigma2, tau2, n, V, Dsq, VtXty, Xty, yty,
@@ -72,7 +127,7 @@ compute_theta_blup <- function(data, model) {
   alpha <- model$alpha
   mu <- model$mu
   sigma2 <- model$sigma2
-  tau2 <- if (is.null(model$tau2)) 0 else model$tau2
+  tau2 <- model$tau2
 
   b <- colSums(mu * alpha)
 
@@ -567,14 +622,21 @@ update_model_variance <- function(data, model, lowerbound, upperbound, estimate_
     model$tau2 <- variance_result$tau2
   }
 
+  # Handle unmappable effects outputs (theta for both inf and ash)
+  if (!is.null(variance_result$theta)) {
+    model$theta <- variance_result$theta
+  }
+
+  # Handle ash weights
+  if (!is.null(variance_result$ash_pi)) {
+    model$ash_pi <- variance_result$ash_pi
+  }
+
   # Update derived quantities after variance component changes
   data <- update_derived_quantities(data, model)
 
-  # Transfer theta from data to model if computed (for unmappable effects methods)
-  if (!is.null(data$theta)) {
-    model$theta <- data$theta
-
-    # Update fitted values to include theta: XtXr = XtX %*% (b + theta)
+  # Update fitted values to include theta if it exists
+  if (!is.null(model$theta)) {
     b <- colSums(model$alpha * model$mu)
     model$XtXr <- data$XtX %*% (b + model$theta)
   }
@@ -604,7 +666,7 @@ get_objective <- function(data, model, verbose = FALSE) {
     # For infinitesimal effects, compute the full ELBO
     p <- data$p
     L <- nrow(model$alpha)
-    tau2 <- if (is.null(model$tau2)) 0 else model$tau2
+    tau2 <- model$tau2
 
     # Compute omega matrix
     var <- tau2 * data$eigen_values + model$sigma2
