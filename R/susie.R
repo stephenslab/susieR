@@ -188,9 +188,10 @@
 #'   \dQuote{ELBO} (the objective function to be maximized), is
 #'   less than \code{tol}.
 #'
-#'  @param  tol_small used for small =TRUE only. Small, non-negative number specifying the convergence
-#'   tolerance for the GIBSS fitting procedure. The fitting procedure
-#'   will halt when the difference in the estimated posterior inclusion probability is
+#'  @param tol_small used for small = TRUE only. Small, non-negative
+#'   number specifying the convergence tolerance for the GIBSS
+#'   fitting procedure. The fitting procedure will halt when the
+#'   difference in the estimated posterior inclusion probability is
 #'   less than \code{tol}.
 #'
 #' @param verbose If \code{verbose = TRUE}, the algorithm's progress,
@@ -340,7 +341,7 @@ susie = function (X,y,L = min(10,ncol(X)),
                    na.rm = FALSE,
                    max_iter = 100,
                    tol = 1e-3,
-                   tol_small=1e-4,
+                   tol_small = 1e-4,
                    verbose = FALSE,
                    track_fit = FALSE,
                    residual_variance_lowerbound = var(drop(y))/1e4,
@@ -383,15 +384,9 @@ susie = function (X,y,L = min(10,ncol(X)),
   }
   if(small){
 
-    warning_message("Option 'small' is set to TRUE: SuSiE will be fitted using
-    the general IBSS algorithm. Note that the ELBO is not defined in this
-    setting; convergence is determined based on the numerical stability of
-    the estimated parameters across iterations. The tolerance parameter is now
-    tol_small which is set to 1e-4 by default, the prior optimizer is set to EM.
-    The option scaled_prior_variance=0.2, is
-    ignored ")
+    warning_message("Option 'small' is set to TRUE: SuSiE will be fitted using the general IBSS algorithm. Note that the ELBO is not defined in this setting; convergence is determined based on the numerical stability of the estimated parameters across iterations. The tolerance parameter is now 'tol_small'. Also note that the 'scaled_prior_variance' option is ignored and estimate_prior_method = \"EM\".")
 
-    estimate_prior_method= "EM"
+    estimate_prior_method <- "EM"
     tol= tol_small
     if( !(residual_variance_upperbound ==Inf )){
       warning_message("residual_variance_upperbound set to a different value than default,
