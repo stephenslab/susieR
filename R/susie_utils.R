@@ -920,3 +920,46 @@ add_null_effect <- function(s, V) {
   s$V <- c(s$V, V)
   return(s)
 }
+
+# Servin and Stephens prior helper functions
+#' @keywords internal
+
+# Compute log Bayes factor for Servin and Stephens prior
+compute_log_ssbf <- function(x, y, s0, alpha0 = 0, beta0 = 0) {
+  x <- x - mean(x)
+  y <- y - mean(y)
+  n <- length(x)
+  xx <- sum(x * x)
+  xy <- sum(x * y)
+  yy <- sum(y * y)
+  r0 <- s0 / (s0 + 1 / xx)
+  sxy <- xy / sqrt(xx * yy)
+  ratio <- (beta0 + yy * (1 - r0 * sxy^2)) / (beta0 + yy)
+  return((log(1 - r0) - (n + alpha0) * log(ratio)) / 2)
+}
+
+# Posterior mean for Servin and Stephens prior using sufficient statistics
+posterior_mean_SS_suff <- function(xtx, xty, s0_t = 1) {
+  omega <- (xtx + (1 / s0_t^2))^(-1)
+  b_bar <- omega %*% xty
+  return(b_bar)
+}
+
+# Posterior variance for Servin and Stephens prior using sufficient statistics
+posterior_var_SS_suff <- function(xtx, xty, yty, n, s0_t = 1) {
+
+  # If prior variance is too small, return 0.
+  if (s0_t < 1e-5) {
+    return(c(0, 0))
+  }
+
+  omega <- (xtx + (1 / s0_t^2))^(-1)
+  b_bar <- omega %*% xty
+  beta1 <- (yty - b_bar * (omega^(-1)) * b_bar)
+  post_var_up <- 0.5 * (yty - b_bar * (omega^(-1)) * b_bar)
+  post_var_down <- 0.5 * (n * (1 / omega))
+  post_var <- omega * (post_var_up / post_var_down) * n / (n - 2)
+
+  # TODO: return this as a list and update properly in SER.
+  return(c(post_var, beta1))
+}

@@ -32,7 +32,12 @@ individual_data_constructor <- function(X, y,
                                         na.rm = FALSE,
                                         prior_weights = NULL,
                                         null_weight = 0,
-                                        unmappable_effects = "none") {
+                                        unmappable_effects = "none",
+                                        estimate_residual_method = "MLE",
+                                        convergence_method = "elbo",
+                                        estimate_prior_method = "optim",
+                                        alpha0 = 0,
+                                        beta0 = 0) {
   # Validate input X
   if (!(is.double(X) & is.matrix(X)) &
     !inherits(X, "CsparseMatrix") &
@@ -115,6 +120,27 @@ individual_data_constructor <- function(X, y,
   attr(X, "scaled:scale") <- out$csd
   attr(X, "d") <- out$d
 
+  # Handle Servin_Stephens parameters for small sample correction
+  if(estimate_residual_method == "Servin_Stephens"){
+    use_servin_stephens <- TRUE
+
+    # Override convergence method
+    if (convergence_method != "pip") {
+      warning("Servin_Stephens method requires PIP convergence. Setting convergence_method='pip'")
+      convergence_method <- "pip"
+    }
+
+    # Override prior variance estimation method
+    if (estimate_prior_method != "EM") {
+      warning("Servin_Stephens method works better with EM. Setting estimate_prior_method='EM'")
+      estimate_prior_method <- "EM"
+    }
+  }else{
+    use_servin_stephens <- FALSE
+    alpha0 <- NULL
+    beta0 <- NULL
+  }
+
   data_object <- structure(
     list(
       X = X,
@@ -124,7 +150,12 @@ individual_data_constructor <- function(X, y,
       p = p,
       prior_weights = prior_weights,
       null_weight = null_weight,
-      unmappable_effects = unmappable_effects
+      unmappable_effects = unmappable_effects,
+      use_servin_stephens = use_servin_stephens,
+      alpha0 = alpha0,
+      beta0 = beta0,
+      convergence_method = convergence_method,
+      estimate_prior_method = estimate_prior_method
     ),
     class = "individual"
   )
@@ -174,7 +205,8 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
                                          maf_thresh = 0, standardize = TRUE,
                                          r_tol = 1e-8, check_input = FALSE,
                                          prior_weights = NULL, null_weight = 0,
-                                         unmappable_effects = "none") {
+                                         unmappable_effects = "none",
+                                         estimate_residual_method = "MLE") {
   # Validate required inputs
   if (missing(n)) {
     stop("n must be provided")
@@ -321,6 +353,10 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
     )
   }
 
+  # Handle Servin_Stephens parameters for small sample correction
+  if(estimate_residual_method == "Servin_Stephens")
+    stop("Small sample correction not implemented for SS/RSS data.")
+
   # Assemble data object
   data_object <- structure(
     list(
@@ -333,7 +369,8 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
       y_mean = y_mean,
       prior_weights = prior_weights,
       null_weight = null_weight,
-      unmappable_effects = unmappable_effects
+      unmappable_effects = unmappable_effects,
+      use_servin_stephens = FALSE
     ),
     class = "ss"
   )
@@ -547,7 +584,8 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL,
     check_input = check_input,
     prior_weights = prior_weights,
     null_weight = null_weight,
-    unmappable_effects = unmappable_effects
+    unmappable_effects = unmappable_effects,
+    estimate_residual_method = estimate_residual_method
   )
 
   # Add RSS-specific prior variance handling
@@ -593,10 +631,18 @@ rss_lambda_constructor <- function(z, R, maf = NULL, maf_thresh = 0,
                                    prior_variance = 50,
                                    intercept_value = 0,
                                    estimate_residual_method = "MLE") {
+
   # Validate that MoM is not requested for RSS with lambda != 0
   if (estimate_residual_method == "MoM") {
     stop(
-      "Method of Moments (MoM) variance estimation is not implemented for RSS with lambda != 0. ",
+      "Method of Moments (MoM) variance estimation is not implemented for RSS with lambda > 0. ",
+      "Please use estimate_residual_method = 'MLE' instead."
+    )
+  }
+
+  if (estimate_residual_method == "Servin_Stephens") {
+    stop(
+      "Servin Stephens small sample correction is not implemented for RSS with lambda > 0. ",
       "Please use estimate_residual_method = 'MLE' instead."
     )
   }

@@ -6,7 +6,7 @@ susie <- function(X, y, L = min(10, ncol(X)),
                   standardize = TRUE,
                   intercept = TRUE,
                   estimate_residual_variance = TRUE,
-                  estimate_residual_method = c("MLE", "MoM"),
+                  estimate_residual_method = c("MLE", "MoM", "Servin_Stephens"),
                   estimate_prior_variance = TRUE,
                   estimate_prior_method = c("optim", "EM", "simple"),
                   unmappable_effects = c("none", "inf", "ash"),
@@ -24,7 +24,9 @@ susie <- function(X, y, L = min(10, ncol(X)),
                   verbose = FALSE,
                   track_fit = FALSE,
                   residual_variance_lowerbound = var(drop(y)) / 1e4,
-                  n_purity = 100) {
+                  n_purity = 100,
+                  alpha0 = 0,
+                  beta0 = 0) {
   # Validate method arguments
   unmappable_effects <- match.arg(unmappable_effects)
   estimate_prior_method <- match.arg(estimate_prior_method)
@@ -34,19 +36,21 @@ susie <- function(X, y, L = min(10, ncol(X)),
   # Construct data object
   data <- individual_data_constructor(
     X, y, intercept, standardize, na.rm,
-    prior_weights, null_weight, unmappable_effects
+    prior_weights, null_weight, unmappable_effects,
+    estimate_residual_method, convergence_method,
+    estimate_prior_method, alpha0, beta0
   )
 
-  # Run SuSiE workhorse
   model <- susie_workhorse(data, L, intercept, standardize, scaled_prior_variance,
     residual_variance, data$prior_weights, data$null_weight,
-    model_init, estimate_prior_variance, estimate_prior_method,
+    model_init, estimate_prior_variance, data$estimate_prior_method,
     check_null_threshold, estimate_residual_variance,
     estimate_residual_method,
     residual_variance_lowerbound, residual_variance_upperbound,
     max_iter, tol, verbose, track_fit, coverage, min_abs_corr,
     prior_tol, n_purity, compute_univariate_zscore,
-    check_prior = FALSE, convergence_method = convergence_method
+    check_prior = FALSE, convergence_method = data$convergence_method,
+    alpha0 = alpha0, beta0 = beta0
   )
 
   return(model)
@@ -65,7 +69,7 @@ susie_ss <- function(XtX, Xty, yty, n,
                      null_weight = 0,
                      model_init = NULL,
                      estimate_residual_variance = TRUE,
-                     estimate_residual_method = c("MLE", "MoM"),
+                     estimate_residual_method = c("MLE", "MoM", "Servin_Stephens"),
                      residual_variance_lowerbound = 0,
                      residual_variance_upperbound = Inf,
                      estimate_prior_variance = TRUE,
@@ -81,7 +85,8 @@ susie_ss <- function(XtX, Xty, yty, n,
                      n_purity = 100,
                      verbose = FALSE,
                      track_fit = FALSE,
-                     check_prior = FALSE, ...) {
+                     check_prior = FALSE,
+                     ...) {
   # Validate method arguments
   unmappable_effects <- match.arg(unmappable_effects)
   estimate_prior_method <- match.arg(estimate_prior_method)
@@ -92,7 +97,7 @@ susie_ss <- function(XtX, Xty, yty, n,
   data <- sufficient_stats_constructor(
     XtX, Xty, yty, n, X_colmeans, y_mean,
     maf, maf_thresh, standardize, r_tol, check_input,
-    prior_weights, null_weight, unmappable_effects
+    prior_weights, null_weight, unmappable_effects, estimate_residual_method
   )
 
   # Run SuSiE workhorse
