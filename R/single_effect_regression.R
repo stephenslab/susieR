@@ -145,8 +145,7 @@ single_effect_regression <-
       # customized EM update eliminating this if/else
       if (optimize_V == "EM") {
         if (data$use_servin_stephens) {
-          V <- sum(alpha * (betahat^2 +
-                              (beta_1 / (data$n-2))))
+          V <- sqrt(sum(alpha * (betahat^2 + (beta_1/(data$n - 2)) + shat2)))
         } else {
           V <- optimize_prior_variance(optimize_V, data, betahat, shat2, prior_weights,
             alpha, post_mean2,
