@@ -65,7 +65,7 @@ objective_L1_SER= function(X,y,s){
  out=  Eloglik(X,y,s)-kl_L1_SS_SER (alpha = s$alpha,
                                      m=s$mu, s2= s$mu^2 -s$mu2,
                                      pi=rep( 1/ncol(s$alpha),ncol(s$alpha)) ,
-                                     tau2= s$sigma2,
+                                     tau2= 1/s$sigma2,
                                      sigma2 = s$sigma2
   )$KL
  return(out)

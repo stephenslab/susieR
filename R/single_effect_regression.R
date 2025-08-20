@@ -45,7 +45,7 @@
 #'     If set to TRUE, susie is fitted using single-effect regression with the Servin and Stephens prior
 #'     instead of the default Gaussian prior. This improves the calibration of credible sets.
 #'     Default is FALSE.
-#' 
+#'
 #' @param alpha0 Numerical parameter for the NIG prior when using Servin
 #'   and Stephens SER.
 #'
@@ -206,7 +206,7 @@ single_effect_regression =
 
     if(optimize_V == "EM"){
 
-      V =  sqrt(sum(alpha * (betahat^2 + ( beta_1/(nrow(X)-2))* shat2 )))
+      V =   sqrt(sum(alpha * (betahat^2 + ( beta_1/(nrow(X)-2))* shat2 )))
     }
 
     #    post_mean2 =post_mean^2+ post_var
