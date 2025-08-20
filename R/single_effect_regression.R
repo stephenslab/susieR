@@ -206,7 +206,7 @@ single_effect_regression =
 
     if(optimize_V == "EM"){
 
-      V =   sum(alpha*(betahat^2+(beta_1/(nrow(X)-2)) ))
+      V =sqrt(sum(alpha * (betahat^2 + ( beta_1/(nrow(X)-2))+ shat2 )))  # sum(alpha*(betahat^2+(beta_1/(nrow(X)-2)) ))
     }
 
     #    post_mean2 =post_mean^2+ post_var
