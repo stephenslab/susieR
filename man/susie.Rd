@@ -29,7 +29,7 @@ susie(
   na.rm = FALSE,
   max_iter = 100,
   tol = 0.001,
-  tol_small = 0.0001,
+  tol_small = 1e-04,
   verbose = FALSE,
   track_fit = FALSE,
   residual_variance_lowerbound = var(drop(y))/10000,

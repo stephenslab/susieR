@@ -34,39 +34,45 @@ SER_posterior_e_loglik = function (X, Y, s2, Eb, Eb2) {
 }
 
 
-
-
 kl_L1_SS_SER <- function(alpha, m, s2, pi, tau2,
-                               sigma2 = NULL,
-                               E_inv_sigma2 = NULL, E_log_sigma2 = NULL) {
+                         a0, b0, a1, b1) {
   eps <- .Machine$double.eps
-  v <- pmax(s2 - m^2, eps)  # posterior variance when gamma=1
+  v <- pmax(s2 - m^2, eps)
 
   # KL for gamma
   KL_gamma <- sum(alpha * (log(pmax(alpha, eps)) - log(pmax(pi, eps))))
 
-  if (!is.null(sigma2)) {
-    # Known sigma^2
-    KL_norm <- 0.5 * sum(alpha * ( log((sigma2 * tau2) / v) + (v + m^2) / (sigma2 * tau2) - 1 ))
-  } else {
-    # Integrated sigma^2: need expectations
-    if (is.null(E_inv_sigma2) || is.null(E_log_sigma2))
-      stop("Provide either sigma2, or both E_inv_sigma2 and E_log_sigma2.")
-    KL_norm <- 0.5 * sum(alpha * ( E_log_sigma2 + log(tau2) - log(v) +
-                                     E_inv_sigma2 * (v + m^2) / tau2 - 1 ))
-  }
+  # Expectations under q(sigma^2) ~ IG(a1,b1)
+  E_log_sigma2  <- digamma(a1) - log(b1)
+  E_inv_sigma2  <- a1 / b1
 
-  list(KL = as.numeric(KL_gamma + KL_norm),
-       components = list(KL_gamma = KL_gamma, KL_beta = KL_norm))
+  # KL for beta given sigma^2
+  KL_beta <- 0.5 * sum(alpha * (
+    E_log_sigma2 + log(tau2) - log(v) +
+      E_inv_sigma2 * (v + m^2) / tau2 - 1
+  ))
+
+  # KL between IG posterior and IG prior
+  KL_sigma2 <- lgamma(a0) - lgamma(a1) +
+    a0 * log(b1/b0) +
+    (a1 - a0) * digamma(a1) - a1 + (a1 * b0) / b1
+
+  KL_total <- KL_gamma + KL_beta + KL_sigma2
+
+  list(KL = as.numeric(KL_total),
+       components = list(KL_gamma = KL_gamma,
+                         KL_beta = KL_beta,
+                         KL_sigma2 = KL_sigma2))
 }
-
 
 objective_L1_SER= function(X,y,s){
  out=  Eloglik(X,y,s)-kl_L1_SS_SER (alpha = s$alpha,
                                      m=s$mu, s2= s$mu^2 -s$mu2,
                                      pi=rep( 1/ncol(s$alpha),ncol(s$alpha)) ,
-                                     tau2= 1/s$sigma2,
-                                     sigma2 = s$sigma2
+                                     tau2= 1/s$V,
+                                     #sigma2 = s$sigma2,
+                                    a0=1,b0=1,
+                                    a1=nrow(X)/2+1,b1= nrow(X)*s$sigma2+1
   )$KL
  return(out)
 }

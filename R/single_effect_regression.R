@@ -179,6 +179,7 @@ single_effect_regression =
     if(V <=0){
       post_mean  = rep(0, ncol(X))
       post_mean2 = rep(0, ncol(X))
+      post_var   = rep(0, ncol(X))
       beta_1     = rep(0, ncol(X))
     }else{
 
@@ -193,7 +194,6 @@ single_effect_regression =
       tt= do.call(rbind, lapply(1:ncol(X), function(i){
         posterior_var_SS_suff(xtx=(attr(X,"d")[i]) , xty= Xty[i],yty=yty,n= nrow(X), s0_t=V)
       }))
-
       beta_1=tt[,2]
       post_var=tt[,1]
       post_mean2=  post_mean^2+post_var
@@ -206,7 +206,7 @@ single_effect_regression =
 
     if(optimize_V == "EM"){
 
-      V =   sqrt(sum(alpha * (betahat^2 + ( beta_1/(nrow(X)-2))* shat2 )))
+      V =   sum(alpha*(betahat^2+(beta_1/(nrow(X)-2)) ))
     }
 
     #    post_mean2 =post_mean^2+ post_var
