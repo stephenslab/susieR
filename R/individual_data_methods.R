@@ -23,7 +23,7 @@ get_var_y.individual <- function(data, ...) {
 configure_data.individual <- function(data) {
   if (data$unmappable_effects == "none") {
     return(data)
-  } else (data$unmappable_effects %in% c("inf", "ash")) {
+  } else {
     warning("Individual-level data converted to sufficient statistics for unmappable effects methods\n")
     return(convert_individual_to_ss_unmappable(data))
   }

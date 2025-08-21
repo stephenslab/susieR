@@ -124,21 +124,32 @@ mom_unmappable <- function(alpha, mu, omega, sigma2, tau2, n, V, Dsq, VtXty, Xty
 # Compute theta using BLUP
 #' @keywords internal
 compute_theta_blup <- function(data, model) {
-  alpha <- model$alpha
-  mu <- model$mu
-  sigma2 <- model$sigma2
-  tau2 <- model$tau2
+  # Calculate diagXtOmegaX, diagonal variances, and Beta
+  omega_res <- compute_omega_quantities(data, model$tau2, model$sigma2)
+  b <- colSums(model$mu * model$alpha)
 
-  b <- colSums(mu * alpha)
+  XtOmegaXb <- data$eigen_vectors %*% ((t(data$eigen_vectors) %*% b) * data$eigen_values / omega_res$omega_var)
+  XtOmegay <- data$eigen_vectors %*% (data$VtXty / omega_res$omega_var)
+  XtOmegar <- XtOmegay - XtOmegaXb
 
-  var <- tau2 * data$eigen_values + sigma2
-  XtOmegaXb <- data$eigen_vectors %*% ((t(data$eigen_vectors) %*% b) * data$eigen_values / var)
-
-  XtOmegar <- data$XtOmegay - XtOmegaXb
-
-  theta <- tau2 * XtOmegar
+  theta <- model$tau2 * XtOmegar
 
   return(theta)
+}
+
+# Compute Omega-weighted quantities for unmappable effects methods
+#' @keywords internal
+compute_omega_quantities <- function(data, tau2, sigma2) {
+  # Compute variance in eigen space
+  omega_var <- tau2 * data$eigen_values + sigma2
+
+  # Compute diagonal of X'OmegaX
+  diagXtOmegaX <- rowSums(sweep(data$eigen_vectors^2, 2, (data$eigen_values / omega_var), `*`))
+
+  return(list(
+    omega_var = omega_var,
+    diagXtOmegaX = diagXtOmegaX
+  ))
 }
 
 # Find how many variables in the CS.
@@ -663,23 +674,18 @@ get_pip <- function(data, model, coverage, min_abs_corr, prior_tol) {
 #' @keywords internal
 get_objective <- function(data, model, verbose = FALSE) {
   if (data$unmappable_effects == "inf") {
-    # For infinitesimal effects, compute the full ELBO
-    p <- data$p
+    # Compute omega
     L <- nrow(model$alpha)
-    tau2 <- model$tau2
-
-    # Compute omega matrix
-    var <- tau2 * data$eigen_values + model$sigma2
-    diagXtOmegaX <- rowSums(sweep(data$eigen_vectors^2, 2, (data$eigen_values / var), `*`))
-    omega <- matrix(0, L, p)
+    omega_res <- compute_omega_quantities(data, model$tau2, model$sigma2)
+    omega <- matrix(0, L, data$p)
     for (l in seq_len(L)) {
-      omega[l, ] <- diagXtOmegaX + 1 / model$V[l]
+      omega[l, ] <- omega_res$diagXtOmegaX + 1 / model$V[l]
     }
 
     # Compute total ELBO for infinitesimal effects model
     objective <- compute_elbo_inf(
       model$alpha, model$mu, omega, model$lbf,
-      model$sigma2, tau2, data$n, data$p,
+      model$sigma2, model$tau2, data$n, data$p,
       data$eigen_vectors, data$eigen_values,
       data$VtXty, data$yty
     )
@@ -1039,21 +1045,18 @@ add_eigen_decomposition <- function(data, individual_data) {
   data$eigen_values <- eigen_decomp$Dsq
   data$VtXty <- t(eigen_decomp$V) %*% data$Xty
 
-  # susie.ash requires the original X and y matrices as well as VtXt
+  # SuSiE.ash requires the original X matrix, y vector, and VtXt
   if (data$unmappable_effects == "ash") {
     data$X <- individual_data$X
     data$y <- individual_data$y
     data$VtXt <- t(data$eigen_vectors) %*% t(individual_data$X)
   }
 
-  # Initialize derived quantities for unmappable effects methods
-  sigmasq <- 1
-  tausq <- 0
-
-  # Precompute diagXtOmegaX and XtOmegay
-  data$var <- tausq * data$eigen_values + sigmasq
-  data$diagXtOmegaX <- rowSums(sweep(data$eigen_vectors^2, 2, (data$eigen_values / data$var), `*`))
-  data$XtOmegay <- data$eigen_vectors %*% (data$VtXty / data$var)
+  # Precompute diagXtOmegaX and XtOmegay using initial values of sigma2 and tau2
+  omega_res <- compute_omega_quantities(data, tau2 = 0, sigma2 = 1)
+  data$omega_var <- omega_res$omega_var
+  data$diagXtOmegaX <- omega_res$diagXtOmegaX
+  data$XtOmegay <- data$eigen_vectors %*% (data$VtXty / omega_res$omega_var)
 
   return(data)
 }
