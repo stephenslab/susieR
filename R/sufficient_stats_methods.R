@@ -278,33 +278,10 @@ get_zscore.ss <- function(data, model, ...) {
 # Configure ss data for specified method
 configure_data.ss <- function(data) {
   if (data$unmappable_effects == "none") {
-    return(data) # No changes needed
-  } else {
-    # Add eigen decomposition for unmappable effects
-    data <- add_eigen_decomposition(data)
     return(data)
+  } else {
+    return(add_eigen_decomposition(data))
   }
-}
-
-# Add eigen decomposition to ss objects (for unmappable effects methods)
-add_eigen_decomposition.ss <- function(data) {
-  # Compute eigen decomposition of correlation matrix
-  eigen_decomp <- compute_eigen_decomposition(data$XtX, data$n)
-
-  # Add eigen components to data object
-  data$eigen_vectors <- eigen_decomp$V
-  data$eigen_values <- eigen_decomp$Dsq
-  data$VtXty <- t(eigen_decomp$V) %*% data$Xty
-
-  # Initialize derived quantities for unmappable effects methods
-  sigmasq <- 1
-  tausq <- 0
-  var <- tausq * data$eigen_values + sigmasq
-  data$var <- var
-  data$diagXtOmegaX <- rowSums(sweep(data$eigen_vectors^2, 2, (data$eigen_values / var), `*`))
-  data$XtOmegay <- data$eigen_vectors %*% (data$VtXty / var)
-
-  return(data)
 }
 
 # Update variance components for ss data

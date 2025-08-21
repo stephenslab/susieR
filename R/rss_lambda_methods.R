@@ -40,11 +40,6 @@ configure_data.rss_lambda <- function(data) {
   return(data)
 }
 
-# Add eigen decomposition
-add_eigen_decomposition.rss_lambda <- function(data) {
-  return(data)
-}
-
 # Extract core parameters for tracking
 extract_core.rss_lambda <- function(data, model, tracking, iter, track_fit, ...) {
   if (isTRUE(track_fit)) {

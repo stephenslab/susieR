@@ -23,12 +23,9 @@ get_var_y.individual <- function(data, ...) {
 configure_data.individual <- function(data) {
   if (data$unmappable_effects == "none") {
     return(data)
-  } else if (data$unmappable_effects %in% c("inf", "ash")) {
-    # Convert to sufficient statistics for unmappable effects methods
+  } else (data$unmappable_effects %in% c("inf", "ash")) {
     warning("Individual-level data converted to sufficient statistics for unmappable effects methods\n")
-    return(convert_individual_to_ss_unmappable(data, data$unmappable_effects))
-  } else {
-    stop("Unsupported unmappable effects method: ", data$unmappable_effects)
+    return(convert_individual_to_ss_unmappable(data))
   }
 }
 

@@ -966,21 +966,14 @@ posterior_var_SS_suff <- function(xtx, xty, yty, n, s0_t = 1) {
 
 # Convert individual data to ss with unmappable effects components.
 #' @keywords internal
-convert_individual_to_ss_unmappable <- function(individual_data, unmappable_effects) {
-  # Extract components from individual data
-  X <- individual_data$X
-  y <- individual_data$y
-  n <- individual_data$n
-  p <- individual_data$p
-  mean_y <- individual_data$mean_y
-
+convert_individual_to_ss_unmappable <- function(data) {
   # Compute sufficient statistics
-  XtX <- crossprod(X)
-  Xty <- crossprod(X, y)
-  yty <- sum(y^2)
+  XtX <- crossprod(data$X)
+  Xty <- compute_Xty(data$X, data$y)
+  yty <- sum(data$y^2)
 
   # Get column means and scaling from attributes
-  X_colmeans <- attr(X, "scaled:center")
+  X_colmeans <- attr(data$X, "scaled:center")
 
   # Create sufficient statistics data object
   ss_data <- structure(
@@ -988,32 +981,25 @@ convert_individual_to_ss_unmappable <- function(individual_data, unmappable_effe
       XtX = XtX,
       Xty = Xty,
       yty = yty,
-      n = n,
-      p = p,
+      n = data$n,
+      p = data$p,
       X_colmeans = X_colmeans,
-      y_mean = mean_y,
-      prior_weights = individual_data$prior_weights,
-      null_weight = individual_data$null_weight,
-      unmappable_effects = unmappable_effects,
-      convergence_method = individual_data$convergence_method,
+      y_mean = data$mean_y,
+      prior_weights = data$prior_weights,
+      null_weight = data$null_weight,
+      unmappable_effects = data$unmappable_effects,
+      convergence_method = data$convergence_method,
       use_servin_stephens = FALSE
     ),
     class = "ss"
   )
 
   # Copy attributes from X to XtX
-  attr(ss_data$XtX, "d") <- attr(X, "d")
-  attr(ss_data$XtX, "scaled:scale") <- attr(X, "scaled:scale")
+  attr(ss_data$XtX, "d") <- attr(data$X, "d")
+  attr(ss_data$XtX, "scaled:scale") <- attr(data$X, "scaled:scale")
 
   # Add eigen decomposition for unmappable effects methods
-  ss_data <- add_eigen_decomposition(ss_data)
-
-  # susie.ash requires the original X and y matrices as well as VtXt
-  if (unmappable_effects == "ash") {
-    ss_data$X <- X
-    ss_data$y <- y
-    ss_data$VtXt <- t(ss_data$eigen_vectors) %*% t(X)
-  }
+  ss_data <- add_eigen_decomposition(ss_data, data)
 
   return(ss_data)
 }
@@ -1040,4 +1026,34 @@ check_convergence <- function(model_prev, model_current, elbo, tol, convergence_
   } else {
     return(ELBO_diff < tol)
   }
+}
+
+# Add eigen decomposition to ss objects (for unmappable effects methods)
+#' @keywords internal
+add_eigen_decomposition <- function(data, individual_data) {
+  # Compute eigen decomposition of correlation matrix
+  eigen_decomp <- compute_eigen_decomposition(data$XtX, data$n)
+
+  # Add eigen components to data object
+  data$eigen_vectors <- eigen_decomp$V
+  data$eigen_values <- eigen_decomp$Dsq
+  data$VtXty <- t(eigen_decomp$V) %*% data$Xty
+
+  # susie.ash requires the original X and y matrices as well as VtXt
+  if (data$unmappable_effects == "ash") {
+    data$X <- individual_data$X
+    data$y <- individual_data$y
+    data$VtXt <- t(data$eigen_vectors) %*% t(individual_data$X)
+  }
+
+  # Initialize derived quantities for unmappable effects methods
+  sigmasq <- 1
+  tausq <- 0
+
+  # Precompute diagXtOmegaX and XtOmegay
+  data$var <- tausq * data$eigen_values + sigmasq
+  data$diagXtOmegaX <- rowSums(sweep(data$eigen_vectors^2, 2, (data$eigen_values / data$var), `*`))
+  data$XtOmegay <- data$eigen_vectors %*% (data$VtXty / data$var)
+
+  return(data)
 }

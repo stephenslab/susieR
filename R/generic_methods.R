@@ -120,14 +120,6 @@ configure_data.default <- function(data) {
   stop("configure_data: no method for class '", class(data)[1], "'")
 }
 
-# Add eigenvalue decomposition to data objects
-add_eigen_decomposition <- function(data) {
-  UseMethod("add_eigen_decomposition")
-}
-add_eigen_decomposition.default <- function(data) {
-  stop("add_eigen_decomposition: no method for class '", class(data)[1], "'")
-}
-
 # Update variance components
 update_variance_components <- function(data, model, estimate_method = "MLE") {
   UseMethod("update_variance_components")
