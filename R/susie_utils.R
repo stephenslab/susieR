@@ -124,21 +124,32 @@ mom_unmappable <- function(alpha, mu, omega, sigma2, tau2, n, V, Dsq, VtXty, Xty
 # Compute theta using BLUP
 #' @keywords internal
 compute_theta_blup <- function(data, model) {
-  alpha <- model$alpha
-  mu <- model$mu
-  sigma2 <- model$sigma2
-  tau2 <- model$tau2
+  # Calculate diagXtOmegaX, diagonal variances, and Beta
+  omega_res <- compute_omega_quantities(data, model$tau2, model$sigma2)
+  b <- colSums(model$mu * model$alpha)
 
-  b <- colSums(mu * alpha)
+  XtOmegaXb <- data$eigen_vectors %*% ((t(data$eigen_vectors) %*% b) * data$eigen_values / omega_res$omega_var)
+  XtOmegay <- data$eigen_vectors %*% (data$VtXty / omega_res$omega_var)
+  XtOmegar <- XtOmegay - XtOmegaXb
 
-  var <- tau2 * data$eigen_values + sigma2
-  XtOmegaXb <- data$eigen_vectors %*% ((t(data$eigen_vectors) %*% b) * data$eigen_values / var)
-
-  XtOmegar <- data$XtOmegay - XtOmegaXb
-
-  theta <- tau2 * XtOmegar
+  theta <- model$tau2 * XtOmegar
 
   return(theta)
+}
+
+# Compute Omega-weighted quantities for unmappable effects methods
+#' @keywords internal
+compute_omega_quantities <- function(data, tau2, sigma2) {
+  # Compute variance in eigen space
+  omega_var <- tau2 * data$eigen_values + sigma2
+
+  # Compute diagonal of X'OmegaX
+  diagXtOmegaX <- rowSums(sweep(data$eigen_vectors^2, 2, (data$eigen_values / omega_var), `*`))
+
+  return(list(
+    omega_var = omega_var,
+    diagXtOmegaX = diagXtOmegaX
+  ))
 }
 
 # Find how many variables in the CS.
@@ -663,23 +674,18 @@ get_pip <- function(data, model, coverage, min_abs_corr, prior_tol) {
 #' @keywords internal
 get_objective <- function(data, model, verbose = FALSE) {
   if (data$unmappable_effects == "inf") {
-    # For infinitesimal effects, compute the full ELBO
-    p <- data$p
+    # Compute omega
     L <- nrow(model$alpha)
-    tau2 <- model$tau2
-
-    # Compute omega matrix
-    var <- tau2 * data$eigen_values + model$sigma2
-    diagXtOmegaX <- rowSums(sweep(data$eigen_vectors^2, 2, (data$eigen_values / var), `*`))
-    omega <- matrix(0, L, p)
+    omega_res <- compute_omega_quantities(data, model$tau2, model$sigma2)
+    omega <- matrix(0, L, data$p)
     for (l in seq_len(L)) {
-      omega[l, ] <- diagXtOmegaX + 1 / model$V[l]
+      omega[l, ] <- omega_res$diagXtOmegaX + 1 / model$V[l]
     }
 
     # Compute total ELBO for infinitesimal effects model
     objective <- compute_elbo_inf(
       model$alpha, model$mu, omega, model$lbf,
-      model$sigma2, tau2, data$n, data$p,
+      model$sigma2, model$tau2, data$n, data$p,
       data$eigen_vectors, data$eigen_values,
       data$VtXty, data$yty
     )
@@ -925,7 +931,7 @@ add_null_effect <- function(s, V) {
 #' @keywords internal
 
 # Compute log Bayes factor for Servin and Stephens prior
-compute_log_ssbf <- function(x, y, s0, alpha0 = 0, beta0 = 0) {
+compute_lbf_servin_stephens <- function(x, y, s0, alpha0 = 0, beta0 = 0) {
   x <- x - mean(x)
   y <- y - mean(y)
   n <- length(x)
@@ -939,14 +945,14 @@ compute_log_ssbf <- function(x, y, s0, alpha0 = 0, beta0 = 0) {
 }
 
 # Posterior mean for Servin and Stephens prior using sufficient statistics
-posterior_mean_SS_suff <- function(xtx, xty, s0_t = 1) {
+posterior_mean_servin_stephens <- function(xtx, xty, s0_t = 1) {
   omega <- (xtx + (1 / s0_t^2))^(-1)
   b_bar <- omega %*% xty
   return(b_bar)
 }
 
 # Posterior variance for Servin and Stephens prior using sufficient statistics
-posterior_var_SS_suff <- function(xtx, xty, yty, n, s0_t = 1) {
+posterior_var_servin_stephens <- function(xtx, xty, yty, n, s0_t = 1) {
 
   # If prior variance is too small, return 0.
   if (s0_t < 1e-5) {
@@ -962,4 +968,95 @@ posterior_var_SS_suff <- function(xtx, xty, yty, n, s0_t = 1) {
 
   # TODO: return this as a list and update properly in SER.
   return(c(post_var, beta1))
+}
+
+# Convert individual data to ss with unmappable effects components.
+#' @keywords internal
+convert_individual_to_ss_unmappable <- function(data) {
+  # Compute sufficient statistics
+  XtX <- crossprod(data$X)
+  Xty <- compute_Xty(data$X, data$y)
+  yty <- sum(data$y^2)
+
+  # Get column means and scaling from attributes
+  X_colmeans <- attr(data$X, "scaled:center")
+
+  # Create sufficient statistics data object
+  ss_data <- structure(
+    list(
+      XtX = XtX,
+      Xty = Xty,
+      yty = yty,
+      n = data$n,
+      p = data$p,
+      X_colmeans = X_colmeans,
+      y_mean = data$mean_y,
+      prior_weights = data$prior_weights,
+      null_weight = data$null_weight,
+      unmappable_effects = data$unmappable_effects,
+      convergence_method = data$convergence_method,
+      use_servin_stephens = FALSE
+    ),
+    class = "ss"
+  )
+
+  # Copy attributes from X to XtX
+  attr(ss_data$XtX, "d") <- attr(data$X, "d")
+  attr(ss_data$XtX, "scaled:scale") <- attr(data$X, "scaled:scale")
+
+  # Add eigen decomposition for unmappable effects methods
+  ss_data <- add_eigen_decomposition(ss_data, data)
+
+  return(ss_data)
+}
+
+# Check convergence
+#' @keywords internal
+check_convergence <- function(model_prev, model_current, elbo, tol, convergence_method, iter) {
+  # Skip convergence check on first iteration
+  if(iter == 1) {
+    return(FALSE)
+  }
+
+  ELBO_diff <- elbo[iter + 1] - elbo[iter]
+  PIP_diff <- max(abs(model_prev$alpha - model_current$alpha))
+
+  # If ELBO calculation produces NA/Inf value, fallback to PIP-based convergence
+  if((is.na(ELBO_diff) || is.infinite(ELBO_diff)) && convergence_method == "elbo"){
+    warning(paste0("Iteration ", iter, " produced an NA/infinite ELBO value. Using pip-based convergence this iteration."))
+    convergence_method <- "pip"
+  }
+
+  if (convergence_method == "pip") {
+    return(PIP_diff < tol)
+  } else {
+    return(ELBO_diff < tol)
+  }
+}
+
+# Add eigen decomposition to ss objects (for unmappable effects methods)
+#' @keywords internal
+add_eigen_decomposition <- function(data, individual_data) {
+  # Compute eigen decomposition of correlation matrix
+  eigen_decomp <- compute_eigen_decomposition(data$XtX, data$n)
+
+  # Add eigen components to data object
+  data$eigen_vectors <- eigen_decomp$V
+  data$eigen_values <- eigen_decomp$Dsq
+  data$VtXty <- t(eigen_decomp$V) %*% data$Xty
+
+  # SuSiE.ash requires the original X matrix, y vector, and VtXt
+  if (data$unmappable_effects == "ash") {
+    data$X <- individual_data$X
+    data$y <- individual_data$y
+    data$VtXt <- t(data$eigen_vectors) %*% t(individual_data$X)
+  }
+
+  # Precompute diagXtOmegaX and XtOmegay using initial values of sigma2 and tau2
+  omega_res <- compute_omega_quantities(data, tau2 = 0, sigma2 = 1)
+  data$omega_var <- omega_res$omega_var
+  data$diagXtOmegaX <- omega_res$diagXtOmegaX
+  data$XtOmegay <- data$eigen_vectors %*% (data$VtXty / omega_res$omega_var)
+
+  return(data)
 }

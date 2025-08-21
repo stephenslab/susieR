@@ -23,64 +23,10 @@ get_var_y.individual <- function(data, ...) {
 configure_data.individual <- function(data) {
   if (data$unmappable_effects == "none") {
     return(data)
-  } else if (data$unmappable_effects %in% c("inf", "ash")) {
-    # Convert to sufficient statistics for unmappable effects methods
-    warning("Individual-level data converted to sufficient statistics for unmappable effects methods")
-    return(convert_individual_to_ss_unmappable(data, data$unmappable_effects))
   } else {
-    stop("Unsupported unmappable effects method: ", data$unmappable_effects)
+    warning("Individual-level data converted to sufficient statistics for unmappable effects methods\n")
+    return(convert_individual_to_ss_unmappable(data))
   }
-}
-
-# Convert individual data to ss with unmappable effects components.
-convert_individual_to_ss_unmappable <- function(individual_data, unmappable_effects) {
-  # Extract components from individual data
-  X <- individual_data$X
-  y <- individual_data$y
-  n <- individual_data$n
-  p <- individual_data$p
-  mean_y <- individual_data$mean_y
-
-  # Compute sufficient statistics
-  XtX <- crossprod(X)
-  Xty <- crossprod(X, y)
-  yty <- sum(y^2)
-
-  # Get column means and scaling from attributes
-  X_colmeans <- attr(X, "scaled:center")
-
-  # Create sufficient statistics data object
-  ss_data <- structure(
-    list(
-      XtX = XtX,
-      Xty = Xty,
-      yty = yty,
-      n = n,
-      p = p,
-      X_colmeans = X_colmeans,
-      y_mean = mean_y,
-      prior_weights = individual_data$prior_weights,
-      null_weight = individual_data$null_weight,
-      unmappable_effects = unmappable_effects
-    ),
-    class = "ss"
-  )
-
-  # Copy attributes from X to XtX
-  attr(ss_data$XtX, "d") <- attr(X, "d")
-  attr(ss_data$XtX, "scaled:scale") <- attr(X, "scaled:scale")
-
-  # Add eigen decomposition for unmappable effects methods
-  ss_data <- add_eigen_decomposition(ss_data)
-
-  # susie.ash requires the original X and y matrices as well as VtXt
-  if (unmappable_effects == "ash") {
-    ss_data$X <- X
-    ss_data$y <- y
-    ss_data$VtXt <- t(ss_data$eigen_vectors) %*% t(X)
-  }
-
-  return(ss_data)
 }
 
 # Extract core parameters across iterations
@@ -203,10 +149,10 @@ get_cs.individual <- function(data, model, coverage, min_abs_corr, n_purity) {
   }
 
   return(susie_get_cs(model,
-    coverage = coverage, X = data$X,
-    min_abs_corr = min_abs_corr,
-    n_purity = n_purity
-  ))
+                      coverage = coverage,
+                      X = data$X,
+                      min_abs_corr = min_abs_corr,
+                      n_purity = n_purity))
 }
 
 
@@ -252,22 +198,6 @@ update_derived_quantities.individual <- function(data, model) {
   return(data) # No changes needed for individual data
 }
 
-# Check convergence for individual data
-check_convergence.individual <- function(data, model_prev, model_current, elbo_prev, elbo_current, tol, convergence_method) {
-  if (convergence_method == "pip") {
-    # PIP-based convergence
-    PIP_diff <- max(abs(model_prev$alpha - model_current$alpha))
-    return(PIP_diff < tol)
-  } else {
-    # ELBO-based convergence
-    if (is.na(elbo_prev)) {
-      return(FALSE) # Cannot converge on first iteration
-    }
-    return(elbo_current - elbo_prev < tol)
-  }
-}
-
-
 # Expected log-likelihood
 Eloglik.individual <- function(data, model) {
   return(-data$n / 2 * log(2 * pi * model$sigma2) -
@@ -281,12 +211,12 @@ loglik.individual <- function(data, V, betahat, shat2, prior_weights) {
   # Check if using Servin-Stephens prior
   if (data$use_servin_stephens) {
     # Calculate Servin-Stephens logged Bayes factors
-    lbf = do.call(c, lapply(1:data$p, function(j){
-      compute_log_ssbf(x = data$X[,j],
-                       y = data$R,
-                       s0 = sqrt(V),
-                       alpha0 = data$alpha0,
-                       beta0 = data$beta0)}))
+    lbf <- do.call(c, lapply(1:data$p, function(j){
+      compute_lbf_servin_stephens(x = data$X[,j],
+                                  y = data$R,
+                                  s0 = sqrt(V),
+                                  alpha0 = data$alpha0,
+                                  beta0 = data$beta0)}))
 
   } else {
     # Standard Gaussian prior log Bayes factors

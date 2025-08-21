@@ -120,19 +120,25 @@ individual_data_constructor <- function(X, y,
   attr(X, "scaled:scale") <- out$csd
   attr(X, "d") <- out$d
 
+  # Override convergence method for unmappable effects methods.
+  if(unmappable_effects != "none"){
+    warning("Unmappable effects methods require PIP convergence. Setting convergence_method='pip'\n")
+    convergence_method <- "pip"
+  }
+
   # Handle Servin_Stephens parameters for small sample correction
   if(estimate_residual_method == "Servin_Stephens"){
     use_servin_stephens <- TRUE
 
     # Override convergence method
     if (convergence_method != "pip") {
-      warning("Servin_Stephens method requires PIP convergence. Setting convergence_method='pip'")
+      warning("Servin_Stephens method requires PIP convergence. Setting convergence_method='pip'\n")
       convergence_method <- "pip"
     }
 
     # Override prior variance estimation method
     if (estimate_prior_method != "EM") {
-      warning("Servin_Stephens method works better with EM. Setting estimate_prior_method='EM'")
+      warning("Servin_Stephens method works better with EM. Setting estimate_prior_method='EM'\n")
       estimate_prior_method <- "EM"
     }
   }else{
@@ -206,7 +212,8 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
                                          r_tol = 1e-8, check_input = FALSE,
                                          prior_weights = NULL, null_weight = 0,
                                          unmappable_effects = "none",
-                                         estimate_residual_method = "MLE") {
+                                         estimate_residual_method = "MLE",
+                                         convergence_method = "elbo") {
   # Validate required inputs
   if (missing(n)) {
     stop("n must be provided")
@@ -356,6 +363,12 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
   # Handle Servin_Stephens parameters for small sample correction
   if(estimate_residual_method == "Servin_Stephens")
     stop("Small sample correction not implemented for SS/RSS data.")
+  
+  # Override convergence method for unmappable effects methods
+  if(unmappable_effects != "none"){
+    warning("Unmappable effects methods require PIP convergence. Setting convergence_method='pip'\n")
+    convergence_method <- "pip"
+  }
 
   # Assemble data object
   data_object <- structure(
@@ -370,6 +383,7 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
       prior_weights = prior_weights,
       null_weight = null_weight,
       unmappable_effects = unmappable_effects,
+      convergence_method = convergence_method,
       use_servin_stephens = FALSE
     ),
     class = "ss"
@@ -421,7 +435,8 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL,
                                       scaled_prior_variance = 0.2,
                                       intercept_value = 0,
                                       estimate_residual_variance = FALSE,
-                                      estimate_residual_method = "MLE") {
+                                      estimate_residual_method = "MLE",
+                                      convergence_method = "elbo") {
   # Check if this should use RSS-lambda path
   if (lambda != 0) {
     # Parameter validation for RSS-lambda
@@ -452,7 +467,8 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL,
       check_z = check_z, r_tol = r_tol,
       prior_variance = prior_variance,
       intercept_value = intercept_value,
-      estimate_residual_method = estimate_residual_method
+      estimate_residual_method = estimate_residual_method,
+      convergence_method = convergence_method
     ))
   }
 
@@ -585,7 +601,8 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL,
     prior_weights = prior_weights,
     null_weight = null_weight,
     unmappable_effects = unmappable_effects,
-    estimate_residual_method = estimate_residual_method
+    estimate_residual_method = estimate_residual_method,
+    convergence_method = convergence_method
   )
 
   # Add RSS-specific prior variance handling
@@ -630,7 +647,8 @@ rss_lambda_constructor <- function(z, R, maf = NULL, maf_thresh = 0,
                                    r_tol = 1e-8,
                                    prior_variance = 50,
                                    intercept_value = 0,
-                                   estimate_residual_method = "MLE") {
+                                   estimate_residual_method = "MLE",
+                                   convergence_method = "elbo") {
 
   # Validate that MoM is not requested for RSS with lambda != 0
   if (estimate_residual_method == "MoM") {
@@ -764,6 +782,7 @@ rss_lambda_constructor <- function(z, R, maf = NULL, maf_thresh = 0,
       r_tol = r_tol,
       prior_variance = prior_variance,
       eigen_R = eigen_R,
+      convergence_method = convergence_method,
       # workhorse parameter overrides for RSS-lambda
       workhorse_scaled_prior_variance = prior_variance, # Use unscaled
       workhorse_standardize = FALSE, # Never standardize

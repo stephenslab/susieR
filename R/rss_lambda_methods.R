@@ -40,11 +40,6 @@ configure_data.rss_lambda <- function(data) {
   return(data)
 }
 
-# Add eigen decomposition
-add_eigen_decomposition.rss_lambda <- function(data) {
-  return(data)
-}
-
 # Extract core parameters for tracking
 extract_core.rss_lambda <- function(data, model, tracking, iter, track_fit, ...) {
   if (isTRUE(track_fit)) {
@@ -160,12 +155,11 @@ get_cs.rss_lambda <- function(data, model, coverage, min_abs_corr, n_purity) {
   }
 
   return(susie_get_cs(model,
-    coverage = coverage,
-    Xcorr = data$R,
-    min_abs_corr = min_abs_corr,
-    check_symmetric = FALSE,
-    n_purity = n_purity
-  ))
+                      coverage = coverage,
+                      Xcorr = muffled_cov2cor(data$R),
+                      min_abs_corr = min_abs_corr,
+                      check_symmetric = FALSE,
+                      n_purity = n_purity))
 }
 
 # Get variable names
@@ -227,20 +221,6 @@ update_derived_quantities.rss_lambda <- function(data, model) {
 
   return(data)
 }
-
-# Check convergence
-check_convergence.rss_lambda <- function(data, model_prev, model_current,
-                                         elbo_prev, elbo_current, tol, convergence_method) {
-  if (convergence_method == "pip") {
-    # PIP-based convergence
-    PIP_diff <- max(abs(model_prev$alpha - model_current$alpha))
-    return(PIP_diff < tol)
-  } else {
-    # Standard ELBO-based convergence
-    return((elbo_current - elbo_prev) < tol)
-  }
-}
-
 
 # Expected log-likelihood
 Eloglik.rss_lambda <- function(data, model) {
