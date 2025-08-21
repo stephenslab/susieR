@@ -118,16 +118,20 @@ single_effect_regression <-
           post_var   = rep(0, data$p)
           beta_1     = rep(0, data$p)
         } else {
+          # Calculate Servin Stephens Posterior Mean
           post_mean = do.call(c, lapply(1:data$p, function(j){
-            posterior_mean_SS_suff(dXtX[j],
-                                   Xty[j],
-                                   V)}))
+            posterior_mean_servin_stephens(dXtX[j],
+                                           Xty[j],
+                                           V)}))
+
+          # Calculate Servin Stephens Posterior Variance
           var_result = do.call(rbind, lapply(1:data$p, function(j){
-            posterior_var_SS_suff(dXtX[j],
-                                  Xty[j],
-                                  crossprod(data$R),
-                                  data$n,
-                                  V)}))
+            posterior_var_servin_stephens(dXtX[j],
+                                          Xty[j],
+                                          crossprod(data$R),
+                                          data$n,
+                                          V)}))
+
           beta_1 = var_result[,2]
           post_var = var_result[,1]
           post_mean2 = post_mean^2 + post_var

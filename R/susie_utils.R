@@ -931,7 +931,7 @@ add_null_effect <- function(s, V) {
 #' @keywords internal
 
 # Compute log Bayes factor for Servin and Stephens prior
-compute_log_ssbf <- function(x, y, s0, alpha0 = 0, beta0 = 0) {
+compute_lbf_servin_stephens <- function(x, y, s0, alpha0 = 0, beta0 = 0) {
   x <- x - mean(x)
   y <- y - mean(y)
   n <- length(x)
@@ -945,14 +945,14 @@ compute_log_ssbf <- function(x, y, s0, alpha0 = 0, beta0 = 0) {
 }
 
 # Posterior mean for Servin and Stephens prior using sufficient statistics
-posterior_mean_SS_suff <- function(xtx, xty, s0_t = 1) {
+posterior_mean_servin_stephens <- function(xtx, xty, s0_t = 1) {
   omega <- (xtx + (1 / s0_t^2))^(-1)
   b_bar <- omega %*% xty
   return(b_bar)
 }
 
 # Posterior variance for Servin and Stephens prior using sufficient statistics
-posterior_var_SS_suff <- function(xtx, xty, yty, n, s0_t = 1) {
+posterior_var_servin_stephens <- function(xtx, xty, yty, n, s0_t = 1) {
 
   # If prior variance is too small, return 0.
   if (s0_t < 1e-5) {

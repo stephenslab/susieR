@@ -211,12 +211,12 @@ loglik.individual <- function(data, V, betahat, shat2, prior_weights) {
   # Check if using Servin-Stephens prior
   if (data$use_servin_stephens) {
     # Calculate Servin-Stephens logged Bayes factors
-    lbf = do.call(c, lapply(1:data$p, function(j){
-      compute_log_ssbf(x = data$X[,j],
-                       y = data$R,
-                       s0 = sqrt(V),
-                       alpha0 = data$alpha0,
-                       beta0 = data$beta0)}))
+    lbf <- do.call(c, lapply(1:data$p, function(j){
+      compute_lbf_servin_stephens(x = data$X[,j],
+                                  y = data$R,
+                                  s0 = sqrt(V),
+                                  alpha0 = data$alpha0,
+                                  beta0 = data$beta0)}))
 
   } else {
     # Standard Gaussian prior log Bayes factors
