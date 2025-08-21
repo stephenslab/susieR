@@ -55,7 +55,12 @@ ibss_initialize <- function(data,
 
   # Check & validate residual variance
   if (is.null(residual_variance)) {
-    residual_variance <- var_y
+    # For unmappable effects methods, initialize sigma2 to 1 (as in original implementations)
+    if (!is.null(data$unmappable_effects) && data$unmappable_effects %in% c("inf", "ash")) {
+      residual_variance <- 1
+    } else {
+      residual_variance <- var_y
+    }
   }
   if (!is.numeric(residual_variance)) {
     stop("Input residual variance sigma2 must be numeric")

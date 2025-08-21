@@ -16,17 +16,19 @@ initialize_susie_model.individual <- function(data, L, scaled_prior_variance, va
 
 # Get variance of y
 get_var_y.individual <- function(data, ...) {
-  return(var(drop(data$y)))
+    return(var(drop(data$y)))
 }
 
 # Configure individual data for specified method
 configure_data.individual <- function(data) {
   if (data$unmappable_effects == "none") {
     return(data)
-  } else {
+  } else if (data$unmappable_effects %in% c("inf", "ash")) {
     # Convert to sufficient statistics for unmappable effects methods
     warning("Individual-level data converted to sufficient statistics for unmappable effects methods")
     return(convert_individual_to_ss_unmappable(data, data$unmappable_effects))
+  } else {
+    stop("Unsupported unmappable effects method: ", data$unmappable_effects)
   }
 }
 
@@ -71,6 +73,13 @@ convert_individual_to_ss_unmappable <- function(individual_data, unmappable_effe
   # Add eigen decomposition for unmappable effects methods
   ss_data <- add_eigen_decomposition(ss_data)
 
+  # susie.ash requires the original X and y matrices as well as VtXt
+  if (unmappable_effects == "ash") {
+    ss_data$X <- X
+    ss_data$y <- y
+    ss_data$VtXt <- t(ss_data$eigen_vectors) %*% t(X)
+  }
+
   return(ss_data)
 }
 
@@ -110,13 +119,17 @@ get_ER2.individual <- function(data, model) {
 single_effect_update.individual <- function(
     data, model, l,
     optimize_V, check_null_threshold) {
+
   # Remove lth effect
   model$Xr <- model$Xr - compute_Xb(data$X, model$alpha[l, ] * model$mu[l, ])
 
   # Compute Residuals
   R <- data$y - model$Xr
-  XtR <- crossprod(data$X, R)
+  XtR <- compute_Xty(data$X, R)
   d <- attr(data$X, "d")
+
+  # Append residual to data object (needed for Servin-Stephens)
+  data$R <- R
 
   res <- single_effect_regression(
     data                 = data,
@@ -264,9 +277,23 @@ Eloglik.individual <- function(data, model) {
 #' @importFrom Matrix colSums
 #' @importFrom stats dnorm
 loglik.individual <- function(data, V, betahat, shat2, prior_weights) {
-  # log(bf) for each SNP
-  lbf <- dnorm(betahat, 0, sqrt(V + shat2), log = TRUE) -
-    dnorm(betahat, 0, sqrt(shat2), log = TRUE)
+
+  # Check if using Servin-Stephens prior
+  if (data$use_servin_stephens) {
+    # Calculate Servin-Stephens logged Bayes factors
+    lbf = do.call(c, lapply(1:data$p, function(j){
+      compute_log_ssbf(x = data$X[,j],
+                       y = data$R,
+                       s0 = sqrt(V),
+                       alpha0 = data$alpha0,
+                       beta0 = data$beta0)}))
+
+  } else {
+    # Standard Gaussian prior log Bayes factors
+    lbf <- dnorm(betahat, 0, sqrt(V + shat2), log = TRUE) -
+      dnorm(betahat, 0, sqrt(shat2), log = TRUE)
+  }
+
   lpo <- lbf + log(prior_weights + sqrt(.Machine$double.eps))
 
   # Deal with special case of infinite shat2 (e.g., happens if X does
@@ -279,11 +306,14 @@ loglik.individual <- function(data, V, betahat, shat2, prior_weights) {
   weighted_sum_w <- sum(w_weighted)
   alpha <- w_weighted / weighted_sum_w
 
-  # Compute gradient
-  T2 <- betahat^2 / shat2
-  grad_components <- 0.5 * (1 / (V + shat2)) * ((shat2 / (V + shat2)) * T2 - 1)
-  grad_components[is.nan(grad_components)] <- 0
-  gradient <- sum(alpha * grad_components)
+  # Compute gradient (only for standard Gaussian prior)
+  gradient <- NULL
+  if (!data$use_servin_stephens) {
+    T2 <- betahat^2 / shat2
+    grad_components <- 0.5 * (1 / (V + shat2)) * ((shat2 / (V + shat2)) * T2 - 1)
+    grad_components[is.nan(grad_components)] <- 0
+    gradient <- sum(alpha * grad_components)
+  }
 
   return(list(
     lbf_model = log(weighted_sum_w) + maxlpo,

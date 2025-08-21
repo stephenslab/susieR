@@ -2,7 +2,7 @@
 
 # Initialize fitted values
 initialize_fitted.ss <- function(data, alpha, mu) {
-  if (data$unmappable_effects == "inf") {
+  if (data$unmappable_effects %in% c("inf", "ash")) {
     b <- colSums(alpha * mu)
     XtXr <- data$XtX %*% b
     return(list(XtXr = XtXr))
@@ -14,7 +14,7 @@ initialize_fitted.ss <- function(data, alpha, mu) {
 # Initialize susie model
 initialize_susie_model.ss <- function(data, L, scaled_prior_variance, var_y,
                                       residual_variance, prior_weights, ...) {
-  if (data$unmappable_effects != "none") {
+  if (data$unmappable_effects %in% c("inf", "ash")) {
     return(initialize_matrices(data$p, L, scaled_prior_variance, var_y,
       residual_variance, prior_weights,
       include_unmappable = TRUE
@@ -35,14 +35,20 @@ get_var_y.ss <- function(data, ...) {
 # Extract core parameters across iterations
 extract_core.ss <- function(data, model, tracking, iter, track_fit, ...) {
   if (isTRUE(track_fit)) {
-    if (data$unmappable_effects != "none") {
-      tracking[[iter]] <- list(
+    if (data$unmappable_effects %in% c("inf", "ash")) {
+      tracking_item <- list(
         alpha = model$alpha,
         niter = iter,
         V = model$V,
         sigma2 = model$sigma2,
         tau2 = model$tau2
       )
+      # Add ash-specific tracking
+      if (data$unmappable_effects == "ash" && !is.null(model$ash_pi)) {
+        tracking_item$ash_pi <- model$ash_pi
+        tracking_item$theta <- model$theta
+      }
+      tracking[[iter]] <- tracking_item
     } else {
       tracking[[iter]] <- list(
         alpha = model$alpha,
@@ -96,8 +102,8 @@ get_ER2.ss <- function(data, model) {
 single_effect_update.ss <- function(
     data, model, l,
     optimize_V, check_null_threshold) {
-  if (data$unmappable_effects == "inf") {
-    # Unmappable effects implementation
+  if (data$unmappable_effects %in% c("inf", "ash")) {
+    # Unmappable effects implementation (both inf and ash)
     alpha <- model$alpha
     mu <- model$mu
 
@@ -110,22 +116,20 @@ single_effect_update.ss <- function(
     L <- nrow(alpha)
 
     sigma2 <- model$sigma2
-    tau2 <- if (is.null(model$tau2)) 0 else model$tau2
+    tau2 <- model$tau2
 
-    if (!is.null(data$diagXtOmegaX) && !is.null(data$XtOmegay)) {
-      diagXtOmegaX <- data$diagXtOmegaX
-      XtOmegay <- data$XtOmegay
-    } else {
-      var <- tau2 * Dsq + sigma2
-      diagXtOmegaX <- rowSums(sweep(V^2, 2, (Dsq / var), `*`))
-      XtOmegay <- V %*% (VtXty / var)
-    }
+    # Compute var consistently for both XtOmegay and XtOmegaXb
+    var <- tau2 * Dsq + sigma2
+
+    # Always recompute to ensure consistency between XtOmegay and XtOmegaXb
+    diagXtOmegaX <- rowSums(sweep(V^2, 2, (Dsq / var), `*`))
+    XtOmegay <- V %*% (VtXty / var)
 
     # Remove lth effect
     b <- colSums(mu * alpha) - mu[l, ] * alpha[l, ]
 
-    # Compute Residuals
-    XtOmegaXb <- V %*% ((t(V) %*% b) * Dsq / (tau2 * Dsq + sigma2))
+    # Compute Residuals using the same var
+    XtOmegaXb <- V %*% ((t(V) %*% b) * Dsq / var)
     XtOmegar <- XtOmegay - XtOmegaXb
 
     res <- single_effect_regression(
@@ -147,7 +151,7 @@ single_effect_update.ss <- function(
     model$lbf[l] <- res$lbf_model
     model$lbf_variable[l, ] <- res$lbf
 
-    # TODO: KL and mu2 for infinitesimal model is not properly implemented at the moment.
+    # TODO: KL and mu2 for infinitesimal and ash models is not properly implemented at the moment.
     model$KL[l] <- -res$lbf_model + SER_posterior_e_loglik(data, model, XtOmegar,
       Eb  = model$alpha[l, ] * model$mu[l, ],
       Eb2 = model$alpha[l, ] * model$mu2[l, ]
@@ -290,12 +294,11 @@ add_eigen_decomposition.ss <- function(data) {
   # Add eigen components to data object
   data$eigen_vectors <- eigen_decomp$V
   data$eigen_values <- eigen_decomp$Dsq
-  data$VtXty <- t(eigen_decomp$V) %*% data$Xty # Compute VtXty
+  data$VtXty <- t(eigen_decomp$V) %*% data$Xty
 
   # Initialize derived quantities for unmappable effects methods
-  # These will be updated when variance components change
-  sigmasq <- 1 # Default initial value
-  tausq <- 0 # Default initial value
+  sigmasq <- 1
+  tausq <- 0
   var <- tausq * data$eigen_values + sigmasq
   data$var <- var
   data$diagXtOmegaX <- rowSums(sweep(data$eigen_vectors^2, 2, (data$eigen_values / var), `*`))
@@ -307,14 +310,14 @@ add_eigen_decomposition.ss <- function(data) {
 # Update variance components for ss data
 update_variance_components.ss <- function(data, model, estimate_method = "MLE") {
   if (data$unmappable_effects == "inf") {
-    # Compute omega for both MLE and MoM
+
     alpha <- model$alpha
     mu <- model$mu
     p <- data$p
     L <- nrow(alpha)
 
     sigma2 <- model$sigma2
-    tau2 <- if (is.null(model$tau2)) 0 else model$tau2
+    tau2 <- model$tau2
 
     var <- tau2 * data$eigen_values + sigma2
     diagXtOmegaX <- rowSums(sweep(data$eigen_vectors^2, 2, (data$eigen_values / var), `*`))
@@ -337,8 +340,93 @@ update_variance_components.ss <- function(data, model, estimate_method = "MLE") 
         data$Xty, data$yty,
         est_sigma2 = TRUE, est_tau2 = TRUE, verbose = FALSE
       )
-      return(list(sigma2 = mom_result$sigma2, tau2 = mom_result$tau2))
+
+      # Compute theta (BLUP) for infinitesimal effects
+      theta <- compute_theta_blup(data, model)
+
+      return(list(sigma2 = mom_result$sigma2, tau2 = mom_result$tau2, theta = theta))
     }
+  } else if (data$unmappable_effects == "ash") {
+    # ASH variance components update using mr.ash
+    alpha <- model$alpha
+    mu <- model$mu
+    p <- data$p
+    L <- nrow(alpha)
+
+    # Compute initial tau2 estimate from SuSiE model (as in original susie_ash)
+    initial_tau2 <- mean(colSums(alpha * model$V))
+
+    # For MoM, we need omega as it was computed during SER
+    # The diagXtOmegaX used during SER was based on current model tau2/sigma2
+    sigma2 <- model$sigma2
+    tau2_current <- model$tau2
+
+    # Compute diagXtOmegaX as it was during SER
+    var_ser <- tau2_current * data$eigen_values + sigma2
+    diagXtOmegaX_ser <- rowSums(sweep(data$eigen_vectors^2, 2, (data$eigen_values / var_ser), `*`))
+
+    # Compute omega using SER's diagXtOmegaX and updated V values
+    omega <- matrix(rep(diagXtOmegaX_ser, L), nrow = L, ncol = p, byrow = TRUE) +
+      matrix(rep(1 / model$V, p), nrow = L, ncol = p, byrow = FALSE)
+
+    # Call MoM with initial tau2 estimate and the omega from SER
+    mom_result <- mom_unmappable(alpha, mu, omega, sigma2, initial_tau2, data$n,
+      data$eigen_vectors, data$eigen_values, data$VtXty,
+      data$Xty, data$yty,
+      est_sigma2 = TRUE, est_tau2 = TRUE, verbose = FALSE
+    )
+
+    # Use MoM sigma2 but keep original tau2 for diagXtOmegaX computation
+    sigma2_for_ash <- mom_result$sigma2
+    tau2_for_diagXtOmega <- initial_tau2  # Use initial tau2 for diagXtOmegaX
+    tau2_for_grid <- mom_result$tau2  # Use MoM tau2 for variance grid
+
+    # Compute variance grid using MoM tau2 (as in original)
+    est_sa2 <- 100 * tau2_for_grid * (seq(0, 1, length.out = 10))^2
+
+    # Compute diagXtOmegaX and XtOmega using initial tau2
+    var <- tau2_for_diagXtOmega * data$eigen_values + sigma2_for_ash
+    diagXtOmegaX <- rowSums(sweep(data$eigen_vectors^2, 2, (data$eigen_values / var), `*`))
+    XtOmega <- data$eigen_vectors %*% sweep(data$VtXt, 1, 1/var, `*`)
+
+    # Call mr.ash directly with pre-computed quantities
+    mrash_output <- mr.ash.alpha.mccreight::mr.ash(
+      X = data$X,
+      y = data$y,
+      sa2 = est_sa2,
+      intercept = FALSE,
+      standardize = FALSE,
+      sigma2 = sigma2_for_ash,
+      update.sigma2 = FALSE,
+      diagXtOmegaX = diagXtOmegaX,
+      XtOmega = XtOmega,
+      V = data$eigen_vectors,
+      tausq = tau2_for_diagXtOmega,
+      sum_Dsq = sum(data$eigen_values),
+      Dsq = data$eigen_values,
+      VtXt = data$VtXt
+    )
+
+    # Extract results from mr.ash
+    ash_result <- list(
+      sigma2 = mrash_output$sigma2,
+      tau2 = sum(est_sa2 * mrash_output$pi),
+      theta = mrash_output$beta,
+      pi = mrash_output$pi,
+      est_sa2 = est_sa2
+    )
+
+    # Store theta (ash coefficients) in model
+    model$theta <- ash_result$theta
+    model$ash_pi <- ash_result$pi
+    model$ash_grid <- ash_result$est_sa2
+
+    return(list(
+      sigma2 = ash_result$sigma2,
+      tau2 = ash_result$tau2,
+      theta = ash_result$theta,
+      ash_pi = ash_result$pi
+    ))
   } else {
     # For standard SuSiE w/ ss data, MLE and MoM are equivalent
     sigma2 <- est_residual_variance(data, model)
@@ -348,18 +436,18 @@ update_variance_components.ss <- function(data, model, estimate_method = "MLE") 
 
 # Update derived quantities for ss data
 update_derived_quantities.ss <- function(data, model) {
-  if (data$unmappable_effects == "inf") {
+  if (data$unmappable_effects %in% c("inf", "ash")) {
     sigma2 <- model$sigma2
-    tau2 <- if (is.null(model$tau2)) 0 else model$tau2
+    tau2 <- model$tau2
 
+    # Update var, diagXtOmegaX, and XtOmegay for next iteration.
     var <- tau2 * data$eigen_values + sigma2
     data$var <- var
     data$diagXtOmegaX <- rowSums(sweep(data$eigen_vectors^2, 2, (data$eigen_values / var), `*`))
     data$XtOmegay <- data$eigen_vectors %*% (data$VtXty / var)
 
-    data$theta <- compute_theta_blup(data, model)
-
     return(data)
+
   } else {
     return(data) # No changes needed for standard ss data
   }
@@ -367,10 +455,10 @@ update_derived_quantities.ss <- function(data, model) {
 
 # Check convergence for ss data
 check_convergence.ss <- function(data, model_prev, model_current, elbo_prev, elbo_current, tol, convergence_method) {
-  # Special handling for unmappable_effects = "inf"
-  if (data$unmappable_effects == "inf") {
+  # Special handling for unmappable_effects
+  if (data$unmappable_effects %in% c("inf", "ash")) {
     if (convergence_method == "elbo") {
-      # TODO: Implement ELBO-based convergence for unmappable_effects = "inf"
+      # TODO: Implement ELBO-based convergence for unmappable_effects
       # For now, silently fall back to PIP-based convergence
       PIP_diff <- max(abs(model_prev$alpha - model_current$alpha))
       return(PIP_diff < tol)

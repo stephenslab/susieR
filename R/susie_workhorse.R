@@ -12,10 +12,12 @@ susie_workhorse <- function(data,
                             max_iter, tol, verbose, track_fit,
                             coverage, min_abs_corr,
                             prior_tol, n_purity, compute_univariate_zscore = FALSE,
-                            check_prior = FALSE, convergence_method = "elbo") {
+                            check_prior = FALSE, convergence_method = "elbo",
+                            alpha0 = 0, beta0 = 0) {
   # Validate method argument
   estimate_prior_method <- match.arg(estimate_prior_method)
 
+  # TODO: throw these into constructors + interface (e.g. data$parameter)
   # Apply any workhorse parameter overrides from data constructor
   if (!is.null(data$workhorse_scaled_prior_variance)) {
     scaled_prior_variance <- data$workhorse_scaled_prior_variance
@@ -41,7 +43,6 @@ susie_workhorse <- function(data,
     prior_tol = prior_tol,
     residual_variance_upperbound = residual_variance_upperbound
   )
-
 
   # Initialize tracking
   elbo <- rep(as.numeric(NA), max_iter + 1)

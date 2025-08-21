@@ -39,10 +39,13 @@ single_effect_regression <-
            optimize_V = c("none", "optim", "uniroot", "EM", "simple"),
            check_null_threshold = 0,
            unmappable_effects = FALSE) {
+
+    # Match prior variance optimization argument
     optimize_V <- match.arg(optimize_V)
 
-    # Check if this is RSS data
-    if (!is.null(data) && inherits(data, "rss_lambda")) {
+    # Check if input data is RSS with non-zero lambda
+    if (inherits(data, "rss_lambda")) {
+
       # RSS-specific computation path
       p <- length(z)
       shat2 <- 1 / RjSinvRj
@@ -74,7 +77,7 @@ single_effect_regression <-
         V <- sum(alpha * post_mean2)
       }
     } else {
-      # Standard computation path
+      # Computation path for individual, ss, and rss (with lambda = 0)
       betahat <- (1 / dXtX) * Xty
       shat2 <- residual_variance / dXtX
 
@@ -85,35 +88,70 @@ single_effect_regression <-
 
       # Optimize Prior Variance of lth effect
       if (optimize_V != "EM" && optimize_V != "none") {
+
+        # Specific prior variance optimization function for unmappable effects
         if (unmappable_effects && optimize_V == "optim") {
           V <- optimize_prior_variance_unmappable(V, Xty, dXtX, prior_weights)
         } else {
           # TODO: look into consolidating prior variance into singular function.
-          # We for unmappable effects = "inf", we could input dXtX (which is really dXtOmegaX) as shat2
-          # as it is already weighted by the effective residual. Then, we set beta = XtOmegar / XtOmegaX.
-          # besides the additional features within the prior variance functions (i.e. null threshold check) and
-          # the bounds for optimization and numerical stability tricks, the two are equivalent.
           V <- optimize_prior_variance(optimize_V, data, betahat, shat2, prior_weights,
             alpha = NULL, post_mean2 = NULL, V_init = V,
-            check_null_threshold = check_null_threshold
-          )
+            check_null_threshold = check_null_threshold)
         }
+
       }
 
-      # Use loglik to compute log Bayes factors and alpha
+      # Use loglik generic to compute logged Bayes factors and alpha
       loglik_res <- loglik(data, V, betahat, shat2, prior_weights)
       lbf <- loglik_res$lbf
       alpha <- loglik_res$alpha
       lbf_model <- loglik_res$lbf_model
-      post_var <- (1 / V + dXtX / residual_variance)^(-1) # Posterior variance.
-      post_mean <- (1 / residual_variance) * post_var * Xty
-      post_mean2 <- post_var + post_mean^2 # Second moment.
 
+      # Compute posterior moments
+      # TODO: We could convert posterior moment calculation to generics to reduce complexity here.
+      # Alternatively, we could make a misc helper function in the utils file specifically for this
+      # servin stephens. Something like if(servin){calclulate_servin_stephens_moments}else{original code}
+      if (data$use_servin_stephens){
+        if(V <= 0){
+          post_mean  = rep(0, data$p)
+          post_mean2 = rep(0, data$p)
+          post_var   = rep(0, data$p)
+          beta_1     = rep(0, data$p)
+        } else {
+          post_mean = do.call(c, lapply(1:data$p, function(j){
+            posterior_mean_SS_suff(dXtX[j],
+                                   Xty[j],
+                                   V)}))
+          var_result = do.call(rbind, lapply(1:data$p, function(j){
+            posterior_var_SS_suff(dXtX[j],
+                                  Xty[j],
+                                  crossprod(data$R),
+                                  data$n,
+                                  V)}))
+          beta_1 = var_result[,2]
+          post_var = var_result[,1]
+          post_mean2 = post_mean^2 + post_var
+
+        }
+      } else {
+        # Standard Gaussian posterior calculations
+        post_var <- (1 / V + dXtX / residual_variance)^(-1) # Posterior variance.
+        post_mean <- (1 / residual_variance) * post_var * Xty
+        post_mean2 <- post_var + post_mean^2 # Second moment.
+      }
+
+      # Expectation-maximization prior variance update using posterior moments.
+      # TODO: Modify optimize_prior_variance to take servin stephens flag then call
+      # customized EM update eliminating this if/else
       if (optimize_V == "EM") {
-        V <- optimize_prior_variance(optimize_V, data, betahat, shat2, prior_weights,
-          alpha, post_mean2,
-          check_null_threshold = check_null_threshold
-        )
+        if (data$use_servin_stephens) {
+          V <- sqrt(sum(alpha * (betahat^2 + (beta_1/(data$n - 2)) + shat2)))
+        } else {
+          V <- optimize_prior_variance(optimize_V, data, betahat, shat2, prior_weights,
+            alpha, post_mean2,
+            check_null_threshold = check_null_threshold
+          )
+        }
       }
     }
 
