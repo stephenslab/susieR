@@ -97,7 +97,8 @@ susie_ss <- function(XtX, Xty, yty, n,
   data <- sufficient_stats_constructor(
     XtX, Xty, yty, n, X_colmeans, y_mean,
     maf, maf_thresh, standardize, r_tol, check_input,
-    prior_weights, null_weight, unmappable_effects, estimate_residual_method
+    prior_weights, null_weight, unmappable_effects, estimate_residual_method,
+    convergence_method
   )
 
   # Run SuSiE workhorse
@@ -110,7 +111,7 @@ susie_ss <- function(XtX, Xty, yty, n,
     residual_variance_lowerbound, residual_variance_upperbound,
     max_iter, tol, verbose, track_fit, coverage, min_abs_corr,
     prior_tol, n_purity, compute_univariate_zscore = FALSE,
-    check_prior, convergence_method = convergence_method
+    check_prior, convergence_method = data$convergence_method
   )
 
   return(model)
@@ -175,7 +176,8 @@ susie_rss <- function(z = NULL, R, n = NULL,
     scaled_prior_variance = scaled_prior_variance,
     intercept_value = intercept_value,
     estimate_residual_variance = estimate_residual_variance,
-    estimate_residual_method = estimate_residual_method
+    estimate_residual_method = estimate_residual_method,
+    convergence_method = convergence_method
   )
 
   # Run SuSiE workhorse

@@ -963,3 +963,81 @@ posterior_var_SS_suff <- function(xtx, xty, yty, n, s0_t = 1) {
   # TODO: return this as a list and update properly in SER.
   return(c(post_var, beta1))
 }
+
+# Convert individual data to ss with unmappable effects components.
+#' @keywords internal
+convert_individual_to_ss_unmappable <- function(individual_data, unmappable_effects) {
+  # Extract components from individual data
+  X <- individual_data$X
+  y <- individual_data$y
+  n <- individual_data$n
+  p <- individual_data$p
+  mean_y <- individual_data$mean_y
+
+  # Compute sufficient statistics
+  XtX <- crossprod(X)
+  Xty <- crossprod(X, y)
+  yty <- sum(y^2)
+
+  # Get column means and scaling from attributes
+  X_colmeans <- attr(X, "scaled:center")
+
+  # Create sufficient statistics data object
+  ss_data <- structure(
+    list(
+      XtX = XtX,
+      Xty = Xty,
+      yty = yty,
+      n = n,
+      p = p,
+      X_colmeans = X_colmeans,
+      y_mean = mean_y,
+      prior_weights = individual_data$prior_weights,
+      null_weight = individual_data$null_weight,
+      unmappable_effects = unmappable_effects,
+      convergence_method = individual_data$convergence_method,
+      use_servin_stephens = FALSE
+    ),
+    class = "ss"
+  )
+
+  # Copy attributes from X to XtX
+  attr(ss_data$XtX, "d") <- attr(X, "d")
+  attr(ss_data$XtX, "scaled:scale") <- attr(X, "scaled:scale")
+
+  # Add eigen decomposition for unmappable effects methods
+  ss_data <- add_eigen_decomposition(ss_data)
+
+  # susie.ash requires the original X and y matrices as well as VtXt
+  if (unmappable_effects == "ash") {
+    ss_data$X <- X
+    ss_data$y <- y
+    ss_data$VtXt <- t(ss_data$eigen_vectors) %*% t(X)
+  }
+
+  return(ss_data)
+}
+
+# Check convergence
+#' @keywords internal
+check_convergence <- function(model_prev, model_current, elbo, tol, convergence_method, iter) {
+  # Skip convergence check on first iteration
+  if(iter == 1) {
+    return(FALSE)
+  }
+
+  ELBO_diff <- elbo[iter + 1] - elbo[iter]
+  PIP_diff <- max(abs(model_prev$alpha - model_current$alpha))
+
+  # If ELBO calculation produces NA/Inf value, fallback to PIP-based convergence
+  if((is.na(ELBO_diff) || is.infinite(ELBO_diff)) && convergence_method == "elbo"){
+    warning(paste0("Iteration ", iter, " produced an NA/infinite ELBO value. Using pip-based convergence this iteration."))
+    convergence_method <- "pip"
+  }
+
+  if (convergence_method == "pip") {
+    return(PIP_diff < tol)
+  } else {
+    return(ELBO_diff < tol)
+  }
+}

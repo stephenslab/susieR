@@ -228,20 +228,6 @@ update_derived_quantities.rss_lambda <- function(data, model) {
   return(data)
 }
 
-# Check convergence
-check_convergence.rss_lambda <- function(data, model_prev, model_current,
-                                         elbo_prev, elbo_current, tol, convergence_method) {
-  if (convergence_method == "pip") {
-    # PIP-based convergence
-    PIP_diff <- max(abs(model_prev$alpha - model_current$alpha))
-    return(PIP_diff < tol)
-  } else {
-    # Standard ELBO-based convergence
-    return((elbo_current - elbo_prev) < tol)
-  }
-}
-
-
 # Expected log-likelihood
 Eloglik.rss_lambda <- function(data, model) {
   d <- model$sigma2 * data$eigen_R$values + data$lambda

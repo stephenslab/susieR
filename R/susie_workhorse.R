@@ -69,7 +69,7 @@ susie_workhorse <- function(data,
     elbo[iter + 1] <- get_objective(data, model, verbose = verbose)
 
     # Check for convergence
-    converged <- check_convergence(data, model_prev, model, elbo[iter], elbo[iter + 1], tol, convergence_method)
+    converged <- check_convergence(model_prev, model, elbo, tol, convergence_method, iter)
 
     if (converged) {
       model$converged <- TRUE
