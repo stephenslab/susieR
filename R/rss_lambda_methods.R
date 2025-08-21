@@ -155,12 +155,11 @@ get_cs.rss_lambda <- function(data, model, coverage, min_abs_corr, n_purity) {
   }
 
   return(susie_get_cs(model,
-    coverage = coverage,
-    Xcorr = data$R,
-    min_abs_corr = min_abs_corr,
-    check_symmetric = FALSE,
-    n_purity = n_purity
-  ))
+                      coverage = coverage,
+                      Xcorr = muffled_cov2cor(data$R),
+                      min_abs_corr = min_abs_corr,
+                      check_symmetric = FALSE,
+                      n_purity = n_purity))
 }
 
 # Get variable names

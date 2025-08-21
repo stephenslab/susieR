@@ -149,10 +149,10 @@ get_cs.individual <- function(data, model, coverage, min_abs_corr, n_purity) {
   }
 
   return(susie_get_cs(model,
-    coverage = coverage, X = data$X,
-    min_abs_corr = min_abs_corr,
-    n_purity = n_purity
-  ))
+                      coverage = coverage,
+                      X = data$X,
+                      min_abs_corr = min_abs_corr,
+                      n_purity = n_purity))
 }
 
 

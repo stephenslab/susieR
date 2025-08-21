@@ -205,43 +205,19 @@ get_cs.ss <- function(data, model, coverage, min_abs_corr, n_purity) {
     return(NULL)
   }
 
-  if (data$unmappable_effects == "inf" && !is.null(data$eigen_vectors)) {
-    # For unmappable effects, construct correlation matrix from eigen decomposition
-    LD <- (data$eigen_vectors %*% diag(data$eigen_values)) %*% t(data$eigen_vectors) / data$n
-    if (any(!(diag(LD) %in% c(0, 1)))) {
-      Xcorr <- muffled_cov2cor(LD)
-    } else {
-      Xcorr <- LD
-    }
-    return(susie_get_cs(model,
-      coverage = coverage,
-      Xcorr = Xcorr,
-      min_abs_corr = min_abs_corr,
-      check_symmetric = FALSE,
-      n_purity = n_purity
-    ))
+  if (any(!(diag(data$XtX) %in% c(0, 1)))) {
+    Xcorr <- muffled_cov2cor(data$XtX)
   } else {
-    # Standard approach using XtX
-    if (any(!(diag(data$XtX) %in% c(0, 1)))) {
-      return(susie_get_cs(model,
-        coverage = coverage,
-        Xcorr = muffled_cov2cor(data$XtX),
-        min_abs_corr = min_abs_corr,
-        check_symmetric = FALSE,
-        n_purity = n_purity
-      ))
-    } else {
-      return(susie_get_cs(model,
-        coverage = coverage,
-        Xcorr = data$XtX,
-        min_abs_corr = min_abs_corr,
-        check_symmetric = FALSE,
-        n_purity = n_purity
-      ))
-    }
+    Xcorr <- data$XtX
   }
-}
 
+  return(susie_get_cs(model,
+                      coverage = coverage,
+                      Xcorr = Xcorr,
+                      min_abs_corr = min_abs_corr,
+                      check_symmetric = FALSE,
+                      n_purity = n_purity))
+}
 
 # Get Variable Names
 get_variable_names.ss <- function(data, model, null_weight) {
