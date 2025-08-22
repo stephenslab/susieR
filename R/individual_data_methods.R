@@ -61,29 +61,57 @@ get_ER2.individual <- function(data, model) {
   return(sum((data$y - model$Xr)^2) - sum(Xr_L^2) + sum(attr(data$X, "d") * t(postb2)))
 }
 
+# Compute residuals for single effect regression
+compute_residuals.individual <- function(data, model, l, ...) {
+  # Remove lth effect from fitted values
+  Xr_without_l <- model$Xr - compute_Xb(data$X, model$alpha[l, ] * model$mu[l, ])
+
+  # Compute residuals
+  R <- data$y - Xr_without_l
+  XtR <- compute_Xty(data$X, R)
+
+  return(list(
+    R = R,
+    XtR = XtR,
+    Xr_without_l = Xr_without_l
+  ))
+}
+
+# Compute SER statistics
+compute_ser_statistics.individual <- function(data, model, residuals, dXtX, residual_variance, ...) {
+  betahat <- (1 / dXtX) * residuals
+  shat2 <- residual_variance / dXtX
+  
+  # Compute initial value for optimization
+  optim_init <- log(max(c(betahat^2 - shat2, 1), na.rm = TRUE))
+  
+  return(list(
+    betahat = betahat,
+    shat2 = shat2,
+    optim_init = optim_init
+  ))
+}
+
 # Single Effect Update
 single_effect_update.individual <- function(
     data, model, l,
     optimize_V, check_null_threshold) {
 
-  # Remove lth effect
-  model$Xr <- model$Xr - compute_Xb(data$X, model$alpha[l, ] * model$mu[l, ])
+  # Compute residuals
+  residuals <- compute_residuals(data, model, l)
 
-  # Compute Residuals
-  R <- data$y - model$Xr
-  XtR <- compute_Xty(data$X, R)
-  d <- attr(data$X, "d")
+  # Update Xr (removing lth effect)
+  model$Xr <- residuals$Xr_without_l
 
   # Append residual to data object (needed for Servin-Stephens)
-  data$R <- R
+  data$R <- residuals$R
 
   res <- single_effect_regression(
     data                 = data,
-    Xty                  = XtR,
-    dXtX                 = d,
-    V                    = model$V[l],
-    residual_variance    = model$sigma2,
-    prior_weights        = model$pi,
+    model                = model,
+    l                    = l,
+    residuals            = residuals$XtR,
+    dXtX                 = attr(data$X, "d"),
     optimize_V           = optimize_V,
     check_null_threshold = check_null_threshold,
     unmappable_effects   = FALSE
@@ -91,10 +119,10 @@ single_effect_update.individual <- function(
 
   # log-likelihood term using current residual vector (not available in ss)
   res$loglik <- res$lbf_model +
-    sum(dnorm(R, 0, sqrt(model$sigma2), log = TRUE))
+    sum(dnorm(residuals$R, 0, sqrt(model$sigma2), log = TRUE))
 
   res$KL <- -res$loglik +
-    SER_posterior_e_loglik(data, model, R,
+    SER_posterior_e_loglik(data, model, residuals$R,
       Eb  = res$alpha * res$mu,
       Eb2 = res$alpha * res$mu2
     )
@@ -108,6 +136,7 @@ single_effect_update.individual <- function(
   model$lbf_variable[l, ] <- res$lbf
   model$KL[l] <- res$KL
 
+  # Update Xr (add lth effect back)
   model$Xr <- model$Xr + compute_Xb(data$X, model$alpha[l, ] * model$mu[l, ])
 
   return(model)
@@ -206,8 +235,7 @@ Eloglik.individual <- function(data, model) {
 
 #' @importFrom Matrix colSums
 #' @importFrom stats dnorm
-loglik.individual <- function(data, V, betahat, shat2, prior_weights) {
-
+loglik.individual <- function(data, model = NULL, V, residuals, ser_stats, prior_weights, ...) {
   # Check if using Servin-Stephens prior
   if (data$use_servin_stephens) {
     # Calculate Servin-Stephens logged Bayes factors
@@ -220,18 +248,18 @@ loglik.individual <- function(data, V, betahat, shat2, prior_weights) {
 
   } else {
     # Standard Gaussian prior log Bayes factors
-    lbf <- dnorm(betahat, 0, sqrt(V + shat2), log = TRUE) -
-      dnorm(betahat, 0, sqrt(shat2), log = TRUE)
+    lbf <- dnorm(ser_stats$betahat, 0, sqrt(V + ser_stats$shat2), log = TRUE) -
+      dnorm(ser_stats$betahat, 0, sqrt(ser_stats$shat2), log = TRUE)
   }
 
   # Stabilize logged Bayes Factor
-  stable_res <- lbf_stabilization(lbf, prior_weights, shat2)
+  stable_res <- lbf_stabilization(lbf, prior_weights, ser_stats$shat2)
 
   # Compute posterior weights
   weights_res <- compute_posterior_weights(stable_res$lpo)
 
   # Compute gradient
-  gradient <- compute_lbf_gradient(weights_res$alpha, betahat, shat2, V, data$use_servin_stephens)
+  gradient <- compute_lbf_gradient(weights_res$alpha, ser_stats$betahat, ser_stats$shat2, V, data$use_servin_stephens)
 
   return(list(
     lbf = stable_res$lbf,
@@ -241,7 +269,52 @@ loglik.individual <- function(data, V, betahat, shat2, prior_weights) {
   ))
 }
 
-neg_loglik_logscale.individual <- function(data, lV, betahat, shat2, prior_weights) {
-  res <- loglik.individual(data, exp(lV), betahat, shat2, prior_weights)
+neg_loglik_logscale.individual <- function(data, model = NULL, lV, residuals, ser_stats, prior_weights, ...) {
+  res <- loglik.individual(data, model, exp(lV), residuals, ser_stats, prior_weights)
   return(-res$lbf_model)
+}
+
+# Calculate posterior moments for single effect regression
+calculate_posterior_moments.individual <- function(data, model = NULL, V, residuals,
+                                                   dXtX, residual_variance, ...) {
+  # Initialize beta_1 as NULL (only used for Servin-Stephens)
+  beta_1 <- NULL
+
+  if (data$use_servin_stephens) {
+    if (V <= 0) {
+      # Zero variance case
+      post_mean  <- rep(0, data$p)
+      post_mean2 <- rep(0, data$p)
+      post_var   <- rep(0, data$p)
+      beta_1     <- rep(0, data$p)
+    } else {
+      # Calculate Servin Stephens Posterior Mean
+      post_mean <- sapply(1:data$p, function(j){
+        posterior_mean_servin_stephens(dXtX[j], residuals[j], V)
+      })
+
+      # Calculate Servin Stephens Posterior Variance
+      var_result <- lapply(1:data$p, function(j){
+        posterior_var_servin_stephens(dXtX[j], residuals[j],
+                                      crossprod(data$R),
+                                      data$n, V)
+      })
+
+      post_var <- sapply(var_result, function(x) x$post_var)
+      beta_1 <- sapply(var_result, function(x) x$beta1)
+      post_mean2 <- post_mean^2 + post_var
+    }
+  } else {
+    # Standard Gaussian posterior calculations
+    post_var <- (1 / V + dXtX / residual_variance)^(-1)
+    post_mean <- (1 / residual_variance) * post_var * residuals
+    post_mean2 <- post_var + post_mean^2
+  }
+
+  return(list(
+    post_mean = post_mean,
+    post_mean2 = post_mean2,
+    post_var = post_var,
+    beta_1 = beta_1
+  ))
 }
