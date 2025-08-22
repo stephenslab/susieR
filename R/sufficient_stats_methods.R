@@ -371,28 +371,20 @@ loglik.ss <- function(data, V, betahat, shat2, prior_weights) {
   # log(bf) for each SNP
   lbf <- dnorm(betahat, 0, sqrt(V + shat2), log = TRUE) -
     dnorm(betahat, 0, sqrt(shat2), log = TRUE)
-  lpo <- lbf + log(prior_weights + sqrt(.Machine$double.eps))
 
-  # Deal with special case of infinite shat2 (e.g., happens if X does
-  # not vary).
-  lbf[is.infinite(shat2)] <- 0
-  lpo[is.infinite(shat2)] <- 0
+  # Stabilize logged Bayes Factor
+  stable_res <- lbf_stabilization(lbf, prior_weights, shat2)
 
-  maxlpo <- max(lpo)
-  w_weighted <- exp(lpo - maxlpo)
-  weighted_sum_w <- sum(w_weighted)
-  alpha <- w_weighted / weighted_sum_w
+  # Compute posterior weights
+  weights_res <- compute_posterior_weights(stable_res$lpo)
 
   # Compute gradient
-  T2 <- betahat^2 / shat2
-  grad_components <- 0.5 * (1 / (V + shat2)) * ((shat2 / (V + shat2)) * T2 - 1)
-  grad_components[is.nan(grad_components)] <- 0
-  gradient <- sum(alpha * grad_components)
+  gradient <- compute_lbf_gradient(weights_res$alpha, betahat, shat2, V)
 
   return(list(
-    lbf_model = log(weighted_sum_w) + maxlpo,
-    lbf = lbf,
-    alpha = alpha,
+    lbf = stable_res$lbf,
+    lbf_model = weights_res$lbf_model,
+    alpha = weights_res$alpha,
     gradient = gradient
   ))
 }

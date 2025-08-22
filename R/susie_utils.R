@@ -1034,6 +1034,50 @@ check_convergence <- function(model_prev, model_current, elbo, tol, convergence_
   }
 }
 
+# Stabilize log Bayes factors and compute log posterior odds
+#' @keywords internal
+lbf_stabilization <- function(lbf, prior_weights, shat2 = NULL) {
+
+  # Add numerical stability to prior weights
+  lpo <- lbf + log(prior_weights + sqrt(.Machine$double.eps))
+
+  # Handle special case of infinite shat2 (e.g., when variable doesn't vary)
+  infinite_idx <- is.infinite(shat2)
+  lbf[infinite_idx] <- 0
+  lpo[infinite_idx] <- 0
+
+  return(list(lbf = lbf, lpo = lpo))
+}
+
+# Compute alpha and lbf for each effect
+#' @keywords internal
+compute_posterior_weights <- function(lpo) {
+
+  w_weighted <- exp(lpo - max(lpo))
+  weighted_sum_w <- sum(w_weighted)
+  alpha <- w_weighted / weighted_sum_w
+
+  return(list(
+    alpha = alpha,
+    lbf_model = log(weighted_sum_w) + max(lpo)
+  ))
+}
+
+# Compute gradient for prior variance optimization
+#' @keywords internal
+compute_lbf_gradient <- function(alpha, betahat, shat2, V, use_servin_stephens = FALSE) {
+  # No gradient computation for Servin-Stephens prior
+  if (use_servin_stephens) {
+    return(NULL)
+  }
+
+  T2 <- betahat^2 / shat2
+  grad_components <- 0.5 * (1 / (V + shat2)) * ((shat2 / (V + shat2)) * T2 - 1)
+  grad_components[is.nan(grad_components)] <- 0
+  gradient <- sum(alpha * grad_components)
+  return(gradient)
+}
+
 # Add eigen decomposition to ss objects (for unmappable effects methods)
 #' @keywords internal
 add_eigen_decomposition <- function(data, individual_data) {

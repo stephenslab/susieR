@@ -224,31 +224,19 @@ loglik.individual <- function(data, V, betahat, shat2, prior_weights) {
       dnorm(betahat, 0, sqrt(shat2), log = TRUE)
   }
 
-  lpo <- lbf + log(prior_weights + sqrt(.Machine$double.eps))
+  # Stabilize logged Bayes Factor
+  stable_res <- lbf_stabilization(lbf, prior_weights, shat2)
 
-  # Deal with special case of infinite shat2 (e.g., happens if X does
-  # not vary).
-  lbf[is.infinite(shat2)] <- 0
-  lpo[is.infinite(shat2)] <- 0
+  # Compute posterior weights
+  weights_res <- compute_posterior_weights(stable_res$lpo)
 
-  maxlpo <- max(lpo)
-  w_weighted <- exp(lpo - maxlpo)
-  weighted_sum_w <- sum(w_weighted)
-  alpha <- w_weighted / weighted_sum_w
-
-  # Compute gradient (only for standard Gaussian prior)
-  gradient <- NULL
-  if (!data$use_servin_stephens) {
-    T2 <- betahat^2 / shat2
-    grad_components <- 0.5 * (1 / (V + shat2)) * ((shat2 / (V + shat2)) * T2 - 1)
-    grad_components[is.nan(grad_components)] <- 0
-    gradient <- sum(alpha * grad_components)
-  }
+  # Compute gradient
+  gradient <- compute_lbf_gradient(weights_res$alpha, betahat, shat2, V, data$use_servin_stephens)
 
   return(list(
-    lbf_model = log(weighted_sum_w) + maxlpo,
-    lbf = lbf,
-    alpha = alpha,
+    lbf = stable_res$lbf,
+    lbf_model = weights_res$lbf_model,
+    alpha = weights_res$alpha,
     gradient = gradient
   ))
 }

@@ -239,24 +239,17 @@ loglik.rss_lambda <- function(data, V, z, SinvRj, RjSinvRj, shat2, prior_weights
       0.5 * (V / (1 + (V / shat2[j]))) * sum(SinvRj[, j] * z)^2
   })
 
-  # Add log prior weights
-  lpo <- lbf + log(prior_weights + sqrt(.Machine$double.eps))
+  # Stabilize logged Bayes Factor
+  stable_res <- lbf_stabilization(lbf, prior_weights, shat2)
 
-  # Deal with special case of infinite shat2 (e.g., happens if X does not vary)
-  lbf[is.infinite(shat2)] <- 0
-  lpo[is.infinite(shat2)] <- 0
-
-  # Compute log-sum-exp of weighted lbf
-  maxlpo <- max(lpo)
-  w_weighted <- exp(lpo - maxlpo)
-  weighted_sum_w <- sum(w_weighted)
-  alpha <- w_weighted / weighted_sum_w
+  # Compute posterior weights
+  weights_res <- compute_posterior_weights(stable_res$lpo)
 
   return(list(
-    lbf_model = log(weighted_sum_w) + maxlpo,
-    lbf = lbf,
-    alpha = alpha,
-    gradient = NA # Gradient not computed for RSS
+    lbf = stable_res$lbf,
+    lbf_model = weights_res$lbf_model,
+    alpha = weights_res$alpha,
+    gradient = NA # Gradient not implemented for RSS with lambda > 0
   ))
 }
 
