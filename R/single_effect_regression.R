@@ -80,6 +80,7 @@ single_effect_regression <-
       # Computation path for individual, ss, and rss (with lambda = 0)
       betahat <- (1 / dXtX) * Xty
       shat2 <- residual_variance / dXtX
+      beta_1 <- NULL
 
       # Check prior weights
       if (is.null(prior_weights)) {
@@ -111,6 +112,8 @@ single_effect_regression <-
       # TODO: We could convert posterior moment calculation to generics to reduce complexity here.
       # Alternatively, we could make a misc helper function in the utils file specifically for this
       # servin stephens. Something like if(servin){calclulate_servin_stephens_moments}else{original code}
+
+
       if (data$use_servin_stephens){
         if(V <= 0){
           post_mean  = rep(0, data$p)
@@ -119,10 +122,10 @@ single_effect_regression <-
           beta_1     = rep(0, data$p)
         } else {
           # Calculate Servin Stephens Posterior Mean
-          post_mean = do.call(c, lapply(1:data$p, function(j){
+          post_mean = sapply(1:data$p, function(j){
             posterior_mean_servin_stephens(dXtX[j],
                                            Xty[j],
-                                           V)}))
+                                           V)})
 
           # Calculate Servin Stephens Posterior Variance
           var_result = lapply(1:data$p, function(j){
@@ -145,17 +148,14 @@ single_effect_regression <-
       }
 
       # Expectation-maximization prior variance update using posterior moments.
-      # TODO: Modify optimize_prior_variance to take servin stephens flag then call
-      # customized EM update eliminating this if/else
       if (optimize_V == "EM") {
-        if (data$use_servin_stephens) {
-          V <- sqrt(sum(alpha * (betahat^2 + (beta_1/(data$n - 2)) + shat2)))
-        } else {
-          V <- optimize_prior_variance(optimize_V, data, betahat, shat2, prior_weights,
-            alpha, post_mean2,
-            check_null_threshold = check_null_threshold
-          )
-        }
+        V <- optimize_prior_variance(optimize_V, data, betahat, shat2, prior_weights,
+          alpha, post_mean2,
+          check_null_threshold = check_null_threshold,
+          use_servin_stephens = data$use_servin_stephens,
+          beta_1 = beta_1,
+          n = data$n
+        )
       }
     }
 
@@ -173,7 +173,8 @@ single_effect_regression <-
 
 optimize_prior_variance <- function(optimize_V, data, betahat, shat2, prior_weights,
                                     alpha = NULL, post_mean2 = NULL,
-                                    V_init = NULL, check_null_threshold = 0) {
+                                    V_init = NULL, check_null_threshold = 0,
+                                    use_servin_stephens = FALSE, beta_1 = NULL, n = NULL) {
   V <- V_init
   if (optimize_V != "simple") {
     if (optimize_V == "optim") {
@@ -195,7 +196,13 @@ optimize_prior_variance <- function(optimize_V, data, betahat, shat2, prior_weig
     } else if (optimize_V == "uniroot") {
       V <- est_V_uniroot(data, betahat, shat2, prior_weights)
     } else if (optimize_V == "EM") {
-      V <- sum(alpha * post_mean2)
+      if (use_servin_stephens) {
+        # Servin-Stephens EM update
+        V <- sqrt(sum(alpha * (betahat^2 + (beta_1/(n - 2)) + shat2)))
+      } else {
+        # Standard EM update
+        V <- sum(alpha * post_mean2)
+      }
     } else {
       stop("Invalid option for optimize_V method")
     }
