@@ -673,7 +673,7 @@ get_pip <- function(data, model, coverage, min_abs_corr, prior_tol) {
 # Objective function (ELBO)
 #' @keywords internal
 get_objective <- function(data, model, verbose = FALSE) {
-  if (data$unmappable_effects == "inf") {
+  if (!is.null(data$unmappable_effects) && data$unmappable_effects == "inf") {
     # Compute omega
     L <- nrow(model$alpha)
     omega_res <- compute_omega_quantities(data, model$tau2, model$sigma2)
