@@ -8,6 +8,30 @@ SER_posterior_e_loglik.default <- function(data, model, R, Eb, Eb2) {
   stop("SER_posterior_e_loglik: no method for class '", class(data)[1], "'")
 }
 
+# Calculate posterior moments for single effect regression
+calculate_posterior_moments <- function(data, ...) {
+  UseMethod("calculate_posterior_moments")
+}
+calculate_posterior_moments.default <- function(data, ...) {
+  stop("calculate_posterior_moments: no method for class '", class(data)[1], "'")
+}
+
+# Compute residuals for single effect regression
+compute_residuals <- function(data, model, l, ...) {
+  UseMethod("compute_residuals")
+}
+compute_residuals.default <- function(data, model, l, ...) {
+  stop("compute_residuals: no method for class '", class(data)[1], "'")
+}
+
+# Compute SER statistics (betahat, shat2)
+compute_ser_statistics <- function(data, model, residuals, dXtX, residual_variance, ...) {
+  UseMethod("compute_ser_statistics")
+}
+compute_ser_statistics.default <- function(data, model, residuals, dXtX, residual_variance, ...) {
+  stop("compute_ser_statistics: no method for class '", class(data)[1], "'")
+}
+
 # Expected squared residuals
 get_ER2 <- function(data, model) {
   UseMethod("get_ER2")

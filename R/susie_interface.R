@@ -49,7 +49,7 @@ susie <- function(X, y, L = min(10, ncol(X)),
     residual_variance_lowerbound, residual_variance_upperbound,
     max_iter, tol, verbose, track_fit, coverage, min_abs_corr,
     prior_tol, n_purity, compute_univariate_zscore,
-    check_prior = FALSE, convergence_method = data$convergence_method,
+    check_prior = FALSE, data$convergence_method,
     alpha0 = alpha0, beta0 = beta0
   )
 
@@ -111,7 +111,7 @@ susie_ss <- function(XtX, Xty, yty, n,
     residual_variance_lowerbound, residual_variance_upperbound,
     max_iter, tol, verbose, track_fit, coverage, min_abs_corr,
     prior_tol, n_purity, compute_univariate_zscore = FALSE,
-    check_prior, convergence_method = data$convergence_method
+    check_prior, data$convergence_method
   )
 
   return(model)
@@ -177,20 +177,22 @@ susie_rss <- function(z = NULL, R, n = NULL,
     intercept_value = intercept_value,
     estimate_residual_variance = estimate_residual_variance,
     estimate_residual_method = estimate_residual_method,
-    convergence_method = convergence_method
+    convergence_method = convergence_method,
+    check_prior = check_prior,
+    residual_variance_upperbound = residual_variance_upperbound
   )
 
   # Run SuSiE workhorse
   model <- susie_workhorse(data, L,
-    intercept = FALSE, standardize, scaled_prior_variance,
+    intercept = FALSE, data$standardize, data$scaled_prior_variance,
     residual_variance, data$prior_weights, data$null_weight,
     s_init, estimate_prior_variance, estimate_prior_method,
     check_null_threshold, estimate_residual_variance,
-    estimate_residual_method,
-    residual_variance_lowerbound, residual_variance_upperbound,
-    max_iter, tol, verbose, track_fit, coverage, min_abs_corr,
-    prior_tol, n_purity, compute_univariate_zscore = FALSE,
-    check_prior, convergence_method = convergence_method
+    estimate_residual_method, residual_variance_lowerbound,
+    data$residual_variance_upperbound, max_iter, tol, verbose,
+    track_fit, coverage, min_abs_corr, prior_tol, n_purity,
+    compute_univariate_zscore = FALSE, data$check_prior,
+    convergence_method
   )
 
   return(model)

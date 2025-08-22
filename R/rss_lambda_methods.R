@@ -85,6 +85,36 @@ get_ER2.rss_lambda <- function(data, model, sigma2 = NULL) {
     RZ2 + sum(diag(RSinvR) * t(postb2)))
 }
 
+# Compute residuals for single effect regression
+compute_residuals.rss_lambda <- function(data, model, l, ...) {
+  # Remove lth effect from fitted values
+  Rz_without_l <- model$Rz - data$R %*% (model$alpha[l, ] * model$mu[l, ])
+
+  # Compute residuals
+  r <- data$z - Rz_without_l
+
+  return(list(
+    z_residual = r,
+    Rz_without_l = Rz_without_l
+  ))
+}
+
+# Compute SER statistics
+compute_ser_statistics.rss_lambda <- function(data, model, residuals, dXtX, residual_variance, ...) {
+  # For RSS-lambda, we only need shat2
+  shat2 <- 1 / model$RjSinvRj
+  
+  # Compute initial value for optimization: max((z^T Sigma^{-1} R_j)^2 - 1/RjSinvRj, 1e-6)
+  init_vals <- sapply(1:data$p, function(j) sum(model$SinvRj[, j] * residuals)^2) - (1 / model$RjSinvRj)
+  optim_init <- log(max(c(init_vals, 1e-6), na.rm = TRUE))
+  
+  return(list(
+    betahat = NULL,  # Not used for RSS-lambda
+    shat2 = shat2,
+    optim_init = optim_init
+  ))
+}
+
 # SER posterior expected log-likelihood
 SER_posterior_e_loglik.rss_lambda <- function(data, model, r, Eb, Eb2) {
   rR <- data$R %*% r
@@ -100,17 +130,19 @@ SER_posterior_e_loglik.rss_lambda <- function(data, model, r, Eb, Eb2) {
 # Single effect update
 single_effect_update.rss_lambda <- function(data, model, l,
                                             optimize_V, check_null_threshold) {
-  model$Rz <- model$Rz - data$R %*% (model$alpha[l, ] * model$mu[l, ])
 
-  r <- data$z - model$Rz
+  # Compute residuals
+  residuals <- compute_residuals(data, model, l)
+
+  # Update Rz (removing lth effect)
+  model$Rz <- residuals$Rz_without_l
 
   res <- single_effect_regression(
     data = data,
-    z = r,
-    SinvRj = model$SinvRj,
-    RjSinvRj = model$RjSinvRj,
-    V = model$V[l],
-    prior_weights = model$pi,
+    model = model,
+    l = l,
+    residuals = residuals$z_residual,
+    dXtX = NULL,  # Not used for RSS-lambda
     optimize_V = optimize_V,
     check_null_threshold = check_null_threshold
   )
@@ -124,10 +156,11 @@ single_effect_update.rss_lambda <- function(data, model, l,
 
   model$KL[l] <- -res$lbf_model +
     SER_posterior_e_loglik.rss_lambda(
-      data, model, r,
+      data, model, residuals$z_residual,
       res$alpha * res$mu, res$alpha * res$mu2
     )
 
+  # Add lth effect back
   model$Rz <- model$Rz + data$R %*% (model$alpha[l, ] * model$mu[l, ])
 
   return(model)
@@ -230,37 +263,45 @@ Eloglik.rss_lambda <- function(data, model) {
 }
 
 # Log-likelihood for RSS
-loglik.rss_lambda <- function(data, V, z, SinvRj, RjSinvRj, shat2, prior_weights) {
-  p <- length(z)
-
+loglik.rss_lambda <- function(data, model, V, residuals, ser_stats, prior_weights, ...) {
   # Compute log Bayes factors
-  lbf <- sapply(1:p, function(j) {
-    -0.5 * log(1 + (V / shat2[j])) +
-      0.5 * (V / (1 + (V / shat2[j]))) * sum(SinvRj[, j] * z)^2
+  lbf <- sapply(1:data$p, function(j) {
+    -0.5 * log(1 + (V / ser_stats$shat2[j])) +
+      0.5 * (V / (1 + (V / ser_stats$shat2[j]))) * sum(model$SinvRj[, j] * residuals)^2
   })
 
-  # Add log prior weights
-  lpo <- lbf + log(prior_weights + sqrt(.Machine$double.eps))
+  # Stabilize logged Bayes Factor
+  stable_res <- lbf_stabilization(lbf, prior_weights, ser_stats$shat2)
 
-  # Deal with special case of infinite shat2 (e.g., happens if X does not vary)
-  lbf[is.infinite(shat2)] <- 0
-  lpo[is.infinite(shat2)] <- 0
-
-  # Compute log-sum-exp of weighted lbf
-  maxlpo <- max(lpo)
-  w_weighted <- exp(lpo - maxlpo)
-  weighted_sum_w <- sum(w_weighted)
-  alpha <- w_weighted / weighted_sum_w
+  # Compute posterior weights
+  weights_res <- compute_posterior_weights(stable_res$lpo)
 
   return(list(
-    lbf_model = log(weighted_sum_w) + maxlpo,
-    lbf = lbf,
-    alpha = alpha,
-    gradient = NA # Gradient not computed for RSS
+    lbf = stable_res$lbf,
+    lbf_model = weights_res$lbf_model,
+    alpha = weights_res$alpha,
+    gradient = NA # Gradient not implemented for RSS with lambda > 0
   ))
 }
 
-neg_loglik_logscale.rss_lambda <- function(data, lV, z, SinvRj, RjSinvRj, shat2, prior_weights) {
-  res <- loglik.rss_lambda(data, exp(lV), z, SinvRj, RjSinvRj, shat2, prior_weights)
+neg_loglik_logscale.rss_lambda <- function(data, model, lV, residuals, ser_stats, prior_weights, ...) {
+  res <- loglik.rss_lambda(data, model, exp(lV), residuals, ser_stats, prior_weights)
   return(-res$lbf_model)
+}
+
+# Calculate posterior moments for single effect regression
+calculate_posterior_moments.rss_lambda <- function(data, model, V, residuals, ...) {
+  # RSS-lambda specific posterior calculations
+  post_var <- (model$RjSinvRj + 1 / V)^(-1)
+  post_mean <- sapply(1:data$p, function(j) {
+    post_var[j] * sum(model$SinvRj[, j] * residuals)
+  })
+  post_mean2 <- post_var + post_mean^2
+
+  return(list(
+    post_mean = post_mean,
+    post_mean2 = post_mean2,
+    post_var = post_var,
+    beta_1 = NULL  # Not used for RSS-lambda
+  ))
 }

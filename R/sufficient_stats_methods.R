@@ -98,14 +98,10 @@ get_ER2.ss <- function(data, model) {
     XB2 + sum(d * t(postb2)))
 }
 
-# Single Effect Update
-single_effect_update.ss <- function(
-    data, model, l,
-    optimize_V, check_null_threshold) {
-  if (data$unmappable_effects %in% c("inf", "ash")) {
-    # Infinitesimal / ash single effect update
-
-    # Remove lth effect
+# Compute residuals for single effect regression
+compute_residuals.ss <- function(data, model, l, ...) {
+  if (!is.null(data$unmappable_effects) && data$unmappable_effects != "none") {
+    # Remove lth effect from fitted values
     b <- colSums(model$mu * model$alpha) - model$mu[l, ] * model$alpha[l, ]
 
     # Compute Residuals
@@ -114,70 +110,101 @@ single_effect_update.ss <- function(
     XtOmegaXb <- data$eigen_vectors %*% ((t(data$eigen_vectors) %*% b) * data$eigen_values / omega_res$omega_var)
     XtOmegar <- XtOmegay - XtOmegaXb
 
-    res <- single_effect_regression(
-      data                 = data,
-      Xty                  = XtOmegar,
-      dXtX                 = omega_res$diagXtOmegaX,
-      V                    = model$V[l],
-      residual_variance    = 1, # Already incorporated in Omega
-      prior_weights        = model$pi,
-      optimize_V           = optimize_V,
-      check_null_threshold = check_null_threshold,
-      unmappable_effects   = TRUE
-    )
-
-    model$alpha[l, ] <- res$alpha
-    model$mu[l, ] <- res$mu
-    model$mu2[l, ] <- res$mu2
-    model$V[l] <- res$V
-    model$lbf[l] <- res$lbf_model
-    model$lbf_variable[l, ] <- res$lbf
-
-    # TODO: KL and mu2 for infinitesimal and ash models is not properly implemented at the moment.
-    model$KL[l] <- -res$lbf_model + SER_posterior_e_loglik(data, model, XtOmegar,
-      Eb  = model$alpha[l, ] * model$mu[l, ],
-      Eb2 = model$alpha[l, ] * model$mu2[l, ]
-    )
-
-    b <- colSums(model$alpha * model$mu)
-    model$XtXr <- data$XtX %*% (b + model$theta)
-
+    return(list(
+      XtR = XtOmegar,
+      unmappable = TRUE,
+      omega_res = omega_res,
+      b_without_l = b
+    ))
   } else {
-    # Ordinary SuSiE single effect update
-
-    # Remove lth effect
-    model$XtXr <- model$XtXr - data$XtX %*% (model$alpha[l, ] * model$mu[l, ])
+    # Remove lth effect from fitted values
+    XtXr_without_l <- model$XtXr - data$XtX %*% (model$alpha[l, ] * model$mu[l, ])
 
     # Compute Residuals
-    XtR <- data$Xty - model$XtXr
+    XtR <- data$Xty - XtXr_without_l
 
-    res <- single_effect_regression(
-      data                 = data,
-      Xty                  = XtR,
-      dXtX                 = attr(data$XtX, "d"),
-      V                    = model$V[l],
-      residual_variance    = model$sigma2,
-      prior_weights        = model$pi,
-      optimize_V           = optimize_V,
-      check_null_threshold = check_null_threshold,
-      unmappable_effects   = FALSE
+    return(list(
+      XtR = XtR,
+      XtXr_without_l = XtXr_without_l,
+      unmappable = FALSE
+    ))
+  }
+}
+
+# Compute SER statistics
+compute_ser_statistics.ss <- function(data, model, residuals, dXtX, residual_variance, ...) {
+  betahat <- (1 / dXtX) * residuals
+  shat2 <- residual_variance / dXtX
+  
+  # Compute initial value for optimization
+  optim_init <- log(max(c(betahat^2 - shat2, 1), na.rm = TRUE))
+  
+  return(list(
+    betahat = betahat,
+    shat2 = shat2,
+    optim_init = optim_init
+  ))
+}
+
+# Single Effect Update
+single_effect_update.ss <- function(
+    data, model, l,
+    optimize_V, check_null_threshold) {
+
+  # Compute residuals using generic (removes lth effect)
+  residuals <- compute_residuals(data, model, l)
+
+  # Update model state (removing lth effect)
+  if (!residuals$unmappable) {
+    model$XtXr <- residuals$XtXr_without_l
+  }
+
+  # Determine parameters for SER based on unmappable status
+  if (residuals$unmappable) {
+    dXtX <- residuals$omega_res$diagXtOmegaX
+    residual_variance <- 1  # Already incorporated in Omega
+    unmappable_effects <- TRUE
+  } else {
+    dXtX <- attr(data$XtX, "d")
+    residual_variance <- model$sigma2
+    unmappable_effects <- FALSE
+  }
+
+  # Run single effect regression
+  res <- single_effect_regression(
+    data                 = data,
+    model                = model,
+    l                    = l,
+    residuals            = residuals$XtR,
+    dXtX                 = dXtX,
+    residual_variance    = residual_variance,
+    optimize_V           = optimize_V,
+    check_null_threshold = check_null_threshold,
+    unmappable_effects   = unmappable_effects
+  )
+
+  # Store results
+  model$alpha[l, ] <- res$alpha
+  model$mu[l, ] <- res$mu
+  model$mu2[l, ] <- res$mu2
+  model$V[l] <- res$V
+  model$lbf[l] <- res$lbf_model
+  model$lbf_variable[l, ] <- res$lbf
+
+  # Compute KL divergence
+  # TODO: KL and mu2 for infinitesimal and ash models is not properly implemented at the moment.
+  res$KL <- -res$lbf_model +
+    SER_posterior_e_loglik(data, model, residuals$XtR,
+                           Eb  = res$alpha * res$mu,
+                           Eb2 = res$alpha * res$mu2
     )
+  model$KL[l] <- res$KL
 
-    res$KL <- -res$lbf_model +
-      SER_posterior_e_loglik(data, model, XtR,
-        Eb  = res$alpha * res$mu,
-        Eb2 = res$alpha * res$mu2
-      )
-
-    # Update alpha and mu for adding effect back
-    model$alpha[l, ] <- res$alpha
-    model$mu[l, ] <- res$mu
-    model$mu2[l, ] <- res$mu2
-    model$V[l] <- res$V
-    model$lbf[l] <- res$lbf_model
-    model$lbf_variable[l, ] <- res$lbf
-    model$KL[l] <- res$KL
-
+  # Add lth effect back
+  if (residuals$unmappable) {
+    b <- colSums(model$alpha * model$mu)
+    model$XtXr <- data$XtX %*% (b + model$theta)
+  } else {
     model$XtXr <- model$XtXr + data$XtX %*% (model$alpha[l, ] * model$mu[l, ])
   }
 
@@ -367,37 +394,45 @@ Eloglik.ss <- function(data, model) {
 
 #' @importFrom Matrix colSums
 #' @importFrom stats dnorm
-loglik.ss <- function(data, V, betahat, shat2, prior_weights) {
+loglik.ss <- function(data, model = NULL, V, residuals, ser_stats, prior_weights, ...) {
   # log(bf) for each SNP
-  lbf <- dnorm(betahat, 0, sqrt(V + shat2), log = TRUE) -
-    dnorm(betahat, 0, sqrt(shat2), log = TRUE)
-  lpo <- lbf + log(prior_weights + sqrt(.Machine$double.eps))
+  lbf <- dnorm(ser_stats$betahat, 0, sqrt(V + ser_stats$shat2), log = TRUE) -
+    dnorm(ser_stats$betahat, 0, sqrt(ser_stats$shat2), log = TRUE)
 
-  # Deal with special case of infinite shat2 (e.g., happens if X does
-  # not vary).
-  lbf[is.infinite(shat2)] <- 0
-  lpo[is.infinite(shat2)] <- 0
+  # Stabilize logged Bayes Factor
+  stable_res <- lbf_stabilization(lbf, prior_weights, ser_stats$shat2)
 
-  maxlpo <- max(lpo)
-  w_weighted <- exp(lpo - maxlpo)
-  weighted_sum_w <- sum(w_weighted)
-  alpha <- w_weighted / weighted_sum_w
+  # Compute posterior weights
+  weights_res <- compute_posterior_weights(stable_res$lpo)
 
   # Compute gradient
-  T2 <- betahat^2 / shat2
-  grad_components <- 0.5 * (1 / (V + shat2)) * ((shat2 / (V + shat2)) * T2 - 1)
-  grad_components[is.nan(grad_components)] <- 0
-  gradient <- sum(alpha * grad_components)
+  gradient <- compute_lbf_gradient(weights_res$alpha, ser_stats$betahat, ser_stats$shat2, V)
 
   return(list(
-    lbf_model = log(weighted_sum_w) + maxlpo,
-    lbf = lbf,
-    alpha = alpha,
+    lbf = stable_res$lbf,
+    lbf_model = weights_res$lbf_model,
+    alpha = weights_res$alpha,
     gradient = gradient
   ))
 }
 
-neg_loglik_logscale.ss <- function(data, lV, betahat, shat2, prior_weights) {
-  res <- loglik.ss(data, exp(lV), betahat, shat2, prior_weights)
+neg_loglik_logscale.ss <- function(data, model = NULL, lV, residuals, ser_stats, prior_weights, ...) {
+  res <- loglik.ss(data, model, exp(lV), residuals, ser_stats, prior_weights)
   return(-res$lbf_model)
+}
+
+# Calculate posterior moments for single effect regression
+calculate_posterior_moments.ss <- function(data, model = NULL, V, residuals,
+                                           dXtX, residual_variance, ...) {
+  # Standard Gaussian posterior calculations
+  post_var <- (1 / V + dXtX / residual_variance)^(-1)
+  post_mean <- (1 / residual_variance) * post_var * residuals
+  post_mean2 <- post_var + post_mean^2
+
+  return(list(
+    post_mean = post_mean,
+    post_mean2 = post_mean2,
+    post_var = post_var,
+    beta_1 = NULL  # Not used for SS
+  ))
 }

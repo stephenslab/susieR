@@ -213,7 +213,10 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
                                          prior_weights = NULL, null_weight = 0,
                                          unmappable_effects = "none",
                                          estimate_residual_method = "MLE",
-                                         convergence_method = "elbo") {
+                                         convergence_method = "elbo",
+                                         scaled_prior_variance = NULL,
+                                         check_prior = NULL,
+                                         residual_variance_upperbound = NULL) {
   # Validate required inputs
   if (missing(n)) {
     stop("n must be provided")
@@ -363,7 +366,7 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
   # Handle Servin_Stephens parameters for small sample correction
   if(estimate_residual_method == "Servin_Stephens")
     stop("Small sample correction not implemented for SS/RSS data.")
-  
+
   # Override convergence method for unmappable effects methods
   if(unmappable_effects != "none"){
     warning("Unmappable effects methods require PIP convergence. Setting convergence_method='pip'\n")
@@ -384,7 +387,11 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
       null_weight = null_weight,
       unmappable_effects = unmappable_effects,
       convergence_method = convergence_method,
-      use_servin_stephens = FALSE
+      use_servin_stephens = FALSE,
+      scaled_prior_variance = scaled_prior_variance,
+      standardize = standardize,
+      check_prior = check_prior,
+      residual_variance_upperbound = residual_variance_upperbound
     ),
     class = "ss"
   )
@@ -436,7 +443,9 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL,
                                       intercept_value = 0,
                                       estimate_residual_variance = FALSE,
                                       estimate_residual_method = "MLE",
-                                      convergence_method = "elbo") {
+                                      convergence_method = "elbo",
+                                      check_prior = TRUE,
+                                      residual_variance_upperbound = Inf) {
   # Check if this should use RSS-lambda path
   if (lambda != 0) {
     # Parameter validation for RSS-lambda
@@ -459,7 +468,7 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL,
       warning("Parameter 'n' is ignored when lambda != 0.")
     }
 
-    # Delegate to rss_lambda_constructor
+    # Delegate to rss_lambda_constructor (which will apply overrides)
     return(rss_lambda_constructor(
       z = z, R = R, maf = maf, maf_thresh = maf_thresh,
       lambda = lambda, prior_weights = prior_weights,
@@ -602,14 +611,11 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL,
     null_weight = null_weight,
     unmappable_effects = unmappable_effects,
     estimate_residual_method = estimate_residual_method,
-    convergence_method = convergence_method
+    convergence_method = convergence_method,
+    scaled_prior_variance = scaled_prior_variance,
+    check_prior = check_prior,
+    residual_variance_upperbound = residual_variance_upperbound
   )
-
-  # Add RSS-specific prior variance handling
-  # When n is not provided, prior_variance should be used as scaled_prior_variance
-  data_object$rss_prior_variance <- prior_variance
-  data_object$rss_scaled_prior_variance <- scaled_prior_variance
-  data_object$rss_n_provided <- !is.null(n)
 
   return(data_object)
 }
@@ -768,7 +774,7 @@ rss_lambda_constructor <- function(z, R, maf = NULL, maf_thresh = 0,
     }
   }
 
-  # Create data object
+  # Create data object with RSS-lambda specific parameter overrides
   data_object <- structure(
     list(
       z = z,
@@ -783,12 +789,12 @@ rss_lambda_constructor <- function(z, R, maf = NULL, maf_thresh = 0,
       prior_variance = prior_variance,
       eigen_R = eigen_R,
       convergence_method = convergence_method,
-      # workhorse parameter overrides for RSS-lambda
-      workhorse_scaled_prior_variance = prior_variance, # Use unscaled
-      workhorse_standardize = FALSE, # Never standardize
-      workhorse_residual_variance_upperbound = 1, # RSS constraint
-      workhorse_check_prior = FALSE
-    ), # RSS-lambda always uses check_prior = FALSE
+      # RSS-lambda specific parameter overrides
+      scaled_prior_variance = prior_variance, # Use unscaled for RSS-lambda
+      standardize = FALSE, # Never standardize RSS-lambda
+      residual_variance_upperbound = 1, # RSS constraint
+      check_prior = FALSE # Skip prior check for RSS-lambda
+    ),
     class = "rss_lambda"
   )
 
