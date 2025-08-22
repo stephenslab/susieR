@@ -125,15 +125,15 @@ single_effect_regression <-
                                            V)}))
 
           # Calculate Servin Stephens Posterior Variance
-          var_result = do.call(rbind, lapply(1:data$p, function(j){
+          var_result = lapply(1:data$p, function(j){
             posterior_var_servin_stephens(dXtX[j],
                                           Xty[j],
                                           crossprod(data$R),
                                           data$n,
-                                          V)}))
+                                          V)})
 
-          beta_1 = var_result[,2]
-          post_var = var_result[,1]
+          post_var = sapply(var_result, function(x) x$post_var)
+          beta_1 = sapply(var_result, function(x) x$beta1)
           post_mean2 = post_mean^2 + post_var
 
         }

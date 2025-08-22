@@ -956,7 +956,7 @@ posterior_var_servin_stephens <- function(xtx, xty, yty, n, s0_t = 1) {
 
   # If prior variance is too small, return 0.
   if (s0_t < 1e-5) {
-    return(c(0, 0))
+    return(list(post_var = 0, beta1 = 0))
   }
 
   omega <- (xtx + (1 / s0_t^2))^(-1)
@@ -966,8 +966,7 @@ posterior_var_servin_stephens <- function(xtx, xty, yty, n, s0_t = 1) {
   post_var_down <- 0.5 * (n * (1 / omega))
   post_var <- omega * (post_var_up / post_var_down) * n / (n - 2)
 
-  # TODO: return this as a list and update properly in SER.
-  return(c(post_var, beta1))
+  return(list(post_var = post_var, beta1 = beta1))
 }
 
 # Convert individual data to ss with unmappable effects components.
