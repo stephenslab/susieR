@@ -24,6 +24,7 @@ susie <- function(X, y, L = min(10, ncol(X)),
                   verbose = FALSE,
                   track_fit = FALSE,
                   residual_variance_lowerbound = var(drop(y)) / 1e4,
+                  refine = FALSE,
                   n_purity = 100,
                   alpha0 = 0,
                   beta0 = 0) {
@@ -50,7 +51,7 @@ susie <- function(X, y, L = min(10, ncol(X)),
     max_iter, tol, verbose, track_fit, coverage, min_abs_corr,
     prior_tol, n_purity, compute_univariate_zscore,
     check_prior = FALSE, data$convergence_method,
-    alpha0 = alpha0, beta0 = beta0
+    alpha0 = alpha0, beta0 = beta0, refine = refine
   )
 
   return(model)

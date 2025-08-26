@@ -13,7 +13,7 @@ susie_workhorse <- function(data,
                             coverage, min_abs_corr,
                             prior_tol, n_purity, compute_univariate_zscore = FALSE,
                             check_prior = FALSE, convergence_method = "elbo",
-                            alpha0 = 0, beta0 = 0) {
+                            alpha0 = 0, beta0 = 0, refine = FALSE) {
   # Validate method argument
   estimate_prior_method <- match.arg(estimate_prior_method)
 
@@ -95,6 +95,42 @@ susie_workhorse <- function(data,
     track_fit = track_fit,
     tracking = tracking
   )
+
+  # Run refinement if requested
+  if (refine && !is.null(model$sets) && length(model$sets$cs) > 0) {
+    model <- run_refine(
+      model = model,
+      data = data,
+      L = L,
+      intercept = intercept,
+      standardize = standardize,
+      scaled_prior_variance = scaled_prior_variance,
+      residual_variance = residual_variance,
+      prior_weights = prior_weights,
+      null_weight = null_weight,
+      model_init = model_init,
+      estimate_prior_variance = estimate_prior_variance,
+      estimate_prior_method = estimate_prior_method,
+      check_null_threshold = check_null_threshold,
+      estimate_residual_variance = estimate_residual_variance,
+      estimate_residual_method = estimate_residual_method,
+      residual_variance_lowerbound = residual_variance_lowerbound,
+      residual_variance_upperbound = residual_variance_upperbound,
+      max_iter = max_iter,
+      tol = tol,
+      verbose = verbose,
+      track_fit = track_fit,
+      coverage = coverage,
+      min_abs_corr = min_abs_corr,
+      prior_tol = prior_tol,
+      n_purity = n_purity,
+      compute_univariate_zscore = compute_univariate_zscore,
+      check_prior = check_prior,
+      convergence_method = convergence_method,
+      alpha0 = alpha0,
+      beta0 = beta0
+    )
+  }
 
   return(model)
 }
