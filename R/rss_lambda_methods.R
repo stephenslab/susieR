@@ -100,18 +100,23 @@ compute_residuals.rss_lambda <- function(data, model, l, ...) {
 }
 
 # Compute SER statistics
-compute_ser_statistics.rss_lambda <- function(data, model, residuals, dXtX, residual_variance, ...) {
+compute_ser_statistics.rss_lambda <- function(data, model, residuals, dXtX, residual_variance, l, ...) {
   # For RSS-lambda, we only need shat2
   shat2 <- 1 / model$RjSinvRj
   
   # Compute initial value for optimization: max((z^T Sigma^{-1} R_j)^2 - 1/RjSinvRj, 1e-6)
   init_vals <- sapply(1:data$p, function(j) sum(model$SinvRj[, j] * residuals)^2) - (1 / model$RjSinvRj)
   optim_init <- log(max(c(init_vals, 1e-6), na.rm = TRUE))
+  optim_bounds <- c(-30, 15)
+  optim_scale <- "log"
   
   return(list(
     betahat = NULL,  # Not used for RSS-lambda
     shat2 = shat2,
-    optim_init = optim_init
+    dXtX = dXtX,  # Store for consistency
+    optim_init = optim_init,
+    optim_bounds = optim_bounds,
+    optim_scale = optim_scale
   ))
 }
 
@@ -284,8 +289,10 @@ loglik.rss_lambda <- function(data, model, V, residuals, ser_stats, prior_weight
   ))
 }
 
-neg_loglik_logscale.rss_lambda <- function(data, model, lV, residuals, ser_stats, prior_weights, ...) {
-  res <- loglik.rss_lambda(data, model, exp(lV), residuals, ser_stats, prior_weights)
+neg_loglik.rss_lambda <- function(data, model, V_param, residuals, ser_stats, prior_weights, ...) {
+  # Convert parameter to V based on optimization scale (always log for RSS lambda)
+  V <- exp(V_param)
+  res <- loglik.rss_lambda(data, model, V, residuals, ser_stats, prior_weights)
   return(-res$lbf_model)
 }
 

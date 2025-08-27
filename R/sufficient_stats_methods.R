@@ -132,17 +132,30 @@ compute_residuals.ss <- function(data, model, l, ...) {
 }
 
 # Compute SER statistics
-compute_ser_statistics.ss <- function(data, model, residuals, dXtX, residual_variance, ...) {
+compute_ser_statistics.ss <- function(data, model, residuals, dXtX, residual_variance, l, ...) {
   betahat <- (1 / dXtX) * residuals
   shat2 <- residual_variance / dXtX
-  
-  # Compute initial value for optimization
-  optim_init <- log(max(c(betahat^2 - shat2, 1), na.rm = TRUE))
-  
+
+  # Compute optimization parameters based on unmappable effects
+  if (data$unmappable_effects == "none") {
+    # Standard SuSiE: optimize on log scale
+    optim_init <- log(max(c(betahat^2 - shat2, 1), na.rm = TRUE))
+    optim_bounds <- c(-30, 15)
+    optim_scale <- "log"
+  } else {
+    # Unmappable effects: optimize on linear scale
+    optim_init <- model$V[l]
+    optim_bounds <- c(0, 1)
+    optim_scale <- "linear"
+  }
+
   return(list(
     betahat = betahat,
     shat2 = shat2,
-    optim_init = optim_init
+    dXtX = dXtX,  # Store for unmappable objective
+    optim_init = optim_init,
+    optim_bounds = optim_bounds,
+    optim_scale = optim_scale
   ))
 }
 
@@ -163,11 +176,9 @@ single_effect_update.ss <- function(
   if (residuals$unmappable) {
     dXtX <- residuals$omega_res$diagXtOmegaX
     residual_variance <- 1  # Already incorporated in Omega
-    unmappable_effects <- TRUE
   } else {
     dXtX <- attr(data$XtX, "d")
     residual_variance <- model$sigma2
-    unmappable_effects <- FALSE
   }
 
   # Run single effect regression
@@ -179,16 +190,15 @@ single_effect_update.ss <- function(
     dXtX                 = dXtX,
     residual_variance    = residual_variance,
     optimize_V           = optimize_V,
-    check_null_threshold = check_null_threshold,
-    unmappable_effects   = unmappable_effects
+    check_null_threshold = check_null_threshold
   )
 
   # Store results
-  model$alpha[l, ] <- res$alpha
-  model$mu[l, ] <- res$mu
-  model$mu2[l, ] <- res$mu2
-  model$V[l] <- res$V
-  model$lbf[l] <- res$lbf_model
+  model$alpha[l, ]        <- res$alpha
+  model$mu[l, ]           <- res$mu
+  model$mu2[l, ]          <- res$mu2
+  model$V[l]              <- res$V
+  model$lbf[l]            <- res$lbf_model
   model$lbf_variable[l, ] <- res$lbf
 
   # Compute KL divergence
@@ -416,9 +426,22 @@ loglik.ss <- function(data, model = NULL, V, residuals, ser_stats, prior_weights
   ))
 }
 
-neg_loglik_logscale.ss <- function(data, model = NULL, lV, residuals, ser_stats, prior_weights, ...) {
-  res <- loglik.ss(data, model, exp(lV), residuals, ser_stats, prior_weights)
-  return(-res$lbf_model)
+neg_loglik.ss <- function(data, model = NULL, V_param, residuals, ser_stats, prior_weights, ...) {
+  # Convert parameter to V based on optimization scale
+  V <- if (ser_stats$optim_scale == "log") exp(V_param) else V_param
+
+  if (data$unmappable_effects == "none") {
+    # Standard objective
+    res <- loglik.ss(data, model, V, residuals, ser_stats, prior_weights)
+    return(-res$lbf_model)
+  } else {
+    # Unmappable objective with logSumExp trick
+    return(-matrixStats::logSumExp(
+      -0.5 * log(1 + V * ser_stats$dXtX) +
+      V * residuals^2 / (2 * (1 + V * ser_stats$dXtX)) +
+        log(prior_weights + sqrt(.Machine$double.eps))
+    ))
+  }
 }
 
 # Calculate posterior moments for single effect regression

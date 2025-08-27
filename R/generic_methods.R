@@ -176,10 +176,10 @@ loglik.default <- function(data, ...) {
   stop("loglik: no method for class '", class(data)[1], "'")
 }
 
-# Negative log-likelihood in log scale for optimization
-neg_loglik_logscale <- function(data, ...) {
-  UseMethod("neg_loglik_logscale")
+# Negative log-likelihood for optimization (handles both log and linear scales)
+neg_loglik <- function(data, ...) {
+  UseMethod("neg_loglik")
 }
-neg_loglik_logscale.default <- function(data, ...) {
-  stop("neg_loglik_logscale: no method for class '", class(data)[1], "'")
+neg_loglik.default <- function(data, ...) {
+  stop("neg_loglik: no method for class '", class(data)[1], "'")
 }
