@@ -48,10 +48,10 @@ validate_prior.individual <- function(data, model, check_prior, ...) {
 }
 
 # Posterior expected log-likelihood for single effect regression
-SER_posterior_e_loglik.individual <- function(data, model, R, Eb, Eb2) {
+SER_posterior_e_loglik.individual <- function(data, model, R, Eb, Eb2, dXtX) {
   return(-0.5 * data$n * log(2 * pi * model$sigma2) -
     0.5 / model$sigma2 * (sum(R * R) - 2 * sum(R * compute_Xb(data$X, Eb)) +
-      sum(attr(data$X, "d") * Eb2)))
+      sum(dXtX * Eb2)))
 }
 
 # Expected squared residuals
@@ -128,7 +128,8 @@ single_effect_update.individual <- function(
   res$KL <- -res$loglik +
     SER_posterior_e_loglik(data, model, residuals$R,
       Eb  = res$alpha * res$mu,
-      Eb2 = res$alpha * res$mu2
+      Eb2 = res$alpha * res$mu2,
+      dXtX = attr(data$X, "d")
     )
 
   # Update alpha and mu for adding effect back

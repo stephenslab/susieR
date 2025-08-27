@@ -121,7 +121,7 @@ compute_ser_statistics.rss_lambda <- function(data, model, residuals, dXtX, resi
 }
 
 # SER posterior expected log-likelihood
-SER_posterior_e_loglik.rss_lambda <- function(data, model, r, Eb, Eb2) {
+SER_posterior_e_loglik.rss_lambda <- function(data, model, r, Eb, Eb2, dXtX) {
   rR <- data$R %*% r
 
   d <- model$sigma2 * data$eigen_R$values + data$lambda
@@ -160,9 +160,10 @@ single_effect_update.rss_lambda <- function(data, model, l,
   model$lbf_variable[l, ] <- res$lbf
 
   model$KL[l] <- -res$lbf_model +
-    SER_posterior_e_loglik.rss_lambda(
+    SER_posterior_e_loglik(
       data, model, residuals$z_residual,
-      res$alpha * res$mu, res$alpha * res$mu2
+      res$alpha * res$mu, res$alpha * res$mu2,
+      dXtX = diag(data$R)  # For RSS, diagonal of R matrix
     )
 
   # Add lth effect back

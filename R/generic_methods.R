@@ -1,10 +1,10 @@
 # Generic methods for S3 dispatch
 
 # Single effect regression posterior expected log-likelihood
-SER_posterior_e_loglik <- function(data, model, R, Eb, Eb2) {
+SER_posterior_e_loglik <- function(data, model, R, Eb, Eb2, dXtX) {
   UseMethod("SER_posterior_e_loglik")
 }
-SER_posterior_e_loglik.default <- function(data, model, R, Eb, Eb2) {
+SER_posterior_e_loglik.default <- function(data, model, R, Eb, Eb2, dXtX) {
   stop("SER_posterior_e_loglik: no method for class '", class(data)[1], "'")
 }
 

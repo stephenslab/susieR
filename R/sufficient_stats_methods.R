@@ -83,8 +83,14 @@ validate_prior.ss <- function(data, model, check_prior, ...) {
 }
 
 # Posterior expected log-likelihood for a single effect regression
-SER_posterior_e_loglik.ss <- function(data, model, XtR, Eb, Eb2) {
-  return(-0.5 / model$sigma2 * (-2 * sum(Eb * XtR) + sum(attr(data$XtX, "d") * as.vector(Eb2))))
+SER_posterior_e_loglik.ss <- function(data, model, XtR, Eb, Eb2, dXtX) {
+  if (data$unmappable_effects == "none") {
+    # Standard SuSiE
+    return(-0.5 / model$sigma2 * (-2 * sum(Eb * XtR) + sum(dXtX * as.vector(Eb2))))
+  } else {
+    # Omega-weighted likelihood
+    return(-0.5 * (-2 * sum(Eb * XtR) + sum(dXtX * as.vector(Eb2))))
+  }
 }
 
 # Expected Squared Residuals
@@ -202,13 +208,11 @@ single_effect_update.ss <- function(
   model$lbf_variable[l, ] <- res$lbf
 
   # Compute KL divergence
-  # TODO: KL and mu2 for infinitesimal and ash models is not properly implemented at the moment.
-  res$KL <- -res$lbf_model +
+  model$KL[l] <- -res$lbf_model +
     SER_posterior_e_loglik(data, model, residuals$XtR,
                            Eb  = res$alpha * res$mu,
-                           Eb2 = res$alpha * res$mu2
-    )
-  model$KL[l] <- res$KL
+                           Eb2 = res$alpha * res$mu2,
+                           dXtX = dXtX)
 
   # Add lth effect back
   if (residuals$unmappable) {
