@@ -120,9 +120,10 @@ individual_data_constructor <- function(X, y,
   attr(X, "scaled:scale") <- out$csd
   attr(X, "d") <- out$d
 
-  # Override convergence method for unmappable effects methods.
-  if(unmappable_effects != "none"){
-    warning("Unmappable effects methods require PIP convergence. Setting convergence_method='pip'\n")
+  # Override convergence method for susie.ash
+  if(unmappable_effects == "ash"){
+    warning("SuSiE.ash currently does not have a well-defined ELBO and requires PIP convergence.
+            Setting convergence_method='pip'\n")
     convergence_method <- "pip"
   }
 
@@ -367,11 +368,10 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
   if(estimate_residual_method == "Servin_Stephens")
     stop("Small sample correction not implemented for SS/RSS data.")
 
-  # Override convergence method for unmappable effects methods
-  if(unmappable_effects != "none"){
-    warning("Unmappable effects methods require PIP convergence. Setting convergence_method='pip'\n")
-    convergence_method <- "pip"
-  }
+  # Ash requires individual-level data and cannot work with sufficient statistics alone
+  if(unmappable_effects == "ash")
+    stop("Adaptive shrinkage (ash) requires individual-level data and cannot be used with sufficient statistics. ",
+           "Please provide X and y instead of XtX, Xty, and yty.")
 
   # Assemble data object
   data_object <- structure(
