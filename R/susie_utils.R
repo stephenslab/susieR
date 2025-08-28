@@ -983,7 +983,7 @@ posterior_var_servin_stephens <- function(xtx, xty, yty, n, s0_t = 1) {
 #' @keywords internal
 convert_individual_to_ss_unmappable <- function(data) {
   # Compute sufficient statistics
-  XtX <- crossprod(data$X)
+  XtX <- compute_XtX(data$X)
   Xty <- compute_Xty(data$X, data$y)
   yty <- sum(data$y^2)
 
@@ -1089,7 +1089,20 @@ compute_lbf_gradient <- function(alpha, betahat, shat2, V, use_servin_stephens =
 
 # Add eigen decomposition to ss objects (for unmappable effects methods)
 #' @keywords internal
-add_eigen_decomposition <- function(data, individual_data) {
+add_eigen_decomposition <- function(data, individual_data = NULL) {
+  # Standardize y to unit variance for all unmappable effects methods
+  y_scale_factor <- 1
+
+  if (data$unmappable_effects != "none") {
+    var_y <- data$yty / (data$n - 1)
+    if (abs(var_y - 1) > 1e-10) {
+      sd_y <- sqrt(var_y)
+      data$yty <- data$yty / var_y
+      data$Xty <- data$Xty / sd_y
+      y_scale_factor <- sd_y
+    }
+  }
+
   # Compute eigen decomposition of correlation matrix
   eigen_decomp <- compute_eigen_decomposition(data$XtX, data$n)
 
@@ -1098,10 +1111,13 @@ add_eigen_decomposition <- function(data, individual_data) {
   data$eigen_values <- eigen_decomp$Dsq
   data$VtXty <- t(eigen_decomp$V) %*% data$Xty
 
-  # SuSiE.ash requires the original X matrix, y vector, and VtXt
+  # SuSiE.ash requires the X matrix and standardized y vector
   if (data$unmappable_effects == "ash") {
+    if (is.null(individual_data)) {
+      stop("Adaptive shrinkage (ash) requires individual-level data")
+    }
     data$X <- individual_data$X
-    data$y <- individual_data$y
+    data$y <- individual_data$y / y_scale_factor
     data$VtXt <- t(data$eigen_vectors) %*% t(individual_data$X)
   }
 
