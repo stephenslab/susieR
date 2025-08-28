@@ -40,7 +40,7 @@ susie <- function(X, y, L = min(10, ncol(X)),
     X, y, intercept, standardize, na.rm,
     prior_weights, null_weight, unmappable_effects,
     estimate_residual_method, convergence_method,
-    estimate_prior_method, alpha0, beta0
+    estimate_prior_method, alpha0, beta0, refine
   )
 
   model <- susie_workhorse(
