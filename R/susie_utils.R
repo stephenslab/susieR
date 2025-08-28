@@ -853,11 +853,8 @@ compute_elbo_inf <- function(alpha, mu, omega, lbf, sigma2, tau2, n, p,
                              eigen_vectors, eigen_values, VtXty, yty) {
   L <- nrow(mu)
 
-  # Compute b = sum_l alpha_l * mu_l
   b <- colSums(mu * alpha)
   Vtb <- t(eigen_vectors) %*% b
-
-  # Compute E[theta'theta] diagonal
   diagVtMV <- Vtb^2
   tmpD <- rep(0, p)
 
@@ -873,19 +870,16 @@ compute_elbo_inf <- function(alpha, mu, omega, lbf, sigma2, tau2, n, p,
   # Compute variance
   var <- tau2 * eigen_values + sigma2
 
-  # Compute negative ELBO (matching original formulation)
+  # Compute negative ELBO
   neg_elbo <- 0.5 * (n - p) * log(sigma2) + 0.5 / sigma2 * yty +
     sum(0.5 * log(var) -
       0.5 * tau2 / sigma2 * VtXty^2 / var -
       Vtb * VtXty / var +
       0.5 * eigen_values / var * diagVtMV)
 
-  # Total ELBO includes both infinitesimal and sparse components
-  elbo_infinitesimal <- -neg_elbo
-  elbo_sparse <- sum(lbf)
-  elbo_total <- elbo_infinitesimal + elbo_sparse
+  elbo <- -neg_elbo
 
-  return(elbo_total)
+  return(elbo)
 }
 
 # @title sets the attributes for the R matrix
@@ -1223,7 +1217,7 @@ run_refine <- function(model, data, L, intercept, standardize,
         residual_variance = residual_variance,
         prior_weights = data_modified$prior_weights,
         null_weight = data_modified$null_weight,
-        model_init = NULL,  # No initialization
+        model_init = NULL,
         estimate_prior_variance = estimate_prior_variance,
         estimate_prior_method = estimate_prior_method,
         check_null_threshold = check_null_threshold,
@@ -1233,8 +1227,8 @@ run_refine <- function(model, data, L, intercept, standardize,
         residual_variance_upperbound = residual_variance_upperbound,
         max_iter = max_iter,
         tol = tol,
-        verbose = FALSE,  # Suppress verbose output in refinement
-        track_fit = FALSE,  # Don't track in refinement
+        verbose = FALSE,
+        track_fit = FALSE,
         coverage = coverage,
         min_abs_corr = min_abs_corr,
         prior_tol = prior_tol,
@@ -1244,7 +1238,7 @@ run_refine <- function(model, data, L, intercept, standardize,
         convergence_method = convergence_method,
         alpha0 = alpha0,
         beta0 = beta0,
-        refine = FALSE  # CRITICAL: Prevent infinite recursion
+        refine = FALSE
       )
 
       # Step 3: Extract initialization from step1
@@ -1278,8 +1272,8 @@ run_refine <- function(model, data, L, intercept, standardize,
         residual_variance_upperbound = residual_variance_upperbound,
         max_iter = max_iter,
         tol = tol,
-        verbose = FALSE,  # Suppress verbose output in refinement
-        track_fit = FALSE,  # Don't track in refinement
+        verbose = FALSE,
+        track_fit = FALSE,
         coverage = coverage,
         min_abs_corr = min_abs_corr,
         prior_tol = prior_tol,
@@ -1289,7 +1283,7 @@ run_refine <- function(model, data, L, intercept, standardize,
         convergence_method = convergence_method,
         alpha0 = alpha0,
         beta0 = beta0,
-        refine = FALSE  # CRITICAL: Prevent infinite recursion
+        refine = FALSE
       )
 
       candidate_models <- c(candidate_models, list(model_step2))
@@ -1315,8 +1309,8 @@ run_refine <- function(model, data, L, intercept, standardize,
         cat("Best candidate ELBO:", max(elbos), "\n")
       }
 
-      if (max(elbos) > current_elbo) {
-        # Found improvement
+      if (max(elbos) - current_elbo > tol) {
+        # Found improvement beyond tolerance
         best_idx <- which.max(elbos)
         model <- candidate_models[[best_idx]]
         if (verbose) {
@@ -1324,9 +1318,9 @@ run_refine <- function(model, data, L, intercept, standardize,
           cat("Improvement:", max(elbos) - current_elbo, "\n")
         }
       } else {
-        # No improvement, stop
+        # No improvement beyond tolerance, stop
         if (verbose) {
-          cat("No improvement in ELBO, stopping refinement\n")
+          cat("No improvement in ELBO beyond tolerance (", tol, "), stopping refinement\n")
         }
         conti <- FALSE
       }
