@@ -371,6 +371,13 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n, X_colmeans = NA,
          "Please provide X and y instead of XtX, Xty, and yty.")
   }
 
+  # Override convergence method for unmappable effects
+  if (unmappable_effects != "none") {
+    warning("Unmappable effects models (inf/ash) do not have a well defined ELBO and require PIP convergence. ",
+            "Setting convergence_method='pip'.\n")
+    convergence_method <- "pip"
+  }
+
   # Assemble data object
   data_object <- structure(
     list(
