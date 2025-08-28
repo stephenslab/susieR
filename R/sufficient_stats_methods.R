@@ -329,7 +329,6 @@ update_variance_components.ss <- function(data, model, estimate_method = "MLE") 
                                  est_sigma2 = TRUE, est_tau2 = TRUE, verbose = FALSE)
 
     # Compute diagXtOmegaX and XtOmega for mr.ash using sparse effect variance and MoM residual variance
-    # TODO: Use Rcpp for this XtOmega computation
     omega_res <- compute_omega_quantities(data, sparse_var, mom_result$sigma2)
     XtOmega <- data$eigen_vectors %*% sweep(data$VtXt, 1, 1/omega_res$omega_var, `*`)
 
@@ -337,8 +336,6 @@ update_variance_components.ss <- function(data, model, estimate_method = "MLE") 
     est_sa2 <- 100 * mom_result$tau2 * (seq(0, 1, length.out = 10))^2
 
     # Call mr.ash directly with pre-computed quantities
-    # TODO: We can fix the exact why to call the correction version of mr.ash,
-    # but for now I did a direct call to my customized package.
     mrash_output <- mr.ash.alpha.mccreight::mr.ash(
       X = data$X,
       y = data$y,
