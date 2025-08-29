@@ -188,7 +188,7 @@
 #'   \dQuote{ELBO} (the objective function to be maximized), is
 #'   less than \code{tol}.
 #'
-#'  @param tol_small used for small = TRUE only. Small, non-negative
+#' @param tol_small used for small = TRUE only. Small, non-negative
 #'   number specifying the convergence tolerance for the GIBSS
 #'   fitting procedure. The fitting procedure will halt when the
 #'   difference in the estimated posterior inclusion probability is
