@@ -12,61 +12,6 @@ compute_eigen_decomposition <- function(XtX, n) {
   )
 }
 
-# Call mr.ash for adaptive shrinkage unmappable effects
-#' @keywords internal
-call_mr_ash <- function(X, y, sigma2, tau2, alpha, mu,
-                        V, Dsq, VtXt,
-                        K_length = 10,
-                        update_ash_sigma = FALSE,
-                        custom_est_sa2 = NULL) {
-
-  # Create variance grid for mr.ash
-  if (is.null(custom_est_sa2)) {
-    est_sa2 <- 100 * tau2 * (seq(0, 1, length.out = K_length))^2
-  } else {
-    est_sa2 <- custom_est_sa2
-  }
-
-  # Compute required quantities for mr.ash
-  var <- tau2 * Dsq + sigma2
-  diagXtOmegaX <- rowSums(sweep(V^2, 2, Dsq / var, `*`))
-
-  # Compute XtOmega for mr.ash
-  # TODO: This will become a bottleneck for larger matrices. Switch to Rcpp.
-  XtOmega <- V %*% sweep(VtXt, 1, 1/var, `*`)
-
-  # Call mr.ash. Kept hard coded for now to show this is a modified version of the
-  # original mr.ash package.
-  mrash_output <- mr.ash.alpha.mccreight::mr.ash(
-    X = X,
-    y = y,
-    sa2 = est_sa2,
-    intercept = FALSE,
-    standardize = FALSE,
-    sigma2 = sigma2,
-    update.sigma2 = update_ash_sigma,
-    diagXtOmegaX = diagXtOmegaX,
-    XtOmega = XtOmega,
-    V = V,
-    tausq = tau2,
-    sum_Dsq = sum(Dsq),
-    Dsq = Dsq,
-    VtXt = VtXt
-  )
-
-  # Extract updated variance components
-  sigma2_new <- mrash_output$sigma2
-  tau2_new <- sum(est_sa2 * mrash_output$pi)
-
-  return(list(
-    sigma2 = sigma2_new,
-    tau2 = tau2_new,
-    theta = mrash_output$beta,
-    pi = mrash_output$pi,
-    est_sa2 = est_sa2
-  ))
-}
-
 # Method of Moments variance estimation for unmappable effects methods
 #' @keywords internal
 mom_unmappable <- function(alpha, mu, omega, sigma2, tau2, n, V, Dsq, VtXty, Xty, yty,
@@ -473,12 +418,6 @@ validate_init <- function(model_init, L, null_weight) {
   pi_w <- model_init$pi
   null_id <- model_init$null_index
 
-
-  # TODO: Fix this check
-  # if(null_id > 0 && is.null(null_weight) || null_weight == 0)
-  #   stop("There is a mistmatch in null_weight between the initalization object",
-  #        " and the current call. Please make them consistent.")
-
   # Verify no NA/Inf values in alpha
   if (any(!is.finite(alpha))) {
     stop("model_init$alpha contains NA/Inf values")
@@ -494,19 +433,28 @@ validate_init <- function(model_init, L, null_weight) {
     stop("model_init$mu2 contains NA/Inf values")
   }
 
-  # Verify no NA/Inf values in V
-  if (any(!is.finite(V))) {
-    stop("model_init$V contains NA/Inf values")
+  # Only check V if it exists
+  if (!is.null(V)) {
+    # Verify no NA/Inf values in V
+    if (any(!is.finite(V))) {
+      stop("model_init$V contains NA/Inf values")
+    }
   }
 
-  # Verify no NA/Inf values in sigma2
-  if (any(!is.finite(sigma2))) {
-    stop("model_init$sigma2 contains NA/Inf")
+  # Only check sigma2 if it exists
+  if (!is.null(sigma2)) {
+    # Verify no NA/Inf values in sigma2
+    if (any(!is.finite(sigma2))) {
+      stop("model_init$sigma2 contains NA/Inf")
+    }
   }
 
-  # Verify no NA/Inf values in prior weights
-  if (any(!is.finite(pi_w))) {
-    stop("model_init$pi contains NA/Inf")
+  # Only check pi_w if it exists
+  if (!is.null(pi_w)) {
+    # Verify no NA/Inf values in prior weights
+    if (any(!is.finite(pi_w))) {
+      stop("model_init$pi contains NA/Inf")
+    }
   }
 
   # Verify alpha is matrix
@@ -535,40 +483,44 @@ validate_init <- function(model_init, L, null_weight) {
     stop("model_init$mu2 and model_init$alpha dimensions do not match")
   }
 
-  # Verify V & alpha dimensions agree
-  if (length(V) != nrow(alpha)) {
-    stop(
-      "length(model_init$V) (", length(V), ") does not equal nrow(model_init$alpha) (",
-      nrow(alpha), ")"
-    )
+  # Only validate V dimensions and values if V exists
+  if (!is.null(V)) {
+    # Verify V & alpha dimensions agree
+    if (length(V) != nrow(alpha)) {
+      stop(
+        "length(model_init$V) (", length(V), ") does not equal nrow(model_init$alpha) (",
+        nrow(alpha), ")"
+      )
+    }
+
+    # Verify V is numeric and non-negative
+    if (!is.numeric(V)) {
+      stop("model_init$V must be numeric")
+    }
+    if (any(V < 0)) {
+      stop("model_init$V has at least one negative value")
+    }
   }
 
-  # Verify V is numeric and non-negative
-  if (!is.numeric(V)) {
-    stop("model_init$V must be numeric")
-  }
-  if (any(V < 0)) {
-    stop("model_init$V has at least one negative value")
-  }
-
-  # Verify sigma2 is numeric and non-negative
-  if (!is.numeric(sigma2)) {
-    stop("model_init$sigma2 must be numeric")
-  }
-  if (sigma2 < 0) {
-    stop("model_init$sigma2 is negative")
+  # Verify sigma2 is numeric and non-negative if it exists
+  if (!is.null(sigma2)) {
+    if (!is.numeric(sigma2)) {
+      stop("model_init$sigma2 must be numeric")
+    }
+    if (sigma2 < 0) {
+      stop("model_init$sigma2 is negative")
+    }
   }
 
-  # Verify prior weight properties
-  if (length(pi_w) != ncol(alpha)) {
-    stop(
-      "model_init$pi should have the same length as the number of columns",
-      " in model_init$alpha"
-    )
+  # Verify prior weight properties if they exist
+  if (!is.null(pi_w)) {
+    if (length(pi_w) != ncol(alpha)) {
+      stop(
+        "model_init$pi should have the same length as the number of columns",
+        " in model_init$alpha"
+      )
+    }
   }
-  # TODO: fix this check. is this a floating point difference ? maybe set a tol ?
-  # if (sum(pi_w) != 1)
-  #   stop("model_init$pi must sum to one")
 
   invisible(model_init)
 }
@@ -837,11 +789,8 @@ compute_elbo_inf <- function(alpha, mu, omega, lbf, sigma2, tau2, n, p,
                              eigen_vectors, eigen_values, VtXty, yty) {
   L <- nrow(mu)
 
-  # Compute b = sum_l alpha_l * mu_l
   b <- colSums(mu * alpha)
   Vtb <- t(eigen_vectors) %*% b
-
-  # Compute E[theta'theta] diagonal
   diagVtMV <- Vtb^2
   tmpD <- rep(0, p)
 
@@ -857,19 +806,16 @@ compute_elbo_inf <- function(alpha, mu, omega, lbf, sigma2, tau2, n, p,
   # Compute variance
   var <- tau2 * eigen_values + sigma2
 
-  # Compute negative ELBO (matching original formulation)
+  # Compute negative ELBO
   neg_elbo <- 0.5 * (n - p) * log(sigma2) + 0.5 / sigma2 * yty +
     sum(0.5 * log(var) -
       0.5 * tau2 / sigma2 * VtXty^2 / var -
       Vtb * VtXty / var +
       0.5 * eigen_values / var * diagVtMV)
 
-  # Total ELBO includes both infinitesimal and sparse components
-  elbo_infinitesimal <- -neg_elbo
-  elbo_sparse <- sum(lbf)
-  elbo_total <- elbo_infinitesimal + elbo_sparse
+  elbo <- -neg_elbo
 
-  return(elbo_total)
+  return(elbo)
 }
 
 # @title sets the attributes for the R matrix
@@ -973,7 +919,7 @@ posterior_var_servin_stephens <- function(xtx, xty, yty, n, s0_t = 1) {
 #' @keywords internal
 convert_individual_to_ss_unmappable <- function(data) {
   # Compute sufficient statistics
-  XtX <- crossprod(data$X)
+  XtX <- compute_XtX(data$X)
   Xty <- compute_Xty(data$X, data$y)
   yty <- sum(data$y^2)
 
@@ -1079,7 +1025,20 @@ compute_lbf_gradient <- function(alpha, betahat, shat2, V, use_servin_stephens =
 
 # Add eigen decomposition to ss objects (for unmappable effects methods)
 #' @keywords internal
-add_eigen_decomposition <- function(data, individual_data) {
+add_eigen_decomposition <- function(data, individual_data = NULL) {
+  # Standardize y to unit variance for all unmappable effects methods
+  y_scale_factor <- 1
+
+  if (data$unmappable_effects != "none") {
+    var_y <- data$yty / (data$n - 1)
+    if (abs(var_y - 1) > 1e-10) {
+      sd_y <- sqrt(var_y)
+      data$yty <- data$yty / var_y
+      data$Xty <- data$Xty / sd_y
+      y_scale_factor <- sd_y
+    }
+  }
+
   # Compute eigen decomposition of correlation matrix
   eigen_decomp <- compute_eigen_decomposition(data$XtX, data$n)
 
@@ -1088,10 +1047,13 @@ add_eigen_decomposition <- function(data, individual_data) {
   data$eigen_values <- eigen_decomp$Dsq
   data$VtXty <- t(eigen_decomp$V) %*% data$Xty
 
-  # SuSiE.ash requires the original X matrix, y vector, and VtXt
+  # SuSiE.ash requires the X matrix and standardized y vector
   if (data$unmappable_effects == "ash") {
+    if (is.null(individual_data)) {
+      stop("Adaptive shrinkage (ash) requires individual-level data")
+    }
     data$X <- individual_data$X
-    data$y <- individual_data$y
+    data$y <- individual_data$y / y_scale_factor
     data$VtXt <- t(data$eigen_vectors) %*% t(individual_data$X)
   }
 
@@ -1102,4 +1064,226 @@ add_eigen_decomposition <- function(data, individual_data) {
   data$XtOmegay <- data$eigen_vectors %*% (data$VtXty / omega_res$omega_var)
 
   return(data)
+}
+
+# Helper function to extract prior weights for refinement
+#' @keywords internal
+extract_refine_prior_weights <- function(model, null_weight) {
+  if (!is.null(null_weight) && null_weight != 0 && !is.null(model$null_index) && model$null_index != 0) {
+    # Extract non-null prior weights and rescale
+    pw_s <- model$pi[-model$null_index] / (1 - null_weight)
+  } else {
+    pw_s <- model$pi
+  }
+  return(pw_s)
+}
+
+# Helper function to modify data object prior weights
+#' @keywords internal
+modify_data_prior_weights <- function(data, new_prior_weights) {
+  # Create a modified copy of the data object
+  data_modified <- data
+
+  # Handle null weight case
+  if (!is.null(data$null_weight) && data$null_weight != 0) {
+    # Reconstruct full prior weights including null
+    data_modified$prior_weights <- c(
+      new_prior_weights * (1 - data$null_weight),
+      data$null_weight
+    )
+  } else {
+    data_modified$prior_weights <- new_prior_weights
+  }
+
+  # Normalize to sum to 1
+  data_modified$prior_weights <- data_modified$prior_weights / sum(data_modified$prior_weights)
+
+  return(data_modified)
+}
+
+# Function to run refinement iterations
+#' @keywords internal
+run_refine <- function(model, data, L, intercept, standardize,
+                       scaled_prior_variance, residual_variance,
+                       prior_weights, null_weight, model_init,
+                       estimate_prior_variance, estimate_prior_method,
+                       check_null_threshold, estimate_residual_variance,
+                       estimate_residual_method, residual_variance_lowerbound,
+                       residual_variance_upperbound, max_iter, tol,
+                       verbose, track_fit, coverage, min_abs_corr,
+                       prior_tol, n_purity, compute_univariate_zscore,
+                       check_prior, convergence_method, alpha0, beta0) {
+
+  # Warn if model_init was provided initially
+  if (!is.null(model_init)) {
+    warning("The given model_init is not used in refinement")
+  }
+
+  if (verbose) {
+    cat("Starting refinement process...\n")
+    cat("Initial ELBO:", susie_get_objective(model), "\n")
+    cat("Number of credible sets to refine:", length(model$sets$cs), "\n")
+  }
+
+  # Extract prior weights for refinement
+  pw_s <- extract_refine_prior_weights(model, data$null_weight)
+
+  # Main refinement loop
+  conti <- TRUE
+  refine_iteration <- 0
+
+  while (conti && !is.null(model$sets) && length(model$sets$cs) > 0) {
+    refine_iteration <- refine_iteration + 1
+    if (verbose) {
+      cat("\nRefinement iteration", refine_iteration, "\n")
+    }
+    candidate_models <- list()
+
+    for (cs_idx in seq_along(model$sets$cs)) {
+      # Create modified prior weights (zero out CS variables)
+      pw_cs <- pw_s
+      pw_cs[model$sets$cs[[cs_idx]]] <- 0
+
+      # Skip if all weights are zero
+      if (all(pw_cs == 0)) {
+        if (verbose) {
+          cat("  Skipping CS", cs_idx, "- all prior weights would be zero\n")
+        }
+        break
+      }
+
+      if (verbose) {
+        cat("  Refining CS", cs_idx, "with variables:", model$sets$cs[[cs_idx]], "\n")
+      }
+
+      # Step 1: Create data with modified prior weights
+      data_modified <- modify_data_prior_weights(data, pw_cs)
+
+      # Step 2: Fit with modified weights, no initialization
+      model_step1 <- susie_workhorse(
+        data = data_modified,
+        L = L,
+        intercept = intercept,
+        standardize = standardize,
+        scaled_prior_variance = scaled_prior_variance,
+        residual_variance = residual_variance,
+        prior_weights = data_modified$prior_weights,
+        null_weight = data_modified$null_weight,
+        model_init = NULL,
+        estimate_prior_variance = estimate_prior_variance,
+        estimate_prior_method = estimate_prior_method,
+        check_null_threshold = check_null_threshold,
+        estimate_residual_variance = estimate_residual_variance,
+        estimate_residual_method = estimate_residual_method,
+        residual_variance_lowerbound = residual_variance_lowerbound,
+        residual_variance_upperbound = residual_variance_upperbound,
+        max_iter = max_iter,
+        tol = tol,
+        verbose = FALSE,
+        track_fit = FALSE,
+        coverage = coverage,
+        min_abs_corr = min_abs_corr,
+        prior_tol = prior_tol,
+        n_purity = n_purity,
+        compute_univariate_zscore = compute_univariate_zscore,
+        check_prior = check_prior,
+        convergence_method = convergence_method,
+        alpha0 = alpha0,
+        beta0 = beta0,
+        refine = FALSE
+      )
+
+      # Step 3: Extract initialization from step1
+      init_from_step1 <- list(
+        alpha = model_step1$alpha,
+        mu = model_step1$mu,
+        mu2 = model_step1$mu2
+      )
+      class(init_from_step1) <- "susie"
+
+      # Step 4: Create data with original prior weights
+      data_original <- modify_data_prior_weights(data, pw_s)
+
+      # Step 5: Fit with original weights using initialization
+      model_step2 <- susie_workhorse(
+        data = data_original,
+        L = L,
+        intercept = intercept,
+        standardize = standardize,
+        scaled_prior_variance = scaled_prior_variance,
+        residual_variance = residual_variance,
+        prior_weights = data_original$prior_weights,
+        null_weight = data_original$null_weight,
+        model_init = init_from_step1,
+        estimate_prior_variance = estimate_prior_variance,
+        estimate_prior_method = estimate_prior_method,
+        check_null_threshold = check_null_threshold,
+        estimate_residual_variance = estimate_residual_variance,
+        estimate_residual_method = estimate_residual_method,
+        residual_variance_lowerbound = residual_variance_lowerbound,
+        residual_variance_upperbound = residual_variance_upperbound,
+        max_iter = max_iter,
+        tol = tol,
+        verbose = FALSE,
+        track_fit = FALSE,
+        coverage = coverage,
+        min_abs_corr = min_abs_corr,
+        prior_tol = prior_tol,
+        n_purity = n_purity,
+        compute_univariate_zscore = compute_univariate_zscore,
+        check_prior = check_prior,
+        convergence_method = convergence_method,
+        alpha0 = alpha0,
+        beta0 = beta0,
+        refine = FALSE
+      )
+
+      candidate_models <- c(candidate_models, list(model_step2))
+
+      if (verbose) {
+        cat("    ELBO for refined CS", cs_idx, ":", susie_get_objective(model_step2), "\n")
+      }
+    }
+
+    # Evaluate candidates
+    if (length(candidate_models) == 0) {
+      conti <- FALSE
+      if (verbose) {
+        cat("No candidate models generated, stopping refinement\n")
+      }
+    } else {
+      elbos <- sapply(candidate_models, susie_get_objective)
+      current_elbo <- susie_get_objective(model)
+
+      if (verbose) {
+        cat("\nCurrent ELBO:", current_elbo, "\n")
+        cat("Candidate ELBOs:", elbos, "\n")
+        cat("Best candidate ELBO:", max(elbos), "\n")
+      }
+
+      if (max(elbos) - current_elbo > tol) {
+        # Found improvement beyond tolerance
+        best_idx <- which.max(elbos)
+        model <- candidate_models[[best_idx]]
+        if (verbose) {
+          cat("ELBO improved! Selected model from CS", best_idx, "refinement\n")
+          cat("Improvement:", max(elbos) - current_elbo, "\n")
+        }
+      } else {
+        # No improvement beyond tolerance, stop
+        if (verbose) {
+          cat("No improvement in ELBO beyond tolerance (", tol, "), stopping refinement\n")
+        }
+        conti <- FALSE
+      }
+    }
+  }
+
+  if (verbose) {
+    cat("\nRefinement complete!\n")
+    cat("Final ELBO:", susie_get_objective(model), "\n")
+    cat("Total refinement iterations:", refine_iteration, "\n")
+  }
+
+  return(model)
 }

@@ -1,10 +1,10 @@
 # Generic methods for S3 dispatch
 
 # Single effect regression posterior expected log-likelihood
-SER_posterior_e_loglik <- function(data, model, R, Eb, Eb2) {
+SER_posterior_e_loglik <- function(data, model, R, Eb, Eb2, dXtX) {
   UseMethod("SER_posterior_e_loglik")
 }
-SER_posterior_e_loglik.default <- function(data, model, R, Eb, Eb2) {
+SER_posterior_e_loglik.default <- function(data, model, R, Eb, Eb2, dXtX) {
   stop("SER_posterior_e_loglik: no method for class '", class(data)[1], "'")
 }
 
@@ -176,10 +176,10 @@ loglik.default <- function(data, ...) {
   stop("loglik: no method for class '", class(data)[1], "'")
 }
 
-# Negative log-likelihood in log scale for optimization
-neg_loglik_logscale <- function(data, ...) {
-  UseMethod("neg_loglik_logscale")
+# Negative log-likelihood for optimization (handles both log and linear scales)
+neg_loglik <- function(data, ...) {
+  UseMethod("neg_loglik")
 }
-neg_loglik_logscale.default <- function(data, ...) {
-  stop("neg_loglik_logscale: no method for class '", class(data)[1], "'")
+neg_loglik.default <- function(data, ...) {
+  stop("neg_loglik: no method for class '", class(data)[1], "'")
 }

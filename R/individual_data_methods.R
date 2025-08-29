@@ -48,10 +48,10 @@ validate_prior.individual <- function(data, model, check_prior, ...) {
 }
 
 # Posterior expected log-likelihood for single effect regression
-SER_posterior_e_loglik.individual <- function(data, model, R, Eb, Eb2) {
+SER_posterior_e_loglik.individual <- function(data, model, R, Eb, Eb2, dXtX) {
   return(-0.5 * data$n * log(2 * pi * model$sigma2) -
     0.5 / model$sigma2 * (sum(R * R) - 2 * sum(R * compute_Xb(data$X, Eb)) +
-      sum(attr(data$X, "d") * Eb2)))
+      sum(dXtX * Eb2)))
 }
 
 # Expected squared residuals
@@ -78,17 +78,22 @@ compute_residuals.individual <- function(data, model, l, ...) {
 }
 
 # Compute SER statistics
-compute_ser_statistics.individual <- function(data, model, residuals, dXtX, residual_variance, ...) {
+compute_ser_statistics.individual <- function(data, model, residuals, dXtX, residual_variance, l, ...) {
   betahat <- (1 / dXtX) * residuals
   shat2 <- residual_variance / dXtX
   
-  # Compute initial value for optimization
+  # Compute initial value for optimization (individual data always uses log scale)
   optim_init <- log(max(c(betahat^2 - shat2, 1), na.rm = TRUE))
+  optim_bounds <- c(-30, 15)
+  optim_scale <- "log"
   
   return(list(
     betahat = betahat,
     shat2 = shat2,
-    optim_init = optim_init
+    dXtX = dXtX,
+    optim_init = optim_init,
+    optim_bounds = optim_bounds,
+    optim_scale = optim_scale
   ))
 }
 
@@ -113,8 +118,7 @@ single_effect_update.individual <- function(
     residuals            = residuals$XtR,
     dXtX                 = attr(data$X, "d"),
     optimize_V           = optimize_V,
-    check_null_threshold = check_null_threshold,
-    unmappable_effects   = FALSE
+    check_null_threshold = check_null_threshold
   )
 
   # log-likelihood term using current residual vector (not available in ss)
@@ -124,7 +128,8 @@ single_effect_update.individual <- function(
   res$KL <- -res$loglik +
     SER_posterior_e_loglik(data, model, residuals$R,
       Eb  = res$alpha * res$mu,
-      Eb2 = res$alpha * res$mu2
+      Eb2 = res$alpha * res$mu2,
+      dXtX = attr(data$X, "d")
     )
 
   # Update alpha and mu for adding effect back
@@ -269,8 +274,10 @@ loglik.individual <- function(data, model = NULL, V, residuals, ser_stats, prior
   ))
 }
 
-neg_loglik_logscale.individual <- function(data, model = NULL, lV, residuals, ser_stats, prior_weights, ...) {
-  res <- loglik.individual(data, model, exp(lV), residuals, ser_stats, prior_weights)
+neg_loglik.individual <- function(data, model = NULL, V_param, residuals, ser_stats, prior_weights, ...) {
+  # Convert parameter to V based on optimization scale (always log for individual)
+  V <- exp(V_param)
+  res <- loglik.individual(data, model, V, residuals, ser_stats, prior_weights)
   return(-res$lbf_model)
 }
 
