@@ -194,7 +194,7 @@ susie_plot <- function(model, y, add_bar = FALSE, pos = NULL, b = NULL,
     }
     pos_with_value <- 1:length(p)
   }
-  legend_text <- list(col = vector(), purity = vector(), size = vector())
+  legend_text <- list(col = vector(), purity = vector(), size = vector(), cs_index = vector())
   # scipen0 = options()$scipen
   # options(scipen = 10)
   args <- list(...)
@@ -205,24 +205,23 @@ susie_plot <- function(model, y, add_bar = FALSE, pos = NULL, b = NULL,
   args$y <- p[pos]
   do.call(plot, args)
   if (is_susie && !is.null(model$sets$cs)) {
-    for (i in rev(1:nrow(model$alpha))) {
-      if (!is.null(model$sets$cs_index) && !(i %in% model$sets$cs_index)) {
-        next
-      }
-      purity <- model$sets$purity[which(model$sets$cs_index == i), 1]
+    for (cs_idx in rev(seq_along(model$sets$cs))) {
+
+      cs_vars <- model$sets$cs[[cs_idx]]
+      purity <- model$sets$purity[cs_idx, 1]
+
+      # Apply filtering based on max_cs parameter
       if (!is.null(model$sets$purity) && max_cs < 1 && purity >= max_cs) {
-        x0 <- intersect(pos, model$sets$cs[[which(model$sets$cs_index == i)]])
+        x0 <- intersect(pos, cs_vars)
         y1 <- p[x0]
-      } else if (n_in_CS(model, model$sets$requested_coverage)[i] < max_cs) {
-        x0 <- intersect(
-          pos,
-          pos[pos_with_value][which(in_CS(model, model$sets$requested_coverage)[i, ] > 0)]
-        )
+      } else if (length(cs_vars) < max_cs) {
+        x0 <- intersect(pos, cs_vars)
         y1 <- p[x0]
       } else {
         x0 <- NULL
         y1 <- NULL
       }
+
       if (is.null(x0)) {
         next
       }
@@ -238,17 +237,25 @@ susie_plot <- function(model, y, add_bar = FALSE, pos = NULL, b = NULL,
       color <- c(color[-1], color[1])
       legend_text$purity <- append(round(purity, 4), legend_text$purity)
       legend_text$size <- append(length(x0), legend_text$size)
+
+      # Store the original cs_index
+      if (!is.null(model$sets$cs_index)) {
+        legend_text$cs_index <- append(model$sets$cs_index[cs_idx], legend_text$cs_index)
+      } else {
+        legend_text$cs_index <- append(cs_idx, legend_text$cs_index)
+      }
     }
     if (length(legend_text$col) > 0 && !is.null(add_legend) &&
       !identical(add_legend, FALSE)) {
       # Plot legend.
       text <- vector()
       for (i in 1:length(legend_text$col)) {
+        effect_label <- if (length(legend_text$cs_index) >= i) legend_text$cs_index[i] else i
         if (legend_text$size[i] == 1) {
-          text[i] <- paste0("L", i, ": C=1")
+          text[i] <- paste0("L", effect_label, ": C=1")
         } else {
           text[i] <- paste0(
-            "L", i, ": C=", legend_text$size[i], "/R=",
+            "L", effect_label, ": C=", legend_text$size[i], "/R=",
             legend_text$purity[i]
           )
         }
