@@ -2,8 +2,7 @@
 
 # Initialize fitted values
 initialize_fitted.rss_lambda <- function(data, alpha, mu) {
-  Rz <- as.vector(data$R %*% colSums(alpha * mu))
-  return(list(Rz = Rz))
+  return(list(Rz = compute_Xb(data$R, colSums(alpha * mu))))
 }
 
 # Initialize susie model
@@ -85,6 +84,54 @@ get_ER2.rss_lambda <- function(data, model, sigma2 = NULL) {
     RZ2 + sum(diag(RSinvR) * t(postb2)))
 }
 
+# SER posterior expected log-likelihood
+SER_posterior_e_loglik.rss_lambda <- function(data, model, r, Eb, Eb2, dXtX) {
+  rR <- data$R %*% r
+
+  d <- model$sigma2 * data$eigen_R$values + data$lambda
+  Dinv <- 1 / d
+  Dinv[is.infinite(Dinv)] <- 0
+  SinvEb <- data$eigen_R$vectors %*% (Dinv * crossprod(data$eigen_R$vectors, Eb))
+
+  return(-0.5 * (-2 * sum(rR * SinvEb) + sum(model$RjSinvRj * Eb2)))
+}
+
+# Expected log-likelihood
+Eloglik.rss_lambda <- function(data, model) {
+  d <- model$sigma2 * data$eigen_R$values + data$lambda
+  result <- -(length(data$z) / 2) * log(2 * pi) - 0.5 * sum(log(d)) - 0.5 * get_ER2.rss_lambda(data, model)
+  return(result)
+}
+
+# Log-likelihood for RSS
+loglik.rss_lambda <- function(data, model, V, residuals, ser_stats, prior_weights, ...) {
+  # Compute log Bayes factors
+  lbf <- sapply(1:data$p, function(j) {
+    -0.5 * log(1 + (V / ser_stats$shat2[j])) +
+      0.5 * (V / (1 + (V / ser_stats$shat2[j]))) * sum(model$SinvRj[, j] * residuals)^2
+  })
+
+  # Stabilize logged Bayes Factor
+  stable_res <- lbf_stabilization(lbf, prior_weights, ser_stats$shat2)
+
+  # Compute posterior weights
+  weights_res <- compute_posterior_weights(stable_res$lpo)
+
+  return(list(
+    lbf = stable_res$lbf,
+    lbf_model = weights_res$lbf_model,
+    alpha = weights_res$alpha,
+    gradient = NA # Gradient not implemented for RSS with lambda > 0
+  ))
+}
+
+neg_loglik.rss_lambda <- function(data, model, V_param, residuals, ser_stats, prior_weights, ...) {
+  # Convert parameter to V based on optimization scale (always log for RSS lambda)
+  V <- exp(V_param)
+  res <- loglik.rss_lambda(data, model, V, residuals, ser_stats, prior_weights)
+  return(-res$lbf_model)
+}
+
 # Compute residuals for single effect regression
 compute_residuals.rss_lambda <- function(data, model, l, ...) {
   # Remove lth effect from fitted values
@@ -118,18 +165,6 @@ compute_ser_statistics.rss_lambda <- function(data, model, residuals, dXtX, resi
     optim_bounds = optim_bounds,
     optim_scale = optim_scale
   ))
-}
-
-# SER posterior expected log-likelihood
-SER_posterior_e_loglik.rss_lambda <- function(data, model, r, Eb, Eb2, dXtX) {
-  rR <- data$R %*% r
-
-  d <- model$sigma2 * data$eigen_R$values + data$lambda
-  Dinv <- 1 / d
-  Dinv[is.infinite(Dinv)] <- 0
-  SinvEb <- data$eigen_R$vectors %*% (Dinv * crossprod(data$eigen_R$vectors, Eb))
-
-  return(-0.5 * (-2 * sum(rR * SinvEb) + sum(model$RjSinvRj * Eb2)))
 }
 
 # Single effect update
@@ -167,7 +202,7 @@ single_effect_update.rss_lambda <- function(data, model, l,
     )
 
   # Add lth effect back
-  model$Rz <- model$Rz + data$R %*% (model$alpha[l, ] * model$mu[l, ])
+  model$Rz <- model$Rz + compute_Xb(data$R, model$alpha[l, ] * model$mu[l, ])
 
   return(model)
 }
@@ -188,6 +223,7 @@ get_fitted.rss_lambda <- function(data, model, ...) {
 }
 
 # Get credible sets
+# FIXME: data$R has been used previously as residuals but here it is R the LD matrix. Even though these are different data types I still think for clarity we should, throughout the code base, use "R" for correlatin/LD matrix. You can use `yr` for residual or something else, in the individual level data objects.
 get_cs.rss_lambda <- function(data, model, coverage, min_abs_corr, n_purity) {
   if (is.null(coverage) || is.null(min_abs_corr)) {
     return(NULL)
@@ -261,41 +297,6 @@ update_derived_quantities.rss_lambda <- function(data, model) {
   return(data)
 }
 
-# Expected log-likelihood
-Eloglik.rss_lambda <- function(data, model) {
-  d <- model$sigma2 * data$eigen_R$values + data$lambda
-  result <- -(length(data$z) / 2) * log(2 * pi) - 0.5 * sum(log(d)) - 0.5 * get_ER2.rss_lambda(data, model)
-  return(result)
-}
-
-# Log-likelihood for RSS
-loglik.rss_lambda <- function(data, model, V, residuals, ser_stats, prior_weights, ...) {
-  # Compute log Bayes factors
-  lbf <- sapply(1:data$p, function(j) {
-    -0.5 * log(1 + (V / ser_stats$shat2[j])) +
-      0.5 * (V / (1 + (V / ser_stats$shat2[j]))) * sum(model$SinvRj[, j] * residuals)^2
-  })
-
-  # Stabilize logged Bayes Factor
-  stable_res <- lbf_stabilization(lbf, prior_weights, ser_stats$shat2)
-
-  # Compute posterior weights
-  weights_res <- compute_posterior_weights(stable_res$lpo)
-
-  return(list(
-    lbf = stable_res$lbf,
-    lbf_model = weights_res$lbf_model,
-    alpha = weights_res$alpha,
-    gradient = NA # Gradient not implemented for RSS with lambda > 0
-  ))
-}
-
-neg_loglik.rss_lambda <- function(data, model, V_param, residuals, ser_stats, prior_weights, ...) {
-  # Convert parameter to V based on optimization scale (always log for RSS lambda)
-  V <- exp(V_param)
-  res <- loglik.rss_lambda(data, model, V, residuals, ser_stats, prior_weights)
-  return(-res$lbf_model)
-}
 
 # Calculate posterior moments for single effect regression
 calculate_posterior_moments.rss_lambda <- function(data, model, V, residuals, ...) {
@@ -311,5 +312,7 @@ calculate_posterior_moments.rss_lambda <- function(data, model, V, residuals, ..
     post_mean2 = post_mean2,
     post_var = post_var,
     beta_1 = NULL  # Not used for RSS-lambda
+    # FIXME: when it is not used we should not have to include it as a NULL
+    # Also beta_1 as a notation is a bit weird. What is it exactly from Servin_Stephens and can we clarify on why we need it?
   ))
 }

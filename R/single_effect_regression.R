@@ -23,6 +23,7 @@
 #'
 #' @keywords internal
 #' @noRd
+# FIXME: the only things am not so happy with at this point are 1) do we really need dXtX (isn't it already part of `data`?) and 2) can we also build residuals into data --- does it make sense to do so?
 single_effect_regression <-
   function(data, model, l,
            residuals,

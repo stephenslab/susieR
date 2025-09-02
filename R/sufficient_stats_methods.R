@@ -2,35 +2,24 @@
 
 # Initialize fitted values
 initialize_fitted.ss <- function(data, alpha, mu) {
-  if (data$unmappable_effects %in% c("inf", "ash")) {
-    b <- colSums(alpha * mu)
-    XtXr <- data$XtX %*% b
-    return(list(XtXr = XtXr))
-  } else {
-    return(list(XtXr = data$XtX %*% colSums(alpha * mu)))
-  }
+  return(list(XtXr = compute_Xb(data$XtX, colSums(alpha * mu))))
 }
 
 # Initialize susie model
 initialize_susie_model.ss <- function(data, L, scaled_prior_variance, var_y,
                                       residual_variance, prior_weights, ...) {
-  if (data$unmappable_effects %in% c("inf", "ash")) {
     return(initialize_matrices(data$p, L, scaled_prior_variance, var_y,
       residual_variance, prior_weights,
-      include_unmappable = TRUE
+      include_unmappable = ifelse(data$unmappable_effects %in% c("inf", "ash"), TRUE, FALSE) 
     ))
-  } else {
-    return(initialize_matrices(
-      data$p, L, scaled_prior_variance, var_y,
-      residual_variance, prior_weights
-    ))
-  }
 }
 
 # Get variance of y
 get_var_y.ss <- function(data, ...) {
   return(data$yty / (data$n - 1))
 }
+
+# FIXME: we don't have "configure_data" function here? if the only place we need for configre_data.individal then it is simply converting individual level data to suff stats which should not happen as a generic method. It should be done outside of the methods and we caution that it is temporary (due to lack of implementation of individual level updates for the unmappable effects)
 
 # Extract core parameters across iterations
 extract_core.ss <- function(data, model, tracking, iter, track_fit, ...) {
@@ -82,17 +71,6 @@ validate_prior.ss <- function(data, model, check_prior, ...) {
   invisible(TRUE)
 }
 
-# Posterior expected log-likelihood for a single effect regression
-SER_posterior_e_loglik.ss <- function(data, model, XtR, Eb, Eb2, dXtX) {
-  if (data$unmappable_effects == "none") {
-    # Standard SuSiE
-    return(-0.5 / model$sigma2 * (-2 * sum(Eb * XtR) + sum(dXtX * as.vector(Eb2))))
-  } else {
-    # Omega-weighted likelihood
-    return(-0.5 * (-2 * sum(Eb * XtR) + sum(dXtX * as.vector(Eb2))))
-  }
-}
-
 # Expected Squared Residuals
 get_ER2.ss <- function(data, model) {
   B <- model$alpha * model$mu
@@ -102,6 +80,17 @@ get_ER2.ss <- function(data, model) {
   postb2 <- model$alpha * model$mu2 # Posterior second moment.
   return(data$yty - 2 * sum(betabar * data$Xty) + sum(betabar * (data$XtX %*% betabar)) -
     XB2 + sum(d * t(postb2)))
+}
+
+# Posterior expected log-likelihood for a single effect regression
+SER_posterior_e_loglik.ss <- function(data, model, XtR, Eb, Eb2, dXtX) {
+  if (data$unmappable_effects == "none") {
+    # Standard SuSiE
+    return(-0.5 / model$sigma2 * (-2 * sum(Eb * XtR) + sum(dXtX * as.vector(Eb2))))
+  } else {
+    # Omega-weighted likelihood
+    return(-0.5 * (-2 * sum(Eb * XtR) + sum(dXtX * as.vector(Eb2))))
+  }
 }
 
 # Compute residuals for single effect regression
@@ -217,9 +206,9 @@ single_effect_update.ss <- function(
   # Add lth effect back
   if (residuals$unmappable) {
     b <- colSums(model$alpha * model$mu)
-    model$XtXr <- data$XtX %*% (b + model$theta)
+    model$XtXr <- compute_Xb(data$XtX, b + model$theta)
   } else {
-    model$XtXr <- model$XtXr + data$XtX %*% (model$alpha[l, ] * model$mu[l, ])
+    model$XtXr <- model$XtXr + compute_Xb(data$XtX , model$alpha[l, ] * model$mu[l, ])
   }
 
   return(model)
@@ -267,6 +256,7 @@ get_variable_names.ss <- function(data, model, null_weight) {
 }
 
 # Get univariate z-score
+# FIXME: again for what's returned as NULL do we still have to define them or we can put in the default behavior with generic method?
 get_zscore.ss <- function(data, model, ...) {
   return(NULL)
 }

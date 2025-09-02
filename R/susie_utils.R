@@ -918,6 +918,7 @@ posterior_var_servin_stephens <- function(xtx, xty, yty, n, s0_t = 1) {
 # Convert individual data to ss with unmappable effects components.
 #' @keywords internal
 convert_individual_to_ss_unmappable <- function(data) {
+  # FIXME: we should remove `_unmappable` just call this function # convert_individual_to_ss. Then copy all the data attribites to the new object and removce X and y (set to NULL) then add XtX etc. There is no need to mention unmappable here; it's just converting individual level data object into ss
   # Compute sufficient statistics
   XtX <- compute_XtX(data$X)
   Xty <- compute_Xty(data$X, data$y)

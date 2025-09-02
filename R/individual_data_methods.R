@@ -11,7 +11,7 @@ initialize_susie_model.individual <- function(data, L, scaled_prior_variance, va
   return(initialize_matrices(
     data$p, L, scaled_prior_variance, var_y,
     residual_variance, prior_weights
-  ))
+  )) # FIXME: why don't we have include_unmappable here? And if we do, would it be the same as sufficient statistics? (but I guess we still have to maintain this redundency because of rss_lambda) or we can implement this into the generic function as the "default?"
 }
 
 # Get variance of y
@@ -26,6 +26,7 @@ configure_data.individual <- function(data) {
   } else {
     warning("Individual-level data converted to sufficient statistics for unmappable effects methods\n")
     return(convert_individual_to_ss_unmappable(data))
+    # FIXME: see comment on this function in utility
   }
 }
 
@@ -40,18 +41,26 @@ extract_core.individual <- function(data, model, tracking, iter, track_fit, ...)
     )
   }
   return(tracking)
+# FIXME: i dont think we need a method for this. Because, you can leverage
+#> a = list(); b = list()
+#> a
+#list()
+#> b
+#list()
+#> a$tau = b$tau
+#> a
+#list()
+#> b
+#list()
+
+# FIXME: i also think it is better called `track_ibss_fit()` not `extract_core`
 }
+
 
 # Validate prior variance
 validate_prior.individual <- function(data, model, check_prior, ...) {
   invisible(TRUE)
-}
-
-# Posterior expected log-likelihood for single effect regression
-SER_posterior_e_loglik.individual <- function(data, model, R, Eb, Eb2, dXtX) {
-  return(-0.5 * data$n * log(2 * pi * model$sigma2) -
-    0.5 / model$sigma2 * (sum(R * R) - 2 * sum(R * compute_Xb(data$X, Eb)) +
-      sum(dXtX * Eb2)))
+  # FIXME: between invisible and return model in rss_lambda which one should we do? Or as i asked before, can we make a default in generic function?
 }
 
 # Expected squared residuals
@@ -61,6 +70,15 @@ get_ER2.individual <- function(data, model) {
   return(sum((data$y - model$Xr)^2) - sum(Xr_L^2) + sum(attr(data$X, "d") * t(postb2)))
 }
 
+# Posterior expected log-likelihood for single effect regression
+SER_posterior_e_loglik.individual <- function(data, model, R, Eb, Eb2, dXtX) {
+  return(-0.5 * data$n * log(2 * pi * model$sigma2) -
+    0.5 / model$sigma2 * (sum(R * R) - 2 * sum(R * compute_Xb(data$X, Eb)) +
+      sum(dXtX * Eb2)))
+}
+
+
+# FIXME: in principle the input and output of "methods" should be the same to make it modular. Here the output of this function and other methods are different but I am not sure if it makes sense to unify them without losing clarity.
 # Compute residuals for single effect regression
 compute_residuals.individual <- function(data, model, l, ...) {
   # Remove lth effect from fitted values
@@ -76,6 +94,8 @@ compute_residuals.individual <- function(data, model, l, ...) {
     Xr_without_l = Xr_without_l
   ))
 }
+
+
 
 # Compute SER statistics
 compute_ser_statistics.individual <- function(data, model, residuals, dXtX, residual_variance, l, ...) {
