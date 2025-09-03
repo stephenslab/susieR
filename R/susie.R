@@ -429,6 +429,9 @@ susie = function (X,y,L = min(10,ncol(X)),
   # Initialize susie fit.
   s = init_setup(n,p,L,scaled_prior_variance,residual_variance,prior_weights,
                  null_weight,as.numeric(var(y)),standardize)
+  if(small){
+    s$rv= list()
+  }
   if (!missing(s_init) && !is.null(s_init)) {
     if (!inherits(s_init,"susie"))
       stop("s_init should be a susie object")
@@ -511,7 +514,7 @@ susie = function (X,y,L = min(10,ncol(X)),
     }
     if (small & i > 2) {
         d <- (cv_criterion[i] + cv_criterion[i-1])/2
-      if (verbose) 
+      if (verbose)
         print(paste0("max change in alpha: ",d))
       if (d < tol) {
         # this force to have at least 3 consecutive iteration with small
@@ -522,13 +525,31 @@ susie = function (X,y,L = min(10,ncol(X)),
     }
 
     if (estimate_residual_variance) {
-      s$sigma2 = pmax(residual_variance_lowerbound,
-                      estimate_residual_variance(X,y,s))
-      if (s$sigma2 > residual_variance_upperbound)
-        s$sigma2 = residual_variance_upperbound
-      if (verbose & !small)
-        print(paste0("objective:",get_objective(X,y,s)))
-    }
+      if( !small){
+        s$sigma2 = pmax(residual_variance_lowerbound,
+                        estimate_residual_variance(X,y,s))
+
+        if (verbose & !small)
+          print(paste0("objective:",get_objective(X,y,s)))
+      }
+      }
+      if(small    ){
+        if ( L==1 ){
+
+          s$sigma2 = update_sigma2_small(s)
+        }else{
+          s$sigma2 = pmax(residual_variance_lowerbound,
+                          estimate_residual_variance(X,y,s))
+
+        }
+        print(s$sigma2)
+        if (s$sigma2 > residual_variance_upperbound)
+            s$sigma2 = residual_variance_upperbound
+        if (verbose & !small)
+          print(paste0("objective:",get_objective(X,y,s)))
+      }
+
+
   }
 
   # Remove first (infinite) entry, and trailing NAs.

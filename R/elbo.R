@@ -33,46 +33,39 @@ SER_posterior_e_loglik = function (X, Y, s2, Eb, Eb2) {
                                        + sum(attr(X,"d") * Eb2)))
 }
 
-
-kl_L1_SS_SER <- function(alpha, m, s2, pi, tau2,
-                         a0, b0, a1, b1) {
-  eps <- .Machine$double.eps
-  v <- pmax(s2 - m^2, eps)
-
-  # KL for gamma
-  KL_gamma <- sum(alpha * (log(pmax(alpha, eps)) - log(pmax(pi, eps))))
-
-  # Expectations under q(sigma^2) ~ IG(a1,b1)
-  E_log_sigma2  <- digamma(a1) - log(b1)
-  E_inv_sigma2  <- a1 / b1
-
-  # KL for beta given sigma^2
-  KL_beta <- 0.5 * sum(alpha * (
-    E_log_sigma2 + log(tau2) - log(v) +
-      E_inv_sigma2 * (v + m^2) / tau2 - 1
-  ))
-
-  # KL between IG posterior and IG prior
-  KL_sigma2 <- lgamma(a0) - lgamma(a1) +
-    a0 * log(b1/b0) +
-    (a1 - a0) * digamma(a1) - a1 + (a1 * b0) / b1
-
-  KL_total <- KL_gamma + KL_beta + KL_sigma2
-
-  list(KL = as.numeric(KL_total),
-       components = list(KL_gamma = KL_gamma,
-                         KL_beta = KL_beta,
-                         KL_sigma2 = KL_sigma2))
+# Compute the ELBO (which is also the marginal log-likelihood since
+# the ELBO is exact). The inputs are: ll0, the log-likelihood under
+# the "null" model; and lbf, the log-Bayes factors.
+compute_elbo <- function (ll0, lbf) {
+  x <- max(lbf)
+  bf <- exp(lbf - x)
+  return(ll0 + x + log(mean(bf)))
 }
 
+# Compute the log-normalizing factor for the IG(a,b) distribution.
+inv_gamma_factor <- function (a, b)
+  a*log(b) - lgamma(a)
+
+# Compute the log-likelihood under the "null" model under the
+# normal-inverse-gamma (NIG) prior.
+compute_null_loglik_NIG <- function (n, yy, a0, b0) {
+  return(-n*log(2*pi)/2 +
+           inv_gamma_factor(a0/2,b0/2) -
+           inv_gamma_factor((a0 + n)/2,(b0 + yy)/2))
+}
+
+
 objective_L1_SER= function(X,y,s){
- out=  Eloglik(X,y,s)-kl_L1_SS_SER (alpha = s$alpha,
-                                     m=s$mu, s2= s$mu^2 -s$mu2,
-                                     pi=rep( 1/ncol(s$alpha),ncol(s$alpha)) ,
-                                     tau2= 1/s$V,
-                                     #sigma2 = s$sigma2,
-                                    a0=1,b0=1,
-                                    a1=nrow(X)/2+1,b1= nrow(X)*s$sigma2+1
-  )$KL
+
+  lbf=s$lbf_variable[1,]
+
+  a0= max(s$alpha0,0.01)
+  b0=max(s$beta0,0.01)
+  yy=sum(y*y)
+  n =length(y)
+
+
+  ll0=  compute_null_loglik_NIG(n, yy, a0, b0)
+  out=  compute_elbo (ll0, lbf)
  return(out)
 }

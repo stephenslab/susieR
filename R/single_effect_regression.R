@@ -149,69 +149,48 @@ single_effect_regression =
   }
   if(small){
 
-    lbf  = do.call(c, lapply(1:ncol(X), function(j){
-      compute_log_ssbf (x=X[,j],y=y,
-                        s0 =sqrt(V),
-                        alpha0=alpha0,
-                        beta0=beta0)
-    }))
+    dat <- list(xx  = colSums(X^2),
+                xy  = drop(crossprod(X,y)),
+                yy  = sum(y^2),
+                sxy = drop(cor(X,y)),
+                s0  = V,
+                a0  = max(alpha0,0.01),
+                b0  = max(beta0,0.01))
+    n <- length(y)
 
-    lpo = lbf + log(prior_weights + sqrt(.Machine$double.eps))
+    lbf <- with(dat, compute_stats_NIG(n, xx, xy, yy, sxy, s0, a0, b0)$lbf)
 
-    # Deal with special case of infinite shat2 (e.g., happens if X does
-    # not vary).
-    lbf[is.infinite(shat2)] = 0
-    lpo[is.infinite(shat2)] = 0
-    maxlpo = max(lpo)
+    pip <- normalizelogweights(lbf)
+    alpha <- pip
 
-    # w is proportional to
-    #
-    #   posterior odds = BF * prior,
-    #
-    # but subtract max for numerical stability.
-    w_weighted = exp(lpo - maxlpo)
+    ll0 <- compute_null_loglik_NIG(n, dat$yy, dat$a0, dat$b0)
 
-    # Posterior prob for each SNP.
-    weighted_sum_w = sum(w_weighted)
-    alpha = w_weighted / weighted_sum_w
+    out <- with(dat, compute_stats_NIG(n, xx, xy, yy, sxy, s0, a0, b0))
+    rv <- out$rv
+    b1 <- out$b1   # Posterior mean
+    b2 <- out$b2   # Second moment
+    s1 <- out$s1   # Variance
 
+    s <- sum(pip * rv)
 
-    if(V <=0){
-      post_mean  = rep(0, ncol(X))
-      post_mean2 = rep(0, ncol(X))
-      post_var   = rep(0, ncol(X))
-      beta_1     = rep(0, ncol(X))
-    }else{
-
-
-      post_mean=do.call(c, lapply(1:ncol(X), function(i){
-        posterior_mean_SS_suff((attr(X,"d")[i]) , Xty[i], s0_t=V)
-      }))
-      yty=t(y)%*%y
-
-
-
-      tt= do.call(rbind, lapply(1:ncol(X), function(i){
-        posterior_var_SS_suff(xtx=(attr(X,"d")[i]) , xty= Xty[i],yty=yty,n= nrow(X), s0_t=V)
-      }))
-      beta_1=tt[,2]
-      post_var=tt[,1]
-      post_mean2=  post_mean^2+post_var
-    }
-
-
-    # BF for single effect model.
-    lbf_model = maxlpo + log(weighted_sum_w)
-    loglik = lbf_model + sum(dnorm(y,0,sqrt(residual_variance),log = TRUE))
-
+    # 6. EM update for prior variance (optional, only if optimize_V == "EM")
     if(optimize_V == "EM"){
-
-      V =sqrt(sum(alpha * (betahat^2 + ( beta_1/(nrow(X)-2))+ shat2 )))  # sum(alpha*(betahat^2+(beta_1/(nrow(X)-2)) ))
+      V <- with(dat, update_prior_variance_NIG  (n, xx, xy, yy, sxy, s0, a0, b0))
     }
 
-    #    post_mean2 =post_mean^2+ post_var
-    return(list(alpha = alpha,mu = post_mean,mu2 =   post_mean2 ,lbf = lbf,
-                lbf_model = lbf_model,V = V,loglik = loglik))
+    # 7. ELBO (marginal likelihood) as loglik
+    loglik <- compute_elbo(ll0, lbf)
+
+    return(list(
+      alpha     = alpha,
+      mu        = b1,
+      mu2       = b2,
+      lbf       = lbf,
+      lbf_model = loglik,  # use marginal likelihood
+      V         = V,
+      loglik    = loglik,
+      rv=rv
+    ))
   }
 
 
@@ -376,41 +355,74 @@ lbf = function (V, shat2, T2) {
   return(l)
 }
 
-
-#posterior mean for Servin and Stephens prior using sufficient statisitics
-posterior_mean_SS_suff <- function(xtx,xty, s0_t=1){
-  omega <- (( 1/s0_t^2)+xtx)^-1
-  b_bar<- omega%*%(xty)
-  return( b_bar)
+compute_stats_NIG <- function (n, xx, xy, yy, sxy, s0, a0, b0) {
+  r0   <- s0/(s0 + 1/xx)
+  rss  <- yy*(1 - r0*sxy^2)
+  a1   <- a0 + n
+  b1   <- b0 + rss
+  lbf  <- -(log(1 + s0*xx) + a1*log(b1/(b0 + yy)))/2
+  # Note that the line above is the same as:
+  # lbf = (log(1 - r0) - a1*log(b1/(b0 + yy)))/2
+  bhat <- xy/xx
+  mu1  <- r0*bhat
+  s1   <- b1/(a1 - 2)*r0/xx
+  rv   <- (b1/2)/(a1/2 - 1)
+  return(list(lbf = lbf,
+              b1  = mu1,
+              b2  = s1 + mu1^2,
+              s1  = s1,
+              rv  = rv))
 }
 
-#posterior variance for Servin and Stephens prior using sufficient statisitics
-
-posterior_var_SS_suff <- function (xtx,xty,yty, n,s0_t=1){
-  if(s0_t <0.00001){
-    return(c(0,0))
+update_prior_variance_NIG <- function (n, xx, xy, yy, sxy, s0, a0, b0) {
+  ll0 <- compute_null_loglik_NIG(n,yy,a0,b0)
+  f <- function (s0) {
+    lbf <- compute_stats_NIG(n,xx,xy,yy,sxy,s0,a0,b0)$lbf
+    return(-compute_elbo(ll0,lbf))
   }
-  omega <- (( 1/s0_t^2)+xtx)^-1
-  b_bar<- omega%*%(xty)
-  beta1=(yty  -  b_bar *(omega ^(-1))*b_bar)
-  post_var_up <- 0.5*(yty  -  b_bar *(omega ^(-1))*b_bar)
-  post_var_down <- 0.5*(n*(1/omega ))
-  post_var <- omega*(post_var_up/post_var_down)* n/(n-2)
-  return( c( post_var,beta1))
+  out <- optim(s0,f,method = "Brent",lower = 0,upper = 10)
+  return(out$par)
 }
 
 
-compute_log_ssbf <- function (x, y, s0,
-                              alpha0=0,
-                              beta0=0) {
-  x   <- x - mean(x)
-  y   <- y - mean(y)
-  n   <- length(x)
-  xx  <- sum(x*x)
-  xy  <- sum(x*y)
-  yy  <- sum(y*y)
-  r0  <- s0/(s0 + 1/xx)
-  sxy <- xy/sqrt(xx*yy)
-  ratio= (beta0+ yy*(1 - r0*sxy^2))/(beta0+ yy)
-  return((log(1 - r0) - (n+alpha0)*log(ratio))/2)
+update_prior_variance_NIG2 <- function (n, xx, xy, yy, sxy, pip,
+                                        s0, a0, b0) {
+  p    <- length(pip)
+  r0   <- s0/(s0 + 1/xx)
+  rss  <- yy*(1 - r0*sxy^2)
+  a1   <- a0 + n
+  b1   <- b0 + rss
+  bhat <- xy/xx
+  mu1  <- r0*bhat
+  s1   <- r0/xx
+  ns  <- 100
+  out <- 0
+  for (i in 1:ns) {
+    # ss = rinvgamma(p,a1/2,b1/2)
+    ss <- 1/rgamma(p,a1/2,b1/2)
+    bb  <- rnorm(p,mu1/sqrt(ss),sqrt(s1))
+    out <- out + sum(pip * bb^2)
+  }
+  return(out/ns)
 }
+
+
+update_sigma2_small <- function(s){
+
+
+ out=   ( do.call(c,
+                lapply( 1:nrow (s$alpha), function(l){
+                  sum(s$alpha[l,]*s$rv[[l]])
+                })
+
+  ))
+
+ id= which (s$V>1e-5)
+ if(length( id)==0) {
+   id=1
+ }
+ print(out[id])
+ print(out)
+ return(mean(out[id]))
+}
+
