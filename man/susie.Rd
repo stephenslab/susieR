@@ -185,16 +185,16 @@ variable.}
 \item{max_iter}{Maximum number of IBSS iterations to perform.}
 
 \item{tol}{A small, non-negative number specifying the convergence
-  tolerance for the IBSS fitting procedure. The fitting procedure
-  will halt when the difference in the variational lower bound, or
-  \dQuote{ELBO} (the objective function to be maximized), is
-  less than \code{tol}.
+tolerance for the IBSS fitting procedure. The fitting procedure
+will halt when the difference in the variational lower bound, or
+\dQuote{ELBO} (the objective function to be maximized), is
+less than \code{tol}.}
 
- @param tol_small used for small = TRUE only. Small, non-negative
-  number specifying the convergence tolerance for the GIBSS
-  fitting procedure. The fitting procedure will halt when the
-  difference in the estimated posterior inclusion probability is
-  less than \code{tol}.}
+\item{tol_small}{used for small = TRUE only. Small, non-negative
+number specifying the convergence tolerance for the GIBSS
+fitting procedure. The fitting procedure will halt when the
+difference in the estimated posterior inclusion probability is
+less than \code{tol}.}
 
 \item{verbose}{If \code{verbose = TRUE}, the algorithm's progress,
 and a summary of the optimization settings, are printed to the
