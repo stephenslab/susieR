@@ -229,7 +229,7 @@ get_variable_names.ss <- function(data, model, null_weight) {
 
 # Get univariate z-score
 get_zscore.ss <- function(data, model, ...) {
-  return(NULL)
+  return(get_zscore.default(data, model))
 }
 
 # Update variance components for ss data

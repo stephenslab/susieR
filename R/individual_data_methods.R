@@ -168,7 +168,7 @@ get_variable_names.individual <- function(data, model, null_weight) {
 get_zscore.individual <- function(data, model, compute_univariate_zscore,
                                   intercept, standardize, null_weight) {
   if (isFALSE(compute_univariate_zscore)) {
-    return(NULL)
+    return(get_zscore.default(data, model))
   }
 
   X <- data$X

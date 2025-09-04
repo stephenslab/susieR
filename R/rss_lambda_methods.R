@@ -199,7 +199,7 @@ get_variable_names.rss_lambda <- function(data, model, null_weight) {
 
 # Get univariate z-scores
 get_zscore.rss_lambda <- function(data, model, ...) {
-  return(data$z)
+  return(get_zscore.default(data, model))
 }
 
 # Update variance components

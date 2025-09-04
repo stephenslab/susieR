@@ -109,7 +109,7 @@ get_zscore <- function(data, model, ...) {
   UseMethod("get_zscore")
 }
 get_zscore.default <- function(data, model, ...) {
-  stop("get_zscore: no method for class '", class(data)[1], "'")
+  return(NULL)
 }
 
 # Initialize fitted values
