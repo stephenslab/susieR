@@ -5,13 +5,31 @@ initialize_fitted.ss <- function(data, alpha, mu) {
   return(list(XtXr = compute_Xb(data$XtX, colSums(alpha * mu))))
 }
 
-# Initialize susie model
+# Initialize SuSiE model
 initialize_susie_model.ss <- function(data, L, scaled_prior_variance, var_y,
                                       residual_variance, prior_weights, ...) {
-    return(initialize_matrices(data$p, L, scaled_prior_variance, var_y,
-      residual_variance, prior_weights,
-      include_unmappable = ifelse(data$unmappable_effects %in% c("inf", "ash"), TRUE, FALSE) 
-    ))
+
+  # Base model
+  model <- initialize_matrices(data, L, scaled_prior_variance, var_y,
+                               residual_variance, prior_weights)
+
+  # Append predictor weights and initialize non-sparse quantities
+  if (data$unmappable_effects %in% c("inf", "ash")) {
+
+    # Initialize omega quantities for unmappable effects
+    omega_res               <- compute_omega_quantities(data, tau2 = 0, sigma2 = 1)
+    model$omega_var         <- omega_res$omega_var
+    model$predictor_weights <- omega_res$diagXtOmegaX
+    model$XtOmegay          <- data$eigen_vectors %*% (data$VtXty / omega_res$omega_var)
+
+    # Initialize unmappable variance component and coefficients
+    model$tau2  <- 0
+    model$theta <- rep(0, data$p)
+  } else {
+    model$predictor_weights <- attr(data$XtX, "d")
+  }
+
+  return(model)
 }
 
 # Get variance of y
@@ -21,33 +39,19 @@ get_var_y.ss <- function(data, ...) {
 
 # FIXME: we don't have "configure_data" function here? if the only place we need for configre_data.individal then it is simply converting individual level data to suff stats which should not happen as a generic method. It should be done outside of the methods and we caution that it is temporary (due to lack of implementation of individual level updates for the unmappable effects)
 
-# Extract core parameters across iterations
-extract_core.ss <- function(data, model, tracking, iter, track_fit, ...) {
-  if (isTRUE(track_fit)) {
-    if (data$unmappable_effects %in% c("inf", "ash")) {
-      tracking_item <- list(
-        alpha = model$alpha,
-        niter = iter,
-        V = model$V,
-        sigma2 = model$sigma2,
-        tau2 = model$tau2
-      )
-      # Add ash-specific tracking
-      if (data$unmappable_effects == "ash" && !is.null(model$ash_pi)) {
-        tracking_item$ash_pi <- model$ash_pi
-        tracking_item$theta <- model$theta
-      }
-      tracking[[iter]] <- tracking_item
-    } else {
-      tracking[[iter]] <- list(
-        alpha = model$alpha,
-        niter = iter,
-        V = model$V,
-        sigma2 = model$sigma2
-      )
+# Track core parameters across iterations
+track_ibss_fit.ss <- function(data, model, tracking, iter, track_fit, ...) {
+  if (data$unmappable_effects %in% c("inf", "ash")) {
+    # Append non-sparse variance component to tracking
+    tracking <- track_ibss_fit.default(data, model, tracking, iter, track_fit, ...)
+    if (isTRUE(track_fit)) {
+      tracking[[iter]]$tau2 <- model$tau2
     }
+    return(tracking)
+  } else {
+    # Use default for standard SS case
+    return(track_ibss_fit.default(data, model, tracking, iter, track_fit, ...))
   }
-  return(tracking)
 }
 
 # Validate Prior Variance
@@ -83,13 +87,13 @@ get_ER2.ss <- function(data, model) {
 }
 
 # Posterior expected log-likelihood for a single effect regression
-SER_posterior_e_loglik.ss <- function(data, model, XtR, Eb, Eb2, dXtX) {
+SER_posterior_e_loglik.ss <- function(data, model, XtR, Eb, Eb2) {
   if (data$unmappable_effects == "none") {
     # Standard SuSiE
-    return(-0.5 / model$sigma2 * (-2 * sum(Eb * XtR) + sum(dXtX * as.vector(Eb2))))
+    return(-0.5 / model$sigma2 * (-2 * sum(Eb * XtR) + sum(model$predictor_weights * as.vector(Eb2))))
   } else {
     # Omega-weighted likelihood
-    return(-0.5 * (-2 * sum(Eb * XtR) + sum(dXtX * as.vector(Eb2))))
+    return(-0.5 * (-2 * sum(Eb * XtR) + sum(model$predictor_weights * as.vector(Eb2))))
   }
 }
 
@@ -105,12 +109,12 @@ compute_residuals.ss <- function(data, model, l, ...) {
     XtOmegaXb <- data$eigen_vectors %*% ((t(data$eigen_vectors) %*% b) * data$eigen_values / omega_res$omega_var)
     XtOmegar <- XtOmegay - XtOmegaXb
 
-    return(list(
-      XtR = XtOmegar,
-      unmappable = TRUE,
-      omega_res = omega_res,
-      b_without_l = b
-    ))
+    # Store unified residuals in model (unmappable case)
+    model$residuals <- XtOmegar             # For SER & KL
+    model$omega_res <- omega_res            # For predictor_weights update
+    model$unmappable <- TRUE                # Flag for special handling
+    
+    return(model)
   } else {
     # Remove lth effect from fitted values
     XtXr_without_l <- model$XtXr - data$XtX %*% (model$alpha[l, ] * model$mu[l, ])
@@ -118,18 +122,19 @@ compute_residuals.ss <- function(data, model, l, ...) {
     # Compute Residuals
     XtR <- data$Xty - XtXr_without_l
 
-    return(list(
-      XtR = XtR,
-      XtXr_without_l = XtXr_without_l,
-      unmappable = FALSE
-    ))
+    # Store unified residuals in model (standard case)
+    model$residuals <- XtR                  # For SER & KL
+    model$fitted_without_l <- XtXr_without_l # For fitted update
+    model$unmappable <- FALSE               # Flag for special handling
+
+    return(model)
   }
 }
 
 # Compute SER statistics
-compute_ser_statistics.ss <- function(data, model, residuals, dXtX, residual_variance, l, ...) {
-  betahat <- (1 / dXtX) * residuals
-  shat2 <- residual_variance / dXtX
+compute_ser_statistics.ss <- function(data, model, residual_variance, l, ...) {
+  betahat <- (1 / model$predictor_weights) * model$residuals
+  shat2 <- residual_variance / model$predictor_weights
 
   # Compute optimization parameters based on unmappable effects
   if (data$unmappable_effects == "none") {
@@ -147,7 +152,6 @@ compute_ser_statistics.ss <- function(data, model, residuals, dXtX, residual_var
   return(list(
     betahat = betahat,
     shat2 = shat2,
-    dXtX = dXtX,  # Store for unmappable objective
     optim_init = optim_init,
     optim_bounds = optim_bounds,
     optim_scale = optim_scale
@@ -159,20 +163,14 @@ single_effect_update.ss <- function(
     data, model, l,
     optimize_V, check_null_threshold) {
 
-  # Compute residuals using generic (removes lth effect)
-  residuals <- compute_residuals(data, model, l)
+  # Compute residuals and store in model
+  model <- compute_residuals(data, model, l)
 
-  # Update model state (removing lth effect)
-  if (!residuals$unmappable) {
-    model$XtXr <- residuals$XtXr_without_l
-  }
-
-  # Determine parameters for SER based on unmappable status
-  if (residuals$unmappable) {
-    dXtX <- residuals$omega_res$diagXtOmegaX
+  # Update model predictor_weights and residual variance based on unmappable status
+  if (model$unmappable) {
+    model$predictor_weights <- model$omega_res$diagXtOmegaX
     residual_variance <- 1  # Already incorporated in Omega
   } else {
-    dXtX <- attr(data$XtX, "d")
     residual_variance <- model$sigma2
   }
 
@@ -181,8 +179,6 @@ single_effect_update.ss <- function(
     data                 = data,
     model                = model,
     l                    = l,
-    residuals            = residuals$XtR,
-    dXtX                 = dXtX,
     residual_variance    = residual_variance,
     optimize_V           = optimize_V,
     check_null_threshold = check_null_threshold
@@ -198,17 +194,16 @@ single_effect_update.ss <- function(
 
   # Compute KL divergence
   model$KL[l] <- -res$lbf_model +
-    SER_posterior_e_loglik(data, model, residuals$XtR,
+    SER_posterior_e_loglik(data, model, model$residuals,
                            Eb  = res$alpha * res$mu,
-                           Eb2 = res$alpha * res$mu2,
-                           dXtX = dXtX)
+                           Eb2 = res$alpha * res$mu2)
 
-  # Add lth effect back
-  if (residuals$unmappable) {
+  # Update fitted values
+  if (model$unmappable) {
     b <- colSums(model$alpha * model$mu)
     model$XtXr <- compute_Xb(data$XtX, b + model$theta)
   } else {
-    model$XtXr <- model$XtXr + compute_Xb(data$XtX , model$alpha[l, ] * model$mu[l, ])
+    model$XtXr <- model$fitted_without_l + compute_Xb(data$XtX, model$alpha[l, ] * model$mu[l, ])
   }
 
   return(model)
@@ -274,10 +269,10 @@ configure_data.ss <- function(data) {
 update_variance_components.ss <- function(data, model, estimate_method = "MLE") {
   if (data$unmappable_effects == "inf") {
     # Calculate omega
-    L <- nrow(model$alpha)
+    L         <- nrow(model$alpha)
     omega_res <- compute_omega_quantities(data, model$tau2, model$sigma2)
-    omega <- matrix(rep(omega_res$diagXtOmegaX, L), nrow = L, ncol = data$p, byrow = TRUE) +
-      matrix(rep(1 / model$V, data$p), nrow = L, ncol = data$p, byrow = FALSE)
+    omega     <- matrix(rep(omega_res$diagXtOmegaX, L), nrow = L, ncol = data$p,byrow = TRUE) +
+                 matrix(rep(1 / model$V, data$p), nrow = L, ncol = data$p, byrow = FALSE)
 
     # Compute theta for infinitesimal effects.
     theta <- compute_theta_blup(data, model)
@@ -290,23 +285,23 @@ update_variance_components.ss <- function(data, model, estimate_method = "MLE") 
         verbose = FALSE
       )
       return(list(sigma2 = mle_result$sigma2,
-                  tau2 = mle_result$tau2,
-                  theta = theta))
+                  tau2   = mle_result$tau2,
+                  theta  = theta))
     } else {
       mom_result <- mom_unmappable(model$alpha, model$mu, omega, model$sigma2, model$tau2, data$n,
         data$eigen_vectors, data$eigen_values, data$VtXty, data$Xty, data$yty,
         est_sigma2 = TRUE, est_tau2 = TRUE, verbose = FALSE
       )
       return(list(sigma2 = mom_result$sigma2,
-                  tau2 = mom_result$tau2,
-                  theta = theta))
+                  tau2   = mom_result$tau2,
+                  theta  = theta))
     }
   } else if (data$unmappable_effects == "ash") {
     # Compute omega from current iteration
-    L <- nrow(model$alpha)
+    L         <- nrow(model$alpha)
     omega_res <- compute_omega_quantities(data, model$tau2, model$sigma2)
-    omega <- matrix(rep(omega_res$diagXtOmegaX, L), nrow = L, ncol = data$p, byrow = TRUE) +
-      matrix(rep(1 / model$V, data$p), nrow = L, ncol = data$p, byrow = FALSE)
+    omega     <- matrix(rep(omega_res$diagXtOmegaX, L), nrow = L, ncol = data$p, byrow = TRUE) +
+                 matrix(rep(1 / model$V, data$p), nrow = L, ncol = data$p, byrow = FALSE)
 
     # Update the sparse effect variance
     sparse_var <- mean(colSums(model$alpha * model$V))
@@ -327,62 +322,51 @@ update_variance_components.ss <- function(data, model, estimate_method = "MLE") 
 
     # Call mr.ash directly with pre-computed quantities
     mrash_output <- mr.ash.alpha.mccreight::mr.ash(
-      X = data$X,
-      y = data$y,
-      sa2 = est_sa2,
-      intercept = FALSE,
-      standardize = FALSE,
-      sigma2 = mom_result$sigma2,
+      X             = data$X,
+      y             = data$y,
+      sa2           = est_sa2,
+      intercept     = FALSE,
+      standardize   = FALSE,
+      sigma2        = mom_result$sigma2,
       update.sigma2 = FALSE,
-      diagXtOmegaX = omega_res$diagXtOmegaX,
-      XtOmega = XtOmega,
-      V = data$eigen_vectors,
-      tausq = sparse_var,
-      sum_Dsq = sum(data$eigen_values),
-      Dsq = data$eigen_values,
-      VtXt = data$VtXt
+      diagXtOmegaX  = omega_res$diagXtOmegaX,
+      XtOmega       = XtOmega,
+      V             = data$eigen_vectors,
+      tausq         = sparse_var,
+      sum_Dsq       = sum(data$eigen_values),
+      Dsq           = data$eigen_values,
+      VtXt          = data$VtXt
     )
-
-    # Extract results from mr.ash
-    ash_result <- list(
-      sigma2 = mrash_output$sigma2,
-      tau2 = sum(est_sa2 * mrash_output$pi),
-      theta = mrash_output$beta,
-      pi = mrash_output$pi,
-      est_sa2 = est_sa2
-    )
-
-    # Store theta, mixture weights, and grid in model object
-    model$theta <- ash_result$theta
-    model$ash_pi <- ash_result$pi
-    model$ash_grid <- ash_result$est_sa2
 
     return(list(
-      sigma2 = ash_result$sigma2,
-      tau2 = ash_result$tau2,
-      theta = ash_result$theta,
-      ash_pi = ash_result$pi
+      sigma2 = mrash_output$sigma2,
+      tau2   = sum(est_sa2 * mrash_output$pi),
+      theta  = mrash_output$beta,
+      ash_pi = mrash_output$pi
     ))
   } else {
-    # For standard SuSiE w/ ss data, MLE and MoM are equivalent
+    # For standard SuSiE MLE and MoM are equivalent
     sigma2 <- est_residual_variance(data, model)
-    return(list(sigma2 = sigma2, tau2 = NULL))
+    return(list(sigma2 = sigma2))
   }
 }
 
 # Update derived quantities for ss data
 update_derived_quantities.ss <- function(data, model) {
   if (data$unmappable_effects %in% c("inf", "ash")) {
+    # Update omega quantities for next iteration
+    omega_res               <- compute_omega_quantities(data, model$tau2, model$sigma2)
+    model$omega_var         <- omega_res$omega_var
+    model$predictor_weights <- omega_res$diagXtOmegaX
+    model$XtOmegay          <- data$eigen_vectors %*% (data$VtXty / omega_res$omega_var)
 
-    # Update var, diagXtOmegaX, and XtOmegay for next iteration.
-    omega_res <- compute_omega_quantities(data, model$tau2, model$sigma2)
-    data$var <- omega_res$omega_var
-    data$diagXtOmegaX <- omega_res$diagXtOmegaX
-    data$XtOmegay <- data$eigen_vectors %*% (data$VtXty / omega_res$omega_var)
+    # Update fitted values to include theta
+    b          <- colSums(model$alpha * model$mu)
+    model$XtXr <- data$XtX %*% (b + model$theta)
 
-    return(data)
+    return(model)
   } else {
-    return(data)
+    return(model)
   }
 }
 
@@ -395,7 +379,7 @@ Eloglik.ss <- function(data, model) {
 
 #' @importFrom Matrix colSums
 #' @importFrom stats dnorm
-loglik.ss <- function(data, model = NULL, V, residuals, ser_stats, prior_weights, ...) {
+loglik.ss <- function(data, model, V, ser_stats, prior_weights, ...) {
   # log(bf) for each SNP
   lbf <- dnorm(ser_stats$betahat, 0, sqrt(V + ser_stats$shat2), log = TRUE) -
     dnorm(ser_stats$betahat, 0, sqrt(ser_stats$shat2), log = TRUE)
@@ -417,36 +401,35 @@ loglik.ss <- function(data, model = NULL, V, residuals, ser_stats, prior_weights
   ))
 }
 
-neg_loglik.ss <- function(data, model = NULL, V_param, residuals, ser_stats, prior_weights, ...) {
+neg_loglik.ss <- function(data, model, V_param, ser_stats, prior_weights, ...) {
   # Convert parameter to V based on optimization scale
   V <- if (ser_stats$optim_scale == "log") exp(V_param) else V_param
 
   if (data$unmappable_effects == "none") {
     # Standard objective
-    res <- loglik.ss(data, model, V, residuals, ser_stats, prior_weights)
+    res <- loglik.ss(data, model, V, ser_stats, prior_weights)
     return(-res$lbf_model)
   } else {
     # Unmappable objective with logSumExp trick
     return(-matrixStats::logSumExp(
-      -0.5 * log(1 + V * ser_stats$dXtX) +
-      V * residuals^2 / (2 * (1 + V * ser_stats$dXtX)) +
+      -0.5 * log(1 + V * model$predictor_weights) +
+      V * model$residuals^2 / (2 * (1 + V * model$predictor_weights)) +
         log(prior_weights + sqrt(.Machine$double.eps))
     ))
   }
 }
 
 # Calculate posterior moments for single effect regression
-calculate_posterior_moments.ss <- function(data, model = NULL, V, residuals,
-                                           dXtX, residual_variance, ...) {
+calculate_posterior_moments.ss <- function(data, model, V,
+                                           residual_variance, ...) {
   # Standard Gaussian posterior calculations
-  post_var <- (1 / V + dXtX / residual_variance)^(-1)
-  post_mean <- (1 / residual_variance) * post_var * residuals
+  post_var <- (1 / V + model$predictor_weights / residual_variance)^(-1)
+  post_mean <- (1 / residual_variance) * post_var * model$residuals
   post_mean2 <- post_var + post_mean^2
 
   return(list(
     post_mean = post_mean,
     post_mean2 = post_mean2,
-    post_var = post_var,
-    beta_1 = NULL  # Not used for SS
+    post_var = post_var
   ))
 }
