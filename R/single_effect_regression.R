@@ -6,10 +6,7 @@
 #' @param data Data object with class determining computation method (individual, ss, or rss_lambda)
 #' @param model Current SuSiE model containing alpha, mu, mu2, V, sigma2, and other parameters
 #' @param l Integer index of the effect being updated (1 to L)
-#' @param residuals Unified residuals input: XtR for individual/ss data, z_residual for RSS
-#' @param dXtX A p-vector of diagonal elements of X'X (from data attributes)
 #' @param residual_variance The residual variance (sigma^2)
-#' @param prior_weights A p-vector of prior weights for each variable
 #' @param optimize_V Method for optimizing prior variance: "none", "optim", "EM", or "simple"
 #' @param check_null_threshold Threshold for setting V to zero for numerical stability
 #'
@@ -23,13 +20,9 @@
 #'
 #' @keywords internal
 #' @noRd
-# FIXME: the only things am not so happy with at this point are 1) do we really need dXtX (isn't it already part of `data`?) and 2) can we also build residuals into data --- does it make sense to do so?
 single_effect_regression <-
   function(data, model, l,
-           residuals,
-           dXtX,
            residual_variance = NULL,
-           prior_weights = NULL,
            optimize_V = c("none", "optim", "EM", "simple"),
            check_null_threshold = 0) {
 
@@ -39,12 +32,6 @@ single_effect_regression <-
     # Store Prior Variance Value for the lth Effect
     V <- model$V[l]
 
-    # Extract weights
-    if (!is.null(model$pi)) {
-      prior_weights <- model$pi
-    } else {
-      prior_weights <- rep(1 / data$p, data$p)
-    }
 
     # Set residual_variance if not provided
     if (is.null(residual_variance)) {
@@ -52,23 +39,22 @@ single_effect_regression <-
     }
 
     # Compute SER statistics (betahat, shat2, initial value for prior variance optimization)
-    ser_stats <- compute_ser_statistics(data, model, residuals, dXtX, residual_variance, l)
+    ser_stats <- compute_ser_statistics(data, model, residual_variance, l)
 
     # Optimize Prior Variance of lth effect
     if (optimize_V != "EM" && optimize_V != "none") {
-      V <- optimize_prior_variance(optimize_V, data, model, ser_stats, residuals,
-        prior_weights, alpha = NULL, post_mean2 = NULL, V, check_null_threshold)
+      V <- optimize_prior_variance(optimize_V, data, model, ser_stats,
+        alpha = NULL, post_mean2 = NULL, V, check_null_threshold)
     }
 
     # Use loglik to compute logged Bayes factors and posterior inclusion probabilities
-    loglik_res <- loglik(data, model, V, residuals, ser_stats, prior_weights)
+    loglik_res <- loglik(data, model, V, ser_stats)
     lbf        <- loglik_res$lbf
     alpha      <- loglik_res$alpha
     lbf_model  <- loglik_res$lbf_model
 
     # Compute posterior moments
-    moments    <- calculate_posterior_moments(data, model, V, residuals,
-                                              dXtX, residual_variance)
+    moments    <- calculate_posterior_moments(data, model, V, residual_variance)
 
     post_mean  <- moments$post_mean
     post_mean2 <- moments$post_mean2
@@ -76,8 +62,8 @@ single_effect_regression <-
 
     # Expectation-maximization prior variance update using posterior moments
     if (optimize_V == "EM") {
-      V <- optimize_prior_variance(optimize_V, data, model, ser_stats, residuals,
-        prior_weights, alpha, post_mean2, V_init = NULL, check_null_threshold,
+      V <- optimize_prior_variance(optimize_V, data, model, ser_stats,
+        alpha, post_mean2, V_init = NULL, check_null_threshold,
         data$use_servin_stephens, moments$beta_1, data$n)
     }
 
@@ -92,8 +78,8 @@ single_effect_regression <-
   }
 
 # Optimization functions
-optimize_prior_variance <- function(optimize_V, data, model, ser_stats, residuals,
-                                    prior_weights, alpha = NULL, post_mean2 = NULL,
+optimize_prior_variance <- function(optimize_V, data, model, ser_stats,
+                                    alpha = NULL, post_mean2 = NULL,
                                     V_init = NULL, check_null_threshold = 0,
                                     use_servin_stephens = FALSE, beta_1 = NULL, n = NULL) {
   V <- V_init
@@ -102,8 +88,7 @@ optimize_prior_variance <- function(optimize_V, data, model, ser_stats, residual
       V_param_opt <- optim(
         par = ser_stats$optim_init, fn = neg_loglik,
         data = data, model = model,
-        residuals = residuals, ser_stats = ser_stats,
-        prior_weights = prior_weights,
+        ser_stats = ser_stats,
         method = "Brent",
         lower = ser_stats$optim_bounds[1],
         upper = ser_stats$optim_bounds[2]
@@ -118,8 +103,8 @@ optimize_prior_variance <- function(optimize_V, data, model, ser_stats, residual
 
       # Check if new estimate improves likelihood
       V_param_init <- if (ser_stats$optim_scale == "linear") V else log(V)
-      if (neg_loglik(data, model, V_param_opt, residuals, ser_stats, prior_weights) >
-          neg_loglik(data, model, V_param_init, residuals, ser_stats, prior_weights)) {
+      if (neg_loglik(data, model, V_param_opt, ser_stats) >
+          neg_loglik(data, model, V_param_init, ser_stats)) {
         V_new <- V
       }
       V <- V_new
@@ -147,8 +132,8 @@ optimize_prior_variance <- function(optimize_V, data, model, ser_stats, residual
   # non-zeros estimates unless they are indeed small enough to be
   # neglible. See more intuition at
   # https://stephens999.github.io/fiveMinuteStats/LR_and_BF.html
-  if (loglik(data, model, 0, residuals, ser_stats, prior_weights)$lbf_model +
-    check_null_threshold >= loglik(data, model, V, residuals, ser_stats, prior_weights)$lbf_model) {
+  if (loglik(data, model, 0, ser_stats)$lbf_model +
+    check_null_threshold >= loglik(data, model, V, ser_stats)$lbf_model) {
     V <- 0
   }
 

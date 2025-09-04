@@ -5,26 +5,20 @@ initialize_fitted.rss_lambda <- function(data, alpha, mu) {
   return(list(Rz = compute_Xb(data$R, colSums(alpha * mu))))
 }
 
-# Initialize susie model
+# Initialize SuSiE model
 initialize_susie_model.rss_lambda <- function(data, L, scaled_prior_variance, var_y,
                                               residual_variance, prior_weights, ...) {
-  model <- initialize_matrices(data$p, L, scaled_prior_variance, var_y,
-    residual_variance, prior_weights,
-    include_unmappable = FALSE
-  )
+  # Base model
+  model <- initialize_matrices(data, L, scaled_prior_variance, var_y,
+                               residual_variance, prior_weights)
 
-  model$lambda <- data$lambda
-  model$intercept <- data$intercept_value
+  # Initialize SinvRj and RjSinvRj
+  D    <- data$eigen_R$values
+  V    <- data$eigen_R$vectors
+  Dinv <- compute_Dinv(model, data)
 
-  # Initialize SinvRj and RjSinvRj based on initial sigma2
-  eigenS_values <- model$sigma2 * data$eigen_R$values + data$lambda
-  Dinv <- 1 / eigenS_values
-  Dinv[is.infinite(Dinv)] <- 0
-
-  model$SinvRj <- data$eigen_R$vectors %*% (Dinv * data$eigen_R$values * t(data$eigen_R$vectors))
-
-  tmp <- t(data$eigen_R$vectors)
-  model$RjSinvRj <- colSums(tmp * (Dinv * (data$eigen_R$values^2) * tmp))
+  model$SinvRj   <- V %*% (Dinv * D * t(V))
+  model$RjSinvRj <- colSums(t(V) * (Dinv * D^2 * t(V)))
 
   return(model)
 }
@@ -36,47 +30,34 @@ get_var_y.rss_lambda <- function(data, ...) {
 
 # Configure data
 configure_data.rss_lambda <- function(data) {
-  return(data)
+  return(configure_data.default(data))
 }
 
-# Extract core parameters for tracking
-extract_core.rss_lambda <- function(data, model, tracking, iter, track_fit, ...) {
-  if (isTRUE(track_fit)) {
-    tracking[[iter]] <- list(
-      alpha = model$alpha,
-      niter = iter,
-      V = model$V,
-      sigma2 = model$sigma2
-    )
-  }
-  return(tracking)
+# Track core parameters for tracking
+track_ibss_fit.rss_lambda <- function(data, model, tracking, iter, track_fit, ...) {
+  return(track_ibss_fit.default(data, model, tracking, iter, track_fit, ...))
 }
 
 # Validate prior variance
 validate_prior.rss_lambda <- function(data, model, check_prior, ...) {
-  return(model)
+  return(validate_prior.default(data, model, check_prior, ...))
 }
 
 # Expected squared residuals
-get_ER2.rss_lambda <- function(data, model, sigma2 = NULL) {
-  if (is.null(sigma2)) {
-    sigma2 <- model$sigma2
-  }
+get_ER2.rss_lambda <- function(data, model) {
+  D    <- data$eigen_R$values
+  V    <- data$eigen_R$vectors
+  Dinv <- compute_Dinv(model, data)
 
-  d <- sigma2 * data$eigen_R$values + data$lambda
-  Dinv <- 1 / d
-  Dinv[is.infinite(Dinv)] <- 0
-
-  SinvR <- data$eigen_R$vectors %*%
-    ((Dinv * data$eigen_R$values) * t(data$eigen_R$vectors))
-  Utz <- crossprod(data$eigen_R$vectors, data$z)
+  SinvR  <- V %*% ((Dinv * D) * t(V))
+  Utz    <- crossprod(V, data$z)
   zSinvz <- sum(Utz * (Dinv * Utz))
 
-  Z <- model$alpha * model$mu
+  Z      <- model$alpha * model$mu
   RSinvR <- data$R %*% SinvR
-  RZ2 <- sum((Z %*% RSinvR) * Z)
+  RZ2    <- sum((Z %*% RSinvR) * Z)
 
-  zbar <- colSums(Z)
+  zbar   <- colSums(Z)
   postb2 <- model$alpha * model$mu2
 
   return(zSinvz - 2 * sum((SinvR %*% data$z) * zbar) +
@@ -85,50 +66,48 @@ get_ER2.rss_lambda <- function(data, model, sigma2 = NULL) {
 }
 
 # SER posterior expected log-likelihood
-SER_posterior_e_loglik.rss_lambda <- function(data, model, r, Eb, Eb2, dXtX) {
-  rR <- data$R %*% r
-
-  d <- model$sigma2 * data$eigen_R$values + data$lambda
-  Dinv <- 1 / d
-  Dinv[is.infinite(Dinv)] <- 0
-  SinvEb <- data$eigen_R$vectors %*% (Dinv * crossprod(data$eigen_R$vectors, Eb))
+SER_posterior_e_loglik.rss_lambda <- function(data, model, Eb, Eb2) {
+  V      <- data$eigen_R$vectors
+  Dinv   <- compute_Dinv(model, data)
+  rR     <- data$R %*% model$residuals
+  SinvEb <- V %*% (Dinv * crossprod(V, Eb))
 
   return(-0.5 * (-2 * sum(rR * SinvEb) + sum(model$RjSinvRj * Eb2)))
 }
 
 # Expected log-likelihood
 Eloglik.rss_lambda <- function(data, model) {
-  d <- model$sigma2 * data$eigen_R$values + data$lambda
-  result <- -(length(data$z) / 2) * log(2 * pi) - 0.5 * sum(log(d)) - 0.5 * get_ER2.rss_lambda(data, model)
-  return(result)
+  D <- data$eigen_R$values
+  d <- model$sigma2 * D + data$lambda
+  return(-(length(data$z) / 2) * log(2 * pi) - 0.5 *
+           sum(log(d)) - 0.5 * get_ER2.rss_lambda(data, model))
 }
 
 # Log-likelihood for RSS
-loglik.rss_lambda <- function(data, model, V, residuals, ser_stats, prior_weights, ...) {
+loglik.rss_lambda <- function(data, model, V, ser_stats, ...) {
   # Compute log Bayes factors
   lbf <- sapply(1:data$p, function(j) {
     -0.5 * log(1 + (V / ser_stats$shat2[j])) +
-      0.5 * (V / (1 + (V / ser_stats$shat2[j]))) * sum(model$SinvRj[, j] * residuals)^2
+      0.5 * (V / (1 + (V / ser_stats$shat2[j]))) * sum(model$SinvRj[, j] * model$residuals)^2
   })
 
   # Stabilize logged Bayes Factor
-  stable_res <- lbf_stabilization(lbf, prior_weights, ser_stats$shat2)
+  stable_res <- lbf_stabilization(lbf, model$pi, ser_stats$shat2)
 
   # Compute posterior weights
   weights_res <- compute_posterior_weights(stable_res$lpo)
 
   return(list(
-    lbf = stable_res$lbf,
+    lbf       = stable_res$lbf,
     lbf_model = weights_res$lbf_model,
-    alpha = weights_res$alpha,
-    gradient = NA # Gradient not implemented for RSS with lambda > 0
+    alpha     = weights_res$alpha
   ))
 }
 
-neg_loglik.rss_lambda <- function(data, model, V_param, residuals, ser_stats, prior_weights, ...) {
+neg_loglik.rss_lambda <- function(data, model, V_param, ser_stats, ...) {
   # Convert parameter to V based on optimization scale (always log for RSS lambda)
-  V <- exp(V_param)
-  res <- loglik.rss_lambda(data, model, V, residuals, ser_stats, prior_weights)
+  V   <- exp(V_param)
+  res <- loglik.rss_lambda(data, model, V, ser_stats)
   return(-res$lbf_model)
 }
 
@@ -140,27 +119,25 @@ compute_residuals.rss_lambda <- function(data, model, l, ...) {
   # Compute residuals
   r <- data$z - Rz_without_l
 
-  return(list(
-    z_residual = r,
-    Rz_without_l = Rz_without_l
-  ))
+  # Store unified residuals in model
+  model$residuals        <- r
+  model$fitted_without_l <- Rz_without_l
+
+  return(model)
 }
 
 # Compute SER statistics
-compute_ser_statistics.rss_lambda <- function(data, model, residuals, dXtX, residual_variance, l, ...) {
-  # For RSS-lambda, we only need shat2
+compute_ser_statistics.rss_lambda <- function(data, model, residual_variance, l, ...) {
   shat2 <- 1 / model$RjSinvRj
-  
-  # Compute initial value for optimization: max((z^T Sigma^{-1} R_j)^2 - 1/RjSinvRj, 1e-6)
-  init_vals <- sapply(1:data$p, function(j) sum(model$SinvRj[, j] * residuals)^2) - (1 / model$RjSinvRj)
+
+  # Optimization parameters
+  init_vals <- sapply(1:data$p, function(j) sum(model$SinvRj[, j] * model$residuals)^2) - (1 / model$RjSinvRj)
   optim_init <- log(max(c(init_vals, 1e-6), na.rm = TRUE))
   optim_bounds <- c(-30, 15)
   optim_scale <- "log"
-  
+
   return(list(
-    betahat = NULL,  # Not used for RSS-lambda
     shat2 = shat2,
-    dXtX = dXtX,  # Store for consistency
     optim_init = optim_init,
     optim_bounds = optim_bounds,
     optim_scale = optim_scale
@@ -171,38 +148,16 @@ compute_ser_statistics.rss_lambda <- function(data, model, residuals, dXtX, resi
 single_effect_update.rss_lambda <- function(data, model, l,
                                             optimize_V, check_null_threshold) {
 
-  # Compute residuals
-  residuals <- compute_residuals(data, model, l)
+  # Update prior variance, alpha, mu, lbf
+  model <- single_effect_update.default(data, model, l, optimize_V, check_null_threshold)
 
-  # Update Rz (removing lth effect)
-  model$Rz <- residuals$Rz_without_l
+  # Update KL
+  model$KL[l] <- -model$lbf[l] + SER_posterior_e_loglik(data, model,
+                                                        model$alpha[l, ] * model$mu[l, ],
+                                                        model$alpha[l, ] * model$mu2[l, ])
 
-  res <- single_effect_regression(
-    data = data,
-    model = model,
-    l = l,
-    residuals = residuals$z_residual,
-    dXtX = NULL,  # Not used for RSS-lambda
-    optimize_V = optimize_V,
-    check_null_threshold = check_null_threshold
-  )
-
-  model$mu[l, ] <- res$mu
-  model$alpha[l, ] <- res$alpha
-  model$mu2[l, ] <- res$mu2
-  model$V[l] <- res$V
-  model$lbf[l] <- res$lbf_model
-  model$lbf_variable[l, ] <- res$lbf
-
-  model$KL[l] <- -res$lbf_model +
-    SER_posterior_e_loglik(
-      data, model, residuals$z_residual,
-      res$alpha * res$mu, res$alpha * res$mu2,
-      dXtX = diag(data$R)  # For RSS, diagonal of R matrix
-    )
-
-  # Add lth effect back
-  model$Rz <- model$Rz + compute_Xb(data$R, model$alpha[l, ] * model$mu[l, ])
+  # Update fitted values
+  model$Rz <- model$fitted_without_l + compute_Xb(data$R, model$alpha[l, ] * model$mu[l, ])
 
   return(model)
 }
@@ -214,7 +169,7 @@ get_scale_factors.rss_lambda <- function(data) {
 
 # Get intercept
 get_intercept.rss_lambda <- function(data, model, ...) {
-  return(model$intercept)
+  return(data$intercept_value)
 }
 
 # Get fitted values
@@ -223,7 +178,6 @@ get_fitted.rss_lambda <- function(data, model, ...) {
 }
 
 # Get credible sets
-# FIXME: data$R has been used previously as residuals but here it is R the LD matrix. Even though these are different data types I still think for clarity we should, throughout the code base, use "R" for correlatin/LD matrix. You can use `yr` for residual or something else, in the individual level data objects.
 get_cs.rss_lambda <- function(data, model, coverage, min_abs_corr, n_purity) {
   if (is.null(coverage) || is.null(min_abs_corr)) {
     return(NULL)
@@ -245,74 +199,53 @@ get_variable_names.rss_lambda <- function(data, model, null_weight) {
 
 # Get univariate z-scores
 get_zscore.rss_lambda <- function(data, model, ...) {
-  return(data$z)
+  return(get_zscore.default(data, model))
 }
 
 # Update variance components
 update_variance_components.rss_lambda <- function(data, model, estimate_method = "MLE") {
-  # For lambda != 0, use optimization to estimate sigma2
-  upper_bound <- 1 - data$lambda
-
-  Eloglik <- function(sigma2) {
-    model_temp <- model
-    model_temp$sigma2 <- sigma2
-
-    eigenS_values <- sigma2 * data$eigen_R$values + data$lambda
-    Dinv <- 1 / eigenS_values
-    Dinv[is.infinite(Dinv)] <- 0
-
-    model_temp$SinvRj <- data$eigen_R$vectors %*% (Dinv * data$eigen_R$values * t(data$eigen_R$vectors))
-    tmp <- t(data$eigen_R$vectors)
-    model_temp$RjSinvRj <- colSums(tmp * (Dinv * (data$eigen_R$values^2) * tmp))
-
-    log_det_Sigma <- sum(log(eigenS_values[eigenS_values > 0]))
-    ER2_term <- get_ER2.rss_lambda(data, model_temp, sigma2 = sigma2)
-
-    return(-0.5 * log_det_Sigma - 0.5 * ER2_term)
-  }
-
-  opt_result <- optimize(Eloglik, interval = c(1e-4, upper_bound), maximum = TRUE)
+  # Optimize for sigma2
+  opt_result <- optimize(function(sigma2) rss_lambda_likelihood(sigma2, data, model),
+                         interval = c(1e-4, upper_bound), maximum = TRUE)
   est_sigma2 <- opt_result$maximum
 
-  if (Eloglik(est_sigma2) < Eloglik(upper_bound)) {
+  # Set upper bound
+  upper_bound <- 1 - data$lambda
+
+  # Check boundary condition
+  if (rss_lambda_likelihood(est_sigma2, data, model) < rss_lambda_likelihood(upper_bound, data, model)) {
     est_sigma2 <- upper_bound
   }
 
-  # Return just the sigma2 value - RSS lambda doesn't use tau2
-  return(list(sigma2 = est_sigma2, tau2 = NULL))
+  return(list(sigma2 = est_sigma2))
 }
 
 # Update derived quantities
 update_derived_quantities.rss_lambda <- function(data, model) {
-  # Calculate updated SinvRj and RjSinvRj based on new sigma2
-  eigenS_values <- model$sigma2 * data$eigen_R$values + data$lambda
-  Dinv <- 1 / eigenS_values
-  Dinv[is.infinite(Dinv)] <- 0
+  # Recalculate Dinv with updated sigma2
+  Dinv <- compute_Dinv(model, data)
+  V <- data$eigen_R$vectors
+  D <- data$eigen_R$values
 
-  data$SinvRj_temp <- data$eigen_R$vectors %*% (Dinv * data$eigen_R$values * t(data$eigen_R$vectors))
+  # Update SinvRj and RjSinvRj
+  model$SinvRj <- V %*% (Dinv * D * t(V))
+  model$RjSinvRj <- colSums(t(V) * (Dinv * (D^2) * t(V)))
 
-  tmp <- t(data$eigen_R$vectors)
-  data$RjSinvRj_temp <- colSums(tmp * (Dinv * (data$eigen_R$values^2) * tmp))
-
-  return(data)
+  return(model)
 }
 
 
 # Calculate posterior moments for single effect regression
-calculate_posterior_moments.rss_lambda <- function(data, model, V, residuals, ...) {
-  # RSS-lambda specific posterior calculations
-  post_var <- (model$RjSinvRj + 1 / V)^(-1)
-  post_mean <- sapply(1:data$p, function(j) {
-    post_var[j] * sum(model$SinvRj[, j] * residuals)
+calculate_posterior_moments.rss_lambda <- function(data, model, V, ...) {
+  post_var   <- (model$RjSinvRj + 1 / V)^(-1)
+  post_mean  <- sapply(1:data$p, function(j) {
+    post_var[j] * sum(model$SinvRj[, j] * model$residuals)
   })
   post_mean2 <- post_var + post_mean^2
 
   return(list(
-    post_mean = post_mean,
+    post_mean  = post_mean,
     post_mean2 = post_mean2,
-    post_var = post_var,
-    beta_1 = NULL  # Not used for RSS-lambda
-    # FIXME: when it is not used we should not have to include it as a NULL
-    # Also beta_1 as a notation is a bit weird. What is it exactly from Servin_Stephens and can we clarify on why we need it?
+    post_var   = post_var
   ))
 }

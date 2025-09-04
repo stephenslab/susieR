@@ -1,10 +1,10 @@
 # Generic methods for S3 dispatch
 
 # Single effect regression posterior expected log-likelihood
-SER_posterior_e_loglik <- function(data, model, R, Eb, Eb2, dXtX) {
+SER_posterior_e_loglik <- function(data, model, Eb, Eb2) {
   UseMethod("SER_posterior_e_loglik")
 }
-SER_posterior_e_loglik.default <- function(data, model, R, Eb, Eb2, dXtX) {
+SER_posterior_e_loglik.default <- function(data, model, Eb, Eb2) {
   stop("SER_posterior_e_loglik: no method for class '", class(data)[1], "'")
 }
 
@@ -25,10 +25,10 @@ compute_residuals.default <- function(data, model, l, ...) {
 }
 
 # Compute SER statistics (betahat, shat2)
-compute_ser_statistics <- function(data, model, residuals, dXtX, residual_variance, ...) {
+compute_ser_statistics <- function(data, model, residual_variance, ...) {
   UseMethod("compute_ser_statistics")
 }
-compute_ser_statistics.default <- function(data, model, residuals, dXtX, residual_variance, ...) {
+compute_ser_statistics.default <- function(data, model, residual_variance, ...) {
   stop("compute_ser_statistics: no method for class '", class(data)[1], "'")
 }
 
@@ -44,8 +44,24 @@ get_ER2.default <- function(data, model) {
 single_effect_update <- function(data, model, l, ...) {
   UseMethod("single_effect_update")
 }
-single_effect_update.default <- function(data, model, l, ...) {
-  stop("single_effect_update: no method for class '", class(data)[1], "'")
+single_effect_update.default <- function(data, model, l, optimize_V, check_null_threshold, ...) {
+  # Common algorithm for all data types
+  model <- compute_residuals(data, model, l)
+  
+  res <- single_effect_regression(data, model, l, 
+                                 residual_variance = model$residual_variance,
+                                 optimize_V = optimize_V,
+                                 check_null_threshold = check_null_threshold)
+  
+  # Store basic results in model
+  model$alpha[l, ]        <- res$alpha
+  model$mu[l, ]           <- res$mu
+  model$mu2[l, ]          <- res$mu2  
+  model$V[l]              <- res$V
+  model$lbf[l]            <- res$lbf_model
+  model$lbf_variable[l, ] <- res$lbf
+  
+  return(model)
 }
 
 # Get column scale factors
@@ -93,7 +109,7 @@ get_zscore <- function(data, model, ...) {
   UseMethod("get_zscore")
 }
 get_zscore.default <- function(data, model, ...) {
-  stop("get_zscore: no method for class '", class(data)[1], "'")
+  return(NULL)
 }
 
 # Initialize fitted values
@@ -117,15 +133,23 @@ validate_prior <- function(data, model, check_prior, ...) {
   UseMethod("validate_prior")
 }
 validate_prior.default <- function(data, model, check_prior, ...) {
-  stop("validate_prior: no method for class '", class(data)[1], "'")
+  invisible(TRUE)
 }
 
-# Extract core parameters of a susie fit across iterations
-extract_core <- function(data, model, tracking, iter, track_fit, ...) {
-  UseMethod("extract_core")
+# Track core parameters of a susie fit across iterations
+track_ibss_fit <- function(data, model, tracking, iter, track_fit, ...) {
+  UseMethod("track_ibss_fit")
 }
-extract_core.default <- function(data, model, tracking, iter, track_fit, ...) {
-  stop("extract_core: no method for class '", class(data)[1], "'")
+track_ibss_fit.default <- function(data, model, tracking, iter, track_fit, ...) {
+  if (isTRUE(track_fit)) {
+    tracking[[iter]] <- list(
+      alpha = model$alpha,
+      niter = iter,
+      V = model$V,
+      sigma2 = model$sigma2
+    )
+  }
+  return(tracking)
 }
 
 # Initialize susie model
@@ -141,7 +165,7 @@ configure_data <- function(data) {
   UseMethod("configure_data")
 }
 configure_data.default <- function(data) {
-  stop("configure_data: no method for class '", class(data)[1], "'")
+  return(data)
 }
 
 # Update variance components
@@ -157,7 +181,7 @@ update_derived_quantities <- function(data, model) {
   UseMethod("update_derived_quantities")
 }
 update_derived_quantities.default <- function(data, model) {
-  stop("update_derived_quantities: no method for class '", class(data)[1], "'")
+  return(model)
 }
 
 # Expected log-likelihood
