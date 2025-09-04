@@ -84,7 +84,7 @@ Eloglik.rss_lambda <- function(data, model) {
 }
 
 # Log-likelihood for RSS
-loglik.rss_lambda <- function(data, model, V, ser_stats, prior_weights, ...) {
+loglik.rss_lambda <- function(data, model, V, ser_stats, ...) {
   # Compute log Bayes factors
   lbf <- sapply(1:data$p, function(j) {
     -0.5 * log(1 + (V / ser_stats$shat2[j])) +
@@ -92,7 +92,7 @@ loglik.rss_lambda <- function(data, model, V, ser_stats, prior_weights, ...) {
   })
 
   # Stabilize logged Bayes Factor
-  stable_res <- lbf_stabilization(lbf, prior_weights, ser_stats$shat2)
+  stable_res <- lbf_stabilization(lbf, model$pi, ser_stats$shat2)
 
   # Compute posterior weights
   weights_res <- compute_posterior_weights(stable_res$lpo)
@@ -104,10 +104,10 @@ loglik.rss_lambda <- function(data, model, V, ser_stats, prior_weights, ...) {
   ))
 }
 
-neg_loglik.rss_lambda <- function(data, model, V_param, ser_stats, prior_weights, ...) {
+neg_loglik.rss_lambda <- function(data, model, V_param, ser_stats, ...) {
   # Convert parameter to V based on optimization scale (always log for RSS lambda)
   V   <- exp(V_param)
-  res <- loglik.rss_lambda(data, model, V, ser_stats, prior_weights)
+  res <- loglik.rss_lambda(data, model, V, ser_stats)
   return(-res$lbf_model)
 }
 

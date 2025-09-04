@@ -379,13 +379,13 @@ Eloglik.ss <- function(data, model) {
 
 #' @importFrom Matrix colSums
 #' @importFrom stats dnorm
-loglik.ss <- function(data, model, V, ser_stats, prior_weights, ...) {
+loglik.ss <- function(data, model, V, ser_stats, ...) {
   # log(bf) for each SNP
   lbf <- dnorm(ser_stats$betahat, 0, sqrt(V + ser_stats$shat2), log = TRUE) -
     dnorm(ser_stats$betahat, 0, sqrt(ser_stats$shat2), log = TRUE)
 
   # Stabilize logged Bayes Factor
-  stable_res <- lbf_stabilization(lbf, prior_weights, ser_stats$shat2)
+  stable_res <- lbf_stabilization(lbf, model$pi, ser_stats$shat2)
 
   # Compute posterior weights
   weights_res <- compute_posterior_weights(stable_res$lpo)
@@ -401,20 +401,20 @@ loglik.ss <- function(data, model, V, ser_stats, prior_weights, ...) {
   ))
 }
 
-neg_loglik.ss <- function(data, model, V_param, ser_stats, prior_weights, ...) {
+neg_loglik.ss <- function(data, model, V_param, ser_stats, ...) {
   # Convert parameter to V based on optimization scale
   V <- if (ser_stats$optim_scale == "log") exp(V_param) else V_param
 
   if (data$unmappable_effects == "none") {
     # Standard objective
-    res <- loglik.ss(data, model, V, ser_stats, prior_weights)
+    res <- loglik.ss(data, model, V, ser_stats)
     return(-res$lbf_model)
   } else {
     # Unmappable objective with logSumExp trick
     return(-matrixStats::logSumExp(
       -0.5 * log(1 + V * model$predictor_weights) +
       V * model$residuals^2 / (2 * (1 + V * model$predictor_weights)) +
-        log(prior_weights + sqrt(.Machine$double.eps))
+        log(model$pi + sqrt(.Machine$double.eps))
     ))
   }
 }

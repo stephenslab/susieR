@@ -248,7 +248,7 @@ Eloglik.individual <- function(data, model) {
 
 #' @importFrom Matrix colSums
 #' @importFrom stats dnorm
-loglik.individual <- function(data, model, V, ser_stats, prior_weights, ...) {
+loglik.individual <- function(data, model, V, ser_stats, ...) {
   # Check if using Servin-Stephens prior
   if (data$use_servin_stephens) {
     # Calculate Servin-Stephens logged Bayes factors
@@ -266,7 +266,7 @@ loglik.individual <- function(data, model, V, ser_stats, prior_weights, ...) {
   }
 
   # Stabilize logged Bayes Factor
-  stable_res <- lbf_stabilization(lbf, prior_weights, ser_stats$shat2)
+  stable_res <- lbf_stabilization(lbf, model$pi, ser_stats$shat2)
 
   # Compute posterior weights
   weights_res <- compute_posterior_weights(stable_res$lpo)
@@ -282,10 +282,10 @@ loglik.individual <- function(data, model, V, ser_stats, prior_weights, ...) {
   ))
 }
 
-neg_loglik.individual <- function(data, model, V_param, ser_stats, prior_weights, ...) {
+neg_loglik.individual <- function(data, model, V_param, ser_stats, ...) {
   # Convert parameter to V based on optimization scale (always log for individual)
   V <- exp(V_param)
-  res <- loglik.individual(data, model, V, ser_stats, prior_weights)
+  res <- loglik.individual(data, model, V, ser_stats)
   return(-res$lbf_model)
 }
 
