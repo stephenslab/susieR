@@ -1,10 +1,10 @@
 # Generic methods for S3 dispatch
 
 # Single effect regression posterior expected log-likelihood
-SER_posterior_e_loglik <- function(data, model, R, Eb, Eb2) {
+SER_posterior_e_loglik <- function(data, model, Eb, Eb2) {
   UseMethod("SER_posterior_e_loglik")
 }
-SER_posterior_e_loglik.default <- function(data, model, R, Eb, Eb2) {
+SER_posterior_e_loglik.default <- function(data, model, Eb, Eb2) {
   stop("SER_posterior_e_loglik: no method for class '", class(data)[1], "'")
 }
 
@@ -44,8 +44,24 @@ get_ER2.default <- function(data, model) {
 single_effect_update <- function(data, model, l, ...) {
   UseMethod("single_effect_update")
 }
-single_effect_update.default <- function(data, model, l, ...) {
-  stop("single_effect_update: no method for class '", class(data)[1], "'")
+single_effect_update.default <- function(data, model, l, optimize_V, check_null_threshold, ...) {
+  # Common algorithm for all data types
+  model <- compute_residuals(data, model, l)
+  
+  res <- single_effect_regression(data, model, l, 
+                                 residual_variance = model$residual_variance,
+                                 optimize_V = optimize_V,
+                                 check_null_threshold = check_null_threshold)
+  
+  # Store basic results in model
+  model$alpha[l, ]        <- res$alpha
+  model$mu[l, ]           <- res$mu
+  model$mu2[l, ]          <- res$mu2  
+  model$V[l]              <- res$V
+  model$lbf[l]            <- res$lbf_model
+  model$lbf_variable[l, ] <- res$lbf
+  
+  return(model)
 }
 
 # Get column scale factors

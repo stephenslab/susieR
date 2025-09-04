@@ -68,9 +68,9 @@ get_ER2.individual <- function(data, model) {
 }
 
 # Posterior expected log-likelihood for single effect regression
-SER_posterior_e_loglik.individual <- function(data, model, R, Eb, Eb2) {
+SER_posterior_e_loglik.individual <- function(data, model, Eb, Eb2) {
   return(-0.5 * data$n * log(2 * pi * model$sigma2) -
-    0.5 / model$sigma2 * (sum(R * R) - 2 * sum(R * compute_Xb(data$X, Eb)) +
+    0.5 / model$sigma2 * (sum(model$raw_residuals * model$raw_residuals) - 2 * sum(model$raw_residuals * compute_Xb(data$X, Eb)) +
       sum(model$predictor_weights * Eb2)))
 }
 
@@ -119,37 +119,16 @@ single_effect_update.individual <- function(
     data, model, l,
     optimize_V, check_null_threshold) {
 
-  # Compute residuals and store in model
-  model <- compute_residuals(data, model, l)
+  # Update prior variance, alpha, mu, lbf
+  model <- single_effect_update.default(data, model, l, optimize_V, check_null_threshold)
 
-  res <- single_effect_regression(
-    data                 = data,
-    model                = model,
-    l                    = l,
-    optimize_V           = optimize_V,
-    check_null_threshold = check_null_threshold
-  )
+  # Update KL
+  loglik_term <- model$lbf[l] + sum(dnorm(model$raw_residuals, 0, sqrt(model$sigma2), log = TRUE))
+  model$KL[l] <- -loglik_term + SER_posterior_e_loglik(data, model,
+                                                       model$alpha[l, ] * model$mu[l, ],
+                                                       model$alpha[l, ] * model$mu2[l, ])
 
-  # log-likelihood term using current residual vector (not available in ss)
-  res$loglik <- res$lbf_model +
-    sum(dnorm(model$raw_residuals, 0, sqrt(model$sigma2), log = TRUE))
-
-  res$KL <- -res$loglik +
-    SER_posterior_e_loglik(data, model, model$raw_residuals,
-      Eb  = res$alpha * res$mu,
-      Eb2 = res$alpha * res$mu2
-    )
-
-  # Update alpha and mu for adding effect back
-  model$alpha[l, ] <- res$alpha
-  model$mu[l, ] <- res$mu
-  model$mu2[l, ] <- res$mu2
-  model$V[l] <- res$V
-  model$lbf[l] <- res$lbf_model
-  model$lbf_variable[l, ] <- res$lbf
-  model$KL[l] <- res$KL
-
-  # Update fitted values using fitted_without_l + new contribution
+  # Update fitted values
   model$Xr <- model$fitted_without_l + compute_Xb(data$X, model$alpha[l, ] * model$mu[l, ])
 
   return(model)

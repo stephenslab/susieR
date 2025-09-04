@@ -87,13 +87,13 @@ get_ER2.ss <- function(data, model) {
 }
 
 # Posterior expected log-likelihood for a single effect regression
-SER_posterior_e_loglik.ss <- function(data, model, XtR, Eb, Eb2) {
+SER_posterior_e_loglik.ss <- function(data, model, Eb, Eb2) {
   if (data$unmappable_effects == "none") {
     # Standard SuSiE
-    return(-0.5 / model$sigma2 * (-2 * sum(Eb * XtR) + sum(model$predictor_weights * as.vector(Eb2))))
+    return(-0.5 / model$sigma2 * (-2 * sum(Eb * model$residuals) + sum(model$predictor_weights * as.vector(Eb2))))
   } else {
     # Omega-weighted likelihood
-    return(-0.5 * (-2 * sum(Eb * XtR) + sum(model$predictor_weights * as.vector(Eb2))))
+    return(-0.5 * (-2 * sum(Eb * model$residuals) + sum(model$predictor_weights * as.vector(Eb2))))
   }
 }
 
@@ -109,11 +109,11 @@ compute_residuals.ss <- function(data, model, l, ...) {
     XtOmegaXb <- data$eigen_vectors %*% ((t(data$eigen_vectors) %*% b) * data$eigen_values / omega_res$omega_var)
     XtOmegar <- XtOmegay - XtOmegaXb
 
-    # Store unified residuals in model (unmappable case)
-    model$residuals <- XtOmegar             # For SER & KL
-    model$omega_res <- omega_res            # For predictor_weights update
-    model$unmappable <- TRUE                # Flag for special handling
-    
+    # Store residuals and parameters (unmappable case)
+    model$residuals         <- XtOmegar
+    model$predictor_weights <- omega_res$diagXtOmegaX  # Update for this iteration
+    model$residual_variance <- 1                       # Already incorporated in Omega
+
     return(model)
   } else {
     # Remove lth effect from fitted values
@@ -122,10 +122,10 @@ compute_residuals.ss <- function(data, model, l, ...) {
     # Compute Residuals
     XtR <- data$Xty - XtXr_without_l
 
-    # Store unified residuals in model (standard case)
-    model$residuals <- XtR                  # For SER & KL
-    model$fitted_without_l <- XtXr_without_l # For fitted update
-    model$unmappable <- FALSE               # Flag for special handling
+    # Store residuals and parameters (standard case)
+    model$residuals         <- XtR
+    model$fitted_without_l  <- XtXr_without_l # For fitted update
+    model$residual_variance <- model$sigma2  # Standard residual variance
 
     return(model)
   }
@@ -163,45 +163,17 @@ single_effect_update.ss <- function(
     data, model, l,
     optimize_V, check_null_threshold) {
 
-  # Compute residuals and store in model
-  model <- compute_residuals(data, model, l)
+  # Update prior variance, alpha, mu, lbf
+  model <- single_effect_update.default(data, model, l, optimize_V, check_null_threshold)
 
-  # Update model predictor_weights and residual variance based on unmappable status
-  if (model$unmappable) {
-    model$predictor_weights <- model$omega_res$diagXtOmegaX
-    residual_variance <- 1  # Already incorporated in Omega
-  } else {
-    residual_variance <- model$sigma2
-  }
-
-  # Run single effect regression
-  res <- single_effect_regression(
-    data                 = data,
-    model                = model,
-    l                    = l,
-    residual_variance    = residual_variance,
-    optimize_V           = optimize_V,
-    check_null_threshold = check_null_threshold
-  )
-
-  # Store results
-  model$alpha[l, ]        <- res$alpha
-  model$mu[l, ]           <- res$mu
-  model$mu2[l, ]          <- res$mu2
-  model$V[l]              <- res$V
-  model$lbf[l]            <- res$lbf_model
-  model$lbf_variable[l, ] <- res$lbf
-
-  # Compute KL divergence
-  model$KL[l] <- -res$lbf_model +
-    SER_posterior_e_loglik(data, model, model$residuals,
-                           Eb  = res$alpha * res$mu,
-                           Eb2 = res$alpha * res$mu2)
+  # Update KL
+  model$KL[l] <- -model$lbf[l] + SER_posterior_e_loglik(data, model,
+                                                        model$alpha[l, ] * model$mu[l, ],
+                                                        model$alpha[l, ] * model$mu2[l, ])
 
   # Update fitted values
-  if (model$unmappable) {
-    b <- colSums(model$alpha * model$mu)
-    model$XtXr <- compute_Xb(data$XtX, b + model$theta)
+  if (data$unmappable_effects != "none") {
+    model$XtXr <- compute_Xb(data$XtX, colSums(model$alpha * model$mu) + model$theta)
   } else {
     model$XtXr <- model$fitted_without_l + compute_Xb(data$XtX, model$alpha[l, ] * model$mu[l, ])
   }

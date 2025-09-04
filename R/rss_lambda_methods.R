@@ -66,10 +66,10 @@ get_ER2.rss_lambda <- function(data, model) {
 }
 
 # SER posterior expected log-likelihood
-SER_posterior_e_loglik.rss_lambda <- function(data, model, r, Eb, Eb2) {
+SER_posterior_e_loglik.rss_lambda <- function(data, model, Eb, Eb2) {
   V      <- data$eigen_R$vectors
   Dinv   <- compute_Dinv(model, data)
-  rR     <- data$R %*% r
+  rR     <- data$R %*% model$residuals
   SinvEb <- V %*% (Dinv * crossprod(V, Eb))
 
   return(-0.5 * (-2 * sum(rR * SinvEb) + sum(model$RjSinvRj * Eb2)))
@@ -149,31 +149,15 @@ compute_ser_statistics.rss_lambda <- function(data, model, residual_variance, l,
 single_effect_update.rss_lambda <- function(data, model, l,
                                             optimize_V, check_null_threshold) {
 
-  # Compute residuals and store in model
-  model <- compute_residuals(data, model, l)
+  # Update prior variance, alpha, mu, lbf
+  model <- single_effect_update.default(data, model, l, optimize_V, check_null_threshold)
 
-  res <- single_effect_regression(
-    data = data,
-    model = model,
-    l = l,
-    optimize_V = optimize_V,
-    check_null_threshold = check_null_threshold
-  )
+  # Update KL
+  model$KL[l] <- -model$lbf[l] + SER_posterior_e_loglik(data, model,
+                                                        model$alpha[l, ] * model$mu[l, ],
+                                                        model$alpha[l, ] * model$mu2[l, ])
 
-  model$mu[l, ] <- res$mu
-  model$alpha[l, ] <- res$alpha
-  model$mu2[l, ] <- res$mu2
-  model$V[l] <- res$V
-  model$lbf[l] <- res$lbf_model
-  model$lbf_variable[l, ] <- res$lbf
-
-  model$KL[l] <- -res$lbf_model +
-    SER_posterior_e_loglik(
-      data, model, model$residuals,
-      res$alpha * res$mu, res$alpha * res$mu2
-    )
-
-  # Update fitted values using fitted_without_l + new contribution
+  # Update fitted values
   model$Rz <- model$fitted_without_l + compute_Xb(data$R, model$alpha[l, ] * model$mu[l, ])
 
   return(model)
