@@ -37,19 +37,6 @@ configure_data.individual <- function(data) {
 # Track core parameters across iterations
 track_ibss_fit.individual <- function(data, model, tracking, iter, track_fit, ...) {
   return(track_ibss_fit.default(data, model, tracking, iter, track_fit, ...))
-# FIXME: i dont think we need a method for this. Because, you can leverage
-#> a = list(); b = list()
-#> a
-#list()
-#> b
-#list()
-#> a$tau = b$tau
-#> a
-#list()
-#> b
-#list()
-
-# FIXME: i also think it is better called `track_ibss_fit()` not `extract_core`
 }
 
 
@@ -72,8 +59,6 @@ SER_posterior_e_loglik.individual <- function(data, model, Eb, Eb2) {
       sum(model$predictor_weights * Eb2)))
 }
 
-
-# FIXME: in principle the input and output of "methods" should be the same to make it modular. Here the output of this function and other methods are different but I am not sure if it makes sense to unify them without losing clarity.
 # Compute residuals for single effect regression
 compute_residuals.individual <- function(data, model, l, ...) {
   # Remove lth effect from fitted values
@@ -84,14 +69,12 @@ compute_residuals.individual <- function(data, model, l, ...) {
   XtR <- compute_Xty(data$X, R)
 
   # Store unified residuals in model
-  model$residuals <- XtR                  # For SER
-  model$fitted_without_l <- Xr_without_l  # For fitted update
-  model$raw_residuals <- R                # For Servin-Stephens KL
+  model$residuals        <- XtR
+  model$fitted_without_l <- Xr_without_l
+  model$raw_residuals    <- R
 
   return(model)
 }
-
-
 
 # Compute SER statistics
 compute_ser_statistics.individual <- function(data, model, residual_variance, l, ...) {

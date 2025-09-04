@@ -37,7 +37,14 @@ get_var_y.ss <- function(data, ...) {
   return(data$yty / (data$n - 1))
 }
 
-# FIXME: we don't have "configure_data" function here? if the only place we need for configre_data.individal then it is simply converting individual level data to suff stats which should not happen as a generic method. It should be done outside of the methods and we caution that it is temporary (due to lack of implementation of individual level updates for the unmappable effects)
+# Configure ss data for specified method
+configure_data.ss <- function(data) {
+  if (data$unmappable_effects == "none") {
+    return(configure_data.default(data))
+  } else {
+    return(add_eigen_decomposition(data))
+  }
+}
 
 # Track core parameters across iterations
 track_ibss_fit.ss <- function(data, model, tracking, iter, track_fit, ...) {
@@ -223,15 +230,6 @@ get_variable_names.ss <- function(data, model, null_weight) {
 # Get univariate z-score
 get_zscore.ss <- function(data, model, ...) {
   return(NULL)
-}
-
-# Configure ss data for specified method
-configure_data.ss <- function(data) {
-  if (data$unmappable_effects == "none") {
-    return(configure_data.default(data))
-  } else {
-    return(add_eigen_decomposition(data))
-  }
 }
 
 # Update variance components for ss data
