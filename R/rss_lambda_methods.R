@@ -30,7 +30,7 @@ get_var_y.rss_lambda <- function(data, ...) {
 
 # Configure data
 configure_data.rss_lambda <- function(data) {
-  return(data)
+  return(configure_data.default(data))
 }
 
 # Track core parameters for tracking
@@ -40,7 +40,7 @@ track_ibss_fit.rss_lambda <- function(data, model, tracking, iter, track_fit, ..
 
 # Validate prior variance
 validate_prior.rss_lambda <- function(data, model, check_prior, ...) {
-  return(model)
+  return(validate_prior.default(data, model, check_prior, ...))
 }
 
 # Expected squared residuals
@@ -120,18 +120,17 @@ compute_residuals.rss_lambda <- function(data, model, l, ...) {
   r <- data$z - Rz_without_l
 
   # Store unified residuals in model
-  model$residuals <- r                    # For SER & KL
-  model$fitted_without_l <- Rz_without_l  # For fitted update
+  model$residuals        <- r
+  model$fitted_without_l <- Rz_without_l
 
   return(model)
 }
 
 # Compute SER statistics
 compute_ser_statistics.rss_lambda <- function(data, model, residual_variance, l, ...) {
-  # For RSS-lambda, we only need shat2
   shat2 <- 1 / model$RjSinvRj
 
-  # Compute initial value for optimization: max((z^T Sigma^{-1} R_j)^2 - 1/RjSinvRj, 1e-6)
+  # Optimization parameters
   init_vals <- sapply(1:data$p, function(j) sum(model$SinvRj[, j] * model$residuals)^2) - (1 / model$RjSinvRj)
   optim_init <- log(max(c(init_vals, 1e-6), na.rm = TRUE))
   optim_bounds <- c(-30, 15)
@@ -179,7 +178,6 @@ get_fitted.rss_lambda <- function(data, model, ...) {
 }
 
 # Get credible sets
-# FIXME: data$R has been used previously as residuals but here it is R the LD matrix. Even though these are different data types I still think for clarity we should, throughout the code base, use "R" for correlatin/LD matrix. You can use `yr` for residual or something else, in the individual level data objects.
 get_cs.rss_lambda <- function(data, model, coverage, min_abs_corr, n_purity) {
   if (is.null(coverage) || is.null(min_abs_corr)) {
     return(NULL)
@@ -239,16 +237,15 @@ update_derived_quantities.rss_lambda <- function(data, model) {
 
 # Calculate posterior moments for single effect regression
 calculate_posterior_moments.rss_lambda <- function(data, model, V, ...) {
-  # RSS-lambda specific posterior calculations
-  post_var <- (model$RjSinvRj + 1 / V)^(-1)
-  post_mean <- sapply(1:data$p, function(j) {
+  post_var   <- (model$RjSinvRj + 1 / V)^(-1)
+  post_mean  <- sapply(1:data$p, function(j) {
     post_var[j] * sum(model$SinvRj[, j] * model$residuals)
   })
   post_mean2 <- post_var + post_mean^2
 
   return(list(
-    post_mean = post_mean,
+    post_mean  = post_mean,
     post_mean2 = post_mean2,
-    post_var = post_var
+    post_var   = post_var
   ))
 }

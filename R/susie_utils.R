@@ -921,8 +921,7 @@ posterior_var_servin_stephens <- function(xtx, xty, yty, n, s0_t = 1) {
 
 # Convert individual data to ss with unmappable effects components.
 #' @keywords internal
-convert_individual_to_ss_unmappable <- function(data) {
-  # FIXME: we should remove `_unmappable` just call this function # convert_individual_to_ss. Then copy all the data attribites to the new object and removce X and y (set to NULL) then add XtX etc. There is no need to mention unmappable here; it's just converting individual level data object into ss
+convert_individual_to_ss <- function(data) {
   # Compute sufficient statistics
   XtX <- compute_XtX(data$X)
   Xty <- compute_Xty(data$X, data$y)
@@ -1049,16 +1048,16 @@ add_eigen_decomposition <- function(data, individual_data = NULL) {
 
   # Add eigen components to data object
   data$eigen_vectors <- eigen_decomp$V
-  data$eigen_values <- eigen_decomp$Dsq
-  data$VtXty <- t(eigen_decomp$V) %*% data$Xty
+  data$eigen_values  <- eigen_decomp$Dsq
+  data$VtXty         <- t(eigen_decomp$V) %*% data$Xty
 
   # SuSiE.ash requires the X matrix and standardized y vector
   if (data$unmappable_effects == "ash") {
     if (is.null(individual_data)) {
       stop("Adaptive shrinkage (ash) requires individual-level data")
     }
-    data$X <- individual_data$X
-    data$y <- individual_data$y / y_scale_factor
+    data$X    <- individual_data$X
+    data$y    <- individual_data$y / y_scale_factor
     data$VtXt <- t(data$eigen_vectors) %*% t(individual_data$X)
   }
 

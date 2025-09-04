@@ -58,9 +58,8 @@ track_ibss_fit.ss <- function(data, model, tracking, iter, track_fit, ...) {
 validate_prior.ss <- function(data, model, check_prior, ...) {
   if (isTRUE(check_prior)) {
     if (is.null(data$zm)) {
-      d <- attr(data$XtX, "d")
-      bhat <- data$Xty / d
-      shat <- sqrt(model$sigma2 / d)
+      bhat <- data$Xty / model$predictor_weights
+      shat <- sqrt(model$sigma2 / model$predictor_weights)
       z <- bhat / shat
       data$zm <- max(abs(z[!is.nan(z)]))
     }
@@ -72,18 +71,18 @@ validate_prior.ss <- function(data, model, check_prior, ...) {
       )
     }
   }
-  invisible(TRUE)
+  return(validate_prior.default(data, model, check_prior, ...))
 }
 
 # Expected Squared Residuals
 get_ER2.ss <- function(data, model) {
-  B <- model$alpha * model$mu
-  XB2 <- sum((B %*% data$XtX) * B)
+  B       <- model$alpha * model$mu
+  XB2     <- sum((B %*% data$XtX) * B)
   betabar <- colSums(B)
-  d <- attr(data$XtX, "d")
-  postb2 <- model$alpha * model$mu2 # Posterior second moment.
+  postb2  <- model$alpha * model$mu2 # Posterior second moment.
+
   return(data$yty - 2 * sum(betabar * data$Xty) + sum(betabar * (data$XtX %*% betabar)) -
-    XB2 + sum(d * t(postb2)))
+    XB2 + sum(model$predictor_weights * t(postb2)))
 }
 
 # Posterior expected log-likelihood for a single effect regression
@@ -136,7 +135,7 @@ compute_ser_statistics.ss <- function(data, model, residual_variance, l, ...) {
   betahat <- (1 / model$predictor_weights) * model$residuals
   shat2 <- residual_variance / model$predictor_weights
 
-  # Compute optimization parameters based on unmappable effects
+  # Optimization parameters
   if (data$unmappable_effects == "none") {
     # Standard SuSiE: optimize on log scale
     optim_init <- log(max(c(betahat^2 - shat2, 1), na.rm = TRUE))
@@ -218,12 +217,10 @@ get_cs.ss <- function(data, model, coverage, min_abs_corr, n_purity) {
 
 # Get Variable Names
 get_variable_names.ss <- function(data, model, null_weight) {
-  variable_names <- colnames(data$XtX)
-  return(assign_names(model, variable_names, null_weight, data$p))
+  return(assign_names(model, colnames(data$XtX), null_weight, data$p))
 }
 
 # Get univariate z-score
-# FIXME: again for what's returned as NULL do we still have to define them or we can put in the default behavior with generic method?
 get_zscore.ss <- function(data, model, ...) {
   return(NULL)
 }
@@ -231,7 +228,7 @@ get_zscore.ss <- function(data, model, ...) {
 # Configure ss data for specified method
 configure_data.ss <- function(data) {
   if (data$unmappable_effects == "none") {
-    return(data)
+    return(configure_data.default(data))
   } else {
     return(add_eigen_decomposition(data))
   }
@@ -338,7 +335,7 @@ update_derived_quantities.ss <- function(data, model) {
 
     return(model)
   } else {
-    return(model)
+    return(update_derived_quantities.default(data, model))
   }
 }
 
@@ -357,19 +354,19 @@ loglik.ss <- function(data, model, V, ser_stats, ...) {
     dnorm(ser_stats$betahat, 0, sqrt(ser_stats$shat2), log = TRUE)
 
   # Stabilize logged Bayes Factor
-  stable_res <- lbf_stabilization(lbf, model$pi, ser_stats$shat2)
+  stable_res  <- lbf_stabilization(lbf, model$pi, ser_stats$shat2)
 
   # Compute posterior weights
   weights_res <- compute_posterior_weights(stable_res$lpo)
 
   # Compute gradient
-  gradient <- compute_lbf_gradient(weights_res$alpha, ser_stats$betahat, ser_stats$shat2, V)
+  gradient    <- compute_lbf_gradient(weights_res$alpha, ser_stats$betahat, ser_stats$shat2, V)
 
   return(list(
-    lbf = stable_res$lbf,
+    lbf       = stable_res$lbf,
     lbf_model = weights_res$lbf_model,
-    alpha = weights_res$alpha,
-    gradient = gradient
+    alpha     = weights_res$alpha,
+    gradient  = gradient
   ))
 }
 
@@ -395,13 +392,13 @@ neg_loglik.ss <- function(data, model, V_param, ser_stats, ...) {
 calculate_posterior_moments.ss <- function(data, model, V,
                                            residual_variance, ...) {
   # Standard Gaussian posterior calculations
-  post_var <- (1 / V + model$predictor_weights / residual_variance)^(-1)
-  post_mean <- (1 / residual_variance) * post_var * model$residuals
+  post_var   <- (1 / V + model$predictor_weights / residual_variance)^(-1)
+  post_mean  <- (1 / residual_variance) * post_var * model$residuals
   post_mean2 <- post_var + post_mean^2
 
   return(list(
-    post_mean = post_mean,
+    post_mean  = post_mean,
     post_mean2 = post_mean2,
-    post_var = post_var
+    post_var   = post_var
   ))
 }

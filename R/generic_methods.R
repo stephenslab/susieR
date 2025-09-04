@@ -133,7 +133,7 @@ validate_prior <- function(data, model, check_prior, ...) {
   UseMethod("validate_prior")
 }
 validate_prior.default <- function(data, model, check_prior, ...) {
-  stop("validate_prior: no method for class '", class(data)[1], "'")
+  invisible(TRUE)
 }
 
 # Track core parameters of a susie fit across iterations
@@ -165,7 +165,7 @@ configure_data <- function(data) {
   UseMethod("configure_data")
 }
 configure_data.default <- function(data) {
-  stop("configure_data: no method for class '", class(data)[1], "'")
+  return(data)
 }
 
 # Update variance components
@@ -181,7 +181,7 @@ update_derived_quantities <- function(data, model) {
   UseMethod("update_derived_quantities")
 }
 update_derived_quantities.default <- function(data, model) {
-  stop("update_derived_quantities: no method for class '", class(data)[1], "'")
+  return(model)
 }
 
 # Expected log-likelihood

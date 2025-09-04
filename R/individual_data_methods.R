@@ -27,11 +27,10 @@ get_var_y.individual <- function(data, ...) {
 # Configure individual data for specified method
 configure_data.individual <- function(data) {
   if (data$unmappable_effects == "none") {
-    return(data)
+    return(configure_data.default(data))
   } else {
     warning("Individual-level data converted to sufficient statistics for unmappable effects methods\n")
-    return(convert_individual_to_ss_unmappable(data))
-    # FIXME: see comment on this function in utility
+    return(convert_individual_to_ss(data))
   }
 }
 
@@ -56,15 +55,14 @@ track_ibss_fit.individual <- function(data, model, tracking, iter, track_fit, ..
 
 # Validate prior variance
 validate_prior.individual <- function(data, model, check_prior, ...) {
-  invisible(TRUE)
-  # FIXME: between invisible and return model in rss_lambda which one should we do? Or as i asked before, can we make a default in generic function?
+  return(validate_prior.default(data, model, check_prior, ...))
 }
 
 # Expected squared residuals
 get_ER2.individual <- function(data, model) {
   Xr_L <- compute_MXt(model$alpha * model$mu, data$X)
   postb2 <- model$alpha * model$mu2
-  return(sum((data$y - model$Xr)^2) - sum(Xr_L^2) + sum(attr(data$X, "d") * t(postb2)))
+  return(sum((data$y - model$Xr)^2) - sum(Xr_L^2) + sum(model$predictor_weights * t(postb2)))
 }
 
 # Posterior expected log-likelihood for single effect regression
@@ -100,7 +98,7 @@ compute_ser_statistics.individual <- function(data, model, residual_variance, l,
   betahat <- (1 / model$predictor_weights) * model$residuals
   shat2 <- residual_variance / model$predictor_weights
 
-  # Compute initial value for optimization (individual data always uses log scale)
+  # Optimization parameters
   optim_init <- log(max(c(betahat^2 - shat2, 1), na.rm = TRUE))
   optim_bounds <- c(-30, 15)
   optim_scale <- "log"
@@ -216,7 +214,7 @@ update_variance_components.individual <- function(data, model, estimate_method =
 
 # Update derived quantities for individual data
 update_derived_quantities.individual <- function(data, model) {
-  return(model) # No changes needed for individual data
+  return(update_derived_quantities.default(data, model))
 }
 
 # Expected log-likelihood
@@ -245,25 +243,26 @@ loglik.individual <- function(data, model, V, ser_stats, ...) {
   }
 
   # Stabilize logged Bayes Factor
-  stable_res <- lbf_stabilization(lbf, model$pi, ser_stats$shat2)
+  stable_res  <- lbf_stabilization(lbf, model$pi, ser_stats$shat2)
 
   # Compute posterior weights
   weights_res <- compute_posterior_weights(stable_res$lpo)
 
   # Compute gradient
-  gradient <- compute_lbf_gradient(weights_res$alpha, ser_stats$betahat, ser_stats$shat2, V, data$use_servin_stephens)
+  gradient    <- compute_lbf_gradient(weights_res$alpha, ser_stats$betahat,
+                                   ser_stats$shat2, V, data$use_servin_stephens)
 
   return(list(
-    lbf = stable_res$lbf,
+    lbf       = stable_res$lbf,
     lbf_model = weights_res$lbf_model,
-    alpha = weights_res$alpha,
-    gradient = gradient
+    alpha     = weights_res$alpha,
+    gradient  = gradient
   ))
 }
 
 neg_loglik.individual <- function(data, model, V_param, ser_stats, ...) {
   # Convert parameter to V based on optimization scale (always log for individual)
-  V <- exp(V_param)
+  V   <- exp(V_param)
   res <- loglik.individual(data, model, V, ser_stats)
   return(-res$lbf_model)
 }
@@ -271,7 +270,7 @@ neg_loglik.individual <- function(data, model, V_param, ser_stats, ...) {
 # Calculate posterior moments for single effect regression
 calculate_posterior_moments.individual <- function(data, model, V,
                                                    residual_variance, ...) {
-  # Initialize beta_1 as NULL (only used for Servin-Stephens)
+  # Initialize beta_1
   beta_1 <- NULL
 
   if (data$use_servin_stephens) {
@@ -294,21 +293,21 @@ calculate_posterior_moments.individual <- function(data, model, V,
                                       data$n, V)
       })
 
-      post_var <- sapply(var_result, function(x) x$post_var)
-      beta_1 <- sapply(var_result, function(x) x$beta1)
+      post_var   <- sapply(var_result, function(x) x$post_var)
+      beta_1     <- sapply(var_result, function(x) x$beta1)
       post_mean2 <- post_mean^2 + post_var
     }
   } else {
     # Standard Gaussian posterior calculations
-    post_var <- (1 / V + model$predictor_weights / residual_variance)^(-1)
-    post_mean <- (1 / residual_variance) * post_var * model$residuals
+    post_var   <- (1 / V + model$predictor_weights / residual_variance)^(-1)
+    post_mean  <- (1 / residual_variance) * post_var * model$residuals
     post_mean2 <- post_var + post_mean^2
   }
 
   return(list(
-    post_mean = post_mean,
+    post_mean  = post_mean,
     post_mean2 = post_mean2,
-    post_var = post_var,
-    beta_1 = beta_1
+    post_var   = post_var,
+    beta_1     = beta_1
   ))
 }
