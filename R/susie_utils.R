@@ -576,51 +576,18 @@ assign_names <- function(model, variable_names, null_weight, p) {
 # Helper function to update variance components and derived quantities
 #' @keywords internal
 update_model_variance <- function(data, model, lowerbound, upperbound, estimate_method = "MLE") {
+  # Update variance components
   variance_result <- update_variance_components(data, model, estimate_method)
-  model$sigma2 <- max(lowerbound, variance_result$sigma2)
-  model$sigma2 <- min(model$sigma2, upperbound)
+  model <- modifyList(model, variance_result)
 
-  # Update additional variance components if they exist
-  if (!is.null(variance_result$tau2)) {
-    model$tau2 <- variance_result$tau2
-  }
-
-  # Handle unmappable effects outputs (theta for both inf and ash)
-  if (!is.null(variance_result$theta)) {
-    model$theta <- variance_result$theta
-  }
-
-  # Handle ash weights
-  if (!is.null(variance_result$ash_pi)) {
-    model$ash_pi <- variance_result$ash_pi
-  }
+  # Apply bounds to residual variance
+  model$sigma2 <- min(max(model$sigma2, lowerbound), upperbound)
 
   # Update derived quantities after variance component changes
-  data <- update_derived_quantities(data, model)
+  model <- update_derived_quantities(data, model)
 
-  # Update fitted values to include theta if it exists
-  if (!is.null(model$theta)) {
-    b <- colSums(model$alpha * model$mu)
-    model$XtXr <- data$XtX %*% (b + model$theta)
-  }
-
-  # Transfer RSS lambda specific updates from data to model
-  if (!is.null(data$SinvRj_temp)) {
-    model$SinvRj <- data$SinvRj_temp
-    model$RjSinvRj <- data$RjSinvRj_temp
-    data$SinvRj_temp <- NULL
-    data$RjSinvRj_temp <- NULL
-  }
-
-  return(list(data = data, model = model))
+  return(model)
 }
-
-# Get posterior inclusion probabilities
-#' @keywords internal
-get_pip <- function(data, model, coverage, min_abs_corr, prior_tol) {
-
-}
-
 
 # Objective function (ELBO)
 #' @keywords internal
@@ -667,25 +634,20 @@ est_residual_variance <- function(data, model) {
 
 # Initialize core susie model object with default parameter matrices
 #' @keywords internal
-initialize_matrices <- function(p, L, scaled_prior_variance, var_y, residual_variance,
-                                prior_weights, include_unmappable = FALSE) {
+initialize_matrices <- function(data, L, scaled_prior_variance, var_y, residual_variance,
+                                prior_weights) {
   mat_init <- list(
-    alpha = matrix(1 / p, L, p),
-    mu = matrix(0, L, p),
-    mu2 = matrix(0, L, p),
+    alpha = matrix(1 / data$p, L, data$p),
+    mu = matrix(0, L, data$p),
+    mu2 = matrix(0, L, data$p),
     V = rep(scaled_prior_variance * var_y, L),
     KL = rep(as.numeric(NA), L),
     lbf = rep(as.numeric(NA), L),
-    lbf_variable = matrix(as.numeric(NA), L, p),
+    lbf_variable = matrix(as.numeric(NA), L, data$p),
     sigma2 = residual_variance,
-    pi = prior_weights
+    pi = prior_weights,
+    predictor_weights = rep(as.numeric(NA), data$p)
   )
-
-  # Add unmappable effects specific components
-  if (include_unmappable) {
-    mat_init$tau2 <- 0
-    mat_init$theta <- rep(0, p)
-  }
 
   return(mat_init)
 }
@@ -822,6 +784,48 @@ compute_elbo_inf <- function(alpha, mu, omega, lbf, sigma2, tau2, n, p,
 # @param R a p by p LD matrix
 # @param r_tol tolerance level for eigen value check of positive
 #   semidefinite matrix of R.
+# Compute inverse eigenvalues for RSS-lambda methods
+#' @keywords internal
+compute_Dinv <- function(model, data) {
+  Dinv <- 1 / (model$sigma2 * data$eigen_R$values + data$lambda)
+  Dinv[is.infinite(Dinv)] <- 0
+  return(Dinv)
+}
+
+# Compute RSS-lambda likelihood for variance optimization
+#' @keywords internal
+rss_lambda_likelihood <- function(sigma2, data, model) {
+  # Extract eigendecomposition
+  V <- data$eigen_R$vectors
+  D <- data$eigen_R$values
+
+  # Create eigenvalues of Sigma = sigma2 * R + lambda * I
+  eigenS_values <- sigma2 * D + data$lambda
+  Dinv <- 1 / eigenS_values
+  Dinv[is.infinite(Dinv)] <- 0
+
+  # Compute log determinant term
+  log_det_Sigma <- sum(log(eigenS_values[eigenS_values > 0]))
+
+  # Compute expected residual sum of squares using temporary matrices
+  SinvR_temp  <- V %*% ((Dinv * D) * t(V))
+  Utz         <- crossprod(V, data$z)
+  zSinvz      <- sum(Utz * (Dinv * Utz))
+
+  Z           <- model$alpha * model$mu
+  RSinvR_temp <- V %*% ((Dinv * (D^2)) * t(V))
+  zbar        <- colSums(Z)
+  RZ2         <- sum((Z %*% data$R) * Z)
+  postb2      <- model$alpha * model$mu2
+
+
+  ER2_term    <- zSinvz - 2 * sum(zbar * (SinvR_temp %*% data$z)) +
+    sum(zbar * (RSinvR_temp %*% zbar)) -
+    RZ2 + sum(diag(RSinvR_temp) * t(postb2))
+
+  return(-0.5 * log_det_Sigma - 0.5 * ER2_term)
+}
+
 # @return R with attribute e.g., attr(R, 'eigenR') is the eigen
 #   decomposition of R.
 set_R_attributes <- function(R, r_tol) {
@@ -1057,12 +1061,6 @@ add_eigen_decomposition <- function(data, individual_data = NULL) {
     data$y <- individual_data$y / y_scale_factor
     data$VtXt <- t(data$eigen_vectors) %*% t(individual_data$X)
   }
-
-  # Precompute diagXtOmegaX and XtOmegay using initial values of sigma2 and tau2
-  omega_res <- compute_omega_quantities(data, tau2 = 0, sigma2 = 1)
-  data$omega_var <- omega_res$omega_var
-  data$diagXtOmegaX <- omega_res$diagXtOmegaX
-  data$XtOmegay <- data$eigen_vectors %*% (data$VtXty / omega_res$omega_var)
 
   return(data)
 }

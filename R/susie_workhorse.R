@@ -31,7 +31,7 @@ susie_workhorse <- function(data, L, intercept = TRUE, standardize = TRUE,
   # Main IBSS iteration loop
   for (iter in seq_len(max_iter)) {
     # Track iteration progress
-    tracking <- extract_core(data, model, tracking, iter, track_fit)
+    tracking <- track_ibss_fit(data, model, tracking, iter, track_fit)
 
     # Store previous model for convergence check
     model_prev <- model
@@ -54,13 +54,10 @@ susie_workhorse <- function(data, L, intercept = TRUE, standardize = TRUE,
 
     # Update variance components if not converged and estimation is requested
     if (estimate_residual_variance) {
-      result <- update_model_variance(
-        data, model, residual_variance_lowerbound,
-        residual_variance_upperbound, estimate_residual_method
-      )
-      data <- result$data
-      model <- result$model
+      model <- update_model_variance(data, model, residual_variance_lowerbound,
+                                     residual_variance_upperbound, estimate_residual_method)
     }
+
   }
 
   # Check final convergence status
