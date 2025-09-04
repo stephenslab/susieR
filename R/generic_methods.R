@@ -1,10 +1,10 @@
 # Generic methods for S3 dispatch
 
 # Single effect regression posterior expected log-likelihood
-SER_posterior_e_loglik <- function(data, model, R, Eb, Eb2, dXtX) {
+SER_posterior_e_loglik <- function(data, model, R, Eb, Eb2) {
   UseMethod("SER_posterior_e_loglik")
 }
-SER_posterior_e_loglik.default <- function(data, model, R, Eb, Eb2, dXtX) {
+SER_posterior_e_loglik.default <- function(data, model, R, Eb, Eb2) {
   stop("SER_posterior_e_loglik: no method for class '", class(data)[1], "'")
 }
 
@@ -25,10 +25,10 @@ compute_residuals.default <- function(data, model, l, ...) {
 }
 
 # Compute SER statistics (betahat, shat2)
-compute_ser_statistics <- function(data, model, residuals, dXtX, residual_variance, ...) {
+compute_ser_statistics <- function(data, model, residual_variance, ...) {
   UseMethod("compute_ser_statistics")
 }
-compute_ser_statistics.default <- function(data, model, residuals, dXtX, residual_variance, ...) {
+compute_ser_statistics.default <- function(data, model, residual_variance, ...) {
   stop("compute_ser_statistics: no method for class '", class(data)[1], "'")
 }
 
@@ -120,12 +120,20 @@ validate_prior.default <- function(data, model, check_prior, ...) {
   stop("validate_prior: no method for class '", class(data)[1], "'")
 }
 
-# Extract core parameters of a susie fit across iterations
-extract_core <- function(data, model, tracking, iter, track_fit, ...) {
-  UseMethod("extract_core")
+# Track core parameters of a susie fit across iterations
+track_ibss_fit <- function(data, model, tracking, iter, track_fit, ...) {
+  UseMethod("track_ibss_fit")
 }
-extract_core.default <- function(data, model, tracking, iter, track_fit, ...) {
-  stop("extract_core: no method for class '", class(data)[1], "'")
+track_ibss_fit.default <- function(data, model, tracking, iter, track_fit, ...) {
+  if (isTRUE(track_fit)) {
+    tracking[[iter]] <- list(
+      alpha = model$alpha,
+      niter = iter,
+      V = model$V,
+      sigma2 = model$sigma2
+    )
+  }
+  return(tracking)
 }
 
 # Initialize susie model
