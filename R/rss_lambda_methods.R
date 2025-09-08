@@ -120,8 +120,9 @@ compute_residuals.rss_lambda <- function(data, model, l, ...) {
   r <- data$z - Rz_without_l
 
   # Store unified residuals in model
-  model$residuals        <- r
-  model$fitted_without_l <- Rz_without_l
+  model$residuals         <- r
+  model$fitted_without_l  <- Rz_without_l
+  model$residual_variance <- 1  # RSS lambda uses normalized residual variance
 
   return(model)
 }
@@ -144,21 +145,14 @@ compute_ser_statistics.rss_lambda <- function(data, model, residual_variance, l,
   ))
 }
 
-# Single effect update
-single_effect_update.rss_lambda <- function(data, model, l,
-                                            optimize_V, check_null_threshold) {
+# Calculate KL divergence
+compute_kl.rss_lambda <- function(data, model, l) {
+  return(compute_kl.default(data, model, l))
+}
 
-  # Update prior variance, alpha, mu, lbf
-  model <- single_effect_update.default(data, model, l, optimize_V, check_null_threshold)
-
-  # Update KL
-  model$KL[l] <- -model$lbf[l] + SER_posterior_e_loglik(data, model,
-                                                        model$alpha[l, ] * model$mu[l, ],
-                                                        model$alpha[l, ] * model$mu2[l, ])
-
-  # Update fitted values
+# Update fitted values
+update_fitted_values.rss_lambda <- function(data, model, l) {
   model$Rz <- model$fitted_without_l + compute_Xb(data$R, model$alpha[l, ] * model$mu[l, ])
-
   return(model)
 }
 

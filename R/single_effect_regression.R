@@ -32,12 +32,6 @@ single_effect_regression <-
     # Store Prior Variance Value for the lth Effect
     V <- model$V[l]
 
-
-    # Set residual_variance if not provided
-    if (is.null(residual_variance)) {
-      residual_variance <- model$sigma2
-    }
-
     # Compute SER statistics (betahat, shat2, initial value for prior variance optimization)
     ser_stats <- compute_ser_statistics(data, model, residual_variance, l)
 

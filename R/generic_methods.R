@@ -40,28 +40,22 @@ get_ER2.default <- function(data, model) {
   stop("get_ER2: no method for class '", class(data)[1], "'")
 }
 
-# Single effect update
-single_effect_update <- function(data, model, l, ...) {
-  UseMethod("single_effect_update")
+# Calculate KL divergence
+compute_kl <- function(data, model, l) {
+  UseMethod("compute_kl")
 }
-single_effect_update.default <- function(data, model, l, optimize_V, check_null_threshold, ...) {
-  # Common algorithm for all data types
-  model <- compute_residuals(data, model, l)
-  
-  res <- single_effect_regression(data, model, l, 
-                                 residual_variance = model$residual_variance,
-                                 optimize_V = optimize_V,
-                                 check_null_threshold = check_null_threshold)
-  
-  # Store basic results in model
-  model$alpha[l, ]        <- res$alpha
-  model$mu[l, ]           <- res$mu
-  model$mu2[l, ]          <- res$mu2  
-  model$V[l]              <- res$V
-  model$lbf[l]            <- res$lbf_model
-  model$lbf_variable[l, ] <- res$lbf
-  
-  return(model)
+compute_kl.default <- function(data, model, l) {
+  return(-model$lbf[l] + SER_posterior_e_loglik(data, model,
+                                                 model$alpha[l, ] * model$mu[l, ],
+                                                 model$alpha[l, ] * model$mu2[l, ]))
+}
+
+# Update fitted values
+update_fitted_values <- function(data, model, l) {
+  UseMethod("update_fitted_values")
+}
+update_fitted_values.default <- function(data, model, l) {
+  stop("update_fitted_values: no method for class '", class(data)[1], "'")
 }
 
 # Get column scale factors

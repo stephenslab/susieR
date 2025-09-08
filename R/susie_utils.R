@@ -1,3 +1,32 @@
+# Single effect update utility function
+#' @keywords internal
+single_effect_update <- function(data, model, l, optimize_V, check_null_threshold) {
+
+  # Compute Residuals
+  model <- compute_residuals(data, model, l)
+
+  res <- single_effect_regression(data, model, l,
+                                 residual_variance = model$residual_variance,
+                                 optimize_V = optimize_V,
+                                 check_null_threshold = check_null_threshold)
+
+  # Store results from SER
+  model$alpha[l, ]        <- res$alpha
+  model$mu[l, ]           <- res$mu
+  model$mu2[l, ]          <- res$mu2
+  model$V[l]              <- res$V
+  model$lbf[l]            <- res$lbf_model
+  model$lbf_variable[l, ] <- res$lbf
+
+  # Update KL-divergence
+  model$KL[l] <- compute_kl(data, model, l)
+
+  # Update fitted values
+  model <- update_fitted_values(data, model, l)
+
+  return(model)
+}
+
 # Compute eigenvalue decomposition
 #' @keywords internal
 compute_eigen_decomposition <- function(XtX, n) {
