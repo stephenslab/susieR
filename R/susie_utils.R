@@ -990,26 +990,27 @@ convert_individual_to_ss <- function(data) {
 
 # Check convergence
 #' @keywords internal
-check_convergence <- function(model_prev, model_current, elbo, tol, convergence_method, iter) {
+check_convergence <- function(model, elbo, tol, convergence_method, iter) {
   # Skip convergence check on first iteration
   if(iter == 1) {
     return(FALSE)
   }
 
-  ELBO_diff <- elbo[iter + 1] - elbo[iter]
-  PIP_diff <- max(abs(model_prev$alpha - model_current$alpha))
+  # Calculate difference in ELBO values
+  ELBO_diff   <- elbo[iter + 1] - model$prev_elbo
+  ELBO_failed <- is.na(ELBO_diff) || is.infinite(ELBO_diff)
 
-  # If ELBO calculation produces NA/Inf value, fallback to PIP-based convergence
-  if((is.na(ELBO_diff) || is.infinite(ELBO_diff)) && convergence_method == "elbo"){
-    warning(paste0("Iteration ", iter, " produced an NA/infinite ELBO value. Using pip-based convergence this iteration."))
-    convergence_method <- "pip"
-  }
+  if (convergence_method == "pip" || ELBO_failed) {
+    # Fallback to PIP-based convergence if ELBO calculation fails
+    if (ELBO_failed && convergence_method == "elbo") {
+      warning(paste0("Iteration ", iter, " produced an NA/infinite ELBO value. Using pip-based convergence this iteration."))
+    }
 
-  if (convergence_method == "pip") {
+    # Calculate difference in alpha values
+    PIP_diff <- max(abs(model$prev_alpha - model$alpha))
     return(PIP_diff < tol)
-  } else {
-    return(ELBO_diff < tol)
   }
+  return(ELBO_diff < tol)
 }
 
 # Stabilize log Bayes factors and compute log posterior odds

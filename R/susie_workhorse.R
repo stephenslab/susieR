@@ -33,8 +33,9 @@ susie_workhorse <- function(data, L, intercept = TRUE, standardize = TRUE,
     # Track iteration progress
     tracking <- track_ibss_fit(data, model, tracking, iter, track_fit)
 
-    # Store previous model for convergence check
-    model_prev <- model
+    # Store previous model parameters for convergence check
+    model$prev_elbo  <- elbo[iter]
+    model$prev_alpha <- model$alpha
 
     # Update all L effects
     model <- ibss_fit(data, model, estimate_prior_variance,
@@ -45,7 +46,7 @@ susie_workhorse <- function(data, L, intercept = TRUE, standardize = TRUE,
     elbo[iter + 1] <- get_objective(data, model, verbose = verbose)
 
     # Check for convergence
-    converged <- check_convergence(model_prev, model, elbo, tol, convergence_method, iter)
+    converged <- check_convergence(model, elbo, tol, convergence_method, iter)
 
     if (converged) {
       model$converged <- TRUE
