@@ -255,13 +255,13 @@ plot (res1$pip)
 abline(a=0,b=1)
 
 
-
+#problem when L>1
 
 resL2=susie(X,y, L=2, small=TRUE)
 plot(resL2$pip)
 resL2$sets$cs
 resL6=susie(X,y, L=6, small=TRUE)
-plot(resl6$pip)
+plot(resL6$pip)
 resL6$sets$cs
 plot(resL6$alpha[1,])
 

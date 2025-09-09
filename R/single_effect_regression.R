@@ -421,8 +421,8 @@ update_sigma2_small <- function(s){
  if(length( id)==0) {
    id=1
  }
- print(out[id])
- print(out)
+# print(out[id])
+ print(paste( "estimated residuals variance" , out))
  return(mean(out[id]))
 }
 
