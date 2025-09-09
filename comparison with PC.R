@@ -235,7 +235,7 @@ y <- data_small$y
 X <- data_small$X
 dim(X)
 tt0= simple_susie(X,y)
-plot(tt0$elbo, col="green")
+plot(tt0$elbo, col="green", main="matching ELBO")
 tt= simple_susie(X,y, prior="NIG")
 points(tt$elbo, col="blue")
 
@@ -245,7 +245,23 @@ res1=susie(X,y, L=1, small=TRUE)
 points(res1$elbo, pch=19, col="blue")
 
 
-plot( tt0$b1, res0$mu)
+plot( tt0$b1, res0$mu, ) # susie Gaussian effect estimate
+#vs susie simple estimate with Gaussian prior
 abline(a=0,b=1)
 points( tt$b1, res1$mu, pch=19, col="lightgreen")
+# susie NIG effect estimate
+#vs susie simple estimate
+plot (res1$pip)
 abline(a=0,b=1)
+
+
+
+
+resL2=susie(X,y, L=2, small=TRUE)
+plot(resL2$pip)
+resL2$sets$cs
+resL6=susie(X,y, L=6, small=TRUE)
+plot(resl6$pip)
+resL6$sets$cs
+plot(resL6$alpha[1,])
+
