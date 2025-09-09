@@ -150,7 +150,7 @@ single_effect_regression =
   if(small){
 
     dat <- list(xx  = colSums(X^2),
-                xy  = drop(crossprod(X,y)),
+                xy  =   drop(crossprod(X,y)),
                 yy  = sum(y^2),
                 sxy = drop(cor(X,y)),
                 s0  = V,
@@ -183,7 +183,7 @@ single_effect_regression =
 
     return(list(
       alpha     = alpha,
-      mu        = b1,
+      mu        = b1 ,
       mu2       = b2,
       lbf       = lbf,
       lbf_model = loglik,  # use marginal likelihood
