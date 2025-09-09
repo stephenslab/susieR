@@ -69,9 +69,10 @@ compute_residuals.individual <- function(data, model, l, ...) {
   XtR <- compute_Xty(data$X, R)
 
   # Store unified residuals in model
-  model$residuals        <- XtR
-  model$fitted_without_l <- Xr_without_l
-  model$raw_residuals    <- R
+  model$residuals         <- XtR
+  model$fitted_without_l  <- Xr_without_l
+  model$raw_residuals     <- R
+  model$residual_variance <- model$sigma2  # Standard residual variance
 
   return(model)
 }
@@ -95,23 +96,17 @@ compute_ser_statistics.individual <- function(data, model, residual_variance, l,
   ))
 }
 
-# Single Effect Update
-single_effect_update.individual <- function(
-    data, model, l,
-    optimize_V, check_null_threshold) {
-
-  # Update prior variance, alpha, mu, lbf
-  model <- single_effect_update.default(data, model, l, optimize_V, check_null_threshold)
-
-  # Update KL
+# Calculate KL divergence
+compute_kl.individual <- function(data, model, l) {
   loglik_term <- model$lbf[l] + sum(dnorm(model$raw_residuals, 0, sqrt(model$sigma2), log = TRUE))
-  model$KL[l] <- -loglik_term + SER_posterior_e_loglik(data, model,
-                                                       model$alpha[l, ] * model$mu[l, ],
-                                                       model$alpha[l, ] * model$mu2[l, ])
+  return(-loglik_term + SER_posterior_e_loglik(data, model,
+                                                model$alpha[l, ] * model$mu[l, ],
+                                                model$alpha[l, ] * model$mu2[l, ]))
+}
 
-  # Update fitted values
+# Update fitted values
+update_fitted_values.individual <- function(data, model, l) {
   model$Xr <- model$fitted_without_l + compute_Xb(data$X, model$alpha[l, ] * model$mu[l, ])
-
   return(model)
 }
 

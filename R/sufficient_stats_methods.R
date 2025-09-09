@@ -164,26 +164,18 @@ compute_ser_statistics.ss <- function(data, model, residual_variance, l, ...) {
   ))
 }
 
-# Single Effect Update
-single_effect_update.ss <- function(
-    data, model, l,
-    optimize_V, check_null_threshold) {
+# Calculate KL divergence
+compute_kl.ss <- function(data, model, l) {
+  return(compute_kl.default(data, model, l))
+}
 
-  # Update prior variance, alpha, mu, lbf
-  model <- single_effect_update.default(data, model, l, optimize_V, check_null_threshold)
-
-  # Update KL
-  model$KL[l] <- -model$lbf[l] + SER_posterior_e_loglik(data, model,
-                                                        model$alpha[l, ] * model$mu[l, ],
-                                                        model$alpha[l, ] * model$mu2[l, ])
-
-  # Update fitted values
+# Update fitted values
+update_fitted_values.ss <- function(data, model, l) {
   if (data$unmappable_effects != "none") {
     model$XtXr <- compute_Xb(data$XtX, colSums(model$alpha * model$mu) + model$theta)
   } else {
     model$XtXr <- model$fitted_without_l + compute_Xb(data$XtX, model$alpha[l, ] * model$mu[l, ])
   }
-
   return(model)
 }
 

@@ -32,12 +32,6 @@ single_effect_regression <-
     # Store Prior Variance Value for the lth Effect
     V <- model$V[l]
 
-
-    # Set residual_variance if not provided
-    if (is.null(residual_variance)) {
-      residual_variance <- model$sigma2
-    }
-
     # Compute SER statistics (betahat, shat2, initial value for prior variance optimization)
     ser_stats <- compute_ser_statistics(data, model, residual_variance, l)
 
@@ -77,7 +71,7 @@ single_effect_regression <-
     ))
   }
 
-# Optimization functions
+# Prior Variance Optimization for the lth Effect
 optimize_prior_variance <- function(optimize_V, data, model, ser_stats,
                                     alpha = NULL, post_mean2 = NULL,
                                     V_init = NULL, check_null_threshold = 0,
@@ -138,4 +132,33 @@ optimize_prior_variance <- function(optimize_V, data, model, ser_stats,
   }
 
   return(V)
+}
+
+
+# Single Effect Update for the lth Effect
+single_effect_update <- function(data, model, l, optimize_V, check_null_threshold) {
+
+  # Compute Residuals
+  model <- compute_residuals(data, model, l)
+
+  res <- single_effect_regression(data, model, l,
+                                  residual_variance = model$residual_variance,
+                                  optimize_V = optimize_V,
+                                  check_null_threshold = check_null_threshold)
+
+  # Store results from SER
+  model$alpha[l, ]        <- res$alpha
+  model$mu[l, ]           <- res$mu
+  model$mu2[l, ]          <- res$mu2
+  model$V[l]              <- res$V
+  model$lbf[l]            <- res$lbf_model
+  model$lbf_variable[l, ] <- res$lbf
+
+  # Update KL-divergence
+  model$KL[l] <- compute_kl(data, model, l)
+
+  # Update fitted values
+  model <- update_fitted_values(data, model, l)
+
+  return(model)
 }
