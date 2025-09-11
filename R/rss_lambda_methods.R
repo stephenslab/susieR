@@ -43,26 +43,37 @@ validate_prior.rss_lambda <- function(data, model, check_prior, ...) {
   return(validate_prior.default(data, model, check_prior, ...))
 }
 
-# Expected squared residuals
 get_ER2.rss_lambda <- function(data, model) {
-  D    <- data$eigen_R$values
-  V    <- data$eigen_R$vectors
-  Dinv <- compute_Dinv(model, data)
+  # Eigen decomposition components
+  D     <- data$eigen_R$values
+  V     <- data$eigen_R$vectors
+  Dinv  <- compute_Dinv(model, data)
 
-  SinvR  <- V %*% ((Dinv * D) * t(V))
-  Utz    <- crossprod(V, data$z)
-  zSinvz <- sum(Utz * (Dinv * Utz))
+  # Cached quantities
+  Vtz   <- data$Vtz
+  zbar  <- model$zbar
+  postb2 <- model$diag_postb2
 
-  Z      <- model$alpha * model$mu
-  RSinvR <- data$R %*% SinvR
-  RZ2    <- sum((Z %*% RSinvR) * Z)
+  # z^T S^{-1} z
+  zSinvz <- sum((Dinv * Vtz) * Vtz)
 
-  zbar   <- colSums(Z)
-  postb2 <- model$alpha * model$mu2
+  # -2 zbar^T S^{-1} z
+  tmp <- V %*% (Dinv * (D * Vtz))
+  term2 <- -2 * sum(tmp * zbar)
 
-  return(zSinvz - 2 * sum((SinvR %*% data$z) * zbar) +
-    sum(zbar * (RSinvR %*% zbar)) -
-    RZ2 + sum(diag(RSinvR) * t(postb2)))
+  # zbar^T R S^{-1} R zbar
+  Vtzbar <- crossprod(V, zbar)
+  term3 <- sum((Vtzbar^2) * (Dinv * D^2))
+
+  # RZ2 = sum((Z %*% RSinvR) * Z)
+  VtZ <- model$Z %*% V
+  term4 <- sum((VtZ^2) %*% (Dinv * D^2))
+
+  # diag(RSinvR)^T postb2
+  diag_RSinvR <- rowSums((V^2) * rep(Dinv * D^2, each = nrow(V)))
+  term5 <- sum(diag_RSinvR * postb2)
+
+  return(zSinvz + term2 + term3 - term4 + term5)
 }
 
 # SER posterior expected log-likelihood
@@ -153,6 +164,8 @@ compute_kl.rss_lambda <- function(data, model, l) {
 # Update fitted values
 update_fitted_values.rss_lambda <- function(data, model, l) {
   model$Rz <- model$fitted_without_l + as.vector(data$R %*% (model$alpha[l, ] * model$mu[l, ]))
+  model    <- precompute_rss_lambda_terms(data, model)
+
   return(model)
 }
 
@@ -196,22 +209,22 @@ get_zscore.rss_lambda <- function(data, model, ...) {
   return(get_zscore.default(data, model))
 }
 
-# Update variance components
 update_variance_components.rss_lambda <- function(data, model, estimate_method = "MLE") {
-  # Set upper bound
   upper_bound <- 1 - data$lambda
-  
-  # Optimize for sigma2
-  opt_result <- optimize(function(sigma2) rss_lambda_likelihood(sigma2, data, model),
-                         interval = c(1e-4, upper_bound), maximum = TRUE)
-  est_sigma2 <- opt_result$maximum
 
-  # Check boundary condition
-  if (rss_lambda_likelihood(est_sigma2, data, model) < rss_lambda_likelihood(upper_bound, data, model)) {
+  objective <- function(sigma2) {
+    temp_model        <- model
+    temp_model$sigma2 <- sigma2
+    Eloglik.rss_lambda(data, temp_model)
+  }
+
+  est_sigma2 <- optimize(objective, interval = c(1e-4, upper_bound), maximum = TRUE)$maximum
+
+  if (objective(est_sigma2) < objective(upper_bound)) {
     est_sigma2 <- upper_bound
   }
 
-  return(list(sigma2 = est_sigma2))
+  list(sigma2 = est_sigma2)
 }
 
 # Update derived quantities
