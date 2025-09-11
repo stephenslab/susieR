@@ -23,7 +23,7 @@ run_refine <- function(model, data, L, intercept, standardize,
   }
 
   # Extract prior weights for refinement
-  pw_s <- extract_refine_prior_weights(model, data$null_weight)
+  pw_s <- extract_prior_weights(model, data$null_weight)
 
   # Main refinement loop
   conti <- TRUE
@@ -54,7 +54,7 @@ run_refine <- function(model, data, L, intercept, standardize,
       }
 
       # Step 1: Create data with modified prior weights
-      data_modified <- modify_data_prior_weights(data, pw_cs)
+      data_modified <- modify_prior_weights(data, pw_cs)
 
       # Step 2: Fit with modified weights, no initialization
       model_step1 <- susie_workhorse(
@@ -99,7 +99,7 @@ run_refine <- function(model, data, L, intercept, standardize,
       class(init_from_step1) <- "susie"
 
       # Step 4: Create data with original prior weights
-      data_original <- modify_data_prior_weights(data, pw_s)
+      data_original <- modify_prior_weights(data, pw_s)
 
       # Step 5: Fit with original weights using initialization
       model_step2 <- susie_workhorse(
@@ -185,37 +185,3 @@ run_refine <- function(model, data, L, intercept, standardize,
   return(model)
 }
 
-# Helper function to extract prior weights for refinement
-#' @keywords internal
-extract_refine_prior_weights <- function(model, null_weight) {
-  if (!is.null(null_weight) && null_weight != 0 && !is.null(model$null_index) && model$null_index != 0) {
-    # Extract non-null prior weights and rescale
-    pw_s <- model$pi[-model$null_index] / (1 - null_weight)
-  } else {
-    pw_s <- model$pi
-  }
-  return(pw_s)
-}
-
-# Helper function to modify data object prior weights
-#' @keywords internal
-modify_data_prior_weights <- function(data, new_prior_weights) {
-  # Create a modified copy of the data object
-  data_modified <- data
-
-  # Handle null weight case
-  if (!is.null(data$null_weight) && data$null_weight != 0) {
-    # Reconstruct full prior weights including null
-    data_modified$prior_weights <- c(
-      new_prior_weights * (1 - data$null_weight),
-      data$null_weight
-    )
-  } else {
-    data_modified$prior_weights <- new_prior_weights
-  }
-
-  # Normalize to sum to 1
-  data_modified$prior_weights <- data_modified$prior_weights / sum(data_modified$prior_weights)
-
-  return(data_modified)
-}

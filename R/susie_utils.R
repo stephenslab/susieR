@@ -1033,3 +1033,38 @@ add_eigen_decomposition <- function(data, individual_data = NULL) {
   return(data)
 }
 
+# Extract non-null prior weights from a model
+#' @keywords internal
+extract_prior_weights <- function(model, null_weight) {
+  if (!is.null(null_weight) && null_weight != 0 && !is.null(model$null_index) && model$null_index != 0) {
+    # Extract non-null prior weights and rescale
+    pw_s <- model$pi[-model$null_index] / (1 - null_weight)
+  } else {
+    pw_s <- model$pi
+  }
+  return(pw_s)
+}
+
+# Modify data object with new prior weights
+#' @keywords internal
+modify_prior_weights <- function(data, new_prior_weights) {
+  # Create a modified copy of the data object
+  data_modified <- data
+
+  # Handle null weight case
+  if (!is.null(data$null_weight) && data$null_weight != 0) {
+    # Reconstruct full prior weights including null
+    data_modified$prior_weights <- c(
+      new_prior_weights * (1 - data$null_weight),
+      data$null_weight
+    )
+  } else {
+    data_modified$prior_weights <- new_prior_weights
+  }
+
+  # Normalize to sum to 1
+  data_modified$prior_weights <- data_modified$prior_weights / sum(data_modified$prior_weights)
+
+  return(data_modified)
+}
+
