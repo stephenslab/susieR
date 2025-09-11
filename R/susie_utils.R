@@ -584,16 +584,12 @@ precompute_rss_lambda_terms <- function(data, model) {
   # Precompute quantities that change per IBSS iteration
   Z <- model$alpha * model$mu           # Element-wise product
   zbar <- colSums(Z)                   # Column sums
-  ZR <- Z %*% data$R                   # Z times R matrix
-  RZ2 <- sum(ZR * Z)                   # Quadratic form Z'RZ
   postb2 <- model$alpha * model$mu2     # Second moments
   diag_postb2 <- colSums(postb2)       # For diagonal operations
 
   # Add precomputed terms to model
   model$Z <- Z
   model$zbar <- zbar
-  model$ZR <- ZR
-  model$RZ2 <- RZ2
   model$postb2 <- postb2
   model$diag_postb2 <- diag_postb2
 
@@ -603,9 +599,6 @@ precompute_rss_lambda_terms <- function(data, model) {
 # Helper function to update variance components and derived quantities
 #' @keywords internal
 update_model_variance <- function(data, model, lowerbound, upperbound, estimate_method = "MLE") {
-  # Precompute RSS lambda terms before variance update
-  model <- precompute_rss_lambda_terms(data, model)
-
   # Update variance components
   variance_result <- update_variance_components(data, model, estimate_method)
   model <- modifyList(model, variance_result)
