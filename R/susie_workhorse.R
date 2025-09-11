@@ -63,7 +63,7 @@ susie_workhorse <- function(data, L, intercept = TRUE, standardize = TRUE,
 
   # Check final convergence status
   if (is.null(model$converged)) {
-    warning(paste("IBSS algorithm did not converge in", max_iter, "iterations!\n"))
+    warning_message(paste("IBSS algorithm did not converge in", max_iter, "iterations!"))
     model$converged <- FALSE
   }
 

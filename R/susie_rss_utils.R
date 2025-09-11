@@ -174,6 +174,17 @@ estimate_s_rss <- function(z, R, n, r_tol = 1e-08, method = "null-mle") {
   return(s)
 }
 
+# Precompute RSS lambda terms that change per IBSS iteration
+#' @keywords internal
+precompute_rss_lambda_terms <- function(data, model) {
+  # Precompute quantities that change per IBSS iteration
+  model$Z           <- model$alpha * model$mu
+  model$zbar        <- colSums(model$Z)
+  model$diag_postb2 <- colSums(model$alpha * model$mu2)
+
+  return(model)
+}
+
 #' @title Compute Distribution of z-scores of Variant j Given Other z-scores, and Detect Possible Allele Switch Issue
 #'
 #' @description Under the null, the rss model with regularized LD

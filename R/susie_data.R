@@ -115,8 +115,8 @@ individual_data_constructor <- function(X, y, intercept = TRUE, standardize = TR
 
   # Override convergence method for unmappable effects
   if (unmappable_effects != "none") {
-    warning("Unmappable effects models (inf/ash) do not have a well defined ELBO and require PIP convergence. ",
-            "Setting convergence_method='pip'.\n")
+    warning_message("Unmappable effects models (inf/ash) do not have a well defined ELBO and require PIP convergence. ",
+            "Setting convergence_method='pip'.")
     convergence_method <- "pip"
   }
 
@@ -132,13 +132,13 @@ individual_data_constructor <- function(X, y, intercept = TRUE, standardize = TR
 
     # Override convergence method
     if (convergence_method != "pip") {
-      warning("Servin_Stephens method requires PIP convergence. Setting convergence_method='pip'.\n")
+      warning_message("Servin_Stephens method requires PIP convergence. Setting convergence_method='pip'.")
       convergence_method <- "pip"
     }
 
     # Override prior variance estimation method
     if (estimate_prior_method != "EM") {
-      warning("Servin_Stephens method works better with EM. Setting estimate_prior_method='EM'.\n")
+      warning_message("Servin_Stephens method works better with EM. Setting estimate_prior_method='EM'.")
       estimate_prior_method <- "EM"
     }
   } else {
@@ -249,7 +249,7 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n, X_colmeans = NA,
 
   # Ensure XtX is symmetric
   if (!is_symmetric_matrix(XtX)) {
-    warning("XtX not symmetric; using (XtX + t(XtX))/2.\n")
+    warning_message("XtX not symmetric; using (XtX + t(XtX))/2.")
     XtX <- (XtX + t(XtX)) / 2
   }
 
@@ -373,8 +373,8 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n, X_colmeans = NA,
 
   # Override convergence method for unmappable effects
   if (unmappable_effects != "none") {
-    warning("Unmappable effects models (inf/ash) do not have a well defined ELBO and require PIP convergence. ",
-            "Setting convergence_method='pip'.\n")
+    warning_message("Unmappable effects models (inf/ash) do not have a well defined ELBO and require PIP convergence. ",
+            "Setting convergence_method='pip'.")
     convergence_method <- "pip"
   }
 
@@ -464,7 +464,7 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
     }
 
     if (!is.null(n)) {
-      warning("Parameter 'n' is ignored when lambda != 0.\n")
+      warning_message("Parameter 'n' is ignored when lambda != 0.")
     }
 
     # Delegate to rss_lambda_constructor (which will apply overrides)
@@ -491,14 +491,14 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
 
   # Issue warning for estimate_residual_variance if TRUE
   if (estimate_residual_variance && lambda == 0) {
-    warning("For estimate_residual_variance = TRUE, please check ",
+    warning_message("For estimate_residual_variance = TRUE, please check ",
             "that R is the \"in-sample\" LD matrix; that is, the ",
             "correlation matrix obtained using the exact same data ",
             "matrix X that was used for the other summary ",
             "statistics. Also note, when covariates are included in ",
             "the univariate regressions that produced the summary ",
             "statistics, also consider removing these effects from ",
-            "X before computing R.\n")
+            "X before computing R.")
   }
 
   # Check input R
@@ -556,8 +556,8 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
 
   # Modify R by z_ld_weight (deprecated but maintained for compatibility)
   if (z_ld_weight > 0) {
-    warning("As of version 0.11.0, use of non-zero z_ld_weight is no longer ",
-            "recommended.\n")
+    warning_message("As of version 0.11.0, use of non-zero z_ld_weight is no longer ",
+            "recommended.")
     R <- muffled_cov2cor((1 - z_ld_weight) * R + z_ld_weight * tcrossprod(z))
     R <- (R + t(R)) / 2
   }
@@ -565,9 +565,9 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
   # Convert to sufficient statistics format
   if (is.null(n)) {
     # Sample size not provided - use unadjusted z-scores
-    warning("Providing the sample size (n), or even a rough estimate of n, ",
+    warning_message("Providing the sample size (n), or even a rough estimate of n, ",
             "is highly recommended. Without n, the implicit assumption is ",
-            "n is large (Inf) and the effect sizes are small (close to zero).\n")
+            "n is large (Inf) and the effect sizes are small (close to zero).")
     XtX <- R
     Xty <- z
     yty <- 1
@@ -694,7 +694,7 @@ rss_lambda_constructor <- function(z, R, maf = NULL, maf_thresh = 0,
 
   # Replace NAs in z with zero
   if (anyNA(z)) {
-    warning("NA values in z-scores are replaced with 0.\n")
+    warning_message("NA values in z-scores are replaced with 0.")
     z[is.na(z)] <- 0
   }
 
@@ -740,7 +740,7 @@ rss_lambda_constructor <- function(z, R, maf = NULL, maf_thresh = 0,
     if (length(colspace) < length(z)) {
       znull <- crossprod(eigen_R$vectors[, -colspace], z)
       if (sum(znull^2) > r_tol * sum(z^2)) {
-        warning("Input z does not lie in the space of non-zero eigenvectors of R.\n")
+        warning_message("Input z does not lie in the space of non-zero eigenvectors of R.")
       } else {
         message("Input z is in space spanned by the non-zero eigenvectors of R.\n")
       }
@@ -749,6 +749,9 @@ rss_lambda_constructor <- function(z, R, maf = NULL, maf_thresh = 0,
 
   # Set negative eigenvalues to zero
   eigen_R$values[eigen_R$values < r_tol] <- 0
+
+  # Precompute V'z
+  Vtz <- crossprod(eigen_R$vectors, z)
 
   # Handle lambda estimation
   if (identical(lambda, "estimate")) {
@@ -775,6 +778,7 @@ rss_lambda_constructor <- function(z, R, maf = NULL, maf_thresh = 0,
       r_tol = r_tol,
       prior_variance = prior_variance,
       eigen_R = eigen_R,
+      Vtz = Vtz,
       convergence_method = convergence_method,
       # RSS-lambda specific parameter overrides
       scaled_prior_variance = prior_variance, # Use unscaled for RSS-lambda

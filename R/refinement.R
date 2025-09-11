@@ -13,17 +13,17 @@ run_refine <- function(model, data, L, intercept, standardize,
 
   # Warn if model_init was provided initially
   if (!is.null(model_init)) {
-    warning("The given model_init is not used in refinement")
+    warning_message("The given model_init is not used in refinement")
   }
 
   if (verbose) {
-    cat("Starting refinement process...\n")
-    cat("Initial ELBO:", susie_get_objective(model), "\n")
-    cat("Number of credible sets to refine:", length(model$sets$cs), "\n")
+    message("Starting refinement process...")
+    message("Initial ELBO:", susie_get_objective(model))
+    message("Number of credible sets to refine:", length(model$sets$cs))
   }
 
   # Extract prior weights for refinement
-  pw_s <- extract_refine_prior_weights(model, data$null_weight)
+  pw_s <- extract_prior_weights(model, data$null_weight)
 
   # Main refinement loop
   conti <- TRUE
@@ -32,7 +32,7 @@ run_refine <- function(model, data, L, intercept, standardize,
   while (conti && !is.null(model$sets) && length(model$sets$cs) > 0) {
     refine_iteration <- refine_iteration + 1
     if (verbose) {
-      cat("\nRefinement iteration", refine_iteration, "\n")
+      message("\nRefinement iteration ", refine_iteration)
     }
     candidate_models <- list()
 
@@ -44,17 +44,17 @@ run_refine <- function(model, data, L, intercept, standardize,
       # Skip if all weights are zero
       if (all(pw_cs == 0)) {
         if (verbose) {
-          cat("  Skipping CS", cs_idx, "- all prior weights would be zero\n")
+          message("  Skipping CS ", cs_idx, " - all prior weights would be zero")
         }
         break
       }
 
       if (verbose) {
-        cat("  Refining CS", cs_idx, "with variables:", model$sets$cs[[cs_idx]], "\n")
+        message("  Refining CS ", cs_idx, " with variables: ", paste(model$sets$cs[[cs_idx]], collapse = " "))
       }
 
       # Step 1: Create data with modified prior weights
-      data_modified <- modify_data_prior_weights(data, pw_cs)
+      data_modified <- modify_prior_weights(data, pw_cs)
 
       # Step 2: Fit with modified weights, no initialization
       model_step1 <- susie_workhorse(
@@ -99,7 +99,7 @@ run_refine <- function(model, data, L, intercept, standardize,
       class(init_from_step1) <- "susie"
 
       # Step 4: Create data with original prior weights
-      data_original <- modify_data_prior_weights(data, pw_s)
+      data_original <- modify_prior_weights(data, pw_s)
 
       # Step 5: Fit with original weights using initialization
       model_step2 <- susie_workhorse(
@@ -138,7 +138,7 @@ run_refine <- function(model, data, L, intercept, standardize,
       candidate_models <- c(candidate_models, list(model_step2))
 
       if (verbose) {
-        cat("    ELBO for refined CS", cs_idx, ":", susie_get_objective(model_step2), "\n")
+        message("    ELBO for refined CS ", cs_idx, ": ", susie_get_objective(model_step2))
       }
     }
 
@@ -146,16 +146,16 @@ run_refine <- function(model, data, L, intercept, standardize,
     if (length(candidate_models) == 0) {
       conti <- FALSE
       if (verbose) {
-        cat("No candidate models generated, stopping refinement\n")
+        message("No candidate models generated, stopping refinement")
       }
     } else {
       elbos <- sapply(candidate_models, susie_get_objective)
       current_elbo <- susie_get_objective(model)
 
       if (verbose) {
-        cat("\nCurrent ELBO:", current_elbo, "\n")
-        cat("Candidate ELBOs:", elbos, "\n")
-        cat("Best candidate ELBO:", max(elbos), "\n")
+        message("\nCurrent ELBO: ", current_elbo)
+        message("Candidate ELBOs: ", paste(elbos, collapse = " "))
+        message("Best candidate ELBO: ", max(elbos))
       }
 
       if (max(elbos) - current_elbo > tol) {
@@ -163,13 +163,13 @@ run_refine <- function(model, data, L, intercept, standardize,
         best_idx <- which.max(elbos)
         model <- candidate_models[[best_idx]]
         if (verbose) {
-          cat("ELBO improved! Selected model from CS", best_idx, "refinement\n")
-          cat("Improvement:", max(elbos) - current_elbo, "\n")
+          message("ELBO improved! Selected model from CS ", best_idx, " refinement")
+          message("Improvement: ", max(elbos) - current_elbo)
         }
       } else {
         # No improvement beyond tolerance, stop
         if (verbose) {
-          cat("No improvement in ELBO beyond tolerance (", tol, "), stopping refinement\n")
+          message("No improvement in ELBO beyond tolerance (", tol, "), stopping refinement")
         }
         conti <- FALSE
       }
@@ -177,45 +177,11 @@ run_refine <- function(model, data, L, intercept, standardize,
   }
 
   if (verbose) {
-    cat("\nRefinement complete!\n")
-    cat("Final ELBO:", susie_get_objective(model), "\n")
-    cat("Total refinement iterations:", refine_iteration, "\n")
+    message("\nRefinement complete!")
+    message("Final ELBO: ", susie_get_objective(model))
+    message("Total refinement iterations: ", refine_iteration)
   }
 
   return(model)
 }
 
-# Helper function to extract prior weights for refinement
-#' @keywords internal
-extract_refine_prior_weights <- function(model, null_weight) {
-  if (!is.null(null_weight) && null_weight != 0 && !is.null(model$null_index) && model$null_index != 0) {
-    # Extract non-null prior weights and rescale
-    pw_s <- model$pi[-model$null_index] / (1 - null_weight)
-  } else {
-    pw_s <- model$pi
-  }
-  return(pw_s)
-}
-
-# Helper function to modify data object prior weights
-#' @keywords internal
-modify_data_prior_weights <- function(data, new_prior_weights) {
-  # Create a modified copy of the data object
-  data_modified <- data
-
-  # Handle null weight case
-  if (!is.null(data$null_weight) && data$null_weight != 0) {
-    # Reconstruct full prior weights including null
-    data_modified$prior_weights <- c(
-      new_prior_weights * (1 - data$null_weight),
-      data$null_weight
-    )
-  } else {
-    data_modified$prior_weights <- new_prior_weights
-  }
-
-  # Normalize to sum to 1
-  data_modified$prior_weights <- data_modified$prior_weights / sum(data_modified$prior_weights)
-
-  return(data_modified)
-}

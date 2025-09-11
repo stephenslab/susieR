@@ -27,7 +27,7 @@ mom_unmappable <- function(alpha, mu, omega, sigma2, tau2, n, V, Dsq, VtXty, Xty
 
   # Compute diag(V'MV)
   b <- colSums(mu * alpha)
-  Vtb <- t(V) %*% b
+  Vtb <- crossprod(V, b)
   diagVtMV <- Vtb^2
   tmpD <- rep(0, p)
 
@@ -55,12 +55,12 @@ mom_unmappable <- function(alpha, mu, omega, sigma2, tau2, n, V, Dsq, VtXty, Xty
       tau2 <- 0
     }
     if (verbose) {
-      cat(sprintf("Update (sigma^2,tau^2) to (%f,%e)\n", sigma2, tau2))
+      message(sprintf("Update (sigma^2,tau^2) to (%f,%e)\n", sigma2, tau2))
     }
   } else if (est_sigma2) {
     sigma2 <- (x[1] - A[1, 2] * tau2) / n
     if (verbose) {
-      cat(sprintf("Update sigma^2 to %f\n", sigma2))
+      message(sprintf("Update sigma^2 to %f\n", sigma2))
     }
   }
   return(list(sigma2 = sigma2, tau2 = tau2))
@@ -530,7 +530,7 @@ validate_init <- function(model_init, L, null_weight) {
 adjust_L <- function(model_init, L, V) {
   num_effects <- nrow(model_init$alpha)
   if (num_effects > L) {
-    warning(paste0(
+    warning_message(paste0(
       "Requested L = ", L,
       " is smaller than the ", num_effects,
       " effects in model_init after pruning; ",
@@ -572,6 +572,7 @@ assign_names <- function(model, variable_names, null_weight, p) {
   }
   return(model)
 }
+
 
 # Helper function to update variance components and derived quantities
 #' @keywords internal
@@ -617,7 +618,7 @@ get_objective <- function(data, model, verbose = FALSE) {
     stop("get_objective() produced an infinite ELBO value")
   }
   if (verbose) {
-    print(paste0("objective:", objective))
+    message("objective:", objective)
   }
   return(objective)
 }
@@ -672,7 +673,7 @@ mle_unmappable <- function(alpha, mu, omega, sigma2, tau2, n,
 
   # Compute diag(V'MV)
   b <- colSums(mu * alpha)
-  Vtb <- t(eigen_vectors) %*% b
+  Vtb <- crossprod(eigen_vectors, b)
   diagVtMV <- Vtb^2
   tmpD <- rep(0, p)
 
@@ -717,10 +718,10 @@ mle_unmappable <- function(alpha, mu, omega, sigma2, tau2, n,
       sigma2 <- res$par[1]
       tau2 <- res$par[2]
       if (verbose) {
-        cat(sprintf("Update (sigma^2,tau^2) to (%f,%e)\n", sigma2, tau2))
+        message(sprintf("Update (sigma^2,tau^2) to (%f,%e)\n", sigma2, tau2))
       }
     } else {
-      warning("MLE optimization failed to converge; keeping previous parameters")
+      warning_message("MLE optimization failed to converge; keeping previous parameters")
     }
   } else if (est_sigma2) {
     # Optimize only sigma^2
@@ -735,10 +736,10 @@ mle_unmappable <- function(alpha, mu, omega, sigma2, tau2, n,
     if (res$convergence == 0) {
       sigma2 <- res$par
       if (verbose) {
-        cat(sprintf("Update sigma^2 to %f\n", sigma2))
+        message(sprintf("Update sigma^2 to %f\n", sigma2))
       }
     } else {
-      warning("MLE optimization failed to converge; keeping previous parameters")
+      warning_message("MLE optimization failed to converge; keeping previous parameters")
     }
   }
 
@@ -792,39 +793,6 @@ compute_Dinv <- function(model, data) {
   return(Dinv)
 }
 
-# Compute RSS-lambda likelihood for variance optimization
-#' @keywords internal
-rss_lambda_likelihood <- function(sigma2, data, model) {
-  # Extract eigendecomposition
-  V <- data$eigen_R$vectors
-  D <- data$eigen_R$values
-
-  # Create eigenvalues of Sigma = sigma2 * R + lambda * I
-  eigenS_values <- sigma2 * D + data$lambda
-  Dinv <- 1 / eigenS_values
-  Dinv[is.infinite(Dinv)] <- 0
-
-  # Compute log determinant term
-  log_det_Sigma <- sum(log(eigenS_values[eigenS_values > 0]))
-
-  # Compute expected residual sum of squares using temporary matrices
-  SinvR_temp  <- V %*% ((Dinv * D) * t(V))
-  Utz         <- crossprod(V, data$z)
-  zSinvz      <- sum(Utz * (Dinv * Utz))
-
-  Z           <- model$alpha * model$mu
-  RSinvR_temp <- V %*% ((Dinv * (D^2)) * t(V))
-  zbar        <- colSums(Z)
-  RZ2         <- sum((Z %*% data$R) * Z)
-  postb2      <- model$alpha * model$mu2
-
-
-  ER2_term    <- zSinvz - 2 * sum(zbar * (SinvR_temp %*% data$z)) +
-    sum(zbar * (RSinvR_temp %*% zbar)) -
-    RZ2 + sum(diag(RSinvR_temp) * t(postb2))
-
-  return(-0.5 * log_det_Sigma - 0.5 * ER2_term)
-}
 
 # @return R with attribute e.g., attr(R, 'eigenR') is the eigen
 #   decomposition of R.
@@ -974,7 +942,7 @@ check_convergence <- function(model, elbo, tol, convergence_method, iter) {
   if (convergence_method == "pip" || ELBO_failed) {
     # Fallback to PIP-based convergence if ELBO calculation fails
     if (ELBO_failed && convergence_method == "elbo") {
-      warning(paste0("Iteration ", iter, " produced an NA/infinite ELBO value. Using pip-based convergence this iteration."))
+      warning_message(paste0("Iteration ", iter, " produced an NA/infinite ELBO value. Using pip-based convergence this iteration."))
     }
 
     # Calculate difference in alpha values
@@ -1063,5 +1031,40 @@ add_eigen_decomposition <- function(data, individual_data = NULL) {
   }
 
   return(data)
+}
+
+# Extract non-null prior weights from a model
+#' @keywords internal
+extract_prior_weights <- function(model, null_weight) {
+  if (!is.null(null_weight) && null_weight != 0 && !is.null(model$null_index) && model$null_index != 0) {
+    # Extract non-null prior weights and rescale
+    pw_s <- model$pi[-model$null_index] / (1 - null_weight)
+  } else {
+    pw_s <- model$pi
+  }
+  return(pw_s)
+}
+
+# Modify data object with new prior weights
+#' @keywords internal
+modify_prior_weights <- function(data, new_prior_weights) {
+  # Create a modified copy of the data object
+  data_modified <- data
+
+  # Handle null weight case
+  if (!is.null(data$null_weight) && data$null_weight != 0) {
+    # Reconstruct full prior weights including null
+    data_modified$prior_weights <- c(
+      new_prior_weights * (1 - data$null_weight),
+      data$null_weight
+    )
+  } else {
+    data_modified$prior_weights <- new_prior_weights
+  }
+
+  # Normalize to sum to 1
+  data_modified$prior_weights <- data_modified$prior_weights / sum(data_modified$prior_weights)
+
+  return(data_modified)
 }
 

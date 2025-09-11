@@ -92,7 +92,7 @@
 #'
 susie_get_objective <- function(res, last_only = TRUE, warning_tol = 1e-6) {
   if (!all(diff(res$elbo) >= (-1 * warning_tol))) {
-    warning("Objective is decreasing")
+    warning_message("Objective is decreasing")
   }
   if (last_only) {
     return(res$elbo[length(res$elbo)])
