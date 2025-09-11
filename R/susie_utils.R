@@ -27,7 +27,7 @@ mom_unmappable <- function(alpha, mu, omega, sigma2, tau2, n, V, Dsq, VtXty, Xty
 
   # Compute diag(V'MV)
   b <- colSums(mu * alpha)
-  Vtb <- t(V) %*% b
+  Vtb <- crossprod(V, b)
   diagVtMV <- Vtb^2
   tmpD <- rep(0, p)
 
@@ -573,9 +573,39 @@ assign_names <- function(model, variable_names, null_weight, p) {
   return(model)
 }
 
+# Precompute RSS lambda terms that change per IBSS iteration
+#' @keywords internal
+precompute_rss_lambda_terms <- function(data, model) {
+  # Only precompute for RSS lambda data
+  if (!inherits(data, "rss_lambda")) {
+    return(model)
+  }
+
+  # Precompute quantities that change per IBSS iteration
+  Z <- model$alpha * model$mu           # Element-wise product
+  zbar <- colSums(Z)                   # Column sums
+  ZR <- Z %*% data$R                   # Z times R matrix
+  RZ2 <- sum(ZR * Z)                   # Quadratic form Z'RZ
+  postb2 <- model$alpha * model$mu2     # Second moments
+  diag_postb2 <- colSums(postb2)       # For diagonal operations
+
+  # Add precomputed terms to model
+  model$Z <- Z
+  model$zbar <- zbar
+  model$ZR <- ZR
+  model$RZ2 <- RZ2
+  model$postb2 <- postb2
+  model$diag_postb2 <- diag_postb2
+
+  return(model)
+}
+
 # Helper function to update variance components and derived quantities
 #' @keywords internal
 update_model_variance <- function(data, model, lowerbound, upperbound, estimate_method = "MLE") {
+  # Precompute RSS lambda terms before variance update
+  model <- precompute_rss_lambda_terms(data, model)
+
   # Update variance components
   variance_result <- update_variance_components(data, model, estimate_method)
   model <- modifyList(model, variance_result)
@@ -672,7 +702,7 @@ mle_unmappable <- function(alpha, mu, omega, sigma2, tau2, n,
 
   # Compute diag(V'MV)
   b <- colSums(mu * alpha)
-  Vtb <- t(eigen_vectors) %*% b
+  Vtb <- crossprod(eigen_vectors, b)
   diagVtMV <- Vtb^2
   tmpD <- rep(0, p)
 
@@ -807,21 +837,15 @@ rss_lambda_likelihood <- function(sigma2, data, model) {
   # Compute log determinant term
   log_det_Sigma <- sum(log(eigenS_values[eigenS_values > 0]))
 
-  # Compute expected residual sum of squares using temporary matrices
+  # Compute expected residual sum of squares using precomputed and temporary matrices
   SinvR_temp  <- V %*% ((Dinv * D) * t(V))
-  Utz         <- crossprod(V, data$z)
-  zSinvz      <- sum(Utz * (Dinv * Utz))
-
-  Z           <- model$alpha * model$mu
+  zSinvz      <- sum(data$Vtz * (Dinv * data$Vtz))
   RSinvR_temp <- V %*% ((Dinv * (D^2)) * t(V))
-  zbar        <- colSums(Z)
-  RZ2         <- sum((Z %*% data$R) * Z)
-  postb2      <- model$alpha * model$mu2
 
-
-  ER2_term    <- zSinvz - 2 * sum(zbar * (SinvR_temp %*% data$z)) +
-    sum(zbar * (RSinvR_temp %*% zbar)) -
-    RZ2 + sum(diag(RSinvR_temp) * t(postb2))
+  # Use precomputed terms from model object
+  ER2_term    <- zSinvz - 2 * sum(model$zbar * (SinvR_temp %*% data$z)) +
+    sum(model$zbar * (RSinvR_temp %*% model$zbar)) -
+    model$RZ2 + sum(diag(RSinvR_temp) * t(model$postb2))
 
   return(-0.5 * log_det_Sigma - 0.5 * ER2_term)
 }

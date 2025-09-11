@@ -2,7 +2,7 @@
 
 # Initialize fitted values
 initialize_fitted.rss_lambda <- function(data, alpha, mu) {
-  return(list(Rz = compute_Xb(data$R, colSums(alpha * mu))))
+  return(list(Rz = as.vector(data$R %*% colSums(alpha * mu))))
 }
 
 # Initialize SuSiE model
@@ -152,7 +152,7 @@ compute_kl.rss_lambda <- function(data, model, l) {
 
 # Update fitted values
 update_fitted_values.rss_lambda <- function(data, model, l) {
-  model$Rz <- model$fitted_without_l + compute_Xb(data$R, model$alpha[l, ] * model$mu[l, ])
+  model$Rz <- model$fitted_without_l + as.vector(data$R %*% (model$alpha[l, ] * model$mu[l, ]))
   return(model)
 }
 
@@ -198,13 +198,13 @@ get_zscore.rss_lambda <- function(data, model, ...) {
 
 # Update variance components
 update_variance_components.rss_lambda <- function(data, model, estimate_method = "MLE") {
+  # Set upper bound
+  upper_bound <- 1 - data$lambda
+  
   # Optimize for sigma2
   opt_result <- optimize(function(sigma2) rss_lambda_likelihood(sigma2, data, model),
                          interval = c(1e-4, upper_bound), maximum = TRUE)
   est_sigma2 <- opt_result$maximum
-
-  # Set upper bound
-  upper_bound <- 1 - data$lambda
 
   # Check boundary condition
   if (rss_lambda_likelihood(est_sigma2, data, model) < rss_lambda_likelihood(upper_bound, data, model)) {

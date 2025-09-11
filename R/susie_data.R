@@ -750,6 +750,9 @@ rss_lambda_constructor <- function(z, R, maf = NULL, maf_thresh = 0,
   # Set negative eigenvalues to zero
   eigen_R$values[eigen_R$values < r_tol] <- 0
 
+  # Precompute V'z for RSS lambda optimization efficiency
+  Vtz <- crossprod(eigen_R$vectors, z)
+
   # Handle lambda estimation
   if (identical(lambda, "estimate")) {
     colspace <- which(eigen_R$values > 0)
@@ -775,6 +778,7 @@ rss_lambda_constructor <- function(z, R, maf = NULL, maf_thresh = 0,
       r_tol = r_tol,
       prior_variance = prior_variance,
       eigen_R = eigen_R,
+      Vtz = Vtz,
       convergence_method = convergence_method,
       # RSS-lambda specific parameter overrides
       scaled_prior_variance = prior_variance, # Use unscaled for RSS-lambda
