@@ -750,7 +750,7 @@ rss_lambda_constructor <- function(z, R, maf = NULL, maf_thresh = 0,
   # Set negative eigenvalues to zero
   eigen_R$values[eigen_R$values < r_tol] <- 0
 
-  # Precompute V'z for RSS lambda optimization efficiency
+  # Precompute V'z
   Vtz <- crossprod(eigen_R$vectors, z)
 
   # Handle lambda estimation
