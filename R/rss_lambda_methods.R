@@ -97,10 +97,8 @@ Eloglik.rss_lambda <- function(data, model) {
 # Log-likelihood for RSS
 loglik.rss_lambda <- function(data, model, V, ser_stats, ...) {
   # Compute log Bayes factors
-  lbf <- sapply(1:data$p, function(j) {
-    -0.5 * log(1 + (V / ser_stats$shat2[j])) +
-      0.5 * (V / (1 + (V / ser_stats$shat2[j]))) * sum(model$SinvRj[, j] * model$residuals)^2
-  })
+  lbf <- -0.5 * log(1 + V / ser_stats$shat2) +
+         0.5 * (V / (1 + V / ser_stats$shat2)) * (crossprod(model$SinvRj, model$residuals)^2)
 
   # Stabilize logged Bayes Factor
   stable_res <- lbf_stabilization(lbf, model$pi, ser_stats$shat2)
