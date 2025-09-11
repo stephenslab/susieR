@@ -13,13 +13,13 @@ run_refine <- function(model, data, L, intercept, standardize,
 
   # Warn if model_init was provided initially
   if (!is.null(model_init)) {
-    warning("The given model_init is not used in refinement")
+    warning_message("The given model_init is not used in refinement")
   }
 
   if (verbose) {
-    cat("Starting refinement process...\n")
-    cat("Initial ELBO:", susie_get_objective(model), "\n")
-    cat("Number of credible sets to refine:", length(model$sets$cs), "\n")
+    message("Starting refinement process...")
+    message("Initial ELBO:", susie_get_objective(model))
+    message("Number of credible sets to refine:", length(model$sets$cs))
   }
 
   # Extract prior weights for refinement
@@ -32,7 +32,7 @@ run_refine <- function(model, data, L, intercept, standardize,
   while (conti && !is.null(model$sets) && length(model$sets$cs) > 0) {
     refine_iteration <- refine_iteration + 1
     if (verbose) {
-      cat("\nRefinement iteration", refine_iteration, "\n")
+      message("\nRefinement iteration ", refine_iteration)
     }
     candidate_models <- list()
 
@@ -44,13 +44,13 @@ run_refine <- function(model, data, L, intercept, standardize,
       # Skip if all weights are zero
       if (all(pw_cs == 0)) {
         if (verbose) {
-          cat("  Skipping CS", cs_idx, "- all prior weights would be zero\n")
+          message("  Skipping CS ", cs_idx, " - all prior weights would be zero")
         }
         break
       }
 
       if (verbose) {
-        cat("  Refining CS", cs_idx, "with variables:", model$sets$cs[[cs_idx]], "\n")
+        message("  Refining CS ", cs_idx, " with variables: ", paste(model$sets$cs[[cs_idx]], collapse = " "))
       }
 
       # Step 1: Create data with modified prior weights
@@ -138,7 +138,7 @@ run_refine <- function(model, data, L, intercept, standardize,
       candidate_models <- c(candidate_models, list(model_step2))
 
       if (verbose) {
-        cat("    ELBO for refined CS", cs_idx, ":", susie_get_objective(model_step2), "\n")
+        message("    ELBO for refined CS ", cs_idx, ": ", susie_get_objective(model_step2))
       }
     }
 
@@ -146,16 +146,16 @@ run_refine <- function(model, data, L, intercept, standardize,
     if (length(candidate_models) == 0) {
       conti <- FALSE
       if (verbose) {
-        cat("No candidate models generated, stopping refinement\n")
+        message("No candidate models generated, stopping refinement")
       }
     } else {
       elbos <- sapply(candidate_models, susie_get_objective)
       current_elbo <- susie_get_objective(model)
 
       if (verbose) {
-        cat("\nCurrent ELBO:", current_elbo, "\n")
-        cat("Candidate ELBOs:", elbos, "\n")
-        cat("Best candidate ELBO:", max(elbos), "\n")
+        message("\nCurrent ELBO: ", current_elbo)
+        message("Candidate ELBOs: ", paste(elbos, collapse = " "))
+        message("Best candidate ELBO: ", max(elbos))
       }
 
       if (max(elbos) - current_elbo > tol) {
@@ -163,13 +163,13 @@ run_refine <- function(model, data, L, intercept, standardize,
         best_idx <- which.max(elbos)
         model <- candidate_models[[best_idx]]
         if (verbose) {
-          cat("ELBO improved! Selected model from CS", best_idx, "refinement\n")
-          cat("Improvement:", max(elbos) - current_elbo, "\n")
+          message("ELBO improved! Selected model from CS ", best_idx, " refinement")
+          message("Improvement: ", max(elbos) - current_elbo)
         }
       } else {
         # No improvement beyond tolerance, stop
         if (verbose) {
-          cat("No improvement in ELBO beyond tolerance (", tol, "), stopping refinement\n")
+          message("No improvement in ELBO beyond tolerance (", tol, "), stopping refinement")
         }
         conti <- FALSE
       }
@@ -177,9 +177,9 @@ run_refine <- function(model, data, L, intercept, standardize,
   }
 
   if (verbose) {
-    cat("\nRefinement complete!\n")
-    cat("Final ELBO:", susie_get_objective(model), "\n")
-    cat("Total refinement iterations:", refine_iteration, "\n")
+    message("\nRefinement complete!")
+    message("Final ELBO: ", susie_get_objective(model))
+    message("Total refinement iterations: ", refine_iteration)
   }
 
   return(model)

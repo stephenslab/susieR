@@ -55,12 +55,12 @@ mom_unmappable <- function(alpha, mu, omega, sigma2, tau2, n, V, Dsq, VtXty, Xty
       tau2 <- 0
     }
     if (verbose) {
-      cat(sprintf("Update (sigma^2,tau^2) to (%f,%e)\n", sigma2, tau2))
+      message(sprintf("Update (sigma^2,tau^2) to (%f,%e)\n", sigma2, tau2))
     }
   } else if (est_sigma2) {
     sigma2 <- (x[1] - A[1, 2] * tau2) / n
     if (verbose) {
-      cat(sprintf("Update sigma^2 to %f\n", sigma2))
+      message(sprintf("Update sigma^2 to %f\n", sigma2))
     }
   }
   return(list(sigma2 = sigma2, tau2 = tau2))
@@ -530,7 +530,7 @@ validate_init <- function(model_init, L, null_weight) {
 adjust_L <- function(model_init, L, V) {
   num_effects <- nrow(model_init$alpha)
   if (num_effects > L) {
-    warning(paste0(
+    warning_message(paste0(
       "Requested L = ", L,
       " is smaller than the ", num_effects,
       " effects in model_init after pruning; ",
@@ -573,28 +573,6 @@ assign_names <- function(model, variable_names, null_weight, p) {
   return(model)
 }
 
-# Precompute RSS lambda terms that change per IBSS iteration
-#' @keywords internal
-precompute_rss_lambda_terms <- function(data, model) {
-  # Only precompute for RSS lambda data
-  if (!inherits(data, "rss_lambda")) {
-    return(model)
-  }
-
-  # Precompute quantities that change per IBSS iteration
-  Z <- model$alpha * model$mu           # Element-wise product
-  zbar <- colSums(Z)                   # Column sums
-  postb2 <- model$alpha * model$mu2     # Second moments
-  diag_postb2 <- colSums(postb2)       # For diagonal operations
-
-  # Add precomputed terms to model
-  model$Z <- Z
-  model$zbar <- zbar
-  model$postb2 <- postb2
-  model$diag_postb2 <- diag_postb2
-
-  return(model)
-}
 
 # Helper function to update variance components and derived quantities
 #' @keywords internal
@@ -640,7 +618,7 @@ get_objective <- function(data, model, verbose = FALSE) {
     stop("get_objective() produced an infinite ELBO value")
   }
   if (verbose) {
-    print(paste0("objective:", objective))
+    message("objective:", objective)
   }
   return(objective)
 }
@@ -740,10 +718,10 @@ mle_unmappable <- function(alpha, mu, omega, sigma2, tau2, n,
       sigma2 <- res$par[1]
       tau2 <- res$par[2]
       if (verbose) {
-        cat(sprintf("Update (sigma^2,tau^2) to (%f,%e)\n", sigma2, tau2))
+        message(sprintf("Update (sigma^2,tau^2) to (%f,%e)\n", sigma2, tau2))
       }
     } else {
-      warning("MLE optimization failed to converge; keeping previous parameters")
+      warning_message("MLE optimization failed to converge; keeping previous parameters")
     }
   } else if (est_sigma2) {
     # Optimize only sigma^2
@@ -758,10 +736,10 @@ mle_unmappable <- function(alpha, mu, omega, sigma2, tau2, n,
     if (res$convergence == 0) {
       sigma2 <- res$par
       if (verbose) {
-        cat(sprintf("Update sigma^2 to %f\n", sigma2))
+        message(sprintf("Update sigma^2 to %f\n", sigma2))
       }
     } else {
-      warning("MLE optimization failed to converge; keeping previous parameters")
+      warning_message("MLE optimization failed to converge; keeping previous parameters")
     }
   }
 
@@ -815,33 +793,6 @@ compute_Dinv <- function(model, data) {
   return(Dinv)
 }
 
-# Compute RSS-lambda likelihood for variance optimization
-#' @keywords internal
-rss_lambda_likelihood <- function(sigma2, data, model) {
-  # Extract eigendecomposition
-  V <- data$eigen_R$vectors
-  D <- data$eigen_R$values
-
-  # Create eigenvalues of Sigma = sigma2 * R + lambda * I
-  eigenS_values <- sigma2 * D + data$lambda
-  Dinv <- 1 / eigenS_values
-  Dinv[is.infinite(Dinv)] <- 0
-
-  # Compute log determinant term
-  log_det_Sigma <- sum(log(eigenS_values[eigenS_values > 0]))
-
-  # Compute expected residual sum of squares using precomputed and temporary matrices
-  SinvR_temp  <- V %*% ((Dinv * D) * t(V))
-  zSinvz      <- sum(data$Vtz * (Dinv * data$Vtz))
-  RSinvR_temp <- V %*% ((Dinv * (D^2)) * t(V))
-
-  # Use precomputed terms from model object
-  ER2_term    <- zSinvz - 2 * sum(model$zbar * (SinvR_temp %*% data$z)) +
-    sum(model$zbar * (RSinvR_temp %*% model$zbar)) -
-    model$RZ2 + sum(diag(RSinvR_temp) * t(model$postb2))
-
-  return(-0.5 * log_det_Sigma - 0.5 * ER2_term)
-}
 
 # @return R with attribute e.g., attr(R, 'eigenR') is the eigen
 #   decomposition of R.
@@ -991,7 +942,7 @@ check_convergence <- function(model, elbo, tol, convergence_method, iter) {
   if (convergence_method == "pip" || ELBO_failed) {
     # Fallback to PIP-based convergence if ELBO calculation fails
     if (ELBO_failed && convergence_method == "elbo") {
-      warning(paste0("Iteration ", iter, " produced an NA/infinite ELBO value. Using pip-based convergence this iteration."))
+      warning_message(paste0("Iteration ", iter, " produced an NA/infinite ELBO value. Using pip-based convergence this iteration."))
     }
 
     # Calculate difference in alpha values

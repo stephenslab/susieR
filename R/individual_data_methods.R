@@ -29,7 +29,7 @@ configure_data.individual <- function(data) {
   if (data$unmappable_effects == "none") {
     return(configure_data.default(data))
   } else {
-    warning("Individual-level data converted to sufficient statistics for unmappable effects methods\n")
+    warning_message("Individual-level data converted to sufficient statistics for unmappable effects methods")
     return(convert_individual_to_ss(data))
   }
 }
@@ -169,7 +169,7 @@ get_zscore.individual <- function(data, model, compute_univariate_zscore,
   X <- data$X
 
   if (!is.matrix(X)) {
-    warning(
+    warning_message(
       "Calculation of univariate regression z-scores is not ",
       "implemented specifically for sparse or trend filtering ",
       "matrices, so this step may be slow if the matrix is large; ",
