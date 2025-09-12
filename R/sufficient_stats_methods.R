@@ -1,11 +1,41 @@
-# Sufficient statistics data backend methods
+# =============================================================================
+#' @section DATA INITIALIZATION & CONFIGURATION
+#'
+#' Functions for data object setup, configuration, and preprocessing.
+#' These prepare data objects for model fitting and handle data-specific
+#' configurations like unmappable effects.
+#'
+#' Functions: configure_data, get_var_y
+# =============================================================================
 
-# Initialize fitted values
-initialize_fitted.ss <- function(data, alpha, mu) {
-  return(list(XtXr = compute_Xb(data$XtX, colSums(alpha * mu))))
+# Configure ss data for specified method
+#' @keywords internal
+configure_data.ss <- function(data) {
+  if (data$unmappable_effects == "none") {
+    return(configure_data.default(data))
+  } else {
+    return(add_eigen_decomposition(data))
+  }
 }
 
+# Get variance of y
+#' @keywords internal
+get_var_y.ss <- function(data, ...) {
+  return(data$yty / (data$n - 1))
+}
+
+# =============================================================================
+#' @section MODEL INITIALIZATION & SETUP
+#'
+#' Functions for initializing model objects and setting up initial states.
+#' These create model matrices, initialize fitted values, and prepare
+#' the SuSiE model for iterative fitting.
+#'
+#' Functions: initialize_susie_model, initialize_fitted, validate_prior, track_ibss_fit
+# =============================================================================
+
 # Initialize SuSiE model
+#' @keywords internal
 initialize_susie_model.ss <- function(data, L, scaled_prior_variance, var_y,
                                       residual_variance, prior_weights, ...) {
 
@@ -32,36 +62,14 @@ initialize_susie_model.ss <- function(data, L, scaled_prior_variance, var_y,
   return(model)
 }
 
-# Get variance of y
-get_var_y.ss <- function(data, ...) {
-  return(data$yty / (data$n - 1))
-}
-
-# Configure ss data for specified method
-configure_data.ss <- function(data) {
-  if (data$unmappable_effects == "none") {
-    return(configure_data.default(data))
-  } else {
-    return(add_eigen_decomposition(data))
-  }
-}
-
-# Track core parameters across iterations
-track_ibss_fit.ss <- function(data, model, tracking, iter, track_fit, ...) {
-  if (data$unmappable_effects %in% c("inf", "ash")) {
-    # Append non-sparse variance component to tracking
-    tracking <- track_ibss_fit.default(data, model, tracking, iter, track_fit, ...)
-    if (isTRUE(track_fit)) {
-      tracking[[iter]]$tau2 <- model$tau2
-    }
-    return(tracking)
-  } else {
-    # Use default for standard SS case
-    return(track_ibss_fit.default(data, model, tracking, iter, track_fit, ...))
-  }
+# Initialize fitted values
+#' @keywords internal
+initialize_fitted.ss <- function(data, alpha, mu) {
+  return(list(XtXr = compute_Xb(data$XtX, colSums(alpha * mu))))
 }
 
 # Validate Prior Variance
+#' @keywords internal
 validate_prior.ss <- function(data, model, check_prior, ...) {
   if (isTRUE(check_prior)) {
     if (is.null(data$zm)) {
@@ -81,29 +89,35 @@ validate_prior.ss <- function(data, model, check_prior, ...) {
   return(validate_prior.default(data, model, check_prior, ...))
 }
 
-# Expected Squared Residuals
-get_ER2.ss <- function(data, model) {
-  B       <- model$alpha * model$mu
-  XB2     <- sum((B %*% data$XtX) * B)
-  betabar <- colSums(B)
-  postb2  <- model$alpha * model$mu2 # Posterior second moment.
-
-  return(data$yty - 2 * sum(betabar * data$Xty) + sum(betabar * (data$XtX %*% betabar)) -
-    XB2 + sum(model$predictor_weights * t(postb2)))
-}
-
-# Posterior expected log-likelihood for a single effect regression
-SER_posterior_e_loglik.ss <- function(data, model, Eb, Eb2) {
-  if (data$unmappable_effects == "none") {
-    # Standard SuSiE
-    return(-0.5 / model$sigma2 * (-2 * sum(Eb * model$residuals) + sum(model$predictor_weights * as.vector(Eb2))))
+# Track core parameters across iterations
+#' @keywords internal
+track_ibss_fit.ss <- function(data, model, tracking, iter, track_fit, ...) {
+  if (data$unmappable_effects %in% c("inf", "ash")) {
+    # Append non-sparse variance component to tracking
+    tracking <- track_ibss_fit.default(data, model, tracking, iter, track_fit, ...)
+    if (isTRUE(track_fit)) {
+      tracking[[iter]]$tau2 <- model$tau2
+    }
+    return(tracking)
   } else {
-    # Omega-weighted likelihood
-    return(-0.5 * (-2 * sum(Eb * model$residuals) + sum(model$predictor_weights * as.vector(Eb2))))
+    # Use default for standard SS case
+    return(track_ibss_fit.default(data, model, tracking, iter, track_fit, ...))
   }
 }
 
+# =============================================================================
+#' @section SINGLE EFFECT REGRESSION & ELBO
+#'
+#' Core functions for single effect regression computation and ELBO calculation.
+#' These handle the mathematical core of SuSiE including residual computation, SER
+#' statistics, posterior moments, and log-likelihood calculations for the ELBO.
+#'
+#' Functions: compute_residuals, compute_ser_statistics, SER_posterior_e_loglik,
+#' calculate_posterior_moments, compute_kl, get_ER2, Eloglik, loglik, neg_loglik
+# =============================================================================
+
 # Compute residuals for single effect regression
+#' @keywords internal
 compute_residuals.ss <- function(data, model, l, ...) {
   if (!is.null(data$unmappable_effects) && data$unmappable_effects != "none") {
     # Remove lth effect from fitted values
@@ -138,38 +152,143 @@ compute_residuals.ss <- function(data, model, l, ...) {
 }
 
 # Compute SER statistics
+#' @keywords internal
 compute_ser_statistics.ss <- function(data, model, residual_variance, l, ...) {
   betahat <- (1 / model$predictor_weights) * model$residuals
-  shat2 <- residual_variance / model$predictor_weights
+  shat2   <- residual_variance / model$predictor_weights
 
   # Optimization parameters
   if (data$unmappable_effects == "none") {
     # Standard SuSiE: optimize on log scale
-    optim_init <- log(max(c(betahat^2 - shat2, 1), na.rm = TRUE))
+    optim_init   <- log(max(c(betahat^2 - shat2, 1), na.rm = TRUE))
     optim_bounds <- c(-30, 15)
-    optim_scale <- "log"
+    optim_scale  <- "log"
   } else {
     # Unmappable effects: optimize on linear scale
-    optim_init <- model$V[l]
+    optim_init   <- model$V[l]
     optim_bounds <- c(0, 1)
-    optim_scale <- "linear"
+    optim_scale  <- "linear"
   }
 
   return(list(
-    betahat = betahat,
-    shat2 = shat2,
-    optim_init = optim_init,
+    betahat      = betahat,
+    shat2        = shat2,
+    optim_init   = optim_init,
     optim_bounds = optim_bounds,
-    optim_scale = optim_scale
+    optim_scale  = optim_scale
+  ))
+}
+
+# Posterior expected log-likelihood for a single effect regression
+#' @keywords internal
+SER_posterior_e_loglik.ss <- function(data, model, Eb, Eb2) {
+  if (data$unmappable_effects == "none") {
+    # Standard SuSiE
+    return(-0.5 / model$sigma2 * (-2 * sum(Eb * model$residuals) + sum(model$predictor_weights * as.vector(Eb2))))
+  } else {
+    # Omega-weighted likelihood
+    return(-0.5 * (-2 * sum(Eb * model$residuals) + sum(model$predictor_weights * as.vector(Eb2))))
+  }
+}
+
+# Calculate posterior moments for single effect regression
+#' @keywords internal
+calculate_posterior_moments.ss <- function(data, model, V,
+                                           residual_variance, ...) {
+  # Standard Gaussian posterior calculations
+  post_var   <- (1 / V + model$predictor_weights / residual_variance)^(-1)
+  post_mean  <- (1 / residual_variance) * post_var * model$residuals
+  post_mean2 <- post_var + post_mean^2
+
+  return(list(
+    post_mean  = post_mean,
+    post_mean2 = post_mean2,
+    post_var   = post_var
   ))
 }
 
 # Calculate KL divergence
+#' @keywords internal
 compute_kl.ss <- function(data, model, l) {
   return(compute_kl.default(data, model, l))
 }
 
+# Expected Squared Residuals
+#' @keywords internal
+get_ER2.ss <- function(data, model) {
+  B       <- model$alpha * model$mu
+  XB2     <- sum((B %*% data$XtX) * B)
+  betabar <- colSums(B)
+  postb2  <- model$alpha * model$mu2 # Posterior second moment.
+
+  return(data$yty - 2 * sum(betabar * data$Xty) + sum(betabar * (data$XtX %*% betabar)) -
+           XB2 + sum(model$predictor_weights * t(postb2)))
+}
+
+# Expected log-likelihood
+#' @keywords internal
+Eloglik.ss <- function(data, model) {
+  # Standard log-likelihood computation
+  return(-data$n / 2 * log(2 * pi * model$sigma2) -
+           1 / (2 * model$sigma2) * get_ER2(data, model))
+}
+
+#' @importFrom Matrix colSums
+#' @importFrom stats dnorm
+#' @keywords internal
+loglik.ss <- function(data, model, V, ser_stats, ...) {
+  # log(bf) for each SNP
+  lbf <- dnorm(ser_stats$betahat, 0, sqrt(V + ser_stats$shat2), log = TRUE) -
+    dnorm(ser_stats$betahat, 0, sqrt(ser_stats$shat2), log = TRUE)
+
+  # Stabilize logged Bayes Factor
+  stable_res  <- lbf_stabilization(lbf, model$pi, ser_stats$shat2)
+
+  # Compute posterior weights
+  weights_res <- compute_posterior_weights(stable_res$lpo)
+
+  # Compute gradient
+  gradient    <- compute_lbf_gradient(weights_res$alpha, ser_stats$betahat, ser_stats$shat2, V)
+
+  return(list(
+    lbf       = stable_res$lbf,
+    lbf_model = weights_res$lbf_model,
+    alpha     = weights_res$alpha,
+    gradient  = gradient
+  ))
+}
+
+#' @keywords internal
+neg_loglik.ss <- function(data, model, V_param, ser_stats, ...) {
+  # Convert parameter to V based on optimization scale
+  V <- if (ser_stats$optim_scale == "log") exp(V_param) else V_param
+
+  if (data$unmappable_effects == "none") {
+    # Standard objective
+    res <- loglik.ss(data, model, V, ser_stats)
+    return(-res$lbf_model)
+  } else {
+    # Unmappable objective with logSumExp trick
+    return(-matrixStats::logSumExp(
+      -0.5 * log(1 + V * model$predictor_weights) +
+        V * model$residuals^2 / (2 * (1 + V * model$predictor_weights)) +
+        log(model$pi + sqrt(.Machine$double.eps))
+    ))
+  }
+}
+
+# =============================================================================
+#' @section MODEL UPDATES & FITTING
+#'
+#' Functions for iterative model updates and variance component estimation.
+#' These handle the dynamic aspects of model fitting including fitted value
+#' updates and variance component estimation.
+#'
+#' Functions: update_fitted_values, update_variance_components, update_derived_quantities
+# =============================================================================
+
 # Update fitted values
+#' @keywords internal
 update_fitted_values.ss <- function(data, model, l) {
   if (data$unmappable_effects != "none") {
     model$XtXr <- compute_Xb(data$XtX, colSums(model$alpha * model$mu) + model$theta)
@@ -179,59 +298,15 @@ update_fitted_values.ss <- function(data, model, l) {
   return(model)
 }
 
-# Get column scale factors
-get_scale_factors.ss <- function(data) {
-  return(attr(data$XtX, "scaled:scale"))
-}
-
-# Get intercept
-get_intercept.ss <- function(data, model, ...) {
-  return(sum(data$X_colmeans * (colSums(model$alpha * model$mu) / model$X_column_scale_factors)))
-}
-
-# Get Fitted Values
-get_fitted.ss <- function(data, model, ...) {
-  return(NULL)
-}
-
-# Get Credible Sets
-get_cs.ss <- function(data, model, coverage, min_abs_corr, n_purity) {
-  if (is.null(coverage) || is.null(min_abs_corr)) {
-    return(NULL)
-  }
-
-  if (any(!(diag(data$XtX) %in% c(0, 1)))) {
-    Xcorr <- muffled_cov2cor(data$XtX)
-  } else {
-    Xcorr <- data$XtX
-  }
-
-  return(susie_get_cs(model,
-                      coverage = coverage,
-                      Xcorr = Xcorr,
-                      min_abs_corr = min_abs_corr,
-                      check_symmetric = FALSE,
-                      n_purity = n_purity))
-}
-
-# Get Variable Names
-get_variable_names.ss <- function(data, model, null_weight) {
-  return(assign_names(model, colnames(data$XtX), null_weight, data$p))
-}
-
-# Get univariate z-score
-get_zscore.ss <- function(data, model, ...) {
-  return(get_zscore.default(data, model))
-}
-
 # Update variance components for ss data
+#' @keywords internal
 update_variance_components.ss <- function(data, model, estimate_method = "MLE") {
   if (data$unmappable_effects == "inf") {
     # Calculate omega
     L         <- nrow(model$alpha)
     omega_res <- compute_omega_quantities(data, model$tau2, model$sigma2)
     omega     <- matrix(rep(omega_res$diagXtOmegaX, L), nrow = L, ncol = data$p,byrow = TRUE) +
-                 matrix(rep(1 / model$V, data$p), nrow = L, ncol = data$p, byrow = FALSE)
+      matrix(rep(1 / model$V, data$p), nrow = L, ncol = data$p, byrow = FALSE)
 
     # Compute theta for infinitesimal effects.
     theta <- compute_theta_blup(data, model)
@@ -239,17 +314,17 @@ update_variance_components.ss <- function(data, model, estimate_method = "MLE") 
     # Sigma2 and tau2 update
     if (estimate_method == "MLE") {
       mle_result <- mle_unmappable(model$alpha, model$mu, omega, model$sigma2, model$tau2, data$n,
-        data$eigen_vectors, data$eigen_values, data$VtXty, data$yty,
-        est_sigma2 = TRUE, est_tau2 = TRUE,
-        verbose = FALSE
+                                   data$eigen_vectors, data$eigen_values, data$VtXty, data$yty,
+                                   est_sigma2 = TRUE, est_tau2 = TRUE,
+                                   verbose = FALSE
       )
       return(list(sigma2 = mle_result$sigma2,
                   tau2   = mle_result$tau2,
                   theta  = theta))
     } else {
       mom_result <- mom_unmappable(model$alpha, model$mu, omega, model$sigma2, model$tau2, data$n,
-        data$eigen_vectors, data$eigen_values, data$VtXty, data$Xty, data$yty,
-        est_sigma2 = TRUE, est_tau2 = TRUE, verbose = FALSE
+                                   data$eigen_vectors, data$eigen_values, data$VtXty, data$Xty, data$yty,
+                                   est_sigma2 = TRUE, est_tau2 = TRUE, verbose = FALSE
       )
       return(list(sigma2 = mom_result$sigma2,
                   tau2   = mom_result$tau2,
@@ -260,7 +335,7 @@ update_variance_components.ss <- function(data, model, estimate_method = "MLE") 
     L         <- nrow(model$alpha)
     omega_res <- compute_omega_quantities(data, model$tau2, model$sigma2)
     omega     <- matrix(rep(omega_res$diagXtOmegaX, L), nrow = L, ncol = data$p, byrow = TRUE) +
-                 matrix(rep(1 / model$V, data$p), nrow = L, ncol = data$p, byrow = FALSE)
+      matrix(rep(1 / model$V, data$p), nrow = L, ncol = data$p, byrow = FALSE)
 
     # Update the sparse effect variance
     sparse_var <- mean(colSums(model$alpha * model$V))
@@ -311,6 +386,7 @@ update_variance_components.ss <- function(data, model, estimate_method = "MLE") 
 }
 
 # Update derived quantities for ss data
+#' @keywords internal
 update_derived_quantities.ss <- function(data, model) {
   if (data$unmappable_effects %in% c("inf", "ash")) {
     # Update omega quantities for next iteration
@@ -329,66 +405,64 @@ update_derived_quantities.ss <- function(data, model) {
   }
 }
 
-# Expected log-likelihood
-Eloglik.ss <- function(data, model) {
-  # Standard log-likelihood computation
-  return(-data$n / 2 * log(2 * pi * model$sigma2) -
-    1 / (2 * model$sigma2) * get_ER2(data, model))
+# =============================================================================
+#' @section OUTPUT GENERATION & POST-PROCESSING
+#'
+#' Functions for generating final results and summary statistics.
+#' These process fitted models into interpretable outputs including
+#' credible sets, variable names, and fitted values.
+#'
+#' Functions: get_scale_factors, get_intercept, get_fitted, get_cs,
+#' get_variable_names, get_zscore
+# =============================================================================
+
+# Get column scale factors
+#' @keywords internal
+get_scale_factors.ss <- function(data) {
+  return(attr(data$XtX, "scaled:scale"))
 }
 
-#' @importFrom Matrix colSums
-#' @importFrom stats dnorm
-loglik.ss <- function(data, model, V, ser_stats, ...) {
-  # log(bf) for each SNP
-  lbf <- dnorm(ser_stats$betahat, 0, sqrt(V + ser_stats$shat2), log = TRUE) -
-    dnorm(ser_stats$betahat, 0, sqrt(ser_stats$shat2), log = TRUE)
-
-  # Stabilize logged Bayes Factor
-  stable_res  <- lbf_stabilization(lbf, model$pi, ser_stats$shat2)
-
-  # Compute posterior weights
-  weights_res <- compute_posterior_weights(stable_res$lpo)
-
-  # Compute gradient
-  gradient    <- compute_lbf_gradient(weights_res$alpha, ser_stats$betahat, ser_stats$shat2, V)
-
-  return(list(
-    lbf       = stable_res$lbf,
-    lbf_model = weights_res$lbf_model,
-    alpha     = weights_res$alpha,
-    gradient  = gradient
-  ))
+# Get intercept
+#' @keywords internal
+get_intercept.ss <- function(data, model, ...) {
+  return(sum(data$X_colmeans * (colSums(model$alpha * model$mu) / model$X_column_scale_factors)))
 }
 
-neg_loglik.ss <- function(data, model, V_param, ser_stats, ...) {
-  # Convert parameter to V based on optimization scale
-  V <- if (ser_stats$optim_scale == "log") exp(V_param) else V_param
+# Get Fitted Values
+#' @keywords internal
+get_fitted.ss <- function(data, model, ...) {
+  return(NULL)
+}
 
-  if (data$unmappable_effects == "none") {
-    # Standard objective
-    res <- loglik.ss(data, model, V, ser_stats)
-    return(-res$lbf_model)
-  } else {
-    # Unmappable objective with logSumExp trick
-    return(-matrixStats::logSumExp(
-      -0.5 * log(1 + V * model$predictor_weights) +
-      V * model$residuals^2 / (2 * (1 + V * model$predictor_weights)) +
-        log(model$pi + sqrt(.Machine$double.eps))
-    ))
+# Get Credible Sets
+#' @keywords internal
+get_cs.ss <- function(data, model, coverage, min_abs_corr, n_purity) {
+  if (is.null(coverage) || is.null(min_abs_corr)) {
+    return(NULL)
   }
+
+  if (any(!(diag(data$XtX) %in% c(0, 1)))) {
+    Xcorr <- muffled_cov2cor(data$XtX)
+  } else {
+    Xcorr <- data$XtX
+  }
+
+  return(susie_get_cs(model,
+                      coverage = coverage,
+                      Xcorr = Xcorr,
+                      min_abs_corr = min_abs_corr,
+                      check_symmetric = FALSE,
+                      n_purity = n_purity))
 }
 
-# Calculate posterior moments for single effect regression
-calculate_posterior_moments.ss <- function(data, model, V,
-                                           residual_variance, ...) {
-  # Standard Gaussian posterior calculations
-  post_var   <- (1 / V + model$predictor_weights / residual_variance)^(-1)
-  post_mean  <- (1 / residual_variance) * post_var * model$residuals
-  post_mean2 <- post_var + post_mean^2
+# Get Variable Names
+#' @keywords internal
+get_variable_names.ss <- function(data, model, null_weight) {
+  return(assign_names(model, colnames(data$XtX), null_weight, data$p))
+}
 
-  return(list(
-    post_mean  = post_mean,
-    post_mean2 = post_mean2,
-    post_var   = post_var
-  ))
+# Get univariate z-score
+#' @keywords internal
+get_zscore.ss <- function(data, model, ...) {
+  return(get_zscore.default(data, model))
 }
