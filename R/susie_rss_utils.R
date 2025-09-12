@@ -352,3 +352,11 @@ kriging_rss <- function(z, R, n, r_tol = 1e-08,
   }
   return(list(plot = p, conditional_dist = res))
 }
+
+# Compute inverse eigenvalues for RSS-lambda methods
+#' @keywords internal
+compute_Dinv <- function(model, data) {
+  Dinv <- 1 / (model$sigma2 * data$eigen_R$values + data$lambda)
+  Dinv[is.infinite(Dinv)] <- 0
+  return(Dinv)
+}

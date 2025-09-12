@@ -213,12 +213,6 @@ is_symmetric_matrix <- function(x) {
   }
 }
 
-# Slim the result of fitted susie model.
-#' @keywords internal
-susie_slim <- function(res) {
-  list(alpha = res$alpha, niter = res$niter, V = res$V, sigma2 = res$sigma2)
-}
-
 # Prune single effects to given number L in susie model object.
 #' @keywords internal
 susie_prune_single_effects <- function(s, L = 0, V = NULL) {
@@ -779,60 +773,6 @@ compute_elbo_inf <- function(alpha, mu, omega, lbf, sigma2, tau2, n, p,
   elbo <- -neg_elbo
 
   return(elbo)
-}
-
-# @title sets the attributes for the R matrix
-# @param R a p by p LD matrix
-# @param r_tol tolerance level for eigen value check of positive
-#   semidefinite matrix of R.
-# Compute inverse eigenvalues for RSS-lambda methods
-#' @keywords internal
-compute_Dinv <- function(model, data) {
-  Dinv <- 1 / (model$sigma2 * data$eigen_R$values + data$lambda)
-  Dinv[is.infinite(Dinv)] <- 0
-  return(Dinv)
-}
-
-
-# @return R with attribute e.g., attr(R, 'eigenR') is the eigen
-#   decomposition of R.
-set_R_attributes <- function(R, r_tol) {
-  if (is.null(attr(R, "eigen"))) {
-    eigenR <- eigen(R, symmetric = TRUE)
-  } else {
-    eigenR <- attr(R, "eigen")
-  }
-
-  # Drop small eigenvalues.
-  eigenR$values[abs(eigenR$values) < r_tol] <- 0
-  if (any(eigenR$values < 0)) {
-    min_lambda <- min(eigenR$values)
-    eigenR$values[eigenR$values < 0] <- 0
-    warning_message(paste0(
-      "The input correlation matrix has negative eigenvalues ",
-      "(smallest one is ", min_lambda, "). The correlation ",
-      "matrix is adjusted such that these negative eigenvalues ",
-      "are now zeros. You can ignore this message, only if you ",
-      "believe the negative eigenvalue is result of numerical ",
-      "rounding errors."
-    ))
-  }
-  res <- eigenR$vectors %*% (t(eigenR$vectors) * eigenR$values)
-
-  attr(res, "eigen") <- eigenR
-  attr(res, "d") <- diag(res)
-  attr(res, "scaled:scale") <- rep(1, length = nrow(R))
-  return(res)
-}
-
-remove_null_effects <- function(s) {
-  null_indices <- (s$V == 0)
-  s$alpha <- s$alpha[!null_indices, , drop = FALSE]
-  s$mu <- s$mu[!null_indices, , drop = FALSE]
-  s$mu2 <- s$mu2[!null_indices, , drop = FALSE]
-  s$lbf_variable <- s$lbf_variable[!null_indices, , drop = FALSE]
-  s$V <- s$V[!null_indices, drop = FALSE]
-  return(s)
 }
 
 add_null_effect <- function(s, V) {
