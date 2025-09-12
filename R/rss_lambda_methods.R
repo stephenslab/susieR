@@ -1,11 +1,37 @@
-# S3 method implementations for RSS Lambda data (class: rss_lambda)
+# =============================================================================
+#' @section DATA INITIALIZATION & CONFIGURATION
+#'
+#' Functions for data object setup, configuration, and preprocessing.
+#' These prepare data objects for model fitting and handle data-specific
+#' configurations like unmappable effects.
+#'
+#' Functions: configure_data, get_var_y
+# =============================================================================
 
-# Initialize fitted values
-initialize_fitted.rss_lambda <- function(data, alpha, mu) {
-  return(list(Rz = as.vector(data$R %*% colSums(alpha * mu))))
+# Configure data
+#' @keywords internal
+configure_data.rss_lambda <- function(data) {
+  return(configure_data.default(data))
 }
 
+# Get variance of y
+#' @keywords internal
+get_var_y.rss_lambda <- function(data, ...) {
+  return(1)
+}
+
+# =============================================================================
+#' @section MODEL INITIALIZATION & SETUP
+#'
+#' Functions for initializing model objects and setting up initial states.
+#' These create model matrices, initialize fitted values, and prepare
+#' the SuSiE model for iterative fitting.
+#'
+#' Functions: initialize_susie_model, initialize_fitted, validate_prior, track_ibss_fit
+# =============================================================================
+
 # Initialize SuSiE model
+#' @keywords internal
 initialize_susie_model.rss_lambda <- function(data, L, scaled_prior_variance, var_y,
                                               residual_variance, prior_weights, ...) {
   # Base model
@@ -23,26 +49,106 @@ initialize_susie_model.rss_lambda <- function(data, L, scaled_prior_variance, va
   return(model)
 }
 
-# Get variance of y
-get_var_y.rss_lambda <- function(data, ...) {
-  return(1)
-}
-
-# Configure data
-configure_data.rss_lambda <- function(data) {
-  return(configure_data.default(data))
-}
-
-# Track core parameters for tracking
-track_ibss_fit.rss_lambda <- function(data, model, tracking, iter, track_fit, ...) {
-  return(track_ibss_fit.default(data, model, tracking, iter, track_fit, ...))
+# Initialize fitted values
+#' @keywords internal
+initialize_fitted.rss_lambda <- function(data, alpha, mu) {
+  return(list(Rz = as.vector(data$R %*% colSums(alpha * mu))))
 }
 
 # Validate prior variance
+#' @keywords internal
 validate_prior.rss_lambda <- function(data, model, check_prior, ...) {
   return(validate_prior.default(data, model, check_prior, ...))
 }
 
+# Track core parameters for tracking
+#' @keywords internal
+track_ibss_fit.rss_lambda <- function(data, model, tracking, iter, track_fit, ...) {
+  return(track_ibss_fit.default(data, model, tracking, iter, track_fit, ...))
+}
+
+# =============================================================================
+#' @section SINGLE EFFECT REGRESSION & ELBO
+#'
+#' Core functions for single effect regression computation and ELBO calculation.
+#' These handle the mathematical core of SuSiE including residual computation, SER
+#' statistics, posterior moments, and log-likelihood calculations for the ELBO.
+#'
+#' Functions: compute_residuals, compute_ser_statistics, SER_posterior_e_loglik,
+#' calculate_posterior_moments, compute_kl, get_ER2, Eloglik, loglik, neg_loglik
+# =============================================================================
+
+# Compute residuals for single effect regression
+#' @keywords internal
+compute_residuals.rss_lambda <- function(data, model, l, ...) {
+  # Remove lth effect from fitted values
+  Rz_without_l <- model$Rz - data$R %*% (model$alpha[l, ] * model$mu[l, ])
+
+  # Compute residuals
+  r <- data$z - Rz_without_l
+
+  # Store unified residuals in model
+  model$residuals         <- r
+  model$fitted_without_l  <- Rz_without_l
+  model$residual_variance <- 1  # RSS lambda uses normalized residual variance
+
+  return(model)
+}
+
+# Compute SER statistics
+#' @keywords internal
+compute_ser_statistics.rss_lambda <- function(data, model, residual_variance, l, ...) {
+  shat2 <- 1 / model$RjSinvRj
+
+  # Optimization parameters
+  init_vals    <- sapply(1:data$p, function(j) sum(model$SinvRj[, j] * model$residuals)^2) - (1 / model$RjSinvRj)
+  optim_init   <- log(max(c(init_vals, 1e-6), na.rm = TRUE))
+  optim_bounds <- c(-30, 15)
+  optim_scale  <- "log"
+
+  return(list(
+    shat2        = shat2,
+    optim_init   = optim_init,
+    optim_bounds = optim_bounds,
+    optim_scale  = optim_scale
+  ))
+}
+
+# SER posterior expected log-likelihood
+#' @keywords internal
+SER_posterior_e_loglik.rss_lambda <- function(data, model, Eb, Eb2) {
+  V      <- data$eigen_R$vectors
+  Dinv   <- compute_Dinv(model, data)
+  rR     <- data$R %*% model$residuals
+  SinvEb <- V %*% (Dinv * crossprod(V, Eb))
+
+  return(-0.5 * (-2 * sum(rR * SinvEb) + sum(model$RjSinvRj * Eb2)))
+}
+
+# Calculate posterior moments for single effect regression
+#' @keywords internal
+calculate_posterior_moments.rss_lambda <- function(data, model, V, ...) {
+  post_var   <- (model$RjSinvRj + 1 / V)^(-1)
+  post_mean  <- sapply(1:data$p, function(j) {
+    post_var[j] * sum(model$SinvRj[, j] * model$residuals)
+  })
+  post_mean2 <- post_var + post_mean^2
+
+  return(list(
+    post_mean  = post_mean,
+    post_mean2 = post_mean2,
+    post_var   = post_var
+  ))
+}
+
+# Calculate KL divergence
+#' @keywords internal
+compute_kl.rss_lambda <- function(data, model, l) {
+  return(compute_kl.default(data, model, l))
+}
+
+# Expected squared residuals
+#' @keywords internal
 get_ER2.rss_lambda <- function(data, model) {
   # Eigen decomposition components
   D     <- data$eigen_R$values
@@ -76,17 +182,8 @@ get_ER2.rss_lambda <- function(data, model) {
   return(zSinvz + term2 + term3 - term4 + term5)
 }
 
-# SER posterior expected log-likelihood
-SER_posterior_e_loglik.rss_lambda <- function(data, model, Eb, Eb2) {
-  V      <- data$eigen_R$vectors
-  Dinv   <- compute_Dinv(model, data)
-  rR     <- data$R %*% model$residuals
-  SinvEb <- V %*% (Dinv * crossprod(V, Eb))
-
-  return(-0.5 * (-2 * sum(rR * SinvEb) + sum(model$RjSinvRj * Eb2)))
-}
-
 # Expected log-likelihood
+#' @keywords internal
 Eloglik.rss_lambda <- function(data, model) {
   D <- data$eigen_R$values
   d <- model$sigma2 * D + data$lambda
@@ -95,10 +192,11 @@ Eloglik.rss_lambda <- function(data, model) {
 }
 
 # Log-likelihood for RSS
+#' @keywords internal
 loglik.rss_lambda <- function(data, model, V, ser_stats, ...) {
   # Compute log Bayes factors
   lbf <- -0.5 * log(1 + V / ser_stats$shat2) +
-         0.5 * (V / (1 + V / ser_stats$shat2)) * (crossprod(model$SinvRj, model$residuals)^2)
+    0.5 * (V / (1 + V / ser_stats$shat2)) * (crossprod(model$SinvRj, model$residuals)^2)
 
   # Stabilize logged Bayes Factor
   stable_res <- lbf_stabilization(lbf, model$pi, ser_stats$shat2)
@@ -113,6 +211,7 @@ loglik.rss_lambda <- function(data, model, V, ser_stats, ...) {
   ))
 }
 
+#' @keywords internal
 neg_loglik.rss_lambda <- function(data, model, V_param, ser_stats, ...) {
   # Convert parameter to V based on optimization scale (always log for RSS lambda)
   V   <- exp(V_param)
@@ -120,46 +219,18 @@ neg_loglik.rss_lambda <- function(data, model, V_param, ser_stats, ...) {
   return(-res$lbf_model)
 }
 
-# Compute residuals for single effect regression
-compute_residuals.rss_lambda <- function(data, model, l, ...) {
-  # Remove lth effect from fitted values
-  Rz_without_l <- model$Rz - data$R %*% (model$alpha[l, ] * model$mu[l, ])
-
-  # Compute residuals
-  r <- data$z - Rz_without_l
-
-  # Store unified residuals in model
-  model$residuals         <- r
-  model$fitted_without_l  <- Rz_without_l
-  model$residual_variance <- 1  # RSS lambda uses normalized residual variance
-
-  return(model)
-}
-
-# Compute SER statistics
-compute_ser_statistics.rss_lambda <- function(data, model, residual_variance, l, ...) {
-  shat2 <- 1 / model$RjSinvRj
-
-  # Optimization parameters
-  init_vals <- sapply(1:data$p, function(j) sum(model$SinvRj[, j] * model$residuals)^2) - (1 / model$RjSinvRj)
-  optim_init <- log(max(c(init_vals, 1e-6), na.rm = TRUE))
-  optim_bounds <- c(-30, 15)
-  optim_scale <- "log"
-
-  return(list(
-    shat2 = shat2,
-    optim_init = optim_init,
-    optim_bounds = optim_bounds,
-    optim_scale = optim_scale
-  ))
-}
-
-# Calculate KL divergence
-compute_kl.rss_lambda <- function(data, model, l) {
-  return(compute_kl.default(data, model, l))
-}
+# =============================================================================
+#' @section MODEL UPDATES & FITTING
+#'
+#' Functions for iterative model updates and variance component estimation.
+#' These handle the dynamic aspects of model fitting including fitted value
+#' updates and variance component estimation.
+#'
+#' Functions: update_fitted_values, update_variance_components, update_derived_quantities
+# =============================================================================
 
 # Update fitted values
+#' @keywords internal
 update_fitted_values.rss_lambda <- function(data, model, l) {
   model$Rz <- model$fitted_without_l + as.vector(data$R %*% (model$alpha[l, ] * model$mu[l, ]))
   model    <- precompute_rss_lambda_terms(data, model)
@@ -167,46 +238,8 @@ update_fitted_values.rss_lambda <- function(data, model, l) {
   return(model)
 }
 
-# Get scale factors
-get_scale_factors.rss_lambda <- function(data) {
-  return(rep(1, data$p))
-}
-
-# Get intercept
-get_intercept.rss_lambda <- function(data, model, ...) {
-  return(data$intercept_value)
-}
-
-# Get fitted values
-get_fitted.rss_lambda <- function(data, model, ...) {
-  return(model$Rz)
-}
-
-# Get credible sets
-get_cs.rss_lambda <- function(data, model, coverage, min_abs_corr, n_purity) {
-  if (is.null(coverage) || is.null(min_abs_corr)) {
-    return(NULL)
-  }
-
-  return(susie_get_cs(model,
-                      coverage = coverage,
-                      Xcorr = muffled_cov2cor(data$R),
-                      min_abs_corr = min_abs_corr,
-                      check_symmetric = FALSE,
-                      n_purity = n_purity))
-}
-
-# Get variable names
-get_variable_names.rss_lambda <- function(data, model, null_weight) {
-  variable_names <- names(data$z)
-  return(assign_names(model, variable_names, null_weight, data$p))
-}
-
-# Get univariate z-scores
-get_zscore.rss_lambda <- function(data, model, ...) {
-  return(get_zscore.default(data, model))
-}
-
+# Update variance components
+#' @keywords internal
 update_variance_components.rss_lambda <- function(data, model, estimate_method = "MLE") {
   upper_bound <- 1 - data$lambda
 
@@ -226,6 +259,7 @@ update_variance_components.rss_lambda <- function(data, model, estimate_method =
 }
 
 # Update derived quantities
+#' @keywords internal
 update_derived_quantities.rss_lambda <- function(data, model) {
   # Recalculate Dinv with updated sigma2
   Dinv <- compute_Dinv(model, data)
@@ -239,18 +273,59 @@ update_derived_quantities.rss_lambda <- function(data, model) {
   return(model)
 }
 
+# =============================================================================
+#' @section OUTPUT GENERATION & POST-PROCESSING
+#'
+#' Functions for generating final results and summary statistics.
+#' These process fitted models into interpretable outputs including
+#' credible sets, variable names, and fitted values.
+#'
+#' Functions: get_scale_factors, get_intercept, get_fitted, get_cs,
+#' get_variable_names, get_zscore
+# =============================================================================
 
-# Calculate posterior moments for single effect regression
-calculate_posterior_moments.rss_lambda <- function(data, model, V, ...) {
-  post_var   <- (model$RjSinvRj + 1 / V)^(-1)
-  post_mean  <- sapply(1:data$p, function(j) {
-    post_var[j] * sum(model$SinvRj[, j] * model$residuals)
-  })
-  post_mean2 <- post_var + post_mean^2
+# Get scale factors
+#' @keywords internal
+get_scale_factors.rss_lambda <- function(data) {
+  return(rep(1, data$p))
+}
 
-  return(list(
-    post_mean  = post_mean,
-    post_mean2 = post_mean2,
-    post_var   = post_var
-  ))
+# Get intercept
+#' @keywords internal
+get_intercept.rss_lambda <- function(data, model, ...) {
+  return(data$intercept_value)
+}
+
+# Get fitted values
+#' @keywords internal
+get_fitted.rss_lambda <- function(data, model, ...) {
+  return(model$Rz)
+}
+
+# Get credible sets
+#' @keywords internal
+get_cs.rss_lambda <- function(data, model, coverage, min_abs_corr, n_purity) {
+  if (is.null(coverage) || is.null(min_abs_corr)) {
+    return(NULL)
+  }
+
+  return(susie_get_cs(model,
+                      coverage = coverage,
+                      Xcorr = muffled_cov2cor(data$R),
+                      min_abs_corr = min_abs_corr,
+                      check_symmetric = FALSE,
+                      n_purity = n_purity))
+}
+
+# Get variable names
+#' @keywords internal
+get_variable_names.rss_lambda <- function(data, model, null_weight) {
+  variable_names <- names(data$z)
+  return(assign_names(model, variable_names, null_weight, data$p))
+}
+
+# Get univariate z-scores
+#' @keywords internal
+get_zscore.rss_lambda <- function(data, model, ...) {
+  return(get_zscore.default(data, model))
 }
