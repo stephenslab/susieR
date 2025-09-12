@@ -1,176 +1,25 @@
-# Compute eigenvalue decomposition
+# =============================================================================
+#' @section FUNDAMENTAL BUILDING BLOCKS
+#'
+#' Basic mathematical operations and utilities that serve as dependencies
+#' for other functions. These include matrix operations, statistical computations,
+#' and general-purpose helper functions.
+#'
+#' Functions: warning_message, muffled_corr, muffled_cov2cor, is_symmetric_matrix,
+#' apply_nonzeros, compute_colSds, compute_colstats
+# =============================================================================
+
+# Utility function to display warning messages as they occur
+#' @importFrom crayon combine_styles
 #' @keywords internal
-compute_eigen_decomposition <- function(XtX, n) {
-  LD <- XtX / n
-  eig <- eigen(LD, symmetric = TRUE)
-  idx <- order(eig$values, decreasing = TRUE)
-
-  list(
-    V = eig$vectors[, idx],
-    Dsq = pmax(eig$values[idx] * n, 0),
-    VtXty = NULL
-  )
-}
-
-# Method of Moments variance estimation for unmappable effects methods
-#' @keywords internal
-mom_unmappable <- function(alpha, mu, omega, sigma2, tau2, n, V, Dsq, VtXty, Xty, yty,
-                           est_sigma2, est_tau2, verbose) {
-  L <- nrow(mu)
-  p <- ncol(mu)
-
-  A <- matrix(0, nrow = 2, ncol = 2)
-  A[1, 1] <- n
-  A[1, 2] <- sum(Dsq)
-  A[2, 1] <- A[1, 2]
-  A[2, 2] <- sum(Dsq^2)
-
-  # Compute diag(V'MV)
-  b <- colSums(mu * alpha)
-  Vtb <- crossprod(V, b)
-  diagVtMV <- Vtb^2
-  tmpD <- rep(0, p)
-
-  for (l in seq_len(L)) {
-    bl <- mu[l, ] * alpha[l, ]
-    Vtbl <- t(V) %*% bl
-    diagVtMV <- diagVtMV - Vtbl^2
-    tmpD <- tmpD + alpha[l, ] * (mu[l, ]^2 + 1 / omega[l, ])
-  }
-
-  diagVtMV <- diagVtMV + rowSums(sweep(t(V)^2, 2, tmpD, `*`))
-
-  # Compute x
-  x <- rep(0, 2)
-  x[1] <- yty - 2 * sum(b * Xty) + sum(Dsq * diagVtMV)
-  x[2] <- sum(Xty^2) - 2 * sum(Vtb * VtXty * Dsq) + sum(Dsq^2 * diagVtMV)
-
-  if (est_tau2) {
-    sol <- solve(A, x)
-    if (sol[1] > 0 && sol[2] > 0) {
-      sigma2 <- sol[1]
-      tau2 <- sol[2]
-    } else {
-      sigma2 <- x[1] / n
-      tau2 <- 0
-    }
-    if (verbose) {
-      message(sprintf("Update (sigma^2,tau^2) to (%f,%e)\n", sigma2, tau2))
-    }
-  } else if (est_sigma2) {
-    sigma2 <- (x[1] - A[1, 2] * tau2) / n
-    if (verbose) {
-      message(sprintf("Update sigma^2 to %f\n", sigma2))
-    }
-  }
-  return(list(sigma2 = sigma2, tau2 = tau2))
-}
-
-# Compute theta using BLUP
-#' @keywords internal
-compute_theta_blup <- function(data, model) {
-  # Calculate diagXtOmegaX, diagonal variances, and Beta
-  omega_res <- compute_omega_quantities(data, model$tau2, model$sigma2)
-  b <- colSums(model$mu * model$alpha)
-
-  XtOmegaXb <- data$eigen_vectors %*% ((t(data$eigen_vectors) %*% b) * data$eigen_values / omega_res$omega_var)
-  XtOmegay <- data$eigen_vectors %*% (data$VtXty / omega_res$omega_var)
-  XtOmegar <- XtOmegay - XtOmegaXb
-
-  theta <- model$tau2 * XtOmegar
-
-  return(theta)
-}
-
-# Compute Omega-weighted quantities for unmappable effects methods
-#' @keywords internal
-compute_omega_quantities <- function(data, tau2, sigma2) {
-  # Compute variance in eigen space
-  omega_var <- tau2 * data$eigen_values + sigma2
-
-  # Compute diagonal of X'OmegaX
-  diagXtOmegaX <- rowSums(sweep(data$eigen_vectors^2, 2, (data$eigen_values / omega_var), `*`))
-
-  return(list(
-    omega_var = omega_var,
-    diagXtOmegaX = diagXtOmegaX
-  ))
-}
-
-# Find how many variables in the CS.
-# x is a probability vector.
-#' @keywords internal
-n_in_CS_x <- function(x, coverage = 0.9) {
-  sum(cumsum(sort(x, decreasing = TRUE)) < coverage) + 1
-}
-
-# Return binary vector indicating if each point is in CS.
-# x is a probability vector.
-#' @keywords internal
-in_CS_x <- function(x, coverage = 0.9) {
-  n <- n_in_CS_x(x, coverage)
-  o <- order(x, decreasing = TRUE)
-  result <- rep(0, length(x))
-  result[o[1:n]] <- 1
-  return(result)
-}
-
-# Returns an l-by-p binary matrix indicating which variables are in
-# susie credible sets.
-#' @keywords internal
-in_CS <- function(res, coverage = 0.9) {
-  if (inherits(res, "susie")) {
-    res <- res$alpha
-  }
-  return(t(apply(res, 1, function(x) in_CS_x(x, coverage))))
-}
-
-#' @keywords internal
-n_in_CS <- function(res, coverage = 0.9) {
-  if (inherits(res, "susie")) {
-    res <- res$alpha
-  }
-  return(apply(res, 1, function(x) n_in_CS_x(x, coverage)))
-}
-
-# Subsample and compute min, mean, median and max abs corr.
-#' @importFrom stats median
-#' @keywords internal
-get_purity <- function(pos, X, Xcorr, squared = FALSE, n = 100,
-                       use_rfast) {
-  if (missing(use_rfast)) {
-    use_rfast <- requireNamespace("Rfast", quietly = TRUE)
-  }
-  if (use_rfast) {
-    get_upper_tri <- Rfast::upper_tri
-    get_median <- Rfast::med
+warning_message <- function(..., style = c("warning", "hint")) {
+  style <- match.arg(style)
+  if (style == "warning" && getOption("warn") >= 0) {
+    alert <- combine_styles("bold", "underline", "red")
+    message(alert("WARNING:"), " ", ...)
   } else {
-    get_upper_tri <- function(R) R[upper.tri(R)]
-    get_median <- stats::median
-  }
-  if (length(pos) == 1) {
-    return(c(1, 1, 1))
-  } else {
-    # Subsample the columns if necessary.
-    if (length(pos) > n) {
-      pos <- sample(pos, n)
-    }
-
-    if (is.null(Xcorr)) {
-      X_sub <- X[, pos]
-      X_sub <- as.matrix(X_sub)
-      value <- abs(get_upper_tri(muffled_corr(X_sub)))
-    } else {
-      value <- abs(get_upper_tri(Xcorr[pos, pos]))
-    }
-    if (squared) {
-      value <- value^2
-    }
-    return(c(
-      min(value),
-      sum(value) / length(value),
-      get_median(value)
-    ))
+    alert <- combine_styles("bold", "underline", "magenta")
+    message(alert("HINT:"), " ", ...)
   }
 }
 
@@ -178,29 +27,20 @@ get_purity <- function(pos, X, Xcorr, squared = FALSE, n = 100,
 #' @importFrom stats cor
 #' @keywords internal
 muffled_corr <- function(x) {
-  withCallingHandlers(cor(x),
-    warning = function(w) {
-      if (grepl("the standard deviation is zero", w$message)) {
-        invokeRestart("muffleWarning")
-      }
-    }
-  )
+  withCallingHandlers(cor(x), warning = function(w) {
+    if (grepl("the standard deviation is zero", w$message)) {
+      invokeRestart("muffleWarning")}
+    })
 }
 
 # cov2cor function with specified warning muffled.
 #' @importFrom stats cov2cor
 #' @keywords internal
 muffled_cov2cor <- function(x) {
-  withCallingHandlers(cov2cor(x),
-    warning = function(w) {
-      if (grepl(
-        "had 0 or NA entries; non-finite result is doubtful",
-        w$message
-      )) {
-        invokeRestart("muffleWarning")
-      }
-    }
-  )
+  withCallingHandlers(cov2cor(x), warning = function(w) {
+    if (grepl("had 0 or NA entries; non-finite result is doubtful", w$message)){
+      invokeRestart("muffleWarning")}
+    })
 }
 
 # Check for symmetric matrix.
@@ -213,64 +53,30 @@ is_symmetric_matrix <- function(x) {
   }
 }
 
-# Prune single effects to given number L in susie model object.
+# Apply operation f to all nonzeros of a sparse matrix.
+#' @importFrom Matrix sparseMatrix
+#' @importFrom Matrix summary
 #' @keywords internal
-susie_prune_single_effects <- function(s, L = 0, V = NULL) {
-  num_effects <- nrow(s$alpha)
-  if (L == 0) {
-    # Filtering will be based on non-zero elements in s$V.
-    if (!is.null(s$V)) {
-      L <- length(which(s$V > 0))
-    } else {
-      L <- num_effects
-    }
-  }
-  if (L == num_effects) {
-    s$sets <- NULL
-    return(s)
-  }
-  if (!is.null(s$sets$cs_index)) {
-    effects_rank <- c(s$sets$cs_index, setdiff(1:num_effects, s$sets$cs_index))
+apply_nonzeros <- function(X, f) {
+  d <- summary(X)
+  return(sparseMatrix(i = d$i, j = d$j, x = f(d$x), dims = dim(X)))
+}
+
+# Computes column standard deviations for any type of matrix
+# This should give the same result as matrixStats::colSds(X),
+# but allows for sparse matrices as well as dense ones.
+#' @importFrom matrixStats colSds
+#' @importFrom Matrix summary
+#' @keywords internal
+compute_colSds <- function(X) {
+  if (is.matrix(X)) {
+    return(colSds(X))
   } else {
-    effects_rank <- 1:num_effects
+    n <- nrow(X)
+    Y <- apply_nonzeros(X, function(u) u^2)
+    d <- colMeans(Y) - colMeans(X)^2
+    return(sqrt(d * n / (n - 1)))
   }
-
-  if (L > num_effects) {
-    message(paste(
-      "Specified number of effects L =", L,
-      "is greater the number of effects", num_effects,
-      "in input SuSiE model. The SuSiE model will be expanded",
-      "to have", L, "effects."
-    ))
-
-    s$alpha <- rbind(
-      s$alpha[effects_rank, ],
-      matrix(1 / ncol(s$alpha), L - num_effects, ncol(s$alpha))
-    )
-    for (n in c("mu", "mu2", "lbf_variable")) {
-      if (!is.null(s[[n]])) {
-        s[[n]] <- rbind(
-          s[[n]][effects_rank, ],
-          matrix(0, L - num_effects, ncol(s[[n]]))
-        )
-      }
-    }
-    for (n in c("KL", "lbf")) {
-      if (!is.null(s[[n]])) {
-        s[[n]] <- c(s[[n]][effects_rank], rep(NA, L - num_effects))
-      }
-    }
-    if (!is.null(V)) {
-      if (length(V) > 1) {
-        V[1:num_effects] <- s$V[effects_rank]
-      } else {
-        V <- rep(V, L)
-      }
-    }
-    s$V <- V
-  }
-  s$sets <- NULL
-  return(s)
 }
 
 # Compute the column means of X, the column standard deviations of X,
@@ -324,22 +130,16 @@ compute_colstats <- function(X, center = TRUE, scale = TRUE) {
   return(list(cm = cm, csd = csd, d = d))
 }
 
-# computes column standard deviations for any type of matrix
-# This should give the same result as matrixStats::colSds(X),
-# but allows for sparse matrices as well as dense ones.
-#' @importFrom matrixStats colSds
-#' @importFrom Matrix summary
-#' @keywords internal
-compute_colSds <- function(X) {
-  if (is.matrix(X)) {
-    return(colSds(X))
-  } else {
-    n <- nrow(X)
-    Y <- apply_nonzeros(X, function(u) u^2)
-    d <- colMeans(Y) - colMeans(X)^2
-    return(sqrt(d * n / (n - 1)))
-  }
-}
+# =============================================================================
+#' @section DATA PROCESSING & VALIDATION
+#'
+#' Functions for input validation, data conversion between formats, and
+#' preprocessing operations. These ensure data integrity and compatibility
+#' across different SuSiE data types.
+#'
+#' Functions: check_semi_pd, check_projection, validate_init,
+#' convert_individual_to_ss, extract_prior_weights, modify_prior_weights
+# =============================================================================
 
 # Check whether A is positive semidefinite
 #' @keywords internal
@@ -354,8 +154,7 @@ check_semi_pd <- function(A, tol) {
   ))
 }
 
-# Check whether b is in space spanned by the non-zero eigenvectors
-# of A
+# Check whether b is in space spanned by the non-zero eigenvectors of A
 #' @keywords internal
 check_projection <- function(A, b) {
   if (is.null(attr(A, "eigen"))) {
@@ -364,7 +163,7 @@ check_projection <- function(A, b) {
   v <- attr(A, "eigen")$values
   B <- attr(A, "eigen")$vectors[, v > .Machine$double.eps]
   msg <- all.equal(as.vector(B %*% crossprod(B, b)), as.vector(b),
-    check.names = FALSE
+                   check.names = FALSE
   )
   if (!is.character(msg)) {
     return(list(status = TRUE, msg = NA))
@@ -373,43 +172,20 @@ check_projection <- function(A, b) {
   }
 }
 
-# Utility function to display warning messages as they occur
-#' @importFrom crayon combine_styles
-#' @keywords internal
-warning_message <- function(..., style = c("warning", "hint")) {
-  style <- match.arg(style)
-  if (style == "warning" && getOption("warn") >= 0) {
-    alert <- combine_styles("bold", "underline", "red")
-    message(alert("WARNING:"), " ", ...)
-  } else {
-    alert <- combine_styles("bold", "underline", "magenta")
-    message(alert("HINT:"), " ", ...)
-  }
-}
-
-# Apply operation f to all nonzeros of a sparse matrix.
-#' @importFrom Matrix sparseMatrix
-#' @importFrom Matrix summary
-#' @keywords internal
-apply_nonzeros <- function(X, f) {
-  d <- summary(X)
-  return(sparseMatrix(i = d$i, j = d$j, x = f(d$x), dims = dim(X)))
-}
-
 # Validate Model Initialization Object
 #' @keywords internal
 validate_init <- function(model_init, L, null_weight) {
-  # Check if model_init is a susie object
   if (!inherits(model_init, "susie")) {
     stop("model_init must be a 'susie' object")
   }
 
-  alpha <- model_init$alpha
-  mu <- model_init$mu
-  mu2 <- model_init$mu2
-  V <- model_init$V
-  sigma2 <- model_init$sigma2
-  pi_w <- model_init$pi
+  # Assign values from initialized model
+  alpha   <- model_init$alpha
+  mu      <- model_init$mu
+  mu2     <- model_init$mu2
+  V       <- model_init$V
+  sigma2  <- model_init$sigma2
+  pi_w    <- model_init$pi
   null_id <- model_init$null_index
 
   # Verify no NA/Inf values in alpha
@@ -519,23 +295,110 @@ validate_init <- function(model_init, L, null_weight) {
   invisible(model_init)
 }
 
-# Adjust the number of effects
+# Convert individual data to ss with unmappable effects components.
 #' @keywords internal
-adjust_L <- function(model_init, L, V) {
-  num_effects <- nrow(model_init$alpha)
-  if (num_effects > L) {
-    warning_message(paste0(
-      "Requested L = ", L,
-      " is smaller than the ", num_effects,
-      " effects in model_init after pruning; ",
-      "using L = ", num_effects, " instead."
-    ))
-    L <- num_effects
+convert_individual_to_ss <- function(data) {
+  # Compute sufficient statistics
+  XtX <- compute_XtX(data$X)
+  Xty <- compute_Xty(data$X, data$y)
+  yty <- sum(data$y^2)
+
+  # Get column means and scaling from attributes
+  X_colmeans <- attr(data$X, "scaled:center")
+
+  # Create sufficient statistics data object
+  ss_data <- structure(
+    list(
+      XtX = XtX,
+      Xty = Xty,
+      yty = yty,
+      n = data$n,
+      p = data$p,
+      X_colmeans = X_colmeans,
+      y_mean = data$mean_y,
+      prior_weights = data$prior_weights,
+      null_weight = data$null_weight,
+      unmappable_effects = data$unmappable_effects,
+      convergence_method = data$convergence_method,
+      use_servin_stephens = FALSE
+    ),
+    class = "ss"
+  )
+
+  # Copy attributes from X to XtX
+  attr(ss_data$XtX, "d") <- attr(data$X, "d")
+  attr(ss_data$XtX, "scaled:scale") <- attr(data$X, "scaled:scale")
+
+  # Add eigen decomposition for unmappable effects methods
+  ss_data <- add_eigen_decomposition(ss_data, data)
+
+  return(ss_data)
+}
+
+# Extract non-null prior weights from a model
+#' @keywords internal
+extract_prior_weights <- function(model, null_weight) {
+  if (!is.null(null_weight) && null_weight != 0 && !is.null(model$null_index) && model$null_index != 0) {
+    # Extract non-null prior weights and rescale
+    pw_s <- model$pi[-model$null_index] / (1 - null_weight)
+  } else {
+    pw_s <- model$pi
+  }
+  return(pw_s)
+}
+
+# Modify data object with new prior weights
+#' @keywords internal
+modify_prior_weights <- function(data, new_prior_weights) {
+  # Create a modified copy of the data object
+  data_modified <- data
+
+  # Handle null weight case
+  if (!is.null(data$null_weight) && data$null_weight != 0) {
+    # Reconstruct full prior weights including null
+    data_modified$prior_weights <- c(
+      new_prior_weights * (1 - data$null_weight),
+      data$null_weight
+    )
+  } else {
+    data_modified$prior_weights <- new_prior_weights
   }
 
-  model_init <- susie_prune_single_effects(model_init, L = L, V = V)
+  # Normalize to sum to 1
+  data_modified$prior_weights <- data_modified$prior_weights / sum(data_modified$prior_weights)
 
-  return(list(model_init = model_init, L = L))
+  return(data_modified)
+}
+
+# =============================================================================
+#' @section MODEL INITIALIZATION
+#'
+#' Functions that set up initial model states, create model matrices,
+#' and handle model configuration. These prepare the SuSiE model object
+#' for iterative fitting.
+#'
+#' Functions: initialize_matrices, initialize_null_index, assign_names,
+#' adjust_L, susie_prune_single_effects, add_null_effect
+# =============================================================================
+
+# Initialize core susie model object with default parameter matrices
+#' @keywords internal
+initialize_matrices <- function(data, L, scaled_prior_variance, var_y,
+                                residual_variance, prior_weights) {
+  mat_init <- list(
+    alpha             = matrix(1 / data$p, L, data$p),
+    mu                = matrix(0, L, data$p),
+    mu2               = matrix(0, L, data$p),
+    V                 = rep(scaled_prior_variance * var_y, L),
+    KL                = rep(as.numeric(NA), L),
+    lbf               = rep(as.numeric(NA), L),
+    lbf_variable      = matrix(as.numeric(NA), L, data$p),
+    sigma2            = residual_variance,
+    pi                = prior_weights,
+    predictor_weights = rep(as.numeric(NA), data$p)
+  )
+
+  return(mat_init)
 }
 
 # Initialize Null Index
@@ -559,92 +422,311 @@ assign_names <- function(model, variable_names, null_weight, p) {
     } else {
       names(model$pip) <- variable_names
     }
-    colnames(model$alpha) <- variable_names
-    colnames(model$mu) <- variable_names
-    colnames(model$mu2) <- variable_names
+    colnames(model$alpha)        <- variable_names
+    colnames(model$mu)           <- variable_names
+    colnames(model$mu2)          <- variable_names
     colnames(model$lbf_variable) <- variable_names
   }
   return(model)
 }
 
-
-# Helper function to update variance components and derived quantities
+# Adjust the number of effects
 #' @keywords internal
-update_model_variance <- function(data, model, lowerbound, upperbound, estimate_method = "MLE") {
-  # Update variance components
-  variance_result <- update_variance_components(data, model, estimate_method)
-  model <- modifyList(model, variance_result)
+adjust_L <- function(model_init, L, V) {
+  num_effects <- nrow(model_init$alpha)
+  if (num_effects > L) {
+    warning_message(paste0(
+      "Requested L = ", L,
+      " is smaller than the ", num_effects,
+      " effects in model_init after pruning; ",
+      "using L = ", num_effects, " instead."
+    ))
+    L <- num_effects
+  }
 
-  # Apply bounds to residual variance
-  model$sigma2 <- min(max(model$sigma2, lowerbound), upperbound)
+  model_init <- susie_prune_single_effects(model_init, L = L, V = V)
 
-  # Update derived quantities after variance component changes
-  model <- update_derived_quantities(data, model)
-
-  return(model)
+  return(list(model_init = model_init, L = L))
 }
 
-# Objective function (ELBO)
+# Prune single effects to given number L in susie model object.
 #' @keywords internal
-get_objective <- function(data, model, verbose = FALSE) {
-  if (!is.null(data$unmappable_effects) && data$unmappable_effects == "inf") {
-    # Compute omega
-    L <- nrow(model$alpha)
-    omega_res <- compute_omega_quantities(data, model$tau2, model$sigma2)
-    omega <- matrix(0, L, data$p)
-    for (l in seq_len(L)) {
-      omega[l, ] <- omega_res$diagXtOmegaX + 1 / model$V[l]
+susie_prune_single_effects <- function(s, L = 0, V = NULL) {
+  num_effects <- nrow(s$alpha)
+  if (L == 0) {
+    # Filtering will be based on non-zero elements in s$V.
+    if (!is.null(s$V)) {
+      L <- length(which(s$V > 0))
+    } else {
+      L <- num_effects
     }
-
-    # Compute total ELBO for infinitesimal effects model
-    objective <- compute_elbo_inf(
-      model$alpha, model$mu, omega, model$lbf,
-      model$sigma2, model$tau2, data$n, data$p,
-      data$eigen_vectors, data$eigen_values,
-      data$VtXty, data$yty
-    )
+  }
+  if (L == num_effects) {
+    s$sets <- NULL
+    return(s)
+  }
+  if (!is.null(s$sets$cs_index)) {
+    effects_rank <- c(s$sets$cs_index, setdiff(1:num_effects, s$sets$cs_index))
   } else {
-    # Standard ELBO computation
-    objective <- Eloglik(data, model) - sum(model$KL)
+    effects_rank <- 1:num_effects
   }
 
-  if (is.infinite(objective)) {
-    stop("get_objective() produced an infinite ELBO value")
+  if (L > num_effects) {
+    message(paste(
+      "Specified number of effects L =", L,
+      "is greater the number of effects", num_effects,
+      "in input SuSiE model. The SuSiE model will be expanded",
+      "to have", L, "effects."
+    ))
+
+    s$alpha <- rbind(
+      s$alpha[effects_rank, ],
+      matrix(1 / ncol(s$alpha), L - num_effects, ncol(s$alpha))
+    )
+    for (n in c("mu", "mu2", "lbf_variable")) {
+      if (!is.null(s[[n]])) {
+        s[[n]] <- rbind(
+          s[[n]][effects_rank, ],
+          matrix(0, L - num_effects, ncol(s[[n]]))
+        )
+      }
+    }
+    for (n in c("KL", "lbf")) {
+      if (!is.null(s[[n]])) {
+        s[[n]] <- c(s[[n]][effects_rank], rep(NA, L - num_effects))
+      }
+    }
+    if (!is.null(V)) {
+      if (length(V) > 1) {
+        V[1:num_effects] <- s$V[effects_rank]
+      } else {
+        V <- rep(V, L)
+      }
+    }
+    s$V <- V
   }
-  if (verbose) {
-    message("objective:", objective)
-  }
-  return(objective)
+  s$sets <- NULL
+  return(s)
 }
 
-# Estimate residual variance
+# Add a null effect to the model object
 #' @keywords internal
-est_residual_variance <- function(data, model) {
-  resid_var <- (1 / data$n) * get_ER2(data, model)
-  if (resid_var < 0) {
-    stop("est_residual_variance() failed: the estimated value is negative")
-  }
-  return(resid_var)
+add_null_effect <- function(s, V) {
+  p              <- ncol(s$alpha)
+  s$alpha        <- rbind(s$alpha, 1 / p)
+  s$mu           <- rbind(s$mu, rep(0, p))
+  s$mu2          <- rbind(s$mu2, rep(0, p))
+  s$lbf_variable <- rbind(s$lbf_variable, rep(0, p))
+  s$V            <- c(s$V, V)
+  return(s)
 }
 
-# Initialize core susie model object with default parameter matrices
+# =============================================================================
+#' @section CORE ALGORITHM COMPONENTS
+#'
+#' Key computational functions that implement the mathematical core of the
+#' SuSiE algorithm. These handle eigen decompositions, posterior computations,
+#' and log Bayes factor calculations.
+#'
+#' Functions: compute_eigen_decomposition, add_eigen_decomposition,
+#' compute_omega_quantities, compute_theta_blup, lbf_stabilization,
+#' compute_posterior_weights, compute_lbf_gradient
+# =============================================================================
+
+# Compute eigenvalue decomposition for unmappable methods
 #' @keywords internal
-initialize_matrices <- function(data, L, scaled_prior_variance, var_y, residual_variance,
-                                prior_weights) {
-  mat_init <- list(
-    alpha = matrix(1 / data$p, L, data$p),
-    mu = matrix(0, L, data$p),
-    mu2 = matrix(0, L, data$p),
-    V = rep(scaled_prior_variance * var_y, L),
-    KL = rep(as.numeric(NA), L),
-    lbf = rep(as.numeric(NA), L),
-    lbf_variable = matrix(as.numeric(NA), L, data$p),
-    sigma2 = residual_variance,
-    pi = prior_weights,
-    predictor_weights = rep(as.numeric(NA), data$p)
+compute_eigen_decomposition <- function(XtX, n) {
+  LD  <- XtX / n
+  eig <- eigen(LD, symmetric = TRUE)
+  idx <- order(eig$values, decreasing = TRUE)
+
+  list(
+    V     = eig$vectors[, idx],
+    Dsq   = pmax(eig$values[idx] * n, 0),
+    VtXty = NULL
   )
+}
 
-  return(mat_init)
+# Add eigen decomposition to ss data objects for unmappable methods
+#' @keywords internal
+add_eigen_decomposition <- function(data, individual_data = NULL) {
+  # Standardize y to unit variance for all unmappable effects methods
+  y_scale_factor <- 1
+
+  if (data$unmappable_effects != "none") {
+    var_y <- data$yty / (data$n - 1)
+    if (abs(var_y - 1) > 1e-10) {
+      sd_y           <- sqrt(var_y)
+      data$yty       <- data$yty / var_y
+      data$Xty       <- data$Xty / sd_y
+      y_scale_factor <- sd_y
+    }
+  }
+
+  # Compute eigen decomposition
+  eigen_decomp <- compute_eigen_decomposition(data$XtX, data$n)
+
+  # Append eigen components to data object
+  data$eigen_vectors <- eigen_decomp$V
+  data$eigen_values  <- eigen_decomp$Dsq
+  data$VtXty         <- t(eigen_decomp$V) %*% data$Xty
+
+  # SuSiE.ash requires the X matrix and standardized y vector
+  if (data$unmappable_effects == "ash") {
+    if (is.null(individual_data)) {
+      stop("Adaptive shrinkage (ash) requires individual-level data")
+    }
+    data$X    <- individual_data$X
+    data$y    <- individual_data$y / y_scale_factor
+    data$VtXt <- t(data$eigen_vectors) %*% t(individual_data$X)
+  }
+
+  return(data)
+}
+
+# Compute Omega-weighted quantities for unmappable effects methods
+#' @keywords internal
+compute_omega_quantities <- function(data, tau2, sigma2) {
+  # Compute variance in eigen space
+  omega_var <- tau2 * data$eigen_values + sigma2
+
+  # Compute diagonal of X'OmegaX
+  diagXtOmegaX <- rowSums(sweep(data$eigen_vectors^2, 2,
+                                (data$eigen_values / omega_var), `*`))
+
+  return(list(
+    omega_var    = omega_var,
+    diagXtOmegaX = diagXtOmegaX
+  ))
+}
+
+# Compute unmappable effects coefficient vector using BLUP
+#' @keywords internal
+compute_theta_blup <- function(data, model) {
+  # Calculate diagXtOmegaX, diagonal variances, and Beta
+  omega_res <- compute_omega_quantities(data, model$tau2, model$sigma2)
+  b         <- colSums(model$mu * model$alpha)
+
+  # Compute XtOmegaXb, XtOmegay, and XtOmegar
+  XtOmegaXb <- data$eigen_vectors %*% ((t(data$eigen_vectors) %*% b) *
+                                         data$eigen_values / omega_res$omega_var)
+  XtOmegay  <- data$eigen_vectors %*% (data$VtXty / omega_res$omega_var)
+  XtOmegar  <- XtOmegay - XtOmegaXb
+
+  # Compute theta
+  theta     <- model$tau2 * XtOmegar
+
+  return(theta)
+}
+
+# Stabilize log Bayes factors and compute log posterior odds
+#' @keywords internal
+lbf_stabilization <- function(lbf, prior_weights, shat2 = NULL) {
+
+  # Add numerical stability to prior weights
+  lpo <- lbf + log(prior_weights + sqrt(.Machine$double.eps))
+
+  # Handle special case of infinite shat2 (e.g., when variable doesn't vary)
+  infinite_idx      <- is.infinite(shat2)
+  lbf[infinite_idx] <- 0
+  lpo[infinite_idx] <- 0
+
+  return(list(lbf = lbf, lpo = lpo))
+}
+
+# Compute alpha and lbf for each effect
+#' @keywords internal
+compute_posterior_weights <- function(lpo) {
+
+  w_weighted     <- exp(lpo - max(lpo))
+  weighted_sum_w <- sum(w_weighted)
+  alpha          <- w_weighted / weighted_sum_w
+
+  return(list(
+    alpha     = alpha,
+    lbf_model = log(weighted_sum_w) + max(lpo)
+  ))
+}
+
+# Compute gradient for prior variance optimization
+#' @keywords internal
+compute_lbf_gradient <- function(alpha, betahat, shat2, V, use_servin_stephens = FALSE) {
+  # No gradient computation for Servin-Stephens prior
+  if (use_servin_stephens) {
+    return(NULL)
+  }
+
+  T2 <- betahat^2 / shat2
+  grad_components <- 0.5 * (1 / (V + shat2)) * ((shat2 / (V + shat2)) * T2 - 1)
+  grad_components[is.nan(grad_components)] <- 0
+  gradient <- sum(alpha * grad_components)
+  return(gradient)
+}
+
+# =============================================================================
+#' @section VARIANCE ESTIMATION
+#'
+#' Functions specifically for estimating variance components using different
+#' methods (MLE, MoM, Servin-Stephens). These handle both standard SuSiE
+#' and unmappable effects models.
+#'
+#' Functions: mom_unmappable, mle_unmappable, compute_lbf_servin_stephens,
+#' posterior_mean_servin_stephens, posterior_var_servin_stephens,
+#' est_residual_variance, update_model_variance
+# =============================================================================
+
+# Method of Moments variance estimation for unmappable effects methods
+#' @keywords internal
+mom_unmappable <- function(alpha, mu, omega, sigma2, tau2, n, V, Dsq, VtXty, Xty, yty,
+                           est_sigma2, est_tau2, verbose) {
+  L <- nrow(mu)
+  p <- ncol(mu)
+
+  A <- matrix(0, nrow = 2, ncol = 2)
+  A[1, 1] <- n
+  A[1, 2] <- sum(Dsq)
+  A[2, 1] <- A[1, 2]
+  A[2, 2] <- sum(Dsq^2)
+
+  # Compute diag(V'MV)
+  b <- colSums(mu * alpha)
+  Vtb <- crossprod(V, b)
+  diagVtMV <- Vtb^2
+  tmpD <- rep(0, p)
+
+  for (l in seq_len(L)) {
+    bl <- mu[l, ] * alpha[l, ]
+    Vtbl <- t(V) %*% bl
+    diagVtMV <- diagVtMV - Vtbl^2
+    tmpD <- tmpD + alpha[l, ] * (mu[l, ]^2 + 1 / omega[l, ])
+  }
+
+  diagVtMV <- diagVtMV + rowSums(sweep(t(V)^2, 2, tmpD, `*`))
+
+  # Compute x
+  x <- rep(0, 2)
+  x[1] <- yty - 2 * sum(b * Xty) + sum(Dsq * diagVtMV)
+  x[2] <- sum(Xty^2) - 2 * sum(Vtb * VtXty * Dsq) + sum(Dsq^2 * diagVtMV)
+
+  if (est_tau2) {
+    sol <- solve(A, x)
+    if (sol[1] > 0 && sol[2] > 0) {
+      sigma2 <- sol[1]
+      tau2 <- sol[2]
+    } else {
+      sigma2 <- x[1] / n
+      tau2 <- 0
+    }
+    if (verbose) {
+      message(sprintf("Update (sigma^2,tau^2) to (%f,%e)\n", sigma2, tau2))
+    }
+  } else if (est_sigma2) {
+    sigma2 <- (x[1] - A[1, 2] * tau2) / n
+    if (verbose) {
+      message(sprintf("Update sigma^2 to %f\n", sigma2))
+    }
+  }
+  return(list(sigma2 = sigma2, tau2 = tau2))
 }
 
 # MLE variance estimation for unmappable effects
@@ -688,9 +770,9 @@ mle_unmappable <- function(alpha, mu, omega, sigma2, tau2, n,
 
     0.5 * (n - p) * log(sigma2_val) + 0.5 / sigma2_val * yty +
       sum(0.5 * log(var_val) -
-        0.5 * tau2_val / sigma2_val * VtXty^2 / var_val -
-        Vtb * VtXty / var_val +
-        0.5 * eigen_values / var_val * diagVtMV)
+            0.5 * tau2_val / sigma2_val * VtXty^2 / var_val -
+            Vtb * VtXty / var_val +
+            0.5 * eigen_values / var_val * diagVtMV)
   }
 
   # Negative ELBO for sigma^2 only (when tau^2 is fixed)
@@ -740,6 +822,145 @@ mle_unmappable <- function(alpha, mu, omega, sigma2, tau2, n,
   return(list(sigma2 = sigma2, tau2 = tau2))
 }
 
+# Compute log Bayes factor for Servin and Stephens prior
+#' @keywords internal
+compute_lbf_servin_stephens <- function(x, y, s0, alpha0 = 0, beta0 = 0) {
+  x <- x - mean(x)
+  y <- y - mean(y)
+  n <- length(x)
+  xx <- sum(x * x)
+  xy <- sum(x * y)
+  yy <- sum(y * y)
+  r0 <- s0 / (s0 + 1 / xx)
+  sxy <- xy / sqrt(xx * yy)
+  ratio <- (beta0 + yy * (1 - r0 * sxy^2)) / (beta0 + yy)
+  return((log(1 - r0) - (n + alpha0) * log(ratio)) / 2)
+}
+
+# Posterior mean for Servin and Stephens prior using sufficient statistics
+#' @keywords internal
+posterior_mean_servin_stephens <- function(xtx, xty, s0_t = 1) {
+  omega <- (xtx + (1 / s0_t^2))^(-1)
+  b_bar <- omega %*% xty
+  return(b_bar)
+}
+
+# Posterior variance for Servin and Stephens prior using sufficient statistics
+#' @keywords internal
+posterior_var_servin_stephens <- function(xtx, xty, yty, n, s0_t = 1) {
+
+  # If prior variance is too small, return 0.
+  if (s0_t < 1e-5) {
+    return(list(post_var = 0, beta1 = 0))
+  }
+
+  omega <- (xtx + (1 / s0_t^2))^(-1)
+  b_bar <- omega %*% xty
+  beta1 <- (yty - b_bar * (omega^(-1)) * b_bar)
+  post_var_up <- 0.5 * (yty - b_bar * (omega^(-1)) * b_bar)
+  post_var_down <- 0.5 * (n * (1 / omega))
+  post_var <- omega * (post_var_up / post_var_down) * n / (n - 2)
+
+  return(list(post_var = post_var, beta1 = beta1))
+}
+
+# Estimate residual variance
+#' @keywords internal
+est_residual_variance <- function(data, model) {
+  resid_var <- (1 / data$n) * get_ER2(data, model)
+  if (resid_var < 0) {
+    stop("est_residual_variance() failed: the estimated value is negative")
+  }
+  return(resid_var)
+}
+
+# Helper function to update variance components and derived quantities
+#' @keywords internal
+update_model_variance <- function(data, model, lowerbound, upperbound,
+                                  estimate_method = "MLE") {
+  # Update variance components
+  variance_result <- update_variance_components(data, model, estimate_method)
+  model           <- modifyList(model, variance_result)
+
+  # Apply bounds to residual variance
+  model$sigma2    <- min(max(model$sigma2, lowerbound), upperbound)
+
+  # Update derived quantities after variance component changes
+  model           <- update_derived_quantities(data, model)
+
+  return(model)
+}
+
+# =============================================================================
+#' @section CONVERGENCE & OPTIMIZATION
+#'
+#' Functions related to iteration control, convergence checking, and objective
+#' function computation. These control the iterative fitting process and
+#' determine when the algorithm has converged.
+#'
+#' Functions: check_convergence, get_objective, compute_elbo_inf
+# =============================================================================
+
+# Check convergence
+#' @keywords internal
+check_convergence <- function(model, elbo, tol, convergence_method, iter) {
+  # Skip convergence check on first iteration
+  if(iter == 1) {
+    return(FALSE)
+  }
+
+  # Calculate difference in ELBO values
+  ELBO_diff   <- elbo[iter + 1] - model$prev_elbo
+  ELBO_failed <- is.na(ELBO_diff) || is.infinite(ELBO_diff)
+
+  if (convergence_method == "pip" || ELBO_failed) {
+    # Fallback to PIP-based convergence if ELBO calculation fails
+    if (ELBO_failed && convergence_method == "elbo") {
+      warning_message(paste0("Iteration ", iter, " produced an NA/infinite ELBO
+                             value. Using pip-based convergence this iteration."))
+    }
+
+    # Calculate difference in alpha values
+    PIP_diff <- max(abs(model$prev_alpha - model$alpha))
+    return(PIP_diff < tol)
+  }
+  return(ELBO_diff < tol)
+}
+
+# Objective function (ELBO)
+#' @keywords internal
+get_objective <- function(data, model, verbose = FALSE) {
+  if (!is.null(data$unmappable_effects) && data$unmappable_effects == "inf") {
+    # Compute omega
+    L         <- nrow(model$alpha)
+    omega_res <- compute_omega_quantities(data, model$tau2, model$sigma2)
+    omega     <- matrix(0, L, data$p)
+
+    for (l in seq_len(L)) {
+      omega[l, ] <- omega_res$diagXtOmegaX + 1 / model$V[l]
+    }
+
+    # Compute total ELBO for infinitesimal effects model
+    objective <- compute_elbo_inf(
+      model$alpha, model$mu, omega, model$lbf,
+      model$sigma2, model$tau2, data$n, data$p,
+      data$eigen_vectors, data$eigen_values,
+      data$VtXty, data$yty
+    )
+  } else {
+    # Standard ELBO computation
+    objective <- Eloglik(data, model) - sum(model$KL)
+  }
+
+  if (is.infinite(objective)) {
+    stop("get_objective() produced an infinite ELBO value")
+  }
+  if (verbose) {
+    message("objective:", objective)
+  }
+  return(objective)
+}
+
 # Compute ELBO for infinitesimal effects model
 #' @keywords internal
 compute_elbo_inf <- function(alpha, mu, omega, lbf, sigma2, tau2, n, p,
@@ -766,245 +987,98 @@ compute_elbo_inf <- function(alpha, mu, omega, lbf, sigma2, tau2, n, p,
   # Compute negative ELBO
   neg_elbo <- 0.5 * (n - p) * log(sigma2) + 0.5 / sigma2 * yty +
     sum(0.5 * log(var) -
-      0.5 * tau2 / sigma2 * VtXty^2 / var -
-      Vtb * VtXty / var +
-      0.5 * eigen_values / var * diagVtMV)
+          0.5 * tau2 / sigma2 * VtXty^2 / var -
+          Vtb * VtXty / var +
+          0.5 * eigen_values / var * diagVtMV)
 
   elbo <- -neg_elbo
 
   return(elbo)
 }
 
-add_null_effect <- function(s, V) {
-  p <- ncol(s$alpha)
-  s$alpha <- rbind(s$alpha, 1 / p)
-  s$mu <- rbind(s$mu, rep(0, p))
-  s$mu2 <- rbind(s$mu2, rep(0, p))
-  s$lbf_variable <- rbind(s$lbf_variable, rep(0, p))
-  s$V <- c(s$V, V)
-  return(s)
-}
+# =============================================================================
+#' @section CREDIBLE SETS & POST-PROCESSING
+#'
+#' Functions for generating final output including credible sets, posterior
+#' inclusion probabilities, and summary statistics. These process the fitted
+#' model into interpretable results.
+#'
+#' Functions: n_in_CS_x, in_CS_x, n_in_CS, in_CS, get_purity
+# =============================================================================
 
-# Servin and Stephens prior helper functions
+# Find how many variables in the CS.
+# x is a probability vector.
 #' @keywords internal
-
-# Compute log Bayes factor for Servin and Stephens prior
-compute_lbf_servin_stephens <- function(x, y, s0, alpha0 = 0, beta0 = 0) {
-  x <- x - mean(x)
-  y <- y - mean(y)
-  n <- length(x)
-  xx <- sum(x * x)
-  xy <- sum(x * y)
-  yy <- sum(y * y)
-  r0 <- s0 / (s0 + 1 / xx)
-  sxy <- xy / sqrt(xx * yy)
-  ratio <- (beta0 + yy * (1 - r0 * sxy^2)) / (beta0 + yy)
-  return((log(1 - r0) - (n + alpha0) * log(ratio)) / 2)
+n_in_CS_x <- function(x, coverage = 0.9) {
+  sum(cumsum(sort(x, decreasing = TRUE)) < coverage) + 1
 }
 
-# Posterior mean for Servin and Stephens prior using sufficient statistics
-posterior_mean_servin_stephens <- function(xtx, xty, s0_t = 1) {
-  omega <- (xtx + (1 / s0_t^2))^(-1)
-  b_bar <- omega %*% xty
-  return(b_bar)
+# Return binary vector indicating if each point is in CS.
+# x is a probability vector.
+#' @keywords internal
+in_CS_x <- function(x, coverage = 0.9) {
+  n <- n_in_CS_x(x, coverage)
+  o <- order(x, decreasing = TRUE)
+  result <- rep(0, length(x))
+  result[o[1:n]] <- 1
+  return(result)
 }
 
-# Posterior variance for Servin and Stephens prior using sufficient statistics
-posterior_var_servin_stephens <- function(xtx, xty, yty, n, s0_t = 1) {
-
-  # If prior variance is too small, return 0.
-  if (s0_t < 1e-5) {
-    return(list(post_var = 0, beta1 = 0))
+# Returns an l-by-p binary matrix indicating which variables are in
+# susie credible sets.
+#' @keywords internal
+in_CS <- function(res, coverage = 0.9) {
+  if (inherits(res, "susie")) {
+    res <- res$alpha
   }
-
-  omega <- (xtx + (1 / s0_t^2))^(-1)
-  b_bar <- omega %*% xty
-  beta1 <- (yty - b_bar * (omega^(-1)) * b_bar)
-  post_var_up <- 0.5 * (yty - b_bar * (omega^(-1)) * b_bar)
-  post_var_down <- 0.5 * (n * (1 / omega))
-  post_var <- omega * (post_var_up / post_var_down) * n / (n - 2)
-
-  return(list(post_var = post_var, beta1 = beta1))
+  return(t(apply(res, 1, function(x) in_CS_x(x, coverage))))
 }
 
-# Convert individual data to ss with unmappable effects components.
 #' @keywords internal
-convert_individual_to_ss <- function(data) {
-  # Compute sufficient statistics
-  XtX <- compute_XtX(data$X)
-  Xty <- compute_Xty(data$X, data$y)
-  yty <- sum(data$y^2)
-
-  # Get column means and scaling from attributes
-  X_colmeans <- attr(data$X, "scaled:center")
-
-  # Create sufficient statistics data object
-  ss_data <- structure(
-    list(
-      XtX = XtX,
-      Xty = Xty,
-      yty = yty,
-      n = data$n,
-      p = data$p,
-      X_colmeans = X_colmeans,
-      y_mean = data$mean_y,
-      prior_weights = data$prior_weights,
-      null_weight = data$null_weight,
-      unmappable_effects = data$unmappable_effects,
-      convergence_method = data$convergence_method,
-      use_servin_stephens = FALSE
-    ),
-    class = "ss"
-  )
-
-  # Copy attributes from X to XtX
-  attr(ss_data$XtX, "d") <- attr(data$X, "d")
-  attr(ss_data$XtX, "scaled:scale") <- attr(data$X, "scaled:scale")
-
-  # Add eigen decomposition for unmappable effects methods
-  ss_data <- add_eigen_decomposition(ss_data, data)
-
-  return(ss_data)
-}
-
-# Check convergence
-#' @keywords internal
-check_convergence <- function(model, elbo, tol, convergence_method, iter) {
-  # Skip convergence check on first iteration
-  if(iter == 1) {
-    return(FALSE)
+n_in_CS <- function(res, coverage = 0.9) {
+  if (inherits(res, "susie")) {
+    res <- res$alpha
   }
+  return(apply(res, 1, function(x) n_in_CS_x(x, coverage)))
+}
 
-  # Calculate difference in ELBO values
-  ELBO_diff   <- elbo[iter + 1] - model$prev_elbo
-  ELBO_failed <- is.na(ELBO_diff) || is.infinite(ELBO_diff)
-
-  if (convergence_method == "pip" || ELBO_failed) {
-    # Fallback to PIP-based convergence if ELBO calculation fails
-    if (ELBO_failed && convergence_method == "elbo") {
-      warning_message(paste0("Iteration ", iter, " produced an NA/infinite ELBO value. Using pip-based convergence this iteration."))
-    }
-
-    # Calculate difference in alpha values
-    PIP_diff <- max(abs(model$prev_alpha - model$alpha))
-    return(PIP_diff < tol)
+# Subsample and compute min, mean, median and max abs corr.
+#' @importFrom stats median
+#' @keywords internal
+get_purity <- function(pos, X, Xcorr, squared = FALSE, n = 100,
+                       use_rfast) {
+  if (missing(use_rfast)) {
+    use_rfast <- requireNamespace("Rfast", quietly = TRUE)
   }
-  return(ELBO_diff < tol)
-}
-
-# Stabilize log Bayes factors and compute log posterior odds
-#' @keywords internal
-lbf_stabilization <- function(lbf, prior_weights, shat2 = NULL) {
-
-  # Add numerical stability to prior weights
-  lpo <- lbf + log(prior_weights + sqrt(.Machine$double.eps))
-
-  # Handle special case of infinite shat2 (e.g., when variable doesn't vary)
-  infinite_idx <- is.infinite(shat2)
-  lbf[infinite_idx] <- 0
-  lpo[infinite_idx] <- 0
-
-  return(list(lbf = lbf, lpo = lpo))
-}
-
-# Compute alpha and lbf for each effect
-#' @keywords internal
-compute_posterior_weights <- function(lpo) {
-
-  w_weighted <- exp(lpo - max(lpo))
-  weighted_sum_w <- sum(w_weighted)
-  alpha <- w_weighted / weighted_sum_w
-
-  return(list(
-    alpha = alpha,
-    lbf_model = log(weighted_sum_w) + max(lpo)
-  ))
-}
-
-# Compute gradient for prior variance optimization
-#' @keywords internal
-compute_lbf_gradient <- function(alpha, betahat, shat2, V, use_servin_stephens = FALSE) {
-  # No gradient computation for Servin-Stephens prior
-  if (use_servin_stephens) {
-    return(NULL)
-  }
-
-  T2 <- betahat^2 / shat2
-  grad_components <- 0.5 * (1 / (V + shat2)) * ((shat2 / (V + shat2)) * T2 - 1)
-  grad_components[is.nan(grad_components)] <- 0
-  gradient <- sum(alpha * grad_components)
-  return(gradient)
-}
-
-# Add eigen decomposition to ss objects (for unmappable effects methods)
-#' @keywords internal
-add_eigen_decomposition <- function(data, individual_data = NULL) {
-  # Standardize y to unit variance for all unmappable effects methods
-  y_scale_factor <- 1
-
-  if (data$unmappable_effects != "none") {
-    var_y <- data$yty / (data$n - 1)
-    if (abs(var_y - 1) > 1e-10) {
-      sd_y <- sqrt(var_y)
-      data$yty <- data$yty / var_y
-      data$Xty <- data$Xty / sd_y
-      y_scale_factor <- sd_y
-    }
-  }
-
-  # Compute eigen decomposition of correlation matrix
-  eigen_decomp <- compute_eigen_decomposition(data$XtX, data$n)
-
-  # Add eigen components to data object
-  data$eigen_vectors <- eigen_decomp$V
-  data$eigen_values  <- eigen_decomp$Dsq
-  data$VtXty         <- t(eigen_decomp$V) %*% data$Xty
-
-  # SuSiE.ash requires the X matrix and standardized y vector
-  if (data$unmappable_effects == "ash") {
-    if (is.null(individual_data)) {
-      stop("Adaptive shrinkage (ash) requires individual-level data")
-    }
-    data$X    <- individual_data$X
-    data$y    <- individual_data$y / y_scale_factor
-    data$VtXt <- t(data$eigen_vectors) %*% t(individual_data$X)
-  }
-
-  return(data)
-}
-
-# Extract non-null prior weights from a model
-#' @keywords internal
-extract_prior_weights <- function(model, null_weight) {
-  if (!is.null(null_weight) && null_weight != 0 && !is.null(model$null_index) && model$null_index != 0) {
-    # Extract non-null prior weights and rescale
-    pw_s <- model$pi[-model$null_index] / (1 - null_weight)
+  if (use_rfast) {
+    get_upper_tri <- Rfast::upper_tri
+    get_median <- Rfast::med
   } else {
-    pw_s <- model$pi
+    get_upper_tri <- function(R) R[upper.tri(R)]
+    get_median <- stats::median
   }
-  return(pw_s)
-}
-
-# Modify data object with new prior weights
-#' @keywords internal
-modify_prior_weights <- function(data, new_prior_weights) {
-  # Create a modified copy of the data object
-  data_modified <- data
-
-  # Handle null weight case
-  if (!is.null(data$null_weight) && data$null_weight != 0) {
-    # Reconstruct full prior weights including null
-    data_modified$prior_weights <- c(
-      new_prior_weights * (1 - data$null_weight),
-      data$null_weight
-    )
+  if (length(pos) == 1) {
+    return(c(1, 1, 1))
   } else {
-    data_modified$prior_weights <- new_prior_weights
+    # Subsample the columns if necessary.
+    if (length(pos) > n) {
+      pos <- sample(pos, n)
+    }
+
+    if (is.null(Xcorr)) {
+      X_sub <- X[, pos]
+      X_sub <- as.matrix(X_sub)
+      value <- abs(get_upper_tri(muffled_corr(X_sub)))
+    } else {
+      value <- abs(get_upper_tri(Xcorr[pos, pos]))
+    }
+    if (squared) {
+      value <- value^2
+    }
+    return(c(
+      min(value),
+      sum(value) / length(value),
+      get_median(value)
+    ))
   }
-
-  # Normalize to sum to 1
-  data_modified$prior_weights <- data_modified$prior_weights / sum(data_modified$prior_weights)
-
-  return(data_modified)
 }
-
