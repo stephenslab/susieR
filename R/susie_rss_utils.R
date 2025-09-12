@@ -1,3 +1,13 @@
+# =============================================================================
+#' @section FUNDAMENTAL COMPUTATIONS
+#'
+#' Basic mathematical utilities and core RSS computations. These functions
+#' handle fundamental operations like sufficient statistics computation and
+#' eigenvalue inverse calculations.
+#'
+#' Functions: compute_suff_stat, compute_Dinv
+# =============================================================================
+
 #' @title Compute sufficient statistics for input to \code{susie_suff_stat}
 #'
 #' @description Computes the sufficient statistics \eqn{X'X, X'y, y'y}
@@ -48,6 +58,24 @@ compute_suff_stat <- function(X, y, standardize = FALSE) {
     y_mean = y_mean, X_colmeans = mu
   ))
 }
+
+# Compute inverse eigenvalues for RSS-lambda methods
+#' @keywords internal
+compute_Dinv <- function(model, data) {
+  Dinv <- 1 / (model$sigma2 * data$eigen_R$values + data$lambda)
+  Dinv[is.infinite(Dinv)] <- 0
+  return(Dinv)
+}
+
+# =============================================================================
+#' @section RSS MODEL METHODS
+#'
+#' Core RSS algorithm functions including parameter estimation and model
+#' preprocessing. These implement the mathematical framework for RSS-based
+#' fine-mapping and handle iteration-specific computations.
+#'
+#' Functions: estimate_s_rss, precompute_rss_lambda_terms
+# =============================================================================
 
 #' @title Estimate s in \code{susie_rss} Model Using Regularized LD
 #'
@@ -141,8 +169,8 @@ estimate_s_rss <- function(z, R, n, r_tol = 1e-08, method = "null-mle") {
         0.5 * tcrossprod(ztv / ((1 - s) * d + s), ztv)
     }
     s <- optim(0.5,
-      fn = negloglikelihood, ztv = crossprod(z, eigenld$vectors),
-      d = eigenld$values, method = "Brent", lower = 0, upper = 1
+               fn = negloglikelihood, ztv = crossprod(z, eigenld$vectors),
+               d = eigenld$values, method = "Brent", lower = 0, upper = 1
     )$par
   } else if (method == "null-partialmle") {
     colspace <- which(eigenld$values > 0)
@@ -155,7 +183,7 @@ estimate_s_rss <- function(z, R, n, r_tol = 1e-08, method = "null-mle") {
   } else if (method == "null-pseudomle") {
     pseudolikelihood <- function(s, z, eigenld) {
       precision <- eigenld$vectors %*% (t(eigenld$vectors) *
-        (1 / ((1 - s) * eigenld$values + s)))
+                                          (1 / ((1 - s) * eigenld$values + s)))
       postmean <- rep(0, length(z))
       postvar <- rep(0, length(z))
       for (i in 1:length(z)) {
@@ -165,8 +193,8 @@ estimate_s_rss <- function(z, R, n, r_tol = 1e-08, method = "null-mle") {
       return(-sum(dnorm(z, mean = postmean, sd = sqrt(postvar), log = TRUE)))
     }
     s <- optim(0.5,
-      fn = pseudolikelihood, z = z, eigenld = eigenld,
-      method = "Brent", lower = 0, upper = 1
+               fn = pseudolikelihood, z = z, eigenld = eigenld,
+               method = "Brent", lower = 0, upper = 1
     )$par
   } else {
     stop("The method is not implemented")
@@ -184,6 +212,16 @@ precompute_rss_lambda_terms <- function(data, model) {
 
   return(model)
 }
+
+# =============================================================================
+#' @section DIAGNOSTIC & QUALITY CONTROL
+#'
+#' Functions for RSS model diagnostics, data quality assessment, and
+#' validation. These help users assess the compatibility between z-scores
+#' and LD matrices and identify potential data issues.
+#'
+#' Functions: kriging_rss
+# =============================================================================
 
 #' @title Compute Distribution of z-scores of Variant j Given Other z-scores, and Detect Possible Allele Switch Issue
 #'
