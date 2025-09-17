@@ -10,12 +10,12 @@
 
 # Configure individual data for specified method
 #' @keywords internal
-configure_data.individual <- function(data) {
-  if (data$unmappable_effects == "none") {
-    return(configure_data.default(data))
+configure_data.individual <- function(data, params) {
+  if (params$unmappable_effects == "none") {
+    return(configure_data.default(data, params))
   } else {
     warning_message("Individual-level data converted to sufficient statistics for unmappable effects methods")
-    return(convert_individual_to_ss(data))
+    return(convert_individual_to_ss(data, params))
   }
 }
 
@@ -37,7 +37,7 @@ get_var_y.individual <- function(data, ...) {
 
 # Initialize SuSiE model
 #' @keywords internal
-initialize_susie_model.individual <- function(data, L, scaled_prior_variance, var_y,
+initialize_susie_model.individual <- function(data, params, L, scaled_prior_variance, var_y,
                                               residual_variance, prior_weights, ...) {
 
   # Base model
@@ -52,20 +52,20 @@ initialize_susie_model.individual <- function(data, L, scaled_prior_variance, va
 
 # Initialize fitted values
 #' @keywords internal
-initialize_fitted.individual <- function(data, alpha, mu) {
+initialize_fitted.individual <- function(data, params, alpha, mu) {
   return(list(Xr = compute_Xb(data$X, colSums(alpha * mu))))
 }
 
 # Validate prior variance
 #' @keywords internal
-validate_prior.individual <- function(data, model, check_prior, ...) {
-  return(validate_prior.default(data, model, check_prior, ...))
+validate_prior.individual <- function(data, params, model, ...) {
+  return(validate_prior.default(data, params, model, ...))
 }
 
 # Track core parameters across iterations
 #' @keywords internal
-track_ibss_fit.individual <- function(data, model, tracking, iter, track_fit, ...) {
-  return(track_ibss_fit.default(data, model, tracking, iter, track_fit, ...))
+track_ibss_fit.individual <- function(data, params, model, tracking, iter, track_fit, ...) {
+  return(track_ibss_fit.default(data, params, model, tracking, iter, track_fit, ...))
 }
 
 # =============================================================================
@@ -81,7 +81,7 @@ track_ibss_fit.individual <- function(data, model, tracking, iter, track_fit, ..
 
 # Compute residuals for single effect regression
 #' @keywords internal
-compute_residuals.individual <- function(data, model, l, ...) {
+compute_residuals.individual <- function(data, params, model, l, ...) {
   # Remove lth effect from fitted values
   Xr_without_l <- model$Xr - compute_Xb(data$X, model$alpha[l, ] * model$mu[l, ])
 
@@ -100,7 +100,7 @@ compute_residuals.individual <- function(data, model, l, ...) {
 
 # Compute SER statistics
 #' @keywords internal
-compute_ser_statistics.individual <- function(data, model, residual_variance, l, ...) {
+compute_ser_statistics.individual <- function(data, params, model, residual_variance, l, ...) {
   betahat <- (1 / model$predictor_weights) * model$residuals
   shat2   <- residual_variance / model$predictor_weights
 
@@ -120,7 +120,7 @@ compute_ser_statistics.individual <- function(data, model, residual_variance, l,
 
 # Posterior expected log-likelihood for single effect regression
 #' @keywords internal
-SER_posterior_e_loglik.individual <- function(data, model, Eb, Eb2) {
+SER_posterior_e_loglik.individual <- function(data, params, model, Eb, Eb2) {
   return(-0.5 * data$n * log(2 * pi * model$sigma2) -
            0.5 / model$sigma2 * (sum(model$raw_residuals * model$raw_residuals)
                                  - 2 * sum(model$raw_residuals * compute_Xb(data$X, Eb)) +
@@ -129,12 +129,12 @@ SER_posterior_e_loglik.individual <- function(data, model, Eb, Eb2) {
 
 # Calculate posterior moments for single effect regression
 #' @keywords internal
-calculate_posterior_moments.individual <- function(data, model, V,
+calculate_posterior_moments.individual <- function(data, params, model, V,
                                                    residual_variance, ...) {
   # Initialize beta_1
   beta_1 <- NULL
 
-  if (data$use_servin_stephens) {
+  if (params$use_servin_stephens) {
     if (V <= 0) {
       # Zero variance case
       post_mean  <- rep(0, data$p)
@@ -175,9 +175,9 @@ calculate_posterior_moments.individual <- function(data, model, V,
 
 # Calculate KL divergence
 #' @keywords internal
-compute_kl.individual <- function(data, model, l) {
+compute_kl.individual <- function(data, params, model, l) {
   loglik_term <- model$lbf[l] + sum(dnorm(model$raw_residuals, 0, sqrt(model$sigma2), log = TRUE))
-  return(-loglik_term + SER_posterior_e_loglik(data, model,
+  return(-loglik_term + SER_posterior_e_loglik(data, params, model,
                                                model$alpha[l, ] * model$mu[l, ],
                                                model$alpha[l, ] * model$mu2[l, ]))
 }
@@ -200,16 +200,16 @@ Eloglik.individual <- function(data, model) {
 #' @importFrom Matrix colSums
 #' @importFrom stats dnorm
 #' @keywords internal
-loglik.individual <- function(data, model, V, ser_stats, ...) {
+loglik.individual <- function(data, params, model, V, ser_stats, ...) {
   # Check if using Servin-Stephens prior
-  if (data$use_servin_stephens) {
+  if (params$use_servin_stephens) {
     # Calculate Servin-Stephens logged Bayes factors
     lbf <- do.call(c, lapply(1:data$p, function(j){
       compute_lbf_servin_stephens(x = data$X[,j],
                                   y = model$raw_residuals,
                                   s0 = sqrt(V),
-                                  alpha0 = data$alpha0,
-                                  beta0 = data$beta0)}))
+                                  alpha0 = params$alpha0,
+                                  beta0 = params$beta0)}))
 
   } else {
     # Standard Gaussian prior log Bayes factors
@@ -225,7 +225,7 @@ loglik.individual <- function(data, model, V, ser_stats, ...) {
 
   # Compute gradient
   gradient    <- compute_lbf_gradient(weights_res$alpha, ser_stats$betahat,
-                                      ser_stats$shat2, V, data$use_servin_stephens)
+                                      ser_stats$shat2, V, params$use_servin_stephens)
 
   return(list(
     lbf       = stable_res$lbf,
@@ -236,10 +236,10 @@ loglik.individual <- function(data, model, V, ser_stats, ...) {
 }
 
 #' @keywords internal
-neg_loglik.individual <- function(data, model, V_param, ser_stats, ...) {
+neg_loglik.individual <- function(data, params, model, V_param, ser_stats, ...) {
   # Convert parameter to V based on optimization scale (always log for individual)
   V   <- exp(V_param)
-  res <- loglik.individual(data, model, V, ser_stats)
+  res <- loglik.individual(data, params, model, V, ser_stats)
   return(-res$lbf_model)
 }
 
@@ -255,14 +255,14 @@ neg_loglik.individual <- function(data, model, V_param, ser_stats, ...) {
 
 # Update fitted values
 #' @keywords internal
-update_fitted_values.individual <- function(data, model, l) {
+update_fitted_values.individual <- function(data, params, model, l) {
   model$Xr <- model$fitted_without_l + compute_Xb(data$X, model$alpha[l, ] * model$mu[l, ])
   return(model)
 }
 
 # Update variance components for individual data
 #' @keywords internal
-update_variance_components.individual <- function(data, model, estimate_method = "MLE") {
+update_variance_components.individual <- function(data, params, model, estimate_method = "MLE") {
   # For standard SuSiE w/ individual data, MLE and MoM are equivalent
   sigma2 <- est_residual_variance(data, model)
   return(list(sigma2 = sigma2))
@@ -270,8 +270,8 @@ update_variance_components.individual <- function(data, model, estimate_method =
 
 # Update derived quantities for individual data
 #' @keywords internal
-update_derived_quantities.individual <- function(data, model) {
-  return(update_derived_quantities.default(data, model))
+update_derived_quantities.individual <- function(data, params, model) {
+  return(update_derived_quantities.default(data, params, model))
 }
 
 # =============================================================================
@@ -287,13 +287,13 @@ update_derived_quantities.individual <- function(data, model) {
 
 # Get column scale factors
 #' @keywords internal
-get_scale_factors.individual <- function(data) {
+get_scale_factors.individual <- function(data, params) {
   return(attr(data$X, "scaled:scale"))
 }
 
 # Get intercept
 #' @keywords internal
-get_intercept.individual <- function(data, model, intercept) {
+get_intercept.individual <- function(data, params, model, intercept) {
   if (intercept) {
     return(data$mean_y - sum(attr(data$X, "scaled:center") *
                                (colSums(model$alpha * model$mu) / attr(data$X, "scaled:scale"))))
@@ -304,7 +304,7 @@ get_intercept.individual <- function(data, model, intercept) {
 
 # Get Fitted Values
 #' @keywords internal
-get_fitted.individual <- function(data, model, intercept) {
+get_fitted.individual <- function(data, params, model, intercept) {
   if (intercept) {
     fitted <- model$Xr + data$mean_y
   } else {

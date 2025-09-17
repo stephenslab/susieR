@@ -876,17 +876,17 @@ est_residual_variance <- function(data, model) {
 
 # Helper function to update variance components and derived quantities
 #' @keywords internal
-update_model_variance <- function(data, model, lowerbound, upperbound,
+update_model_variance <- function(data, params, model, lowerbound, upperbound,
                                   estimate_method = "MLE") {
   # Update variance components
-  variance_result <- update_variance_components(data, model, estimate_method)
+  variance_result <- update_variance_components(data, params, model, estimate_method)
   model           <- modifyList(model, variance_result)
 
   # Apply bounds to residual variance
   model$sigma2    <- min(max(model$sigma2, lowerbound), upperbound)
 
   # Update derived quantities after variance component changes
-  model           <- update_derived_quantities(data, model)
+  model           <- update_derived_quantities(data, params, model)
 
   return(model)
 }

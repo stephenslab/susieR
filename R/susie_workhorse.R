@@ -1,52 +1,48 @@
-susie_workhorse <- function(data, L, intercept = TRUE, standardize = TRUE,
-                            scaled_prior_variance, residual_variance,
-                            prior_weights, null_weight, model_init = NULL,
-                            estimate_prior_variance,
-                            estimate_prior_method = c("optim", "EM", "simple"),
-                            check_null_threshold, estimate_residual_variance,
-                            estimate_residual_method = "MLE",
-                            residual_variance_lowerbound,
-                            residual_variance_upperbound,
-                            max_iter, tol, verbose, track_fit,
-                            coverage, min_abs_corr, prior_tol, n_purity,
-                            compute_univariate_zscore = FALSE,
-                            check_prior = FALSE, convergence_method = "elbo",
-                            alpha0 = 0, beta0 = 0, refine = FALSE) {
+susie_workhorse <- function(data, params) {
 
   # Validate method argument
-  estimate_prior_method <- match.arg(estimate_prior_method)
+  estimate_prior_method <- match.arg(params$estimate_prior_method, c("optim", "EM", "simple"))
 
   # Initialize model object
-  model <- ibss_initialize(
-    data, L, scaled_prior_variance, residual_variance,
-    prior_weights, null_weight, model_init,
-    prior_tol, residual_variance_upperbound
-  )
+  model <- ibss_initialize(data, params)
 
   # Initialize tracking
-  elbo <- rep(as.numeric(NA), max_iter + 1)
+  elbo <- rep(as.numeric(NA), params$max_iter + 1)
   elbo[1] <- -Inf
   tracking <- list()
 
   # Main IBSS iteration loop
-  for (iter in seq_len(max_iter)) {
+  for (iter in seq_len(params$max_iter)) {
+    cat("=== NEW SUSIE2.0: ITER", iter, "===\n")
+    cat("Before ibss_fit: sigma2 =", model$sigma2, "\n")
+    cat("Before ibss_fit: V =", paste(model$V, collapse=", "), "\n")
+    if (exists("XtXr", model)) {
+      cat("Before ibss_fit: XtXr[1:3] =", paste(model$XtXr[1:3], collapse=", "), "\n")
+    }
+    
     # Track iteration progress
-    tracking <- track_ibss_fit(data, model, tracking, iter, track_fit)
+    tracking <- track_ibss_fit(data, params, model, tracking, iter, params$track_fit)
 
     # Store previous model parameters for convergence check
     model$prev_elbo  <- elbo[iter]
     model$prev_alpha <- model$alpha
 
     # Update all L effects
-    model <- ibss_fit(data, model, estimate_prior_variance,
-                      estimate_prior_method, check_null_threshold,
-                      check_prior)
+    model <- ibss_fit(data, params, model)
+    
+    cat("After ibss_fit: V =", paste(model$V, collapse=", "), "\n")
+    cat("After ibss_fit: alpha[1,1:3] =", paste(model$alpha[1,1:3], collapse=", "), "\n")
+    cat("After ibss_fit: mu[1,1:3] =", paste(model$mu[1,1:3], collapse=", "), "\n")
+    if (exists("XtXr", model)) {
+      cat("After ibss_fit: XtXr[1:3] =", paste(model$XtXr[1:3], collapse=", "), "\n")
+    }
 
     # Calculate objective for tracking
-    elbo[iter + 1] <- get_objective(data, model, verbose = verbose)
+    elbo[iter + 1] <- get_objective(data, model, verbose = params$verbose)
+    cat("ELBO =", elbo[iter + 1], "\n")
 
     # Check for convergence
-    converged <- check_convergence(model, elbo, tol, convergence_method, iter)
+    converged <- check_convergence(model, elbo, params$tol, params$convergence_method, iter)
 
     if (converged) {
       model$converged <- TRUE
@@ -54,41 +50,28 @@ susie_workhorse <- function(data, L, intercept = TRUE, standardize = TRUE,
     }
 
     # Update variance components if not converged and estimation is requested
-    if (estimate_residual_variance) {
-      model <- update_model_variance(data, model, residual_variance_lowerbound,
-                                     residual_variance_upperbound, estimate_residual_method)
+    if (params$estimate_residual_variance) {
+      model <- update_model_variance(data, params, model, params$residual_variance_lowerbound,
+                                     params$residual_variance_upperbound, params$estimate_residual_method)
+      cat("After variance update: sigma2 =", model$sigma2, "\n")
     }
 
   }
 
   # Check final convergence status
   if (is.null(model$converged)) {
-    warning_message(paste("IBSS algorithm did not converge in", max_iter, "iterations!"))
+    warning_message(paste("IBSS algorithm did not converge in", params$max_iter, "iterations!"))
     model$converged <- FALSE
   }
 
   # Set ELBO from iterations
   model$elbo <- elbo[2:(iter + 1)]
 
-  model <- ibss_finalize(data, model, coverage, min_abs_corr,
-                         median_abs_corr = NULL, prior_tol, n_purity,
-                         compute_univariate_zscore, intercept, standardize,
-                         elbo, iter, null_weight, track_fit, tracking)
+  model <- ibss_finalize(data, params, model, elbo, iter, tracking)
 
   # Run refinement if requested
-  if (refine && !is.null(model$sets) && length(model$sets$cs) > 0) {
-    model <- run_refine(
-      model, data, L, intercept, standardize,
-      scaled_prior_variance, residual_variance,
-      prior_weights, null_weight, model_init,
-      estimate_prior_variance, estimate_prior_method,
-      check_null_threshold, estimate_residual_variance,
-      estimate_residual_method, residual_variance_lowerbound,
-      residual_variance_upperbound, max_iter, tol,
-      verbose, track_fit, coverage, min_abs_corr,
-      prior_tol, n_purity, compute_univariate_zscore,
-      check_prior, convergence_method, alpha0, beta0
-    )
+  if (params$refine && !is.null(model$sets) && length(model$sets$cs) > 0) {
+    model <- run_refine(model, data, params)
   }
 
   return(model)

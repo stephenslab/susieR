@@ -35,26 +35,23 @@ susie <- function(X, y, L = min(10, ncol(X)),
   estimate_residual_method <- match.arg(estimate_residual_method)
   convergence_method       <- match.arg(convergence_method)
 
-  # Construct data object
-  data <- individual_data_constructor(
-    X, y, intercept, standardize, na.rm,
-    prior_weights, null_weight, unmappable_effects,
-    estimate_residual_method, convergence_method,
-    estimate_prior_method, alpha0, beta0, refine
+  # Construct data and params objects with ALL parameters
+  susie_objects <- individual_data_constructor(
+    X, y, L, scaled_prior_variance, residual_variance,
+    prior_weights, null_weight, standardize, intercept,
+    estimate_residual_variance, estimate_residual_method,
+    estimate_prior_variance, estimate_prior_method,
+    unmappable_effects, check_null_threshold, prior_tol,
+    residual_variance_upperbound, model_init, coverage,
+    min_abs_corr, compute_univariate_zscore, na.rm,
+    max_iter, tol, convergence_method, verbose, track_fit,
+    residual_variance_lowerbound, refine, n_purity,
+    alpha0, beta0
   )
+  data <- susie_objects$data
+  params <- susie_objects$params
 
-  model <- susie_workhorse(
-    data, L, intercept, standardize, scaled_prior_variance,
-    residual_variance, data$prior_weights, data$null_weight,
-    model_init, estimate_prior_variance, data$estimate_prior_method,
-    check_null_threshold, estimate_residual_variance,
-    estimate_residual_method,
-    residual_variance_lowerbound, residual_variance_upperbound,
-    max_iter, tol, verbose, track_fit, coverage, min_abs_corr,
-    prior_tol, n_purity, compute_univariate_zscore,
-    check_prior = FALSE, data$convergence_method,
-    alpha0 = alpha0, beta0 = beta0, refine = refine
-  )
+  model <- susie_workhorse(data, params)
 
   return(model)
 }
@@ -97,27 +94,22 @@ susie_ss <- function(XtX, Xty, yty, n,
   estimate_residual_method <- match.arg(estimate_residual_method)
   convergence_method       <- match.arg(convergence_method)
 
-  # Construct data object
-  data <- sufficient_stats_constructor(
-    XtX, Xty, yty, n, X_colmeans, y_mean,
-    maf, maf_thresh, standardize, r_tol, check_input,
-    prior_weights, null_weight, unmappable_effects, estimate_residual_method,
-    convergence_method
+  # Construct data and params objects
+  susie_objects <- sufficient_stats_constructor(
+    XtX, Xty, yty, n, L, X_colmeans, y_mean,
+    maf = NULL, maf_thresh = 0, check_input, r_tol, standardize,
+    scaled_prior_variance, residual_variance, prior_weights, null_weight,
+    model_init, estimate_residual_variance, estimate_residual_method,
+    residual_variance_lowerbound, residual_variance_upperbound,
+    estimate_prior_variance, estimate_prior_method, unmappable_effects,
+    check_null_threshold, prior_tol, max_iter, tol, convergence_method,
+    coverage, min_abs_corr, n_purity, verbose, track_fit, check_prior
   )
+  data <- susie_objects$data
+  params <- susie_objects$params
 
   # Run SuSiE workhorse
-  model <- susie_workhorse(
-    data, L,
-    intercept = FALSE, standardize, scaled_prior_variance,
-    residual_variance, data$prior_weights, data$null_weight,
-    model_init, estimate_prior_variance, estimate_prior_method,
-    check_null_threshold, estimate_residual_variance,
-    estimate_residual_method,
-    residual_variance_lowerbound, residual_variance_upperbound,
-    max_iter, tol, verbose, track_fit, coverage, min_abs_corr,
-    prior_tol, n_purity, compute_univariate_zscore = FALSE,
-    check_prior, data$convergence_method
-  )
+  model <- susie_workhorse(data, params)
 
   return(model)
 }
@@ -166,31 +158,35 @@ susie_rss <- function(z = NULL, R, n = NULL,
   estimate_residual_method <- match.arg(estimate_residual_method)
   convergence_method       <- match.arg(convergence_method)
 
-  # Construct data object
-  data <- summary_stats_constructor(
-    z, R, n, bhat, shat, var_y, lambda,
-    maf, maf_thresh, z_ld_weight,
-    prior_weights, null_weight, unmappable_effects,
-    standardize, check_input,
-    check_R, check_z, r_tol,
-    prior_variance, scaled_prior_variance, intercept_value,
-    estimate_residual_variance, estimate_residual_method,
-    convergence_method, check_prior, residual_variance_upperbound
+  # Construct data and params objects with ALL parameters
+  susie_objects <- summary_stats_constructor(
+    z = z, R = R, n = n, bhat = bhat, shat = shat, var_y = var_y,
+    L = L, lambda = lambda, maf = maf, maf_thresh = maf_thresh,
+    z_ld_weight = z_ld_weight, prior_variance = prior_variance,
+    scaled_prior_variance = scaled_prior_variance,
+    residual_variance = residual_variance, prior_weights = prior_weights,
+    null_weight = null_weight, standardize = standardize,
+    intercept_value = intercept_value,
+    estimate_residual_variance = estimate_residual_variance,
+    estimate_residual_method = estimate_residual_method,
+    estimate_prior_variance = estimate_prior_variance,
+    estimate_prior_method = estimate_prior_method,
+    unmappable_effects = unmappable_effects,
+    check_null_threshold = check_null_threshold, prior_tol = prior_tol,
+    residual_variance_lowerbound = residual_variance_lowerbound,
+    residual_variance_upperbound = residual_variance_upperbound,
+    model_init = s_init, coverage = coverage, min_abs_corr = min_abs_corr,
+    max_iter = max_iter, tol = tol, convergence_method = convergence_method,
+    verbose = verbose, track_fit = track_fit, check_input = check_input,
+    check_prior = check_prior, check_R = check_R, check_z = check_z,
+    n_purity = n_purity, r_tol = r_tol,
+    compute_univariate_zscore = compute_univariate_zscore
   )
+  data <- susie_objects$data
+  params <- susie_objects$params
 
-  # Run SuSiE workhorse
-  model <- susie_workhorse(
-    data, L,
-    intercept = FALSE, data$standardize, data$scaled_prior_variance,
-    residual_variance, data$prior_weights, data$null_weight,
-    s_init, estimate_prior_variance, estimate_prior_method,
-    check_null_threshold, estimate_residual_variance,
-    estimate_residual_method, residual_variance_lowerbound,
-    data$residual_variance_upperbound, max_iter, tol, verbose,
-    track_fit, coverage, min_abs_corr, prior_tol, n_purity,
-    compute_univariate_zscore = FALSE, data$check_prior,
-    convergence_method
-  )
+  # Run SuSiE workhorse using new pattern for RSS
+  model <- susie_workhorse(data, params)
 
   return(model)
 }

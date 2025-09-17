@@ -26,13 +26,36 @@
 #'
 #' @keywords internal
 #' @noRd
-individual_data_constructor <- function(X, y, intercept = TRUE, standardize = TRUE,
-                                        na.rm = FALSE, prior_weights = NULL,
-                                        null_weight = 0, unmappable_effects = "none",
+individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
+                                        scaled_prior_variance = 0.2,
+                                        residual_variance = NULL,
+                                        prior_weights = NULL,
+                                        null_weight = 0,
+                                        standardize = TRUE,
+                                        intercept = TRUE,
+                                        estimate_residual_variance = TRUE,
                                         estimate_residual_method = "MLE",
-                                        convergence_method = "elbo",
+                                        estimate_prior_variance = TRUE,
                                         estimate_prior_method = "optim",
-                                        alpha0 = 0, beta0 = 0, refine = FALSE) {
+                                        unmappable_effects = "none",
+                                        check_null_threshold = 0,
+                                        prior_tol = 1e-9,
+                                        residual_variance_upperbound = Inf,
+                                        model_init = NULL,
+                                        coverage = 0.95,
+                                        min_abs_corr = 0.5,
+                                        compute_univariate_zscore = FALSE,
+                                        na.rm = FALSE,
+                                        max_iter = 100,
+                                        tol = 1e-3,
+                                        convergence_method = "elbo",
+                                        verbose = FALSE,
+                                        track_fit = FALSE,
+                                        residual_variance_lowerbound = var(drop(y)) / 1e4,
+                                        refine = FALSE,
+                                        n_purity = 100,
+                                        alpha0 = 0,
+                                        beta0 = 0) {
 
   # Validate input X
   if (!(is.double(X) & is.matrix(X)) &
@@ -113,39 +136,40 @@ individual_data_constructor <- function(X, y, intercept = TRUE, standardize = TR
   attr(X, "scaled:scale") <- out$csd
   attr(X, "d") <- out$d
 
-  # Override convergence method for unmappable effects
-  if (unmappable_effects != "none") {
-    warning_message("Unmappable effects models (inf/ash) do not have a well defined ELBO and require PIP convergence. ",
-            "Setting convergence_method='pip'.")
-    convergence_method <- "pip"
-  }
-
-  # Check for incompatible parameter combinations
-  if (refine && unmappable_effects != "none") {
-    stop("Refinement is not supported with unmappable effects (inf/ash) as it relies on ELBO, ",
-         "which is not well-defined for these models. Please set refine = FALSE.")
-  }
-
-  # Handle Servin_Stephens parameters for small sample correction
-  if (estimate_residual_method == "Servin_Stephens") {
-    use_servin_stephens <- TRUE
-
-    # Override convergence method
-    if (convergence_method != "pip") {
-      warning_message("Servin_Stephens method requires PIP convergence. Setting convergence_method='pip'.")
-      convergence_method <- "pip"
-    }
-
-    # Override prior variance estimation method
-    if (estimate_prior_method != "EM") {
-      warning_message("Servin_Stephens method works better with EM. Setting estimate_prior_method='EM'.")
-      estimate_prior_method <- "EM"
-    }
-  } else {
-    use_servin_stephens <- FALSE
-    alpha0 <- NULL
-    beta0 <- NULL
-  }
+  # Create params object with ALL algorithm parameters
+  params_object <- list(
+    L = L,
+    scaled_prior_variance = scaled_prior_variance,
+    residual_variance = residual_variance,
+    estimate_residual_variance = estimate_residual_variance,
+    estimate_residual_method = estimate_residual_method,
+    estimate_prior_variance = estimate_prior_variance,
+    estimate_prior_method = estimate_prior_method,
+    unmappable_effects = unmappable_effects,
+    check_null_threshold = check_null_threshold,
+    prior_tol = prior_tol,
+    residual_variance_upperbound = residual_variance_upperbound,
+    model_init = model_init,
+    coverage = coverage,
+    min_abs_corr = min_abs_corr,
+    compute_univariate_zscore = compute_univariate_zscore,
+    max_iter = max_iter,
+    tol = tol,
+    convergence_method = convergence_method,
+    verbose = verbose,
+    track_fit = track_fit,
+    residual_variance_lowerbound = residual_variance_lowerbound,
+    refine = refine,
+    n_purity = n_purity,
+    alpha0 = alpha0,
+    beta0 = beta0,
+    use_servin_stephens = FALSE,  # Will be set by validation function
+    intercept = intercept,
+    standardize = standardize
+  )
+  
+  # Validate and apply parameter overrides
+  params_object <- validate_and_override_params(params_object)
 
   data_object <- structure(
     list(
@@ -155,21 +179,15 @@ individual_data_constructor <- function(X, y, intercept = TRUE, standardize = TR
       n = n,
       p = p,
       prior_weights = prior_weights,
-      null_weight = null_weight,
-      unmappable_effects = unmappable_effects,
-      use_servin_stephens = use_servin_stephens,
-      alpha0 = alpha0,
-      beta0 = beta0,
-      convergence_method = convergence_method,
-      estimate_prior_method = estimate_prior_method
+      null_weight = null_weight
     ),
     class = "individual"
   )
 
-  # Configure data object for specified unmappable effects method
-  data_object <- configure_data(data_object)
+  # Configure data object based on params
+  data_object <- configure_data(data_object, params_object)
 
-  return(data_object)
+  return(list(data = data_object, params = params_object))
 }
 
 #' Sufficient Statistics Data Constructor
@@ -206,16 +224,36 @@ individual_data_constructor <- function(X, y, intercept = TRUE, standardize = TR
 #'
 #' @keywords internal
 #' @noRd
-sufficient_stats_constructor <- function(XtX, Xty, yty, n, X_colmeans = NA,
-                                         y_mean = NA, maf = NULL, maf_thresh = 0,
-                                         standardize = TRUE, r_tol = 1e-8,
-                                         check_input = FALSE, prior_weights = NULL,
-                                         null_weight = 0, unmappable_effects = "none",
+sufficient_stats_constructor <- function(XtX, Xty, yty, n,
+                                         L = min(10, ncol(XtX)),
+                                         X_colmeans = NA, y_mean = NA,
+                                         maf = NULL, maf_thresh = 0,
+                                         check_input = FALSE,
+                                         r_tol = 1e-8,
+                                         standardize = TRUE,
+                                         scaled_prior_variance = 0.2,
+                                         residual_variance = NULL,
+                                         prior_weights = NULL,
+                                         null_weight = 0,
+                                         model_init = NULL,
+                                         estimate_residual_variance = TRUE,
                                          estimate_residual_method = "MLE",
+                                         residual_variance_lowerbound = 0,
+                                         residual_variance_upperbound = Inf,
+                                         estimate_prior_variance = TRUE,
+                                         estimate_prior_method = "optim",
+                                         unmappable_effects = "none",
+                                         check_null_threshold = 0,
+                                         prior_tol = 1e-9,
+                                         max_iter = 100,
+                                         tol = 1e-3,
                                          convergence_method = "elbo",
-                                         scaled_prior_variance = NULL,
-                                         check_prior = NULL,
-                                         residual_variance_upperbound = NULL) {
+                                         coverage = 0.95,
+                                         min_abs_corr = 0.5,
+                                         n_purity = 100,
+                                         verbose = FALSE,
+                                         track_fit = FALSE,
+                                         check_prior = FALSE) {
 
   # Validate required inputs
   if (missing(n)) {
@@ -349,6 +387,7 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n, X_colmeans = NA,
 
   attr(XtX, "d") <- diag(XtX)
   attr(XtX, "scaled:scale") <- csd
+  attr(XtX, "scaled:center") <- rep(0, p)  # SS data is already centered
 
   if (length(X_colmeans) == 1) {
     X_colmeans <- rep(X_colmeans, p)
@@ -360,23 +399,51 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n, X_colmeans = NA,
     )
   }
 
-  # Handle Servin_Stephens parameters for small sample correction
-  if (estimate_residual_method == "Servin_Stephens") {
+  # Create params object with ALL algorithm parameters
+  params_object <- list(
+    L = L,
+    scaled_prior_variance = scaled_prior_variance,
+    residual_variance = residual_variance,
+    estimate_residual_variance = estimate_residual_variance,
+    estimate_residual_method = estimate_residual_method,
+    estimate_prior_variance = estimate_prior_variance,
+    estimate_prior_method = estimate_prior_method,
+    unmappable_effects = unmappable_effects,
+    check_null_threshold = check_null_threshold,
+    prior_tol = prior_tol,
+    residual_variance_upperbound = residual_variance_upperbound,
+    model_init = model_init,
+    coverage = coverage,
+    min_abs_corr = min_abs_corr,
+    compute_univariate_zscore = FALSE,  # SS doesn't support univariate zscore
+    max_iter = max_iter,
+    tol = tol,
+    convergence_method = convergence_method,
+    verbose = verbose,
+    track_fit = track_fit,
+    residual_variance_lowerbound = residual_variance_lowerbound,
+    refine = FALSE,  # SS doesn't get refine from interface
+    n_purity = n_purity,
+    alpha0 = 0,  # SS doesn't support Servin_Stephens
+    beta0 = 0,   # SS doesn't support Servin_Stephens
+    use_servin_stephens = FALSE,  # Will be validated
+    intercept = FALSE,  # SS always uses intercept = FALSE
+    standardize = standardize,
+    check_prior = check_prior
+  )
+  
+  # Handle SS-specific validation before general validation
+  if (params_object$estimate_residual_method == "Servin_Stephens") {
     stop("Small sample correction not implemented for SS/RSS data.")
   }
-
-  # Ash requires individual-level data and cannot work with sufficient statistics alone
-  if (unmappable_effects == "ash") {
+  
+  if (params_object$unmappable_effects == "ash") {
     stop("Adaptive shrinkage (ash) requires individual-level data and cannot be used with sufficient statistics. ",
          "Please provide X and y instead of XtX, Xty, and yty.")
   }
-
-  # Override convergence method for unmappable effects
-  if (unmappable_effects != "none") {
-    warning_message("Unmappable effects models (inf/ash) do not have a well defined ELBO and require PIP convergence. ",
-            "Setting convergence_method='pip'.")
-    convergence_method <- "pip"
-  }
+  
+  # Validate and apply parameter overrides
+  params_object <- validate_and_override_params(params_object)
 
   # Assemble data object
   data_object <- structure(
@@ -389,22 +456,15 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n, X_colmeans = NA,
       X_colmeans = X_colmeans,
       y_mean = y_mean,
       prior_weights = prior_weights,
-      null_weight = null_weight,
-      unmappable_effects = unmappable_effects,
-      convergence_method = convergence_method,
-      use_servin_stephens = FALSE,
-      scaled_prior_variance = scaled_prior_variance,
-      standardize = standardize,
-      check_prior = check_prior,
-      residual_variance_upperbound = residual_variance_upperbound
+      null_weight = null_weight
     ),
     class = "ss"
   )
 
-  # Configure data object for specified unmappable effects method
-  data_object <- configure_data(data_object)
+  # Configure data object based on params
+  data_object <- configure_data(data_object, params_object)
 
-  return(data_object)
+  return(list(data = data_object, params = params_object))
 }
 
 #' Summary Statistics (RSS) Data Constructor
@@ -432,20 +492,43 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n, X_colmeans = NA,
 #' @keywords internal
 #' @noRd
 summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
-                                      shat = NULL, var_y = NULL, lambda = 0,
-                                      maf = NULL, maf_thresh = 0, z_ld_weight = 0,
-                                      prior_weights = NULL, null_weight = 0,
-                                      unmappable_effects = "none",
-                                      standardize = TRUE, check_input = FALSE,
-                                      check_R = TRUE, check_z = FALSE,
-                                      r_tol = 1e-8, prior_variance = 50,
+                                      shat = NULL, var_y = NULL,
+                                      L = min(10, ncol(R)),
+                                      lambda = 0,
+                                      maf = NULL,
+                                      maf_thresh = 0,
+                                      z_ld_weight = 0,
+                                      prior_variance = 50,
                                       scaled_prior_variance = 0.2,
+                                      residual_variance = NULL,
+                                      prior_weights = NULL,
+                                      null_weight = 0,
+                                      standardize = TRUE,
                                       intercept_value = 0,
                                       estimate_residual_variance = FALSE,
                                       estimate_residual_method = "MLE",
+                                      estimate_prior_variance = TRUE,
+                                      estimate_prior_method = "optim",
+                                      unmappable_effects = "none",
+                                      check_null_threshold = 0,
+                                      prior_tol = 1e-9,
+                                      residual_variance_lowerbound = 0,
+                                      residual_variance_upperbound = Inf,
+                                      model_init = NULL,
+                                      coverage = 0.95,
+                                      min_abs_corr = 0.5,
+                                      max_iter = 100,
+                                      tol = 1e-3,
                                       convergence_method = "elbo",
+                                      verbose = FALSE,
+                                      track_fit = FALSE,
+                                      check_input = FALSE,
                                       check_prior = TRUE,
-                                      residual_variance_upperbound = Inf) {
+                                      check_R = TRUE,
+                                      check_z = FALSE,
+                                      n_purity = 100,
+                                      r_tol = 1e-8,
+                                      compute_univariate_zscore = FALSE) {
 
   # Check if this should use RSS-lambda path
   if (lambda != 0) {
@@ -467,16 +550,28 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
       warning_message("Parameter 'n' is ignored when lambda != 0.")
     }
 
-    # Delegate to rss_lambda_constructor (which will apply overrides)
+    # Delegate to rss_lambda_constructor with ALL parameters
     return(rss_lambda_constructor(
-      z = z, R = R, maf = maf, maf_thresh = maf_thresh,
-      lambda = lambda, prior_weights = prior_weights,
-      null_weight = null_weight, check_R = check_R,
-      check_z = check_z, r_tol = r_tol,
-      prior_variance = prior_variance,
+      z = z, R = R, n = n, bhat = bhat, shat = shat, var_y = var_y,
+      L = L, lambda = lambda, maf = maf, maf_thresh = maf_thresh,
+      z_ld_weight = z_ld_weight, prior_variance = prior_variance,
+      scaled_prior_variance = scaled_prior_variance,
+      residual_variance = residual_variance, prior_weights = prior_weights,
+      null_weight = null_weight, standardize = standardize,
       intercept_value = intercept_value,
+      estimate_residual_variance = estimate_residual_variance,
       estimate_residual_method = estimate_residual_method,
-      convergence_method = convergence_method
+      estimate_prior_variance = estimate_prior_variance,
+      estimate_prior_method = estimate_prior_method,
+      unmappable_effects = unmappable_effects,
+      check_null_threshold = check_null_threshold, prior_tol = prior_tol,
+      residual_variance_lowerbound = residual_variance_lowerbound,
+      residual_variance_upperbound = residual_variance_upperbound,
+      model_init = model_init, coverage = coverage, min_abs_corr = min_abs_corr,
+      max_iter = max_iter, tol = tol, convergence_method = convergence_method,
+      verbose = verbose, track_fit = track_fit, check_input = check_input,
+      check_prior = check_prior, check_R = check_R, check_z = check_z,
+      n_purity = n_purity, r_tol = r_tol
     ))
   }
 
@@ -589,28 +684,27 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
     }
   }
 
-  # Use sufficient_stats_constructor to handle the rest
-  data_object <- sufficient_stats_constructor(
-    XtX = XtX,
-    Xty = Xty,
-    yty = yty,
-    n = n,
-    X_colmeans = NA,
-    y_mean = NA,
-    standardize = standardize,
-    r_tol = r_tol,
-    check_input = check_input,
-    prior_weights = prior_weights,
-    null_weight = null_weight,
-    unmappable_effects = unmappable_effects,
-    estimate_residual_method = estimate_residual_method,
-    convergence_method = convergence_method,
+  # Use sufficient_stats_constructor with ALL parameters
+  return(sufficient_stats_constructor(
+    XtX = XtX, Xty = Xty, yty = yty, n = n,
+    L = L, X_colmeans = NA, y_mean = NA,
+    maf = NULL, maf_thresh = 0, check_input = check_input,
+    r_tol = r_tol, standardize = standardize,
     scaled_prior_variance = scaled_prior_variance,
-    check_prior = check_prior,
-    residual_variance_upperbound = residual_variance_upperbound
-  )
-
-  return(data_object)
+    residual_variance = residual_variance, prior_weights = prior_weights,
+    null_weight = null_weight, model_init = model_init,
+    estimate_residual_variance = estimate_residual_variance,
+    estimate_residual_method = estimate_residual_method,
+    residual_variance_lowerbound = residual_variance_lowerbound,
+    residual_variance_upperbound = residual_variance_upperbound,
+    estimate_prior_variance = estimate_prior_variance,
+    estimate_prior_method = estimate_prior_method,
+    unmappable_effects = unmappable_effects,
+    check_null_threshold = check_null_threshold, prior_tol = prior_tol,
+    max_iter = max_iter, tol = tol, convergence_method = convergence_method,
+    coverage = coverage, min_abs_corr = min_abs_corr, n_purity = n_purity,
+    verbose = verbose, track_fit = track_fit, check_prior = check_prior
+  ))
 }
 
 #' Constructor for RSS Lambda Data
@@ -639,13 +733,43 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
 #'
 #' @keywords internal
 #' @noRd
-rss_lambda_constructor <- function(z, R, maf = NULL, maf_thresh = 0,
-                                   lambda = 0, prior_weights = NULL,
-                                   null_weight = 0, check_R = TRUE,
-                                   check_z = FALSE, r_tol = 1e-8,
-                                   prior_variance = 50, intercept_value = 0,
+rss_lambda_constructor <- function(z, R, n = NULL,
+                                   bhat = NULL, shat = NULL, var_y = NULL,
+                                   L = min(10, ncol(R)),
+                                   lambda = 0,
+                                   maf = NULL,
+                                   maf_thresh = 0,
+                                   z_ld_weight = 0,
+                                   prior_variance = 50,
+                                   scaled_prior_variance = 0.2,
+                                   residual_variance = NULL,
+                                   prior_weights = NULL,
+                                   null_weight = 0,
+                                   standardize = TRUE,
+                                   intercept_value = 0,
+                                   estimate_residual_variance = FALSE,
                                    estimate_residual_method = "MLE",
-                                   convergence_method = "elbo") {
+                                   estimate_prior_variance = TRUE,
+                                   estimate_prior_method = "optim",
+                                   unmappable_effects = "none",
+                                   check_null_threshold = 0,
+                                   prior_tol = 1e-9,
+                                   residual_variance_lowerbound = 0,
+                                   residual_variance_upperbound = Inf,
+                                   model_init = NULL,
+                                   coverage = 0.95,
+                                   min_abs_corr = 0.5,
+                                   max_iter = 100,
+                                   tol = 1e-3,
+                                   convergence_method = "elbo",
+                                   verbose = FALSE,
+                                   track_fit = FALSE,
+                                   check_input = FALSE,
+                                   check_prior = TRUE,
+                                   check_R = TRUE,
+                                   check_z = FALSE,
+                                   n_purity = 100,
+                                   r_tol = 1e-8) {
 
   # Validate that MoM is not requested for RSS with lambda != 0
   if (estimate_residual_method == "MoM") {
@@ -764,7 +888,43 @@ rss_lambda_constructor <- function(z, R, maf = NULL, maf_thresh = 0,
     }
   }
 
-  # Create data object with RSS-lambda specific parameter overrides
+  # Create params object with ALL algorithm parameters
+  params_object <- list(
+    L = L,
+    scaled_prior_variance = prior_variance, # Use unscaled prior_variance for RSS-lambda
+    residual_variance = residual_variance,
+    estimate_residual_variance = estimate_residual_variance,
+    estimate_residual_method = estimate_residual_method,
+    estimate_prior_variance = estimate_prior_variance,
+    estimate_prior_method = estimate_prior_method,
+    unmappable_effects = "none", # RSS-lambda doesn't support unmappable effects
+    check_null_threshold = check_null_threshold,
+    prior_tol = prior_tol,
+    residual_variance_upperbound = 1, # RSS constraint
+    model_init = model_init,
+    coverage = coverage,
+    min_abs_corr = min_abs_corr,
+    compute_univariate_zscore = FALSE,  # RSS data already has z-scores
+    max_iter = max_iter,
+    tol = tol,
+    convergence_method = convergence_method,
+    verbose = verbose,
+    track_fit = track_fit,
+    residual_variance_lowerbound = residual_variance_lowerbound,
+    refine = FALSE,  # RSS doesn't support refine
+    n_purity = n_purity,
+    alpha0 = 0,  # RSS doesn't support Servin_Stephens
+    beta0 = 0,   # RSS doesn't support Servin_Stephens
+    use_servin_stephens = FALSE,
+    intercept = FALSE,  # RSS always uses intercept = FALSE
+    standardize = FALSE, # Never standardize RSS-lambda
+    check_prior = check_prior
+  )
+  
+  # Validate params (but RSS-lambda has special restrictions)
+  params_object <- validate_and_override_params(params_object)
+
+  # Create data object with RSS-lambda specific fields
   data_object <- structure(
     list(
       z = z,
@@ -778,16 +938,68 @@ rss_lambda_constructor <- function(z, R, maf = NULL, maf_thresh = 0,
       r_tol = r_tol,
       prior_variance = prior_variance,
       eigen_R = eigen_R,
-      Vtz = Vtz,
-      convergence_method = convergence_method,
-      # RSS-lambda specific parameter overrides
-      scaled_prior_variance = prior_variance, # Use unscaled for RSS-lambda
-      standardize = FALSE, # Never standardize RSS-lambda
-      residual_variance_upperbound = 1, # RSS constraint
-      check_prior = FALSE # Skip prior check for RSS-lambda
+      Vtz = Vtz
     ),
     class = "rss_lambda"
   )
 
-  return(data_object)
+  return(list(data = data_object, params = params_object))
+}
+
+#' Validate and Override Parameters
+#'
+#' Validates parameter combinations and applies overrides for conflicts.
+#' This centralizes all parameter validation logic that was previously
+#' scattered across data constructors.
+#'
+#' @param params A list of parameters to validate and potentially override
+#'
+#' @return A validated and potentially modified params list
+#'
+#' @keywords internal
+#' @noRd
+validate_and_override_params <- function(params) {
+  
+  # Validate unmappable_effects
+  if (!params$unmappable_effects %in% c("none", "inf", "ash")) {
+    stop("unmappable_effects must be one of 'none', 'inf', or 'ash'.")
+  }
+  
+  # Override convergence method for unmappable effects
+  if (params$unmappable_effects != "none") {
+    if (params$convergence_method != "pip") {
+      warning_message("Unmappable effects models (inf/ash) do not have a well defined ELBO and require PIP convergence. ",
+              "Setting convergence_method='pip'.")
+      params$convergence_method <- "pip"
+    }
+  }
+  
+  # Check for incompatible parameter combinations
+  if (!is.null(params$refine) && params$refine && params$unmappable_effects != "none") {
+    stop("Refinement is not supported with unmappable effects (inf/ash) as it relies on ELBO, ",
+         "which is not well-defined for these models. Please set refine = FALSE.")
+  }
+  
+  # Handle Servin_Stephens parameters for small sample correction
+  if (params$estimate_residual_method == "Servin_Stephens") {
+    params$use_servin_stephens <- TRUE
+    
+    # Override convergence method
+    if (params$convergence_method != "pip") {
+      warning_message("Servin_Stephens method requires PIP convergence. Setting convergence_method='pip'.")
+      params$convergence_method <- "pip"
+    }
+    
+    # Override prior variance estimation method
+    if (params$estimate_prior_method != "EM") {
+      warning_message("Servin_Stephens method works better with EM. Setting estimate_prior_method='EM'.")
+      params$estimate_prior_method <- "EM"
+    }
+  } else {
+    params$use_servin_stephens <- FALSE
+    params$alpha0 <- NULL
+    params$beta0 <- NULL
+  }
+  
+  return(params)
 }
