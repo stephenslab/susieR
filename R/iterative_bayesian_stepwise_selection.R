@@ -1,5 +1,17 @@
-# Core IBSS functions: ibss_initialize(), ibss_fit(), and ibss_finalize()
-
+# =============================================================================
+#' @section IBSS INITIALIZATION
+#'
+#' Initializes the SuSiE model object for Iterative Bayesian Stepwise Selection.
+#' Sets up model matrices, handles model_init, and prepares for IBSS.
+# =============================================================================
+#'
+#' @param data Data object (individual, ss, or rss_lambda)
+#' @param params Validated params object
+#'
+#' @return Initialized SuSiE model object with alpha, mu, mu2, V, sigma2, and fitted values
+#'
+#' @keywords internal
+#' @noRd
 ibss_initialize <- function(data, params) {
 
   # Define p and var_y
@@ -46,7 +58,7 @@ ibss_initialize <- function(data, params) {
     adjustment <- adjust_L(model_init_pruned, params$L, V = rep(params$scaled_prior_variance * var_y, params$L))
     params$L <- adjustment$L
 
-    # Create base model with all required fields  
+    # Create base model with all required fields
     mat_init <- initialize_susie_model(data, params, params$L, params$scaled_prior_variance, var_y,
                                        params$residual_variance, prior_weights)
 
@@ -78,6 +90,22 @@ ibss_initialize <- function(data, params) {
   return(model)
 }
 
+# =============================================================================
+#' @section IBSS FITTING
+#'
+#' Updates all L single effects in the SuSiE model for one IBSS iteration.
+#' Calls single_effect_update for each effect and validates prior variance estimates.
+# =============================================================================
+#'
+#' @param data Data object (individual, ss, or rss_lambda)
+#' @param params Validated params object
+#' @param model Current SuSiE model object
+#'
+#' @return Updated SuSiE model object with new alpha, mu, mu2, V, lbf, KL, and
+#' fitted values
+#'
+#' @keywords internal
+#' @noRd
 ibss_fit <- function(data, params, model) {
 
   estimate_prior_method <- match.arg(params$estimate_prior_method, c("optim", "EM", "simple"))
@@ -103,6 +131,22 @@ ibss_fit <- function(data, params, model) {
   return(model)
 }
 
+# =============================================================================
+#' @section IBSS FINALIZATION
+#'
+#' Finalizes the SuSiE model after convergence or maximum number of iterations
+#' reached. Computes credible sets, PIPs, intercept, fitted values, and z-scores.
+# =============================================================================
+#'
+#' @param data Data object (individual, ss, or rss_lambda)
+#' @param params Validated params object
+#' @param model Final SuSiE model object from iterations
+#' @param ... Additional finalization parameters
+#'
+#' @return Complete SuSiE model object with credible sets, PIPs, and summary statistics
+#'
+#' @keywords internal
+#' @noRd
 ibss_finalize <- function(data, params, model, elbo = NULL, iter = NA_integer_,
                           tracking = NULL) {
 
