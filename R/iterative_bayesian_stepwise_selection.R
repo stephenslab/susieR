@@ -7,30 +7,7 @@ ibss_initialize <- function(data, params) {
   var_y <- get_var_y(data)
   L <- params$L
 
-  # Validate prior tolerance threshold
-  if (!is.numeric(params$prior_tol) || length(params$prior_tol) != 1) {
-    stop("prior_tol must be a numeric scalar.")
-  }
-  if (params$prior_tol < 0) {
-    stop("prior_tol must be non-negative.")
-  }
-
-  # Validate residual_variance_upperbound
-  if (!is.numeric(params$residual_variance_upperbound) || length(params$residual_variance_upperbound) != 1) {
-    stop("residual_variance_upperbound must be a numeric scalar.")
-  }
-  if (params$residual_variance_upperbound <= 0) {
-    stop("residual_variance_upperbound must be positive.")
-  }
-
-  # Check prior variance
-  if (!is.numeric(params$scaled_prior_variance) || any(params$scaled_prior_variance < 0)) {
-    stop("Scaled prior variance should be positive number.")
-  }
-
-  # Note: RSS-specific logic now handled in constructors
-
-  # Check number of single effects
+  # Adjust number of single effects if needed
   if (p < params$L) {
     params$L <- p
   }

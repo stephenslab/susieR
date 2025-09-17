@@ -167,7 +167,7 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
     intercept = intercept,
     standardize = standardize
   )
-  
+
   # Validate and apply parameter overrides
   params_object <- validate_and_override_params(params_object)
 
@@ -387,7 +387,6 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
 
   attr(XtX, "d") <- diag(XtX)
   attr(XtX, "scaled:scale") <- csd
-  attr(XtX, "scaled:center") <- rep(0, p)  # SS data is already centered
 
   if (length(X_colmeans) == 1) {
     X_colmeans <- rep(X_colmeans, p)
@@ -431,17 +430,17 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
     standardize = standardize,
     check_prior = check_prior
   )
-  
+
   # Handle SS-specific validation before general validation
   if (params_object$estimate_residual_method == "Servin_Stephens") {
     stop("Small sample correction not implemented for SS/RSS data.")
   }
-  
+
   if (params_object$unmappable_effects == "ash") {
     stop("Adaptive shrinkage (ash) requires individual-level data and cannot be used with sufficient statistics. ",
          "Please provide X and y instead of XtX, Xty, and yty.")
   }
-  
+
   # Validate and apply parameter overrides
   params_object <- validate_and_override_params(params_object)
 
@@ -920,7 +919,7 @@ rss_lambda_constructor <- function(z, R, n = NULL,
     standardize = FALSE, # Never standardize RSS-lambda
     check_prior = check_prior
   )
-  
+
   # Validate params (but RSS-lambda has special restrictions)
   params_object <- validate_and_override_params(params_object)
 
@@ -959,12 +958,33 @@ rss_lambda_constructor <- function(z, R, n = NULL,
 #' @keywords internal
 #' @noRd
 validate_and_override_params <- function(params) {
+
+  # Validate prior tolerance threshold
+  if (!is.numeric(params$prior_tol) || length(params$prior_tol) != 1) {
+    stop("prior_tol must be a numeric scalar.")
+  }
+  if (params$prior_tol < 0) {
+    stop("prior_tol must be non-negative.")
+  }
+  
+  # Validate residual_variance_upperbound
+  if (!is.numeric(params$residual_variance_upperbound) || length(params$residual_variance_upperbound) != 1) {
+    stop("residual_variance_upperbound must be a numeric scalar.")
+  }
+  if (params$residual_variance_upperbound <= 0) {
+    stop("residual_variance_upperbound must be positive.")
+  }
+  
+  # Validate scaled prior variance
+  if (!is.numeric(params$scaled_prior_variance) || any(params$scaled_prior_variance < 0)) {
+    stop("Scaled prior variance should be positive number.")
+  }
   
   # Validate unmappable_effects
   if (!params$unmappable_effects %in% c("none", "inf", "ash")) {
     stop("unmappable_effects must be one of 'none', 'inf', or 'ash'.")
   }
-  
+
   # Override convergence method for unmappable effects
   if (params$unmappable_effects != "none") {
     if (params$convergence_method != "pip") {
@@ -973,23 +993,23 @@ validate_and_override_params <- function(params) {
       params$convergence_method <- "pip"
     }
   }
-  
+
   # Check for incompatible parameter combinations
   if (!is.null(params$refine) && params$refine && params$unmappable_effects != "none") {
     stop("Refinement is not supported with unmappable effects (inf/ash) as it relies on ELBO, ",
          "which is not well-defined for these models. Please set refine = FALSE.")
   }
-  
+
   # Handle Servin_Stephens parameters for small sample correction
   if (params$estimate_residual_method == "Servin_Stephens") {
     params$use_servin_stephens <- TRUE
-    
+
     # Override convergence method
     if (params$convergence_method != "pip") {
       warning_message("Servin_Stephens method requires PIP convergence. Setting convergence_method='pip'.")
       params$convergence_method <- "pip"
     }
-    
+
     # Override prior variance estimation method
     if (params$estimate_prior_method != "EM") {
       warning_message("Servin_Stephens method works better with EM. Setting estimate_prior_method='EM'.")
@@ -1000,6 +1020,6 @@ validate_and_override_params <- function(params) {
     params$alpha0 <- NULL
     params$beta0 <- NULL
   }
-  
+
   return(params)
 }
