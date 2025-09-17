@@ -13,13 +13,6 @@ susie_workhorse <- function(data, params) {
 
   # Main IBSS iteration loop
   for (iter in seq_len(params$max_iter)) {
-    cat("=== NEW SUSIE2.0: ITER", iter, "===\n")
-    cat("Before ibss_fit: sigma2 =", model$sigma2, "\n")
-    cat("Before ibss_fit: V =", paste(model$V, collapse=", "), "\n")
-    if (exists("XtXr", model)) {
-      cat("Before ibss_fit: XtXr[1:3] =", paste(model$XtXr[1:3], collapse=", "), "\n")
-    }
-    
     # Track iteration progress
     tracking <- track_ibss_fit(data, params, model, tracking, iter, params$track_fit)
 
@@ -29,17 +22,9 @@ susie_workhorse <- function(data, params) {
 
     # Update all L effects
     model <- ibss_fit(data, params, model)
-    
-    cat("After ibss_fit: V =", paste(model$V, collapse=", "), "\n")
-    cat("After ibss_fit: alpha[1,1:3] =", paste(model$alpha[1,1:3], collapse=", "), "\n")
-    cat("After ibss_fit: mu[1,1:3] =", paste(model$mu[1,1:3], collapse=", "), "\n")
-    if (exists("XtXr", model)) {
-      cat("After ibss_fit: XtXr[1:3] =", paste(model$XtXr[1:3], collapse=", "), "\n")
-    }
 
     # Calculate objective for tracking
     elbo[iter + 1] <- get_objective(data, model, verbose = params$verbose)
-    cat("ELBO =", elbo[iter + 1], "\n")
 
     # Check for convergence
     converged <- check_convergence(model, elbo, params$tol, params$convergence_method, iter)
@@ -53,7 +38,6 @@ susie_workhorse <- function(data, params) {
     if (params$estimate_residual_variance) {
       model <- update_model_variance(data, params, model, params$residual_variance_lowerbound,
                                      params$residual_variance_upperbound, params$estimate_residual_method)
-      cat("After variance update: sigma2 =", model$sigma2, "\n")
     }
 
   }
