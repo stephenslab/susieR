@@ -397,6 +397,7 @@ susie_ss <- function(XtX, Xty, yty, n,
                      verbose = FALSE,
                      track_fit = FALSE,
                      check_prior = FALSE,
+                     refine = FALSE,
                      ...) {
 
   # Validate method arguments
@@ -414,7 +415,8 @@ susie_ss <- function(XtX, Xty, yty, n,
     residual_variance_lowerbound, residual_variance_upperbound,
     estimate_prior_variance, estimate_prior_method, unmappable_effects,
     check_null_threshold, prior_tol, max_iter, tol, convergence_method,
-    coverage, min_abs_corr, n_purity, verbose, track_fit, check_prior
+    coverage, min_abs_corr, n_purity, verbose, track_fit, check_prior,
+    refine
   )
 
   # Run main SuSiE algorithm
@@ -502,7 +504,8 @@ susie_rss <- function(z = NULL, R, n = NULL,
                       check_R = TRUE,
                       check_z = FALSE,
                       n_purity = 100,
-                      r_tol = 1e-8) {
+                      r_tol = 1e-8,
+                      refine = FALSE) {
 
   # Validate method arguments
   unmappable_effects       <- match.arg(unmappable_effects)
@@ -521,7 +524,8 @@ susie_rss <- function(z = NULL, R, n = NULL,
     residual_variance_lowerbound, residual_variance_upperbound,
     model_init = s_init, coverage, min_abs_corr,
     max_iter, tol, convergence_method, verbose, track_fit, check_input,
-    check_prior, check_R, check_z, n_purity, r_tol, compute_univariate_zscore
+    check_prior, check_R, check_z, n_purity, r_tol, compute_univariate_zscore,
+    refine
   )
 
   # Run main SuSiE algorithm

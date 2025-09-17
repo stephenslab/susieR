@@ -219,7 +219,8 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
                                          n_purity = 100,
                                          verbose = FALSE,
                                          track_fit = FALSE,
-                                         check_prior = FALSE) {
+                                         check_prior = FALSE,
+                                         refine = FALSE) {
 
   # Validate required inputs
   if (missing(n)) {
@@ -483,7 +484,8 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
                                       check_z = FALSE,
                                       n_purity = 100,
                                       r_tol = 1e-8,
-                                      compute_univariate_zscore = FALSE) {
+                                      compute_univariate_zscore = FALSE,
+                                      refine = FALSE) {
 
   # Check if this should use RSS-lambda path
   if (lambda != 0) {
@@ -526,7 +528,7 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
       max_iter = max_iter, tol = tol, convergence_method = convergence_method,
       verbose = verbose, track_fit = track_fit, check_input = check_input,
       check_prior = check_prior, check_R = check_R, check_z = check_z,
-      n_purity = n_purity, r_tol = r_tol
+      n_purity = n_purity, r_tol = r_tol, refine = refine
     ))
   }
 
@@ -658,7 +660,8 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
     check_null_threshold = check_null_threshold, prior_tol = prior_tol,
     max_iter = max_iter, tol = tol, convergence_method = convergence_method,
     coverage = coverage, min_abs_corr = min_abs_corr, n_purity = n_purity,
-    verbose = verbose, track_fit = track_fit, check_prior = check_prior
+    verbose = verbose, track_fit = track_fit, check_prior = check_prior,
+    refine = refine
   ))
 }
 
@@ -712,7 +715,8 @@ rss_lambda_constructor <- function(z, R, n = NULL,
                                    check_R = TRUE,
                                    check_z = FALSE,
                                    n_purity = 100,
-                                   r_tol = 1e-8) {
+                                   r_tol = 1e-8,
+                                   refine = FALSE) {
 
   # Validate that MoM is not requested for RSS with lambda != 0
   if (estimate_residual_method == "MoM") {
