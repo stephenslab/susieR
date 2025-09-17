@@ -138,7 +138,8 @@ compute_colstats <- function(X, center = TRUE, scale = TRUE) {
 #' across different SuSiE data types.
 #'
 #' Functions: check_semi_pd, check_projection, validate_init,
-#' convert_individual_to_ss, extract_prior_weights, modify_prior_weights
+#' convert_individual_to_ss, extract_prior_weights, modify_prior_weights,
+#' validate_and_override_params
 # =============================================================================
 
 # Check whether A is positive semidefinite
@@ -368,6 +369,75 @@ modify_prior_weights <- function(data, new_prior_weights) {
   data_modified$prior_weights <- data_modified$prior_weights / sum(data_modified$prior_weights)
 
   return(data_modified)
+}
+
+# Validate and Override Parameters
+#' @keywords internal
+validate_and_override_params <- function(params) {
+
+  # Validate prior tolerance threshold
+  if (!is.numeric(params$prior_tol) || length(params$prior_tol) != 1) {
+    stop("prior_tol must be a numeric scalar.")
+  }
+  if (params$prior_tol < 0) {
+    stop("prior_tol must be non-negative.")
+  }
+
+  # Validate residual_variance_upperbound
+  if (!is.numeric(params$residual_variance_upperbound) || length(params$residual_variance_upperbound) != 1) {
+    stop("residual_variance_upperbound must be a numeric scalar.")
+  }
+  if (params$residual_variance_upperbound <= 0) {
+    stop("residual_variance_upperbound must be positive.")
+  }
+
+  # Validate scaled prior variance
+  if (!is.numeric(params$scaled_prior_variance) || any(params$scaled_prior_variance < 0)) {
+    stop("Scaled prior variance should be positive number.")
+  }
+
+  # Validate unmappable_effects
+  if (!params$unmappable_effects %in% c("none", "inf", "ash")) {
+    stop("unmappable_effects must be one of 'none', 'inf', or 'ash'.")
+  }
+
+  # Override convergence method for unmappable effects
+  if (params$unmappable_effects != "none") {
+    if (params$convergence_method != "pip") {
+      warning_message("Unmappable effects models (inf/ash) do not have a well defined ELBO and require PIP convergence. ",
+              "Setting convergence_method='pip'.")
+      params$convergence_method <- "pip"
+    }
+  }
+
+  # Check for incompatible parameter combinations
+  if (!is.null(params$refine) && params$refine && params$unmappable_effects != "none") {
+    stop("Refinement is not supported with unmappable effects (inf/ash) as it relies on ELBO, ",
+         "which is not well-defined for these models. Please set refine = FALSE.")
+  }
+
+  # Handle Servin_Stephens parameters for small sample correction
+  if (params$estimate_residual_method == "Servin_Stephens") {
+    params$use_servin_stephens <- TRUE
+
+    # Override convergence method
+    if (params$convergence_method != "pip") {
+      warning_message("Servin_Stephens method requires PIP convergence. Setting convergence_method='pip'.")
+      params$convergence_method <- "pip"
+    }
+
+    # Override prior variance estimation method
+    if (params$estimate_prior_method != "EM") {
+      warning_message("Servin_Stephens method works better with EM. Setting estimate_prior_method='EM'.")
+      params$estimate_prior_method <- "EM"
+    }
+  } else {
+    params$use_servin_stephens <- FALSE
+    params$alpha0 <- NULL
+    params$beta0 <- NULL
+  }
+
+  return(params)
 }
 
 # =============================================================================

@@ -1,28 +1,14 @@
-#' Individual-level Data Constructor
+# =============================================================================
+#' @section INDIVIDUAL-LEVEL DATA CONSTRUCTOR
 #'
-#' Constructs a data object for SuSiE from individual-level data (X, y).
-#' This internal function prepares and validates the input data for use
-#' in the SuSiE algorithm.
+#' Constructs data and params objects for SuSiE from individual-level data (X, y).
+#' Handles data preprocessing, parameter validation, and object creation.
+# =============================================================================
 #'
-#' @param X An n by p matrix of covariates (or sparse matrix, or trend filtering matrix)
-#' @param y An n-vector of response values
-#' @param intercept If TRUE, center X and y (default TRUE)
-#' @param standardize If TRUE, scale X to have unit variance (default TRUE)
-#' @param na.rm If TRUE, remove samples with missing values in y (default FALSE)
-#' @param prior_weights A p-vector of prior inclusion probabilities (default NULL for uniform)
-#' @param null_weight Weight for the null component (default 0, no null)
-#' @param unmappable_effects Method for handling unmappable effects: "none", "inf", or "ash"
-#'
-#' @return A list with class "individual" containing:
-#' \item{X}{The (possibly centered/scaled) covariate matrix}
-#' \item{y}{The (possibly centered) response vector}
-#' \item{mean_y}{Original mean of y}
-#' \item{n}{Number of samples}
-#' \item{p}{Number of variables}
-#' \item{prior_weights}{Normalized prior weights}
-#' \item{null_weight}{Weight for null component}
-#' \item{unmappable_effects}{Method for unmappable effects}
-#' Plus additional fields added by configure_data()
+#' @return A list containing:
+#' \item{data}{A processed list containing X and y matrices with appropriate scaling
+#' attributes, sample dimensions,  and prior weights}
+#' \item{params}{Validated params object with all input algorithm parameters}
 #'
 #' @keywords internal
 #' @noRd
@@ -136,7 +122,7 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
   attr(X, "scaled:scale") <- out$csd
   attr(X, "d") <- out$d
 
-  # Create params object with ALL algorithm parameters
+  # Create params object with all input parameters
   params_object <- list(
     L = L,
     scaled_prior_variance = scaled_prior_variance,
@@ -190,37 +176,17 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
   return(list(data = data_object, params = params_object))
 }
 
-#' Sufficient Statistics Data Constructor
+# =============================================================================
+#' @section SUFFICIENT STATISTICS DATA CONSTRUCTOR
 #'
-#' Constructs a data object for SuSiE from sufficient statistics.
-#' This internal function prepares and validates sufficient statistics
-#' for use in the SuSiE algorithm without requiring individual-level data.
+#' Constructs data and params objects for SuSiE from sufficient statistics (XtX, Xty, yty).
+#' Handles data preprocessing, parameter validation, and object creation.
+# =============================================================================
 #'
-#' @param XtX A p by p matrix of X'X
-#' @param Xty A p-vector of X'y
-#' @param yty A scalar of y'y
-#' @param n Sample size
-#' @param X_colmeans Column means of X (default NA)
-#' @param y_mean Mean of y (default NA)
-#' @param maf Minor allele frequencies (for genetic data, default NULL)
-#' @param maf_thresh MAF threshold for filtering (default 0)
-#' @param standardize If TRUE, standardize variables (default TRUE)
-#' @param r_tol Tolerance for positive semi-definite check (default 1e-8)
-#' @param check_input If TRUE, perform additional input validation (default FALSE)
-#' @param prior_weights A p-vector of prior inclusion probabilities (default NULL for uniform)
-#' @param null_weight Weight for the null component (default 0, no null)
-#' @param unmappable_effects Method for handling unmappable effects: "none", "inf", or "ash"
-#'
-#' @return A list with class "ss" containing:
-#' \item{XtX}{The (possibly standardized) X'X matrix}
-#' \item{Xty}{The (possibly standardized) X'y vector}
-#' \item{yty}{The y'y value}
-#' \item{n}{Sample size}
-#' \item{p}{Number of variables}
-#' \item{prior_weights}{Normalized prior weights}
-#' \item{null_weight}{Weight for null component}
-#' \item{unmappable_effects}{Method for unmappable effects}
-#' Plus additional fields added by configure_data()
+#' @return A list containing:
+#' \item{data}{A processed list containing XtX, Xty, yty matrices with appropriate scaling
+#' attributes, sample dimensions, and prior weights}
+#' \item{params}{Validated params object with all input algorithm parameters}
 #'
 #' @keywords internal
 #' @noRd
@@ -398,7 +364,7 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
     )
   }
 
-  # Create params object with ALL algorithm parameters
+  # Create params object with all input parameters
   params_object <- list(
     L = L,
     scaled_prior_variance = scaled_prior_variance,
@@ -421,11 +387,11 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
     verbose = verbose,
     track_fit = track_fit,
     residual_variance_lowerbound = residual_variance_lowerbound,
-    refine = FALSE,  # SS doesn't get refine from interface
+    refine = refine,
     n_purity = n_purity,
     alpha0 = 0,  # SS doesn't support Servin_Stephens
     beta0 = 0,   # SS doesn't support Servin_Stephens
-    use_servin_stephens = FALSE,  # Will be validated
+    use_servin_stephens = FALSE,  # SS doesn't support Servin_Stephens
     intercept = FALSE,  # SS always uses intercept = FALSE
     standardize = standardize,
     check_prior = check_prior
@@ -466,27 +432,17 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
   return(list(data = data_object, params = params_object))
 }
 
-#' Summary Statistics (RSS) Data Constructor
+# =============================================================================
+#' @section SUMMARY STATISTICS (RSS) DATA CONSTRUCTOR
 #'
-#' Constructs a data object for SuSiE from summary statistics (RSS format).
-#' This internal function converts z-scores and correlation matrix to sufficient
-#' statistics format for use in the SuSiE algorithm.
+#' Constructs data and params objects for SuSiE from summary statistics (z-scores, R matrix).
+#' Routes to appropriate constructor based on lambda parameter (RSS vs RSS-lambda).
+# =============================================================================
 #'
-#' @param z A p-vector of z-scores
-#' @param R A p by p correlation matrix
-#' @param n Sample size (optional but highly recommended)
-#' @param bhat Alternative summary data giving estimated effects (length p)
-#' @param shat Alternative summary data giving standard errors (length p)
-#' @param var_y Sample variance of y, defined as y'y/(n-1)
-#' @param z_ld_weight Deprecated parameter for backwards compatibility
-#' @param prior_weights A p-vector of prior inclusion probabilities (default NULL for uniform)
-#' @param null_weight Weight for the null component (default 0, no null)
-#' @param unmappable_effects Method for handling unmappable effects: "none", "inf", or "ash"
-#' @param standardize If TRUE, scale to unit variance (default TRUE)
-#' @param check_input If TRUE, perform additional input validation (default FALSE)
-#' @param r_tol Tolerance for positive semi-definite check (default 1e-8)
-#'
-#' @return A list with class "ss" containing sufficient statistics
+#' @return A list containing:
+#' \item{data}{A processed list containing converted matrices with appropriate scaling
+#' attributes, sample dimensions, and prior weights}
+#' \item{params}{Validated params object with all input algorithm parameters}
 #'
 #' @keywords internal
 #' @noRd
@@ -706,29 +662,17 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
   ))
 }
 
-#' Constructor for RSS Lambda Data
+# =============================================================================
+#' @section RSS LAMBDA DATA CONSTRUCTOR
 #'
-#' Constructs a data object for RSS data with lambda regularization.
+#' Constructs data and params objects for SuSiE from RSS data with correlated errors (lambda > 0).
+#' Handles eigen decomposition, MAF filtering, and specialized RSS-lambda preprocessing.
+# =============================================================================
 #'
-#' @param z A p-vector of z-scores
-#' @param R A p by p correlation matrix
-#' @param maf A p-vector of minor allele frequencies
-#' @param maf_thresh MAF threshold for filtering (default 0)
-#' @param lambda Regularization parameter for correlated errors (default 0)
-#' @param prior_weights A p-vector of prior inclusion probabilities (default NULL for uniform)
-#' @param null_weight Weight for the null component (default 0, no null)
-#' @param check_R If TRUE, check that R is positive semi-definite (default TRUE)
-#' @param check_z If TRUE, check that z lies in column space of R (default FALSE)
-#' @param r_tol Tolerance for eigenvalue checks (default 1e-8)
-#' @param prior_variance Prior variance on effect sizes (default 50)
-#' @param intercept_value Intercept value for the model (default 0)
-#'
-#' @return A list with class "rss_lambda" containing:
-#' \item{z}{The z-scores}
-#' \item{R}{The correlation matrix}
-#' \item{lambda}{The regularization parameter}
-#' \item{eigen_R}{Eigen decomposition of R}
-#' Plus additional fields for the model
+#' @return A list containing:
+#' \item{data}{A processed list containing z-scores, R matrix, eigen decomposition,
+#' and RSS-lambda specific fields}
+#' \item{params}{Validated params object with all input algorithm parameters}
 #'
 #' @keywords internal
 #' @noRd
@@ -903,14 +847,14 @@ rss_lambda_constructor <- function(z, R, n = NULL,
     model_init = model_init,
     coverage = coverage,
     min_abs_corr = min_abs_corr,
-    compute_univariate_zscore = FALSE,  # RSS data already has z-scores
+    compute_univariate_zscore = FALSE,
     max_iter = max_iter,
     tol = tol,
     convergence_method = convergence_method,
     verbose = verbose,
     track_fit = track_fit,
     residual_variance_lowerbound = residual_variance_lowerbound,
-    refine = FALSE,  # RSS doesn't support refine
+    refine = refine,
     n_purity = n_purity,
     alpha0 = 0,  # RSS doesn't support Servin_Stephens
     beta0 = 0,   # RSS doesn't support Servin_Stephens
@@ -920,7 +864,7 @@ rss_lambda_constructor <- function(z, R, n = NULL,
     check_prior = check_prior
   )
 
-  # Validate params (but RSS-lambda has special restrictions)
+  # Validate params
   params_object <- validate_and_override_params(params_object)
 
   # Create data object with RSS-lambda specific fields
@@ -945,81 +889,3 @@ rss_lambda_constructor <- function(z, R, n = NULL,
   return(list(data = data_object, params = params_object))
 }
 
-#' Validate and Override Parameters
-#'
-#' Validates parameter combinations and applies overrides for conflicts.
-#' This centralizes all parameter validation logic that was previously
-#' scattered across data constructors.
-#'
-#' @param params A list of parameters to validate and potentially override
-#'
-#' @return A validated and potentially modified params list
-#'
-#' @keywords internal
-#' @noRd
-validate_and_override_params <- function(params) {
-
-  # Validate prior tolerance threshold
-  if (!is.numeric(params$prior_tol) || length(params$prior_tol) != 1) {
-    stop("prior_tol must be a numeric scalar.")
-  }
-  if (params$prior_tol < 0) {
-    stop("prior_tol must be non-negative.")
-  }
-  
-  # Validate residual_variance_upperbound
-  if (!is.numeric(params$residual_variance_upperbound) || length(params$residual_variance_upperbound) != 1) {
-    stop("residual_variance_upperbound must be a numeric scalar.")
-  }
-  if (params$residual_variance_upperbound <= 0) {
-    stop("residual_variance_upperbound must be positive.")
-  }
-  
-  # Validate scaled prior variance
-  if (!is.numeric(params$scaled_prior_variance) || any(params$scaled_prior_variance < 0)) {
-    stop("Scaled prior variance should be positive number.")
-  }
-  
-  # Validate unmappable_effects
-  if (!params$unmappable_effects %in% c("none", "inf", "ash")) {
-    stop("unmappable_effects must be one of 'none', 'inf', or 'ash'.")
-  }
-
-  # Override convergence method for unmappable effects
-  if (params$unmappable_effects != "none") {
-    if (params$convergence_method != "pip") {
-      warning_message("Unmappable effects models (inf/ash) do not have a well defined ELBO and require PIP convergence. ",
-              "Setting convergence_method='pip'.")
-      params$convergence_method <- "pip"
-    }
-  }
-
-  # Check for incompatible parameter combinations
-  if (!is.null(params$refine) && params$refine && params$unmappable_effects != "none") {
-    stop("Refinement is not supported with unmappable effects (inf/ash) as it relies on ELBO, ",
-         "which is not well-defined for these models. Please set refine = FALSE.")
-  }
-
-  # Handle Servin_Stephens parameters for small sample correction
-  if (params$estimate_residual_method == "Servin_Stephens") {
-    params$use_servin_stephens <- TRUE
-
-    # Override convergence method
-    if (params$convergence_method != "pip") {
-      warning_message("Servin_Stephens method requires PIP convergence. Setting convergence_method='pip'.")
-      params$convergence_method <- "pip"
-    }
-
-    # Override prior variance estimation method
-    if (params$estimate_prior_method != "EM") {
-      warning_message("Servin_Stephens method works better with EM. Setting estimate_prior_method='EM'.")
-      params$estimate_prior_method <- "EM"
-    }
-  } else {
-    params$use_servin_stephens <- FALSE
-    params$alpha0 <- NULL
-    params$beta0 <- NULL
-  }
-
-  return(params)
-}
