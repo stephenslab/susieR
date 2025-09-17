@@ -1,22 +1,18 @@
-#' Single Effect Regression
+# =============================================================================
+#' @section SINGLE EFFECT REGRESSION
 #'
-#' Performs single effect regression (SER) for a single effect in the SuSiE model.
-#' Uses S3 method dispatch based on data class for computation.
+#' Performs single effect regression for the lth effect in the SuSiE model.
+#' Computes posterior moments, log Bayes factors, and optimizes prior variance.
+# =============================================================================
 #'
-#' @param data Data object with class determining computation method (individual, ss, or rss_lambda)
-#' @param model Current SuSiE model containing alpha, mu, mu2, V, sigma2, and other parameters
-#' @param l Integer index of the effect being updated (1 to L)
-#' @param residual_variance The residual variance (sigma^2)
-#' @param optimize_V Method for optimizing prior variance: "none", "optim", "EM", or "simple"
-#' @param check_null_threshold Threshold for setting V to zero for numerical stability
+#' @param data Data object (individual, ss, or rss_lambda)
+#' @param params Validated params object
+#' @param model Current SuSiE model object
+#' @param l Effect index being updated
+#' @param optimize_V Prior variance optimization method
+#' @param ... Additional parameters
 #'
-#' @return A list containing:
-#' \item{alpha}{Posterior inclusion probabilities (p-vector)}
-#' \item{mu}{Posterior means (p-vector)}
-#' \item{mu2}{Posterior second moments (p-vector)}
-#' \item{lbf}{Log Bayes factors for each variable (p-vector)}
-#' \item{lbf_model}{Model log Bayes factor (scalar)}
-#' \item{V}{Optimized prior variance (scalar)}
+#' @return List with alpha, mu, mu2, lbf, lbf_model, and V for the lth effect
 #'
 #' @keywords internal
 #' @noRd
@@ -71,7 +67,24 @@ single_effect_regression <-
     ))
   }
 
-# Prior Variance Optimization for the lth Effect
+# =============================================================================
+#' @section PRIOR VARIANCE OPTIMIZATION
+#'
+#' Optimizes prior variance for single effects using different methods.
+#' Handles optim, EM, simple methods and null threshold checking.
+# =============================================================================
+#'
+#' @param optimize_V Optimization method ("optim", "EM", "simple")
+#' @param data Data object
+#' @param params Validated params object
+#' @param model Current SuSiE model object
+#' @param ser_stats SER statistics and optimization parameters from compute_ser_statistics
+#' @param ... Additional method-specific parameters
+#'
+#' @return Optimized prior variance (scalar)
+#'
+#' @keywords internal
+#' @noRd
 optimize_prior_variance <- function(optimize_V, data, params, model, ser_stats,
                                     alpha = NULL, post_mean2 = NULL,
                                     V_init = NULL, check_null_threshold = 0,
@@ -80,7 +93,7 @@ optimize_prior_variance <- function(optimize_V, data, params, model, ser_stats,
   if (optimize_V != "simple") {
     if (optimize_V == "optim") {
       V_param_opt <- optim(
-        par = ser_stats$optim_init, 
+        par = ser_stats$optim_init,
         fn = function(V_param) neg_loglik(data, params, model, V_param, ser_stats),
         method = "Brent",
         lower = ser_stats$optim_bounds[1],
@@ -133,13 +146,30 @@ optimize_prior_variance <- function(optimize_V, data, params, model, ser_stats,
   return(V)
 }
 
-
-# Single Effect Update for the lth Effect
+# =============================================================================
+#' @section SINGLE EFFECT UPDATE
+#'
+#' High-level function that updates one effect in the SuSiE model.
+#' Coordinates residual computation, SER, KL divergence, and fitted value updates.
+# =============================================================================
+#'
+#' @param data Data object (individual, ss, or rss_lambda)
+#' @param params Validated params object
+#' @param model Current SuSiE model object
+#' @param l Effect index being updated
+#' @param optimize_V Prior variance optimization method
+#' @param check_null_threshold Threshold for setting V to zero
+#'
+#' @return Updated SuSiE model object with new parameters for effect l
+#'
+#' @keywords internal
+#' @noRd
 single_effect_update <- function(data, params, model, l, optimize_V, check_null_threshold) {
 
   # Compute Residuals
   model <- compute_residuals(data, params, model, l)
 
+  # Run Single Effect Regression
   res <- single_effect_regression(data, params, model, l,
                                   residual_variance = model$residual_variance,
                                   optimize_V = optimize_V,
