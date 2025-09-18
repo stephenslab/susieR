@@ -35,11 +35,9 @@ susie_workhorse <- function(data, params) {
     # Update all L effects
     model <- ibss_fit(data, params, model)
 
-    # Calculate objective for tracking
+    # Calculate objective and check convergence
     elbo[iter + 1] <- get_objective(data, params, model)
-
-    # Check for convergence
-    converged <- check_convergence(params, model, elbo, iter)
+    converged      <- check_convergence(params, model, elbo, iter)
 
     if (converged) {
       model$converged <- TRUE
