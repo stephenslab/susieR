@@ -83,8 +83,9 @@ Each data object receives an S3 class to automatically route to the appropriate 
 
 3. **`single_effect_regression.R`**: Single Effect Regression (SER) implementation
    - `single_effect_regression()`: Fits one sparse effect at a time
-   - Computes posterior means, variances, and inclusion probabilities
-   - Supports prior variance optimization via `optimize_V` parameter
+   - `optimize_prior_variance()`: Optimizes the prior variance for the lth effect
+   - `single_effect_update()`: Orchestrates the complete single-effect
+   update pipeline
 
 ## Backend Method Implementations
 
