@@ -14,7 +14,7 @@ configure_data.ss <- function(data, params) {
   if (params$unmappable_effects == "none") {
     return(configure_data.default(data, params))
   } else {
-    return(add_eigen_decomposition(data))
+    return(add_eigen_decomposition(data, params))
   }
 }
 

@@ -298,7 +298,7 @@ validate_init <- function(model_init, L, null_weight) {
 
 # Convert individual data to ss with unmappable effects components.
 #' @keywords internal
-convert_individual_to_ss <- function(data) {
+convert_individual_to_ss <- function(data, params) {
   # Compute sufficient statistics
   XtX <- compute_XtX(data$X)
   Xty <- compute_Xty(data$X, data$y)
@@ -318,10 +318,7 @@ convert_individual_to_ss <- function(data) {
       X_colmeans = X_colmeans,
       y_mean = data$mean_y,
       prior_weights = data$prior_weights,
-      null_weight = data$null_weight,
-      unmappable_effects = data$unmappable_effects,
-      convergence_method = data$convergence_method,
-      use_servin_stephens = FALSE
+      null_weight = data$null_weight
     ),
     class = "ss"
   )
@@ -331,7 +328,7 @@ convert_individual_to_ss <- function(data) {
   attr(ss_data$XtX, "scaled:scale") <- attr(data$X, "scaled:scale")
 
   # Add eigen decomposition for unmappable effects methods
-  ss_data <- add_eigen_decomposition(ss_data, data)
+  ss_data <- add_eigen_decomposition(ss_data, params, data)
 
   return(ss_data)
 }
@@ -619,11 +616,11 @@ compute_eigen_decomposition <- function(XtX, n) {
 
 # Add eigen decomposition to ss data objects for unmappable methods
 #' @keywords internal
-add_eigen_decomposition <- function(data, individual_data = NULL) {
+add_eigen_decomposition <- function(data, params, individual_data = NULL) {
   # Standardize y to unit variance for all unmappable effects methods
   y_scale_factor <- 1
 
-  if (data$unmappable_effects != "none") {
+  if (params$unmappable_effects != "none") {
     var_y <- data$yty / (data$n - 1)
     if (abs(var_y - 1) > 1e-10) {
       sd_y           <- sqrt(var_y)
@@ -642,7 +639,7 @@ add_eigen_decomposition <- function(data, individual_data = NULL) {
   data$VtXty         <- t(eigen_decomp$V) %*% data$Xty
 
   # SuSiE.ash requires the X matrix and standardized y vector
-  if (data$unmappable_effects == "ash") {
+  if (params$unmappable_effects == "ash") {
     if (is.null(individual_data)) {
       stop("Adaptive shrinkage (ash) requires individual-level data")
     }
