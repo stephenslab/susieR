@@ -47,10 +47,10 @@ initialize_susie_model.default <- function(data, params, ...) {
 
 # Initialize fitted values
 #' @keywords internal
-initialize_fitted <- function(data, params, alpha, mu) {
+initialize_fitted <- function(data, mat_init) {
   UseMethod("initialize_fitted")
 }
-initialize_fitted.default <- function(data, params, alpha, mu, ...) {
+initialize_fitted.default <- function(data, mat_init, ...) {
   stop("initialize_fitted: no method for class '", class(data)[1], "'")
 }
 
@@ -102,10 +102,10 @@ compute_residuals.default <- function(data, params, model, l, ...) {
 
 # Compute SER statistics (betahat, shat2)
 #' @keywords internal
-compute_ser_statistics <- function(data, params, model, residual_variance, ...) {
+compute_ser_statistics <- function(data, params, model, l, ...) {
   UseMethod("compute_ser_statistics")
 }
-compute_ser_statistics.default <- function(data, params, model, residual_variance, ...) {
+compute_ser_statistics.default <- function(data, params, model, l, ...) {
   stop("compute_ser_statistics: no method for class '", class(data)[1], "'")
 }
 

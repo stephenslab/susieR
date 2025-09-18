@@ -94,16 +94,20 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
   n <- nrow(X)
   p <- ncol(X)
 
-  # Validate and normalize prior_weights
-  if (!is.null(prior_weights)) {
-    if (length(prior_weights) != p) {
-      stop("Prior weights must have length p.")
-    }
-    if (all(prior_weights == 0)) {
-      stop("Prior weight should be greater than 0 for at least one variable.")
-    }
-    prior_weights <- prior_weights / sum(prior_weights)
+  # Set uniform prior weights if not provided
+  if (is.null(prior_weights)) {
+    prior_weights <- rep(1 / p, p)
   }
+
+  # Validate and normalize prior_weights
+  if (length(prior_weights) != p) {
+    stop("Prior weights must have length p.")
+  }
+  if (all(prior_weights == 0)) {
+    stop("Prior weight should be greater than 0 for at least one variable.")
+  }
+  prior_weights <- prior_weights / sum(prior_weights)
+
   if (p > 1000 & !requireNamespace("Rfast", quietly = TRUE)) {
     warning_message("For an X with many columns, please consider installing ",
                     "the Rfast package for more efficient credible set (CS) ",
@@ -330,16 +334,19 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
   # Define p
   p <- ncol(XtX)
 
-  # Validate and normalize prior_weights
-  if (!is.null(prior_weights)) {
-    if (length(prior_weights) != p) {
-      stop("Prior weights must have length p.")
-    }
-    if (all(prior_weights == 0)) {
-      stop("Prior weight should be greater than 0 for at least one variable.")
-    }
-    prior_weights <- prior_weights / sum(prior_weights)
+  # Set uniform prior weights if not provided
+  if (is.null(prior_weights)) {
+    prior_weights <- rep(1 / p, p)
   }
+  
+  # Validate and normalize prior_weights
+  if (length(prior_weights) != p) {
+    stop("Prior weights must have length p.")
+  }
+  if (all(prior_weights == 0)) {
+    stop("Prior weight should be greater than 0 for at least one variable.")
+  }
+  prior_weights <- prior_weights / sum(prior_weights)
 
   # Standardize if requested
   if (standardize) {
@@ -791,6 +798,12 @@ rss_lambda_constructor <- function(z, R, n = NULL,
 
   # Eigen decomposition for R
   p <- ncol(R)
+  
+  # Set uniform prior weights if not provided
+  if (is.null(prior_weights)) {
+    prior_weights <- rep(1 / p, p)
+  }
+  
   eigen_R <- eigen(R, symmetric = TRUE)
 
   if (check_R && any(eigen_R$values < -r_tol)) {

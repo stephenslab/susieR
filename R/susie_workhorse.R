@@ -1,8 +1,5 @@
 susie_workhorse <- function(data, params) {
 
-  # Validate method argument
-  estimate_prior_method <- match.arg(params$estimate_prior_method, c("optim", "EM", "simple"))
-
   # Initialize model object
   model <- ibss_initialize(data, params)
 

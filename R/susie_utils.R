@@ -175,19 +175,20 @@ check_projection <- function(A, b) {
 
 # Validate Model Initialization Object
 #' @keywords internal
-validate_init <- function(model_init, L, null_weight) {
-  if (!inherits(model_init, "susie")) {
+validate_init <- function(data, params) {
+  if (!inherits(params$model_init, "susie")) {
     stop("model_init must be a 'susie' object")
   }
 
   # Assign values from initialized model
-  alpha   <- model_init$alpha
-  mu      <- model_init$mu
-  mu2     <- model_init$mu2
-  V       <- model_init$V
-  sigma2  <- model_init$sigma2
-  pi_w    <- model_init$pi
-  null_id <- model_init$null_index
+  L       <- params$L
+  alpha   <- params$model_init$alpha
+  mu      <- params$model_init$mu
+  mu2     <- params$model_init$mu2
+  V       <- params$model_init$V
+  sigma2  <- params$model_init$sigma2
+  pi_w    <- params$model_init$pi
+  null_id <- params$model_init$null_index
 
   # Verify no NA/Inf values in alpha
   if (any(!is.finite(alpha))) {
@@ -234,7 +235,7 @@ validate_init <- function(model_init, L, null_weight) {
   }
 
   # Verify alpha values are between [0,1]
-  if (max(model_init$alpha) > 1 || min(model_init$alpha) < 0) {
+  if (max(alpha) > 1 || min(alpha) < 0) {
     stop(
       "model_init$alpha has invalid values outside range [0,1]; please ",
       "check your input"
@@ -242,7 +243,7 @@ validate_init <- function(model_init, L, null_weight) {
   }
 
   # Verify alpha dimensions for number of requested effects
-  if (nrow(model_init$alpha) > L) {
+  if (nrow(alpha) > L) {
     stop("model_init has more effects than requested L")
   }
 
@@ -413,6 +414,11 @@ validate_and_override_params <- function(params) {
          "which is not well-defined for these models. Please set refine = FALSE.")
   }
 
+  # Override prior estimation method when estimation is disabled
+  if (!params$estimate_prior_variance) {
+    params$estimate_prior_method <- "none"
+  }
+
   # Handle Servin_Stephens parameters for small sample correction
   if (params$estimate_residual_method == "Servin_Stephens") {
     params$use_servin_stephens <- TRUE
@@ -445,23 +451,23 @@ validate_and_override_params <- function(params) {
 #' for iterative fitting.
 #'
 #' Functions: initialize_matrices, initialize_null_index, assign_names,
-#' adjust_L, susie_prune_single_effects, add_null_effect
+#' adjust_L, prune_single_effects, add_null_effect
 # =============================================================================
 
 # Initialize core susie model object with default parameter matrices
 #' @keywords internal
-initialize_matrices <- function(data, L, scaled_prior_variance, var_y,
-                                residual_variance, prior_weights) {
+initialize_matrices <- function(data, params, var_y) {
+  L <- params$L
   mat_init <- list(
     alpha             = matrix(1 / data$p, L, data$p),
     mu                = matrix(0, L, data$p),
     mu2               = matrix(0, L, data$p),
-    V                 = rep(scaled_prior_variance * var_y, L),
+    V                 = rep(params$scaled_prior_variance * var_y, L),
     KL                = rep(as.numeric(NA), L),
     lbf               = rep(as.numeric(NA), L),
     lbf_variable      = matrix(as.numeric(NA), L, data$p),
-    sigma2            = residual_variance,
-    pi                = prior_weights,
+    sigma2            = params$residual_variance,
+    pi                = data$prior_weights,
     predictor_weights = rep(as.numeric(NA), data$p)
   )
 
@@ -470,11 +476,11 @@ initialize_matrices <- function(data, L, scaled_prior_variance, var_y,
 
 # Initialize Null Index
 #' @keywords internal
-initialize_null_index <- function(null_weight, p) {
-  if (is.null(null_weight) || null_weight == 0) {
+initialize_null_index <- function(data) {
+  if (is.null(data$null_weight) || data$null_weight == 0) {
     null_idx <- 0
   } else {
-    null_idx <- p
+    null_idx <- data$p
   }
   return(null_idx)
 }
@@ -499,8 +505,10 @@ assign_names <- function(model, variable_names, null_weight, p) {
 
 # Adjust the number of effects
 #' @keywords internal
-adjust_L <- function(model_init, L, V) {
-  num_effects <- nrow(model_init$alpha)
+adjust_L <- function(params, model_init_pruned, var_y) {
+  num_effects <- nrow(model_init_pruned$alpha)
+  L <- params$L
+
   if (num_effects > L) {
     warning_message(paste0(
       "Requested L = ", L,
@@ -511,29 +519,30 @@ adjust_L <- function(model_init, L, V) {
     L <- num_effects
   }
 
-  model_init <- susie_prune_single_effects(model_init, L = L, V = V)
+  V <- rep(params$scaled_prior_variance * var_y, L)
+  model_init <- prune_single_effects(model_init_pruned, L = L, V = V)
 
   return(list(model_init = model_init, L = L))
 }
 
 # Prune single effects to given number L in susie model object.
 #' @keywords internal
-susie_prune_single_effects <- function(s, L = 0, V = NULL) {
-  num_effects <- nrow(s$alpha)
+prune_single_effects <- function(model_init, L = 0, V = NULL) {
+  num_effects <- nrow(model_init$alpha)
   if (L == 0) {
-    # Filtering will be based on non-zero elements in s$V.
-    if (!is.null(s$V)) {
-      L <- length(which(s$V > 0))
+    # Filtering will be based on non-zero elements in model_init$V.
+    if (!is.null(model_init$V)) {
+      L <- length(which(model_init$V > 0))
     } else {
       L <- num_effects
     }
   }
   if (L == num_effects) {
-    s$sets <- NULL
-    return(s)
+    model_init$sets <- NULL
+    return(model_init)
   }
-  if (!is.null(s$sets$cs_index)) {
-    effects_rank <- c(s$sets$cs_index, setdiff(1:num_effects, s$sets$cs_index))
+  if (!is.null(model_init$sets$cs_index)) {
+    effects_rank <- c(model_init$sets$cs_index, setdiff(1:num_effects, model_init$sets$cs_index))
   } else {
     effects_rank <- 1:num_effects
   }
@@ -546,46 +555,46 @@ susie_prune_single_effects <- function(s, L = 0, V = NULL) {
       "to have", L, "effects."
     ))
 
-    s$alpha <- rbind(
-      s$alpha[effects_rank, ],
-      matrix(1 / ncol(s$alpha), L - num_effects, ncol(s$alpha))
+    model_init$alpha <- rbind(
+      model_init$alpha[effects_rank, ],
+      matrix(1 / ncol(model_init$alpha), L - num_effects, ncol(model_init$alpha))
     )
     for (n in c("mu", "mu2", "lbf_variable")) {
-      if (!is.null(s[[n]])) {
-        s[[n]] <- rbind(
-          s[[n]][effects_rank, ],
-          matrix(0, L - num_effects, ncol(s[[n]]))
+      if (!is.null(model_init[[n]])) {
+        model_init[[n]] <- rbind(
+          model_init[[n]][effects_rank, ],
+          matrix(0, L - num_effects, ncol(model_init[[n]]))
         )
       }
     }
     for (n in c("KL", "lbf")) {
-      if (!is.null(s[[n]])) {
-        s[[n]] <- c(s[[n]][effects_rank], rep(NA, L - num_effects))
+      if (!is.null(model_init[[n]])) {
+        model_init[[n]] <- c(model_init[[n]][effects_rank], rep(NA, L - num_effects))
       }
     }
     if (!is.null(V)) {
       if (length(V) > 1) {
-        V[1:num_effects] <- s$V[effects_rank]
+        V[1:num_effects] <- model_init$V[effects_rank]
       } else {
         V <- rep(V, L)
       }
     }
-    s$V <- V
+    model_init$V <- V
   }
-  s$sets <- NULL
-  return(s)
+  model_init$sets <- NULL
+  return(model_init)
 }
 
 # Add a null effect to the model object
 #' @keywords internal
-add_null_effect <- function(s, V) {
-  p              <- ncol(s$alpha)
-  s$alpha        <- rbind(s$alpha, 1 / p)
-  s$mu           <- rbind(s$mu, rep(0, p))
-  s$mu2          <- rbind(s$mu2, rep(0, p))
-  s$lbf_variable <- rbind(s$lbf_variable, rep(0, p))
-  s$V            <- c(s$V, V)
-  return(s)
+add_null_effect <- function(model_init, V) {
+  p                       <- ncol(model_init$alpha)
+  model_init$alpha        <- rbind(model_init$alpha, 1 / p)
+  model_init$mu           <- rbind(model_init$mu, rep(0, p))
+  model_init$mu2          <- rbind(model_init$mu2, rep(0, p))
+  model_init$lbf_variable <- rbind(model_init$lbf_variable, rep(0, p))
+  model_init$V            <- c(model_init$V, V)
+  return(model_init)
 }
 
 # =============================================================================

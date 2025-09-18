@@ -37,12 +37,10 @@ get_var_y.individual <- function(data, ...) {
 
 # Initialize SuSiE model
 #' @keywords internal
-initialize_susie_model.individual <- function(data, params, L, scaled_prior_variance, var_y,
-                                              residual_variance, prior_weights, ...) {
+initialize_susie_model.individual <- function(data, params, var_y, ...) {
 
   # Base model
-  model <- initialize_matrices(data, L, scaled_prior_variance, var_y,
-                               residual_variance, prior_weights)
+  model <- initialize_matrices(data, params, var_y)
 
   # Append predictor weights
   model$predictor_weights <- attr(data$X, "d")
@@ -52,8 +50,8 @@ initialize_susie_model.individual <- function(data, params, L, scaled_prior_vari
 
 # Initialize fitted values
 #' @keywords internal
-initialize_fitted.individual <- function(data, params, alpha, mu) {
-  return(list(Xr = compute_Xb(data$X, colSums(alpha * mu))))
+initialize_fitted.individual <- function(data, mat_init) {
+  return(list(Xr = compute_Xb(data$X, colSums(mat_init$alpha * mat_init$mu))))
 }
 
 # Validate prior variance
@@ -100,9 +98,9 @@ compute_residuals.individual <- function(data, params, model, l, ...) {
 
 # Compute SER statistics
 #' @keywords internal
-compute_ser_statistics.individual <- function(data, params, model, residual_variance, l, ...) {
+compute_ser_statistics.individual <- function(data, params, model, l, ...) {
   betahat <- (1 / model$predictor_weights) * model$residuals
-  shat2   <- residual_variance / model$predictor_weights
+  shat2   <- model$residual_variance / model$predictor_weights
 
   # Optimization parameters
   optim_init   <- log(max(c(betahat^2 - shat2, 1), na.rm = TRUE))
@@ -129,8 +127,7 @@ SER_posterior_e_loglik.individual <- function(data, params, model, Eb, Eb2) {
 
 # Calculate posterior moments for single effect regression
 #' @keywords internal
-calculate_posterior_moments.individual <- function(data, params, model, V,
-                                                   residual_variance, ...) {
+calculate_posterior_moments.individual <- function(data, params, model, V, ...) {
   # Initialize beta_1
   beta_1 <- NULL
 
@@ -160,8 +157,8 @@ calculate_posterior_moments.individual <- function(data, params, model, V,
     }
   } else {
     # Standard Gaussian posterior calculations
-    post_var   <- (1 / V + model$predictor_weights / residual_variance)^(-1)
-    post_mean  <- (1 / residual_variance) * post_var * model$residuals
+    post_var   <- (1 / V + model$predictor_weights / model$residual_variance)^(-1)
+    post_mean  <- (1 / model$residual_variance) * post_var * model$residuals
     post_mean2 <- post_var + post_mean^2
   }
 

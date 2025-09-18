@@ -9,32 +9,23 @@
 #' @param params Validated params object
 #' @param model Current SuSiE model object
 #' @param l Effect index being updated
-#' @param optimize_V Prior variance optimization method
-#' @param ... Additional parameters
 #'
 #' @return List with alpha, mu, mu2, lbf, lbf_model, and V for the lth effect
 #'
 #' @keywords internal
 #' @noRd
-single_effect_regression <-
-  function(data, params, model, l,
-           residual_variance = NULL,
-           optimize_V = c("none", "optim", "EM", "simple"),
-           check_null_threshold = 0) {
-
-    # Match prior variance optimization argument
-    optimize_V <- match.arg(optimize_V)
+single_effect_regression <- function(data, params, model, l) {
 
     # Store Prior Variance Value for the lth Effect
     V <- model$V[l]
 
     # Compute SER statistics (betahat, shat2, initial value for prior variance optimization)
-    ser_stats <- compute_ser_statistics(data, params, model, residual_variance, l)
+    ser_stats <- compute_ser_statistics(data, params, model, l)
 
     # Optimize Prior Variance of lth effect
-    if (optimize_V != "EM" && optimize_V != "none") {
-      V <- optimize_prior_variance(optimize_V, data, params, model, ser_stats,
-        alpha = NULL, post_mean2 = NULL, V, params$check_null_threshold)
+    if (params$estimate_prior_method != "EM" && params$estimate_prior_method != "none") {
+      V <- optimize_prior_variance(data, params, model, ser_stats,
+        V_init = V)
     }
 
     # Use loglik to compute logged Bayes factors and posterior inclusion probabilities
@@ -44,17 +35,16 @@ single_effect_regression <-
     lbf_model  <- loglik_res$lbf_model
 
     # Compute posterior moments
-    moments    <- calculate_posterior_moments(data, params, model, V, residual_variance)
+    moments    <- calculate_posterior_moments(data, params, model, V)
 
     post_mean  <- moments$post_mean
     post_mean2 <- moments$post_mean2
     beta_1     <- moments$beta_1
 
     # Expectation-maximization prior variance update using posterior moments
-    if (optimize_V == "EM") {
-      V <- optimize_prior_variance(optimize_V, data, params, model, ser_stats,
-        alpha, post_mean2, V_init = NULL, params$check_null_threshold,
-        params$use_servin_stephens, moments$beta_1, data$n)
+    if (params$estimate_prior_method == "EM") {
+      V <- optimize_prior_variance(data, params, model, ser_stats,
+        alpha, moments, V_init = NULL)
     }
 
     return(list(
@@ -74,24 +64,23 @@ single_effect_regression <-
 #' Handles optim, EM, simple methods and null threshold checking.
 # =============================================================================
 #'
-#' @param optimize_V Optimization method ("optim", "EM", "simple")
 #' @param data Data object
 #' @param params Validated params object
 #' @param model Current SuSiE model object
 #' @param ser_stats SER statistics and optimization parameters from compute_ser_statistics
+#' @param moments Posterior moments from calculate_posterior_moments
 #' @param ... Additional method-specific parameters
 #'
 #' @return Optimized prior variance (scalar)
 #'
 #' @keywords internal
 #' @noRd
-optimize_prior_variance <- function(optimize_V, data, params, model, ser_stats,
-                                    alpha = NULL, post_mean2 = NULL,
-                                    V_init = NULL, check_null_threshold = 0,
-                                    use_servin_stephens = FALSE, beta_1 = NULL, n = NULL) {
+optimize_prior_variance <- function(data, params, model, ser_stats,
+                                    alpha = NULL, moments = NULL,
+                                    V_init = NULL) {
   V <- V_init
-  if (optimize_V != "simple") {
-    if (optimize_V == "optim") {
+  if (params$estimate_prior_method != "simple") {
+    if (params$estimate_prior_method == "optim") {
       V_param_opt <- optim(
         par = ser_stats$optim_init,
         fn = function(V_param) neg_loglik(data, params, model, V_param, ser_stats),
@@ -114,16 +103,16 @@ optimize_prior_variance <- function(optimize_V, data, params, model, ser_stats,
         V_new <- V
       }
       V <- V_new
-    } else if (optimize_V == "EM") {
-      if (use_servin_stephens) {
+    } else if (params$estimate_prior_method == "EM") {
+      if (params$use_servin_stephens) {
         # Servin-Stephens EM update
-        V <- sqrt(sum(alpha * (ser_stats$betahat^2 + beta_1/(n - 2) + ser_stats$shat2)))
+        V <- sqrt(sum(alpha * (ser_stats$betahat^2 + moments$beta_1/(data$n - 2) + ser_stats$shat2)))
       } else {
         # Standard EM update
-        V <- sum(alpha * post_mean2)
+        V <- sum(alpha * moments$post_mean2)
       }
     } else {
-      stop("Invalid option for optimize_V method")
+      stop("Invalid option for estimate_prior_method: ", params$estimate_prior_method)
     }
   }
 
@@ -139,7 +128,7 @@ optimize_prior_variance <- function(optimize_V, data, params, model, ser_stats,
   # neglible. See more intuition at
   # https://stephens999.github.io/fiveMinuteStats/LR_and_BF.html
   if (loglik(data, params, model, 0, ser_stats)$lbf_model +
-    check_null_threshold >= loglik(data, params, model, V, ser_stats)$lbf_model) {
+    params$check_null_threshold >= loglik(data, params, model, V, ser_stats)$lbf_model) {
     V <- 0
   }
 
@@ -157,23 +146,18 @@ optimize_prior_variance <- function(optimize_V, data, params, model, ser_stats,
 #' @param params Validated params object
 #' @param model Current SuSiE model object
 #' @param l Effect index being updated
-#' @param optimize_V Prior variance optimization method
-#' @param check_null_threshold Threshold for setting V to zero
 #'
 #' @return Updated SuSiE model object with new parameters for effect l
 #'
 #' @keywords internal
 #' @noRd
-single_effect_update <- function(data, params, model, l, optimize_V, check_null_threshold) {
+single_effect_update <- function(data, params, model, l) {
 
   # Compute Residuals
   model <- compute_residuals(data, params, model, l)
 
   # Run Single Effect Regression
-  res <- single_effect_regression(data, params, model, l,
-                                  residual_variance = model$residual_variance,
-                                  optimize_V = optimize_V,
-                                  check_null_threshold = check_null_threshold)
+  res <- single_effect_regression(data, params, model, l)
 
   # Store results from SER
   model$alpha[l, ]        <- res$alpha

@@ -14,14 +14,12 @@
 #' @noRd
 ibss_initialize <- function(data, params) {
 
-  # Define p and var_y
-  p <- data$p
+  # Set var(y)
   var_y <- get_var_y(data)
-  L <- params$L
 
   # Adjust number of single effects if needed
-  if (p < params$L) {
-    params$L <- p
+  if (data$p < params$L) {
+    params$L <- data$p
   }
 
   # Check & validate residual variance
@@ -39,46 +37,35 @@ ibss_initialize <- function(data, params) {
     stop("Residual variance sigma2 must be positive (is your var(Y) zero?).")
   }
 
-  # Initialize prior weights if needed
-  if (is.null(data$prior_weights)) {
-    prior_weights <- rep(1 / p, p)
-  } else {
-    prior_weights <- data$prior_weights
-  }
-
   # Handle model initialization
   if (!is.null(params$model_init)) {
     # Validate the contents of model_init
-    validate_init(params$model_init, params$L, data$null_weight)
+    validate_init(data, params)
 
     # Prune effects with zero prior variance
-    model_init_pruned <- susie_prune_single_effects(params$model_init)
+    model_init_pruned <- prune_single_effects(params$model_init)
 
     # Adjust the number of effects
-    adjustment <- adjust_L(model_init_pruned, params$L, V = rep(params$scaled_prior_variance * var_y, params$L))
-    params$L <- adjustment$L
+    adjustment <- adjust_L(params, model_init_pruned, var_y)
+    params$L   <- adjustment$L
 
     # Create base model with all required fields
-    mat_init <- initialize_susie_model(data, params, params$L, params$scaled_prior_variance, var_y,
-                                       params$residual_variance, prior_weights)
+    mat_init <- initialize_susie_model(data, params, var_y)
 
     # Merge with adjusted model_init
     mat_init <- modifyList(mat_init, adjustment$model_init)
 
     # Reset iteration-specific values
-    mat_init$KL <- rep(as.numeric(NA), params$L)
+    mat_init$KL  <- rep(as.numeric(NA), params$L)
     mat_init$lbf <- rep(as.numeric(NA), params$L)
   } else {
     # Create fresh model
-    mat_init <- initialize_susie_model(data, params, params$L, params$scaled_prior_variance, var_y,
-                                       params$residual_variance, prior_weights)
+    mat_init <- initialize_susie_model(data, params, var_y)
   }
 
-  # Initialize fitted values
-  fitted <- initialize_fitted(data, params, mat_init$alpha, mat_init$mu)
-
-  # Set null index
-  null_index <- initialize_null_index(data$null_weight, p)
+  # Initialize fitted values and null index
+  fitted     <- initialize_fitted(data, mat_init)
+  null_index <- initialize_null_index(data)
 
   # Return assembled SuSiE object
   model <- c(mat_init,
@@ -108,20 +95,11 @@ ibss_initialize <- function(data, params) {
 #' @noRd
 ibss_fit <- function(data, params, model) {
 
-  estimate_prior_method <- match.arg(params$estimate_prior_method, c("optim", "EM", "simple"))
-
-  # Set prior variance estimation if NA
-  if (!params$estimate_prior_variance) {
-    estimate_prior_method <- "none"
-  }
-
   # Repeat for each effect to update
   L <- nrow(model$alpha)
   if (L > 0) {
     for (l in seq_len(L)) {
-      model <- single_effect_update(data, params, model, l,
-                                     optimize_V = estimate_prior_method,
-                                     check_null_threshold = params$check_null_threshold)
+      model <- single_effect_update(data, params, model, l)
     }
   }
 

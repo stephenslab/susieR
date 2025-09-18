@@ -32,11 +32,9 @@ get_var_y.rss_lambda <- function(data, ...) {
 
 # Initialize SuSiE model
 #' @keywords internal
-initialize_susie_model.rss_lambda <- function(data, params, L, scaled_prior_variance, var_y,
-                                              residual_variance, prior_weights, ...) {
+initialize_susie_model.rss_lambda <- function(data, params, var_y, ...) {
   # Base model
-  model <- initialize_matrices(data, L, scaled_prior_variance, var_y,
-                               residual_variance, prior_weights)
+  model <- initialize_matrices(data, params, var_y)
 
   # Initialize SinvRj and RjSinvRj
   D    <- data$eigen_R$values
@@ -51,8 +49,8 @@ initialize_susie_model.rss_lambda <- function(data, params, L, scaled_prior_vari
 
 # Initialize fitted values
 #' @keywords internal
-initialize_fitted.rss_lambda <- function(data, params, alpha, mu) {
-  return(list(Rz = as.vector(data$R %*% colSums(alpha * mu))))
+initialize_fitted.rss_lambda <- function(data, mat_init) {
+  return(list(Rz = as.vector(data$R %*% colSums(mat_init$alpha * mat_init$mu))))
 }
 
 # Validate prior variance
@@ -97,7 +95,7 @@ compute_residuals.rss_lambda <- function(data, params, model, l, ...) {
 
 # Compute SER statistics
 #' @keywords internal
-compute_ser_statistics.rss_lambda <- function(data, params, model, residual_variance, ...) {
+compute_ser_statistics.rss_lambda <- function(data, params, model, l, ...) {
   shat2 <- 1 / model$RjSinvRj
 
   # Optimization parameters
@@ -127,7 +125,7 @@ SER_posterior_e_loglik.rss_lambda <- function(data, params, model, Eb, Eb2) {
 
 # Calculate posterior moments for single effect regression
 #' @keywords internal
-calculate_posterior_moments.rss_lambda <- function(data, params, model, V, residual_variance, ...) {
+calculate_posterior_moments.rss_lambda <- function(data, params, model, V, ...) {
   post_var   <- (model$RjSinvRj + 1 / V)^(-1)
   post_mean  <- sapply(1:data$p, function(j) {
     post_var[j] * sum(model$SinvRj[, j] * model$residuals)
