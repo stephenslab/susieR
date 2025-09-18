@@ -133,31 +133,22 @@ ibss_finalize <- function(data, params, model, elbo = NULL, iter = NA_integer_,
 
   # Intercept & Fitted Values
   model$X_column_scale_factors <- get_scale_factors(data, params)
-  model$intercept <- get_intercept(data, params, model, params$intercept)
-  model$fitted <- get_fitted(data, params, model, params$intercept)
+  model$intercept              <- get_intercept(data, params, model)
+  model$fitted                 <- get_fitted(data, params, model)
+
+  # Posterior Inclusion Probabilities, credible sets, z-scores
+  model$sets <- get_cs(data, params, model)
+  model$pip  <- susie_get_pip(model, prior_tol = params$prior_tol)
+  model$z    <- get_zscore(data, params, model)
 
   # Tracking Across Iterations
-  if (params$track_fit) {
-    model$trace <- tracking
-  }
-
-  # Credible Sets
-  model$sets <- get_cs(data, model, params$coverage, params$min_abs_corr, params$n_purity)
-
-  # Posterior Inclusion Probabilities
-  model$pip <- susie_get_pip(model, prune_by_cs = FALSE, prior_tol = params$prior_tol)
+  if (params$track_fit) model$trace <- tracking
 
   # Set pi field from prior_weights
-  if (is.null(model$pi)) {
-    model$pi <- model$prior_weights
-  }
+  if (is.null(model$pi)) model$pi   <- model$prior_weights
 
   # Assign Variable Names
-  model <- get_variable_names(data, model, data$null_weight)
-
-  # Compute z-scores
-  model$z <- get_zscore(data, model, params$compute_univariate_zscore,
-                        params$intercept, params$standardize, data$null_weight)
+  model <- get_variable_names(data, model)
 
   return(model)
 }

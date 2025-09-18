@@ -3,15 +3,15 @@ susie_workhorse <- function(data, params) {
   # Initialize model object
   model <- ibss_initialize(data, params)
 
-  # Initialize tracking
-  elbo <- rep(as.numeric(NA), params$max_iter + 1)
-  elbo[1] <- -Inf
+  # Initialize ELBO & tracking
+  elbo     <- rep(as.numeric(NA), params$max_iter + 1)
+  elbo[1]  <- -Inf
   tracking <- list()
 
   # Main IBSS iteration loop
   for (iter in seq_len(params$max_iter)) {
     # Track iteration progress
-    tracking <- track_ibss_fit(data, params, model, tracking, iter, params$track_fit)
+    tracking <- track_ibss_fit(data, params, model, tracking, iter)
 
     # Store previous model parameters for convergence check
     model$prev_elbo  <- elbo[iter]
@@ -21,10 +21,10 @@ susie_workhorse <- function(data, params) {
     model <- ibss_fit(data, params, model)
 
     # Calculate objective for tracking
-    elbo[iter + 1] <- get_objective(data, model, verbose = params$verbose)
+    elbo[iter + 1] <- get_objective(data, params, model)
 
     # Check for convergence
-    converged <- check_convergence(model, elbo, params$tol, params$convergence_method, iter)
+    converged <- check_convergence(params, model, elbo, iter)
 
     if (converged) {
       model$converged <- TRUE
@@ -33,8 +33,7 @@ susie_workhorse <- function(data, params) {
 
     # Update variance components if not converged and estimation is requested
     if (params$estimate_residual_variance) {
-      model <- update_model_variance(data, params, model, params$residual_variance_lowerbound,
-                                     params$residual_variance_upperbound, params$estimate_residual_method)
+      model <- update_model_variance(data, params, model)
     }
 
   }

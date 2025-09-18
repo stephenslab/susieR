@@ -61,8 +61,8 @@ validate_prior.rss_lambda <- function(data, params, model, ...) {
 
 # Track core parameters for tracking
 #' @keywords internal
-track_ibss_fit.rss_lambda <- function(data, params, model, tracking, iter, track_fit, ...) {
-  return(track_ibss_fit.default(data, params, model, tracking, iter, track_fit, ...))
+track_ibss_fit.rss_lambda <- function(data, params, model, tracking, iter, ...) {
+  return(track_ibss_fit.default(data, params, model, tracking, iter, ...))
 }
 
 # =============================================================================
@@ -114,7 +114,9 @@ compute_ser_statistics.rss_lambda <- function(data, params, model, l, ...) {
 
 # SER posterior expected log-likelihood
 #' @keywords internal
-SER_posterior_e_loglik.rss_lambda <- function(data, params, model, Eb, Eb2) {
+SER_posterior_e_loglik.rss_lambda <- function(data, params, model, l) {
+  Eb     <- model$alpha[l, ] * model$mu[l, ]
+  Eb2    <- model$alpha[l, ] * model$mu2[l, ]
   V      <- data$eigen_R$vectors
   Dinv   <- compute_Dinv(model, data)
   rR     <- data$R %*% model$residuals
@@ -238,7 +240,7 @@ update_fitted_values.rss_lambda <- function(data, params, model, l) {
 
 # Update variance components
 #' @keywords internal
-update_variance_components.rss_lambda <- function(data, params, model, estimate_method = "MLE") {
+update_variance_components.rss_lambda <- function(data, params, model, ...) {
   upper_bound <- 1 - data$lambda
 
   objective <- function(sigma2) {
@@ -261,11 +263,11 @@ update_variance_components.rss_lambda <- function(data, params, model, estimate_
 update_derived_quantities.rss_lambda <- function(data, params, model) {
   # Recalculate Dinv with updated sigma2
   Dinv <- compute_Dinv(model, data)
-  V <- data$eigen_R$vectors
-  D <- data$eigen_R$values
+  V    <- data$eigen_R$vectors
+  D    <- data$eigen_R$values
 
   # Update SinvRj and RjSinvRj
-  model$SinvRj <- V %*% (Dinv * D * t(V))
+  model$SinvRj   <- V %*% (Dinv * D * t(V))
   model$RjSinvRj <- colSums(t(V) * (Dinv * (D^2) * t(V)))
 
   return(model)
@@ -290,40 +292,39 @@ get_scale_factors.rss_lambda <- function(data, params) {
 
 # Get intercept
 #' @keywords internal
-get_intercept.rss_lambda <- function(data, params, model, intercept, ...) {
+get_intercept.rss_lambda <- function(data, params, model, ...) {
   return(data$intercept_value)
 }
 
 # Get fitted values
 #' @keywords internal
-get_fitted.rss_lambda <- function(data, params, model, intercept, ...) {
-  return(model$Rz)
+get_fitted.rss_lambda <- function(data, params, model, ...) {
+  return(get_fitted.default(data, params, model, ...))
 }
 
 # Get credible sets
 #' @keywords internal
-get_cs.rss_lambda <- function(data, model, coverage, min_abs_corr, n_purity) {
-  if (is.null(coverage) || is.null(min_abs_corr)) {
+get_cs.rss_lambda <- function(data, params, model, ...) {
+  if (is.null(params$coverage) || is.null(params$min_abs_corr)) {
     return(NULL)
   }
 
   return(susie_get_cs(model,
-                      coverage = coverage,
-                      Xcorr = muffled_cov2cor(data$R),
-                      min_abs_corr = min_abs_corr,
+                      Xcorr           = muffled_cov2cor(data$R),
                       check_symmetric = FALSE,
-                      n_purity = n_purity))
+                      coverage        = params$coverage,
+                      min_abs_corr    = params$min_abs_corr,
+                      n_purity        = params$n_purity))
 }
 
 # Get variable names
 #' @keywords internal
-get_variable_names.rss_lambda <- function(data, model, null_weight) {
-  variable_names <- names(data$z)
-  return(assign_names(model, variable_names, null_weight, data$p))
+get_variable_names.rss_lambda <- function(data, model, ...) {
+  return(assign_names(data, model, names(data$z)))
 }
 
 # Get univariate z-scores
 #' @keywords internal
-get_zscore.rss_lambda <- function(data, model, compute_univariate_zscore, intercept, standardize, null_weight, ...) {
-  return(get_zscore.default(data, model))
+get_zscore.rss_lambda <- function(data, params, model, ...) {
+  return(get_zscore.default(data, params, model))
 }

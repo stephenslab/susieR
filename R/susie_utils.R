@@ -487,11 +487,11 @@ initialize_null_index <- function(data) {
 
 # Helper function to assign variable names to model components
 #' @keywords internal
-assign_names <- function(model, variable_names, null_weight, p) {
+assign_names <- function(data, model, variable_names) {
   if (!is.null(variable_names)) {
-    if (!is.null(null_weight)) {
+    if (!is.null(data$null_weight)) {
       variable_names[length(variable_names)] <- "null"
-      names(model$pip) <- variable_names[-p]
+      names(model$pip) <- variable_names[-data$p]
     } else {
       names(model$pip) <- variable_names
     }
@@ -753,52 +753,51 @@ compute_lbf_gradient <- function(alpha, betahat, shat2, V, use_servin_stephens =
 
 # Method of Moments variance estimation for unmappable effects methods
 #' @keywords internal
-mom_unmappable <- function(alpha, mu, omega, sigma2, tau2, n, V, Dsq, VtXty, Xty, yty,
-                           est_sigma2, est_tau2, verbose) {
-  L <- nrow(mu)
-  p <- ncol(mu)
+mom_unmappable <- function(data, params, model, omega, tau2) {
+  L <- nrow(model$mu)
 
   A <- matrix(0, nrow = 2, ncol = 2)
-  A[1, 1] <- n
-  A[1, 2] <- sum(Dsq)
+  A[1, 1] <- data$n
+  A[1, 2] <- sum(data$eigen_values)
   A[2, 1] <- A[1, 2]
-  A[2, 2] <- sum(Dsq^2)
+  A[2, 2] <- sum(data$eigen_values^2)
 
   # Compute diag(V'MV)
-  b <- colSums(mu * alpha)
-  Vtb <- crossprod(V, b)
+  b <- colSums(model$mu * model$alpha)
+  Vtb <- crossprod(data$eigen_vectors, b)
   diagVtMV <- Vtb^2
-  tmpD <- rep(0, p)
+  tmpD <- rep(0, data$p)
 
   for (l in seq_len(L)) {
-    bl <- mu[l, ] * alpha[l, ]
-    Vtbl <- t(V) %*% bl
+    bl <- model$mu[l, ] * model$alpha[l, ]
+    Vtbl <- crossprod(data$eigen_vectors, bl)
     diagVtMV <- diagVtMV - Vtbl^2
-    tmpD <- tmpD + alpha[l, ] * (mu[l, ]^2 + 1 / omega[l, ])
+    tmpD <- tmpD + model$alpha[l, ] * (model$mu[l, ]^2 + 1 / omega[l, ])
   }
 
-  diagVtMV <- diagVtMV + rowSums(sweep(t(V)^2, 2, tmpD, `*`))
+  diagVtMV <- diagVtMV + rowSums(sweep(t(data$eigen_vectors)^2, 2, tmpD, `*`))
 
   # Compute x
   x <- rep(0, 2)
-  x[1] <- yty - 2 * sum(b * Xty) + sum(Dsq * diagVtMV)
-  x[2] <- sum(Xty^2) - 2 * sum(Vtb * VtXty * Dsq) + sum(Dsq^2 * diagVtMV)
+  x[1] <- data$yty - 2 * sum(b * data$Xty) + sum(data$eigen_values * diagVtMV)
+  x[2] <- sum(data$Xty^2) - 2 * sum(Vtb * data$VtXty * data$eigen_values) +
+    sum(data$eigen_values^2 * diagVtMV)
 
   if (est_tau2) {
     sol <- solve(A, x)
     if (sol[1] > 0 && sol[2] > 0) {
       sigma2 <- sol[1]
-      tau2 <- sol[2]
+      tau2   <- sol[2]
     } else {
-      sigma2 <- x[1] / n
-      tau2 <- 0
+      sigma2 <- x[1] / data$n
+      tau2   <- 0
     }
-    if (verbose) {
+    if (params$verbose) {
       message(sprintf("Update (sigma^2,tau^2) to (%f,%e)\n", sigma2, tau2))
     }
   } else if (est_sigma2) {
-    sigma2 <- (x[1] - A[1, 2] * tau2) / n
-    if (verbose) {
+    sigma2 <- (x[1] - A[1, 2] * tau2) / data$n
+    if (params$verbose) {
       message(sprintf("Update sigma^2 to %f\n", sigma2))
     }
   }
@@ -807,69 +806,60 @@ mom_unmappable <- function(alpha, mu, omega, sigma2, tau2, n, V, Dsq, VtXty, Xty
 
 # MLE variance estimation for unmappable effects
 #' @keywords internal
-mle_unmappable <- function(alpha, mu, omega, sigma2, tau2, n,
-                           eigen_vectors, eigen_values, VtXty, yty,
-                           est_sigma2 = TRUE, est_tau2 = TRUE,
-                           sigma2_range = NULL, tau2_range = NULL,
-                           verbose = FALSE) {
-  L <- nrow(mu)
-  p <- ncol(mu)
+mle_unmappable <- function(data, params, model, omega) {
+  L <- nrow(model$alpha)
 
-  # Set default ranges if not provided
-  if (is.null(sigma2_range)) {
-    sigma2_range <- c(0.2 * yty / n, 1.2 * yty / n)
-  }
-  if (is.null(tau2_range)) {
-    tau2_range <- c(1e-12, 1.2 * yty / (n * p))
-  }
+  # Set default ranges
+  sigma2_range <- c(0.2 * data$yty / data$n, 1.2 * data$yty / data$n)
+  tau2_range   <- c(1e-12, 1.2 * data$yty / (data$n * data$p))
 
   # Compute diag(V'MV)
-  b <- colSums(mu * alpha)
-  Vtb <- crossprod(eigen_vectors, b)
+  b        <- colSums(model$mu * model$alpha)
+  Vtb      <- crossprod(data$eigen_vectors, b)
   diagVtMV <- Vtb^2
-  tmpD <- rep(0, p)
+  tmpD     <- rep(0, data$p)
 
   for (l in seq_len(L)) {
-    bl <- mu[l, ] * alpha[l, ]
-    Vtbl <- t(eigen_vectors) %*% bl
+    bl       <- model$mu[l, ] * model$alpha[l, ]
+    Vtbl     <- crossprod(data$eigen_vectors, bl)
     diagVtMV <- diagVtMV - Vtbl^2
-    tmpD <- tmpD + alpha[l, ] * (mu[l, ]^2 + 1 / omega[l, ])
+    tmpD     <- tmpD + model$alpha[l, ] * (model$mu[l, ]^2 + 1 / omega[l, ])
   }
 
-  diagVtMV <- diagVtMV + rowSums(sweep(t(eigen_vectors)^2, 2, tmpD, `*`))
+  diagVtMV <- diagVtMV + rowSums(sweep(t(data$eigen_vectors)^2, 2, tmpD, `*`))
 
   # Negative ELBO as function of x = (sigma^2, tau^2)
   f <- function(x) {
     sigma2_val <- x[1]
-    tau2_val <- x[2]
-    var_val <- tau2_val * eigen_values + sigma2_val
+    tau2_val   <- x[2]
+    var_val    <- tau2_val * data$eigen_values + sigma2_val
 
-    0.5 * (n - p) * log(sigma2_val) + 0.5 / sigma2_val * yty +
+    0.5 * (data$n - data$p) * log(sigma2_val) + 0.5 / sigma2_val * data$yty +
       sum(0.5 * log(var_val) -
-            0.5 * tau2_val / sigma2_val * VtXty^2 / var_val -
-            Vtb * VtXty / var_val +
-            0.5 * eigen_values / var_val * diagVtMV)
+            0.5 * tau2_val / sigma2_val * data$VtXty^2 / var_val -
+            Vtb * data$VtXty / var_val +
+            0.5 * data$eigen_values / var_val * diagVtMV)
   }
 
   # Negative ELBO for sigma^2 only (when tau^2 is fixed)
   g <- function(sigma2_val) {
-    f(c(sigma2_val, tau2))
+    f(c(sigma2_val, model$tau2))
   }
 
   if (est_tau2) {
     # Optimize both sigma^2 and tau^2
     res <- optim(
-      par = c(sigma2, tau2),
-      fn = f,
+      par    = c(model$sigma2, model$tau2),
+      fn     = f,
       method = "L-BFGS-B",
-      lower = c(sigma2_range[1], tau2_range[1]),
-      upper = c(sigma2_range[2], tau2_range[2])
+      lower  = c(sigma2_range[1], tau2_range[1]),
+      upper  = c(sigma2_range[2], tau2_range[2])
     )
 
     if (res$convergence == 0) {
       sigma2 <- res$par[1]
-      tau2 <- res$par[2]
-      if (verbose) {
+      tau2   <- res$par[2]
+      if (params$verbose) {
         message(sprintf("Update (sigma^2,tau^2) to (%f,%e)\n", sigma2, tau2))
       }
     } else {
@@ -878,16 +868,16 @@ mle_unmappable <- function(alpha, mu, omega, sigma2, tau2, n,
   } else if (est_sigma2) {
     # Optimize only sigma^2
     res <- optim(
-      par = sigma2,
-      fn = g,
+      par    = model$sigma2,
+      fn     = g,
       method = "L-BFGS-B",
-      lower = sigma2_range[1],
-      upper = sigma2_range[2]
+      lower  = sigma2_range[1],
+      upper  = sigma2_range[2]
     )
 
     if (res$convergence == 0) {
       sigma2 <- res$par
-      if (verbose) {
+      if (params$verbose) {
         message(sprintf("Update sigma^2 to %f\n", sigma2))
       }
     } else {
@@ -952,14 +942,14 @@ est_residual_variance <- function(data, model) {
 
 # Helper function to update variance components and derived quantities
 #' @keywords internal
-update_model_variance <- function(data, params, model, lowerbound, upperbound,
-                                  estimate_method = "MLE") {
+update_model_variance <- function(data, params, model) {
   # Update variance components
-  variance_result <- update_variance_components(data, params, model, estimate_method)
+  variance_result <- update_variance_components(data, params, model)
   model           <- modifyList(model, variance_result)
 
   # Apply bounds to residual variance
-  model$sigma2    <- min(max(model$sigma2, lowerbound), upperbound)
+  model$sigma2    <- min(max(model$sigma2, params$residual_variance_lowerbound),
+                         params$residual_variance_upperbound)
 
   # Update derived quantities after variance component changes
   model           <- update_derived_quantities(data, params, model)
@@ -979,7 +969,7 @@ update_model_variance <- function(data, params, model, lowerbound, upperbound,
 
 # Check convergence
 #' @keywords internal
-check_convergence <- function(model, elbo, tol, convergence_method, iter) {
+check_convergence <- function(params, model, elbo, iter) {
   # Skip convergence check on first iteration
   if(iter == 1) {
     return(FALSE)
@@ -989,24 +979,24 @@ check_convergence <- function(model, elbo, tol, convergence_method, iter) {
   ELBO_diff   <- elbo[iter + 1] - model$prev_elbo
   ELBO_failed <- is.na(ELBO_diff) || is.infinite(ELBO_diff)
 
-  if (convergence_method == "pip" || ELBO_failed) {
+  if (params$convergence_method == "pip" || ELBO_failed) {
     # Fallback to PIP-based convergence if ELBO calculation fails
-    if (ELBO_failed && convergence_method == "elbo") {
+    if (ELBO_failed && params$convergence_method == "elbo") {
       warning_message(paste0("Iteration ", iter, " produced an NA/infinite ELBO
                              value. Using pip-based convergence this iteration."))
     }
 
     # Calculate difference in alpha values
     PIP_diff <- max(abs(model$prev_alpha - model$alpha))
-    return(PIP_diff < tol)
+    return(PIP_diff < params$tol)
   }
-  return(ELBO_diff < tol)
+  return(ELBO_diff < params$tol)
 }
 
 # Objective function (ELBO)
 #' @keywords internal
-get_objective <- function(data, model, verbose = FALSE) {
-  if (!is.null(data$unmappable_effects) && data$unmappable_effects == "inf") {
+get_objective <- function(data, params, model) {
+  if (!is.null(params$unmappable_effects) && params$unmappable_effects == "inf") {
     # Compute omega
     L         <- nrow(model$alpha)
     omega_res <- compute_omega_quantities(data, model$tau2, model$sigma2)
@@ -1031,7 +1021,7 @@ get_objective <- function(data, model, verbose = FALSE) {
   if (is.infinite(objective)) {
     stop("get_objective() produced an infinite ELBO value")
   }
-  if (verbose) {
+  if (params$verbose) {
     message("objective:", objective)
   }
   return(objective)

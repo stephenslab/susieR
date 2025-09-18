@@ -65,15 +65,15 @@ validate_prior.default <- function(data, params, model, ...) {
 
 # Track core parameters of a susie fit across iterations
 #' @keywords internal
-track_ibss_fit <- function(data, params, model, tracking, iter, track_fit, ...) {
+track_ibss_fit <- function(data, params, model, tracking, iter, ...) {
   UseMethod("track_ibss_fit")
 }
-track_ibss_fit.default <- function(data, params, model, tracking, iter, track_fit, ...) {
-  if (isTRUE(track_fit)) {
+track_ibss_fit.default <- function(data, params, model, tracking, iter, ...) {
+  if (isTRUE(params$track_fit)) {
     tracking[[iter]] <- list(
-      alpha = model$alpha,
-      niter = iter,
-      V = model$V,
+      alpha  = model$alpha,
+      niter  = iter,
+      V      = model$V,
       sigma2 = model$sigma2
     )
   }
@@ -111,19 +111,19 @@ compute_ser_statistics.default <- function(data, params, model, l, ...) {
 
 # Single effect regression posterior expected log-likelihood
 #' @keywords internal
-SER_posterior_e_loglik <- function(data, params, model, Eb, Eb2) {
+SER_posterior_e_loglik <- function(data, params, model, l) {
   UseMethod("SER_posterior_e_loglik")
 }
-SER_posterior_e_loglik.default <- function(data, params, model, Eb, Eb2) {
+SER_posterior_e_loglik.default <- function(data, params, model, l) {
   stop("SER_posterior_e_loglik: no method for class '", class(data)[1], "'")
 }
 
 # Calculate posterior moments for single effect regression
 #' @keywords internal
-calculate_posterior_moments <- function(data, params, ...) {
+calculate_posterior_moments <- function(data, params, model, V, ...) {
   UseMethod("calculate_posterior_moments")
 }
-calculate_posterior_moments.default <- function(data, params, ...) {
+calculate_posterior_moments.default <- function(data, params, model, V, ...) {
   stop("calculate_posterior_moments: no method for class '", class(data)[1], "'")
 }
 
@@ -133,9 +133,7 @@ compute_kl <- function(data, params, model, l) {
   UseMethod("compute_kl")
 }
 compute_kl.default <- function(data, params, model, l) {
-  return(-model$lbf[l] + SER_posterior_e_loglik(data, params, model,
-                                                model$alpha[l, ] * model$mu[l, ],
-                                                model$alpha[l, ] * model$mu2[l, ]))
+  return(-model$lbf[l] + SER_posterior_e_loglik(data, params, model, l))
 }
 
 # Expected squared residuals
@@ -195,11 +193,13 @@ update_fitted_values.default <- function(data, params, model, l) {
 
 # Update variance components
 #' @keywords internal
-update_variance_components <- function(data, params, model, estimate_method = "MLE") {
+update_variance_components <- function(data, params, model, ...) {
   UseMethod("update_variance_components")
 }
-update_variance_components.default <- function(data, params, model, estimate_method = "MLE") {
-  stop("update_variance_components: no method for class '", class(data)[1], "'")
+update_variance_components.default <- function(data, params, model, ...) {
+  # Standard MLE estimation (MLE and MoM are equivalent for standard SuSiE)
+  sigma2 <- est_residual_variance(data, model)
+  return(list(sigma2 = sigma2))
 }
 
 # Update derived quantities after variance component changes
@@ -246,15 +246,15 @@ get_fitted <- function(data, params, model, ...) {
   UseMethod("get_fitted")
 }
 get_fitted.default <- function(data, params, model, ...) {
-  stop("get_fitted: no method for class '", class(data)[1], "'")
+  return(NULL)
 }
 
 # Get credible sets
 #' @keywords internal
-get_cs <- function(data, model, ...) {
+get_cs <- function(data, params, model, ...) {
   UseMethod("get_cs")
 }
-get_cs.default <- function(data, model, ...) {
+get_cs.default <- function(data, params, model, ...) {
   stop("get_cs: no method for class '", class(data)[1], "'")
 }
 
@@ -269,9 +269,9 @@ get_variable_names.default <- function(data, model, ...) {
 
 # Get univariate z-scores
 #' @keywords internal
-get_zscore <- function(data, model, ...) {
+get_zscore <- function(data, params, model, ...) {
   UseMethod("get_zscore")
 }
-get_zscore.default <- function(data, model, ...) {
+get_zscore.default <- function(data, params, model, ...) {
   return(NULL)
 }

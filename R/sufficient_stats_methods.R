@@ -89,17 +89,17 @@ validate_prior.ss <- function(data, params, model, ...) {
 
 # Track core parameters across iterations
 #' @keywords internal
-track_ibss_fit.ss <- function(data, params, model, tracking, iter, track_fit, ...) {
+track_ibss_fit.ss <- function(data, params, model, tracking, iter, ...) {
   if (params$unmappable_effects %in% c("inf", "ash")) {
     # Append non-sparse variance component to tracking
-    tracking <- track_ibss_fit.default(data, params, model, tracking, iter, track_fit, ...)
-    if (isTRUE(track_fit)) {
+    tracking <- track_ibss_fit.default(data, params, model, tracking, iter, ...)
+    if (isTRUE(params$track_fit)) {
       tracking[[iter]]$tau2 <- model$tau2
     }
     return(tracking)
   } else {
     # Use default for standard SS case
-    return(track_ibss_fit.default(data, params, model, tracking, iter, track_fit, ...))
+    return(track_ibss_fit.default(data, params, model, tracking, iter, ...))
   }
 }
 
@@ -179,7 +179,10 @@ compute_ser_statistics.ss <- function(data, params, model, l, ...) {
 
 # Posterior expected log-likelihood for a single effect regression
 #' @keywords internal
-SER_posterior_e_loglik.ss <- function(data, params, model, Eb, Eb2) {
+SER_posterior_e_loglik.ss <- function(data, params, model, l) {
+  Eb  <- model$alpha[l, ] * model$mu[l, ]
+  Eb2 <- model$alpha[l, ] * model$mu2[l, ]
+
   if (params$unmappable_effects == "none") {
     # Standard SuSiE
     return(-0.5 / model$sigma2 * (-2 * sum(Eb * model$residuals) + sum(model$predictor_weights * as.vector(Eb2))))
@@ -299,7 +302,7 @@ update_fitted_values.ss <- function(data, params, model, l) {
 
 # Update variance components for ss data
 #' @keywords internal
-update_variance_components.ss <- function(data, params, model, estimate_method = "MLE") {
+update_variance_components.ss <- function(data, params, model, ...) {
   if (params$unmappable_effects == "inf") {
     # Calculate omega
     L         <- nrow(model$alpha)
@@ -311,20 +314,13 @@ update_variance_components.ss <- function(data, params, model, estimate_method =
     theta <- compute_theta_blup(data, model)
 
     # Sigma2 and tau2 update
-    if (estimate_method == "MLE") {
-      mle_result <- mle_unmappable(model$alpha, model$mu, omega, model$sigma2, model$tau2, data$n,
-                                   data$eigen_vectors, data$eigen_values, data$VtXty, data$yty,
-                                   est_sigma2 = TRUE, est_tau2 = TRUE,
-                                   verbose = FALSE
-      )
+    if (params$estimate_residual_method == "MLE") {
+      mle_result <- mle_unmappable(data, params, model, omega)
       return(list(sigma2 = mle_result$sigma2,
                   tau2   = mle_result$tau2,
                   theta  = theta))
     } else {
-      mom_result <- mom_unmappable(model$alpha, model$mu, omega, model$sigma2, model$tau2, data$n,
-                                   data$eigen_vectors, data$eigen_values, data$VtXty, data$Xty, data$yty,
-                                   est_sigma2 = TRUE, est_tau2 = TRUE, verbose = FALSE
-      )
+      mom_result <- mom_unmappable(data, params, model, omega, model$tau2)
       return(list(sigma2 = mom_result$sigma2,
                   tau2   = mom_result$tau2,
                   theta  = theta))
@@ -340,11 +336,7 @@ update_variance_components.ss <- function(data, params, model, estimate_method =
     sparse_var <- mean(colSums(model$alpha * model$V))
 
     # Update sigma2 and tau2 using sparse effect variance and omega from current iteration
-    mom_result <- mom_unmappable(model$alpha, model$mu, omega,
-                                 sigma2 = model$sigma2, tau2 = sparse_var, data$n,
-                                 data$eigen_vectors, data$eigen_values, data$VtXty,
-                                 data$Xty, data$yty,
-                                 est_sigma2 = TRUE, est_tau2 = TRUE, verbose = FALSE)
+    mom_result <- mom_unmappable(data, params, model, omega, sparse_var)
 
     # Compute diagXtOmegaX and XtOmega for mr.ash using sparse effect variance and MoM residual variance
     omega_res <- compute_omega_quantities(data, sparse_var, mom_result$sigma2)
@@ -378,9 +370,8 @@ update_variance_components.ss <- function(data, params, model, estimate_method =
       ash_pi = mrash_output$pi
     ))
   } else {
-    # For standard SuSiE MLE and MoM are equivalent
-    sigma2 <- est_residual_variance(data, model)
-    return(list(sigma2 = sigma2))
+    # Use default method for standard SuSiE
+    return(update_variance_components.default(data, params, model))
   }
 }
 
@@ -429,14 +420,14 @@ get_intercept.ss <- function(data, params, model, ...) {
 
 # Get Fitted Values
 #' @keywords internal
-get_fitted.ss <- function(data, model, ...) {
-  return(NULL)
+get_fitted.ss <- function(data, params, model, ...) {
+  return(get_fitted.default(data, params, model, ...))
 }
 
 # Get Credible Sets
 #' @keywords internal
-get_cs.ss <- function(data, model, coverage, min_abs_corr, n_purity) {
-  if (is.null(coverage) || is.null(min_abs_corr)) {
+get_cs.ss <- function(data, params, model, ...) {
+  if (is.null(params$coverage) || is.null(params$min_abs_corr)) {
     return(NULL)
   }
 
@@ -447,21 +438,21 @@ get_cs.ss <- function(data, model, coverage, min_abs_corr, n_purity) {
   }
 
   return(susie_get_cs(model,
-                      coverage = coverage,
-                      Xcorr = Xcorr,
-                      min_abs_corr = min_abs_corr,
+                      Xcorr           = Xcorr,
                       check_symmetric = FALSE,
-                      n_purity = n_purity))
+                      coverage        = params$coverage,
+                      min_abs_corr    = params$min_abs_corr,
+                      n_purity        = params$n_purity))
 }
 
 # Get Variable Names
 #' @keywords internal
-get_variable_names.ss <- function(data, model, null_weight) {
-  return(assign_names(model, colnames(data$XtX), null_weight, data$p))
+get_variable_names.ss <- function(data, model, ...) {
+  return(assign_names(data, model, colnames(data$XtX)))
 }
 
 # Get univariate z-score
 #' @keywords internal
-get_zscore.ss <- function(data, model, ...) {
-  return(get_zscore.default(data, model))
+get_zscore.ss <- function(data, params, model, ...) {
+  return(get_zscore.default(data, params, model))
 }
