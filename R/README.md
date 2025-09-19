@@ -2,9 +2,10 @@
 
 ## Overview
 
-susieR 2.0 implements a unified architecture for the Sum of Single Effects. The package supports multiple data types (individual-level, sufficient statistics, regression summary statistics) through a single algorithmic pipeline using S3 method dispatch.
+susieR 2.0 implements a unified architecture incorporating various extensions to the Sum of Single Effects model for Bayesian variable selection regression. 
+The package supports multiple data types (individual-level, sufficient statistics, regression summary statistics) through a single algorithmic pipeline using S3 method dispatch.
 
-## Architecture Overview
+## Architecture Diagram
 
 ```
 Interface → Constructor → Workhorse → IBSS Core → Backend Methods
@@ -14,7 +15,7 @@ Interface → Constructor → Workhorse → IBSS Core → Backend Methods
 
 ## Core Object Definitions
 
-The architecture revolves around three fundamental objects:
+The architecture revolves around three key objects:
 
 ### **Data Object**
 - **Purpose**: Contains input data in processed, algorithm-ready form
@@ -84,8 +85,7 @@ Each data object receives an S3 class to automatically route to the appropriate 
 3. **`single_effect_regression.R`**: Single Effect Regression (SER) implementation
    - `single_effect_regression()`: Fits one sparse effect at a time
    - `optimize_prior_variance()`: Optimizes the prior variance for the lth effect
-   - `single_effect_update()`: Orchestrates the complete single-effect
-   update pipeline
+   - `single_effect_update()`: Implements the complete SER update pipeline
 
 ## Backend Method Implementations
 
