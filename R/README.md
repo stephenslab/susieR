@@ -1,59 +1,91 @@
-# SusieR 2.0 Architecture
+# susieR 2.0 Architecture
+
+## Overview
+
+susieR 2.0 implements a unified architecture for the Sum of Single Effects. The package supports multiple data types (individual-level, sufficient statistics, regression summary statistics) through a single algorithmic pipeline using S3 method dispatch.
 
 ## Architecture Overview
 
 ```
 Interface → Constructor → Workhorse → IBSS Core → Backend Methods
+               ↓            ↓
+          (data, params) → model
 ```
 
-The package follows a clean separation of concerns with each layer having specific responsibilities.
+## Core Object Definitions
 
-## Data Objects
+The architecture revolves around three fundamental objects:
 
-The package supports three types of data input:
+### **Data Object**
+- **Purpose**: Contains input data in processed, algorithm-ready form
+- **S3 Classes**: `individual`, `ss`, `rss_lambda` (determines method dispatch)
+- **Mutability**: Immutable - never modified after creation
+- **Contents**: 
+  - Input matrices: X/y (individual), XtX/Xty/yty (ss), z/R (rss_lambda)
+  - Metadata: n, p, prior_weights, null_weight
+  - Scaling attributes: For compute_Xb() compatibility
+  - Specialized fields: Eigen decomposition for unmappable effects/rss_lambda
 
-- **`individual`**: Raw individual-level data with X and y
-- **`ss`**: Sufficient statistics data with XtX, Xty, yty, and sample size (n)
-- **`rss`**: Summary statistics data with z-scores, correlation matrix (R), and sample size (n)
 
-### Key Files:
-- `susie_data.R`: Creates and validates data objects. Handles standardization, intercept adjustment, and data-specific configurations. Automatically assigns appropriate S3 class based on input type.
-- `generic_methods.R`: Defines generic S3 methods that operate on data objects (e.g., `single_effect_update()`, `update_variance_components()`, `check_convergence()`).
+### **Params Object**
+- **Purpose**: Contains ALL algorithm parameters and user settings
+- **Mutability**: Immutable - never modified after validation
+- **Contents**:
+  - Algorithm parameters: L, max_iter, tol, convergence_method
+  - Estimation settings: estimate_prior_method, estimate_residual_method
+  - Model options: unmappable_effects, refine, standardize, intercept
 
-### Data Flow:
-1. User provides raw data, summary statistics, or RSS inputs
-2. Constructor validates inputs and creates appropriate data object with S3 class
-3. For unmappable effects, individual data is automatically converted to sufficient statistics
-4. Generic methods dispatch to appropriate backend based on data class
+### **Model Object**
+- **Purpose**: Contains fitted SuSiE model state, results, and algorithm outputs
+- **Mutability**: Mutable - updated throughout fitting process
+- **Contents**:
+  - Model matrices: alpha, mu, mu2, V, sigma2
+  - Fitted values: Xr (individual), XtXr (ss), Rz (rss_lambda)
+  - Algorithm outputs: ELBO, niter, converged
+  - Final results: credible sets, PIPs, intercept, z-scores
 
-### Unmappable Effects:
-Unmappable effects are specified as a field within data objects:
-- `data$unmappable_effects = "none"` - Standard SuSiE (default)
-- `data$unmappable_effects = "inf"` - Infinitesimal effects model
-- `data$unmappable_effects = "ash"` - Adaptive shrinkage
+## Constructor Pattern
+
+### **Constructor Workflow**:
+1. **Interface functions** (`susie()`, `susie_ss()`, and `susie_rss()`) take user inputs and call constructors functions
+2. **Constructors** create validated (data, params) objects
+3. **Workhorse** Validated (data, params) objects are directly forwarded to the workhorse function for the main SuSiE algorithm
+
+### **Constructor Functions** (`susie_constructors.R`):
+- `individual_data_constructor()` → Processes X, y matrices → (data, params)
+- `sufficient_stats_constructor()`→ Processes XtX, Xty, yty → (data, params)  
+- `summary_stats_constructor()`: Routes RSS inputs based on lambda parameter
+   - If `lambda = 0` → Converts RSS data to SS → `sufficient_stats_constructor()` → (data, params)
+   - If `lambda > 0` → `rss_lambda_constructor()`→ Processes z, R for correlated errors → (data, params)
+
+### **Data Type Support**:
+
+Each data object receives an S3 class to automatically route to the appropriate backend function based on the data object's S3 class.
+
+- **`individual`**: Individual-level data (X, y matrices)
+- **`ss`**: Sufficient statistics (XtX, Xty, yty, n)
+- **`rss_lambda`**: RSS with correlated errors (z, R, lambda > 0)
 
 ## Model Components
 
-The SuSiE model represents the response as a sum of L "single effects" plus noise. Each single effect is a sparse vector where at most one element is non-zero.
-
 ### Core Algorithm Files:
 
-1. **`single_effect_regression.R`**: Single Effect Regression (SER) implementation
-   - `single_effect_regression()`: Fits one sparse effect at a time
-   - Computes posterior means, variances, and inclusion probabilities
-   - Supports prior variance optimization via `optimize_V` parameter
-   - Enhanced `optimize_prior_variance()` handles both standard and unmappable effects
+1. **`susie_workhorse.R`**: Main orchestration layer
+   - Manages the complete fitting pipeline: initialize → iterate → finalize
+   - Coordinates variance component updates
+   - Handles convergence checking based on specified method
+   - Tracks fit history when `track_fit=TRUE`
 
 2. **`iterative_bayesian_stepwise_selection.R`**: IBSS algorithm
    - `ibss_initialize()`: Creates initial model state with L effects
    - `ibss_fit()`: Main iteration loop that updates each effect sequentially
    - `ibss_finalize()`: Post-processing to compute credible sets and PIPs
 
-3. **`susie_workhorse.R`**: Main orchestration layer
-   - Manages the complete fitting pipeline: initialize → iterate → finalize
-   - Coordinates variance component updates
-   - Handles convergence checking based on specified method
-   - Tracks fit history when `track_fit=TRUE`
+3. **`single_effect_regression.R`**: Single Effect Regression (SER) implementation
+   - `single_effect_regression()`: Fits one sparse effect at a time
+   - `optimize_prior_variance()`: Optimizes the prior variance for the lth effect
+   - `single_effect_update()`: Orchestrates the complete single-effect
+   update pipeline
 
 ## Backend Method Implementations
 
@@ -65,40 +97,23 @@ Each data type has a corresponding backend file implementing the S3 methods defi
 
 The backend system allows the same high-level algorithm to work with different data representations through S3 method dispatch. Each backend file contains a 1:1 correspondence with the generic methods, implementing data-specific computations.
 
-Methods check the `data$unmappable_effects` field to apply appropriate algorithms when needed.
-
-## User Interface
-
-`susie_interface.R` provides the main user-facing functions:
-
-- **`susie()`** - Fits SuSiE model with individual-level data (X, y)
-- **`susie_ss()`** - Fits SuSiE model with summary statistics (XtX, Xty, yty, n)
-- **`susie_rss()`** - Fits SuSiE model with RSS data (z-scores, R matrix)
-  - Automatically handles both lambda = 0 (standard RSS) and lambda > 0 (correlated errors)
-  - Lambda = 0 routes through sufficient statistics backend
-  - Lambda > 0 uses specialized rss_lambda backend
-
-All interface functions support the full range of algorithm options and call the same underlying `susie_workhorse()`.
-
-## S3 Method Dispatch
-
-This package uses R's S3 object-oriented system for method dispatch. When you call a generic function like `single_effect_update(data, model, l)`, R automatically dispatches to the appropriate method based on the class of the `data` object:
-
-- `single_effect_update.individual()` for class `individual`
-- `single_effect_update.ss()` for class `ss`
-- `single_effect_update.rss_lambda()` for class `rss_lambda`
-
-If a specific method doesn't exist, R falls back to the default method.
-
 ## Utility Functions
 
-- `susie_utils.R`: Internal utility functions including:
-  - `mom_unmappable()`: Method of moments for unmappable effects
-  - `compute_eigen_decomposition()`: Eigen decomposition for unmappable effects
-  - `compute_theta_blup()`: BLUP calculations for infinitesimal effects
-  - Various helper functions for computations
+- **`susie_utils.R`**: Internal utility functions organized by:
+  - **Fundamental Building Blocks** (general purpose-helpers, matrix operations)
+  - **Data Processing & Validation** (input validation, data conversion)
+  - **Model Initialization** (set up model state)
+  - **Core Algorithm Components** (posterior mean calculation, lbf calculation)
+  - **Variance Esimation** (residual variance and unmappable effects variance esimation)
+  - **Convergence & Optimization** (Convergence checking, ELBO computation)
+  - **Credible Sets & Post-processing** (Generate credible sets, pips)
 
-- `susie_get_functions.R`: Exported accessor functions for extracting results:
+- **`susie_rss_utils.R`**: Internal utility functions specific to RSS data with lambda > 0, organized by:
+  - **Fundamental Computations** (core RSS computations)
+  - **RSS Model Methods** (lambda estimation, precomputations)
+  - **Diagnostic & Quality Control** (detect allele switch)
+
+- **`susie_get_functions.R`**: Exported accessor functions for extracting results:
   - `susie_get_cs()`: Extract credible sets
   - `susie_get_pip()`: Extract posterior inclusion probabilities
   - Other accessor functions for model components

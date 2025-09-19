@@ -19,6 +19,7 @@ Date: 2025-06-04
 Version: 0.14.2
 Authors@R: c(person("Gao","Wang",role="aut",email="wang.gao@columbia.edu"),
              person("Yuxin","Zou",role="aut"),
+             person("Alexander","McCreight",role="aut"),
              person("Kaiqian","Zhang",role="aut"),
              person("Peter","Carbonetto",role=c("aut","cre"),
                     email="peter.carbonetto@gmail.com"),

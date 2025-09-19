@@ -10,8 +10,8 @@
 
 # Configure data
 #' @keywords internal
-configure_data.rss_lambda <- function(data) {
-  return(configure_data.default(data))
+configure_data.rss_lambda <- function(data, params) {
+  return(configure_data.default(data, params))
 }
 
 # Get variance of y
@@ -32,11 +32,9 @@ get_var_y.rss_lambda <- function(data, ...) {
 
 # Initialize SuSiE model
 #' @keywords internal
-initialize_susie_model.rss_lambda <- function(data, L, scaled_prior_variance, var_y,
-                                              residual_variance, prior_weights, ...) {
+initialize_susie_model.rss_lambda <- function(data, params, var_y, ...) {
   # Base model
-  model <- initialize_matrices(data, L, scaled_prior_variance, var_y,
-                               residual_variance, prior_weights)
+  model <- initialize_matrices(data, params, var_y)
 
   # Initialize SinvRj and RjSinvRj
   D    <- data$eigen_R$values
@@ -51,20 +49,20 @@ initialize_susie_model.rss_lambda <- function(data, L, scaled_prior_variance, va
 
 # Initialize fitted values
 #' @keywords internal
-initialize_fitted.rss_lambda <- function(data, alpha, mu) {
-  return(list(Rz = as.vector(data$R %*% colSums(alpha * mu))))
+initialize_fitted.rss_lambda <- function(data, mat_init) {
+  return(list(Rz = as.vector(data$R %*% colSums(mat_init$alpha * mat_init$mu))))
 }
 
 # Validate prior variance
 #' @keywords internal
-validate_prior.rss_lambda <- function(data, model, check_prior, ...) {
-  return(validate_prior.default(data, model, check_prior, ...))
+validate_prior.rss_lambda <- function(data, params, model, ...) {
+  return(validate_prior.default(data, params, model, ...))
 }
 
 # Track core parameters for tracking
 #' @keywords internal
-track_ibss_fit.rss_lambda <- function(data, model, tracking, iter, track_fit, ...) {
-  return(track_ibss_fit.default(data, model, tracking, iter, track_fit, ...))
+track_ibss_fit.rss_lambda <- function(data, params, model, tracking, iter, ...) {
+  return(track_ibss_fit.default(data, params, model, tracking, iter, ...))
 }
 
 # =============================================================================
@@ -80,7 +78,7 @@ track_ibss_fit.rss_lambda <- function(data, model, tracking, iter, track_fit, ..
 
 # Compute residuals for single effect regression
 #' @keywords internal
-compute_residuals.rss_lambda <- function(data, model, l, ...) {
+compute_residuals.rss_lambda <- function(data, params, model, l, ...) {
   # Remove lth effect from fitted values
   Rz_without_l <- model$Rz - data$R %*% (model$alpha[l, ] * model$mu[l, ])
 
@@ -97,7 +95,7 @@ compute_residuals.rss_lambda <- function(data, model, l, ...) {
 
 # Compute SER statistics
 #' @keywords internal
-compute_ser_statistics.rss_lambda <- function(data, model, residual_variance, l, ...) {
+compute_ser_statistics.rss_lambda <- function(data, params, model, l, ...) {
   shat2 <- 1 / model$RjSinvRj
 
   # Optimization parameters
@@ -116,7 +114,9 @@ compute_ser_statistics.rss_lambda <- function(data, model, residual_variance, l,
 
 # SER posterior expected log-likelihood
 #' @keywords internal
-SER_posterior_e_loglik.rss_lambda <- function(data, model, Eb, Eb2) {
+SER_posterior_e_loglik.rss_lambda <- function(data, params, model, l) {
+  Eb     <- model$alpha[l, ] * model$mu[l, ]
+  Eb2    <- model$alpha[l, ] * model$mu2[l, ]
   V      <- data$eigen_R$vectors
   Dinv   <- compute_Dinv(model, data)
   rR     <- data$R %*% model$residuals
@@ -127,7 +127,7 @@ SER_posterior_e_loglik.rss_lambda <- function(data, model, Eb, Eb2) {
 
 # Calculate posterior moments for single effect regression
 #' @keywords internal
-calculate_posterior_moments.rss_lambda <- function(data, model, V, ...) {
+calculate_posterior_moments.rss_lambda <- function(data, params, model, V, ...) {
   post_var   <- (model$RjSinvRj + 1 / V)^(-1)
   post_mean  <- sapply(1:data$p, function(j) {
     post_var[j] * sum(model$SinvRj[, j] * model$residuals)
@@ -143,8 +143,8 @@ calculate_posterior_moments.rss_lambda <- function(data, model, V, ...) {
 
 # Calculate KL divergence
 #' @keywords internal
-compute_kl.rss_lambda <- function(data, model, l) {
-  return(compute_kl.default(data, model, l))
+compute_kl.rss_lambda <- function(data, params, model, l) {
+  return(compute_kl.default(data, params, model, l))
 }
 
 # Expected squared residuals
@@ -193,7 +193,7 @@ Eloglik.rss_lambda <- function(data, model) {
 
 # Log-likelihood for RSS
 #' @keywords internal
-loglik.rss_lambda <- function(data, model, V, ser_stats, ...) {
+loglik.rss_lambda <- function(data, params, model, V, ser_stats, ...) {
   # Compute log Bayes factors
   lbf <- -0.5 * log(1 + V / ser_stats$shat2) +
     0.5 * (V / (1 + V / ser_stats$shat2)) * (crossprod(model$SinvRj, model$residuals)^2)
@@ -212,10 +212,10 @@ loglik.rss_lambda <- function(data, model, V, ser_stats, ...) {
 }
 
 #' @keywords internal
-neg_loglik.rss_lambda <- function(data, model, V_param, ser_stats, ...) {
+neg_loglik.rss_lambda <- function(data, params, model, V_param, ser_stats, ...) {
   # Convert parameter to V based on optimization scale (always log for RSS lambda)
   V   <- exp(V_param)
-  res <- loglik.rss_lambda(data, model, V, ser_stats)
+  res <- loglik.rss_lambda(data, params, model, V, ser_stats)
   return(-res$lbf_model)
 }
 
@@ -231,7 +231,7 @@ neg_loglik.rss_lambda <- function(data, model, V_param, ser_stats, ...) {
 
 # Update fitted values
 #' @keywords internal
-update_fitted_values.rss_lambda <- function(data, model, l) {
+update_fitted_values.rss_lambda <- function(data, params, model, l) {
   model$Rz <- model$fitted_without_l + as.vector(data$R %*% (model$alpha[l, ] * model$mu[l, ]))
   model    <- precompute_rss_lambda_terms(data, model)
 
@@ -240,7 +240,7 @@ update_fitted_values.rss_lambda <- function(data, model, l) {
 
 # Update variance components
 #' @keywords internal
-update_variance_components.rss_lambda <- function(data, model, estimate_method = "MLE") {
+update_variance_components.rss_lambda <- function(data, params, model, ...) {
   upper_bound <- 1 - data$lambda
 
   objective <- function(sigma2) {
@@ -260,14 +260,14 @@ update_variance_components.rss_lambda <- function(data, model, estimate_method =
 
 # Update derived quantities
 #' @keywords internal
-update_derived_quantities.rss_lambda <- function(data, model) {
+update_derived_quantities.rss_lambda <- function(data, params, model) {
   # Recalculate Dinv with updated sigma2
   Dinv <- compute_Dinv(model, data)
-  V <- data$eigen_R$vectors
-  D <- data$eigen_R$values
+  V    <- data$eigen_R$vectors
+  D    <- data$eigen_R$values
 
   # Update SinvRj and RjSinvRj
-  model$SinvRj <- V %*% (Dinv * D * t(V))
+  model$SinvRj   <- V %*% (Dinv * D * t(V))
   model$RjSinvRj <- colSums(t(V) * (Dinv * (D^2) * t(V)))
 
   return(model)
@@ -286,46 +286,45 @@ update_derived_quantities.rss_lambda <- function(data, model) {
 
 # Get scale factors
 #' @keywords internal
-get_scale_factors.rss_lambda <- function(data) {
+get_scale_factors.rss_lambda <- function(data, params) {
   return(rep(1, data$p))
 }
 
 # Get intercept
 #' @keywords internal
-get_intercept.rss_lambda <- function(data, model, ...) {
+get_intercept.rss_lambda <- function(data, params, model, ...) {
   return(data$intercept_value)
 }
 
 # Get fitted values
 #' @keywords internal
-get_fitted.rss_lambda <- function(data, model, ...) {
-  return(model$Rz)
+get_fitted.rss_lambda <- function(data, params, model, ...) {
+  return(get_fitted.default(data, params, model, ...))
 }
 
 # Get credible sets
 #' @keywords internal
-get_cs.rss_lambda <- function(data, model, coverage, min_abs_corr, n_purity) {
-  if (is.null(coverage) || is.null(min_abs_corr)) {
+get_cs.rss_lambda <- function(data, params, model, ...) {
+  if (is.null(params$coverage) || is.null(params$min_abs_corr)) {
     return(NULL)
   }
 
   return(susie_get_cs(model,
-                      coverage = coverage,
-                      Xcorr = muffled_cov2cor(data$R),
-                      min_abs_corr = min_abs_corr,
+                      Xcorr           = muffled_cov2cor(data$R),
                       check_symmetric = FALSE,
-                      n_purity = n_purity))
+                      coverage        = params$coverage,
+                      min_abs_corr    = params$min_abs_corr,
+                      n_purity        = params$n_purity))
 }
 
 # Get variable names
 #' @keywords internal
-get_variable_names.rss_lambda <- function(data, model, null_weight) {
-  variable_names <- names(data$z)
-  return(assign_names(model, variable_names, null_weight, data$p))
+get_variable_names.rss_lambda <- function(data, model, ...) {
+  return(assign_names(data, model, names(data$z)))
 }
 
 # Get univariate z-scores
 #' @keywords internal
-get_zscore.rss_lambda <- function(data, model, ...) {
-  return(get_zscore.default(data, model))
+get_zscore.rss_lambda <- function(data, params, model, ...) {
+  return(get_zscore.default(data, params, model))
 }

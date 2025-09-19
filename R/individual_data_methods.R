@@ -10,12 +10,12 @@
 
 # Configure individual data for specified method
 #' @keywords internal
-configure_data.individual <- function(data) {
-  if (data$unmappable_effects == "none") {
-    return(configure_data.default(data))
+configure_data.individual <- function(data, params) {
+  if (params$unmappable_effects == "none") {
+    return(configure_data.default(data, params))
   } else {
     warning_message("Individual-level data converted to sufficient statistics for unmappable effects methods")
-    return(convert_individual_to_ss(data))
+    return(convert_individual_to_ss(data, params))
   }
 }
 
@@ -37,12 +37,10 @@ get_var_y.individual <- function(data, ...) {
 
 # Initialize SuSiE model
 #' @keywords internal
-initialize_susie_model.individual <- function(data, L, scaled_prior_variance, var_y,
-                                              residual_variance, prior_weights, ...) {
+initialize_susie_model.individual <- function(data, params, var_y, ...) {
 
   # Base model
-  model <- initialize_matrices(data, L, scaled_prior_variance, var_y,
-                               residual_variance, prior_weights)
+  model <- initialize_matrices(data, params, var_y)
 
   # Append predictor weights
   model$predictor_weights <- attr(data$X, "d")
@@ -52,20 +50,20 @@ initialize_susie_model.individual <- function(data, L, scaled_prior_variance, va
 
 # Initialize fitted values
 #' @keywords internal
-initialize_fitted.individual <- function(data, alpha, mu) {
-  return(list(Xr = compute_Xb(data$X, colSums(alpha * mu))))
+initialize_fitted.individual <- function(data, mat_init) {
+  return(list(Xr = compute_Xb(data$X, colSums(mat_init$alpha * mat_init$mu))))
 }
 
 # Validate prior variance
 #' @keywords internal
-validate_prior.individual <- function(data, model, check_prior, ...) {
-  return(validate_prior.default(data, model, check_prior, ...))
+validate_prior.individual <- function(data, params, model, ...) {
+  return(validate_prior.default(data, params, model, ...))
 }
 
 # Track core parameters across iterations
 #' @keywords internal
-track_ibss_fit.individual <- function(data, model, tracking, iter, track_fit, ...) {
-  return(track_ibss_fit.default(data, model, tracking, iter, track_fit, ...))
+track_ibss_fit.individual <- function(data, params, model, tracking, iter, ...) {
+  return(track_ibss_fit.default(data, params, model, tracking, iter, ...))
 }
 
 # =============================================================================
@@ -81,7 +79,7 @@ track_ibss_fit.individual <- function(data, model, tracking, iter, track_fit, ..
 
 # Compute residuals for single effect regression
 #' @keywords internal
-compute_residuals.individual <- function(data, model, l, ...) {
+compute_residuals.individual <- function(data, params, model, l, ...) {
   # Remove lth effect from fitted values
   Xr_without_l <- model$Xr - compute_Xb(data$X, model$alpha[l, ] * model$mu[l, ])
 
@@ -100,9 +98,9 @@ compute_residuals.individual <- function(data, model, l, ...) {
 
 # Compute SER statistics
 #' @keywords internal
-compute_ser_statistics.individual <- function(data, model, residual_variance, l, ...) {
+compute_ser_statistics.individual <- function(data, params, model, l, ...) {
   betahat <- (1 / model$predictor_weights) * model$residuals
-  shat2   <- residual_variance / model$predictor_weights
+  shat2   <- model$residual_variance / model$predictor_weights
 
   # Optimization parameters
   optim_init   <- log(max(c(betahat^2 - shat2, 1), na.rm = TRUE))
@@ -120,7 +118,9 @@ compute_ser_statistics.individual <- function(data, model, residual_variance, l,
 
 # Posterior expected log-likelihood for single effect regression
 #' @keywords internal
-SER_posterior_e_loglik.individual <- function(data, model, Eb, Eb2) {
+SER_posterior_e_loglik.individual <- function(data, params, model, l) {
+  Eb  <- model$alpha[l, ] * model$mu[l, ]
+  Eb2 <- model$alpha[l, ] * model$mu2[l, ]
   return(-0.5 * data$n * log(2 * pi * model$sigma2) -
            0.5 / model$sigma2 * (sum(model$raw_residuals * model$raw_residuals)
                                  - 2 * sum(model$raw_residuals * compute_Xb(data$X, Eb)) +
@@ -129,12 +129,11 @@ SER_posterior_e_loglik.individual <- function(data, model, Eb, Eb2) {
 
 # Calculate posterior moments for single effect regression
 #' @keywords internal
-calculate_posterior_moments.individual <- function(data, model, V,
-                                                   residual_variance, ...) {
+calculate_posterior_moments.individual <- function(data, params, model, V, ...) {
   # Initialize beta_1
   beta_1 <- NULL
 
-  if (data$use_servin_stephens) {
+  if (params$use_servin_stephens) {
     if (V <= 0) {
       # Zero variance case
       post_mean  <- rep(0, data$p)
@@ -160,8 +159,8 @@ calculate_posterior_moments.individual <- function(data, model, V,
     }
   } else {
     # Standard Gaussian posterior calculations
-    post_var   <- (1 / V + model$predictor_weights / residual_variance)^(-1)
-    post_mean  <- (1 / residual_variance) * post_var * model$residuals
+    post_var   <- (1 / V + model$predictor_weights / model$residual_variance)^(-1)
+    post_mean  <- (1 / model$residual_variance) * post_var * model$residuals
     post_mean2 <- post_var + post_mean^2
   }
 
@@ -175,11 +174,9 @@ calculate_posterior_moments.individual <- function(data, model, V,
 
 # Calculate KL divergence
 #' @keywords internal
-compute_kl.individual <- function(data, model, l) {
+compute_kl.individual <- function(data, params, model, l) {
   loglik_term <- model$lbf[l] + sum(dnorm(model$raw_residuals, 0, sqrt(model$sigma2), log = TRUE))
-  return(-loglik_term + SER_posterior_e_loglik(data, model,
-                                               model$alpha[l, ] * model$mu[l, ],
-                                               model$alpha[l, ] * model$mu2[l, ]))
+  return(-loglik_term + SER_posterior_e_loglik(data, params, model, l))
 }
 
 # Expected squared residuals
@@ -200,16 +197,16 @@ Eloglik.individual <- function(data, model) {
 #' @importFrom Matrix colSums
 #' @importFrom stats dnorm
 #' @keywords internal
-loglik.individual <- function(data, model, V, ser_stats, ...) {
+loglik.individual <- function(data, params, model, V, ser_stats, ...) {
   # Check if using Servin-Stephens prior
-  if (data$use_servin_stephens) {
+  if (params$use_servin_stephens) {
     # Calculate Servin-Stephens logged Bayes factors
     lbf <- do.call(c, lapply(1:data$p, function(j){
       compute_lbf_servin_stephens(x = data$X[,j],
                                   y = model$raw_residuals,
                                   s0 = sqrt(V),
-                                  alpha0 = data$alpha0,
-                                  beta0 = data$beta0)}))
+                                  alpha0 = params$alpha0,
+                                  beta0 = params$beta0)}))
 
   } else {
     # Standard Gaussian prior log Bayes factors
@@ -225,7 +222,7 @@ loglik.individual <- function(data, model, V, ser_stats, ...) {
 
   # Compute gradient
   gradient    <- compute_lbf_gradient(weights_res$alpha, ser_stats$betahat,
-                                      ser_stats$shat2, V, data$use_servin_stephens)
+                                      ser_stats$shat2, V, params$use_servin_stephens)
 
   return(list(
     lbf       = stable_res$lbf,
@@ -236,10 +233,10 @@ loglik.individual <- function(data, model, V, ser_stats, ...) {
 }
 
 #' @keywords internal
-neg_loglik.individual <- function(data, model, V_param, ser_stats, ...) {
+neg_loglik.individual <- function(data, params, model, V_param, ser_stats, ...) {
   # Convert parameter to V based on optimization scale (always log for individual)
   V   <- exp(V_param)
-  res <- loglik.individual(data, model, V, ser_stats)
+  res <- loglik.individual(data, params, model, V, ser_stats)
   return(-res$lbf_model)
 }
 
@@ -255,23 +252,21 @@ neg_loglik.individual <- function(data, model, V_param, ser_stats, ...) {
 
 # Update fitted values
 #' @keywords internal
-update_fitted_values.individual <- function(data, model, l) {
+update_fitted_values.individual <- function(data, params, model, l) {
   model$Xr <- model$fitted_without_l + compute_Xb(data$X, model$alpha[l, ] * model$mu[l, ])
   return(model)
 }
 
 # Update variance components for individual data
 #' @keywords internal
-update_variance_components.individual <- function(data, model, estimate_method = "MLE") {
-  # For standard SuSiE w/ individual data, MLE and MoM are equivalent
-  sigma2 <- est_residual_variance(data, model)
-  return(list(sigma2 = sigma2))
+update_variance_components.individual <- function(data, params, model, ...) {
+  return(update_variance_components.default(data, params, model, ...))
 }
 
 # Update derived quantities for individual data
 #' @keywords internal
-update_derived_quantities.individual <- function(data, model) {
-  return(update_derived_quantities.default(data, model))
+update_derived_quantities.individual <- function(data, params, model) {
+  return(update_derived_quantities.default(data, params, model))
 }
 
 # =============================================================================
@@ -287,14 +282,14 @@ update_derived_quantities.individual <- function(data, model) {
 
 # Get column scale factors
 #' @keywords internal
-get_scale_factors.individual <- function(data) {
+get_scale_factors.individual <- function(data, params) {
   return(attr(data$X, "scaled:scale"))
 }
 
 # Get intercept
 #' @keywords internal
-get_intercept.individual <- function(data, model, intercept) {
-  if (intercept) {
+get_intercept.individual <- function(data, params, model, ...) {
+  if (params$intercept) {
     return(data$mean_y - sum(attr(data$X, "scaled:center") *
                                (colSums(model$alpha * model$mu) / attr(data$X, "scaled:scale"))))
   } else {
@@ -304,8 +299,8 @@ get_intercept.individual <- function(data, model, intercept) {
 
 # Get Fitted Values
 #' @keywords internal
-get_fitted.individual <- function(data, model, intercept) {
-  if (intercept) {
+get_fitted.individual <- function(data, params, model, ...) {
+  if (params$intercept) {
     fitted <- model$Xr + data$mean_y
   } else {
     fitted <- model$Xr
@@ -319,32 +314,30 @@ get_fitted.individual <- function(data, model, intercept) {
 
 # Get Credible Sets
 #' @keywords internal
-get_cs.individual <- function(data, model, coverage, min_abs_corr, n_purity) {
-  if (is.null(coverage) || is.null(min_abs_corr)) {
+get_cs.individual <- function(data, params, model, ...) {
+  if (is.null(params$coverage) || is.null(params$min_abs_corr)) {
     return(NULL)
   }
 
   return(susie_get_cs(model,
-                      coverage = coverage,
-                      X = data$X,
-                      min_abs_corr = min_abs_corr,
-                      n_purity = n_purity))
+                      X            = data$X,
+                      coverage     = params$coverage,
+                      min_abs_corr = params$min_abs_corr,
+                      n_purity     = params$n_purity))
 }
 
 
 # Get Variable Names
 #' @keywords internal
-get_variable_names.individual <- function(data, model, null_weight) {
-  variable_names <- colnames(data$X)
-  return(assign_names(model, variable_names, null_weight, data$p))
+get_variable_names.individual <- function(data, model, ...) {
+  return(assign_names(data, model, colnames(data$X)))
 }
 
 # Get univariate z-score
 #' @keywords internal
-get_zscore.individual <- function(data, model, compute_univariate_zscore,
-                                  intercept, standardize, null_weight) {
-  if (isFALSE(compute_univariate_zscore)) {
-    return(get_zscore.default(data, model))
+get_zscore.individual <- function(data, params, model, ...) {
+  if (isFALSE(params$compute_univariate_zscore)) {
+    return(get_zscore.default(data, params, model))
   }
 
   X <- data$X
@@ -357,9 +350,9 @@ get_zscore.individual <- function(data, model, compute_univariate_zscore,
       "to skip this step set compute_univariate_zscore = FALSE"
     )
   }
-  if (!is.null(null_weight) && null_weight != 0) {
+  if (!is.null(data$null_weight) && data$null_weight != 0) {
     X <- X[, 1:(ncol(X) - 1)]
   }
 
-  return(calc_z(X, data$y, center = intercept, scale = standardize))
+  return(calc_z(X, data$y, center = params$intercept, scale = params$standardize))
 }

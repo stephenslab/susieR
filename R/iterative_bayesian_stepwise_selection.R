@@ -1,112 +1,71 @@
-# Core IBSS functions: ibss_initialize(), ibss_fit(), and ibss_finalize()
+# =============================================================================
+#' @section IBSS INITIALIZATION
+#'
+#' Initializes the SuSiE model object for Iterative Bayesian Stepwise Selection.
+#' Sets up model matrices, handles model_init, and prepares for IBSS.
+# =============================================================================
+#'
+#' @param data Data object (individual, ss, or rss_lambda)
+#' @param params Validated params object
+#'
+#' @return Initialized SuSiE model object with alpha, mu, mu2, V, sigma2, and fitted values
+#'
+#' @keywords internal
+#' @noRd
+ibss_initialize <- function(data, params) {
 
-ibss_initialize <- function(data, L = min(10, data$p),
-                            scaled_prior_variance = 0.2,
-                            residual_variance = NULL,
-                            prior_weights = NULL,
-                            null_weight = NULL,
-                            model_init = NULL,
-                            prior_tol = 1e-9,
-                            residual_variance_upperbound = Inf) {
-
-  # Define p and var_y
-  p <- data$p
+  # Set var(y)
   var_y <- get_var_y(data)
 
-  # Validate prior tolerance threshold
-  if (!is.numeric(prior_tol) || length(prior_tol) != 1) {
-    stop("prior_tol must be a numeric scalar.")
-  }
-  if (prior_tol < 0) {
-    stop("prior_tol must be non-negative.")
-  }
-
-  # Validate residual_variance_upperbound
-  if (!is.numeric(residual_variance_upperbound) || length(residual_variance_upperbound) != 1) {
-    stop("residual_variance_upperbound must be a numeric scalar.")
-  }
-  if (residual_variance_upperbound <= 0) {
-    stop("residual_variance_upperbound must be positive.")
-  }
-
-  # Check prior variance
-  if (!is.numeric(scaled_prior_variance) || any(scaled_prior_variance < 0)) {
-    stop("Scaled prior variance should be positive number.")
-  }
-
-  # Handle RSS-specific prior variance logic
-  # When n is not provided in RSS, use prior_variance as scaled_prior_variance
-  if (!is.null(data$rss_n_provided) && !data$rss_n_provided) {
-    scaled_prior_variance <- data$rss_prior_variance
-  }
-
-  # Check prior weights
-  if (is.null(prior_weights)) {
-    prior_weights <- rep(1 / p, p)
-  }
-
-  # Check number of single effects
-  if (p < L) {
-    L <- p
+  # Adjust number of single effects if needed
+  if (data$p < params$L) {
+    params$L <- data$p
   }
 
   # Check & validate residual variance
-  if (is.null(residual_variance)) {
-    # For unmappable effects methods, initialize sigma2 to 1 (as in original implementations)
-    if (!is.null(data$unmappable_effects) && data$unmappable_effects %in% c("inf", "ash")) {
-      residual_variance <- 1
-    } else {
-      residual_variance <- var_y
-    }
+  if (is.null(params$residual_variance)) {
+    params$residual_variance <- var_y
   }
-  if (!is.numeric(residual_variance)) {
+  if (!is.numeric(params$residual_variance)) {
     stop("Input residual variance sigma2 must be numeric.")
   }
-  residual_variance <- as.numeric(residual_variance)
-  if (length(residual_variance) != 1) {
+  params$residual_variance <- as.numeric(params$residual_variance)
+  if (length(params$residual_variance) != 1) {
     stop("Input residual variance sigma2 must be a scalar.")
   }
-  if (residual_variance <= 0) {
+  if (params$residual_variance <= 0) {
     stop("Residual variance sigma2 must be positive (is your var(Y) zero?).")
   }
 
   # Handle model initialization
-  if (!missing(model_init) && !is.null(model_init)) {
+  if (!is.null(params$model_init)) {
     # Validate the contents of model_init
-    validate_init(model_init, L, null_weight)
+    validate_init(data, params)
 
     # Prune effects with zero prior variance
-    model_init <- susie_prune_single_effects(model_init)
+    model_init_pruned <- prune_single_effects(params$model_init)
 
     # Adjust the number of effects
-    adjustment <- adjust_L(model_init, L, V = rep(scaled_prior_variance * var_y, L))
-    L <- adjustment$L
+    adjustment <- adjust_L(params, model_init_pruned, var_y)
+    params$L   <- adjustment$L
 
     # Create base model with all required fields
-    mat_init <- initialize_susie_model(
-      data, L, scaled_prior_variance, var_y,
-      residual_variance, prior_weights
-    )
+    mat_init <- initialize_susie_model(data, params, var_y)
 
     # Merge with adjusted model_init
     mat_init <- modifyList(mat_init, adjustment$model_init)
 
     # Reset iteration-specific values
-    mat_init$KL <- rep(as.numeric(NA), L)
-    mat_init$lbf <- rep(as.numeric(NA), L)
+    mat_init$KL  <- rep(as.numeric(NA), params$L)
+    mat_init$lbf <- rep(as.numeric(NA), params$L)
   } else {
     # Create fresh model
-    mat_init <- initialize_susie_model(
-      data, L, scaled_prior_variance, var_y,
-      residual_variance, prior_weights
-    )
+    mat_init <- initialize_susie_model(data, params, var_y)
   }
 
-  # Initialize fitted values
-  fitted <- initialize_fitted(data, mat_init$alpha, mat_init$mu)
-
-  # Set null index
-  null_index <- initialize_null_index(null_weight, p)
+  # Initialize fitted values and null index
+  fitted     <- initialize_fitted(data, mat_init)
+  null_index <- initialize_null_index(data)
 
   # Return assembled SuSiE object
   model <- c(mat_init,
@@ -118,72 +77,78 @@ ibss_initialize <- function(data, L = min(10, data$p),
   return(model)
 }
 
-ibss_fit <- function(data, model, estimate_prior_variance = TRUE,
-                     estimate_prior_method = c("optim", "EM", "simple"),
-                     check_null_threshold = 0, check_prior = FALSE) {
-
-  estimate_prior_method <- match.arg(estimate_prior_method)
-
-  # Set prior variance estimation if NA
-  if (!estimate_prior_variance) {
-    estimate_prior_method <- "none"
-  }
+# =============================================================================
+#' @section IBSS FITTING
+#'
+#' Updates all L single effects in the SuSiE model for one IBSS iteration.
+#' Calls single_effect_update for each effect and validates prior variance estimates.
+# =============================================================================
+#'
+#' @param data Data object (individual, ss, or rss_lambda)
+#' @param params Validated params object
+#' @param model Current SuSiE model object
+#'
+#' @return Updated SuSiE model object with new alpha, mu, mu2, V, lbf, KL, and
+#' fitted values
+#'
+#' @keywords internal
+#' @noRd
+ibss_fit <- function(data, params, model) {
 
   # Repeat for each effect to update
   L <- nrow(model$alpha)
   if (L > 0) {
     for (l in seq_len(L)) {
-      model <- single_effect_update(data, model, l,
-                                     optimize_V = estimate_prior_method,
-                                     check_null_threshold = check_null_threshold)
+      model <- single_effect_update(data, params, model, l)
     }
   }
 
   # Validate prior variance is reasonable
-  validate_prior(data, model, check_prior)
+  validate_prior(data, params, model)
 
   return(model)
 }
 
-ibss_finalize <- function(data, model, coverage = 0.95,
-                          min_abs_corr = 0.50, median_abs_corr = NULL,
-                          prior_tol = 1e-9, n_purity = 100,
-                          compute_univariate_zscore = FALSE,
-                          intercept = TRUE, standardize = TRUE,
-                          elbo = NULL, iter = NA_integer_,
-                          null_weight = NULL, track_fit = FALSE,
+# =============================================================================
+#' @section IBSS FINALIZATION
+#'
+#' Finalizes the SuSiE model after convergence or maximum number of iterations
+#' reached. Computes credible sets, PIPs, intercept, fitted values, and z-scores.
+# =============================================================================
+#'
+#' @param data Data object (individual, ss, or rss_lambda)
+#' @param params Validated params object
+#' @param model Final SuSiE model object from iterations
+#' @param ... Additional finalization parameters
+#'
+#' @return Complete SuSiE model object with credible sets, PIPs, and summary statistics
+#'
+#' @keywords internal
+#' @noRd
+ibss_finalize <- function(data, params, model, elbo = NULL, iter = NA_integer_,
                           tracking = NULL) {
 
   # Append ELBO & iteration count to model output
   model$niter <- iter
 
   # Intercept & Fitted Values
-  model$X_column_scale_factors <- get_scale_factors(data)
-  model$intercept <- get_intercept(data, model, intercept)
-  model$fitted <- get_fitted(data, model, intercept)
+  model$X_column_scale_factors <- get_scale_factors(data, params)
+  model$intercept              <- get_intercept(data, params, model)
+  model$fitted                 <- get_fitted(data, params, model)
+
+  # Posterior Inclusion Probabilities, credible sets, z-scores
+  model$sets <- get_cs(data, params, model)
+  model$pip  <- susie_get_pip(model, prior_tol = params$prior_tol)
+  model$z    <- get_zscore(data, params, model)
 
   # Tracking Across Iterations
-  if (track_fit) {
-    model$trace <- tracking
-  }
-
-  # Credible Sets
-  model$sets <- get_cs(data, model, coverage, min_abs_corr, n_purity)
-
-  # Posterior Inclusion Probabilities]
-  model$pip <- susie_get_pip(model, prune_by_cs = FALSE, prior_tol = prior_tol)
+  if (params$track_fit) model$trace <- tracking
 
   # Set pi field from prior_weights
-  if (is.null(model$pi)) {
-    model$pi <- model$prior_weights
-  }
+  if (is.null(model$pi)) model$pi   <- model$prior_weights
 
   # Assign Variable Names
-  model <- get_variable_names(data, model, null_weight)
-
-  # Compute z-scores
-  model$z <- get_zscore(data, model, compute_univariate_zscore,
-                        intercept, standardize, null_weight)
+  model <- get_variable_names(data, model)
 
   return(model)
 }

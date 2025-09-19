@@ -10,10 +10,10 @@
 
 # Configure data object for specified method
 #' @keywords internal
-configure_data <- function(data) {
+configure_data <- function(data, params) {
   UseMethod("configure_data")
 }
-configure_data.default <- function(data) {
+configure_data.default <- function(data, params) {
   return(data)
 }
 
@@ -38,42 +38,42 @@ get_var_y.default <- function(data, ...) {
 
 # Initialize susie model object
 #' @keywords internal
-initialize_susie_model <- function(data, ...) {
+initialize_susie_model <- function(data, params, ...) {
   UseMethod("initialize_susie_model")
 }
-initialize_susie_model.default <- function(data, ...) {
+initialize_susie_model.default <- function(data, params, ...) {
   stop("initialize_susie_model: no method for class '", class(data)[1], "'")
 }
 
 # Initialize fitted values
 #' @keywords internal
-initialize_fitted <- function(data, alpha, mu) {
+initialize_fitted <- function(data, mat_init) {
   UseMethod("initialize_fitted")
 }
-initialize_fitted.default <- function(data, alpha, mu, ...) {
+initialize_fitted.default <- function(data, mat_init, ...) {
   stop("initialize_fitted: no method for class '", class(data)[1], "'")
 }
 
 # Validate prior variance
 #' @keywords internal
-validate_prior <- function(data, model, check_prior, ...) {
+validate_prior <- function(data, params, model, ...) {
   UseMethod("validate_prior")
 }
-validate_prior.default <- function(data, model, check_prior, ...) {
+validate_prior.default <- function(data, params, model, ...) {
   invisible(TRUE)
 }
 
 # Track core parameters of a susie fit across iterations
 #' @keywords internal
-track_ibss_fit <- function(data, model, tracking, iter, track_fit, ...) {
+track_ibss_fit <- function(data, params, model, tracking, iter, ...) {
   UseMethod("track_ibss_fit")
 }
-track_ibss_fit.default <- function(data, model, tracking, iter, track_fit, ...) {
-  if (isTRUE(track_fit)) {
+track_ibss_fit.default <- function(data, params, model, tracking, iter, ...) {
+  if (isTRUE(params$track_fit)) {
     tracking[[iter]] <- list(
-      alpha = model$alpha,
-      niter = iter,
-      V = model$V,
+      alpha  = model$alpha,
+      niter  = iter,
+      V      = model$V,
       sigma2 = model$sigma2
     )
   }
@@ -93,49 +93,47 @@ track_ibss_fit.default <- function(data, model, tracking, iter, track_fit, ...) 
 
 # Compute residuals for single effect regression
 #' @keywords internal
-compute_residuals <- function(data, model, l, ...) {
+compute_residuals <- function(data, params, model, l, ...) {
   UseMethod("compute_residuals")
 }
-compute_residuals.default <- function(data, model, l, ...) {
+compute_residuals.default <- function(data, params, model, l, ...) {
   stop("compute_residuals: no method for class '", class(data)[1], "'")
 }
 
 # Compute SER statistics (betahat, shat2)
 #' @keywords internal
-compute_ser_statistics <- function(data, model, residual_variance, ...) {
+compute_ser_statistics <- function(data, params, model, l, ...) {
   UseMethod("compute_ser_statistics")
 }
-compute_ser_statistics.default <- function(data, model, residual_variance, ...) {
+compute_ser_statistics.default <- function(data, params, model, l, ...) {
   stop("compute_ser_statistics: no method for class '", class(data)[1], "'")
 }
 
 # Single effect regression posterior expected log-likelihood
 #' @keywords internal
-SER_posterior_e_loglik <- function(data, model, Eb, Eb2) {
+SER_posterior_e_loglik <- function(data, params, model, l) {
   UseMethod("SER_posterior_e_loglik")
 }
-SER_posterior_e_loglik.default <- function(data, model, Eb, Eb2) {
+SER_posterior_e_loglik.default <- function(data, params, model, l) {
   stop("SER_posterior_e_loglik: no method for class '", class(data)[1], "'")
 }
 
 # Calculate posterior moments for single effect regression
 #' @keywords internal
-calculate_posterior_moments <- function(data, ...) {
+calculate_posterior_moments <- function(data, params, model, V, ...) {
   UseMethod("calculate_posterior_moments")
 }
-calculate_posterior_moments.default <- function(data, ...) {
+calculate_posterior_moments.default <- function(data, params, model, V, ...) {
   stop("calculate_posterior_moments: no method for class '", class(data)[1], "'")
 }
 
 # Calculate KL divergence
 #' @keywords internal
-compute_kl <- function(data, model, l) {
+compute_kl <- function(data, params, model, l) {
   UseMethod("compute_kl")
 }
-compute_kl.default <- function(data, model, l) {
-  return(-model$lbf[l] + SER_posterior_e_loglik(data, model,
-                                                model$alpha[l, ] * model$mu[l, ],
-                                                model$alpha[l, ] * model$mu2[l, ]))
+compute_kl.default <- function(data, params, model, l) {
+  return(-model$lbf[l] + SER_posterior_e_loglik(data, params, model, l))
 }
 
 # Expected squared residuals
@@ -158,19 +156,19 @@ Eloglik.default <- function(data, model) {
 
 # Log-likelihood for prior variance optimization
 #' @keywords internal
-loglik <- function(data, ...) {
+loglik <- function(data, params, model, V, ser_stats, ...) {
   UseMethod("loglik")
 }
-loglik.default <- function(data, ...) {
+loglik.default <- function(data, params, model, V, ser_stats, ...) {
   stop("loglik: no method for class '", class(data)[1], "'")
 }
 
 # Negative log-likelihood for optimization (handles both log and linear scales)
 #' @keywords internal
-neg_loglik <- function(data, ...) {
+neg_loglik <- function(data, params, model, V_param, ser_stats, ...) {
   UseMethod("neg_loglik")
 }
-neg_loglik.default <- function(data, ...) {
+neg_loglik.default <- function(data, params, model, V_param, ser_stats, ...) {
   stop("neg_loglik: no method for class '", class(data)[1], "'")
 }
 
@@ -186,28 +184,30 @@ neg_loglik.default <- function(data, ...) {
 
 # Update fitted values
 #' @keywords internal
-update_fitted_values <- function(data, model, l) {
+update_fitted_values <- function(data, params, model, l) {
   UseMethod("update_fitted_values")
 }
-update_fitted_values.default <- function(data, model, l) {
+update_fitted_values.default <- function(data, params, model, l) {
   stop("update_fitted_values: no method for class '", class(data)[1], "'")
 }
 
 # Update variance components
 #' @keywords internal
-update_variance_components <- function(data, model, estimate_method = "MLE") {
+update_variance_components <- function(data, params, model, ...) {
   UseMethod("update_variance_components")
 }
-update_variance_components.default <- function(data, model, estimate_method = "MLE") {
-  stop("update_variance_components: no method for class '", class(data)[1], "'")
+update_variance_components.default <- function(data, params, model, ...) {
+  # Standard MLE estimation (MLE and MoM are equivalent for standard SuSiE)
+  sigma2 <- est_residual_variance(data, model)
+  return(list(sigma2 = sigma2))
 }
 
 # Update derived quantities after variance component changes
 #' @keywords internal
-update_derived_quantities <- function(data, model) {
+update_derived_quantities <- function(data, params, model) {
   UseMethod("update_derived_quantities")
 }
-update_derived_quantities.default <- function(data, model) {
+update_derived_quantities.default <- function(data, params, model) {
   return(model)
 }
 
@@ -224,37 +224,37 @@ update_derived_quantities.default <- function(data, model) {
 
 # Get column scale factors
 #' @keywords internal
-get_scale_factors <- function(data, ...) {
+get_scale_factors <- function(data, params, ...) {
   UseMethod("get_scale_factors")
 }
-get_scale_factors.default <- function(data, ...) {
+get_scale_factors.default <- function(data, params, ...) {
   stop("get_scale_factors: no method for class '", class(data)[1], "'")
 }
 
 # Get intercept
 #' @keywords internal
-get_intercept <- function(data, model, ...) {
+get_intercept <- function(data, params, model, ...) {
   UseMethod("get_intercept")
 }
-get_intercept.default <- function(data, model, ...) {
+get_intercept.default <- function(data, params, model, ...) {
   stop("get_intercept: no method for class '", class(data)[1], "'")
 }
 
 # Get fitted values
 #' @keywords internal
-get_fitted <- function(data, model, ...) {
+get_fitted <- function(data, params, model, ...) {
   UseMethod("get_fitted")
 }
-get_fitted.default <- function(data, model, ...) {
-  stop("get_fitted: no method for class '", class(data)[1], "'")
+get_fitted.default <- function(data, params, model, ...) {
+  return(NULL)
 }
 
 # Get credible sets
 #' @keywords internal
-get_cs <- function(data, model, ...) {
+get_cs <- function(data, params, model, ...) {
   UseMethod("get_cs")
 }
-get_cs.default <- function(data, model, ...) {
+get_cs.default <- function(data, params, model, ...) {
   stop("get_cs: no method for class '", class(data)[1], "'")
 }
 
@@ -269,9 +269,9 @@ get_variable_names.default <- function(data, model, ...) {
 
 # Get univariate z-scores
 #' @keywords internal
-get_zscore <- function(data, model, ...) {
+get_zscore <- function(data, params, model, ...) {
   UseMethod("get_zscore")
 }
-get_zscore.default <- function(data, model, ...) {
+get_zscore.default <- function(data, params, model, ...) {
   return(NULL)
 }

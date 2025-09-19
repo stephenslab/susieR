@@ -138,7 +138,8 @@ compute_colstats <- function(X, center = TRUE, scale = TRUE) {
 #' across different SuSiE data types.
 #'
 #' Functions: check_semi_pd, check_projection, validate_init,
-#' convert_individual_to_ss, extract_prior_weights, modify_prior_weights
+#' convert_individual_to_ss, extract_prior_weights, modify_prior_weights,
+#' validate_and_override_params
 # =============================================================================
 
 # Check whether A is positive semidefinite
@@ -174,19 +175,20 @@ check_projection <- function(A, b) {
 
 # Validate Model Initialization Object
 #' @keywords internal
-validate_init <- function(model_init, L, null_weight) {
-  if (!inherits(model_init, "susie")) {
+validate_init <- function(data, params) {
+  if (!inherits(params$model_init, "susie")) {
     stop("model_init must be a 'susie' object")
   }
 
   # Assign values from initialized model
-  alpha   <- model_init$alpha
-  mu      <- model_init$mu
-  mu2     <- model_init$mu2
-  V       <- model_init$V
-  sigma2  <- model_init$sigma2
-  pi_w    <- model_init$pi
-  null_id <- model_init$null_index
+  L       <- params$L
+  alpha   <- params$model_init$alpha
+  mu      <- params$model_init$mu
+  mu2     <- params$model_init$mu2
+  V       <- params$model_init$V
+  sigma2  <- params$model_init$sigma2
+  pi_w    <- params$model_init$pi
+  null_id <- params$model_init$null_index
 
   # Verify no NA/Inf values in alpha
   if (any(!is.finite(alpha))) {
@@ -233,7 +235,7 @@ validate_init <- function(model_init, L, null_weight) {
   }
 
   # Verify alpha values are between [0,1]
-  if (max(model_init$alpha) > 1 || min(model_init$alpha) < 0) {
+  if (max(alpha) > 1 || min(alpha) < 0) {
     stop(
       "model_init$alpha has invalid values outside range [0,1]; please ",
       "check your input"
@@ -241,7 +243,7 @@ validate_init <- function(model_init, L, null_weight) {
   }
 
   # Verify alpha dimensions for number of requested effects
-  if (nrow(model_init$alpha) > L) {
+  if (nrow(alpha) > L) {
     stop("model_init has more effects than requested L")
   }
 
@@ -297,7 +299,7 @@ validate_init <- function(model_init, L, null_weight) {
 
 # Convert individual data to ss with unmappable effects components.
 #' @keywords internal
-convert_individual_to_ss <- function(data) {
+convert_individual_to_ss <- function(data, params) {
   # Compute sufficient statistics
   XtX <- compute_XtX(data$X)
   Xty <- compute_Xty(data$X, data$y)
@@ -317,10 +319,7 @@ convert_individual_to_ss <- function(data) {
       X_colmeans = X_colmeans,
       y_mean = data$mean_y,
       prior_weights = data$prior_weights,
-      null_weight = data$null_weight,
-      unmappable_effects = data$unmappable_effects,
-      convergence_method = data$convergence_method,
-      use_servin_stephens = FALSE
+      null_weight = data$null_weight
     ),
     class = "ss"
   )
@@ -330,7 +329,7 @@ convert_individual_to_ss <- function(data) {
   attr(ss_data$XtX, "scaled:scale") <- attr(data$X, "scaled:scale")
 
   # Add eigen decomposition for unmappable effects methods
-  ss_data <- add_eigen_decomposition(ss_data, data)
+  ss_data <- add_eigen_decomposition(ss_data, params, data)
 
   return(ss_data)
 }
@@ -370,6 +369,80 @@ modify_prior_weights <- function(data, new_prior_weights) {
   return(data_modified)
 }
 
+# Validate and Override Parameters
+#' @keywords internal
+validate_and_override_params <- function(params) {
+
+  # Validate prior tolerance threshold
+  if (!is.numeric(params$prior_tol) || length(params$prior_tol) != 1) {
+    stop("prior_tol must be a numeric scalar.")
+  }
+  if (params$prior_tol < 0) {
+    stop("prior_tol must be non-negative.")
+  }
+
+  # Validate residual_variance_upperbound
+  if (!is.numeric(params$residual_variance_upperbound) || length(params$residual_variance_upperbound) != 1) {
+    stop("residual_variance_upperbound must be a numeric scalar.")
+  }
+  if (params$residual_variance_upperbound <= 0) {
+    stop("residual_variance_upperbound must be positive.")
+  }
+
+  # Validate scaled prior variance
+  if (!is.numeric(params$scaled_prior_variance) || any(params$scaled_prior_variance < 0)) {
+    stop("Scaled prior variance should be positive number.")
+  }
+
+  # Validate unmappable_effects
+  if (!params$unmappable_effects %in% c("none", "inf", "ash")) {
+    stop("unmappable_effects must be one of 'none', 'inf', or 'ash'.")
+  }
+
+  # Override convergence method for unmappable effects
+  if (params$unmappable_effects != "none") {
+    if (params$convergence_method != "pip") {
+      warning_message("Unmappable effects models (inf/ash) do not have a well defined ELBO and require PIP convergence. ",
+              "Setting convergence_method='pip'.")
+      params$convergence_method <- "pip"
+    }
+  }
+
+  # Check for incompatible parameter combinations
+  if (!is.null(params$refine) && params$refine && params$unmappable_effects != "none") {
+    stop("Refinement is not supported with unmappable effects (inf/ash) as it relies on ELBO, ",
+         "which is not well-defined for these models. Please set refine = FALSE.")
+  }
+
+  # Override prior estimation method when estimation is disabled
+  if (!params$estimate_prior_variance) {
+    params$estimate_prior_method <- "none"
+  }
+
+  # Handle Servin_Stephens parameters for small sample correction
+  if (params$estimate_residual_method == "Servin_Stephens") {
+    params$use_servin_stephens <- TRUE
+
+    # Override convergence method
+    if (params$convergence_method != "pip") {
+      warning_message("Servin_Stephens method requires PIP convergence. Setting convergence_method='pip'.")
+      params$convergence_method <- "pip"
+    }
+
+    # Override prior variance estimation method
+    if (params$estimate_prior_method != "EM") {
+      warning_message("Servin_Stephens method works better with EM. Setting estimate_prior_method='EM'.")
+      params$estimate_prior_method <- "EM"
+    }
+  } else {
+    params$use_servin_stephens <- FALSE
+    params$alpha0 <- NULL
+    params$beta0 <- NULL
+  }
+
+  return(params)
+}
+
 # =============================================================================
 #' @section MODEL INITIALIZATION
 #'
@@ -378,23 +451,23 @@ modify_prior_weights <- function(data, new_prior_weights) {
 #' for iterative fitting.
 #'
 #' Functions: initialize_matrices, initialize_null_index, assign_names,
-#' adjust_L, susie_prune_single_effects, add_null_effect
+#' adjust_L, prune_single_effects, add_null_effect
 # =============================================================================
 
 # Initialize core susie model object with default parameter matrices
 #' @keywords internal
-initialize_matrices <- function(data, L, scaled_prior_variance, var_y,
-                                residual_variance, prior_weights) {
+initialize_matrices <- function(data, params, var_y) {
+  L <- params$L
   mat_init <- list(
     alpha             = matrix(1 / data$p, L, data$p),
     mu                = matrix(0, L, data$p),
     mu2               = matrix(0, L, data$p),
-    V                 = rep(scaled_prior_variance * var_y, L),
+    V                 = rep(params$scaled_prior_variance * var_y, L),
     KL                = rep(as.numeric(NA), L),
     lbf               = rep(as.numeric(NA), L),
     lbf_variable      = matrix(as.numeric(NA), L, data$p),
-    sigma2            = residual_variance,
-    pi                = prior_weights,
+    sigma2            = params$residual_variance,
+    pi                = data$prior_weights,
     predictor_weights = rep(as.numeric(NA), data$p)
   )
 
@@ -403,22 +476,22 @@ initialize_matrices <- function(data, L, scaled_prior_variance, var_y,
 
 # Initialize Null Index
 #' @keywords internal
-initialize_null_index <- function(null_weight, p) {
-  if (is.null(null_weight) || null_weight == 0) {
+initialize_null_index <- function(data) {
+  if (is.null(data$null_weight) || data$null_weight == 0) {
     null_idx <- 0
   } else {
-    null_idx <- p
+    null_idx <- data$p
   }
   return(null_idx)
 }
 
 # Helper function to assign variable names to model components
 #' @keywords internal
-assign_names <- function(model, variable_names, null_weight, p) {
+assign_names <- function(data, model, variable_names) {
   if (!is.null(variable_names)) {
-    if (!is.null(null_weight)) {
+    if (!is.null(data$null_weight)) {
       variable_names[length(variable_names)] <- "null"
-      names(model$pip) <- variable_names[-p]
+      names(model$pip) <- variable_names[-data$p]
     } else {
       names(model$pip) <- variable_names
     }
@@ -432,8 +505,10 @@ assign_names <- function(model, variable_names, null_weight, p) {
 
 # Adjust the number of effects
 #' @keywords internal
-adjust_L <- function(model_init, L, V) {
-  num_effects <- nrow(model_init$alpha)
+adjust_L <- function(params, model_init_pruned, var_y) {
+  num_effects <- nrow(model_init_pruned$alpha)
+  L <- params$L
+
   if (num_effects > L) {
     warning_message(paste0(
       "Requested L = ", L,
@@ -444,29 +519,30 @@ adjust_L <- function(model_init, L, V) {
     L <- num_effects
   }
 
-  model_init <- susie_prune_single_effects(model_init, L = L, V = V)
+  V <- rep(params$scaled_prior_variance * var_y, L)
+  model_init <- prune_single_effects(model_init_pruned, L = L, V = V)
 
   return(list(model_init = model_init, L = L))
 }
 
 # Prune single effects to given number L in susie model object.
 #' @keywords internal
-susie_prune_single_effects <- function(s, L = 0, V = NULL) {
-  num_effects <- nrow(s$alpha)
+prune_single_effects <- function(model_init, L = 0, V = NULL) {
+  num_effects <- nrow(model_init$alpha)
   if (L == 0) {
-    # Filtering will be based on non-zero elements in s$V.
-    if (!is.null(s$V)) {
-      L <- length(which(s$V > 0))
+    # Filtering will be based on non-zero elements in model_init$V.
+    if (!is.null(model_init$V)) {
+      L <- length(which(model_init$V > 0))
     } else {
       L <- num_effects
     }
   }
   if (L == num_effects) {
-    s$sets <- NULL
-    return(s)
+    model_init$sets <- NULL
+    return(model_init)
   }
-  if (!is.null(s$sets$cs_index)) {
-    effects_rank <- c(s$sets$cs_index, setdiff(1:num_effects, s$sets$cs_index))
+  if (!is.null(model_init$sets$cs_index)) {
+    effects_rank <- c(model_init$sets$cs_index, setdiff(1:num_effects, model_init$sets$cs_index))
   } else {
     effects_rank <- 1:num_effects
   }
@@ -479,46 +555,46 @@ susie_prune_single_effects <- function(s, L = 0, V = NULL) {
       "to have", L, "effects."
     ))
 
-    s$alpha <- rbind(
-      s$alpha[effects_rank, ],
-      matrix(1 / ncol(s$alpha), L - num_effects, ncol(s$alpha))
+    model_init$alpha <- rbind(
+      model_init$alpha[effects_rank, ],
+      matrix(1 / ncol(model_init$alpha), L - num_effects, ncol(model_init$alpha))
     )
     for (n in c("mu", "mu2", "lbf_variable")) {
-      if (!is.null(s[[n]])) {
-        s[[n]] <- rbind(
-          s[[n]][effects_rank, ],
-          matrix(0, L - num_effects, ncol(s[[n]]))
+      if (!is.null(model_init[[n]])) {
+        model_init[[n]] <- rbind(
+          model_init[[n]][effects_rank, ],
+          matrix(0, L - num_effects, ncol(model_init[[n]]))
         )
       }
     }
     for (n in c("KL", "lbf")) {
-      if (!is.null(s[[n]])) {
-        s[[n]] <- c(s[[n]][effects_rank], rep(NA, L - num_effects))
+      if (!is.null(model_init[[n]])) {
+        model_init[[n]] <- c(model_init[[n]][effects_rank], rep(NA, L - num_effects))
       }
     }
     if (!is.null(V)) {
       if (length(V) > 1) {
-        V[1:num_effects] <- s$V[effects_rank]
+        V[1:num_effects] <- model_init$V[effects_rank]
       } else {
         V <- rep(V, L)
       }
     }
-    s$V <- V
+    model_init$V <- V
   }
-  s$sets <- NULL
-  return(s)
+  model_init$sets <- NULL
+  return(model_init)
 }
 
 # Add a null effect to the model object
 #' @keywords internal
-add_null_effect <- function(s, V) {
-  p              <- ncol(s$alpha)
-  s$alpha        <- rbind(s$alpha, 1 / p)
-  s$mu           <- rbind(s$mu, rep(0, p))
-  s$mu2          <- rbind(s$mu2, rep(0, p))
-  s$lbf_variable <- rbind(s$lbf_variable, rep(0, p))
-  s$V            <- c(s$V, V)
-  return(s)
+add_null_effect <- function(model_init, V) {
+  p                       <- ncol(model_init$alpha)
+  model_init$alpha        <- rbind(model_init$alpha, 1 / p)
+  model_init$mu           <- rbind(model_init$mu, rep(0, p))
+  model_init$mu2          <- rbind(model_init$mu2, rep(0, p))
+  model_init$lbf_variable <- rbind(model_init$lbf_variable, rep(0, p))
+  model_init$V            <- c(model_init$V, V)
+  return(model_init)
 }
 
 # =============================================================================
@@ -549,11 +625,11 @@ compute_eigen_decomposition <- function(XtX, n) {
 
 # Add eigen decomposition to ss data objects for unmappable methods
 #' @keywords internal
-add_eigen_decomposition <- function(data, individual_data = NULL) {
+add_eigen_decomposition <- function(data, params, individual_data = NULL) {
   # Standardize y to unit variance for all unmappable effects methods
   y_scale_factor <- 1
 
-  if (data$unmappable_effects != "none") {
+  if (params$unmappable_effects != "none") {
     var_y <- data$yty / (data$n - 1)
     if (abs(var_y - 1) > 1e-10) {
       sd_y           <- sqrt(var_y)
@@ -572,7 +648,7 @@ add_eigen_decomposition <- function(data, individual_data = NULL) {
   data$VtXty         <- t(eigen_decomp$V) %*% data$Xty
 
   # SuSiE.ash requires the X matrix and standardized y vector
-  if (data$unmappable_effects == "ash") {
+  if (params$unmappable_effects == "ash") {
     if (is.null(individual_data)) {
       stop("Adaptive shrinkage (ash) requires individual-level data")
     }
@@ -677,52 +753,51 @@ compute_lbf_gradient <- function(alpha, betahat, shat2, V, use_servin_stephens =
 
 # Method of Moments variance estimation for unmappable effects methods
 #' @keywords internal
-mom_unmappable <- function(alpha, mu, omega, sigma2, tau2, n, V, Dsq, VtXty, Xty, yty,
-                           est_sigma2, est_tau2, verbose) {
-  L <- nrow(mu)
-  p <- ncol(mu)
+mom_unmappable <- function(data, params, model, omega, tau2) {
+  L <- nrow(model$mu)
 
   A <- matrix(0, nrow = 2, ncol = 2)
-  A[1, 1] <- n
-  A[1, 2] <- sum(Dsq)
+  A[1, 1] <- data$n
+  A[1, 2] <- sum(data$eigen_values)
   A[2, 1] <- A[1, 2]
-  A[2, 2] <- sum(Dsq^2)
+  A[2, 2] <- sum(data$eigen_values^2)
 
   # Compute diag(V'MV)
-  b <- colSums(mu * alpha)
-  Vtb <- crossprod(V, b)
+  b <- colSums(model$mu * model$alpha)
+  Vtb <- crossprod(data$eigen_vectors, b)
   diagVtMV <- Vtb^2
-  tmpD <- rep(0, p)
+  tmpD <- rep(0, data$p)
 
   for (l in seq_len(L)) {
-    bl <- mu[l, ] * alpha[l, ]
-    Vtbl <- t(V) %*% bl
+    bl <- model$mu[l, ] * model$alpha[l, ]
+    Vtbl <- crossprod(data$eigen_vectors, bl)
     diagVtMV <- diagVtMV - Vtbl^2
-    tmpD <- tmpD + alpha[l, ] * (mu[l, ]^2 + 1 / omega[l, ])
+    tmpD <- tmpD + model$alpha[l, ] * (model$mu[l, ]^2 + 1 / omega[l, ])
   }
 
-  diagVtMV <- diagVtMV + rowSums(sweep(t(V)^2, 2, tmpD, `*`))
+  diagVtMV <- diagVtMV + rowSums(sweep(t(data$eigen_vectors)^2, 2, tmpD, `*`))
 
   # Compute x
   x <- rep(0, 2)
-  x[1] <- yty - 2 * sum(b * Xty) + sum(Dsq * diagVtMV)
-  x[2] <- sum(Xty^2) - 2 * sum(Vtb * VtXty * Dsq) + sum(Dsq^2 * diagVtMV)
+  x[1] <- data$yty - 2 * sum(b * data$Xty) + sum(data$eigen_values * diagVtMV)
+  x[2] <- sum(data$Xty^2) - 2 * sum(Vtb * data$VtXty * data$eigen_values) +
+    sum(data$eigen_values^2 * diagVtMV)
 
   if (est_tau2) {
     sol <- solve(A, x)
     if (sol[1] > 0 && sol[2] > 0) {
       sigma2 <- sol[1]
-      tau2 <- sol[2]
+      tau2   <- sol[2]
     } else {
-      sigma2 <- x[1] / n
-      tau2 <- 0
+      sigma2 <- x[1] / data$n
+      tau2   <- 0
     }
-    if (verbose) {
+    if (params$verbose) {
       message(sprintf("Update (sigma^2,tau^2) to (%f,%e)\n", sigma2, tau2))
     }
   } else if (est_sigma2) {
-    sigma2 <- (x[1] - A[1, 2] * tau2) / n
-    if (verbose) {
+    sigma2 <- (x[1] - A[1, 2] * tau2) / data$n
+    if (params$verbose) {
       message(sprintf("Update sigma^2 to %f\n", sigma2))
     }
   }
@@ -731,69 +806,60 @@ mom_unmappable <- function(alpha, mu, omega, sigma2, tau2, n, V, Dsq, VtXty, Xty
 
 # MLE variance estimation for unmappable effects
 #' @keywords internal
-mle_unmappable <- function(alpha, mu, omega, sigma2, tau2, n,
-                           eigen_vectors, eigen_values, VtXty, yty,
-                           est_sigma2 = TRUE, est_tau2 = TRUE,
-                           sigma2_range = NULL, tau2_range = NULL,
-                           verbose = FALSE) {
-  L <- nrow(mu)
-  p <- ncol(mu)
+mle_unmappable <- function(data, params, model, omega) {
+  L <- nrow(model$alpha)
 
-  # Set default ranges if not provided
-  if (is.null(sigma2_range)) {
-    sigma2_range <- c(0.2 * yty / n, 1.2 * yty / n)
-  }
-  if (is.null(tau2_range)) {
-    tau2_range <- c(1e-12, 1.2 * yty / (n * p))
-  }
+  # Set default ranges
+  sigma2_range <- c(0.2 * data$yty / data$n, 1.2 * data$yty / data$n)
+  tau2_range   <- c(1e-12, 1.2 * data$yty / (data$n * data$p))
 
   # Compute diag(V'MV)
-  b <- colSums(mu * alpha)
-  Vtb <- crossprod(eigen_vectors, b)
+  b        <- colSums(model$mu * model$alpha)
+  Vtb      <- crossprod(data$eigen_vectors, b)
   diagVtMV <- Vtb^2
-  tmpD <- rep(0, p)
+  tmpD     <- rep(0, data$p)
 
   for (l in seq_len(L)) {
-    bl <- mu[l, ] * alpha[l, ]
-    Vtbl <- t(eigen_vectors) %*% bl
+    bl       <- model$mu[l, ] * model$alpha[l, ]
+    Vtbl     <- crossprod(data$eigen_vectors, bl)
     diagVtMV <- diagVtMV - Vtbl^2
-    tmpD <- tmpD + alpha[l, ] * (mu[l, ]^2 + 1 / omega[l, ])
+    tmpD     <- tmpD + model$alpha[l, ] * (model$mu[l, ]^2 + 1 / omega[l, ])
   }
 
-  diagVtMV <- diagVtMV + rowSums(sweep(t(eigen_vectors)^2, 2, tmpD, `*`))
+  diagVtMV <- diagVtMV + rowSums(sweep(t(data$eigen_vectors)^2, 2, tmpD, `*`))
 
   # Negative ELBO as function of x = (sigma^2, tau^2)
   f <- function(x) {
     sigma2_val <- x[1]
-    tau2_val <- x[2]
-    var_val <- tau2_val * eigen_values + sigma2_val
+    tau2_val   <- x[2]
+    var_val    <- tau2_val * data$eigen_values + sigma2_val
 
-    0.5 * (n - p) * log(sigma2_val) + 0.5 / sigma2_val * yty +
+    0.5 * (data$n - data$p) * log(sigma2_val) + 0.5 / sigma2_val * data$yty +
       sum(0.5 * log(var_val) -
-            0.5 * tau2_val / sigma2_val * VtXty^2 / var_val -
-            Vtb * VtXty / var_val +
-            0.5 * eigen_values / var_val * diagVtMV)
+            0.5 * tau2_val / sigma2_val * data$VtXty^2 / var_val -
+            Vtb * data$VtXty / var_val +
+            0.5 * data$eigen_values / var_val * diagVtMV)
   }
 
   # Negative ELBO for sigma^2 only (when tau^2 is fixed)
   g <- function(sigma2_val) {
-    f(c(sigma2_val, tau2))
+    f(c(sigma2_val, model$tau2))
   }
 
   if (est_tau2) {
     # Optimize both sigma^2 and tau^2
     res <- optim(
-      par = c(sigma2, tau2),
-      fn = f,
+      par    = c(model$sigma2, model$tau2),
+      fn     = f,
       method = "L-BFGS-B",
-      lower = c(sigma2_range[1], tau2_range[1]),
-      upper = c(sigma2_range[2], tau2_range[2])
+      lower  = c(sigma2_range[1], tau2_range[1]),
+      upper  = c(sigma2_range[2], tau2_range[2])
     )
 
     if (res$convergence == 0) {
       sigma2 <- res$par[1]
-      tau2 <- res$par[2]
-      if (verbose) {
+      tau2   <- res$par[2]
+      if (params$verbose) {
         message(sprintf("Update (sigma^2,tau^2) to (%f,%e)\n", sigma2, tau2))
       }
     } else {
@@ -802,16 +868,16 @@ mle_unmappable <- function(alpha, mu, omega, sigma2, tau2, n,
   } else if (est_sigma2) {
     # Optimize only sigma^2
     res <- optim(
-      par = sigma2,
-      fn = g,
+      par    = model$sigma2,
+      fn     = g,
       method = "L-BFGS-B",
-      lower = sigma2_range[1],
-      upper = sigma2_range[2]
+      lower  = sigma2_range[1],
+      upper  = sigma2_range[2]
     )
 
     if (res$convergence == 0) {
       sigma2 <- res$par
-      if (verbose) {
+      if (params$verbose) {
         message(sprintf("Update sigma^2 to %f\n", sigma2))
       }
     } else {
@@ -876,17 +942,17 @@ est_residual_variance <- function(data, model) {
 
 # Helper function to update variance components and derived quantities
 #' @keywords internal
-update_model_variance <- function(data, model, lowerbound, upperbound,
-                                  estimate_method = "MLE") {
+update_model_variance <- function(data, params, model) {
   # Update variance components
-  variance_result <- update_variance_components(data, model, estimate_method)
+  variance_result <- update_variance_components(data, params, model)
   model           <- modifyList(model, variance_result)
 
   # Apply bounds to residual variance
-  model$sigma2    <- min(max(model$sigma2, lowerbound), upperbound)
+  model$sigma2    <- min(max(model$sigma2, params$residual_variance_lowerbound),
+                         params$residual_variance_upperbound)
 
   # Update derived quantities after variance component changes
-  model           <- update_derived_quantities(data, model)
+  model           <- update_derived_quantities(data, params, model)
 
   return(model)
 }
@@ -903,7 +969,7 @@ update_model_variance <- function(data, model, lowerbound, upperbound,
 
 # Check convergence
 #' @keywords internal
-check_convergence <- function(model, elbo, tol, convergence_method, iter) {
+check_convergence <- function(params, model, elbo, iter) {
   # Skip convergence check on first iteration
   if(iter == 1) {
     return(FALSE)
@@ -913,24 +979,24 @@ check_convergence <- function(model, elbo, tol, convergence_method, iter) {
   ELBO_diff   <- elbo[iter + 1] - model$prev_elbo
   ELBO_failed <- is.na(ELBO_diff) || is.infinite(ELBO_diff)
 
-  if (convergence_method == "pip" || ELBO_failed) {
+  if (params$convergence_method == "pip" || ELBO_failed) {
     # Fallback to PIP-based convergence if ELBO calculation fails
-    if (ELBO_failed && convergence_method == "elbo") {
+    if (ELBO_failed && params$convergence_method == "elbo") {
       warning_message(paste0("Iteration ", iter, " produced an NA/infinite ELBO
                              value. Using pip-based convergence this iteration."))
     }
 
     # Calculate difference in alpha values
     PIP_diff <- max(abs(model$prev_alpha - model$alpha))
-    return(PIP_diff < tol)
+    return(PIP_diff < params$tol)
   }
-  return(ELBO_diff < tol)
+  return(ELBO_diff < params$tol)
 }
 
 # Objective function (ELBO)
 #' @keywords internal
-get_objective <- function(data, model, verbose = FALSE) {
-  if (!is.null(data$unmappable_effects) && data$unmappable_effects == "inf") {
+get_objective <- function(data, params, model) {
+  if (!is.null(params$unmappable_effects) && params$unmappable_effects == "inf") {
     # Compute omega
     L         <- nrow(model$alpha)
     omega_res <- compute_omega_quantities(data, model$tau2, model$sigma2)
@@ -955,7 +1021,7 @@ get_objective <- function(data, model, verbose = FALSE) {
   if (is.infinite(objective)) {
     stop("get_objective() produced an infinite ELBO value")
   }
-  if (verbose) {
+  if (params$verbose) {
     message("objective:", objective)
   }
   return(objective)

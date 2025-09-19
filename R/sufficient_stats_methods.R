@@ -10,11 +10,11 @@
 
 # Configure ss data for specified method
 #' @keywords internal
-configure_data.ss <- function(data) {
-  if (data$unmappable_effects == "none") {
-    return(configure_data.default(data))
+configure_data.ss <- function(data, params) {
+  if (params$unmappable_effects == "none") {
+    return(configure_data.default(data, params))
   } else {
-    return(add_eigen_decomposition(data))
+    return(add_eigen_decomposition(data, params))
   }
 }
 
@@ -36,15 +36,13 @@ get_var_y.ss <- function(data, ...) {
 
 # Initialize SuSiE model
 #' @keywords internal
-initialize_susie_model.ss <- function(data, L, scaled_prior_variance, var_y,
-                                      residual_variance, prior_weights, ...) {
+initialize_susie_model.ss <- function(data, params, var_y, ...) {
 
   # Base model
-  model <- initialize_matrices(data, L, scaled_prior_variance, var_y,
-                               residual_variance, prior_weights)
+  model <- initialize_matrices(data, params, var_y)
 
   # Append predictor weights and initialize non-sparse quantities
-  if (data$unmappable_effects %in% c("inf", "ash")) {
+  if (params$unmappable_effects %in% c("inf", "ash")) {
 
     # Initialize omega quantities for unmappable effects
     omega_res               <- compute_omega_quantities(data, tau2 = 0, sigma2 = 1)
@@ -64,14 +62,14 @@ initialize_susie_model.ss <- function(data, L, scaled_prior_variance, var_y,
 
 # Initialize fitted values
 #' @keywords internal
-initialize_fitted.ss <- function(data, alpha, mu) {
-  return(list(XtXr = compute_Xb(data$XtX, colSums(alpha * mu))))
+initialize_fitted.ss <- function(data, mat_init) {
+  return(list(XtXr = as.vector(data$XtX %*% colSums(mat_init$alpha * mat_init$mu))))
 }
 
 # Validate Prior Variance
 #' @keywords internal
-validate_prior.ss <- function(data, model, check_prior, ...) {
-  if (isTRUE(check_prior)) {
+validate_prior.ss <- function(data, params, model, ...) {
+  if (isTRUE(params$check_prior)) {
     if (is.null(data$zm)) {
       bhat <- data$Xty / model$predictor_weights
       shat <- sqrt(model$sigma2 / model$predictor_weights)
@@ -91,17 +89,17 @@ validate_prior.ss <- function(data, model, check_prior, ...) {
 
 # Track core parameters across iterations
 #' @keywords internal
-track_ibss_fit.ss <- function(data, model, tracking, iter, track_fit, ...) {
-  if (data$unmappable_effects %in% c("inf", "ash")) {
+track_ibss_fit.ss <- function(data, params, model, tracking, iter, ...) {
+  if (params$unmappable_effects %in% c("inf", "ash")) {
     # Append non-sparse variance component to tracking
-    tracking <- track_ibss_fit.default(data, model, tracking, iter, track_fit, ...)
-    if (isTRUE(track_fit)) {
+    tracking <- track_ibss_fit.default(data, params, model, tracking, iter, ...)
+    if (isTRUE(params$track_fit)) {
       tracking[[iter]]$tau2 <- model$tau2
     }
     return(tracking)
   } else {
     # Use default for standard SS case
-    return(track_ibss_fit.default(data, model, tracking, iter, track_fit, ...))
+    return(track_ibss_fit.default(data, params, model, tracking, iter, ...))
   }
 }
 
@@ -118,8 +116,8 @@ track_ibss_fit.ss <- function(data, model, tracking, iter, track_fit, ...) {
 
 # Compute residuals for single effect regression
 #' @keywords internal
-compute_residuals.ss <- function(data, model, l, ...) {
-  if (!is.null(data$unmappable_effects) && data$unmappable_effects != "none") {
+compute_residuals.ss <- function(data, params, model, l, ...) {
+  if (!is.null(params$unmappable_effects) && params$unmappable_effects != "none") {
     # Remove lth effect from fitted values
     b <- colSums(model$mu * model$alpha) - model$mu[l, ] * model$alpha[l, ]
 
@@ -153,12 +151,12 @@ compute_residuals.ss <- function(data, model, l, ...) {
 
 # Compute SER statistics
 #' @keywords internal
-compute_ser_statistics.ss <- function(data, model, residual_variance, l, ...) {
+compute_ser_statistics.ss <- function(data, params, model, l, ...) {
   betahat <- (1 / model$predictor_weights) * model$residuals
-  shat2   <- residual_variance / model$predictor_weights
+  shat2   <- model$residual_variance / model$predictor_weights
 
   # Optimization parameters
-  if (data$unmappable_effects == "none") {
+  if (params$unmappable_effects == "none") {
     # Standard SuSiE: optimize on log scale
     optim_init   <- log(max(c(betahat^2 - shat2, 1), na.rm = TRUE))
     optim_bounds <- c(-30, 15)
@@ -181,8 +179,11 @@ compute_ser_statistics.ss <- function(data, model, residual_variance, l, ...) {
 
 # Posterior expected log-likelihood for a single effect regression
 #' @keywords internal
-SER_posterior_e_loglik.ss <- function(data, model, Eb, Eb2) {
-  if (data$unmappable_effects == "none") {
+SER_posterior_e_loglik.ss <- function(data, params, model, l) {
+  Eb  <- model$alpha[l, ] * model$mu[l, ]
+  Eb2 <- model$alpha[l, ] * model$mu2[l, ]
+
+  if (params$unmappable_effects == "none") {
     # Standard SuSiE
     return(-0.5 / model$sigma2 * (-2 * sum(Eb * model$residuals) + sum(model$predictor_weights * as.vector(Eb2))))
   } else {
@@ -193,11 +194,10 @@ SER_posterior_e_loglik.ss <- function(data, model, Eb, Eb2) {
 
 # Calculate posterior moments for single effect regression
 #' @keywords internal
-calculate_posterior_moments.ss <- function(data, model, V,
-                                           residual_variance, ...) {
+calculate_posterior_moments.ss <- function(data, params, model, V, ...) {
   # Standard Gaussian posterior calculations
-  post_var   <- (1 / V + model$predictor_weights / residual_variance)^(-1)
-  post_mean  <- (1 / residual_variance) * post_var * model$residuals
+  post_var   <- (1 / V + model$predictor_weights / model$residual_variance)^(-1)
+  post_mean  <- (1 / model$residual_variance) * post_var * model$residuals
   post_mean2 <- post_var + post_mean^2
 
   return(list(
@@ -209,8 +209,8 @@ calculate_posterior_moments.ss <- function(data, model, V,
 
 # Calculate KL divergence
 #' @keywords internal
-compute_kl.ss <- function(data, model, l) {
-  return(compute_kl.default(data, model, l))
+compute_kl.ss <- function(data, params, model, l) {
+  return(compute_kl.default(data, params, model, l))
 }
 
 # Expected Squared Residuals
@@ -236,7 +236,7 @@ Eloglik.ss <- function(data, model) {
 #' @importFrom Matrix colSums
 #' @importFrom stats dnorm
 #' @keywords internal
-loglik.ss <- function(data, model, V, ser_stats, ...) {
+loglik.ss <- function(data, params, model, V, ser_stats, ...) {
   # log(bf) for each SNP
   lbf <- dnorm(ser_stats$betahat, 0, sqrt(V + ser_stats$shat2), log = TRUE) -
     dnorm(ser_stats$betahat, 0, sqrt(ser_stats$shat2), log = TRUE)
@@ -259,13 +259,13 @@ loglik.ss <- function(data, model, V, ser_stats, ...) {
 }
 
 #' @keywords internal
-neg_loglik.ss <- function(data, model, V_param, ser_stats, ...) {
+neg_loglik.ss <- function(data, params, model, V_param, ser_stats, ...) {
   # Convert parameter to V based on optimization scale
   V <- if (ser_stats$optim_scale == "log") exp(V_param) else V_param
 
-  if (data$unmappable_effects == "none") {
+  if (params$unmappable_effects == "none") {
     # Standard objective
-    res <- loglik.ss(data, model, V, ser_stats)
+    res <- loglik.ss(data, params, model, V, ser_stats)
     return(-res$lbf_model)
   } else {
     # Unmappable objective with logSumExp trick
@@ -289,19 +289,21 @@ neg_loglik.ss <- function(data, model, V_param, ser_stats, ...) {
 
 # Update fitted values
 #' @keywords internal
-update_fitted_values.ss <- function(data, model, l) {
-  if (data$unmappable_effects != "none") {
+update_fitted_values.ss <- function(data, params, model, l) {
+  if (params$unmappable_effects != "none") {
     model$XtXr <- compute_Xb(data$XtX, colSums(model$alpha * model$mu) + model$theta)
   } else {
-    model$XtXr <- model$fitted_without_l + compute_Xb(data$XtX, model$alpha[l, ] * model$mu[l, ])
+    # Fix: Use direct matrix multiplication to match original implementation
+    # Original: s$XtXr = s$XtXr + XtX %*% (s$alpha[l,] * s$mu[l,])
+    model$XtXr <- model$fitted_without_l + as.vector(data$XtX %*% (model$alpha[l, ] * model$mu[l, ]))
   }
   return(model)
 }
 
 # Update variance components for ss data
 #' @keywords internal
-update_variance_components.ss <- function(data, model, estimate_method = "MLE") {
-  if (data$unmappable_effects == "inf") {
+update_variance_components.ss <- function(data, params, model, ...) {
+  if (params$unmappable_effects == "inf") {
     # Calculate omega
     L         <- nrow(model$alpha)
     omega_res <- compute_omega_quantities(data, model$tau2, model$sigma2)
@@ -312,25 +314,18 @@ update_variance_components.ss <- function(data, model, estimate_method = "MLE") 
     theta <- compute_theta_blup(data, model)
 
     # Sigma2 and tau2 update
-    if (estimate_method == "MLE") {
-      mle_result <- mle_unmappable(model$alpha, model$mu, omega, model$sigma2, model$tau2, data$n,
-                                   data$eigen_vectors, data$eigen_values, data$VtXty, data$yty,
-                                   est_sigma2 = TRUE, est_tau2 = TRUE,
-                                   verbose = FALSE
-      )
+    if (params$estimate_residual_method == "MLE") {
+      mle_result <- mle_unmappable(data, params, model, omega)
       return(list(sigma2 = mle_result$sigma2,
                   tau2   = mle_result$tau2,
                   theta  = theta))
     } else {
-      mom_result <- mom_unmappable(model$alpha, model$mu, omega, model$sigma2, model$tau2, data$n,
-                                   data$eigen_vectors, data$eigen_values, data$VtXty, data$Xty, data$yty,
-                                   est_sigma2 = TRUE, est_tau2 = TRUE, verbose = FALSE
-      )
+      mom_result <- mom_unmappable(data, params, model, omega, model$tau2)
       return(list(sigma2 = mom_result$sigma2,
                   tau2   = mom_result$tau2,
                   theta  = theta))
     }
-  } else if (data$unmappable_effects == "ash") {
+  } else if (params$unmappable_effects == "ash") {
     # Compute omega from current iteration
     L         <- nrow(model$alpha)
     omega_res <- compute_omega_quantities(data, model$tau2, model$sigma2)
@@ -341,11 +336,7 @@ update_variance_components.ss <- function(data, model, estimate_method = "MLE") 
     sparse_var <- mean(colSums(model$alpha * model$V))
 
     # Update sigma2 and tau2 using sparse effect variance and omega from current iteration
-    mom_result <- mom_unmappable(model$alpha, model$mu, omega,
-                                 sigma2 = model$sigma2, tau2 = sparse_var, data$n,
-                                 data$eigen_vectors, data$eigen_values, data$VtXty,
-                                 data$Xty, data$yty,
-                                 est_sigma2 = TRUE, est_tau2 = TRUE, verbose = FALSE)
+    mom_result <- mom_unmappable(data, params, model, omega, sparse_var)
 
     # Compute diagXtOmegaX and XtOmega for mr.ash using sparse effect variance and MoM residual variance
     omega_res <- compute_omega_quantities(data, sparse_var, mom_result$sigma2)
@@ -379,16 +370,15 @@ update_variance_components.ss <- function(data, model, estimate_method = "MLE") 
       ash_pi = mrash_output$pi
     ))
   } else {
-    # For standard SuSiE MLE and MoM are equivalent
-    sigma2 <- est_residual_variance(data, model)
-    return(list(sigma2 = sigma2))
+    # Use default method for standard SuSiE
+    return(update_variance_components.default(data, params, model))
   }
 }
 
 # Update derived quantities for ss data
 #' @keywords internal
-update_derived_quantities.ss <- function(data, model) {
-  if (data$unmappable_effects %in% c("inf", "ash")) {
+update_derived_quantities.ss <- function(data, params, model) {
+  if (params$unmappable_effects %in% c("inf", "ash")) {
     # Update omega quantities for next iteration
     omega_res               <- compute_omega_quantities(data, model$tau2, model$sigma2)
     model$omega_var         <- omega_res$omega_var
@@ -401,7 +391,7 @@ update_derived_quantities.ss <- function(data, model) {
 
     return(model)
   } else {
-    return(update_derived_quantities.default(data, model))
+    return(update_derived_quantities.default(data, params, model))
   }
 }
 
@@ -418,26 +408,26 @@ update_derived_quantities.ss <- function(data, model) {
 
 # Get column scale factors
 #' @keywords internal
-get_scale_factors.ss <- function(data) {
+get_scale_factors.ss <- function(data, params) {
   return(attr(data$XtX, "scaled:scale"))
 }
 
 # Get intercept
 #' @keywords internal
-get_intercept.ss <- function(data, model, ...) {
+get_intercept.ss <- function(data, params, model, ...) {
   return(sum(data$X_colmeans * (colSums(model$alpha * model$mu) / model$X_column_scale_factors)))
 }
 
 # Get Fitted Values
 #' @keywords internal
-get_fitted.ss <- function(data, model, ...) {
-  return(NULL)
+get_fitted.ss <- function(data, params, model, ...) {
+  return(get_fitted.default(data, params, model, ...))
 }
 
 # Get Credible Sets
 #' @keywords internal
-get_cs.ss <- function(data, model, coverage, min_abs_corr, n_purity) {
-  if (is.null(coverage) || is.null(min_abs_corr)) {
+get_cs.ss <- function(data, params, model, ...) {
+  if (is.null(params$coverage) || is.null(params$min_abs_corr)) {
     return(NULL)
   }
 
@@ -448,21 +438,21 @@ get_cs.ss <- function(data, model, coverage, min_abs_corr, n_purity) {
   }
 
   return(susie_get_cs(model,
-                      coverage = coverage,
-                      Xcorr = Xcorr,
-                      min_abs_corr = min_abs_corr,
+                      Xcorr           = Xcorr,
                       check_symmetric = FALSE,
-                      n_purity = n_purity))
+                      coverage        = params$coverage,
+                      min_abs_corr    = params$min_abs_corr,
+                      n_purity        = params$n_purity))
 }
 
 # Get Variable Names
 #' @keywords internal
-get_variable_names.ss <- function(data, model, null_weight) {
-  return(assign_names(model, colnames(data$XtX), null_weight, data$p))
+get_variable_names.ss <- function(data, model, ...) {
+  return(assign_names(data, model, colnames(data$XtX)))
 }
 
 # Get univariate z-score
 #' @keywords internal
-get_zscore.ss <- function(data, model, ...) {
-  return(get_zscore.default(data, model))
+get_zscore.ss <- function(data, params, model, ...) {
+  return(get_zscore.default(data, params, model))
 }
