@@ -96,7 +96,7 @@ for each SNP, <span class="math inline">E(\hat{z}_j |
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/stephenslab/susieR" class="external-link">susieR</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://jeroen.r-universe.dev/curl" class="external-link">curl</a></span><span class="op">)</span></span>
-<span><span class="co"># Using libcurl 8.14.1 with OpenSSL/3.5.1</span></span></code></pre></div>
+<span><span class="co"># Using libcurl 8.14.1 with OpenSSL/3.5.3</span></span></code></pre></div>
 <div class="section level2">
 <h2 id="ld-information-from-the-original-genotype-data">LD information from the original genotype data<a class="anchor" aria-label="anchor" href="#ld-information-from-the-original-genotype-data"></a>
 </h2>
@@ -128,6 +128,14 @@ mapping vignette</a>.</p>
 <p>The plot for the observed z scores vs the expected z scores is</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">condz_in</span> <span class="op">=</span> <span class="fu"><a href="../reference/kriging_rss.html">kriging_rss</a></span><span class="op">(</span><span class="va">z_scores</span>, <span class="va">Rin</span>, n<span class="op">=</span><span class="va">n</span><span class="op">)</span></span>
+<span><span class="co"># Warning: `aes_string()` was deprecated in ggplot2 3.0.0.</span></span>
+<span><span class="co"># <span style="color: #00BBBB;">ℹ</span> Please use tidy evaluation idioms with `aes()`.</span></span>
+<span><span class="co"># <span style="color: #00BBBB;">ℹ</span> See also `vignette("ggplot2-in-packages")` for more information.</span></span>
+<span><span class="co"># <span style="color: #00BBBB;">ℹ</span> The deprecated feature was likely used in the <span style="color: #0000BB;">susieR</span> package.</span></span>
+<span><span class="co">#   Please report the issue at <span style="color: #0000BB; font-style: italic;">&lt;https://github.com/stephenslab/susieR/issues&gt;</span>.</span></span>
+<span><span class="co"># <span style="color: #555555;">This warning is displayed once every 8 hours.</span></span></span>
+<span><span class="co"># <span style="color: #555555;">Call `lifecycle::last_lifecycle_warnings()` to see where this warning was</span></span></span>
+<span><span class="co"># <span style="color: #555555;">generated.</span></span></span>
 <span><span class="va">condz_in</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="susierss_diagnostic_files/figure-html/unnamed-chunk-4-1.png" alt="&amp;nbsp;" width="600"><p class="caption">
@@ -250,23 +258,24 @@ versions of R, and the R packages, used to generate these results.</p>
 <span><span class="co"># [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co"># </span></span>
 <span><span class="co"># other attached packages:</span></span>
-<span><span class="co"># [1] curl_6.2.2     susieR_0.14.21</span></span>
+<span><span class="co"># [1] curl_7.0.0     susieR_0.14.21</span></span>
 <span><span class="co"># </span></span>
 <span><span class="co"># loaded via a namespace (and not attached):</span></span>
-<span><span class="co">#  [1] Matrix_1.7-3       gtable_0.3.6       jsonlite_2.0.0     dplyr_1.1.4       </span></span>
+<span><span class="co">#  [1] Matrix_1.7-4       gtable_0.3.6       jsonlite_2.0.0     dplyr_1.1.4       </span></span>
 <span><span class="co">#  [5] compiler_4.4.3     crayon_1.5.3       Rcpp_1.1.0         tidyselect_1.2.1  </span></span>
 <span><span class="co">#  [9] parallel_4.4.3     jquerylib_0.1.4    systemfonts_1.2.3  scales_1.4.0      </span></span>
-<span><span class="co"># [13] textshaping_1.0.1  yaml_2.3.10        fastmap_1.2.0      lattice_0.22-7    </span></span>
-<span><span class="co"># [17] plyr_1.8.9         ggplot2_3.5.2      R6_2.6.1           labeling_0.4.3    </span></span>
+<span><span class="co"># [13] textshaping_1.0.3  yaml_2.3.10        fastmap_1.2.0      lattice_0.22-7    </span></span>
+<span><span class="co"># [17] plyr_1.8.9         ggplot2_4.0.0      R6_2.6.1           labeling_0.4.3    </span></span>
 <span><span class="co"># [21] generics_0.1.4     mixsqp_0.3-54      knitr_1.50         htmlwidgets_1.6.4 </span></span>
 <span><span class="co"># [25] tibble_3.3.0       desc_1.4.3         RcppZiggurat_0.1.8 bslib_0.9.0       </span></span>
-<span><span class="co"># [29] pillar_1.11.0      RColorBrewer_1.1-3 rlang_1.1.6        reshape_0.8.9     </span></span>
-<span><span class="co"># [33] cachem_1.1.0       xfun_0.52          fs_1.6.6           sass_0.4.10       </span></span>
-<span><span class="co"># [37] RcppParallel_5.1.9 cli_3.6.5          withr_3.0.2        pkgdown_2.1.3     </span></span>
-<span><span class="co"># [41] magrittr_2.0.3     digest_0.6.37      grid_4.4.3         irlba_2.3.5.1     </span></span>
-<span><span class="co"># [45] lifecycle_1.0.4    vctrs_0.6.5        Rfast_2.1.0        evaluate_1.0.4    </span></span>
-<span><span class="co"># [49] glue_1.8.0         farver_2.1.2       ragg_1.4.0         rmarkdown_2.29    </span></span>
-<span><span class="co"># [53] matrixStats_1.5.0  tools_4.4.3        pkgconfig_2.0.3    htmltools_0.5.8.1</span></span></code></pre></div>
+<span><span class="co"># [29] pillar_1.11.1      RColorBrewer_1.1-3 rlang_1.1.6        reshape_0.8.10    </span></span>
+<span><span class="co"># [33] cachem_1.1.0       xfun_0.53          fs_1.6.6           sass_0.4.10       </span></span>
+<span><span class="co"># [37] S7_0.2.0           RcppParallel_5.1.9 cli_3.6.5          withr_3.0.2       </span></span>
+<span><span class="co"># [41] pkgdown_2.1.3      magrittr_2.0.4     digest_0.6.37      grid_4.4.3        </span></span>
+<span><span class="co"># [45] irlba_2.3.5.1      lifecycle_1.0.4    vctrs_0.6.5        Rfast_2.1.0       </span></span>
+<span><span class="co"># [49] evaluate_1.0.5     glue_1.8.0         farver_2.1.2       ragg_1.5.0        </span></span>
+<span><span class="co"># [53] rmarkdown_2.29     matrixStats_1.5.0  tools_4.4.3        pkgconfig_2.0.3   </span></span>
+<span><span class="co"># [57] htmltools_0.5.8.1</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

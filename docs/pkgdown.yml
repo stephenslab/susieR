@@ -1,4 +1,4 @@
-pandoc: 3.7.0.2
+pandoc: '3.8'
 pkgdown: 2.1.3
 pkgdown_sha: ~
 articles:
@@ -6,13 +6,13 @@ articles:
   finemapping: finemapping.html
   l0_initialization: l0_initialization.html
   mwe: mwe.html
-  small_data: small_data.html
+  small_sample: small_sample.html
   sparse_susie_eval: sparse_susie_eval.html
   susie_refine: susie_refine.html
   susie_rss: susie_rss.html
   susierss_diagnostic: susierss_diagnostic.html
   trend_filtering: trend_filtering.html
-last_built: 2025-09-24T11:52Z
+last_built: 2025-09-24T21:46Z
 urls:
   reference: https://stephenslab.github.io/susieR/reference
   article: https://stephenslab.github.io/susieR/articles
