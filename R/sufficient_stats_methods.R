@@ -89,17 +89,17 @@ validate_prior.ss <- function(data, params, model, ...) {
 
 # Track core parameters across iterations
 #' @keywords internal
-track_ibss_fit.ss <- function(data, params, model, tracking, iter, ...) {
+track_ibss_fit.ss <- function(data, params, model, tracking, iter, elbo, ...) {
   if (params$unmappable_effects %in% c("inf", "ash")) {
     # Append non-sparse variance component to tracking
-    tracking <- track_ibss_fit.default(data, params, model, tracking, iter, ...)
+    tracking <- track_ibss_fit.default(data, params, model, tracking, iter, elbo, ...)
     if (isTRUE(params$track_fit)) {
       tracking[[iter]]$tau2 <- model$tau2
     }
     return(tracking)
   } else {
     # Use default for standard SS case
-    return(track_ibss_fit.default(data, params, model, tracking, iter, ...))
+    return(track_ibss_fit.default(data, params, model, tracking, iter, elbo, ...))
   }
 }
 
@@ -455,4 +455,24 @@ get_variable_names.ss <- function(data, model, ...) {
 #' @keywords internal
 get_zscore.ss <- function(data, params, model, ...) {
   return(get_zscore.default(data, params, model))
+}
+
+# Clean up model object for sufficient statistics data
+#' @keywords internal
+cleanup_model.ss <- function(data, params, model, ...) {
+  # Remove common fields
+  model <- cleanup_model.default(data, params, model, ...)
+  
+  # Remove SS-specific fields for unmappable effects
+  if (!is.null(params$unmappable_effects) && params$unmappable_effects %in% c("inf", "ash")) {
+    unmappable_fields <- c("omega_var", "XtOmegay")
+    
+    for (field in unmappable_fields) {
+      if (field %in% names(model)) {
+        model[[field]] <- NULL
+      }
+    }
+  }
+  
+  return(model)
 }

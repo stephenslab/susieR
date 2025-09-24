@@ -14,7 +14,7 @@ run_refine <- function(model, data, params) {
   }
 
   # Extract prior weights for refinement
-  pw_s <- extract_prior_weights(model, data$null_weight)
+  pw_s <- extract_prior_weights(model)
 
   # Main refinement loop
   conti <- TRUE
@@ -41,20 +41,20 @@ run_refine <- function(model, data, params) {
       }
 
       if (params$verbose) {
-        message("  Refining CS ", cs_idx, " with variables: ", paste(model$sets$cs[[cs_idx]], collapse = " "))
+        message("  Refining CS ", cs_idx, " with variables: ",
+                paste(model$sets$cs[[cs_idx]], collapse = " "))
       }
 
-      # Step 1: Create data with modified prior weights
-      data_modified <- modify_prior_weights(data, pw_cs)
+      # Step 1: Fit with modified weights, no initialization
+      params_step1                <- params
+      params_step1$prior_weights  <- reconstruct_full_weights(pw_cs, model$null_weight)
+      params_step1$null_weight    <- model$null_weight
+      params_step1$model_init     <- NULL
+      params_step1$verbose        <- FALSE
+      params_step1$track_fit      <- FALSE
+      params_step1$refine         <- FALSE
 
-      # Step 2: Fit with modified weights, no initialization
-      params_step1            <- params
-      params_step1$model_init <- NULL
-      params_step1$verbose    <- FALSE
-      params_step1$track_fit  <- FALSE
-      params_step1$refine     <- FALSE
-
-      model_step1 <- susie_workhorse(data_modified, params_step1)
+      model_step1 <- susie_workhorse(data, params_step1)
 
       # Step 3: Extract initialization from step1
       init_from_step1 <- list(
@@ -64,17 +64,16 @@ run_refine <- function(model, data, params) {
       )
       class(init_from_step1) <- "susie"
 
-      # Step 4: Create data with original prior weights
-      data_original <- modify_prior_weights(data, pw_s)
+      # Step 2: Fit with original weights using initialization
+      params_step2                <- params
+      params_step2$prior_weights  <- reconstruct_full_weights(pw_s, model$null_weight)
+      params_step2$null_weight    <- model$null_weight
+      params_step2$model_init     <- init_from_step1
+      params_step2$verbose        <- FALSE
+      params_step2$track_fit      <- FALSE
+      params_step2$refine         <- FALSE
 
-      # Step 5: Fit with original weights using initialization
-      params_step2            <- params
-      params_step2$model_init <- init_from_step1
-      params_step2$verbose    <- FALSE
-      params_step2$track_fit  <- FALSE
-      params_step2$refine     <- FALSE
-
-      model_step2 <- susie_workhorse(data_original, params_step2)
+      model_step2 <- susie_workhorse(data, params_step2)
 
       candidate_models <- c(candidate_models, list(model_step2))
 

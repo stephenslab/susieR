@@ -23,7 +23,7 @@ susie_ss(
   null_weight = 0,
   model_init = NULL,
   estimate_residual_variance = TRUE,
-  estimate_residual_method = c("MLE", "MoM", "Servin_Stephens"),
+  estimate_residual_method = c("MoM", "MLE", "Servin_Stephens"),
   residual_variance_lowerbound = 0,
   residual_variance_upperbound = Inf,
   estimate_prior_variance = TRUE,

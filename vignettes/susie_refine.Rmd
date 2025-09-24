@@ -38,7 +38,7 @@ Since the sample size is large, we use sufficient statistics ($X^\intercal X, X^
 
 ```{r}
 fitted <- with(FinemappingConvergence,
-               susie_suff_stat(XtX = XtX, Xty = Xty, yty = yty, n = n))
+               susie_ss(XtX = XtX, Xty = Xty, yty = yty, n = n))
 susie_plot(fitted, y="PIP", b=b, main=paste0("ELBO = ", round(susie_get_objective(fitted),2)))
 ```
 
@@ -56,7 +56,7 @@ We fit susie model with above procedure by setting `refine = TRUE`.
 
 ```{r}
 fitted_refine <- with(FinemappingConvergence,
-                      susie_suff_stat(XtX = XtX, Xty = Xty, yty = yty,
+                      susie_ss(XtX = XtX, Xty = Xty, yty = yty,
 					                  n = n, refine=TRUE))
 susie_plot(fitted_refine, y="PIP", b=b, main=paste0("ELBO = ", round(susie_get_objective(fitted_refine),2)))
 ```

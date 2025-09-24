@@ -25,19 +25,15 @@ susie_workhorse <- function(data, params) {
 
   # Main IBSS iteration loop
   for (iter in seq_len(params$max_iter)) {
-    # Track iteration progress
-    tracking <- track_ibss_fit(data, params, model, tracking, iter)
-
-    # Store previous model parameters for convergence check
-    model$prev_elbo  <- elbo[iter]
-    model$prev_alpha <- model$alpha
+    # Track iteration progress and store previous values for convergence checking
+    tracking <- track_ibss_fit(data, params, model, tracking, iter, elbo)
 
     # Update all L effects
     model <- ibss_fit(data, params, model)
 
     # Calculate objective and check convergence
     elbo[iter + 1] <- get_objective(data, params, model)
-    converged      <- check_convergence(params, model, elbo, iter)
+    converged      <- check_convergence(params, model, elbo, iter, tracking)
 
     if (converged) {
       model$converged <- TRUE

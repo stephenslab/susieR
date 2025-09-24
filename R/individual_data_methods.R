@@ -62,8 +62,8 @@ validate_prior.individual <- function(data, params, model, ...) {
 
 # Track core parameters across iterations
 #' @keywords internal
-track_ibss_fit.individual <- function(data, params, model, tracking, iter, ...) {
-  return(track_ibss_fit.default(data, params, model, tracking, iter, ...))
+track_ibss_fit.individual <- function(data, params, model, tracking, iter, elbo, ...) {
+  return(track_ibss_fit.default(data, params, model, tracking, iter, elbo, ...))
 }
 
 # =============================================================================
@@ -350,9 +350,27 @@ get_zscore.individual <- function(data, params, model, ...) {
       "to skip this step set compute_univariate_zscore = FALSE"
     )
   }
-  if (!is.null(data$null_weight) && data$null_weight != 0) {
+  if (!is.null(model$null_weight) && model$null_weight != 0) {
     X <- X[, 1:(ncol(X) - 1)]
   }
 
   return(calc_z(X, data$y, center = params$intercept, scale = params$standardize))
+}
+
+# Clean up model object for individual data
+#' @keywords internal
+cleanup_model.individual <- function(data, params, model, ...) {
+  # Remove common fields
+  model <- cleanup_model.default(data, params, model, ...)
+
+  # Remove individual-specific temporary fields
+  individual_fields <- c("raw_residuals")
+
+  for (field in individual_fields) {
+    if (field %in% names(model)) {
+      model[[field]] <- NULL
+    }
+  }
+
+  return(model)
 }

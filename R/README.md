@@ -23,7 +23,7 @@ The architecture revolves around three key objects:
 - **Mutability**: Immutable - never modified after creation
 - **Contents**: 
   - Input matrices: X/y (individual), XtX/Xty/yty (ss), z/R (rss_lambda)
-  - Metadata: n, p, prior_weights, null_weight
+  - Metadata: n, p
   - Scaling attributes: For compute_Xb() compatibility
   - Specialized fields: Eigen decomposition for unmappable effects/rss_lambda
 
@@ -57,7 +57,7 @@ The architecture revolves around three key objects:
 - `sufficient_stats_constructor()`→ Processes XtX, Xty, yty → (data, params)  
 - `summary_stats_constructor()`: Routes RSS inputs based on lambda parameter
    - If `lambda = 0` → Converts RSS data to SS → `sufficient_stats_constructor()` → (data, params)
-   - If `lambda > 0` → `rss_lambda_constructor()`→ Processes z, R for correlated errors → (data, params)
+   - If `lambda > 0` → `rss_lambda_constructor()`→ Processes z, R for regularized LD → (data, params)
 
 ### **Data Type Support**:
 
@@ -65,7 +65,7 @@ Each data object receives an S3 class to automatically route to the appropriate 
 
 - **`individual`**: Individual-level data (X, y matrices)
 - **`ss`**: Sufficient statistics (XtX, Xty, yty, n)
-- **`rss_lambda`**: RSS with correlated errors (z, R, lambda > 0)
+- **`rss_lambda`**: RSS with regularized LD matrix (z, R, lambda > 0)
 
 ## Model Components
 
