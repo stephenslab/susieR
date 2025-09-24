@@ -36,6 +36,12 @@ test-coverage:
 ## Build pkgdown site
 pkgdown: document
 	@echo "Building pkgdown site..."
+	@Rscript -e "pkgdown::clean_site('.')"
+	@Rscript -e "pkgdown::init_site('.')"
+	@Rscript -e "pkgdown::build_site('.', lazy = FALSE)"
+
+pkgdown-lazy: document
+	@echo "Building pkgdown site (lazy mode - only changed pages)..."
 	@Rscript -e "pkgdown::build_site('.', lazy = TRUE)"
 
 ## Run lintr
