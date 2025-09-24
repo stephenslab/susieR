@@ -12,12 +12,12 @@ template:
 development:
   mode: auto
 
-home:
-  links:
-    - text: Learn more
-      href: https://github.com/stephenslab/susieR
-    - text: Report a bug
-      href: https://github.com/stephenslab/susieR/issues
+#home:
+#  links:
+#    - text: Learn more
+#      href: https://github.com/stephenslab/susieR
+#    - text: Report a bug
+#      href: https://github.com/stephenslab/susieR/issues
 
 #authors:
   # Add your package authors here following the same format

@@ -25,8 +25,7 @@ set.seed(1)
 
 ```
 
-This is vignette mimic the example from Figure 1 panel B-C-D in [Denault et al paper](https://doi.org/10.1101/2025.05.16.654543).
-
+This is vignette is a modified example based on Figure 1 panel B-C-D in [Denault et al paper](https://doi.org/10.1101/2025.05.16.654543).
 
 
 To reproduce, install the latest development version of susieR (optional):
@@ -36,7 +35,7 @@ remotes::install_github("stephenslab/susieR")
 ```
 
 ## Data
-We analyze a simulated eQTL dataset built from normalized gene expression and normalized SNP genotypes. The goal is to fine-map causal variants for expression (eQTLs). In this example the ground truth is unknown.
+We analyze a simulated eQTL dataset by modifying normalized gene expression and normalized SNP genotypes in [Denault et al](https://doi.org/10.1101/2025.05.16.654543). The goal is to fine-map causal variants for expression (eQTLs). In this example the ground truth is unknown.
 
 ```{r load-data}
 library(susieR)
@@ -45,7 +44,6 @@ y <- data_small$y
 X <- data_small$X
 dim(X)
 ```
-
 
 ## Baseline SuSiE fit
 The original SuSiE procedure displays signs of misscalibration: the
@@ -72,14 +70,8 @@ plot(y, ypred, pch = 20,
 abline(0, 1, col = "magenta", lty = "dotted")
 ```
 
-
-
 ## SuSiE with Servin–Stephens SER (small = TRUE)
-Setting `small = TRUE` switches SuSiE to a variant of single-effect regression (SER) that properly accounts for uncertainty in the residual , see following Servin & Stephens (2007, PLOS Genetics).
-
-Setting `small = TRUE` in the susie call uses a slightly different  single effect regression
-(i.e. Servin-Stephens single effect regression, see Servin and Stephens  2007 PLOS Genetics ) model that accounts for uncertainty in the
-residual.
+Setting `small = TRUE` switches SuSiE to a variant of single-effect regression (SER) that properly accounts for uncertainty in the residual, i.e. Servin-Stephens single effect regression ([Servin and Stephens 2007 PLOS Genetics](https://doi.org/10.1371/journal.pgen.0030114)).
 
 ```{r run-susie-small, message=FALSE, warning=FALSE} 
 res_susie_small <- susie(X,y,L = 10,small = TRUE,verbose = TRUE)

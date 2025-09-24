@@ -76,7 +76,8 @@ Denault</h4>
 
     
     
-<p>This is vignette mimic the example from Figure 1 panel B-C-D in <a href="https://doi.org/10.1101/2025.05.16.654543" class="external-link">Denault et al
+<p>This is vignette is a modified example based on Figure 1 panel B-C-D
+in <a href="https://doi.org/10.1101/2025.05.16.654543" class="external-link">Denault et al
 paper</a>.</p>
 <p>To reproduce, install the latest development version of susieR
 (optional):</p>
@@ -86,10 +87,10 @@ paper</a>.</p>
 <div class="section level2">
 <h2 id="data">Data<a class="anchor" aria-label="anchor" href="#data"></a>
 </h2>
-<p>We analyze a simulated eQTL dataset built from normalized gene
-expression and normalized SNP genotypes. The goal is to fine-map causal
-variants for expression (eQTLs). In this example the ground truth is
-unknown.</p>
+<p>We analyze a simulated eQTL dataset by modifying normalized gene
+expression and normalized SNP genotypes in <a href="https://doi.org/10.1101/2025.05.16.654543" class="external-link">Denault et al</a>. The
+goal is to fine-map causal variants for expression (eQTLs). In this
+example the ground truth is unknown.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/stephenslab/susieR" class="external-link">susieR</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">data_small</span><span class="op">)</span></span>
@@ -159,12 +160,8 @@ variation in gene expression, which suggests overfitting.</p>
 </h2>
 <p>Setting <code>small = TRUE</code> switches SuSiE to a variant of
 single-effect regression (SER) that properly accounts for uncertainty in
-the residual , see following Servin &amp; Stephens (2007, PLOS
-Genetics).</p>
-<p>Setting <code>small = TRUE</code> in the susie call uses a slightly
-different single effect regression (i.e. Servin-Stephens single effect
-regression, see Servin and Stephens 2007 PLOS Genetics ) model that
-accounts for uncertainty in the residual.</p>
+the residual, i.e. Servin-Stephens single effect regression (<a href="https://doi.org/10.1371/journal.pgen.0030114" class="external-link">Servin and Stephens
+2007 PLOS Genetics</a>).</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">res_susie_small</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/susie.html">susie</a></span><span class="op">(</span><span class="va">X</span>,<span class="va">y</span>,L <span class="op">=</span> <span class="fl">10</span>,small <span class="op">=</span> <span class="cn">TRUE</span>,verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="co"># [1] "max change in alpha: 0.165158655049151"</span></span>
