@@ -28,31 +28,24 @@ single_effect_regression <- function(data, params, model, l) {
         V_init = V)
     }
 
-    # Use loglik to compute logged Bayes factors and posterior inclusion probabilities
+    # Compute logged Bayes factors and posterior inclusion probabilities
     loglik_res <- loglik(data, params, model, V, ser_stats)
-    lbf        <- loglik_res$lbf
-    alpha      <- loglik_res$alpha
-    lbf_model  <- loglik_res$lbf_model
 
     # Compute posterior moments
     moments    <- calculate_posterior_moments(data, params, model, V)
 
-    post_mean  <- moments$post_mean
-    post_mean2 <- moments$post_mean2
-    beta_1     <- moments$beta_1
-
     # Expectation-maximization prior variance update using posterior moments
     if (params$estimate_prior_method == "EM") {
       V <- optimize_prior_variance(data, params, model, ser_stats,
-        alpha, moments, V_init = NULL)
+        loglik_res$alpha, moments, V_init = NULL)
     }
 
     return(list(
-      alpha     = alpha,
-      mu        = post_mean,
-      mu2       = post_mean2,
-      lbf       = lbf,
-      lbf_model = lbf_model,
+      alpha     = loglik_res$alpha,
+      mu        = moments$post_mean,
+      mu2       = moments$post_mean2,
+      lbf       = loglik_res$lbf,
+      lbf_model = loglik_res$lbf_model,
       V         = V
     ))
   }
@@ -166,9 +159,7 @@ single_effect_update <- function(data, params, model, l) {
   model$V[l]              <- res$V
   model$lbf[l]            <- res$lbf_model
   model$lbf_variable[l, ] <- res$lbf
-
-  # Update KL-divergence
-  model$KL[l] <- compute_kl(data, params, model, l)
+  model$KL[l]             <- compute_kl(data, params, model, l)
 
   # Update fitted values
   model <- update_fitted_values(data, params, model, l)

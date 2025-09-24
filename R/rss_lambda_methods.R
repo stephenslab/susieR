@@ -61,8 +61,8 @@ validate_prior.rss_lambda <- function(data, params, model, ...) {
 
 # Track core parameters for tracking
 #' @keywords internal
-track_ibss_fit.rss_lambda <- function(data, params, model, tracking, iter, ...) {
-  return(track_ibss_fit.default(data, params, model, tracking, iter, ...))
+track_ibss_fit.rss_lambda <- function(data, params, model, tracking, iter, elbo, ...) {
+  return(track_ibss_fit.default(data, params, model, tracking, iter, elbo, ...))
 }
 
 # =============================================================================
@@ -327,4 +327,22 @@ get_variable_names.rss_lambda <- function(data, model, ...) {
 #' @keywords internal
 get_zscore.rss_lambda <- function(data, params, model, ...) {
   return(get_zscore.default(data, params, model))
+}
+
+# Clean up model object for RSS lambda data
+#' @keywords internal
+cleanup_model.rss_lambda <- function(data, params, model, ...) {
+  # Remove common fields
+  model <- cleanup_model.default(data, params, model, ...)
+
+  # Remove RSS-lambda-specific temporary fields
+  rss_fields <- c("SinvRj", "RjSinvRj", "Rz", "Z", "zbar", "diag_postb2")
+
+  for (field in rss_fields) {
+    if (field %in% names(model)) {
+      model[[field]] <- NULL
+    }
+  }
+
+  return(model)
 }

@@ -7,7 +7,7 @@
 #'
 #' @return A list containing:
 #' \item{data}{A processed list containing X and y matrices with appropriate scaling
-#' attributes, sample dimensions,  and prior weights}
+#' attributes and sample dimensions}
 #' \item{params}{Validated params object with all input algorithm parameters}
 #'
 #' @keywords internal
@@ -20,7 +20,7 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
                                         standardize = TRUE,
                                         intercept = TRUE,
                                         estimate_residual_variance = TRUE,
-                                        estimate_residual_method = "MLE",
+                                        estimate_residual_method = "MoM",
                                         estimate_prior_variance = TRUE,
                                         estimate_prior_method = "optim",
                                         unmappable_effects = "none",
@@ -131,6 +131,8 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
     L = L,
     scaled_prior_variance = scaled_prior_variance,
     residual_variance = residual_variance,
+    prior_weights = prior_weights,
+    null_weight = null_weight,
     estimate_residual_variance = estimate_residual_variance,
     estimate_residual_method = estimate_residual_method,
     estimate_prior_variance = estimate_prior_variance,
@@ -167,9 +169,7 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
       y = y,
       mean_y = mean_y,
       n = n,
-      p = p,
-      prior_weights = prior_weights,
-      null_weight = null_weight
+      p = p
     ),
     class = "individual"
   )
@@ -189,7 +189,7 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
 #'
 #' @return A list containing:
 #' \item{data}{A processed list containing XtX, Xty, yty matrices with appropriate scaling
-#' attributes, sample dimensions, and prior weights}
+#' attributes and sample dimensions}
 #' \item{params}{Validated params object with all input algorithm parameters}
 #'
 #' @keywords internal
@@ -207,7 +207,7 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
                                          null_weight = 0,
                                          model_init = NULL,
                                          estimate_residual_variance = TRUE,
-                                         estimate_residual_method = "MLE",
+                                         estimate_residual_method = "MoM",
                                          residual_variance_lowerbound = 0,
                                          residual_variance_upperbound = Inf,
                                          estimate_prior_variance = TRUE,
@@ -338,7 +338,7 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
   if (is.null(prior_weights)) {
     prior_weights <- rep(1 / p, p)
   }
-  
+
   # Validate and normalize prior_weights
   if (length(prior_weights) != p) {
     stop("Prior weights must have length p.")
@@ -377,6 +377,8 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
     L = L,
     scaled_prior_variance = scaled_prior_variance,
     residual_variance = residual_variance,
+    prior_weights = prior_weights,
+    null_weight = null_weight,
     estimate_residual_variance = estimate_residual_variance,
     estimate_residual_method = estimate_residual_method,
     estimate_prior_variance = estimate_prior_variance,
@@ -427,9 +429,7 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
       n = n,
       p = p,
       X_colmeans = X_colmeans,
-      y_mean = y_mean,
-      prior_weights = prior_weights,
-      null_weight = null_weight
+      y_mean = y_mean
     ),
     class = "ss"
   )
@@ -449,7 +449,7 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
 #'
 #' @return A list containing:
 #' \item{data}{A processed list containing converted matrices with appropriate scaling
-#' attributes, sample dimensions, and prior weights}
+#' attributes and sample dimensions}
 #' \item{params}{Validated params object with all input algorithm parameters}
 #'
 #' @keywords internal
@@ -469,7 +469,7 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
                                       standardize = TRUE,
                                       intercept_value = 0,
                                       estimate_residual_variance = FALSE,
-                                      estimate_residual_method = "MLE",
+                                      estimate_residual_method = "MoM",
                                       estimate_prior_variance = TRUE,
                                       estimate_prior_method = "optim",
                                       unmappable_effects = "none",
@@ -675,7 +675,7 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
 # =============================================================================
 #' @section RSS LAMBDA DATA CONSTRUCTOR
 #'
-#' Constructs data and params objects for SuSiE from RSS data with correlated errors (lambda > 0).
+#' Constructs data and params objects for SuSiE from RSS data with regularized LD matrix (lambda > 0).
 #' Handles eigen decomposition, MAF filtering, and specialized RSS-lambda preprocessing.
 # =============================================================================
 #'
@@ -701,7 +701,7 @@ rss_lambda_constructor <- function(z, R, n = NULL,
                                    standardize = TRUE,
                                    intercept_value = 0,
                                    estimate_residual_variance = FALSE,
-                                   estimate_residual_method = "MLE",
+                                   estimate_residual_method = "MoM",
                                    estimate_prior_variance = TRUE,
                                    estimate_prior_method = "optim",
                                    unmappable_effects = "none",
@@ -725,10 +725,11 @@ rss_lambda_constructor <- function(z, R, n = NULL,
                                    r_tol = 1e-8,
                                    refine = FALSE) {
 
-  # Validate that MoM is not requested for RSS with lambda != 0
+  # Handle MoM fallback for RSS with lambda != 0
   if (estimate_residual_method == "MoM") {
-    stop("Method of Moments (MoM) variance estimation is not implemented for RSS with lambda > 0. ",
-         "Please use estimate_residual_method = 'MLE' instead.")
+    warning_message("Method of Moments (MoM) variance estimation is not implemented for RSS with lambda > 0. ",
+            "Automatically switching to estimate_residual_method = 'MLE'.")
+    estimate_residual_method <- "MLE"
   }
 
   if (estimate_residual_method == "Servin_Stephens") {
@@ -798,12 +799,12 @@ rss_lambda_constructor <- function(z, R, n = NULL,
 
   # Eigen decomposition for R
   p <- ncol(R)
-  
+
   # Set uniform prior weights if not provided
   if (is.null(prior_weights)) {
     prior_weights <- rep(1 / p, p)
   }
-  
+
   eigen_R <- eigen(R, symmetric = TRUE)
 
   if (check_R && any(eigen_R$values < -r_tol)) {
@@ -853,6 +854,8 @@ rss_lambda_constructor <- function(z, R, n = NULL,
     L = L,
     scaled_prior_variance = prior_variance, # Use unscaled prior_variance for RSS-lambda
     residual_variance = residual_variance,
+    prior_weights = prior_weights,
+    null_weight = null_weight,
     estimate_residual_variance = estimate_residual_variance,
     estimate_residual_method = estimate_residual_method,
     estimate_prior_variance = estimate_prior_variance,
@@ -891,8 +894,6 @@ rss_lambda_constructor <- function(z, R, n = NULL,
       R = R,
       n = length(z),
       p = length(z),
-      prior_weights = prior_weights,
-      null_weight = null_weight,
       lambda = lambda,
       intercept_value = intercept_value,
       r_tol = r_tol,

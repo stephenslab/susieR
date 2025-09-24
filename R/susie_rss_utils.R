@@ -1,5 +1,5 @@
 # =============================================================================
-#' @section FUNDAMENTAL COMPUTATIONS
+#' @section FUNDAMENTAL COMPUTATIONS:
 #'
 #' Basic mathematical utilities and core RSS computations. These functions
 #' handle fundamental operations like sufficient statistics computation and
@@ -68,7 +68,7 @@ compute_Dinv <- function(model, data) {
 }
 
 # =============================================================================
-#' @section RSS MODEL METHODS
+#' @section RSS MODEL METHODS:
 #'
 #' Core RSS algorithm functions including parameter estimation and model
 #' preprocessing. These implement the mathematical framework for RSS-based
@@ -214,7 +214,7 @@ precompute_rss_lambda_terms <- function(data, model) {
 }
 
 # =============================================================================
-#' @section DIAGNOSTIC & QUALITY CONTROL
+#' @section DIAGNOSTIC & QUALITY CONTROL:
 #'
 #' Functions for RSS model diagnostics, data quality assessment, and
 #' validation. These help users assess the compatibility between z-scores
