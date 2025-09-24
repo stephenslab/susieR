@@ -17,3 +17,7 @@
 ^NOTES\.txt$
 ^\.Renviron$
 ^vignettes/l0_initialization\.Rmd$
+^\.pixi$
+^pixi\.toml$
+^pixi\.lock$
+^\.pixi/.*

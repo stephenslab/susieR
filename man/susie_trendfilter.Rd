@@ -59,19 +59,19 @@ This implementation exploits the special structure of X,
 }
 \examples{
 set.seed(1)
-mu = c(rep(0,50),rep(1,50),rep(3,50),rep(-2,50),rep(0,200))
-y = mu + rnorm(400)
-s = susie_trendfilter(y)
+mu <- c(rep(0, 50), rep(1, 50), rep(3, 50), rep(-2, 50), rep(0, 200))
+y <- mu + rnorm(400)
+s <- susie_trendfilter(y)
 plot(y)
-lines(mu,col = 1,lwd = 3)
-lines(predict(s),col = 2,lwd = 2)
+lines(mu, col = 1, lwd = 3)
+lines(predict(s), col = 2, lwd = 2)
 
 # Calculate credible sets (indices of y that occur just before
 # changepoints).
 susie_get_cs(s)
 
 # Plot with credible sets for changepoints.
-susie_plot_changepoint(s,y) 
+susie_plot_changepoint(s, y)
 
 }
 \references{

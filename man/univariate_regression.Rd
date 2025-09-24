@@ -45,14 +45,14 @@ This function performs the univariate linear
 }
 \examples{
 set.seed(1)
-n = 1000
-p = 1000
-beta = rep(0,p)
-beta[1:4] = 1
-X = matrix(rnorm(n*p),nrow = n,ncol = p)
-X = scale(X,center = TRUE,scale = TRUE)
-y = drop(X \%*\% beta + rnorm(n))
-res = univariate_regression(X,y)
-plot(res$betahat/res$sebetahat)
+n <- 1000
+p <- 1000
+beta <- rep(0, p)
+beta[1:4] <- 1
+X <- matrix(rnorm(n * p), nrow = n, ncol = p)
+X <- scale(X, center = TRUE, scale = TRUE)
+y <- drop(X \%*\% beta + rnorm(n))
+res <- univariate_regression(X, y)
+plot(res$betahat / res$sebetahat)
 
 }

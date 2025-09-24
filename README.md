@@ -81,17 +81,18 @@ or `susie_rss`, please also cite:
 
 ## Developer notes
 
+
++ The `Makefile` contains various R commands to build and maintain the package. 
+For example to build the website via `pkgdown`:
+
+   ```bash
+   make pkgdown
+   ```
+
 + When any changes are made to `roxygen2` markup, run
-`devtools::document()` to update package `NAMESPACE` and documentation
+`make document` to update package `NAMESPACE` and documentation
 files.
 
-
-+ These are the R commands to build the website (make sure you are
-connected to Internet while running these commands):
-
-   ```R
-   pkgdown::build_site(lazy=TRUE, examples=FALSE)
-   ```
 
 + To format R codes in the `R` folder,
 

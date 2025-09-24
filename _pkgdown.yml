@@ -1,14 +1,61 @@
-navbar:
-  left:
-    - text: "Home"
-      href: index.html
-    - text: "Vignettes"
-      href: articles/index.html
-    - text: "Functions"
-      href: reference/index.html
-  right:
-    - text: "Source"
+url: https://stephenslab.github.io/susieR
+
+template:
+  bootstrap: 5
+  light-switch: true
+  math-rendering: katex
+  bslib:
+    base_font: { google: "Roboto" }
+    heading_font: { google: "Roboto Slab" }
+    code_font: { google: "JetBrains Mono" }
+
+development:
+  mode: auto
+
+home:
+  links:
+    - text: Learn more
       href: https://github.com/stephenslab/susieR
+    - text: Report a bug
+      href: https://github.com/stephenslab/susieR/issues
+
+#authors:
+  # Add your package authors here following the same format
+  # Example:
+  # John Doe:
+  #   href: https://johndoe.com/
+  # Jane Smith:
+  #   href: https://github.com/janesmith
+
+navbar:
+  structure:
+    left: [intro, reference, articles, news]
+    right: [search, github, lightswitch]
+  components:
+    intro:
+      icon: fa fa-play-circle
+      text: Get Started
+      href: articles/finemapping.html
+      aria-label: Get started with susieR
+    reference:
+      icon: fa fa-file-code
+      text: Functions
+      href: reference/index.html
+      aria-label: Function reference
+    articles:
+      icon: fa fa-book-reader
+      text: Vignettes
+      href: articles/index.html
+      aria-label: Articles and vignettes
+    news:
+      icon: fa fa-newspaper
+      text: News
+      href: news/index.html
+      aria-label: Package news
+    github:
+      icon: fab fa-github
+      href: https://github.com/stephenslab/susieR
+      aria-label: View source on GitHub
 
 articles:
   - title: "Vignettes"
@@ -26,4 +73,3 @@ articles:
     - trend_filtering
     - sparse_susie_eval
     - susie_refine
-
