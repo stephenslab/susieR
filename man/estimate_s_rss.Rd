@@ -37,6 +37,16 @@ The estimated s gives information about the
   pseudolikelihood \eqn{L(s) = \prod_{j=1}^{p} p(z_j | z_{-j}, s,
   R)}, \eqn{0 < s < 1}.
 }
+\section{RSS MODEL METHODS}{
+
+
+Core RSS algorithm functions including parameter estimation and model
+preprocessing. These implement the mathematical framework for RSS-based
+fine-mapping and handle iteration-specific computations.
+
+Functions: estimate_s_rss, precompute_rss_lambda_terms
+}
+
 \examples{
 set.seed(1)
 n <- 500

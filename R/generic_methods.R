@@ -13,6 +13,7 @@
 configure_data <- function(data, params) {
   UseMethod("configure_data")
 }
+#' @keywords internal
 configure_data.default <- function(data, params) {
   return(data)
 }
@@ -22,6 +23,7 @@ configure_data.default <- function(data, params) {
 get_var_y <- function(data, ...) {
   UseMethod("get_var_y")
 }
+#' @keywords internal
 get_var_y.default <- function(data, ...) {
   stop("get_var_y: no method for class '", class(data)[1], "'")
 }
@@ -41,6 +43,7 @@ get_var_y.default <- function(data, ...) {
 initialize_susie_model <- function(data, params, ...) {
   UseMethod("initialize_susie_model")
 }
+#' @keywords internal
 initialize_susie_model.default <- function(data, params, ...) {
   stop("initialize_susie_model: no method for class '", class(data)[1], "'")
 }
@@ -50,6 +53,7 @@ initialize_susie_model.default <- function(data, params, ...) {
 initialize_fitted <- function(data, mat_init) {
   UseMethod("initialize_fitted")
 }
+#' @keywords internal
 initialize_fitted.default <- function(data, mat_init, ...) {
   stop("initialize_fitted: no method for class '", class(data)[1], "'")
 }
@@ -59,6 +63,7 @@ initialize_fitted.default <- function(data, mat_init, ...) {
 validate_prior <- function(data, params, model, ...) {
   UseMethod("validate_prior")
 }
+#' @keywords internal
 validate_prior.default <- function(data, params, model, ...) {
   invisible(TRUE)
 }
@@ -68,7 +73,21 @@ validate_prior.default <- function(data, params, model, ...) {
 track_ibss_fit <- function(data, params, model, tracking, iter, ...) {
   UseMethod("track_ibss_fit")
 }
-track_ibss_fit.default <- function(data, params, model, tracking, iter, ...) {
+#' @keywords internal
+track_ibss_fit.default <- function(data, params, model, tracking, iter, elbo, ...) {
+  # Initialize tracking structure on first iteration
+  if (iter == 1) {
+    tracking$convergence <- list(
+      prev_elbo  = -Inf,
+      prev_alpha = model$alpha
+    )
+  } else {
+    # Update previous values for convergence checking
+    tracking$convergence$prev_elbo  <- elbo[iter]
+    tracking$convergence$prev_alpha <- model$alpha
+  }
+
+  # Store additional tracking information if requested
   if (isTRUE(params$track_fit)) {
     tracking[[iter]] <- list(
       alpha  = model$alpha,
@@ -96,6 +115,7 @@ track_ibss_fit.default <- function(data, params, model, tracking, iter, ...) {
 compute_residuals <- function(data, params, model, l, ...) {
   UseMethod("compute_residuals")
 }
+#' @keywords internal
 compute_residuals.default <- function(data, params, model, l, ...) {
   stop("compute_residuals: no method for class '", class(data)[1], "'")
 }
@@ -105,6 +125,7 @@ compute_residuals.default <- function(data, params, model, l, ...) {
 compute_ser_statistics <- function(data, params, model, l, ...) {
   UseMethod("compute_ser_statistics")
 }
+#' @keywords internal
 compute_ser_statistics.default <- function(data, params, model, l, ...) {
   stop("compute_ser_statistics: no method for class '", class(data)[1], "'")
 }
@@ -114,6 +135,7 @@ compute_ser_statistics.default <- function(data, params, model, l, ...) {
 SER_posterior_e_loglik <- function(data, params, model, l) {
   UseMethod("SER_posterior_e_loglik")
 }
+#' @keywords internal
 SER_posterior_e_loglik.default <- function(data, params, model, l) {
   stop("SER_posterior_e_loglik: no method for class '", class(data)[1], "'")
 }
@@ -123,6 +145,7 @@ SER_posterior_e_loglik.default <- function(data, params, model, l) {
 calculate_posterior_moments <- function(data, params, model, V, ...) {
   UseMethod("calculate_posterior_moments")
 }
+#' @keywords internal
 calculate_posterior_moments.default <- function(data, params, model, V, ...) {
   stop("calculate_posterior_moments: no method for class '", class(data)[1], "'")
 }
@@ -132,6 +155,7 @@ calculate_posterior_moments.default <- function(data, params, model, V, ...) {
 compute_kl <- function(data, params, model, l) {
   UseMethod("compute_kl")
 }
+#' @keywords internal
 compute_kl.default <- function(data, params, model, l) {
   return(-model$lbf[l] + SER_posterior_e_loglik(data, params, model, l))
 }
@@ -141,6 +165,7 @@ compute_kl.default <- function(data, params, model, l) {
 get_ER2 <- function(data, model) {
   UseMethod("get_ER2")
 }
+#' @keywords internal
 get_ER2.default <- function(data, model) {
   stop("get_ER2: no method for class '", class(data)[1], "'")
 }
@@ -150,6 +175,7 @@ get_ER2.default <- function(data, model) {
 Eloglik <- function(data, model) {
   UseMethod("Eloglik")
 }
+#' @keywords internal
 Eloglik.default <- function(data, model) {
   stop("Eloglik: no method for class '", class(data)[1], "'")
 }
@@ -159,6 +185,7 @@ Eloglik.default <- function(data, model) {
 loglik <- function(data, params, model, V, ser_stats, ...) {
   UseMethod("loglik")
 }
+#' @keywords internal
 loglik.default <- function(data, params, model, V, ser_stats, ...) {
   stop("loglik: no method for class '", class(data)[1], "'")
 }
@@ -168,6 +195,7 @@ loglik.default <- function(data, params, model, V, ser_stats, ...) {
 neg_loglik <- function(data, params, model, V_param, ser_stats, ...) {
   UseMethod("neg_loglik")
 }
+#' @keywords internal
 neg_loglik.default <- function(data, params, model, V_param, ser_stats, ...) {
   stop("neg_loglik: no method for class '", class(data)[1], "'")
 }
@@ -187,6 +215,7 @@ neg_loglik.default <- function(data, params, model, V_param, ser_stats, ...) {
 update_fitted_values <- function(data, params, model, l) {
   UseMethod("update_fitted_values")
 }
+#' @keywords internal
 update_fitted_values.default <- function(data, params, model, l) {
   stop("update_fitted_values: no method for class '", class(data)[1], "'")
 }
@@ -196,6 +225,7 @@ update_fitted_values.default <- function(data, params, model, l) {
 update_variance_components <- function(data, params, model, ...) {
   UseMethod("update_variance_components")
 }
+#' @keywords internal
 update_variance_components.default <- function(data, params, model, ...) {
   # Standard MLE estimation (MLE and MoM are equivalent for standard SuSiE)
   sigma2 <- est_residual_variance(data, model)
@@ -207,6 +237,7 @@ update_variance_components.default <- function(data, params, model, ...) {
 update_derived_quantities <- function(data, params, model) {
   UseMethod("update_derived_quantities")
 }
+#' @keywords internal
 update_derived_quantities.default <- function(data, params, model) {
   return(model)
 }
@@ -219,7 +250,7 @@ update_derived_quantities.default <- function(data, params, model) {
 #' credible sets, variable names, and fitted values.
 #'
 #' Functions: get_scale_factors, get_intercept, get_fitted, get_cs,
-#' get_variable_names, get_zscore
+#' get_variable_names, get_zscore, cleanup_model
 # =============================================================================
 
 # Get column scale factors
@@ -227,6 +258,7 @@ update_derived_quantities.default <- function(data, params, model) {
 get_scale_factors <- function(data, params, ...) {
   UseMethod("get_scale_factors")
 }
+#' @keywords internal
 get_scale_factors.default <- function(data, params, ...) {
   stop("get_scale_factors: no method for class '", class(data)[1], "'")
 }
@@ -236,6 +268,7 @@ get_scale_factors.default <- function(data, params, ...) {
 get_intercept <- function(data, params, model, ...) {
   UseMethod("get_intercept")
 }
+#' @keywords internal
 get_intercept.default <- function(data, params, model, ...) {
   stop("get_intercept: no method for class '", class(data)[1], "'")
 }
@@ -245,6 +278,7 @@ get_intercept.default <- function(data, params, model, ...) {
 get_fitted <- function(data, params, model, ...) {
   UseMethod("get_fitted")
 }
+#' @keywords internal
 get_fitted.default <- function(data, params, model, ...) {
   return(NULL)
 }
@@ -254,6 +288,7 @@ get_fitted.default <- function(data, params, model, ...) {
 get_cs <- function(data, params, model, ...) {
   UseMethod("get_cs")
 }
+#' @keywords internal
 get_cs.default <- function(data, params, model, ...) {
   stop("get_cs: no method for class '", class(data)[1], "'")
 }
@@ -263,6 +298,7 @@ get_cs.default <- function(data, params, model, ...) {
 get_variable_names <- function(data, model, ...) {
   UseMethod("get_variable_names")
 }
+#' @keywords internal
 get_variable_names.default <- function(data, model, ...) {
   stop("get_variable_names: no method for class '", class(data)[1], "'")
 }
@@ -272,6 +308,27 @@ get_variable_names.default <- function(data, model, ...) {
 get_zscore <- function(data, params, model, ...) {
   UseMethod("get_zscore")
 }
+#' @keywords internal
 get_zscore.default <- function(data, params, model, ...) {
   return(NULL)
+}
+
+# Clean up model object by removing temporary computational fields
+#' @keywords internal
+cleanup_model <- function(data, params, model, ...) {
+  UseMethod("cleanup_model")
+}
+#' @keywords internal
+cleanup_model.default <- function(data, params, model, ...) {
+  # Remove temporary fields common to all data types
+  temp_fields <- c("null_weight", "predictor_weights", "prev_elbo", "prev_alpha",
+                   "residuals", "fitted_without_l", "residual_variance")
+
+  for (field in temp_fields) {
+    if (field %in% names(model)) {
+      model[[field]] <- NULL
+    }
+  }
+
+  return(model)
 }

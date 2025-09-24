@@ -15,7 +15,7 @@ susie(
   standardize = TRUE,
   intercept = TRUE,
   estimate_residual_variance = TRUE,
-  estimate_residual_method = c("MLE", "MoM", "Servin_Stephens"),
+  estimate_residual_method = c("MoM", "MLE", "Servin_Stephens"),
   estimate_prior_variance = TRUE,
   estimate_prior_method = c("optim", "EM", "simple"),
   unmappable_effects = c("none", "inf", "ash"),
@@ -181,13 +181,56 @@ to check and escape from local optima (see details).}
 \code{\link{susie_get_cs}}.}
 
 \item{alpha0}{Numerical parameter for the NIG prior when using
-\code{estimate_residual_method = "Servin_Stephens}.}
+\code{estimate_residual_method = "Servin_Stephens"}.}
 
 \item{beta0}{Numerical parameter for the NIG prior when using
-\code{estimate_residual_method = "Servin_Stephens}.}
+\code{estimate_residual_method = "Servin_Stephens"}.}
 }
 \value{
+A \code{"susie"} object with some or all of the following elements:
 
+\item{alpha}{An L by p matrix of posterior inclusion probabilities.}
+
+\item{mu}{An L by p matrix of posterior means, conditional on inclusion.}
+
+\item{mu2}{An L by p matrix of posterior second moments, conditional on
+  inclusion.}
+
+\item{Xr}{A vector of length n, equal to \code{X \%*\% colSums(alpha * mu)}.}
+
+\item{lbf}{Log-Bayes Factor for each single effect.}
+
+\item{lbf_variable}{Log-Bayes Factor for each variable and single effect.}
+
+\item{intercept}{Intercept (fixed or estimated).}
+
+\item{sigma2}{Residual variance (fixed or estimated).}
+
+\item{V}{Prior variance of the non-zero elements of b.}
+
+\item{elbo}{The variational lower bound (or ELBO) achieved at each iteration.}
+
+\item{fitted}{Vector of length n containing the fitted values.}
+
+\item{sets}{Credible sets estimated from model fit.}
+
+\item{pip}{A vector of length p giving the marginal posterior inclusion
+  probabilities.}
+
+\item{z}{A vector of univariate z-scores.}
+
+\item{niter}{Number of IBSS iterations performed.}
+
+\item{converged}{\code{TRUE} or \code{FALSE} indicating whether
+  the IBSS converged to a solution within the chosen tolerance
+  level.}
+
+\item{theta}{If \code{unmappable_effects = "inf"} or
+  \code{unmappable_effects = "ash"}, then \code{theta} is a p-vector of posterior
+  means for the unmappable effects.}
+
+\item{tau2}{If \code{unmappable_effects = "inf"} or
+  \code{unmappable_effects = "ash"}, then \code{tau2} is the unmappable variance.}
 }
 \description{
 Performs a sparse Bayesian multiple linear regression

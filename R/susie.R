@@ -216,10 +216,10 @@
 #'   \code{\link{susie_get_cs}}.
 #'
 #' @param alpha0 Numerical parameter for the NIG prior when using
-#' \code{estimate_residual_method = "Servin_Stephens}.
+#' \code{estimate_residual_method = "Servin_Stephens"}.
 #'
 #' @param beta0 Numerical parameter for the NIG prior when using
-#' \code{estimate_residual_method = "Servin_Stephens}.
+#' \code{estimate_residual_method = "Servin_Stephens"}.
 #'
 #' @return A \code{"susie"} object with some or all of the following elements:
 #'
@@ -261,10 +261,10 @@
 #'
 #' \item{theta}{If \code{unmappable_effects = "inf"} or
 #'   \code{unmappable_effects = "ash"}, then \code{theta} is a p-vector of posterior
-#'   means for the unmappable effects.
+#'   means for the unmappable effects.}
 #'
 #' \item{tau2}{If \code{unmappable_effects = "inf"} or
-#'   \code{unmappable_effects = "ash"}, then \code{tau2} is the unmappable variance.
+#'   \code{unmappable_effects = "ash"}, then \code{tau2} is the unmappable variance.}
 #'
 #' @export
 susie <- function(X, y, L = min(10, ncol(X)),
@@ -275,7 +275,7 @@ susie <- function(X, y, L = min(10, ncol(X)),
                   standardize = TRUE,
                   intercept = TRUE,
                   estimate_residual_variance = TRUE,
-                  estimate_residual_method = c("MLE", "MoM", "Servin_Stephens"),
+                  estimate_residual_method = c("MoM", "MLE", "Servin_Stephens"),
                   estimate_prior_variance = TRUE,
                   estimate_prior_method = c("optim", "EM", "simple"),
                   unmappable_effects = c("none", "inf", "ash"),
@@ -380,7 +380,7 @@ susie_ss <- function(XtX, Xty, yty, n,
                      null_weight = 0,
                      model_init = NULL,
                      estimate_residual_variance = TRUE,
-                     estimate_residual_method = c("MLE", "MoM", "Servin_Stephens"),
+                     estimate_residual_method = c("MoM", "MLE", "Servin_Stephens"),
                      residual_variance_lowerbound = 0,
                      residual_variance_upperbound = Inf,
                      estimate_prior_variance = TRUE,
@@ -432,7 +432,7 @@ susie_ss <- function(XtX, Xty, yty, n,
 #' @title SuSiE with Regression Summary Statistics (RSS)
 #'
 #' @description Performs SuSiE regression using z-scores and correlation matrix.
-#' Supports both standard RSS (lambda = 0) and RSS with correlated errors (lambda > 0).
+#' Supports both standard RSS (lambda = 0) and RSS with regularized LD matrix (lambda > 0).
 #'
 #' @param z A p-vector of z-scores.
 #'
@@ -448,7 +448,7 @@ susie_ss <- function(XtX, Xty, yty, n,
 #'   the estimated effects (a vector of length p). This, together with
 #'   \code{bhat}, may be provided instead of \code{z}.
 #'
-#' @param lambda Regularization parameter for correlated errors. When
+#' @param lambda Regularization parameter for LD matrix. When
 #' \code{lambda} > 0, you cannot use \code{unmappable_effects} methods.
 #'
 #' @param z_ld_weight This parameter is included for backwards
@@ -483,7 +483,7 @@ susie_rss <- function(z = NULL, R, n = NULL,
                       standardize = TRUE,
                       intercept_value = 0,
                       estimate_residual_variance = FALSE,
-                      estimate_residual_method = c("MLE", "MoM"),
+                      estimate_residual_method = c("MoM", "MLE"),
                       estimate_prior_variance = TRUE,
                       estimate_prior_method = c("optim", "EM", "simple"),
                       unmappable_effects = c("none", "inf"),

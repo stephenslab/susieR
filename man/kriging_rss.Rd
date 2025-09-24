@@ -46,6 +46,16 @@ Under the null, the rss model with regularized LD
   weights \eqn{\pi}  We detect the possible allele switch issue
   using likelihood ratio for each variant.
 }
+\section{DIAGNOSTIC & QUALITY CONTROL}{
+
+
+Functions for RSS model diagnostics, data quality assessment, and
+validation. These help users assess the compatibility between z-scores
+and LD matrices and identify potential data issues.
+
+Functions: kriging_rss
+}
+
 \examples{
 # See also the vignette, "Diagnostic for fine-mapping with summary
 # statistics."

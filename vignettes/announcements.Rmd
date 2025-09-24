@@ -1,0 +1,35 @@
+---
+title: "News and Updates"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{News and Updates}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# susieR 2.0.0 - Major Release
+
+*Release date: 2025-06-04*
+
+## Release Overview
+This major release introduces **susieR 2.0**, a complete architectural redesign that addresses the code duplication and fragmented architecture of the original SuSiE implementation while adding new features including unmappable effects modeling and various performance optimizations, all while maintaining full backward compatibility.
+
+susieR 2.0 eliminates this duplicative architecture through a unified framework built on modular design principles. The user-facing interface remains unchanged, but the implementation now uses generic functions with data-type specific backends through R's S3 dispatch system. This architecture enables the integration of new SuSiE extensions while maintaining identical results to their original versions. Beyond architectural improvements, this release introduces substantial algorithmic advances including support for unmappable effects modeling, enhanced computational speed for regularized LD matrices, new convergence criteria, and improved refinement procedures.
+
+## New Features
+
+* <strong><u>Unmappable Effects Support</u></strong>: Integration of SuSiE.ash and SuSiE-inf ([Cui et al. 2024](https://www.nature.com/articles/s41588-023-01597-3)) methods for modeling oligogenic and polygenic backgrounds.
+* <strong><u>Small Sample Correction</u></strong>: New prior option on residual variance estimates to improve credible set coverage and calibration for individual-level data ([Denault et al. 2025](https://www.biorxiv.org/content/10.1101/2025.05.16.654543v1)).
+* <strong><u>Enhanced Performance</u></strong>: Substantial computational speed improvements for RSS models with regularized LD matrices.
+* <strong><u>New Convergence Criteria</u></strong>: PIP-based convergence option alongside traditional ELBO convergence for improved stability.
+* <strong><u>Improved Refinement</u></strong>: Reduced computational time for credible set refinement procedures.

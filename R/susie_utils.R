@@ -138,7 +138,7 @@ compute_colstats <- function(X, center = TRUE, scale = TRUE) {
 #' across different SuSiE data types.
 #'
 #' Functions: check_semi_pd, check_projection, validate_init,
-#' convert_individual_to_ss, extract_prior_weights, modify_prior_weights,
+#' convert_individual_to_ss, extract_prior_weights, reconstruct_full_weights,
 #' validate_and_override_params
 # =============================================================================
 
@@ -294,7 +294,7 @@ validate_init <- function(data, params) {
     }
   }
 
-  invisible(model_init)
+  invisible(params$model_init)
 }
 
 # Convert individual data to ss with unmappable effects components.
@@ -317,9 +317,7 @@ convert_individual_to_ss <- function(data, params) {
       n = data$n,
       p = data$p,
       X_colmeans = X_colmeans,
-      y_mean = data$mean_y,
-      prior_weights = data$prior_weights,
-      null_weight = data$null_weight
+      y_mean = data$mean_y
     ),
     class = "ss"
   )
@@ -336,7 +334,12 @@ convert_individual_to_ss <- function(data, params) {
 
 # Extract non-null prior weights from a model
 #' @keywords internal
-extract_prior_weights <- function(model, null_weight) {
+extract_prior_weights <- function(model, null_weight = NULL) {
+  # Use model's null_weight if not provided (backwards compatibility)
+  if (is.null(null_weight)) {
+    null_weight <- model$null_weight
+  }
+  
   if (!is.null(null_weight) && null_weight != 0 && !is.null(model$null_index) && model$null_index != 0) {
     # Extract non-null prior weights and rescale
     pw_s <- model$pi[-model$null_index] / (1 - null_weight)
@@ -346,28 +349,19 @@ extract_prior_weights <- function(model, null_weight) {
   return(pw_s)
 }
 
-# Modify data object with new prior weights
+# Reconstruct full prior weights with null weight handling
 #' @keywords internal
-modify_prior_weights <- function(data, new_prior_weights) {
-  # Create a modified copy of the data object
-  data_modified <- data
-
-  # Handle null weight case
-  if (!is.null(data$null_weight) && data$null_weight != 0) {
-    # Reconstruct full prior weights including null
-    data_modified$prior_weights <- c(
-      new_prior_weights * (1 - data$null_weight),
-      data$null_weight
-    )
+reconstruct_full_weights <- function(non_null_weights, null_weight) {
+  if (!is.null(null_weight) && null_weight != 0) {
+    # Reconstruct full prior weights including null component
+    full_weights <- c(non_null_weights * (1 - null_weight), null_weight)
   } else {
-    data_modified$prior_weights <- new_prior_weights
+    full_weights <- non_null_weights
   }
-
   # Normalize to sum to 1
-  data_modified$prior_weights <- data_modified$prior_weights / sum(data_modified$prior_weights)
-
-  return(data_modified)
+  return(full_weights / sum(full_weights))
 }
+
 
 # Validate and Override Parameters
 #' @keywords internal
@@ -467,7 +461,8 @@ initialize_matrices <- function(data, params, var_y) {
     lbf               = rep(as.numeric(NA), L),
     lbf_variable      = matrix(as.numeric(NA), L, data$p),
     sigma2            = params$residual_variance,
-    pi                = data$prior_weights,
+    pi                = params$prior_weights,
+    null_weight       = params$null_weight,
     predictor_weights = rep(as.numeric(NA), data$p)
   )
 
@@ -476,8 +471,8 @@ initialize_matrices <- function(data, params, var_y) {
 
 # Initialize Null Index
 #' @keywords internal
-initialize_null_index <- function(data) {
-  if (is.null(data$null_weight) || data$null_weight == 0) {
+initialize_null_index <- function(data, model) {
+  if (is.null(model$null_weight) || model$null_weight == 0) {
     null_idx <- 0
   } else {
     null_idx <- data$p
@@ -489,7 +484,7 @@ initialize_null_index <- function(data) {
 #' @keywords internal
 assign_names <- function(data, model, variable_names) {
   if (!is.null(variable_names)) {
-    if (!is.null(data$null_weight)) {
+    if (!is.null(model$null_weight)) {
       variable_names[length(variable_names)] <- "null"
       names(model$pip) <- variable_names[-data$p]
     } else {
@@ -753,7 +748,7 @@ compute_lbf_gradient <- function(alpha, betahat, shat2, V, use_servin_stephens =
 
 # Method of Moments variance estimation for unmappable effects methods
 #' @keywords internal
-mom_unmappable <- function(data, params, model, omega, tau2) {
+mom_unmappable <- function(data, params, model, omega, tau2, est_tau2 = TRUE, est_sigma2 = TRUE) {
   L <- nrow(model$mu)
 
   A <- matrix(0, nrow = 2, ncol = 2)
@@ -806,7 +801,7 @@ mom_unmappable <- function(data, params, model, omega, tau2) {
 
 # MLE variance estimation for unmappable effects
 #' @keywords internal
-mle_unmappable <- function(data, params, model, omega) {
+mle_unmappable <- function(data, params, model, omega, est_tau2 = TRUE, est_sigma2 = TRUE) {
   L <- nrow(model$alpha)
 
   # Set default ranges
@@ -969,14 +964,14 @@ update_model_variance <- function(data, params, model) {
 
 # Check convergence
 #' @keywords internal
-check_convergence <- function(params, model, elbo, iter) {
+check_convergence <- function(params, model, elbo, iter, tracking) {
   # Skip convergence check on first iteration
   if(iter == 1) {
     return(FALSE)
   }
 
   # Calculate difference in ELBO values
-  ELBO_diff   <- elbo[iter + 1] - model$prev_elbo
+  ELBO_diff   <- elbo[iter + 1] - tracking$convergence$prev_elbo
   ELBO_failed <- is.na(ELBO_diff) || is.infinite(ELBO_diff)
 
   if (params$convergence_method == "pip" || ELBO_failed) {
@@ -987,7 +982,7 @@ check_convergence <- function(params, model, elbo, iter) {
     }
 
     # Calculate difference in alpha values
-    PIP_diff <- max(abs(model$prev_alpha - model$alpha))
+    PIP_diff <- max(abs(tracking$convergence$prev_alpha - model$alpha))
     return(PIP_diff < params$tol)
   }
   return(ELBO_diff < params$tol)
@@ -1069,7 +1064,7 @@ compute_elbo_inf <- function(alpha, mu, omega, lbf, sigma2, tau2, n, p,
 #' inclusion probabilities, and summary statistics. These process the fitted
 #' model into interpretable results.
 #'
-#' Functions: n_in_CS_x, in_CS_x, n_in_CS, in_CS, get_purity
+#' Functions: n_in_CS_x, in_CS_x, n_in_CS, in_CS, get_purity, get_tracking
 # =============================================================================
 
 # Find how many variables in the CS.
@@ -1147,4 +1142,12 @@ get_purity <- function(pos, X, Xcorr, squared = FALSE, n = 100,
       get_median(value)
     ))
   }
+}
+
+# Clean tracking object for output by removing convergence data
+#' @keywords internal
+get_tracking <- function(tracking) {
+  clean_tracking <- tracking
+  clean_tracking$convergence <- NULL
+  return(clean_tracking)
 }

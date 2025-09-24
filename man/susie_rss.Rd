@@ -24,7 +24,7 @@ susie_rss(
   standardize = TRUE,
   intercept_value = 0,
   estimate_residual_variance = FALSE,
-  estimate_residual_method = c("MLE", "MoM"),
+  estimate_residual_method = c("MoM", "MLE"),
   estimate_prior_variance = TRUE,
   estimate_prior_method = c("optim", "EM", "simple"),
   unmappable_effects = c("none", "inf"),
@@ -64,7 +64,7 @@ provided instead of \code{z}.}
 the estimated effects (a vector of length p). This, together with
 \code{bhat}, may be provided instead of \code{z}.}
 
-\item{lambda}{Regularization parameter for correlated errors. When
+\item{lambda}{Regularization parameter for LD matrix. When
 \code{lambda} > 0, you cannot use \code{unmappable_effects} methods.}
 
 \item{z_ld_weight}{This parameter is included for backwards
@@ -85,5 +85,5 @@ LD matrix is provided, we recommend setting
 }
 \description{
 Performs SuSiE regression using z-scores and correlation matrix.
-Supports both standard RSS (lambda = 0) and RSS with correlated errors (lambda > 0).
+Supports both standard RSS (lambda = 0) and RSS with regularized LD matrix (lambda > 0).
 }
