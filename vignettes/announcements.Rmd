@@ -28,7 +28,8 @@ susieR 2.0 eliminates this duplicative architecture through a unified framework 
 
 ## New Features
 
-* <strong><u>Unmappable Effects Support</u></strong>: Integration of SuSiE.ash and SuSiE-inf ([Cui et al. 2024](https://www.nature.com/articles/s41588-023-01597-3)) methods for modeling oligogenic and polygenic backgrounds.
+* <strong><u>SuSiE-ash Model</u></strong>: New adaptive shrinkage framework for unmappable effects, extending SuSiE with ash methodology ([Stephens 2017](https://doi.org/10.1093/biostatistics/kxw041)) to handle residual effects through flexible unimodal distributions rather than assuming purely infinitesimal architecture, aimed at providing robust estimation for oligogenic and complex background effects.
+* <strong><u>SuSiE-inf Integration</u></strong>: Implementation of SuSiE-inf ([Cui et al. 2024](https://www.nature.com/articles/s41588-023-01597-3)), which models infinitesimal effects alongside sparse causal signals to improve fine-mapping calibration and reduce replication failure rates when genetic architecture includes polygenic backgrounds.
 * <strong><u>Small Sample Correction</u></strong>: New prior option on residual variance estimates to improve credible set coverage and calibration for individual-level data ([Denault et al. 2025](https://www.biorxiv.org/content/10.1101/2025.05.16.654543v1)).
 * <strong><u>Enhanced Performance</u></strong>: Substantial computational speed improvements for RSS models with regularized LD matrices.
 * <strong><u>New Convergence Criteria</u></strong>: PIP-based convergence option alongside traditional ELBO convergence for improved stability.
