@@ -14,11 +14,21 @@ knitr::opts_chunk$set(comment = "#",collapse = TRUE,results = "markup",
                       fig.align = "center")
 ```
 
-This is vignette reproduces an example from the
+This is vignette mimic the example from  
 [Denault et al paper](https://doi.org/10.1101/2025.05.16.654543).
 
-The data are normalized gene expression, and the goal is to finemap
-genetic variants for expression (eQTLs). 
+The simulated data are  based on normalized gene expression and normalized SNP data, and the goal is to finemap
+genetic variants for expression (eQTLs). Note that in this example the ground truth in unknown.
+
+
+
+To reproduce this example you need to install the latest version of SuSiE
+```{r eval=FALSE }
+# install.packages("remotes")
+remotes::install_github("stephenslab/susieR")
+```
+
+
 
 ```{r load-data}
 library(susieR)
@@ -58,8 +68,8 @@ res_susie_small <- susie(X,y,L = 10,small = TRUE,verbose = TRUE)
 res_susie_small$sets$cs
 ```
 
-The results are more plausible as this version of SuSiE only outputs a
-single CS:
+The results are more plausible as this version of SuSiE only outputs two
+CSs:
 
 ```{r, fig.height=3, fig.width=4}
 susie_plot(res_susie_small,y = "PIP")
@@ -75,11 +85,9 @@ i <- i[1]
 pve <- summary(lm(y ~ X[,i]))$r.squared
 round(100*pve,digits = 1)
 ```
-
-## Testing with small = TRUE, standardize = FALSE and L = 1
-
-```{r, message=FALSE, warning=FALSE}
-markers <- c(4919,4920,4922,4923)
-res <- susie(X[,markers],y,L = 1,small = TRUE,standardize = FALSE,
-             verbose = TRUE)
-```
+ 
+ 
+ 
+ 
+ 
+ 
