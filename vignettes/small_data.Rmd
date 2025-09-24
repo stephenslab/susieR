@@ -1,6 +1,6 @@
 ---
-title: Small data example
-author: William Denault
+title: "Small data example"
+author: "William R.P. Denault"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
@@ -9,26 +9,34 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+
 ```{r knitr-opts, include=FALSE}
-knitr::opts_chunk$set(comment = "#",collapse = TRUE,results = "markup",
-                      fig.align = "center")
+knitr::opts_chunk$set(
+  comment = "#",
+  collapse = TRUE,
+  results  = "markup",
+  fig.align = "center",
+  fig.width = 4.5,
+  fig.height = 3.2,
+  warning = FALSE,
+  message = FALSE
+)
+set.seed(1)
+
 ```
 
-This is vignette mimic the example from  
-[Denault et al paper](https://doi.org/10.1101/2025.05.16.654543).
-
-The simulated data are  based on normalized gene expression and normalized SNP data, and the goal is to finemap
-genetic variants for expression (eQTLs). Note that in this example the ground truth in unknown.
+This is vignette mimic the example from Figure 1 panel B-C-D in [Denault et al paper](https://doi.org/10.1101/2025.05.16.654543).
 
 
 
-To reproduce this example you need to install the latest version of SuSiE
+To reproduce, install the latest development version of susieR (optional):
 ```{r eval=FALSE }
 # install.packages("remotes")
 remotes::install_github("stephenslab/susieR")
 ```
 
-
+## Data
+We analyze a simulated eQTL dataset built from normalized gene expression and normalized SNP genotypes. The goal is to fine-map causal variants for expression (eQTLs). In this example the ground truth is unknown.
 
 ```{r load-data}
 library(susieR)
@@ -38,11 +46,13 @@ X <- data_small$X
 dim(X)
 ```
 
+
+## Baseline SuSiE fit
 The original SuSiE procedure displays signs of misscalibration: the
-result is highly suspicious as we find 9 credible sets in a data set
+result is highly suspicious as we find 10 credible sets in a data set
 containing only 47 samples.
 
-```{r run-susie, fig.height=3, fig.width=4, message=FALSE}
+```{r run-susie, fig.height=5, fig.width=5, message=FALSE}
 res_susie <- susie(X,y,L = 10,verbose = FALSE)
 res_susie$sets$cs
 susie_plot(res_susie,y = "PIP")
@@ -51,16 +61,24 @@ susie_plot(res_susie,y = "PIP")
 Another clue is that the fine-mapped variants explain >99% of the
 variation in gene expression, which suggests overfitting.
 
-```{r, fig.height=3.5, fig.width=3}
-ypred <- predict(res_susie,X)
-pve <- 1 - drop(res_susie$sigma2/var(y))
-round(100*pve,digits = 1)
-plot(y,ypred,pch = 20)
-abline(a = 0,b = 1,col = "magenta",lty = "dotted")
+```{r, fig.height=5.5, fig.width=5}
+ypred <- predict(res_susie, X)
+pve   <- 1 - drop(res_susie$sigma2 / var(y))
+round(100 * pve, 3)
+
+plot(y, ypred, pch = 20,
+     xlab = "Phenotype",
+     ylab = "Predicted")
+abline(0, 1, col = "magenta", lty = "dotted")
 ```
 
-Setting `small = TRUE` in the susie call uses a slightly different SER
-("single effect regression") model that accounts for uncertainty in the
+
+
+## SuSiE with Servin–Stephens SER (small = TRUE)
+Setting `small = TRUE` switches SuSiE to a variant of single-effect regression (SER) that properly accounts for uncertainty in the residual , see following Servin & Stephens (2007, PLOS Genetics).
+
+Setting `small = TRUE` in the susie call uses a slightly different  single effect regression
+(i.e. Servin-Stephens single effect regression, see Servin and Stephens  2007 PLOS Genetics ) model that accounts for uncertainty in the
 residual.
 
 ```{r run-susie-small, message=FALSE, warning=FALSE} 
@@ -68,26 +86,44 @@ res_susie_small <- susie(X,y,L = 10,small = TRUE,verbose = TRUE)
 res_susie_small$sets$cs
 ```
 
-The results are more plausible as this version of SuSiE only outputs two
-CSs:
+The results are more plausible as this version of SuSiE only a single CS.
 
-```{r, fig.height=3, fig.width=4}
+```{r }
 susie_plot(res_susie_small,y = "PIP")
 ```
 
-A SNP in this CS explains, more plausibly, about 45% of the variance
-in expression:
+The lead SNP in this CS explains about 51% of the variance
+in expression, which is again more plausible
 
-```{r, fig.height=3, fig.width=4}
+```{r}
 i <- res_susie_small$sets$cs$L1
 round(cor(X[,i]),digits = 3)
 i <- i[1]
-pve <- summary(lm(y ~ X[,i]))$r.squared
-round(100*pve,digits = 1)
+fit = lm(y ~ X[,i])
+pred_small = fit$fitted.values
+pve <-summary( fit)$r.squared
+round(100*pve,digits = 3)
 ```
  
  
+## Compare predictions: overfit (default) vs Servin–Stephens SER
+ 
+```{r, fig.height=5, fig.width=5}
+ 
+plot(y, ypred, pch = 20,
+     xlab = "Phenotype",
+     ylab = "Predicted")
+points(y, pred_small, pch = 20, col = "blue")
+abline(0, 1, col = "magenta", lty = "dotted")
+legend("topleft", pch = c(20, 20), col = c("black", "blue"),
+       legend = c("SuSiE (default Gaussian SER)",
+                  "SuSiE (Servin–Stephens SER)") )
+```
  
  
- 
- 
+**References**
+
+Servin, B. & Stephens, M. (2007). *Imputation-based analysis of association studies: Candidate regions and quantitative traits.* PLOS Genetics, 3(7): e114.
+
+
+Denault et al. (2025) *Accounting for uncertainty in residual variances improves calibration for fine-mapping with small sample sizes*, bioRxiv
