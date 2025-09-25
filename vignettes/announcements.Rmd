@@ -17,20 +17,27 @@ knitr::opts_chunk$set(
 )
 ```
 
-# susieR 2.0.0 - Major Release
+# Release notes
 
-*Release date: 2025-06-04*
+## susieR 2.0.0 - Major Release
 
-## Release Overview
+*Release date: 2025-09-22*
+
+### Release Overview
 This major release introduces **susieR 2.0**, a complete architectural redesign that addresses the code duplication and fragmented architecture of the original SuSiE implementation while adding new features including unmappable effects modeling and various performance optimizations, all while maintaining full backward compatibility.
 
 susieR 2.0 eliminates this duplicative architecture through a unified framework built on modular design principles. The user-facing interface remains unchanged, but the implementation now uses generic functions with data-type specific backends through R's S3 dispatch system. This architecture enables the integration of new SuSiE extensions while maintaining identical results to their original versions. Beyond architectural improvements, this release introduces substantial algorithmic advances including support for unmappable effects modeling, enhanced computational speed for regularized LD matrices, new convergence criteria, and improved refinement procedures.
 
-## New Features
+### New Features
 
 * <strong><u>SuSiE-ash Model</u></strong>: New adaptive shrinkage framework for unmappable effects, extending SuSiE with ash methodology ([Stephens 2017](https://doi.org/10.1093/biostatistics/kxw041)) to handle residual effects through flexible unimodal distributions rather than assuming purely infinitesimal architecture, aimed at providing robust estimation for oligogenic and complex background effects.
 * <strong><u>SuSiE-inf Integration</u></strong>: Implementation of SuSiE-inf ([Cui et al. 2024](https://www.nature.com/articles/s41588-023-01597-3)), which models infinitesimal effects alongside sparse causal signals to improve fine-mapping calibration and reduce replication failure rates when genetic architecture includes polygenic backgrounds.
-* <strong><u>Small Sample Correction</u></strong>: New prior option on residual variance estimates to improve credible set coverage and calibration for individual-level data ([Denault et al. 2025](https://www.biorxiv.org/content/10.1101/2025.05.16.654543v1)).
-* <strong><u>Enhanced Performance</u></strong>: Substantial computational speed improvements for RSS models with regularized LD matrices.
-* <strong><u>New Convergence Criteria</u></strong>: PIP-based convergence option alongside traditional ELBO convergence for improved stability.
-* <strong><u>Improved Refinement</u></strong>: Reduced computational time for credible set refinement procedures.
+* <strong><u>Servin-Stephens Model Integration</u></strong>: New prior option ([Servin and Stephens, 2007](https://doi.org/10.1371/journal.pgen.0030114)) on residual variance estimates in single effect regression (SER) to improve credible set coverage and calibration, particularly useful for small sample studies ([Denault et al. 2025](https://www.biorxiv.org/content/10.1101/2025.05.16.654543v1)).
+
+### Enhancement
+
+* <strong><u>Performance improvements for RSS model</u></strong>: Substantial computational speed improvements for RSS models with regularized LD matrices.
+* <strong><u>Convergence Criteria</u></strong>: PIP-based convergence option alongside traditional ELBO convergence for faster convergence in some practical situations.
+* <strong><u>Residual estimation</u></strong>: For the default SER, residual variance now include Methods of Moments alongside Maximum Likelihood for improved stability.
+* <strong><u>Improved initialization</u></strong>: Reduced computational time for credible set auto-initialization procedures (option `refine=TRUE`).
+* <strong><u>Improved implementation infrastracture</u></strong>: Details can be found [here](https://github.com/StatFunGen/susieR/blob/master/R/README.md).
