@@ -1,8 +1,8 @@
 # =============================================================================
-#' @section SUSIE WORKHORSE
-#'
-#' Main orchestration function for the IBSS algorithm. Coordinates the complete
-#' fitting pipeline from initialization through iteration to finalization.
+# SUSIE WORKHORSE
+#
+# Main orchestration function for the IBSS algorithm. Coordinates the complete
+# fitting pipeline from initialization through iteration to finalization.
 # =============================================================================
 #'
 #' @param data Data object (individual, ss, or rss_lambda)

@@ -2,7 +2,7 @@
 % Please edit documentation in R/susie_rss_utils.R
 \name{compute_suff_stat}
 \alias{compute_suff_stat}
-\title{Compute sufficient statistics for input to \code{susie_suff_stat}}
+\title{Compute sufficient statistics for input to \code{susie_ss}}
 \usage{
 compute_suff_stat(X, y, standardize = FALSE)
 }
@@ -24,16 +24,6 @@ Computes the sufficient statistics \eqn{X'X, X'y, y'y}
   columns of \eqn{X} and centering \eqn{y} to have mean zero. We also
   store the column means of \eqn{X} and mean of \eqn{y}.
 }
-\section{FUNDAMENTAL COMPUTATIONS}{
-
-
-Basic mathematical utilities and core RSS computations. These functions
-handle fundamental operations like sufficient statistics computation and
-eigenvalue inverse calculations.
-
-Functions: compute_suff_stat, compute_Dinv
-}
-
 \examples{
 data(N2finemapping)
 ss <- compute_suff_stat(N2finemapping$X, N2finemapping$Y[, 1])

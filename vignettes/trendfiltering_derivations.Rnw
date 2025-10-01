@@ -1,0 +1,349 @@
+\documentclass[11pt]{article}
+\usepackage{Sweave}
+\usepackage{fullpage}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{bm}
+\usepackage{mathabx}
+\usepackage{xspace}
+\usepackage{natbib}
+\bibliographystyle{abbrvnat}
+
+\newcommand{\susie}{\textsl{SuSiE}\xspace}
+\def\vb{\bm b}
+\def\vy{\bm y}
+\def\vx{\bm x}
+
+\begin{document}
+\title{Implementation of SuSiE trend filtering}
+\author{Kaiqian Zhang}
+\maketitle
+
+%\VignetteIndexEntry{Implementation of SuSiE trend filtering}
+
+\section{Notation}
+
+We first describe the notation used in this text. We denote matrices by
+boldface uppercase letters ($\mathbf{A}$), vectors are denoted by
+boldface lowercase letters ($\mathbf{a}$), and scalars are denoted by
+non-boldface letters ($a$ or $A$). All vectors are
+column-vectors. Lowercase letters may represent elements of a vector
+or matrix if they have subscripts. For example, $a_{ij}$ is the
+$(i,j)$th element of $\mathbf{A}$, $a_i$ is the $i$th element of
+$\mathbf{a}$, and $\mathbf{a}_{i}$ is either the $i$th row or $i$th
+column of $\mathbf{A}$. For indexing, we will generally use capital
+non-boldface letters to denote the total number of elements and their
+lowercase non-boldface versions to denote the index. For example, $i =
+1,\ldots,I$. We let $\mathbf{A}_{n \times p}$ denote that $\mathbf{A}
+\in \mathbb{R}^{n \times p}$. We denote the matrix transpose by
+$\mathbf{A}^T$, the matrix inverse by $\mathbf{A}^{-1}$, and the
+matrix determinant by $\det(\mathbf{A})$. Finally, sets will be
+denoted by calligraphic letters ($\mathcal{A}$).
+
+\section{Overview}
+
+Trend filtering is a useful statistical tool for nonparametric
+regression. \cite{Kim07l1trend} first proposed $\ell_1$ trend
+filtering for estimating underlying piecewise linear trends in time
+series data. This idea can be further extended to fit piecewise
+polynomial of degree $k$ to the data. In their paper, Kim et
+al. showed the equivalence between the $\ell_1$ trend filtering and
+the $\ell_1$-regularized least squares problem. This motivates us to
+think about the connection between trend filtering and sparse
+approximation in general.
+
+\section{Trend filtering and sparse regression}
+
+Trend filtering problem is defined mathematically as follows. For a
+given integer $k \geq 0$, the kth order trend filtering is defined by
+a penalized least squares optimization problem,
+
+\begin{align}
+\hat{\vb} = \underset{\vb}{\mathrm{argmin}} \frac{1}{2}|| \vy - 
+            \vb||_2^2 + \frac{n^k}{k!}\lambda||D_{k+1}\vb||_1,
+\end{align}
+where $\vy = [y_1 \dots y_n]^T$ is an n vector of observations,
+$\lambda$ is a tuning parameter, and $D_{k+1}$ is the discrete
+difference operator of order $k$. When order $k=0$, $D$ is defined
+
+\begin{align}\label{D1}
+D_{1} = \begin{bmatrix} 
+    -1 & 1 & 0 & \dots & 0 & 0\\
+    0 & -1 & 1 & \dots & 0 & 0\\
+    \vdots & \ddots & \\
+    0 & 0 & 0 & \dots & -1 & 1\\
+    \end{bmatrix}
+    \in \mathbb{R}^{(n-1)\times n}.
+\end{align}
+In this case, the components of the trend filtering estimate form a
+piecewise constant structure, with break points corresponding to the
+nonzero entries of $D_{1}\hat{\vb} = (\hat{b}_2 - \hat{b}_1, \dots,
+\hat{b}_n - \hat{b}_{n-1})$ \citep{Tibshirani2014}. And when $k\geq 1$,
+the operator $D_{k+1}$ is defined recursively,
+
+\begin{align}\label{D1_2}
+D_{k+1} = D_{1} \cdot D_{k} \in \mathbb{R}^{(n-k-1)\times n},
+\end{align}
+where the dot product is matrix multiplication. Notice that $D_1$ here
+in \ref{D1_2} is the $(n-k-1)\times (n-k)$ version of $D_1$ described
+in \ref{D1}.
+
+Now we want to transform the trend filtering problem into a sparse
+regression problem. Let $\bm{\beta}=D_{k+1}\vb$. Then if $D_{k+1}$
+were invertibe, we could write $\vb = (D_{k+1})^{-1}\bm{\beta}$ and
+the above problem would become
+
+\begin{align}
+\hat{\bm{\beta}} = \underset{\bm{\beta}}{\mathrm{argmin}} \frac{1}{2}||\vy - 
+(D_{k+1})^{-1}\bm{\beta}||_2^2 + \frac{n^k}{k!}\lambda||\bm{\beta}||_1.
+\end{align}
+We can consider this a sparse regression with $\ell_1$ regularization
+problem, where the design matrix is $X_{k+1} = (D_{k+1})^{-1}$.
+
+\section{Modification of $D$}
+
+As we have seen, the trend filtering problem becomes a sparse
+regression with $\ell_1$ regularization if we consider the design
+matrix $X_{k+1} = (D_{k+1})^{-1}$. However, $D_{1} \in
+\mathbb{R}^{(n-1)\times n}$ is not invertible, so is $D_{k+1}$ for
+$k=1,2,\dots$ By observation, we complete $D_{1}$ as a square and
+symmetric matrix
+
+\begin{align}
+\hat{D}_{1} = \begin{bmatrix} 
+    -1 & 1 & 0 & \dots & 0 & 0\\
+    0 & -1 & 1 & \dots & 0 & 0\\
+    \vdots & \ddots & \\
+    0 & 0 & 0 & \dots & -1 & 1\\
+    0 & 0 & 0 & \dots & 0 & -1
+    \end{bmatrix}
+    \in \mathbb{R}^{n\times n}.
+\end{align}
+And for $k\geq 1$, we obtain
+\begin{align}
+\hat{D}_{k+1} = \hat{D}_{1} \cdot \hat{D}_{k} \in \mathbb{R}^{n\times n}.
+\end{align}
+We notice that, by this modification, $\hat{D}_{k+1}$ has $k$ more
+rows added at the bottom without changing any previous entry. With
+this modification, we are able to invert $\hat{D}_{k+1}$ and consider
+the inverse matrix as a design matrix in the sparse regression.
+
+\section{Special structure of $\hat{D}^{-1}$}
+
+After determining the design matrix $X$ in the sparse regression
+problem, we could apply \susie algorithm to help us find a possible
+fit. Here, we denote $X_{k+1} = (\hat{D}_{k+1})^{-1}$, where $k$ is
+the order of trend filtering. Rather than generating $\hat{D}^{-1}$
+and set this as an $X$ input, we exploit the special structure of
+$\hat{D}^{-1}$ and perform \susie on this specific trend filtering
+problem with $O(n)$ complexity. We will talk about how to make
+different computations linear in complexity by utilizing the special
+structure respectively.
+
+\section{Computation of $Xb$} 
+\label{computation-on-Xb}
+
+In the trend filtering application, since $X_{k+1} =
+(\hat{D}_{k+1})^{-1}$, we obtain
+\begin{align}
+X_{k+1} \vb & = (\hat{D}_{k+1})^{-1} \vb = 
+(\underbrace{\hat{D}_{1}\dots \hat{D}_{1}}_{k+1})^{-1} \vb \\
+ &= \underbrace{(\hat{D}_{1})^{-1} \dots (\hat{D}_{1})^{-1}}_{k+1} \vb \\
+ &= \underbrace{X_1 \dots X_1}_{k+1} \vb.
+\end{align}
+We notice that since 
+\begin{align}
+X_1 = \begin{bmatrix} 
+    -1 & -1 & -1 & \dots & -1 & -1\\
+    0 & -1 & -1 & \dots & -1 & -1\\
+    \vdots & \ddots & \\
+    0 & 0 & 0 & \dots & -1 & -1\\
+    0 & 0 & 0 & \dots & 0 & -1
+    \end{bmatrix}
+    \in \mathbb{R}^{n\times n},
+\end{align}
+ 
+\begin{align}
+X_1 \vb & = -1 \cdot [b_1+b_2+\dots+b_n, b_2+\dots+b_n, \dots, 
+                      b_{n-1}+b_n, b_n]^T \\
+& = -1 \cdot \text{cumsum}(\text{reverse}(\vb)) .
+\end{align}
+Let $f: \mathbb{R}^n \to \mathbb{R}^n$ such that $f(\vx)=
+-\text{cumsum}(\text{reverse}(\vx))$ for any $\vx \in
+\mathbb{R}^n$. Then
+\begin{align}
+X_{k+1} \vb & = \underbrace{X_1 \dots X_1}_{k+1} \vb = f^{(k+1)}(\vb),
+\end{align}
+where $k$ is the order of trend filtering. 
+
+\section{Computation of $X^Ty$} 
+\label{computation-on-Xty}
+
+We consider $X_{k+1}^T\vy$. Here $X_{k+1} = (\hat{D}_{k+1})^{-1}$ in
+the trend filtering problem, and $\vy$ is an n vector. We have
+
+\begin{align}
+X_{k+1}^T \vy & = ((\hat{D}_{k+1})^{-1})^T \vy = 
+((\underbrace{\hat{D}_{1}\dots \hat{D}_{1}}_{k+1})^{-1})^T \vy \\
+& = \underbrace{((\hat{D}_{1})^{-1})^T \dots 
+  ((\hat{D}_{1})^{-1})^T}_{k+1} \vy \\
+& = \underbrace{X_1^T \dots X_1^T}_{k+1} \vy.
+\end{align}
+Similarly, we observe that since
+\begin{align}
+X_1^T = \begin{bmatrix} 
+    -1 & 0 & 0 & \dots & 0 & 0\\
+    -1 & -1 & 0 & \dots & 0 & 0\\
+    \vdots & \ddots & \\
+    -1 & -1 & -1 & \dots & -1 & 0\\
+    -1 & -1 & -1 & \dots & -1 & -1
+    \end{bmatrix}
+    \in \mathbb{R}^{n\times n},
+\end{align}
+
+\begin{align}
+ X_1^T \vy & = -1 \cdot [y_1, y_1+y_2, \dots, y_1+y_2+\dots+y_n]^T \\
+& = -1 \cdot \text{cumsum}(\vy). 
+\end{align}
+Let $g: \mathbb{R}^n \to \mathbb{R}^n$ such that $g(\vx)=
+-\text{cumsum}(\vx)$ for any $\vx \in \mathbb{R}^n$. Then
+\begin{align}
+X_{k+1}^T \vy & = \underbrace{X_1^T \dots X_1^T}_{k+1} \vy = g^{(k+1)}(\vy),
+\end{align}
+where $k$ is the order of trend filtering.
+
+\section{Computation on $(X^2)^T 1$; i.e., colSums($X^2$)} 
+\label{computation-on-d}
+
+To compute $(X_{k+1}^2)^T \bm{1}$, let's first explore the special
+structure of $X_{k+1}=(\hat{D}^{(k+1)})^{-1}$ for $k=0,1,2$.
+\begin{align}
+X_1 = \begin{bmatrix} 
+    -1 & -1 & -1 & -1 & -1 & \dots \\
+    0  & -1 & -1 & -1 & -1 & \dots \\
+    0  & 0  & -1 & -1 & -1 & \dots \\
+    0  & 0  & 0  & -1 & -1 & \dots \\
+    \vdots & \ddots & \\
+    \end{bmatrix}
+    \in \mathbb{R}^{n\times n},
+\end{align}
+
+\begin{align}
+X_2 = \begin{bmatrix} 
+    1  & 2 & 3 & 4 & 5 & 6 & \dots \\
+    0  & 1 & 2 & 3 & 4 & 5 & \dots \\
+    0  & 0 & 1 & 2 & 3 & 4 &\dots \\
+    0  & 0 & 0 & 1 & 2 & 3 &\dots \\
+    \vdots & \ddots & \\
+    \end{bmatrix}
+    \in \mathbb{R}^{n\times n},
+\end{align}
+
+\begin{align}
+X_3 = \begin{bmatrix} 
+    -1 & -3 & -6 & -10 & -15 & \dots \\
+    0  & -1 & -3 & -6  & -10 & \dots \\
+    0  &  0 & -1 & -3  & -6  & \dots \\
+    0  &  0 & 0  & -1  & -3  & \dots \\
+    \vdots & \ddots & \\
+    \end{bmatrix}
+    \in \mathbb{R}^{n\times n},
+\end{align}
+
+Define a triangular rotate matrix $Q \in \mathbb{R}^{n\times n}$ such that 
+
+(i) For any $i, j \leq n$, $Q_{ij} = 0$ if $i>j$.
+
+(ii) For any $k < n$, $Q_{ab} = Q_{cd}$ if $b-a = d-c = k$. 
+
+We observe that if $X$ is a triangular rotate matrix, then 
+
+\begin{align}
+X^T \bm{1} = \text{cumsum}(X_{1.}).
+\end{align}
+
+Since $X^2$ is still a triangular rotate matrix, we obtain
+
+\begin{align}
+(X^2)^T \bm{1} = \text{cumsum}(X^2_{1.}).
+\end{align}
+
+Since $X_{k+1} = (\hat{D}_{k+1})^{-1}$ is a triangular rotate matrix, 
+
+\begin{align}
+(X_{k+1}^2)^T \bm{1} = \text{cumsum}((X_{k+1})_{1.}^2).
+\end{align}
+
+And, obviously, the first row of $X_{k+1}$ is 
+\begin{equation}
+ (X_{k+1})_{1.} = 
+    \begin{cases} 
+      \bm{-1} & \text{if } k = 0 \\
+      g^{(k)}(\bm{1}) & \text{if } k > 0.
+   \end{cases}
+\end{equation}
+
+\section{Computation of $\mu$; i.e., column means} 
+\label{computation-on-cm}
+
+For each column $j = 1,2,\dots,n$,
+\begin{equation}
+    \mu_j = E[X_{.j}],
+\end{equation}
+and $\bm{\mu} = [\mu_1, \mu_2, \dots, \mu_n]^T \in
+\mathbb{R}^n$. Hence we get
+\begin{equation}
+\bm{\mu} = \frac{1}{n} X_{k+1}^T \bm{1} 
+         = \frac{1}{n} \text{cumsum}((X_{k+1})_{1.}),
+\end{equation}
+where $(X_{k+1})_{1.}$ is defined above in \ref{computation-on-d}.
+
+\section{Computation of $\sigma$; i.e., column standard deviations} 
+\label{computation-on-csd}
+
+For each column $j=1,2,\dots, n$,
+
+\begin{align}
+\sigma_j & = \sqrt{E[X_{.j}^2] - E[X_{.j}]^2} \\
+       & = \sqrt{\frac{1}{n}\sum_{i=1}^{n}X_{ij}^2 - 
+                (\frac{1}{n}\sum_{i=1}^{n} X_{ij})^2}.
+\end{align}
+Hence, $\bm{\sigma} = [\sigma_1, \sigma_2, \dots, \sigma_n]^T \in
+\mathbb{R}^n$ becomes
+
+\begin{align}
+\bm{\sigma} & = \sqrt{E[X^2] - E[X]^2} \\
+       & = \sqrt{\frac{1}{n}\text{colSums}(X^2) - 
+                 (\frac{1}{n}\text{colSums}(X))^2} \\
+       & = \sqrt{\frac{1}{n}(X^2)^T \bm{1} + (\frac{1}{n} X^T \bm{1})^2},
+\end{align}
+where the first term involves \ref{computation-on-d} and the second
+term is computed in \ref{computation-on-cm}. Note that in the
+algorithm, we set the column standard deviation 1 when the column has
+variance 0 for computation convenience.
+
+\section{Computation on $(\hat{X}^2)^T 1$; i.e., colSums($\hat{X}^2$)} 
+\label{computation-on-std-d}
+
+We want to compute colSums($\hat{X}^2$), where $\hat{X}$ is scaled by
+both column means $\bm{\mu} = [\mu_1, \mu_2, \ldots, \mu_n]^T \in
+\mathbb{R}^n$ and column standard deviations $\bm{\sigma} = [\sigma_1,
+  \sigma_2, \dots, \sigma_n]^T \in \mathbb{R}^n$. We define $\hat{X}
+\in \mathbb{R}^{n \times n}$ such that for each $i = 1,2,\ldots,n$ and
+$j=1,2,\dots,n$,
+\begin{equation*}
+\hat{X}_{ij} = (X_{ij} - \mu_j)/\sigma_j,
+\end{equation*}
+where $X = X_{k+1} = (\hat{D}_{k+1})^{-1}$ if the order is $k$.  
+
+\section{Conclusion}
+
+Computation details from section \ref{computation-on-Xb} to section
+\ref{computation-on-std-d} explain how we can benefit from the unique
+structure of matrices from trend filtering problem. As shown by our
+formula, we do not need to form any matrix and complete \susie
+algorithm with $O(n)$ complexity.
+
+\bibliography{trendfiltering_derivations}
+
+\end{document}

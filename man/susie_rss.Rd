@@ -32,7 +32,7 @@ susie_rss(
   prior_tol = 1e-09,
   residual_variance_lowerbound = 0,
   residual_variance_upperbound = Inf,
-  s_init = NULL,
+  model_init = NULL,
   coverage = 0.95,
   min_abs_corr = 0.5,
   max_iter = 100,

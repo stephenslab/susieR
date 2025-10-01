@@ -1,8 +1,8 @@
 # =============================================================================
-#' @section INDIVIDUAL-LEVEL DATA CONSTRUCTOR
-#'
-#' Constructs data and params objects for SuSiE from individual-level data (X, y).
-#' Handles data preprocessing, parameter validation, and object creation.
+# INDIVIDUAL-LEVEL DATA CONSTRUCTOR
+#
+# Constructs data and params objects for SuSiE from individual-level data (X, y).
+# Handles data preprocessing, parameter validation, and object creation.
 # =============================================================================
 #'
 #' @return A list containing:
@@ -181,10 +181,10 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
 }
 
 # =============================================================================
-#' @section SUFFICIENT STATISTICS DATA CONSTRUCTOR
-#'
-#' Constructs data and params objects for SuSiE from sufficient statistics (XtX, Xty, yty).
-#' Handles data preprocessing, parameter validation, and object creation.
+# SUFFICIENT STATISTICS DATA CONSTRUCTOR
+#
+# Constructs data and params objects for SuSiE from sufficient statistics (XtX, Xty, yty).
+# Handles data preprocessing, parameter validation, and object creation.
 # =============================================================================
 #'
 #' @return A list containing:
@@ -441,10 +441,10 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
 }
 
 # =============================================================================
-#' @section SUMMARY STATISTICS (RSS) DATA CONSTRUCTOR
-#'
-#' Constructs data and params objects for SuSiE from summary statistics (z-scores, R matrix).
-#' Routes to appropriate constructor based on lambda parameter (RSS vs RSS-lambda).
+# SUMMARY STATISTICS (RSS) DATA CONSTRUCTOR
+#
+# Constructs data and params objects for SuSiE from summary statistics (z-scores, R matrix).
+# Routes to appropriate constructor based on lambda parameter (RSS vs RSS-lambda).
 # =============================================================================
 #'
 #' @return A list containing:
@@ -673,10 +673,10 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
 }
 
 # =============================================================================
-#' @section RSS LAMBDA DATA CONSTRUCTOR
-#'
-#' Constructs data and params objects for SuSiE from RSS data with regularized LD matrix (lambda > 0).
-#' Handles eigen decomposition, MAF filtering, and specialized RSS-lambda preprocessing.
+# RSS LAMBDA DATA CONSTRUCTOR
+#
+# Constructs data and params objects for SuSiE from RSS data with regularized LD matrix (lambda > 0).
+# Handles eigen decomposition, MAF filtering, and specialized RSS-lambda preprocessing.
 # =============================================================================
 #'
 #' @return A list containing:
