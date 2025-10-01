@@ -41,6 +41,7 @@ r44 = {features = ["r44"]}
 "r-rmarkdown" = "*"
 "r-rfast" = "*"
 "r-cowplot" = "*"
+"r-l0learn" = "*"
 
 # Development tools (optional, but useful for package development)
 "r-devtools" = "*"
