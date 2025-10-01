@@ -47,4 +47,5 @@ r44 = {features = ["r44"]}
 "r-covr" = "*"
 "r-rcmdcheck" = "*"
 "r-pkgdown" = "*"
+"r-rcppparallel" = "*"
 "qpdf" = "*"
