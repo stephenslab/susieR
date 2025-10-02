@@ -849,6 +849,12 @@ rss_lambda_constructor <- function(z, R, n = NULL,
     }
   }
 
+  if (is.null(residual_variance)) {
+    residual_variance <- 1 - lambda
+  } else {
+    residual_variance <- residual_variance - lambda
+  }
+
   # Create params object with ALL algorithm parameters
   params_object <- list(
     L = L,
