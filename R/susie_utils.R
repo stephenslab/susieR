@@ -798,7 +798,7 @@ mom_unmappable <- function(data, params, model, omega, tau2, est_tau2 = TRUE, es
 }
 
 # MLE variance estimation for unmappable effects
-# @keywords internal
+#' @keywords internal
 mle_unmappable <- function(data, params, model, omega, est_tau2 = TRUE, est_sigma2 = TRUE) {
   L <- nrow(model$alpha)
 
@@ -882,7 +882,7 @@ mle_unmappable <- function(data, params, model, omega, est_tau2 = TRUE, est_sigm
 }
 
 # Compute log Bayes factor for Servin and Stephens prior
-# @keywords internal
+#' @keywords internal
 compute_lbf_servin_stephens <- function(x, y, s0, alpha0 = 0, beta0 = 0) {
   x <- x - mean(x)
   y <- y - mean(y)
@@ -897,7 +897,7 @@ compute_lbf_servin_stephens <- function(x, y, s0, alpha0 = 0, beta0 = 0) {
 }
 
 # Posterior mean for Servin and Stephens prior using sufficient statistics
-# @keywords internal
+#' @keywords internal
 posterior_mean_servin_stephens <- function(xtx, xty, s0_t = 1) {
   omega <- (xtx + (1 / s0_t^2))^(-1)
   b_bar <- omega %*% xty
@@ -905,7 +905,7 @@ posterior_mean_servin_stephens <- function(xtx, xty, s0_t = 1) {
 }
 
 # Posterior variance for Servin and Stephens prior using sufficient statistics
-# @keywords internal
+#' @keywords internal
 posterior_var_servin_stephens <- function(xtx, xty, yty, n, s0_t = 1) {
 
   # If prior variance is too small, return 0.
@@ -924,7 +924,7 @@ posterior_var_servin_stephens <- function(xtx, xty, yty, n, s0_t = 1) {
 }
 
 # Estimate residual variance
-# @keywords internal
+#' @keywords internal
 est_residual_variance <- function(data, model) {
   resid_var <- (1 / data$n) * get_ER2(data, model)
   if (resid_var < 0) {
@@ -934,7 +934,7 @@ est_residual_variance <- function(data, model) {
 }
 
 # Helper function to update variance components and derived quantities
-# @keywords internal
+#' @keywords internal
 update_model_variance <- function(data, params, model) {
   # Update variance components
   variance_result <- update_variance_components(data, params, model)
