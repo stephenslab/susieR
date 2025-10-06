@@ -409,7 +409,7 @@ susie_ss <- function(XtX, Xty, yty, n,
   # Construct data and params objects
   susie_objects <- sufficient_stats_constructor(
     XtX, Xty, yty, n, L, X_colmeans, y_mean,
-    maf = NULL, maf_thresh = 0, check_input, r_tol, standardize,
+    maf, maf_thresh, check_input, r_tol, standardize,
     scaled_prior_variance, residual_variance, prior_weights, null_weight,
     model_init, estimate_residual_variance, estimate_residual_method,
     residual_variance_lowerbound, residual_variance_upperbound,

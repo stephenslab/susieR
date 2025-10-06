@@ -14,7 +14,7 @@ context("susie reference comparison")
 # prior variance optimization methods: "optim", "EM", "simple"
 
 # =============================================================================
-# Part 1: Basic Parameter Tests (with all prior methods)
+# Part 1: Basic Parameter Tests
 # =============================================================================
 
 test_that("susie() matches reference with default parameters - optim", {
@@ -63,7 +63,7 @@ test_that("susie() matches reference with default parameters - simple", {
 })
 
 # =============================================================================
-# Part 2: standardize parameter (with all prior methods)
+# Part 2: standardize parameter
 # =============================================================================
 
 test_that("susie() matches reference with standardize=FALSE - optim", {
@@ -112,7 +112,7 @@ test_that("susie() matches reference with standardize=FALSE - simple", {
 })
 
 # =============================================================================
-# Part 3: intercept parameter (with all prior methods)
+# Part 3: intercept parameter
 # =============================================================================
 
 test_that("susie() matches reference with intercept=FALSE - optim", {
@@ -161,7 +161,7 @@ test_that("susie() matches reference with intercept=FALSE - simple", {
 })
 
 # =============================================================================
-# Part 4: estimate_prior_variance=FALSE (with all prior methods - should be same)
+# Part 4: estimate_prior_variance=FALSE
 # =============================================================================
 
 test_that("susie() matches reference with estimate_prior_variance=FALSE", {
@@ -181,7 +181,7 @@ test_that("susie() matches reference with estimate_prior_variance=FALSE", {
 })
 
 # =============================================================================
-# Part 5: estimate_residual_variance parameter (with all prior methods)
+# Part 5: estimate_residual_variance parameter
 # =============================================================================
 
 test_that("susie() matches reference with estimate_residual_variance=FALSE - optim", {
@@ -245,7 +245,7 @@ test_that("susie() matches reference with estimate_residual_variance=FALSE - sim
 })
 
 # =============================================================================
-# Part 6: Sparse matrix input (with all prior methods)
+# Part 6: Sparse matrix input
 # =============================================================================
 
 test_that("susie() matches reference with sparse matrix input - optim", {
@@ -297,7 +297,7 @@ test_that("susie() matches reference with sparse matrix input - simple", {
 })
 
 # =============================================================================
-# Part 7: Different L values (with all prior methods)
+# Part 7: Different L values
 # =============================================================================
 
 test_that("susie() matches reference with different L values - optim", {
@@ -373,7 +373,7 @@ test_that("susie() matches reference with different L values - simple", {
 })
 
 # =============================================================================
-# Part 8: prior_weights (with all prior methods)
+# Part 8: prior_weights
 # =============================================================================
 
 test_that("susie() matches reference with prior_weights - optim", {
@@ -387,7 +387,9 @@ test_that("susie() matches reference with prior_weights - optim", {
   beta[1:4] <- c(2, 3, -2, 1.5)
   y <- as.vector(X %*% beta + rnorm(n))
 
-  prior_weights <- rep(1/p, p)
+  # Use non-uniform prior weights
+  prior_weights <- runif(p)
+  prior_weights <- prior_weights / sum(prior_weights)
   args <- list(X = X, y = y, L = 10, prior_weights = prior_weights, estimate_prior_method = "optim")
   compare_to_reference("susie", args, tolerance = 1e-5)
 })
@@ -403,7 +405,9 @@ test_that("susie() matches reference with prior_weights - EM", {
   beta[1:4] <- c(2, 3, -2, 1.5)
   y <- as.vector(X %*% beta + rnorm(n))
 
-  prior_weights <- rep(1/p, p)
+  # Use non-uniform prior weights
+  prior_weights <- runif(p)
+  prior_weights <- prior_weights / sum(prior_weights)
   args <- list(X = X, y = y, L = 10, prior_weights = prior_weights, estimate_prior_method = "EM")
   compare_to_reference("susie", args, tolerance = 1e-5)
 })
@@ -419,13 +423,15 @@ test_that("susie() matches reference with prior_weights - simple", {
   beta[1:4] <- c(2, 3, -2, 1.5)
   y <- as.vector(X %*% beta + rnorm(n))
 
-  prior_weights <- rep(1/p, p)
+  # Use non-uniform prior weights
+  prior_weights <- runif(p)
+  prior_weights <- prior_weights / sum(prior_weights)
   args <- list(X = X, y = y, L = 10, prior_weights = prior_weights, estimate_prior_method = "simple")
   compare_to_reference("susie", args, tolerance = 1e-5)
 })
 
 # =============================================================================
-# Part 9: scaled_prior_variance (with all prior methods)
+# Part 9: scaled_prior_variance
 # =============================================================================
 
 test_that("susie() matches reference with scaled_prior_variance - optim", {
@@ -474,7 +480,7 @@ test_that("susie() matches reference with scaled_prior_variance - simple", {
 })
 
 # =============================================================================
-# Part 10: coverage and min_abs_corr (with all prior methods)
+# Part 10: coverage and min_abs_corr
 # =============================================================================
 
 test_that("susie() matches reference with coverage=0.99 - optim", {
@@ -568,7 +574,7 @@ test_that("susie() matches reference with min_abs_corr=0.7 - simple", {
 })
 
 # =============================================================================
-# Part 12: Combined parameter variations (with all prior methods)
+# Part 11: Combined parameter variations
 # =============================================================================
 
 test_that("susie() matches reference with combined parameters - optim", {
@@ -647,5 +653,308 @@ test_that("susie() matches reference with combined parameters - simple", {
     estimate_prior_method = "simple"
   )
   compare_to_reference("susie", args2, tolerance = 1e-5)
+})
+
+# =============================================================================
+# Part 12: prior_tol parameter
+# =============================================================================
+
+test_that("susie() matches reference with prior_tol=0.1 - optim", {
+  skip_if_no_reference()
+
+  set.seed(14)
+  n <- 100
+  p <- 50
+  X <- matrix(rnorm(n * p), n, p)
+  beta <- rep(0, p)
+  beta[1:4] <- c(2, 3, -2, 1.5)
+  y <- as.vector(X %*% beta + rnorm(n))
+
+  args <- list(
+    X = X, y = y, L = 10,
+    prior_tol = 0.1,
+    estimate_prior_method = "optim"
+  )
+  compare_to_reference("susie", args, tolerance = 1e-5)
+})
+
+test_that("susie() matches reference with prior_tol=0.1 - EM", {
+  skip_if_no_reference()
+
+  set.seed(14)
+  n <- 100
+  p <- 50
+  X <- matrix(rnorm(n * p), n, p)
+  beta <- rep(0, p)
+  beta[1:4] <- c(2, 3, -2, 1.5)
+  y <- as.vector(X %*% beta + rnorm(n))
+
+  args <- list(
+    X = X, y = y, L = 10,
+    prior_tol = 0.1,
+    estimate_prior_method = "EM"
+  )
+  compare_to_reference("susie", args, tolerance = 1e-5)
+})
+
+test_that("susie() matches reference with prior_tol=0.1 - simple", {
+  skip_if_no_reference()
+
+  set.seed(14)
+  n <- 100
+  p <- 50
+  X <- matrix(rnorm(n * p), n, p)
+  beta <- rep(0, p)
+  beta[1:4] <- c(2, 3, -2, 1.5)
+  y <- as.vector(X %*% beta + rnorm(n))
+
+  args <- list(
+    X = X, y = y, L = 10,
+    prior_tol = 0.1,
+    estimate_prior_method = "simple"
+  )
+  compare_to_reference("susie", args, tolerance = 1e-5)
+})
+
+# =============================================================================
+# Part 13: check_null_threshold parameter
+# =============================================================================
+
+test_that("susie() matches reference with check_null_threshold=0.1 - optim", {
+  skip_if_no_reference()
+
+  set.seed(15)
+  n <- 100
+  p <- 50
+  X <- matrix(rnorm(n * p), n, p)
+  beta <- rep(0, p)
+  beta[1:4] <- c(2, 3, -2, 1.5)
+  y <- as.vector(X %*% beta + rnorm(n))
+
+  args <- list(
+    X = X, y = y, L = 10,
+    check_null_threshold = 0.1,
+    estimate_prior_method = "optim"
+  )
+  compare_to_reference("susie", args, tolerance = 1e-5)
+})
+
+test_that("susie() matches reference with check_null_threshold=0.1 - EM", {
+  skip_if_no_reference()
+
+  set.seed(15)
+  n <- 100
+  p <- 50
+  X <- matrix(rnorm(n * p), n, p)
+  beta <- rep(0, p)
+  beta[1:4] <- c(2, 3, -2, 1.5)
+  y <- as.vector(X %*% beta + rnorm(n))
+
+  args <- list(
+    X = X, y = y, L = 10,
+    check_null_threshold = 0.1,
+    estimate_prior_method = "EM"
+  )
+  compare_to_reference("susie", args, tolerance = 1e-5)
+})
+
+test_that("susie() matches reference with check_null_threshold=0.1 - simple", {
+  skip_if_no_reference()
+
+  set.seed(15)
+  n <- 100
+  p <- 50
+  X <- matrix(rnorm(n * p), n, p)
+  beta <- rep(0, p)
+  beta[1:4] <- c(2, 3, -2, 1.5)
+  y <- as.vector(X %*% beta + rnorm(n))
+
+  args <- list(
+    X = X, y = y, L = 10,
+    check_null_threshold = 0.1,
+    estimate_prior_method = "simple"
+  )
+  compare_to_reference("susie", args, tolerance = 1e-5)
+})
+
+test_that("susie() matches reference with check_null_threshold=0.5 - optim", {
+  skip_if_no_reference()
+
+  set.seed(16)
+  n <- 100
+  p <- 50
+  X <- matrix(rnorm(n * p), n, p)
+  beta <- rep(0, p)
+  beta[1:4] <- c(2, 3, -2, 1.5)
+  y <- as.vector(X %*% beta + rnorm(n))
+
+  args <- list(
+    X = X, y = y, L = 10,
+    check_null_threshold = 0.5,
+    estimate_prior_method = "optim"
+  )
+  compare_to_reference("susie", args, tolerance = 1e-5)
+})
+
+test_that("susie() matches reference with check_null_threshold=0.5 - EM", {
+  skip_if_no_reference()
+
+  set.seed(16)
+  n <- 100
+  p <- 50
+  X <- matrix(rnorm(n * p), n, p)
+  beta <- rep(0, p)
+  beta[1:4] <- c(2, 3, -2, 1.5)
+  y <- as.vector(X %*% beta + rnorm(n))
+
+  args <- list(
+    X = X, y = y, L = 10,
+    check_null_threshold = 0.5,
+    estimate_prior_method = "EM"
+  )
+  compare_to_reference("susie", args, tolerance = 1e-5)
+})
+
+test_that("susie() matches reference with check_null_threshold=0.5 - simple", {
+  skip_if_no_reference()
+
+  set.seed(16)
+  n <- 100
+  p <- 50
+  X <- matrix(rnorm(n * p), n, p)
+  beta <- rep(0, p)
+  beta[1:4] <- c(2, 3, -2, 1.5)
+  y <- as.vector(X %*% beta + rnorm(n))
+
+  args <- list(
+    X = X, y = y, L = 10,
+    check_null_threshold = 0.5,
+    estimate_prior_method = "simple"
+  )
+  compare_to_reference("susie", args, tolerance = 1e-5)
+})
+
+# =============================================================================
+# Part 14: residual_variance bounds
+# =============================================================================
+
+test_that("susie() matches reference with residual_variance_upperbound - optim", {
+  skip_if_no_reference()
+
+  set.seed(17)
+  n <- 100
+  p <- 50
+  X <- matrix(rnorm(n * p), n, p)
+  beta <- rep(0, p)
+  beta[1:4] <- c(2, 3, -2, 1.5)
+  y <- as.vector(X %*% beta + rnorm(n))
+
+  # Set upperbound lower than natural variance (~1.07) to ensure it's binding
+  args <- list(
+    X = X, y = y, L = 10,
+    residual_variance_upperbound = 0.8,
+    estimate_prior_method = "optim"
+  )
+  compare_to_reference("susie", args, tolerance = 1e-5)
+})
+
+test_that("susie() matches reference with residual_variance_upperbound - EM", {
+  skip_if_no_reference()
+
+  set.seed(17)
+  n <- 100
+  p <- 50
+  X <- matrix(rnorm(n * p), n, p)
+  beta <- rep(0, p)
+  beta[1:4] <- c(2, 3, -2, 1.5)
+  y <- as.vector(X %*% beta + rnorm(n))
+
+  # Set upperbound lower than natural variance (~1.07) to ensure it's binding
+  args <- list(
+    X = X, y = y, L = 10,
+    residual_variance_upperbound = 0.8,
+    estimate_prior_method = "EM"
+  )
+  compare_to_reference("susie", args, tolerance = 1e-5)
+})
+
+test_that("susie() matches reference with residual_variance_upperbound - simple", {
+  skip_if_no_reference()
+
+  set.seed(17)
+  n <- 100
+  p <- 50
+  X <- matrix(rnorm(n * p), n, p)
+  beta <- rep(0, p)
+  beta[1:4] <- c(2, 3, -2, 1.5)
+  y <- as.vector(X %*% beta + rnorm(n))
+
+  # Set upperbound lower than natural variance (~1.07) to ensure it's binding
+  args <- list(
+    X = X, y = y, L = 10,
+    residual_variance_upperbound = 0.8,
+    estimate_prior_method = "simple"
+  )
+  compare_to_reference("susie", args, tolerance = 1e-5)
+})
+
+test_that("susie() matches reference with residual_variance_lowerbound - optim", {
+  skip_if_no_reference()
+
+  set.seed(18)
+  n <- 100
+  p <- 50
+  X <- matrix(rnorm(n * p), n, p)
+  beta <- rep(0, p)
+  beta[1:4] <- c(2, 3, -2, 1.5)
+  y <- as.vector(X %*% beta + rnorm(n))
+
+  # Set lowerbound higher than natural variance (~1.07) to ensure it's binding
+  args <- list(
+    X = X, y = y, L = 10,
+    residual_variance_lowerbound = 1.5,
+    estimate_prior_method = "optim"
+  )
+  compare_to_reference("susie", args, tolerance = 1e-5)
+})
+
+test_that("susie() matches reference with residual_variance_lowerbound - EM", {
+  skip_if_no_reference()
+
+  set.seed(18)
+  n <- 100
+  p <- 50
+  X <- matrix(rnorm(n * p), n, p)
+  beta <- rep(0, p)
+  beta[1:4] <- c(2, 3, -2, 1.5)
+  y <- as.vector(X %*% beta + rnorm(n))
+
+  # Set lowerbound higher than natural variance (~1.07) to ensure it's binding
+  args <- list(
+    X = X, y = y, L = 10,
+    residual_variance_lowerbound = 1.5,
+    estimate_prior_method = "EM"
+  )
+  compare_to_reference("susie", args, tolerance = 1e-5)
+})
+
+test_that("susie() matches reference with residual_variance_lowerbound - simple", {
+  skip_if_no_reference()
+
+  set.seed(18)
+  n <- 100
+  p <- 50
+  X <- matrix(rnorm(n * p), n, p)
+  beta <- rep(0, p)
+  beta[1:4] <- c(2, 3, -2, 1.5)
+  y <- as.vector(X %*% beta + rnorm(n))
+
+  # Set lowerbound higher than natural variance (~1.07) to ensure it's binding
+  args <- list(
+    X = X, y = y, L = 10,
+    residual_variance_lowerbound = 1.5,
+    estimate_prior_method = "simple"
+  )
+  compare_to_reference("susie", args, tolerance = 1e-5)
 })
 

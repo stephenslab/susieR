@@ -540,10 +540,6 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
   }
 
   # Parameter validation for standard RSS (lambda = 0)
-  if (!is.null(maf) || maf_thresh != 0) {
-    stop("Parameters 'maf' and 'maf_thresh' are only supported when lambda != 0.")
-  }
-
   if (intercept_value != 0) {
     stop("Parameter 'intercept_value' is only supported when lambda != 0.")
   }
@@ -621,6 +617,18 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
     R <- (R + t(R)) / 2
   }
 
+  # MAF filter (after z-scores are computed)
+  if (!is.null(maf)) {
+    if (length(maf) != length(z)) {
+      stop(paste0("The length of maf does not agree with expected ", length(z)))
+    }
+    id <- which(maf > maf_thresh)
+    R <- R[id, id]
+    z <- z[id]
+    # Update p after filtering
+    p <- length(z)
+  }
+
   # Convert to sufficient statistics format
   if (is.null(n)) {
     # Sample size not provided - use unadjusted z-scores
@@ -630,7 +638,8 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
     XtX <- R
     Xty <- z
     yty <- 1
-    n <- 2 # Arbitrary choice to ensure var(y) = yty/(n-1) = 1
+    n <- 2
+    scaled_prior_variance <- prior_variance
   } else {
     # Sample size provided - use PVE-adjusted z-scores
     if (!is.null(shat) && !is.null(var_y)) {
