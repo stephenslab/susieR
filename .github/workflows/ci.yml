@@ -1,0 +1,71 @@
+name: Continuous Integration
+
+on:
+  pull_request:
+    paths-ignore:
+      - .github/*
+      - .gitignore
+      - README.md
+
+jobs:
+  ci_linux-64:
+    name: linux-64 CI
+    runs-on: ubuntu-latest
+    env:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: ["r43", "r44"]
+    
+    steps:
+      - name: Checkout pull request branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Copy TOML
+        run:
+          mkdir /tmp/pixi
+          cp ${GITHUB_WORKSPACE}/pixi.toml /tmp/pixi
+
+      - name: Setup pixi
+        uses: prefix-dev/setup-pixi@v0.8.1
+
+      - name: Build package
+        run: pixi run --environment ${{ matrix.environment }} --manifest-path /tmp/pixi/pixi.toml build
+
+      # - name: Run unit tests
+      #   run: pixi run --environment ${{ matrix.environment }} devtools_test
+      #
+      # - name: Check unit test code coverage
+      #   run: pixi run --environment ${{ matrix.environment }} codecov
+
+      - name: Run R CMD CHECK
+        run: pixi run --environment ${{ matrix.environment }} --manifest-path /tmp/pixi/pixi.toml rcmdcheck
+
+  ci_osx-arm64:
+    name: osx-arm64 CI
+    runs-on: macos-14
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: ["r43", "r44"]
+    
+    steps:
+      - name: Checkout pull request branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pixi
+        uses: prefix-dev/setup-pixi@v0.8.1
+
+      - name: Build package
+        run: pixi run --environment ${{ matrix.environment }} --manifest-path /tmp/pixi/pixi.toml build
+
+      # - name: Run unit tests
+      #   run: pixi run --environment ${{ matrix.environment }} devtools_test
+
+      - name: Run R CMD CHECK
+        run: pixi run --environment ${{ matrix.environment }} --manifest-path /tmp/pixi/pixi.toml rcmdcheck

@@ -16,7 +16,8 @@
 ^LICENSE\.md$
 ^NOTES\.txt$
 ^\.Renviron$
-^\.pixi$
 ^pixi\.toml$
 ^pixi\.lock$
 ^\.pixi/.*
+^\.github
+^Makefile
