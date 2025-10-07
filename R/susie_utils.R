@@ -242,11 +242,6 @@ validate_init <- function(data, params) {
     )
   }
 
-  # Verify alpha dimensions for number of requested effects
-  if (nrow(alpha) > L) {
-    stop("model_init has more effects than requested L")
-  }
-
   # Verify mu & mu2 dimensions match alpha
   if (!all(dim(mu) == dim(alpha))) {
     stop("model_init$mu and model_init$alpha dimensions do not match")
