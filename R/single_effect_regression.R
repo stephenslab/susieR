@@ -1,8 +1,8 @@
 # =============================================================================
-#' @section SINGLE EFFECT REGRESSION
-#'
-#' Performs single effect regression for the lth effect in the SuSiE model.
-#' Computes posterior moments, log Bayes factors, and optimizes prior variance.
+# SINGLE EFFECT REGRESSION
+#
+# Performs single effect regression for the lth effect in the SuSiE model.
+# Computes posterior moments, log Bayes factors, and optimizes prior variance.
 # =============================================================================
 #'
 #' @param data Data object (individual, ss, or rss_lambda)
@@ -51,10 +51,10 @@ single_effect_regression <- function(data, params, model, l) {
   }
 
 # =============================================================================
-#' @section PRIOR VARIANCE OPTIMIZATION
-#'
-#' Optimizes prior variance for single effects using different methods.
-#' Handles optim, EM, simple methods and null threshold checking.
+# PRIOR VARIANCE OPTIMIZATION
+#
+# Optimizes prior variance for single effects using different methods.
+# Handles optim, EM, simple methods and null threshold checking.
 # =============================================================================
 #'
 #' @param data Data object
@@ -129,10 +129,10 @@ optimize_prior_variance <- function(data, params, model, ser_stats,
 }
 
 # =============================================================================
-#' @section SINGLE EFFECT UPDATE
-#'
-#' High-level function that updates one effect in the SuSiE model.
-#' Coordinates residual computation, SER, KL divergence, and fitted value updates.
+# SINGLE EFFECT UPDATE
+#
+# High-level function that updates one effect in the SuSiE model.
+# Coordinates residual computation, SER, KL divergence, and fitted value updates.
 # =============================================================================
 #'
 #' @param data Data object (individual, ss, or rss_lambda)

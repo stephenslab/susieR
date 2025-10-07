@@ -1,8 +1,8 @@
 # =============================================================================
-#' @section IBSS INITIALIZATION
-#'
-#' Initializes the SuSiE model object for Iterative Bayesian Stepwise Selection.
-#' Sets up model matrices, handles model_init, and prepares for IBSS.
+# IBSS INITIALIZATION
+#
+# Initializes the SuSiE model object for Iterative Bayesian Stepwise Selection.
+# Sets up model matrices, handles model_init, and prepares for IBSS.
 # =============================================================================
 #'
 #' @param data Data object (individual, ss, or rss_lambda)
@@ -78,10 +78,10 @@ ibss_initialize <- function(data, params) {
 }
 
 # =============================================================================
-#' @section IBSS FITTING
-#'
-#' Updates all L single effects in the SuSiE model for one IBSS iteration.
-#' Calls single_effect_update for each effect and validates prior variance estimates.
+# IBSS FITTING
+#
+# Updates all L single effects in the SuSiE model for one IBSS iteration.
+# Calls single_effect_update for each effect and validates prior variance estimates.
 # =============================================================================
 #'
 #' @param data Data object (individual, ss, or rss_lambda)
@@ -110,10 +110,10 @@ ibss_fit <- function(data, params, model) {
 }
 
 # =============================================================================
-#' @section IBSS FINALIZATION
-#'
-#' Finalizes the SuSiE model after convergence or maximum number of iterations
-#' reached. Computes credible sets, PIPs, intercept, fitted values, and z-scores.
+# IBSS FINALIZATION
+#
+# Finalizes the SuSiE model after convergence or maximum number of iterations
+# reached. Computes credible sets, PIPs, intercept, fitted values, and z-scores.
 # =============================================================================
 #'
 #' @param data Data object (individual, ss, or rss_lambda)

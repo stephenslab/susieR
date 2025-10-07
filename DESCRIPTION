@@ -46,7 +46,8 @@ Suggests:
     knitr,
     rmarkdown,
     Rfast,
-    cowplot
+    cowplot,
+    L0Learn
 LazyData: yes
 LazyDataCompression: xz
 NeedsCompilation: no

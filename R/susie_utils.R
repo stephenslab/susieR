@@ -1,12 +1,12 @@
 # =============================================================================
-#' @section FUNDAMENTAL BUILDING BLOCKS
-#'
-#' Basic mathematical operations and utilities that serve as dependencies
-#' for other functions. These include matrix operations, statistical computations,
-#' and general-purpose helper functions.
-#'
-#' Functions: warning_message, muffled_corr, muffled_cov2cor, is_symmetric_matrix,
-#' apply_nonzeros, compute_colSds, compute_colstats
+# FUNDAMENTAL BUILDING BLOCKS
+#
+# Basic mathematical operations and utilities that serve as dependencies
+# for other functions. These include matrix operations, statistical computations,
+# and general-purpose helper functions.
+#
+# Functions: warning_message, muffled_corr, muffled_cov2cor, is_symmetric_matrix,
+# apply_nonzeros, compute_colSds, compute_colstats
 # =============================================================================
 
 # Utility function to display warning messages as they occur
@@ -131,15 +131,15 @@ compute_colstats <- function(X, center = TRUE, scale = TRUE) {
 }
 
 # =============================================================================
-#' @section DATA PROCESSING & VALIDATION
-#'
-#' Functions for input validation, data conversion between formats, and
-#' preprocessing operations. These ensure data integrity and compatibility
-#' across different SuSiE data types.
-#'
-#' Functions: check_semi_pd, check_projection, validate_init,
-#' convert_individual_to_ss, extract_prior_weights, reconstruct_full_weights,
-#' validate_and_override_params
+# DATA PROCESSING & VALIDATION
+#
+# Functions for input validation, data conversion between formats, and
+# preprocessing operations. These ensure data integrity and compatibility
+# across different SuSiE data types.
+#
+# Functions: check_semi_pd, check_projection, validate_init,
+# convert_individual_to_ss, extract_prior_weights, reconstruct_full_weights,
+# validate_and_override_params
 # =============================================================================
 
 # Check whether A is positive semidefinite
@@ -240,11 +240,6 @@ validate_init <- function(data, params) {
       "model_init$alpha has invalid values outside range [0,1]; please ",
       "check your input"
     )
-  }
-
-  # Verify alpha dimensions for number of requested effects
-  if (nrow(alpha) > L) {
-    stop("model_init has more effects than requested L")
   }
 
   # Verify mu & mu2 dimensions match alpha
@@ -438,14 +433,14 @@ validate_and_override_params <- function(params) {
 }
 
 # =============================================================================
-#' @section MODEL INITIALIZATION
-#'
-#' Functions that set up initial model states, create model matrices,
-#' and handle model configuration. These prepare the SuSiE model object
-#' for iterative fitting.
-#'
-#' Functions: initialize_matrices, initialize_null_index, assign_names,
-#' adjust_L, prune_single_effects, add_null_effect
+# MODEL INITIALIZATION
+#
+# Functions that set up initial model states, create model matrices,
+# and handle model configuration. These prepare the SuSiE model object
+# for iterative fitting.
+#
+# Functions: initialize_matrices, initialize_null_index, assign_names,
+# adjust_L, prune_single_effects, add_null_effect
 # =============================================================================
 
 # Initialize core susie model object with default parameter matrices
@@ -593,15 +588,15 @@ add_null_effect <- function(model_init, V) {
 }
 
 # =============================================================================
-#' @section CORE ALGORITHM COMPONENTS
-#'
-#' Key computational functions that implement the mathematical core of the
-#' SuSiE algorithm. These handle eigen decompositions, posterior computations,
-#' and log Bayes factor calculations.
-#'
-#' Functions: compute_eigen_decomposition, add_eigen_decomposition,
-#' compute_omega_quantities, compute_theta_blup, lbf_stabilization,
-#' compute_posterior_weights, compute_lbf_gradient
+# CORE ALGORITHM COMPONENTS
+#
+# Key computational functions that implement the mathematical core of the
+# SuSiE algorithm. These handle eigen decompositions, posterior computations,
+# and log Bayes factor calculations.
+#
+# Functions: compute_eigen_decomposition, add_eigen_decomposition,
+# compute_omega_quantities, compute_theta_blup, lbf_stabilization,
+# compute_posterior_weights, compute_lbf_gradient
 # =============================================================================
 
 # Compute eigenvalue decomposition for unmappable methods
@@ -692,15 +687,13 @@ compute_theta_blup <- function(data, model) {
 
 # Stabilize log Bayes factors and compute log posterior odds
 #' @keywords internal
-lbf_stabilization <- function(lbf, prior_weights, shat2 = NULL) {
-
-  # Add numerical stability to prior weights
+lbf_stabilization <- function(lbf, prior_weights, shat2) {
   lpo <- lbf + log(prior_weights + sqrt(.Machine$double.eps))
 
-  # Handle special case of infinite shat2 (e.g., when variable doesn't vary)
+  # When shat2 is infinite, set lbf=0 and lpo to prior (no information from data)
   infinite_idx      <- is.infinite(shat2)
   lbf[infinite_idx] <- 0
-  lpo[infinite_idx] <- 0
+  lpo[infinite_idx] <- log(prior_weights[infinite_idx] + sqrt(.Machine$double.eps))
 
   return(list(lbf = lbf, lpo = lpo))
 }
@@ -735,15 +728,15 @@ compute_lbf_gradient <- function(alpha, betahat, shat2, V, use_servin_stephens =
 }
 
 # =============================================================================
-#' @section VARIANCE ESTIMATION
-#'
-#' Functions specifically for estimating variance components using different
-#' methods (MLE, MoM, Servin-Stephens). These handle both standard SuSiE
-#' and unmappable effects models.
-#'
-#' Functions: mom_unmappable, mle_unmappable, compute_lbf_servin_stephens,
-#' posterior_mean_servin_stephens, posterior_var_servin_stephens,
-#' est_residual_variance, update_model_variance
+# VARIANCE ESTIMATION
+#
+# Functions specifically for estimating variance components using different
+# methods (MLE, MoM, Servin-Stephens). These handle both standard SuSiE
+# and unmappable effects models.
+#
+# Functions: mom_unmappable, mle_unmappable, compute_lbf_servin_stephens,
+# posterior_mean_servin_stephens, posterior_var_servin_stephens,
+# est_residual_variance, update_model_variance
 # =============================================================================
 
 # Method of Moments variance estimation for unmappable effects methods
@@ -953,13 +946,13 @@ update_model_variance <- function(data, params, model) {
 }
 
 # =============================================================================
-#' @section CONVERGENCE & OPTIMIZATION
-#'
-#' Functions related to iteration control, convergence checking, and objective
-#' function computation. These control the iterative fitting process and
-#' determine when the algorithm has converged.
-#'
-#' Functions: check_convergence, get_objective, compute_elbo_inf
+# CONVERGENCE & OPTIMIZATION
+#
+# Functions related to iteration control, convergence checking, and objective
+# function computation. These control the iterative fitting process and
+# determine when the algorithm has converged.
+#
+# Functions: check_convergence, get_objective, compute_elbo_inf
 # =============================================================================
 
 # Check convergence
@@ -1058,13 +1051,13 @@ compute_elbo_inf <- function(alpha, mu, omega, lbf, sigma2, tau2, n, p,
 }
 
 # =============================================================================
-#' @section CREDIBLE SETS & POST-PROCESSING
-#'
-#' Functions for generating final output including credible sets, posterior
-#' inclusion probabilities, and summary statistics. These process the fitted
-#' model into interpretable results.
-#'
-#' Functions: n_in_CS_x, in_CS_x, n_in_CS, in_CS, get_purity, get_tracking
+# CREDIBLE SETS & POST-PROCESSING
+#
+# Functions for generating final output including credible sets, posterior
+# inclusion probabilities, and summary statistics. These process the fitted
+# model into interpretable results.
+#
+# Functions: n_in_CS_x, in_CS_x, n_in_CS, in_CS, get_purity, get_tracking
 # =============================================================================
 
 # Find how many variables in the CS.

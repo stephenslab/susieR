@@ -1,14 +1,14 @@
 # =============================================================================
-#' @section FUNDAMENTAL COMPUTATIONS:
-#'
-#' Basic mathematical utilities and core RSS computations. These functions
-#' handle fundamental operations like sufficient statistics computation and
-#' eigenvalue inverse calculations.
-#'
-#' Functions: compute_suff_stat, compute_Dinv
+# FUNDAMENTAL COMPUTATIONS
+#
+# Basic mathematical utilities and core RSS computations. These functions
+# handle fundamental operations like sufficient statistics computation and
+# eigenvalue inverse calculations.
+#
+# Functions: compute_suff_stat, compute_Dinv
 # =============================================================================
 
-#' @title Compute sufficient statistics for input to \code{susie_suff_stat}
+#' @title Compute sufficient statistics for input to \code{susie_ss}
 #'
 #' @description Computes the sufficient statistics \eqn{X'X, X'y, y'y}
 #'   and \eqn{n} after centering (and possibly standardizing) the
@@ -68,13 +68,13 @@ compute_Dinv <- function(model, data) {
 }
 
 # =============================================================================
-#' @section RSS MODEL METHODS:
-#'
-#' Core RSS algorithm functions including parameter estimation and model
-#' preprocessing. These implement the mathematical framework for RSS-based
-#' fine-mapping and handle iteration-specific computations.
-#'
-#' Functions: estimate_s_rss, precompute_rss_lambda_terms
+# RSS MODEL METHODS
+#
+# Core RSS algorithm functions including parameter estimation and model
+# preprocessing. These implement the mathematical framework for RSS-based
+# fine-mapping and handle iteration-specific computations.
+#
+# Functions: estimate_s_rss, precompute_rss_lambda_terms
 # =============================================================================
 
 #' @title Estimate s in \code{susie_rss} Model Using Regularized LD
@@ -214,13 +214,13 @@ precompute_rss_lambda_terms <- function(data, model) {
 }
 
 # =============================================================================
-#' @section DIAGNOSTIC & QUALITY CONTROL:
-#'
-#' Functions for RSS model diagnostics, data quality assessment, and
-#' validation. These help users assess the compatibility between z-scores
-#' and LD matrices and identify potential data issues.
-#'
-#' Functions: kriging_rss
+# DIAGNOSTIC & QUALITY CONTROL
+#
+# Functions for RSS model diagnostics, data quality assessment, and
+# validation. These help users assess the compatibility between z-scores
+# and LD matrices and identify potential data issues.
+#
+# Functions: kriging_rss
 # =============================================================================
 
 #' @title Compute Distribution of z-scores of Variant j Given Other z-scores, and Detect Possible Allele Switch Issue

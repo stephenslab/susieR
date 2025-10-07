@@ -1,8 +1,8 @@
 # =============================================================================
-#' @section INDIVIDUAL-LEVEL DATA CONSTRUCTOR
-#'
-#' Constructs data and params objects for SuSiE from individual-level data (X, y).
-#' Handles data preprocessing, parameter validation, and object creation.
+# INDIVIDUAL-LEVEL DATA CONSTRUCTOR
+#
+# Constructs data and params objects for SuSiE from individual-level data (X, y).
+# Handles data preprocessing, parameter validation, and object creation.
 # =============================================================================
 #'
 #' @return A list containing:
@@ -181,10 +181,10 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
 }
 
 # =============================================================================
-#' @section SUFFICIENT STATISTICS DATA CONSTRUCTOR
-#'
-#' Constructs data and params objects for SuSiE from sufficient statistics (XtX, Xty, yty).
-#' Handles data preprocessing, parameter validation, and object creation.
+# SUFFICIENT STATISTICS DATA CONSTRUCTOR
+#
+# Constructs data and params objects for SuSiE from sufficient statistics (XtX, Xty, yty).
+# Handles data preprocessing, parameter validation, and object creation.
 # =============================================================================
 #'
 #' @return A list containing:
@@ -441,10 +441,10 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
 }
 
 # =============================================================================
-#' @section SUMMARY STATISTICS (RSS) DATA CONSTRUCTOR
-#'
-#' Constructs data and params objects for SuSiE from summary statistics (z-scores, R matrix).
-#' Routes to appropriate constructor based on lambda parameter (RSS vs RSS-lambda).
+# SUMMARY STATISTICS (RSS) DATA CONSTRUCTOR
+#
+# Constructs data and params objects for SuSiE from summary statistics (z-scores, R matrix).
+# Routes to appropriate constructor based on lambda parameter (RSS vs RSS-lambda).
 # =============================================================================
 #'
 #' @return A list containing:
@@ -540,10 +540,6 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
   }
 
   # Parameter validation for standard RSS (lambda = 0)
-  if (!is.null(maf) || maf_thresh != 0) {
-    stop("Parameters 'maf' and 'maf_thresh' are only supported when lambda != 0.")
-  }
-
   if (intercept_value != 0) {
     stop("Parameter 'intercept_value' is only supported when lambda != 0.")
   }
@@ -621,6 +617,18 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
     R <- (R + t(R)) / 2
   }
 
+  # MAF filter (after z-scores are computed)
+  if (!is.null(maf)) {
+    if (length(maf) != length(z)) {
+      stop(paste0("The length of maf does not agree with expected ", length(z)))
+    }
+    id <- which(maf > maf_thresh)
+    R <- R[id, id]
+    z <- z[id]
+    # Update p after filtering
+    p <- length(z)
+  }
+
   # Convert to sufficient statistics format
   if (is.null(n)) {
     # Sample size not provided - use unadjusted z-scores
@@ -630,7 +638,8 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
     XtX <- R
     Xty <- z
     yty <- 1
-    n <- 2 # Arbitrary choice to ensure var(y) = yty/(n-1) = 1
+    n <- 2
+    scaled_prior_variance <- prior_variance
   } else {
     # Sample size provided - use PVE-adjusted z-scores
     if (!is.null(shat) && !is.null(var_y)) {
@@ -673,10 +682,10 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
 }
 
 # =============================================================================
-#' @section RSS LAMBDA DATA CONSTRUCTOR
-#'
-#' Constructs data and params objects for SuSiE from RSS data with regularized LD matrix (lambda > 0).
-#' Handles eigen decomposition, MAF filtering, and specialized RSS-lambda preprocessing.
+# RSS LAMBDA DATA CONSTRUCTOR
+#
+# Constructs data and params objects for SuSiE from RSS data with regularized LD matrix (lambda > 0).
+# Handles eigen decomposition, MAF filtering, and specialized RSS-lambda preprocessing.
 # =============================================================================
 #'
 #' @return A list containing:
@@ -847,6 +856,12 @@ rss_lambda_constructor <- function(z, R, n = NULL,
       znull <- crossprod(eigen_R$vectors[, -colspace], z) # U2^T z
       lambda <- sum(znull^2) / length(znull)
     }
+  }
+
+  if (is.null(residual_variance)) {
+    residual_variance <- 1 - lambda
+  } else {
+    residual_variance <- residual_variance - lambda
   }
 
   # Create params object with ALL algorithm parameters

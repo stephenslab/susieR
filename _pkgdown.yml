@@ -69,6 +69,8 @@ articles:
     contents:
     - sparse_susie_eval
     - susie_refine
+    - l0_initialization
+    - trend_filtering
   - title: "Package Information"
     navbar: ~
     contents:

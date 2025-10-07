@@ -1,11 +1,11 @@
 # =============================================================================
-#' @section DATA INITIALIZATION & CONFIGURATION
-#'
-#' Functions for data object setup, configuration, and preprocessing.
-#' These prepare data objects for model fitting and handle data-specific
-#' configurations like unmappable effects.
-#'
-#' Functions: configure_data, get_var_y
+# DATA INITIALIZATION & CONFIGURATION
+#
+# Functions for data object setup, configuration, and preprocessing.
+# These prepare data objects for model fitting and handle data-specific
+# configurations like unmappable effects.
+#
+# Functions: configure_data, get_var_y
 # =============================================================================
 
 # Configure ss data for specified method
@@ -25,13 +25,13 @@ get_var_y.ss <- function(data, ...) {
 }
 
 # =============================================================================
-#' @section MODEL INITIALIZATION & SETUP
-#'
-#' Functions for initializing model objects and setting up initial states.
-#' These create model matrices, initialize fitted values, and prepare
-#' the SuSiE model for iterative fitting.
-#'
-#' Functions: initialize_susie_model, initialize_fitted, validate_prior, track_ibss_fit
+# MODEL INITIALIZATION & SETUP
+#
+# Functions for initializing model objects and setting up initial states.
+# These create model matrices, initialize fitted values, and prepare
+# the SuSiE model for iterative fitting.
+#
+# Functions: initialize_susie_model, initialize_fitted, validate_prior, track_ibss_fit
 # =============================================================================
 
 # Initialize SuSiE model
@@ -104,14 +104,14 @@ track_ibss_fit.ss <- function(data, params, model, tracking, iter, elbo, ...) {
 }
 
 # =============================================================================
-#' @section SINGLE EFFECT REGRESSION & ELBO
-#'
-#' Core functions for single effect regression computation and ELBO calculation.
-#' These handle the mathematical core of SuSiE including residual computation, SER
-#' statistics, posterior moments, and log-likelihood calculations for the ELBO.
-#'
-#' Functions: compute_residuals, compute_ser_statistics, SER_posterior_e_loglik,
-#' calculate_posterior_moments, compute_kl, get_ER2, Eloglik, loglik, neg_loglik
+# SINGLE EFFECT REGRESSION & ELBO
+#
+# Core functions for single effect regression computation and ELBO calculation.
+# These handle the mathematical core of SuSiE including residual computation, SER
+# statistics, posterior moments, and log-likelihood calculations for the ELBO.
+#
+# Functions: compute_residuals, compute_ser_statistics, SER_posterior_e_loglik,
+# calculate_posterior_moments, compute_kl, get_ER2, Eloglik, loglik, neg_loglik
 # =============================================================================
 
 # Compute residuals for single effect regression
@@ -278,13 +278,13 @@ neg_loglik.ss <- function(data, params, model, V_param, ser_stats, ...) {
 }
 
 # =============================================================================
-#' @section MODEL UPDATES & FITTING
-#'
-#' Functions for iterative model updates and variance component estimation.
-#' These handle the dynamic aspects of model fitting including fitted value
-#' updates and variance component estimation.
-#'
-#' Functions: update_fitted_values, update_variance_components, update_derived_quantities
+# MODEL UPDATES & FITTING
+#
+# Functions for iterative model updates and variance component estimation.
+# These handle the dynamic aspects of model fitting including fitted value
+# updates and variance component estimation.
+#
+# Functions: update_fitted_values, update_variance_components, update_derived_quantities
 # =============================================================================
 
 # Update fitted values
@@ -396,14 +396,14 @@ update_derived_quantities.ss <- function(data, params, model) {
 }
 
 # =============================================================================
-#' @section OUTPUT GENERATION & POST-PROCESSING
-#'
-#' Functions for generating final results and summary statistics.
-#' These process fitted models into interpretable outputs including
-#' credible sets, variable names, and fitted values.
-#'
-#' Functions: get_scale_factors, get_intercept, get_fitted, get_cs,
-#' get_variable_names, get_zscore
+# OUTPUT GENERATION & POST-PROCESSING
+#
+# Functions for generating final results and summary statistics.
+# These process fitted models into interpretable outputs including
+# credible sets, variable names, and fitted values.
+#
+# Functions: get_scale_factors, get_intercept, get_fitted, get_cs,
+# get_variable_names, get_zscore
 # =============================================================================
 
 # Get column scale factors
@@ -415,7 +415,7 @@ get_scale_factors.ss <- function(data, params) {
 # Get intercept
 #' @keywords internal
 get_intercept.ss <- function(data, params, model, ...) {
-  return(sum(data$X_colmeans * (colSums(model$alpha * model$mu) / model$X_column_scale_factors)))
+  return(data$y_mean - sum(data$X_colmeans * (colSums(model$alpha * model$mu) / model$X_column_scale_factors)))
 }
 
 # Get Fitted Values
