@@ -479,7 +479,7 @@ initialize_null_index <- function(data, model) {
 #' @keywords internal
 assign_names <- function(data, model, variable_names) {
   if (!is.null(variable_names)) {
-    if (!is.null(model$null_weight)) {
+    if (!is.null(model$null_weight) && model$null_weight != 0 && !is.null(model$null_index) && model$null_index != 0) {
       variable_names[length(variable_names)] <- "null"
       names(model$pip) <- variable_names[-data$p]
     } else {
@@ -833,6 +833,10 @@ mle_unmappable <- function(data, params, model, omega, est_tau2 = TRUE, est_sigm
   g <- function(sigma2_val) {
     f(c(sigma2_val, model$tau2))
   }
+
+  # Initialize with current values
+  sigma2 <- model$sigma2
+  tau2 <- model$tau2
 
   if (est_tau2) {
     # Optimize both sigma^2 and tau^2

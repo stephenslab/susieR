@@ -304,10 +304,11 @@ susie_plot <- function(model, y, add_bar = FALSE, pos = NULL, b = NULL,
 #' @importFrom grDevices dev.off
 #' @importFrom reshape melt
 #' @importFrom ggplot2 ggplot
-#' @importFrom ggplot2 aes_string
+#' @importFrom ggplot2 aes
 #' @importFrom ggplot2 geom_col
 #' @importFrom ggplot2 ggtitle
 #' @importFrom ggplot2 theme_classic
+#' @importFrom ggplot2 .data
 #'
 #' @export
 #'
@@ -316,8 +317,8 @@ susie_plot_iteration <- function(model, L, file_prefix, pos = NULL) {
     alpha <- melt(obj$alpha[1:k, vars, drop = FALSE])
     colnames(alpha) <- c("L", "variables", "alpha")
     alpha$L <- as.factor(alpha$L)
-    ggplot(alpha, aes_string("variables", "alpha", group = "L")) +
-      geom_col(aes_string(fill = "L")) +
+    ggplot(alpha, aes(x = .data$variables, y = .data$alpha, group = .data$L)) +
+      geom_col(aes(fill = .data$L)) +
       ggtitle(paste("Iteration", idx)) +
       theme_classic()
   }
@@ -397,10 +398,11 @@ susie_plot_iteration <- function(model, L, file_prefix, pos = NULL) {
 #' susie_plot_changepoint(s, y)
 #'
 #' @importFrom ggplot2 ggplot
-#' @importFrom ggplot2 aes_string
+#' @importFrom ggplot2 aes
 #' @importFrom ggplot2 geom_point
 #' @importFrom ggplot2 geom_line
 #' @importFrom ggplot2 annotate
+#' @importFrom ggplot2 .data
 #'
 #' @export
 #'
@@ -409,12 +411,12 @@ susie_plot_changepoint <- function(s, y, line_col = "blue", line_size = 1.5,
   df <- data.frame(x = 1:length(y), y = y, mu = predict.susie(s))
   CS <- susie_get_cs(s)$cs
   p <- ggplot(df) +
-    geom_point(data = df, aes_string(x = "x", y = "y")) +
+    geom_point(data = df, aes(x = .data$x, y = .data$y)) +
     geom_line(
-      color = line_col, data = df, aes_string(x = "x", y = "mu"),
-      size = line_size
+      color = line_col, data = df, aes(x = .data$x, y = .data$mu),
+      linewidth = line_size
     )
-  for (i in 1:length(CS)) {
+  for (i in seq_along(CS)) {
     p <- p + annotate("rect",
       fill = cs_col, alpha = 0.5,
       xmin = min(CS[[i]]) - 0.5, xmax = max(CS[[i]]) + 0.5,
