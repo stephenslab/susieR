@@ -21,3 +21,4 @@
 ^\.pixi/.*
 ^\.github
 ^Makefile
+^\.github$

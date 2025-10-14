@@ -1,7 +1,7 @@
 # susieR
 
 [![CRAN status badge](https://www.r-pkg.org/badges/version/susieR)](https://cran.r-project.org/package=susieR)
-[![codecov](https://codecov.io/gh/stephenslab/susieR/branch/master/graph/badge.svg)](https://app.codecov.io/gh/stephenslab/susieR)
+[![Codecov test coverage](https://codecov.io/gh/StatFunGen/susieR/graph/badge.svg)](https://app.codecov.io/gh/StatFunGen/susieR)
 
 The `susieR` package implements a simple new way to perform variable
 selection in multiple regression ($y=Xb+e$). The methods implemented
