@@ -20,7 +20,7 @@ jobs:
           ref: master
 
       - name: Create TOML from recipe
-        run: .github/workflows/create_toml_from_yaml.sh ${GITHUB_WORKSPACE}
+        run: .github/workflows/create_toml_from_yaml.sh
 
       - name: Setup pixi
         uses: prefix-dev/setup-pixi@v0.9.1
