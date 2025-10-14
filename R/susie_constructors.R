@@ -304,6 +304,9 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
     }
   }
 
+  # Define p before null_weight handling
+  p <- ncol(XtX)
+
   # Handle null weights
   if (is.numeric(null_weight) && null_weight == 0) {
     null_weight <- NULL
@@ -317,7 +320,7 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
       stop("Null weight must be between 0 and 1.")
     }
     if (is.null(prior_weights)) {
-      prior_weights <- c(rep(1 / ncol(XtX) * (1 - null_weight), ncol(XtX)), null_weight)
+      prior_weights <- c(rep(1 / p * (1 - null_weight), p), null_weight)
     } else {
       prior_weights <- c(prior_weights * (1 - null_weight), null_weight)
     }
@@ -329,10 +332,11 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
     if (length(X_colmeans) != p) {
       stop("The length of X_colmeans does not agree with number of variables.")
     }
+    # Add 0 for null column
+    X_colmeans <- c(X_colmeans, 0)
+    # Update p after adding null column
+    p <- ncol(XtX)
   }
-
-  # Define p
-  p <- ncol(XtX)
 
   # Set uniform prior weights if not provided
   if (is.null(prior_weights)) {
