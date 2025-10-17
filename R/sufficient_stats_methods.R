@@ -335,15 +335,22 @@ update_variance_components.ss <- function(data, params, model, ...) {
     # Update the sparse effect variance
     sparse_var <- mean(colSums(model$alpha * model$V))
 
-    # Update sigma2 and tau2 using sparse effect variance and omega from current iteration
-    mom_result <- mom_unmappable(data, params, model, omega, sparse_var)
+    # Update sigma2 conditional on sparse effect variance
+    mom_result <- mom_unmappable(data, params, model, omega, sparse_var, est_tau2 = FALSE, est_sigma2 = TRUE)
 
     # Compute diagXtOmegaX and XtOmega for mr.ash using sparse effect variance and MoM residual variance
     omega_res <- compute_omega_quantities(data, sparse_var, mom_result$sigma2)
-    XtOmega <- data$eigen_vectors %*% sweep(data$VtXt, 1, 1/omega_res$omega_var, `*`)
+    XtOmega <- data$eigen_vectors %*% (data$VtXt / omega_res$omega_var)
 
-    # Compute variance grid using tau2 estimates from MoM
-    est_sa2 <- 100 * mom_result$tau2 * (seq(0, 1, length.out = 10))^2
+    # Create ash variance grid
+    est_sa2 <- create_ash_grid(
+      PIP     = model$alpha,
+      mu      = model$mu,
+      omega   = omega,
+      tausq   = sparse_var,
+      sigmasq = mom_result$sigma2,
+      n       = data$n
+    )
 
     # Call mr.ash directly with pre-computed quantities
     mrash_output <- mr.ash.alpha.mccreight::mr.ash(
