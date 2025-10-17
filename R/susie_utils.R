@@ -736,7 +736,7 @@ compute_lbf_gradient <- function(alpha, betahat, shat2, V, use_servin_stephens =
 #
 # Functions: mom_unmappable, mle_unmappable, compute_lbf_servin_stephens,
 # posterior_mean_servin_stephens, posterior_var_servin_stephens,
-# est_residual_variance, update_model_variance
+# est_residual_variance, update_model_variance, create_ash_grid
 # =============================================================================
 
 # Method of Moments variance estimation for unmappable effects methods
@@ -947,6 +947,77 @@ update_model_variance <- function(data, params, model) {
   model           <- update_derived_quantities(data, params, model)
 
   return(model)
+}
+
+# Create ash grid
+#' @keywords internal
+create_ash_grid <- function(PIP, mu, omega, tausq, sigmasq, n,
+                            K.length = 20, min_pip = 0.01) {
+
+  # Compute posterior second moment
+  post_var <- 1 / omega
+  post_second_moment <- PIP * (mu^2 + post_var)
+  marginal_second_moment <- colSums(post_second_moment)
+
+  # Filter to variants with non-negligible posterior mass
+  active_variants <- marginal_second_moment[marginal_second_moment > min_pip * min(post_var)]
+
+  if (length(active_variants) < 3) {
+    marginal_pip <- 1 - apply(1 - PIP, 2, prod)
+    active_variants <- marginal_second_moment[marginal_pip > min_pip]
+  }
+
+  # Estimate SNP-heritability and effective L 
+  h2_snp <- tausq / (tausq + sigmasq)
+  h2_snp <- max(min(h2_snp, 0.99), 0.01)
+
+  marginal_pip <- 1 - apply(1 - PIP, 2, prod)
+  L_eff <- sum(marginal_pip)
+  L_eff <- max(L_eff, 1)
+
+  # Set lower bound
+  s2_min <- sigmasq / (n * max(h2_snp, 0.1))
+  s2_min <- max(s2_min, 1e-8)
+
+  # Set upper bound
+  var_y <- sigmasq / (1 - h2_snp)
+  s2_max <- (h2_snp / sqrt(L_eff)) * var_y
+  s2_max <- max(s2_max, 10 * s2_min)
+
+  # Quantile-based adaptive grid
+  if (length(active_variants) >= 5) {
+    quantiles <- quantile(active_variants, probs = seq(0, 1, length.out = K.length - 2))
+    quantiles[1] <- min(quantiles[1], s2_min)
+    quantiles[length(quantiles)] <- max(quantiles[length(quantiles)], s2_max)
+
+    est_sa2 <- unique(c(0, quantiles))
+    est_sa2 <- sort(est_sa2)
+
+  } else {
+    median_s2 <- sqrt(s2_min * s2_max)
+    n_below <- ceiling(0.6 * (K.length - 1))
+    n_above <- (K.length - 1) - n_below
+
+    grid_below <- exp(seq(log(s2_min), log(median_s2), length.out = n_below))
+    grid_above <- exp(seq(log(median_s2), log(s2_max), length.out = n_above + 1)[-1])
+
+    est_sa2 <- c(0, grid_below, grid_above)
+  }
+
+  # Grid refinement
+  if (length(active_variants) >= 3) {
+    log_active <- log(active_variants[active_variants > 0])
+    if (length(log_active) >= 3) {
+      dens <- density(log_active, bw = "SJ", n = 512)
+      mode_log_s2 <- dens$x[which.max(dens$y)]
+      mode_s2 <- exp(mode_log_s2)
+
+      mode_region <- c(mode_s2 / exp(0.5), mode_s2, mode_s2 * exp(0.5))
+      est_sa2 <- unique(sort(c(est_sa2, mode_region)))
+    }
+  }
+
+  return(est_sa2)
 }
 
 # =============================================================================
