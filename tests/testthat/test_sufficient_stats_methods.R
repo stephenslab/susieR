@@ -1,5 +1,5 @@
 devtools::load_all(".")
-source(file.path("..", "helpers", "helper_testthat.R"), local = TRUE)
+
 
 context("S3 methods for sufficient statistics (ss) data class")
 
