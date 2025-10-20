@@ -1,5 +1,4 @@
 devtools::load_all(".")
-source(file.path("..", "helpers", "helper_testthat.R"), local = TRUE)
 
 context("coef and predict S3 methods")
 
