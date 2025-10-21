@@ -36,6 +36,7 @@ r43 = {features = ["r44"]}
 "r-crayon" = "*"
 "r-ggplot2" = "*"
 "r-l0learn" = "*"
+"r-mr.ash.alpha.mccreight" = "*"
 
 # Suggested dependencies (for testing and documentation)
 "r-curl" = "*"
