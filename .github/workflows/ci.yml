@@ -38,7 +38,7 @@ jobs:
         run: pixi run --environment ${{ matrix.environment }} --manifest-path /tmp/pixi/pixi.toml devtools_test
 
       - name: Run R CMD CHECK
-        run: 
+        run: |
           pixi run --environment ${{ matrix.environment }} --manifest-path /tmp/pixi/pixi.toml build
           pixi run --environment ${{ matrix.environment }} --manifest-path /tmp/pixi/pixi.toml rcmdcheck
 
