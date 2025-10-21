@@ -17,7 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         environment: ["r43", "r44"]
-    
+
     steps:
       - name: Checkout pull request branch
         uses: actions/checkout@v4
@@ -34,17 +34,16 @@ jobs:
         with:
           run-install: false
 
-      # - name: Build package
-      #   run: pixi run --environment ${{ matrix.environment }} --manifest-path /tmp/pixi/pixi.toml build
-
       - name: Run unit tests
         run: pixi run --environment ${{ matrix.environment }} --manifest-path /tmp/pixi/pixi.toml devtools_test
 
+      - name: Run R CMD CHECK
+        run: 
+          pixi run --environment ${{ matrix.environment }} --manifest-path /tmp/pixi/pixi.toml build
+          pixi run --environment ${{ matrix.environment }} --manifest-path /tmp/pixi/pixi.toml rcmdcheck
+
       - name: Check unit test code coverage
         run: pixi run --environment ${{ matrix.environment }} --manifest-path /tmp/pixi/pixi.toml codecov
-
-      - name: Run R CMD CHECK
-        run: pixi run --environment ${{ matrix.environment }} --manifest-path /tmp/pixi/pixi.toml rcmdcheck
 
   ci_osx-arm64:
     name: osx-arm64 CI
@@ -70,11 +69,10 @@ jobs:
         with:
           run-install: false
 
-      # - name: Build package
-      #   run: pixi run --environment ${{ matrix.environment }} --manifest-path /tmp/pixi/pixi.toml build
-
       - name: Run unit tests
         run: pixi run --environment ${{ matrix.environment }} --manifest-path /tmp/pixi/pixi.toml devtools_test
 
       - name: Run R CMD CHECK
-        run: pixi run --environment ${{ matrix.environment }} --manifest-path /tmp/pixi/pixi.toml rcmdcheck
+        run: |
+          pixi run --environment ${{ matrix.environment }} --manifest-path /tmp/pixi/pixi.toml build
+          pixi run --environment ${{ matrix.environment }} --manifest-path /tmp/pixi/pixi.toml rcmdcheck
