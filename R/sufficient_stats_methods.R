@@ -335,8 +335,8 @@ update_variance_components.ss <- function(data, params, model, ...) {
     # Update the sparse effect variance
     sparse_var <- mean(colSums(model$alpha * model$V))
 
-    # Update sigma2 conditional on sparse effect variance
-    mom_result <- mom_unmappable(data, params, model, omega, sparse_var, est_tau2 = FALSE, est_sigma2 = TRUE)
+    # Update sigma2
+    mom_result <- mom_unmappable(data, params, model, omega, sparse_var, est_tau2 = TRUE, est_sigma2 = TRUE)
 
     # Compute diagXtOmegaX and XtOmega for mr.ash using sparse effect variance and MoM residual variance
     omega_res <- compute_omega_quantities(data, sparse_var, mom_result$sigma2)
@@ -344,13 +344,13 @@ update_variance_components.ss <- function(data, params, model, ...) {
 
     # Create ash variance grid
     est_sa2 <- create_ash_grid(
-      PIP     = model$alpha,
-      mu      = model$mu,
-      omega   = omega,
-      tausq   = sparse_var,
-      sigmasq = mom_result$sigma2,
-      n       = data$n
-    )
+       PIP     = model$alpha,
+       mu      = model$mu,
+       omega   = omega,
+       tausq   = sparse_var,
+       sigmasq = mom_result$sigma2,
+       n       = data$n
+     )
 
     # Call mr.ash directly with pre-computed quantities
     mrash_output <- mr.ash.alpha.mccreight::mr.ash(
@@ -372,9 +372,10 @@ update_variance_components.ss <- function(data, params, model, ...) {
 
     return(list(
       sigma2 = mrash_output$sigma2,
-      tau2   = sum(est_sa2 * mrash_output$pi),
+      tau2   = sum(mrash_output$data$sa2 * mrash_output$pi),
       theta  = mrash_output$beta,
-      ash_pi = mrash_output$pi
+      ash_pi = mrash_output$pi,
+      sa2    = mrash_output$data$sa2
     ))
   } else {
     # Use default method for standard SuSiE

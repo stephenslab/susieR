@@ -46,7 +46,8 @@ muffled_cov2cor <- function(x) {
 # Check for symmetric matrix.
 #' @keywords internal
 is_symmetric_matrix <- function(x) {
-  if (requireNamespace("Rfast", quietly = TRUE)) {
+  if (is.matrix(x) && is.numeric(x) && !isS4(x) &&
+      requireNamespace("Rfast", quietly = TRUE)) {
     return(Rfast::is.symmetric(x))
   } else {
     return(Matrix::isSymmetric(x))
@@ -976,12 +977,12 @@ create_ash_grid <- function(PIP, mu, omega, tausq, sigmasq, n,
   L_eff <- max(L_eff, 1)
 
   # Set lower bound
-  s2_min <- sigmasq / (n * max(h2_snp, 0.1))
+  s2_min <- sigmasq / n
   s2_min <- max(s2_min, 1e-8)
 
   # Set upper bound
   var_y <- sigmasq / (1 - h2_snp)
-  s2_max <- (h2_snp / sqrt(L_eff)) * var_y
+  s2_max <- h2_snp * var_y
   s2_max <- max(s2_max, 10 * s2_min)
 
   # Quantile-based adaptive grid
