@@ -1,6 +1,3 @@
-devtools::load_all(".")
-
-
 context("Utility functions for susieR")
 
 # =============================================================================
@@ -1120,7 +1117,7 @@ test_that("est_residual_variance estimates residual variance", {
   expect_true(result > 0)
 
   # Should be reasonable for random data
-  expect_true(result < 10)  # Shouldn't be huge for standardized data
+  expect_true(result < 10)  
 })
 
 test_that("update_model_variance updates variance components", {

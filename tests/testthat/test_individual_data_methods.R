@@ -1,6 +1,3 @@
-devtools::load_all(".")
-
-
 context("S3 methods for individual data class")
 
 # =============================================================================

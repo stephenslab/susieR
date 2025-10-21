@@ -1,6 +1,3 @@
-devtools::load_all(".")
-
-
 context("Iterative Bayesian Stepwise Selection (IBSS)")
 
 # =============================================================================
