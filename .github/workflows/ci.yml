@@ -34,14 +34,14 @@ jobs:
         with:
           run-install: false
 
-      - name: Build package
-        run: pixi run --environment ${{ matrix.environment }} --manifest-path /tmp/pixi/pixi.toml build
+      # - name: Build package
+      #   run: pixi run --environment ${{ matrix.environment }} --manifest-path /tmp/pixi/pixi.toml build
 
-      # - name: Run unit tests
-      #   run: pixi run --environment ${{ matrix.environment }} devtools_test
-      #
-      # - name: Check unit test code coverage
-      #   run: pixi run --environment ${{ matrix.environment }} codecov
+      - name: Run unit tests
+        run: pixi run --environment ${{ matrix.environment }} --manifest-path /tmp/pixi/pixi.toml devtools_test
+
+      - name: Check unit test code coverage
+        run: pixi run --environment ${{ matrix.environment }} --manifest-path /tmp/pixi/pixi.toml codecov
 
       - name: Run R CMD CHECK
         run: pixi run --environment ${{ matrix.environment }} --manifest-path /tmp/pixi/pixi.toml rcmdcheck
@@ -70,11 +70,11 @@ jobs:
         with:
           run-install: false
 
-      - name: Build package
-        run: pixi run --environment ${{ matrix.environment }} --manifest-path /tmp/pixi/pixi.toml build
+      # - name: Build package
+      #   run: pixi run --environment ${{ matrix.environment }} --manifest-path /tmp/pixi/pixi.toml build
 
-      # - name: Run unit tests
-      #   run: pixi run --environment ${{ matrix.environment }} devtools_test
+      - name: Run unit tests
+        run: pixi run --environment ${{ matrix.environment }} --manifest-path /tmp/pixi/pixi.toml devtools_test
 
       - name: Run R CMD CHECK
         run: pixi run --environment ${{ matrix.environment }} --manifest-path /tmp/pixi/pixi.toml rcmdcheck
