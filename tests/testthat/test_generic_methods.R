@@ -1,5 +1,3 @@
-devtools::load_all(".")
-
 context("Generic methods infrastructure")
 
 # =============================================================================

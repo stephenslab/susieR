@@ -1,6 +1,3 @@
-devtools::load_all(".")
-
-
 context("SuSiE Workhorse - Main Orchestration")
 
 # =============================================================================
