@@ -348,7 +348,8 @@ update_variance_components.ss <- function(data, params, model, ...) {
       est_sa2 <- c(0, mom_result$tau2 * grid_factors)
     } else {
       # Fallback if MoM gives tau2 = 0
-      est_sa2 <- (2^((0:(20-1)) / 5) - 1)^2 * 0.1
+      est_sa2 <- c(0, (2^(0.05*(1:20-1)) - 1)^4)
+      est_sa2 <- est_sa2 * (0.1 / max(est_sa2))
     }
 
     # Simplify precision matrix for ash
@@ -370,7 +371,8 @@ update_variance_components.ss <- function(data, params, model, ...) {
       tausq         = 0,
       sum_Dsq       = sum(data$eigen_values),
       Dsq           = data$eigen_values,
-      VtXt          = data$VtXt
+      VtXt          = data$VtXt,
+      max.iter      = 3000
     )
 
     return(list(
