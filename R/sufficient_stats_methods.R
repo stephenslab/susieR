@@ -335,36 +335,39 @@ update_variance_components.ss <- function(data, params, model, ...) {
     # Update the sparse effect variance
     sparse_var <- mean(colSums(model$alpha * model$V))
 
-    # Update sigma2
+    # Update sigma2 and tau2 via MoM
     mom_result <- mom_unmappable(data, params, model, omega, sparse_var, est_tau2 = TRUE, est_sigma2 = TRUE)
 
-    # Compute diagXtOmegaX and XtOmega for mr.ash using sparse effect variance and MoM residual variance
-    omega_res <- compute_omega_quantities(data, sparse_var, mom_result$sigma2)
-    XtOmega <- data$eigen_vectors %*% (data$VtXt / omega_res$omega_var)
+    # Remove the sparse effects
+    b <- colSums(model$alpha * model$mu)
+    residuals <- data$y - data$X %*% b
 
-    # Create ash variance grid
-    est_sa2 <- create_ash_grid(
-       PIP     = model$alpha,
-       mu      = model$mu,
-       omega   = omega,
-       tausq   = sparse_var,
-       sigmasq = mom_result$sigma2,
-       n       = data$n
-     )
+    # Specify ash grid
+    if (mom_result$tau2 > 0) {
+      grid_factors <- exp(seq(log(0.1), log(100), length.out = 20 - 1))
+      est_sa2 <- c(0, mom_result$tau2 * grid_factors)
+    } else {
+      # Fallback if MoM gives tau2 = 0
+      est_sa2 <- (2^((0:(20-1)) / 5) - 1)^2 * 0.1
+    }
 
-    # Call mr.ash directly with pre-computed quantities
+    # Simplify precision matrix for ash
+    diagXtOmegaX_mrash <- colSums(data$X^2) / mom_result$sigma2 
+    XtOmega_mrash <- t(data$X) / mom_result$sigma2
+
+    # Call mr.ash with residuals and simplified precision matrix
     mrash_output <- mr.ash.alpha.mccreight::mr.ash(
       X             = data$X,
-      y             = data$y,
+      y             = residuals,
       sa2           = est_sa2,
       intercept     = FALSE,
       standardize   = FALSE,
       sigma2        = mom_result$sigma2,
       update.sigma2 = FALSE,
-      diagXtOmegaX  = omega_res$diagXtOmegaX,
-      XtOmega       = XtOmega,
+      diagXtOmegaX  = diagXtOmegaX_mrash,
+      XtOmega       = XtOmega_mrash,
       V             = data$eigen_vectors,
-      tausq         = sparse_var,
+      tausq         = 0,
       sum_Dsq       = sum(data$eigen_values),
       Dsq           = data$eigen_values,
       VtXt          = data$VtXt
