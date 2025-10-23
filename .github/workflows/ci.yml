@@ -43,6 +43,7 @@ jobs:
           pixi run --environment ${{ matrix.environment }} --manifest-path /tmp/pixi/pixi.toml rcmdcheck
 
       - name: Check unit test code coverage
+        if: ${{ matrix.environment == 'r44' }}
         run: pixi run --environment ${{ matrix.environment }} --manifest-path /tmp/pixi/pixi.toml codecov
 
   ci_osx-arm64:
