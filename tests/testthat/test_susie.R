@@ -283,7 +283,7 @@ test_that("susie handles unmappable_effects = inf", {
 })
 
 test_that("susie handles unmappable_effects = ash", {
-  skip_if_not_installed("mr.ash.alpha.mccreight")
+  skip_if_not_installed("mr.ash.alpha")
 
   set.seed(22)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
