@@ -45,7 +45,7 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
 
   # Validate input X
   if (!(is.double(X) & is.matrix(X)) &
-      !inherits(X, "CsparseMatrix") &
+      !inherits(X, "sparseMatrix") &
       is.null(attr(X, "matrix.type"))) {
     stop("Input X must be a double-precision matrix, or a sparse matrix, or ",
          "a trend filtering matrix.")
@@ -238,7 +238,7 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
   }
 
   if (!(is.double(XtX) && is.matrix(XtX)) &&
-      !inherits(XtX, "CsparseMatrix")) {
+      !inherits(XtX, "sparseMatrix")) {
     stop("XtX must be a numeric dense or sparse matrix.")
   }
 
@@ -276,7 +276,7 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
   if (any(is.infinite(Xty))) {
     stop("Input Xty contains infinite values.")
   }
-  if (!(is.double(XtX) & is.matrix(XtX)) & !inherits(XtX, "CsparseMatrix")) {
+  if (!(is.double(XtX) & is.matrix(XtX)) & !inherits(XtX, "sparseMatrix")) {
     stop("Input XtX must be a double-precision matrix, or a sparse matrix.")
   }
   if (anyNA(XtX)) {
@@ -761,7 +761,7 @@ rss_lambda_constructor <- function(z, R, n = NULL,
   if (!isSymmetric(R)) {
     stop("R is not a symmetric matrix.")
   }
-  if (!(is.double(R) & is.matrix(R)) & !inherits(R, "CsparseMatrix")) {
+  if (!(is.double(R) & is.matrix(R)) & !inherits(R, "sparseMatrix")) {
     stop("Input R must be a double-precision matrix or a sparse matrix.")
   }
 

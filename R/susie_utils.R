@@ -38,7 +38,7 @@ muffled_corr <- function(x) {
 #' @keywords internal
 muffled_cov2cor <- function(x) {
   withCallingHandlers(cov2cor(x), warning = function(w) {
-    if (grepl("had 0 or NA entries; non-finite result is doubtful", w$message)){
+    if (grepl("had.*(0|non-positive).*NA entries.*result.*(dubious|doubtful)", w$message)){
       invokeRestart("muffleWarning")}
     })
 }
