@@ -75,6 +75,39 @@ test_that("muffled_cov2cor computes correlation from covariance and muffles warn
   expect_true(any(is.na(result)))
 })
 
+test_that("muffled_corr executes invokeRestart('muffleWarning') when pattern matches", {
+  # Create data that triggers the warning
+  x_const <- matrix(c(1, 2, 3, 4, 5, 6, 1, 1, 1), nrow = 3, ncol = 3)
+
+  # Verify the warning exists
+  expect_warning(cor(x_const), "the standard deviation is zero")
+
+  # Test that muffled_corr suppresses it (invokeRestart is called)
+  expect_silent(muffled_corr(x_const))
+
+  # Verify result is still computed
+  result <- muffled_corr(x_const)
+  expect_true(is.matrix(result))
+  expect_true(any(is.na(result)))
+})
+
+test_that("muffled_cov2cor executes invokeRestart('muffleWarning') when pattern matches", {
+  # Create covariance matrix that triggers the warning
+  cov_mat_zero <- matrix(c(0, 0, 0, 3), nrow = 2)
+
+  # Verify the warning exists without muffling
+  expect_warning(cov2cor(cov_mat_zero))
+
+  # Test that muffled_cov2cor suppresses it (invokeRestart is called)
+  # The updated pattern should match both old and new R warning messages
+  expect_silent(muffled_cov2cor(cov_mat_zero))
+
+  # Verify result is still computed
+  result <- muffled_cov2cor(cov_mat_zero)
+  expect_true(is.matrix(result))
+  expect_true(any(is.na(result)))
+})
+
 test_that("is_symmetric_matrix correctly identifies symmetric matrices", {
   # Symmetric matrix
   sym_mat <- matrix(c(1, 2, 3, 2, 4, 5, 3, 5, 6), nrow = 3)

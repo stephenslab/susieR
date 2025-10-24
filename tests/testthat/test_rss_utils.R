@@ -32,7 +32,7 @@ test_that("compute_suff_stat with sparse matrix input", {
   base_data <- generate_base_data(n = 10, p = 5, seed = 3)
 
   # Sparse version
-  X_sparse <- as(base_data$X, "CsparseMatrix")
+  X_sparse <- as(base_data$X, "sparseMatrix")
 
   out_dense <- compute_suff_stat(base_data$X, base_data$y, standardize = FALSE)
   out_sparse <- compute_suff_stat(X_sparse, base_data$y, standardize = FALSE)

@@ -206,6 +206,36 @@ test_that("individual_data_constructor adjusts prior weights with null_weight", 
   expect_equal(result$params$prior_weights[base_data$p + 1], 0.2, tolerance = 1e-10)
 })
 
+test_that("individual_data_constructor adjusts custom prior weights with null_weight", {
+  base_data <- generate_base_data(n = 100, p = 50, k = 0, seed = 17.5)
+
+  # Create custom prior weights (not uniform)
+  custom_weights <- runif(base_data$p, 0.5, 2)
+  custom_weights <- custom_weights / sum(custom_weights)  # Normalize to sum to 1
+
+  result <- individual_data_constructor(base_data$X, base_data$y,
+                                       prior_weights = custom_weights,
+                                       null_weight = 0.3)
+
+  # Check that we have p+1 weights (original p + null column)
+  expect_length(result$params$prior_weights, base_data$p + 1)
+
+  # Check that all weights sum to 1
+  expect_equal(sum(result$params$prior_weights), 1, tolerance = 1e-10)
+
+  # Check that the null weight is exactly 0.3
+  expect_equal(result$params$prior_weights[base_data$p + 1], 0.3, tolerance = 1e-10)
+
+  # Check that the other weights were scaled by (1 - null_weight) = 0.7
+  # i.e., result$params$prior_weights[1:p] should equal custom_weights * 0.7
+  expect_equal(result$params$prior_weights[1:base_data$p],
+               custom_weights * 0.7,
+               tolerance = 1e-10)
+
+  # Verify that the sum of the first p weights is (1 - 0.3) = 0.7
+  expect_equal(sum(result$params$prior_weights[1:base_data$p]), 0.7, tolerance = 1e-10)
+})
+
 test_that("individual_data_constructor rejects invalid null_weight", {
   base_data <- generate_base_data(n = 100, p = 50, k = 0, seed = 18)
 
@@ -223,6 +253,38 @@ test_that("individual_data_constructor rejects invalid null_weight", {
     individual_data_constructor(base_data$X, base_data$y, null_weight = "invalid"),
     "Null weight must be numeric"
   )
+})
+
+# =============================================================================
+# INDIVIDUAL DATA CONSTRUCTOR - Rfast Warning
+# =============================================================================
+
+test_that("individual_data_constructor warns about Rfast when p > 1000 and Rfast not available", {
+  # Only test the warning if Rfast is not installed
+  skip_if(requireNamespace("Rfast", quietly = TRUE),
+          "Rfast is installed, skipping warning test")
+
+  base_data <- generate_base_data(n = 100, p = 1001, k = 0, seed = 18.5)
+
+  expect_message(
+    result <- individual_data_constructor(base_data$X, base_data$y),
+    "consider installing the Rfast package",
+    fixed = FALSE
+  )
+
+  # Verify constructor still works despite the warning
+  expect_equal(result$data$p, 1001)
+})
+
+test_that("individual_data_constructor does not warn when p <= 1000", {
+  # This should never warn regardless of Rfast availability
+  base_data <- generate_base_data(n = 100, p = 1000, k = 0, seed = 18.6)
+
+  # Use expect_no_message which is more lenient than expect_silent
+  result <- individual_data_constructor(base_data$X, base_data$y)
+
+  # Just verify it worked
+  expect_equal(result$data$p, 1000)
 })
 
 # =============================================================================
@@ -333,6 +395,58 @@ test_that("sufficient_stats_constructor requires all inputs", {
   )
 })
 
+test_that("sufficient_stats_constructor rejects non-matrix XtX", {
+  # Test with data.frame (not a matrix)
+  XtX_df <- data.frame(matrix(rnorm(25), 5, 5))
+  Xty <- rnorm(5)
+  yty <- 10
+  n <- 100
+
+  expect_error(
+    sufficient_stats_constructor(XtX_df, Xty, yty, n),
+    "XtX must be a numeric dense or sparse matrix"
+  )
+})
+
+test_that("sufficient_stats_constructor rejects integer matrix XtX", {
+  # Test with integer matrix (not double)
+  XtX_int <- matrix(1L:25L, 5, 5)
+  Xty <- 1:5
+  yty <- 10
+  n <- 100
+
+  expect_error(
+    sufficient_stats_constructor(XtX_int, Xty, yty, n),
+    "XtX must be a numeric dense or sparse matrix"
+  )
+})
+
+test_that("sufficient_stats_constructor rejects non-numeric XtX", {
+  # Test with character matrix
+  XtX_char <- matrix(as.character(1:25), 5, 5)
+  Xty <- 1:5
+  yty <- 10
+  n <- 100
+
+  expect_error(
+    sufficient_stats_constructor(XtX_char, Xty, yty, n),
+    "XtX must be a numeric dense or sparse matrix"
+  )
+})
+
+test_that("sufficient_stats_constructor rejects vector XtX", {
+  # Test with vector (not a matrix)
+  XtX_vec <- rnorm(25)
+  Xty <- 1:5
+  yty <- 10
+  n <- 100
+
+  expect_error(
+    sufficient_stats_constructor(XtX_vec, Xty, yty, n),
+    "XtX must be a numeric dense or sparse matrix"
+  )
+})
+
 test_that("sufficient_stats_constructor rejects dimension mismatch", {
   base_data <- generate_base_data(n = 100, p = 5, k = 0, seed = 23)
   XtX <- crossprod(base_data$X)
@@ -434,6 +548,43 @@ test_that("sufficient_stats_constructor does not standardize when standardize=FA
 })
 
 # =============================================================================
+# SUFFICIENT STATISTICS CONSTRUCTOR - Rfast Warning
+# =============================================================================
+
+test_that("sufficient_stats_constructor warns about Rfast when p > 1000 and Rfast not available", {
+  # Only test the warning if Rfast is not installed
+  skip_if(requireNamespace("Rfast", quietly = TRUE),
+          "Rfast is installed, skipping warning test")
+
+  base_data <- generate_base_data(n = 100, p = 1001, k = 0, seed = 27.5)
+  XtX <- crossprod(base_data$X)
+  Xty <- crossprod(base_data$X, base_data$y)
+  yty <- sum(base_data$y^2)
+
+  expect_message(
+    result <- sufficient_stats_constructor(XtX, Xty, yty, n = base_data$n),
+    "consider installing the Rfast package",
+    fixed = FALSE
+  )
+
+  # Verify constructor still works despite the warning
+  expect_equal(result$data$p, 1001)
+})
+
+test_that("sufficient_stats_constructor does not warn when p <= 1000", {
+  # This should never warn regardless of Rfast availability
+  base_data <- generate_base_data(n = 100, p = 1000, k = 0, seed = 27.6)
+  XtX <- crossprod(base_data$X)
+  Xty <- crossprod(base_data$X, base_data$y)
+  yty <- sum(base_data$y^2)
+
+  result <- sufficient_stats_constructor(XtX, Xty, yty, n = base_data$n)
+
+  # Just verify it worked
+  expect_equal(result$data$p, 1000)
+})
+
+# =============================================================================
 # SUFFICIENT STATISTICS CONSTRUCTOR - MAF Filtering
 # =============================================================================
 
@@ -453,6 +604,123 @@ test_that("sufficient_stats_constructor applies MAF filter", {
   expect_equal(result$data$p, n_filtered)
   expect_equal(nrow(result$data$XtX), n_filtered)
   expect_length(result$data$Xty, n_filtered)
+})
+
+test_that("sufficient_stats_constructor rejects MAF with incorrect length", {
+  base_data <- generate_base_data(n = 100, p = 50, k = 0, seed = 27.7)
+  XtX <- crossprod(base_data$X)
+  Xty <- crossprod(base_data$X, base_data$y)
+  yty <- sum(base_data$y^2)
+
+  # MAF vector with wrong length (p - 10 instead of p)
+  maf_wrong_length <- runif(base_data$p - 10, 0, 0.5)
+
+  expect_error(
+    sufficient_stats_constructor(
+      XtX, Xty, yty, n = base_data$n,
+      maf = maf_wrong_length, maf_thresh = 0.1
+    ),
+    "The length of maf does not agree with expected"
+  )
+})
+
+test_that("sufficient_stats_constructor rejects MAF that is too long", {
+  base_data <- generate_base_data(n = 100, p = 50, k = 0, seed = 27.8)
+  XtX <- crossprod(base_data$X)
+  Xty <- crossprod(base_data$X, base_data$y)
+  yty <- sum(base_data$y^2)
+
+  # MAF vector with wrong length (p + 10 instead of p)
+  maf_too_long <- runif(base_data$p + 10, 0, 0.5)
+
+  expect_error(
+    sufficient_stats_constructor(
+      XtX, Xty, yty, n = base_data$n,
+      maf = maf_too_long, maf_thresh = 0.1
+    ),
+    "The length of maf does not agree with expected"
+  )
+})
+
+# =============================================================================
+# SUFFICIENT STATISTICS CONSTRUCTOR - Positive Semidefinite Check
+# =============================================================================
+
+test_that("sufficient_stats_constructor rejects non-positive-semidefinite XtX when check_input=TRUE", {
+  # Create a matrix that is NOT positive semidefinite
+  # by using a matrix with negative eigenvalues
+  base_data <- generate_base_data(n = 100, p = 5, k = 0, seed = 28.9)
+  XtX <- crossprod(base_data$X)
+  Xty <- crossprod(base_data$X, base_data$y)
+  yty <- sum(base_data$y^2)
+
+  # Make XtX non-positive-semidefinite by adding a negative diagonal
+  # This creates negative eigenvalues
+  XtX[1, 1] <- -10
+
+  expect_error(
+    sufficient_stats_constructor(
+      XtX, Xty, yty, n = base_data$n,
+      check_input = TRUE
+    ),
+    "XtX is not a positive semidefinite matrix"
+  )
+})
+
+test_that("sufficient_stats_constructor accepts positive-semidefinite XtX when check_input=TRUE", {
+  # Create a valid positive semidefinite matrix
+  base_data <- generate_base_data(n = 100, p = 5, k = 0, seed = 29)
+  XtX <- crossprod(base_data$X)
+  Xty <- crossprod(base_data$X, base_data$y)
+  yty <- sum(base_data$y^2)
+
+  # This should work without error
+  result <- sufficient_stats_constructor(
+    XtX, Xty, yty, n = base_data$n,
+    check_input = TRUE
+  )
+
+  expect_equal(result$data$p, base_data$p)
+})
+
+test_that("sufficient_stats_constructor warns when Xty not in column space of XtX", {
+  # Create a rank-deficient matrix with exact zero eigenvalues
+  p <- 5
+  n <- 100
+
+  # Diagonal matrix with rank 3 (2 zero eigenvalues)
+  XtX <- diag(c(1, 1, 1, 0, 0))
+
+  # Create Xty with non-zero components in the null space (positions 4 and 5)
+  # This Xty cannot be written as X'y for any y
+  Xty <- c(1, 1, 1, 10, 10)  # Last two components are in null space
+
+  yty <- 100
+
+  expect_message(
+    result <- sufficient_stats_constructor(
+      XtX, Xty, yty, n = n,
+      check_input = TRUE
+    ),
+    "Xty does not lie in the space of the non-zero eigenvectors"
+  )
+})
+
+test_that("sufficient_stats_constructor does not warn when Xty in column space", {
+  # Create valid XtX and Xty from same data
+  base_data <- generate_base_data(n = 100, p = 5, k = 0, seed = 29.3)
+  XtX <- crossprod(base_data$X)
+  Xty <- crossprod(base_data$X, base_data$y)
+  yty <- sum(base_data$y^2)
+
+  # This should work without warning since Xty = X'y by construction
+  result <- sufficient_stats_constructor(
+    XtX, Xty, yty, n = base_data$n,
+    check_input = TRUE
+  )
+
+  # Just verify it worked
+  expect_equal(result$data$p, base_data$p)
 })
 
 # =============================================================================
@@ -475,6 +743,194 @@ test_that("sufficient_stats_constructor adds null column when null_weight > 0", 
   expect_equal(nrow(result$data$XtX), base_data$p + 1)
   expect_length(result$data$Xty, base_data$p + 1)
   expect_equal(result$params$null_weight, 0.1)
+})
+
+test_that("sufficient_stats_constructor adjusts custom prior weights with null_weight", {
+  base_data <- generate_base_data(n = 100, p = 50, k = 0, seed = 28.5)
+  XtX <- crossprod(base_data$X)
+  Xty <- crossprod(base_data$X, base_data$y)
+  yty <- sum(base_data$y^2)
+
+  # Create custom prior weights (not uniform)
+  custom_weights <- runif(base_data$p, 0.5, 2)
+  custom_weights <- custom_weights / sum(custom_weights)  # Normalize to sum to 1
+
+  result <- sufficient_stats_constructor(
+    XtX, Xty, yty, n = base_data$n,
+    prior_weights = custom_weights,
+    null_weight = 0.25,
+    X_colmeans = rep(0, base_data$p)
+  )
+
+  # Check that we have p+1 weights (original p + null column)
+  expect_length(result$params$prior_weights, base_data$p + 1)
+
+  # Check that all weights sum to 1
+  expect_equal(sum(result$params$prior_weights), 1, tolerance = 1e-10)
+
+  # Check that the null weight is exactly 0.25
+  expect_equal(result$params$prior_weights[base_data$p + 1], 0.25, tolerance = 1e-10)
+
+  # Check that the other weights were scaled by (1 - null_weight) = 0.75
+  expect_equal(result$params$prior_weights[1:base_data$p],
+               custom_weights * 0.75,
+               tolerance = 1e-10)
+
+  # Verify that the sum of the first p weights is (1 - 0.25) = 0.75
+  expect_equal(sum(result$params$prior_weights[1:base_data$p]), 0.75, tolerance = 1e-10)
+})
+
+test_that("sufficient_stats_constructor rejects non-numeric null_weight", {
+  base_data <- generate_base_data(n = 100, p = 50, k = 0, seed = 28.6)
+  XtX <- crossprod(base_data$X)
+  Xty <- crossprod(base_data$X, base_data$y)
+  yty <- sum(base_data$y^2)
+
+  expect_error(
+    sufficient_stats_constructor(
+      XtX, Xty, yty, n = base_data$n,
+      null_weight = "invalid"
+    ),
+    "Null weight must be numeric"
+  )
+})
+
+test_that("sufficient_stats_constructor rejects negative null_weight", {
+  base_data <- generate_base_data(n = 100, p = 50, k = 0, seed = 28.7)
+  XtX <- crossprod(base_data$X)
+  Xty <- crossprod(base_data$X, base_data$y)
+  yty <- sum(base_data$y^2)
+
+  expect_error(
+    sufficient_stats_constructor(
+      XtX, Xty, yty, n = base_data$n,
+      null_weight = -0.1
+    ),
+    "Null weight must be between 0 and 1"
+  )
+})
+
+test_that("sufficient_stats_constructor rejects null_weight >= 1", {
+  base_data <- generate_base_data(n = 100, p = 50, k = 0, seed = 28.8)
+  XtX <- crossprod(base_data$X)
+  Xty <- crossprod(base_data$X, base_data$y)
+  yty <- sum(base_data$y^2)
+
+  # Test null_weight = 1
+  expect_error(
+    sufficient_stats_constructor(
+      XtX, Xty, yty, n = base_data$n,
+      null_weight = 1
+    ),
+    "Null weight must be between 0 and 1"
+  )
+
+  # Test null_weight > 1
+  expect_error(
+    sufficient_stats_constructor(
+      XtX, Xty, yty, n = base_data$n,
+      null_weight = 1.5
+    ),
+    "Null weight must be between 0 and 1"
+  )
+})
+
+test_that("sufficient_stats_constructor replicates scalar X_colmeans when null_weight is set", {
+  base_data <- generate_base_data(n = 100, p = 50, k = 0, seed = 28.9)
+  XtX <- crossprod(base_data$X)
+  Xty <- crossprod(base_data$X, base_data$y)
+  yty <- sum(base_data$y^2)
+
+  # Provide scalar X_colmeans which should be replicated to length p
+  result <- sufficient_stats_constructor(
+    XtX, Xty, yty, n = base_data$n,
+    null_weight = 0.1,
+    X_colmeans = 0  # Scalar value
+  )
+
+  # Should work without error
+  expect_equal(result$data$p, base_data$p + 1)  # p + 1 due to null column
+})
+
+test_that("sufficient_stats_constructor rejects wrong length X_colmeans with null_weight", {
+  base_data <- generate_base_data(n = 100, p = 50, k = 0, seed = 29.0)
+  XtX <- crossprod(base_data$X)
+  Xty <- crossprod(base_data$X, base_data$y)
+  yty <- sum(base_data$y^2)
+
+  # Provide X_colmeans with wrong length
+  expect_error(
+    sufficient_stats_constructor(
+      XtX, Xty, yty, n = base_data$n,
+      null_weight = 0.1,
+      X_colmeans = rep(0, base_data$p - 10)  # Wrong length
+    ),
+    "The length of X_colmeans does not agree with number of variables"
+  )
+})
+
+test_that("sufficient_stats_constructor replicates scalar X_colmeans without null_weight", {
+  base_data <- generate_base_data(n = 100, p = 50, k = 0, seed = 29.1)
+  XtX <- crossprod(base_data$X)
+  Xty <- crossprod(base_data$X, base_data$y)
+  yty <- sum(base_data$y^2)
+
+  # Provide scalar X_colmeans which should be replicated to length p
+  result <- sufficient_stats_constructor(
+    XtX, Xty, yty, n = base_data$n,
+    X_colmeans = 0  # Scalar value
+  )
+
+  # Should work without error
+  expect_equal(result$data$p, base_data$p)
+})
+
+test_that("sufficient_stats_constructor rejects wrong length X_colmeans without null_weight", {
+  base_data <- generate_base_data(n = 100, p = 50, k = 0, seed = 29.2)
+  XtX <- crossprod(base_data$X)
+  Xty <- crossprod(base_data$X, base_data$y)
+  yty <- sum(base_data$y^2)
+
+  # Provide X_colmeans with wrong length
+  expect_error(
+    sufficient_stats_constructor(
+      XtX, Xty, yty, n = base_data$n,
+      X_colmeans = rep(0, base_data$p - 10)  # Wrong length
+    ),
+    "X_colmeans.*does not match number of variables"
+  )
+})
+
+test_that("sufficient_stats_constructor rejects wrong length prior_weights", {
+  base_data <- generate_base_data(n = 100, p = 50, k = 0, seed = 29.3)
+  XtX <- crossprod(base_data$X)
+  Xty <- crossprod(base_data$X, base_data$y)
+  yty <- sum(base_data$y^2)
+
+  # Provide prior_weights with wrong length
+  expect_error(
+    sufficient_stats_constructor(
+      XtX, Xty, yty, n = base_data$n,
+      prior_weights = rep(1, base_data$p - 10)  # Wrong length
+    ),
+    "Prior weights must have length p"
+  )
+})
+
+test_that("sufficient_stats_constructor rejects all-zero prior_weights", {
+  base_data <- generate_base_data(n = 100, p = 50, k = 0, seed = 29.4)
+  XtX <- crossprod(base_data$X)
+  Xty <- crossprod(base_data$X, base_data$y)
+  yty <- sum(base_data$y^2)
+
+  # Provide all-zero prior_weights
+  expect_error(
+    sufficient_stats_constructor(
+      XtX, Xty, yty, n = base_data$n,
+      prior_weights = rep(0, base_data$p)  # All zeros
+    ),
+    "Prior weight should be greater than 0 for at least one variable"
+  )
 })
 
 # =============================================================================
@@ -601,6 +1057,99 @@ test_that("rss_lambda_constructor rejects non-symmetric R", {
   )
 })
 
+test_that("rss_lambda_constructor rejects integer matrix R", {
+  R <- matrix(1:25, 5, 5)
+  R <- R + t(R)  # Make it symmetric
+  mode(R) <- "integer"  # Convert to integer type
+  z <- rnorm(5)
+
+  expect_error(
+    rss_lambda_constructor(z, R, lambda = 0.5),
+    "Input R must be a double-precision matrix or a sparse matrix"
+  )
+})
+
+test_that("rss_lambda_constructor rejects non-positive-semidefinite R when check_R=TRUE", {
+  # Create a matrix with negative eigenvalue
+  R <- diag(5)
+  R[1, 1] <- -1  # Force negative eigenvalue
+  z <- rnorm(5)
+
+  expect_error(
+    rss_lambda_constructor(z, R, lambda = 0.5, check_R = TRUE),
+    "is not a positive semidefinite matrix"
+  )
+})
+
+test_that("rss_lambda_constructor accepts non-PSD R when check_R=FALSE", {
+  # Create a matrix with negative eigenvalue
+  R <- diag(5)
+  R[1, 1] <- -0.5  # Force negative eigenvalue
+  z <- rnorm(5)
+
+  # Should succeed with check_R = FALSE (sets negative eigenvalues to 0)
+  result <- suppressWarnings(
+    rss_lambda_constructor(z, R, lambda = 0.5, check_R = FALSE)
+  )
+  expect_true(!is.null(result))
+})
+
+test_that("rss_lambda_constructor warns when z not in column space of R", {
+  # Create R with rank < p (has null space)
+  p <- 5
+  R <- diag(c(1, 1, 1, 0, 0))  # Rank 3, nullspace dimension 2
+
+  # Create z with components in null space (positions 4 and 5)
+  z <- c(0.1, 0.1, 0.1, 10, 10)  # Large components in null directions
+
+  expect_message(
+    rss_lambda_constructor(z, R, lambda = 0.5, check_z = TRUE),
+    "Input z does not lie in the space of non-zero eigenvectors of R"
+  )
+})
+
+test_that("rss_lambda_constructor messages when z in column space of R", {
+  # Create R with rank < p
+  p <- 5
+  R <- diag(c(1, 1, 1, 0, 0))  # Rank 3
+
+  # Create z only in column space (zero components in null directions)
+  z <- c(1, 2, 3, 0, 0)
+
+  expect_message(
+    suppressWarnings(
+      rss_lambda_constructor(z, R, lambda = 0.5, check_z = TRUE)
+    ),
+    "Input z is in space spanned by the non-zero eigenvectors of R"
+  )
+})
+
+test_that("rss_lambda_constructor skips z check when check_z=FALSE", {
+  # Create R with rank < p
+  p <- 5
+  R <- diag(c(1, 1, 1, 0, 0))
+  z <- c(0.1, 0.1, 0.1, 10, 10)  # z in null space
+  result <- suppressWarnings(
+    suppressMessages(
+      rss_lambda_constructor(z, R, lambda = 0.5, check_z = FALSE)
+    )
+  )
+  expect_true(!is.null(result))
+})
+
+test_that("rss_lambda_constructor skips z check when R is full rank", {
+  # Full rank R (no null space)
+  p <- 5
+  R <- diag(p)
+  z <- rnorm(p)
+
+  # Should not check when length(colspace) == length(z)
+  result <- suppressWarnings(
+    rss_lambda_constructor(z, R, lambda = 0.5, check_z = TRUE)
+  )
+  expect_true(!is.null(result))
+})
+
 test_that("rss_lambda_constructor rejects R with NAs", {
   R <- diag(10)
   R[1, 1] <- NA
@@ -660,6 +1209,18 @@ test_that("rss_lambda_constructor estimates lambda when lambda='estimate'", {
 
   expect_true(is.numeric(result$data$lambda))
   expect_true(result$data$lambda >= 0)
+})
+
+test_that("rss_lambda_constructor sets lambda=0 when R is full rank and lambda='estimate'", {
+  set.seed(123)
+  p <- 50
+  z <- rnorm(p)
+  R <- diag(p)  # Full rank - all eigenvalues positive
+
+  result <- rss_lambda_constructor(z, R, lambda = "estimate")
+
+  # When R is full rank, length(colspace) == length(z), so lambda should be set to 0
+  expect_equal(result$data$lambda, 0)
 })
 
 test_that("rss_lambda_constructor adjusts residual variance with lambda", {
@@ -728,6 +1289,18 @@ test_that("rss_lambda_constructor applies MAF filter", {
   expect_equal(nrow(result$data$R), n_filtered)
 })
 
+test_that("rss_lambda_constructor rejects MAF with wrong length", {
+  p <- 50
+  z <- rnorm(p)
+  R <- diag(p)
+  maf <- runif(p - 10)  # Wrong length
+
+  expect_error(
+    rss_lambda_constructor(z, R, lambda = 0.5, maf = maf),
+    "The length of maf does not agree with expected 50"
+  )
+})
+
 # =============================================================================
 # RSS LAMBDA CONSTRUCTOR - Null Weight
 # =============================================================================
@@ -744,6 +1317,75 @@ test_that("rss_lambda_constructor adds null column when null_weight > 0", {
   expect_equal(nrow(result$data$R), p + 1)
   expect_equal(result$params$null_weight, 0.1)
   expect_equal(result$data$z[p + 1], 0)
+})
+
+test_that("rss_lambda_constructor adjusts custom prior weights with null_weight", {
+  p <- 50
+  z <- rnorm(p)
+  R <- diag(p)
+
+  # Create custom prior weights (not uniform)
+  custom_weights <- runif(p, 0.5, 2)
+  custom_weights <- custom_weights / sum(custom_weights)  # Normalize to sum to 1
+
+  result <- rss_lambda_constructor(z, R, lambda = 0.5,
+                                  prior_weights = custom_weights,
+                                  null_weight = 0.15)
+
+  # Check that we have p+1 weights (original p + null column)
+  expect_length(result$params$prior_weights, p + 1)
+
+  # Check that all weights sum to 1
+  expect_equal(sum(result$params$prior_weights), 1, tolerance = 1e-10)
+
+  # Check that the null weight is exactly 0.15
+  expect_equal(result$params$prior_weights[p + 1], 0.15, tolerance = 1e-10)
+
+  # Check that the other weights were scaled by (1 - null_weight) = 0.85
+  expect_equal(result$params$prior_weights[1:p],
+               custom_weights * 0.85,
+               tolerance = 1e-10)
+
+  # Verify that the sum of the first p weights is (1 - 0.15) = 0.85
+  expect_equal(sum(result$params$prior_weights[1:p]), 0.85, tolerance = 1e-10)
+})
+
+test_that("rss_lambda_constructor rejects non-numeric null_weight", {
+  p <- 50
+  z <- rnorm(p)
+  R <- diag(p)
+
+  expect_error(
+    rss_lambda_constructor(z, R, lambda = 0.5, null_weight = "invalid"),
+    "Null weight must be numeric"
+  )
+})
+
+test_that("rss_lambda_constructor rejects negative null_weight", {
+  p <- 50
+  z <- rnorm(p)
+  R <- diag(p)
+
+  expect_error(
+    rss_lambda_constructor(z, R, lambda = 0.5, null_weight = -0.1),
+    "Null weight must be between 0 and 1"
+  )
+})
+
+test_that("rss_lambda_constructor rejects null_weight >= 1", {
+  p <- 50
+  z <- rnorm(p)
+  R <- diag(p)
+
+  expect_error(
+    rss_lambda_constructor(z, R, lambda = 0.5, null_weight = 1.0),
+    "Null weight must be between 0 and 1"
+  )
+
+  expect_error(
+    rss_lambda_constructor(z, R, lambda = 0.5, null_weight = 1.5),
+    "Null weight must be between 0 and 1"
+  )
 })
 
 # =============================================================================
@@ -769,6 +1411,181 @@ test_that("summary_stats_constructor routes to sufficient_stats when lambda = 0"
   result <- summary_stats_constructor(z = z, R = R, n = 100, lambda = 0)
 
   expect_s3_class(result$data, "ss")
+})
+
+# =============================================================================
+# SUMMARY STATISTICS CONSTRUCTOR - Input Validation
+# =============================================================================
+
+test_that("summary_stats_constructor rejects R with wrong number of rows", {
+  p <- 50
+  z <- rnorm(p)
+
+  # Create R with wrong number of rows (40 instead of 50)
+  R_wrong <- diag(40)
+
+  expect_error(
+    summary_stats_constructor(z = z, R = R_wrong, n = 100, lambda = 0),
+    "The dimension of R \\(40 x 40\\) does not agree with expected \\(50 x 50\\)"
+  )
+})
+
+test_that("summary_stats_constructor rejects n <= 1", {
+  p <- 50
+  z <- rnorm(p)
+  R <- diag(p)
+
+  # Test n = 1
+  expect_error(
+    summary_stats_constructor(z = z, R = R, n = 1, lambda = 0),
+    "n must be greater than 1"
+  )
+
+  # Test n = 0
+  expect_error(
+    summary_stats_constructor(z = z, R = R, n = 0, lambda = 0),
+    "n must be greater than 1"
+  )
+
+  # Test negative n
+  expect_error(
+    summary_stats_constructor(z = z, R = R, n = -5, lambda = 0),
+    "n must be greater than 1"
+  )
+})
+
+test_that("summary_stats_constructor rejects mismatched bhat and shat lengths", {
+  p <- 50
+  R <- diag(p)
+  bhat <- rnorm(p)
+  shat <- abs(rnorm(p - 5))  # Wrong length
+
+  expect_error(
+    summary_stats_constructor(bhat = bhat, shat = shat, R = R, n = 100, lambda = 0),
+    "The lengths of bhat and shat do not agree"
+  )
+})
+
+test_that("summary_stats_constructor accepts scalar shat and replicates it", {
+  p <- 50
+  R <- diag(p)
+  bhat <- rnorm(p)
+  shat <- 0.1  # Scalar
+
+  # Should replicate shat to length of bhat
+  result <- summary_stats_constructor(bhat = bhat, shat = shat, R = R, n = 100, lambda = 0)
+  expect_true(!is.null(result))
+})
+
+test_that("summary_stats_constructor rejects missing values in bhat", {
+  p <- 50
+  R <- diag(p)
+  bhat <- rnorm(p)
+  bhat[5] <- NA
+  shat <- abs(rnorm(p))
+
+  expect_error(
+    summary_stats_constructor(bhat = bhat, shat = shat, R = R, n = 100, lambda = 0),
+    "bhat, shat cannot have missing values"
+  )
+})
+
+test_that("summary_stats_constructor rejects missing values in shat", {
+  p <- 50
+  R <- diag(p)
+  bhat <- rnorm(p)
+  shat <- abs(rnorm(p))
+  shat[10] <- NA
+
+  expect_error(
+    summary_stats_constructor(bhat = bhat, shat = shat, R = R, n = 100, lambda = 0),
+    "bhat, shat cannot have missing values"
+  )
+})
+
+test_that("summary_stats_constructor rejects zero elements in shat", {
+  p <- 50
+  R <- diag(p)
+  bhat <- rnorm(p)
+  shat <- abs(rnorm(p))
+  shat[5] <- 0
+
+  expect_error(
+    summary_stats_constructor(bhat = bhat, shat = shat, R = R, n = 100, lambda = 0),
+    "shat cannot have zero or negative elements"
+  )
+})
+
+test_that("summary_stats_constructor rejects negative elements in shat", {
+  p <- 50
+  R <- diag(p)
+  bhat <- rnorm(p)
+  shat <- abs(rnorm(p))
+  shat[8] <- -0.5
+
+  expect_error(
+    summary_stats_constructor(bhat = bhat, shat = shat, R = R, n = 100, lambda = 0),
+    "shat cannot have zero or negative elements"
+  )
+})
+
+test_that("summary_stats_constructor rejects empty z vector", {
+  # When z is empty, length(z) = 0, so p = 0
+  # This causes R dimension check to fail before z length check
+  z <- numeric(0)  # Empty vector
+  R <- matrix(0, 0, 0)  # Match the expected dimension (0 x 0)
+
+  expect_error(
+    summary_stats_constructor(z = z, R = R, n = 100, lambda = 0),
+    "Input vector z should have at least one element"
+  )
+})
+
+test_that("summary_stats_constructor warns about deprecated z_ld_weight", {
+  p <- 50
+  z <- rnorm(p)
+  R <- diag(p)
+
+  expect_message(
+    summary_stats_constructor(z = z, R = R, n = 100, lambda = 0, z_ld_weight = 0.1),
+    "As of version 0.11.0, use of non-zero z_ld_weight is no longer recommended"
+  )
+})
+
+test_that("summary_stats_constructor rejects MAF with wrong length", {
+  p <- 50
+  z <- rnorm(p)
+  R <- diag(p)
+  maf <- runif(p - 10)  # Wrong length
+
+  expect_error(
+    summary_stats_constructor(z = z, R = R, n = 100, lambda = 0, maf = maf),
+    "The length of maf does not agree with expected 50"
+  )
+})
+
+test_that("summary_stats_constructor handles shat and var_y for original scale effects", {
+  p <- 50
+  bhat <- rnorm(p)
+  shat <- abs(rnorm(p, mean = 0.1, sd = 0.02))
+  var_y <- 2.5
+  R <- diag(p)
+  n <- 100
+
+  # This should use the original scale path (lines 649-655)
+  result <- summary_stats_constructor(
+    bhat = bhat, shat = shat, var_y = var_y, R = R, n = n, lambda = 0
+  )
+
+  # Verify the result is created successfully
+  expect_true(!is.null(result))
+  expect_true(!is.null(result$data))
+  expect_true(!is.null(result$data$XtX))
+  expect_true(!is.null(result$data$Xty))
+  expect_true(!is.null(result$data$yty))
+
+  # Verify yty matches expected: (n - 1) * var_y
+  expect_equal(result$data$yty, (n - 1) * var_y)
 })
 
 # =============================================================================

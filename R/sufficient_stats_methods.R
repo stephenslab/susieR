@@ -352,12 +352,8 @@ update_variance_components.ss <- function(data, params, model, ...) {
       est_sa2 <- est_sa2 * (0.1 / max(est_sa2))
     }
 
-    # Simplify precision matrix for ash
-    diagXtOmegaX_mrash <- colSums(data$X^2) / mom_result$sigma2 
-    XtOmega_mrash <- t(data$X) / mom_result$sigma2
-
-    # Call mr.ash with residuals and simplified precision matrix
-    mrash_output <- mr.ash.alpha.mccreight::mr.ash(
+    # Call mr.ash with residuals
+    mrash_output <- mr.ash.alpha::mr.ash(
       X             = data$X,
       y             = residuals,
       sa2           = est_sa2,
@@ -365,13 +361,6 @@ update_variance_components.ss <- function(data, params, model, ...) {
       standardize   = FALSE,
       sigma2        = mom_result$sigma2,
       update.sigma2 = FALSE,
-      diagXtOmegaX  = diagXtOmegaX_mrash,
-      XtOmega       = XtOmega_mrash,
-      V             = data$eigen_vectors,
-      tausq         = 0,
-      sum_Dsq       = sum(data$eigen_values),
-      Dsq           = data$eigen_values,
-      VtXt          = data$VtXt,
       max.iter      = 3000
     )
 
