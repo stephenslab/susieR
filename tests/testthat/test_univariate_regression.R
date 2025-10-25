@@ -376,3 +376,169 @@ test_that("univariate_regression with center and scale matches susie preprocessi
   expect_true(all(is.finite(result$betahat)))
   expect_true(all(is.finite(result$sebetahat)))
 })
+
+# =============================================================================
+# CALC_Z FUNCTION
+# =============================================================================
+
+test_that("calc_z returns correct z-scores for single outcome (vector Y)", {
+  base_data <- generate_base_data(n = 100, p = 10, k = 0, seed = 27)
+
+  # Compute z-scores using calc_z
+  z <- susieR:::calc_z(base_data$X, base_data$y, center = FALSE, scale = FALSE)
+
+  # Manually compute z-scores
+  result <- univariate_regression(base_data$X, base_data$y, center = FALSE, scale = FALSE)
+  z_manual <- result$betahat / result$sebetahat
+
+  expect_equal(z, z_manual)
+  expect_length(z, base_data$p)
+  expect_type(z, "double")
+})
+
+test_that("calc_z returns correct z-scores for multiple outcomes (matrix Y)", {
+  set.seed(28)
+  n <- 100
+  p <- 10
+  m <- 3  # Number of outcomes
+  X <- matrix(rnorm(n * p), n, p)
+  Y <- matrix(rnorm(n * m), n, m)
+
+  # Compute z-scores using calc_z
+  z_matrix <- susieR:::calc_z(X, Y, center = FALSE, scale = FALSE)
+
+  # Should return a matrix with p rows and m columns
+  expect_true(is.matrix(z_matrix))
+  expect_equal(nrow(z_matrix), p)
+  expect_equal(ncol(z_matrix), m)
+
+  # Each column should match manual calculation for that outcome
+  for (i in 1:m) {
+    result <- univariate_regression(X, Y[, i], center = FALSE, scale = FALSE)
+    z_manual <- result$betahat / result$sebetahat
+    expect_equal(z_matrix[, i], z_manual)
+  }
+})
+
+test_that("calc_z with center=TRUE centers data before computing z-scores", {
+  set.seed(29)
+  n <- 100
+  p <- 10
+  X <- matrix(rnorm(n * p, mean = 5, sd = 2), n, p)
+  y <- rnorm(n, mean = 10, sd = 3)
+
+  # Compute z-scores with centering
+  z_centered <- susieR:::calc_z(X, y, center = TRUE, scale = FALSE)
+
+  # Manually compute with centering
+  result <- univariate_regression(X, y, center = TRUE, scale = FALSE)
+  z_manual <- result$betahat / result$sebetahat
+
+  expect_equal(z_centered, z_manual)
+  expect_length(z_centered, p)
+})
+
+test_that("calc_z with scale=TRUE scales data before computing z-scores", {
+  set.seed(30)
+  n <- 100
+  p <- 10
+  X <- matrix(rnorm(n * p, sd = c(1, 5, 10, 2, 3, 1, 4, 8, 1, 2)), n, p)
+  y <- rnorm(n, sd = 5)
+
+  # Compute z-scores with scaling
+  z_scaled <- susieR:::calc_z(X, y, center = FALSE, scale = TRUE)
+
+  # Manually compute with scaling
+  result <- univariate_regression(X, y, center = FALSE, scale = TRUE)
+  z_manual <- result$betahat / result$sebetahat
+
+  expect_equal(z_scaled, z_manual)
+  expect_length(z_scaled, p)
+})
+
+test_that("calc_z with center=TRUE and scale=TRUE", {
+  set.seed(31)
+  n <- 100
+  p <- 10
+  X <- matrix(rnorm(n * p, mean = 3, sd = c(1, 5, 10, 2, 3, 1, 4, 8, 1, 2)), n, p)
+  y <- rnorm(n, mean = 7, sd = 5)
+
+  # Compute z-scores with both centering and scaling
+  z_both <- susieR:::calc_z(X, y, center = TRUE, scale = TRUE)
+
+  # Manually compute with both
+  result <- univariate_regression(X, y, center = TRUE, scale = TRUE)
+  z_manual <- result$betahat / result$sebetahat
+
+  expect_equal(z_both, z_manual)
+  expect_length(z_both, p)
+})
+
+test_that("calc_z handles matrix Y with different centering/scaling", {
+  set.seed(32)
+  n <- 100
+  p <- 8
+  m <- 4
+  # Create data with varying means and scales to ensure differences
+  X <- matrix(rnorm(n * p, mean = rep(c(0, 5, -3, 2), each = n * 2)), n, p)
+  Y <- matrix(rnorm(n * m, mean = rep(c(0, 10, -5, 3), each = n)), n, m)
+  # Add varying scales
+  for (i in 1:p) {
+    X[, i] <- X[, i] * (i %% 3 + 1)
+  }
+
+  # Test all combinations
+  z1 <- susieR:::calc_z(X, Y, center = FALSE, scale = FALSE)
+  z2 <- susieR:::calc_z(X, Y, center = TRUE, scale = FALSE)
+  z3 <- susieR:::calc_z(X, Y, center = FALSE, scale = TRUE)
+  z4 <- susieR:::calc_z(X, Y, center = TRUE, scale = TRUE)
+
+  # All should be matrices with correct dimensions
+  expect_equal(dim(z1), c(p, m))
+  expect_equal(dim(z2), c(p, m))
+  expect_equal(dim(z3), c(p, m))
+  expect_equal(dim(z4), c(p, m))
+
+  # All should be finite
+  expect_true(all(is.finite(z1)))
+  expect_true(all(is.finite(z2)))
+  expect_true(all(is.finite(z3)))
+  expect_true(all(is.finite(z4)))
+})
+
+test_that("calc_z matrix Y branch is tested (is.null(dim(Y)) = FALSE)", {
+  set.seed(33)
+  n <- 50
+  p <- 5
+  m <- 2
+  X <- matrix(rnorm(n * p), n, p)
+  Y <- matrix(rnorm(n * m), n, m)
+
+  # Y is a matrix, so dim(Y) is not NULL
+  expect_false(is.null(dim(Y)))
+
+  # This should execute the matrix branch
+  z_matrix <- susieR:::calc_z(X, Y, center = TRUE, scale = FALSE)
+
+  # Verify it's a matrix
+  expect_true(is.matrix(z_matrix))
+  expect_equal(ncol(z_matrix), m)
+})
+
+test_that("calc_z vector Y branch is tested (is.null(dim(Y)) = TRUE)", {
+  set.seed(34)
+  n <- 50
+  p <- 5
+  X <- matrix(rnorm(n * p), n, p)
+  y <- rnorm(n)
+
+  # y is a vector, so dim(y) is NULL
+  expect_true(is.null(dim(y)))
+
+  # This should execute the vector branch
+  z_vector <- susieR:::calc_z(X, y, center = TRUE, scale = FALSE)
+
+  # Verify it's a vector
+  expect_false(is.matrix(z_vector))
+  expect_length(z_vector, p)
+})

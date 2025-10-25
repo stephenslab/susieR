@@ -390,6 +390,24 @@ test_that("get_zscore.individual returns default when compute_univariate_zscore=
   expect_null(z)
 })
 
+test_that("get_zscore.individual warns when X is not a matrix (sparse/trend filtering)", {
+  setup <- setup_individual_data()
+  setup$params$compute_univariate_zscore <- TRUE
+
+  # Convert X to sparse matrix
+  setup$data$X <- Matrix::Matrix(setup$data$X, sparse = TRUE)
+
+  # Should produce warning about slow computation
+  expect_message(
+    z <- get_zscore.individual(setup$data, setup$params, setup$model),
+    "Calculation of univariate regression z-scores is not implemented specifically for sparse or trend filtering matrices"
+  )
+
+  # Should still compute z-scores
+  expect_length(z, setup$data$p)
+  expect_type(z, "double")
+})
+
 test_that("cleanup_model.individual removes temporary fields", {
   setup <- setup_individual_data()
 

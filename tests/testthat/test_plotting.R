@@ -28,6 +28,18 @@ test_that("susie_plot with z-scores requires compute_univariate_zscore", {
   )
 })
 
+test_that("susie_plot with z_original also requires z-scores", {
+  set.seed(51)
+  dat <- simulate_regression(n = 100, p = 50, k = 3)
+  fit <- susie(dat$X, dat$y, L = 5, compute_univariate_zscore = FALSE, verbose = FALSE)
+
+  # Should error when trying to plot z_original without z-scores
+  expect_error(
+    susie_plot(fit, "z_original"),
+    "z-scores are not available"
+  )
+})
+
 test_that("susie_plot with z-scores works when available", {
   set.seed(3)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
@@ -411,9 +423,104 @@ test_that("susie_plot with b parameter highlights specific positions", {
   )
 })
 
+test_that("susie_plot sets x0 and y1 to NULL when CS filtered by max_cs", {
+  set.seed(52)
+  dat <- simulate_regression(n = 200, p = 100, k = 3, signal_sd = 2)
+  fit <- susie(dat$X, dat$y, L = 10, verbose = FALSE)
+
+  # Get CS with purity info
+  fit$sets <- susie_get_cs(fit, X = dat$X, coverage = 0.95)
+
+  if (!is.null(fit$sets$cs) && length(fit$sets$cs) > 0) {
+    # Use very strict max_cs filter (size < 1) to exclude CS
+    # This should trigger the else branch: x0 <- NULL; y1 <- NULL
+    expect_error(
+      susie_plot(fit, "PIP", max_cs = 1, add_legend = TRUE),  # Only CS with size < 1
+      NA
+    )
+
+    # Also test with very high purity threshold (max_cs as purity)
+    expect_error(
+      susie_plot(fit, "PIP", max_cs = 0.999, add_legend = TRUE),  # Very high purity
+      NA
+    )
+  } else {
+    skip("No CS found for max_cs filter test")
+  }
+})
+
+test_that("susie_plot skips CS when x0 is NULL (next statement)", {
+  set.seed(53)
+  dat <- simulate_regression(n = 200, p = 100, k = 3, signal_sd = 2)
+  fit <- susie(dat$X, dat$y, L = 10, verbose = FALSE)
+
+  # Get CS
+  fit$sets <- susie_get_cs(fit, X = dat$X, coverage = 0.95)
+
+  if (!is.null(fit$sets$cs) && length(fit$sets$cs) > 0) {
+    # Use max_cs to filter out large CS, causing is.null(x0) to be TRUE
+    # This should trigger the next statement to skip those CS
+    expect_error(
+      susie_plot(fit, "PIP", max_cs = 2),  # Skip CS with > 2 variables
+      NA
+    )
+  } else {
+    skip("No CS found for next statement test")
+  }
+})
+
+test_that("susie_plot uses cs_index when available (else uses cs_idx)", {
+  set.seed(54)
+  dat <- simulate_regression(n = 200, p = 100, k = 3, signal_sd = 2)
+  fit <- susie(dat$X, dat$y, L = 10, verbose = FALSE)
+
+  # Get CS which should populate cs_index
+  fit$sets <- susie_get_cs(fit, X = dat$X, coverage = 0.95)
+
+  if (!is.null(fit$sets$cs) && length(fit$sets$cs) > 0) {
+    # When cs_index exists, should use it
+    expect_true(!is.null(fit$sets$cs_index))
+
+    # Plot with legend to see cs_index values
+    expect_error(
+      susie_plot(fit, "PIP", add_legend = TRUE),
+      NA
+    )
+
+    # Test the else branch: remove cs_index to force use of cs_idx
+    fit_no_index <- fit
+    fit_no_index$sets$cs_index <- NULL
+
+    expect_error(
+      susie_plot(fit_no_index, "PIP", add_legend = TRUE),
+      NA
+    )
+  } else {
+    skip("No CS found for cs_index test")
+  }
+})
+
 # =============================================================================
 # SUSIE_PLOT_ITERATION
 # =============================================================================
+
+test_that("susie_plot_iteration uses tempdir when file_prefix missing", {
+  set.seed(55)
+  dat <- simulate_regression(n = 100, p = 50, k = 3)
+  fit <- susie(dat$X, dat$y, L = 5, track_fit = FALSE, verbose = FALSE)
+
+  # Don't provide file_prefix - should use tempdir()
+  result <- invisible(capture.output({
+    suppressMessages(susie_plot_iteration(fit, L = 5))
+  }, type = "output"))
+
+  # Check that file was created in tempdir
+  expected_path <- file.path(tempdir(), "susie_plot.pdf")
+  expect_true(file.exists(expected_path))
+
+  # Clean up
+  if (file.exists(expected_path)) file.remove(expected_path)
+})
 
 test_that("susie_plot_iteration with track_fit=FALSE uses final fit only", {
   set.seed(19)
