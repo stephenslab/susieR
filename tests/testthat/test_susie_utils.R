@@ -356,6 +356,89 @@ test_that("validate_init validates model initialization objects", {
   init_no_V$V <- NULL
   params_no_V <- list(L = L, model_init = init_no_V)
   expect_silent(validate_init(data, params_no_V))
+
+  # Test 1: mu2 contains NA/Inf values
+  bad_init <- valid_init
+  bad_init$mu2[2, 3] <- NA
+  params_bad <- list(L = L, model_init = bad_init)
+  expect_error(validate_init(data, params_bad), "model_init\\$mu2 contains NA/Inf values")
+
+  bad_init <- valid_init
+  bad_init$mu2[1, 5] <- Inf
+  params_bad <- list(L = L, model_init = bad_init)
+  expect_error(validate_init(data, params_bad), "model_init\\$mu2 contains NA/Inf values")
+
+  # Test 2: V contains NA/Inf values
+  bad_init <- valid_init
+  bad_init$V[2] <- NA
+  params_bad <- list(L = L, model_init = bad_init)
+  expect_error(validate_init(data, params_bad), "model_init\\$V contains NA/Inf values")
+
+  bad_init <- valid_init
+  bad_init$V[3] <- Inf
+  params_bad <- list(L = L, model_init = bad_init)
+  expect_error(validate_init(data, params_bad), "model_init\\$V contains NA/Inf values")
+
+  # Test 3: sigma2 contains NA/Inf
+  bad_init <- valid_init
+  bad_init$sigma2 <- NA
+  params_bad <- list(L = L, model_init = bad_init)
+  expect_error(validate_init(data, params_bad), "model_init\\$sigma2 contains NA/Inf")
+
+  bad_init <- valid_init
+  bad_init$sigma2 <- Inf
+  params_bad <- list(L = L, model_init = bad_init)
+  expect_error(validate_init(data, params_bad), "model_init\\$sigma2 contains NA/Inf")
+
+  # Test 4: pi contains NA/Inf
+  bad_init <- valid_init
+  bad_init$pi[10] <- NA
+  params_bad <- list(L = L, model_init = bad_init)
+  expect_error(validate_init(data, params_bad), "model_init\\$pi contains NA/Inf")
+
+  bad_init <- valid_init
+  bad_init$pi[5] <- Inf
+  params_bad <- list(L = L, model_init = bad_init)
+  expect_error(validate_init(data, params_bad), "model_init\\$pi contains NA/Inf")
+
+  # Test 5: mu2 and alpha dimensions do not match
+  bad_init <- valid_init
+  bad_init$mu2 <- matrix(0, L, p - 1)
+  params_bad <- list(L = L, model_init = bad_init)
+  expect_error(validate_init(data, params_bad), "model_init\\$mu2 and model_init\\$alpha dimensions do not match")
+
+  bad_init <- valid_init
+  bad_init$mu2 <- matrix(0, L + 1, p)
+  params_bad <- list(L = L, model_init = bad_init)
+  expect_error(validate_init(data, params_bad), "model_init\\$mu2 and model_init\\$alpha dimensions do not match")
+
+  # Test 6: V must be numeric
+  # Note: This branch is unreachable because is.finite() on character vectors
+  # returns FALSE, triggering the NA/Inf error first. The numeric check only runs
+  # if all values pass is.finite(). Testing with numeric values only.
+  bad_init <- valid_init
+  bad_init$V <- rep(0, L)  # All zeros (valid finite numerics)
+  # This should pass all checks since 0 is valid for V
+  params_ok <- list(L = L, model_init = bad_init)
+  expect_silent(validate_init(data, params_ok))
+
+  # Test 7: sigma2 must be numeric
+  # Note: Similar to above - unreachable branch due to is.finite() check first
+  bad_init <- valid_init
+  bad_init$sigma2 <- 0  # Zero is valid
+  params_ok <- list(L = L, model_init = bad_init)
+  expect_silent(validate_init(data, params_ok))
+
+  # Test 8: pi length must match number of columns in alpha
+  bad_init <- valid_init
+  bad_init$pi <- rep(1/(p-1), p - 1)
+  params_bad <- list(L = L, model_init = bad_init)
+  expect_error(validate_init(data, params_bad), "model_init\\$pi should have the same length as the number of columns in model_init\\$alpha")
+
+  bad_init <- valid_init
+  bad_init$pi <- rep(1/(p+1), p + 1)
+  params_bad <- list(L = L, model_init = bad_init)
+  expect_error(validate_init(data, params_bad), "model_init\\$pi should have the same length as the number of columns in model_init\\$alpha")
 })
 
 test_that("convert_individual_to_ss converts individual data to sufficient statistics", {
@@ -487,10 +570,20 @@ test_that("validate_and_override_params validates and adjusts parameters", {
   bad_params$prior_tol <- c(1e-9, 1e-8)
   expect_error(validate_and_override_params(bad_params), "prior_tol must be a numeric scalar")
 
-  # Test: invalid residual_variance_upperbound
+  # Test: invalid residual_variance_upperbound (negative value)
   bad_params <- valid_params
   bad_params$residual_variance_upperbound <- -1
   expect_error(validate_and_override_params(bad_params), "must be positive")
+
+  # Test: residual_variance_upperbound must be a numeric scalar (not a vector)
+  bad_params <- valid_params
+  bad_params$residual_variance_upperbound <- c(1e10, 1e11)
+  expect_error(validate_and_override_params(bad_params), "residual_variance_upperbound must be a numeric scalar")
+
+  # Test: residual_variance_upperbound must be numeric (not character)
+  bad_params <- valid_params
+  bad_params$residual_variance_upperbound <- "1e10"
+  expect_error(validate_and_override_params(bad_params), "residual_variance_upperbound must be a numeric scalar")
 
   # Test: invalid scaled_prior_variance
   bad_params <- valid_params
@@ -708,13 +801,25 @@ test_that("prune_single_effects expands or filters model effects", {
   expect_equal(nrow(result_same$alpha), L_init)
   expect_null(result_same$sets)
 
-  # Test: expand to larger L
+  # Test: expand to larger L with vector V (length(V) > 1)
   L_expand <- 15
   V_expand <- rep(2, L_expand)
   result_expand <- prune_single_effects(model_init, L = L_expand, V = V_expand)
   expect_equal(nrow(result_expand$alpha), L_expand)
   expect_equal(result_expand$V[1:L_init], rep(1, L_init))
   expect_equal(result_expand$V[(L_init+1):L_expand], rep(2, L_expand - L_init))
+
+  # Test: expand to larger L with scalar V (length(V) == 1)
+  # This tests the else branch: V <- rep(V, L)
+  L_expand_scalar <- 12
+  V_scalar <- 3  # Single value
+  result_expand_scalar <- prune_single_effects(model_init, L = L_expand_scalar, V = V_scalar)
+  expect_equal(nrow(result_expand_scalar$alpha), L_expand_scalar)
+  # When V is scalar, it gets replicated to length L
+  expect_equal(result_expand_scalar$V, rep(V_scalar, L_expand_scalar))
+  expect_length(result_expand_scalar$V, L_expand_scalar)
+  # All V values should be the same scalar value
+  expect_true(all(result_expand_scalar$V == V_scalar))
 })
 
 test_that("add_null_effect adds null effect to model", {
@@ -1029,6 +1134,27 @@ test_that("mom_unmappable estimates variance using method of moments", {
                                      est_tau2 = FALSE, est_sigma2 = TRUE)
   expect_true(result_sigma_only$sigma2 > 0)
   expect_equal(result_sigma_only$tau2, 0.01)
+
+  # Test verbose message when estimating both tau2 and sigma2
+  params_verbose <- params
+  params_verbose$verbose <- TRUE
+  expect_message(
+    result_verbose_both <- mom_unmappable(data, params_verbose, model, omega,
+                                         tau2 = model$tau2,
+                                         est_tau2 = TRUE, est_sigma2 = TRUE),
+    "Update \\(sigma\\^2,tau\\^2\\) to"
+  )
+  expect_true(all(c("sigma2", "tau2") %in% names(result_verbose_both)))
+
+  # Test verbose message when estimating only sigma2
+  expect_message(
+    result_verbose_sigma <- mom_unmappable(data, params_verbose, model, omega,
+                                          tau2 = 0.01,
+                                          est_tau2 = FALSE, est_sigma2 = TRUE),
+    "Update sigma\\^2 to"
+  )
+  expect_true(result_verbose_sigma$sigma2 > 0)
+  expect_equal(result_verbose_sigma$tau2, 0.01)
 })
 
 test_that("mle_unmappable estimates variance using MLE", {
@@ -1059,6 +1185,44 @@ test_that("mle_unmappable estimates variance using MLE", {
   result_sigma_only <- mle_unmappable(data, params, model, omega,
                                      est_tau2 = FALSE, est_sigma2 = TRUE)
   expect_true(result_sigma_only$sigma2 > 0)
+
+  # Test verbose message when estimating both tau2 and sigma2
+  params_verbose <- params
+  params_verbose$verbose <- TRUE
+  expect_message(
+    result_verbose_both <- mle_unmappable(data, params_verbose, model, omega,
+                                         est_tau2 = TRUE, est_sigma2 = TRUE),
+    "Update \\(sigma\\^2,tau\\^2\\) to"
+  )
+  expect_true(all(c("sigma2", "tau2") %in% names(result_verbose_both)))
+
+  # Test verbose message when estimating only sigma2
+  expect_message(
+    result_verbose_sigma <- mle_unmappable(data, params_verbose, model, omega,
+                                          est_tau2 = FALSE, est_sigma2 = TRUE),
+    "Update sigma\\^2 to"
+  )
+  expect_true(result_verbose_sigma$sigma2 > 0)
+
+  # Test warning when MLE optimization fails - both parameters
+  # Create case where starting values are way outside feasible bounds
+  # This causes optim to fail to converge for the joint optimization
+  model_bad <- model
+  model_bad$sigma2 <- 1000  # Way above upper bound (should be ~1.2 * yty/n)
+  model_bad$tau2 <- 1000    # Way above upper bound (should be ~1.2 * yty/(n*p))
+
+  # This should trigger convergence failure warning for joint optimization
+  expect_message(
+    result_fail_both <- mle_unmappable(data, params, model_bad, omega,
+                                      est_tau2 = TRUE, est_sigma2 = TRUE),
+    "MLE optimization failed to converge"
+  )
+  # Should keep previous parameters when optimization fails
+  expect_equal(result_fail_both$sigma2, model_bad$sigma2)
+  expect_equal(result_fail_both$tau2, model_bad$tau2)
+
+  # Note: The sigma2-only optimization is more robust and typically succeeds
+  # even with bad starting values, so we only test the joint optimization failure
 })
 
 test_that("compute_lbf_servin_stephens computes log Bayes factor", {

@@ -315,6 +315,26 @@ test_that("compute_XtX works with only centering (no scaling)", {
   expect_equal(result, expected, tolerance = 1e-10)
 })
 
+test_that("compute_XtX rejects trend filtering matrices", {
+  set.seed(1212)
+  n <- 50
+  p <- 10
+
+  X_raw <- matrix(rnorm(n * p), n, p)
+
+  # Add standard attributes
+  attr(X_raw, "scaled:center") <- colMeans(X_raw)
+  attr(X_raw, "scaled:scale") <- apply(X_raw, 2, sd)
+
+  # Add matrix.type attribute to simulate trend filtering matrix
+  attr(X_raw, "matrix.type") <- "trend_filtering"
+
+  expect_error(
+    compute_XtX(X_raw),
+    "compute_XtX not yet implemented for trend filtering matrices"
+  )
+})
+
 # =============================================================================
 # compute_MXt
 # =============================================================================

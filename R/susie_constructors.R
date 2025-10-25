@@ -276,9 +276,6 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
   if (any(is.infinite(Xty))) {
     stop("Input Xty contains infinite values.")
   }
-  if (!(is.double(XtX) & is.matrix(XtX)) & !inherits(XtX, "sparseMatrix")) {
-    stop("Input XtX must be a double-precision matrix, or a sparse matrix.")
-  }
   if (anyNA(XtX)) {
     stop("Input XtX matrix contains NAs.")
   }

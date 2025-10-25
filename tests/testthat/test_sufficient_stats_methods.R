@@ -109,6 +109,29 @@ test_that("validate_prior.ss checks prior variance", {
   )
 })
 
+test_that("validate_prior.ss errors when prior variance is unreasonably large", {
+  setup <- setup_ss_data()
+  setup$params$check_prior <- TRUE
+
+  # Initialize model properly to get predictor_weights
+  var_y <- setup$data$yty / (setup$data$n - 1)
+  setup$model <- initialize_susie_model.ss(setup$data, setup$params, var_y)
+
+  # Compute zm (max z-score magnitude)
+  bhat <- setup$data$Xty / setup$model$predictor_weights
+  shat <- sqrt(setup$model$sigma2 / setup$model$predictor_weights)
+  z <- bhat / shat
+  zm <- max(abs(z[!is.nan(z)]))
+
+  # Set V to be unreasonably large (more than 100 * zm^2)
+  setup$model$V <- rep(150 * (zm^2), setup$params$L)
+
+  expect_error(
+    validate_prior.ss(setup$data, setup$params, setup$model),
+    "Estimated prior variance is unreasonably large"
+  )
+})
+
 test_that("track_ibss_fit.ss delegates to default when unmappable_effects='none'", {
   setup <- setup_ss_data(unmappable_effects = "none")
   tracking <- list()
@@ -379,6 +402,64 @@ test_that("update_variance_components.ss delegates to default for unmappable_eff
   expect_true("sigma2" %in% names(result))
 })
 
+test_that("update_variance_components.ss uses MLE for unmappable_effects='inf' with estimate_residual_method='MLE'", {
+  # Create setup with unmappable_effects='inf' but override to use MLE
+  base_data <- generate_base_data(n = 100, p = 50, k = 0, seed = 42)
+  X <- base_data$X
+  y <- base_data$y
+
+  # Center and scale
+  X_colmeans <- colMeans(X)
+  X <- sweep(X, 2, X_colmeans)
+  y_mean <- mean(y)
+  y <- y - y_mean
+
+  # Compute sufficient statistics
+  XtX <- crossprod(X)
+  Xty <- as.vector(crossprod(X, y))
+  yty <- sum(y^2)
+
+  # Create constructor with MLE method (not the default MoM)
+  susie_objects <- sufficient_stats_constructor(
+    XtX = XtX, Xty = Xty, yty = yty, n = 100, L = 5,
+    X_colmeans = X_colmeans, y_mean = y_mean,
+    standardize = TRUE,
+    unmappable_effects = "inf",
+    estimate_residual_method = "MLE",  # Force MLE instead of default MoM
+    residual_variance = 1,
+    convergence_method = "pip",
+    coverage = 0.95,
+    min_abs_corr = 0.5,
+    n_purity = 100,
+    check_prior = FALSE,
+    track_fit = FALSE
+  )
+
+  data <- susie_objects$data
+  params <- susie_objects$params
+
+  # Initialize model properly
+  var_y <- data$yty / (data$n - 1)
+  model <- initialize_susie_model.ss(data, params, var_y)
+
+  # Verify we're using MLE
+  expect_equal(params$estimate_residual_method, "MLE")
+
+  # Call update_variance_components which should use mle_unmappable
+  result <- update_variance_components.ss(data, params, model)
+
+  # Check that result has expected fields
+  expect_type(result, "list")
+  expect_true("sigma2" %in% names(result))
+  expect_true("tau2" %in% names(result))
+  expect_true("theta" %in% names(result))
+
+  # Check values are reasonable
+  expect_true(result$sigma2 > 0)
+  expect_true(result$tau2 >= 0)
+  expect_length(result$theta, data$p)
+})
+
 test_that("update_derived_quantities.ss delegates to default for unmappable_effects='none'", {
   setup <- setup_ss_data(unmappable_effects = "none")
 
@@ -462,6 +543,26 @@ test_that("get_cs.ss computes correlation from XtX when diagonal not standardize
   setup$model$alpha[1, 1] <- 0.95
   setup$model$alpha[1, -1] <- 0.05 / (setup$data$p - 1)
 
+  cs <- get_cs.ss(setup$data, setup$params, setup$model)
+
+  # May or may not find CS, but should not error
+  expect_true(is.null(cs) || is.list(cs))
+})
+
+test_that("get_cs.ss uses XtX directly when diagonal is standardized", {
+  setup <- setup_ss_data()
+
+  R <- cor(matrix(rnorm(100 * setup$data$p), 100, setup$data$p))
+  setup$data$XtX <- R
+
+  # Verify diagonal is all 1s (correlation matrix)
+  expect_true(all(diag(setup$data$XtX) %in% c(0, 1)))
+
+  # Add strong signal to create credible set
+  setup$model$alpha[1, 1] <- 0.95
+  setup$model$alpha[1, -1] <- 0.05 / (setup$data$p - 1)
+
+  # Call get_cs.ss which should use the else branch (Xcorr <- data$XtX)
   cs <- get_cs.ss(setup$data, setup$params, setup$model)
 
   # May or may not find CS, but should not error

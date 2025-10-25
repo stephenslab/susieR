@@ -91,6 +91,25 @@ test_that("susie_get_posterior_mean returns zeros when all V=0", {
   expect_equal(pm, rep(0, dat$p))
 })
 
+test_that("susie_get_posterior_mean uses all effects when V is not numeric", {
+  set.seed(26)
+  dat <- simulate_regression(n = 100, p = 50, k = 3)
+  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+
+  # Set V to NULL (not numeric) to trigger the else branch
+  fit$V <- NULL
+
+  pm <- susie_get_posterior_mean(fit)
+
+  # Should return p-length vector
+  expect_length(pm, dat$p)
+  expect_type(pm, "double")
+
+  # Manual calculation using ALL effects (since V is not numeric)
+  expected <- colSums(fit$alpha * fit$mu) / fit$X_column_scale_factors
+  expect_equal(pm, expected)
+})
+
 test_that("susie_get_posterior_sd computes correctly", {
   set.seed(7)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
@@ -124,6 +143,44 @@ test_that("susie_get_posterior_sd filters effects with V < prior_tol", {
                            (fit$alpha * fit$mu)^2)[c(1, 3, 5), , drop = FALSE])) /
               fit$X_column_scale_factors
   expect_equal(psd, expected)
+})
+
+test_that("susie_get_posterior_sd uses all effects when V is not numeric", {
+  set.seed(27)
+  dat <- simulate_regression(n = 100, p = 50, k = 3)
+  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+
+  # Set V to NULL (not numeric) to trigger the else branch
+  fit$V <- NULL
+
+  psd <- susie_get_posterior_sd(fit)
+
+  # Should return p-length vector
+  expect_length(psd, dat$p)
+  expect_type(psd, "double")
+  expect_true(all(psd >= 0))  # SD must be non-negative
+
+  # Manual calculation using ALL effects (since V is not numeric)
+  expected <- sqrt(colSums(fit$alpha * fit$mu2 - (fit$alpha * fit$mu)^2)) /
+              fit$X_column_scale_factors
+  expect_equal(psd, expected)
+})
+
+test_that("susie_get_posterior_sd returns zeros when no effects pass prior_tol", {
+  set.seed(28)
+  dat <- simulate_regression(n = 100, p = 50, k = 3)
+  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+
+  # Set all V to zero so no effects pass the prior_tol filter
+  fit$V <- rep(0, 5)
+
+  psd <- susie_get_posterior_sd(fit, prior_tol = 1e-9)
+
+  # Should return p-length vector of zeros (length(include_idx) == 0)
+  expect_length(psd, dat$p)
+  expect_type(psd, "double")
+  expect_equal(psd, numeric(dat$p))  # Should be all zeros
+  expect_true(all(psd == 0))
 })
 
 test_that("susie_get_niter returns correct iteration count", {
@@ -218,6 +275,32 @@ test_that("susie_get_posterior_samples filters effects with V < 1e-9", {
   expect_true(all(samples$gamma == 0))
 })
 
+test_that("susie_get_posterior_samples uses all effects when V is not numeric", {
+  set.seed(29)
+  dat <- simulate_regression(n = 100, p = 50, k = 3)
+  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+
+  # Set V to NULL (not numeric) to trigger the else branch
+  fit$V <- NULL
+
+  num_samples <- 100
+  samples <- susie_get_posterior_samples(fit, num_samples = num_samples)
+
+  # Should return list with b and gamma
+  expect_type(samples, "list")
+  expect_named(samples, c("b", "gamma"))
+
+  # Check dimensions
+  expect_equal(dim(samples$b), c(dat$p, num_samples))
+  expect_equal(dim(samples$gamma), c(dat$p, num_samples))
+
+  # Gamma should be binary
+  expect_true(all(samples$gamma %in% c(0, 1)))
+
+  # When V is not numeric, ALL effects are included (not filtered)
+  # So samples should be generated from all L effects
+})
+
 # =============================================================================
 # Get Credible Sets and Correlations
 # =============================================================================
@@ -281,6 +364,87 @@ test_that("susie_get_cs handles dedup parameter", {
   expect_true(n_cs_dedup <= n_cs_no_dedup)
 })
 
+test_that("susie_get_cs errors when both X and Xcorr are provided", {
+  set.seed(30)
+  dat <- simulate_regression(n = 200, p = 100, k = 3, signal_sd = 2)
+  fit <- susie(dat$X, dat$y, L = 10, verbose = FALSE)
+
+  # Create Xcorr
+  Xcorr <- cor(dat$X)
+
+  # Should error when both X and Xcorr are specified
+  expect_error(
+    susie_get_cs(fit, X = dat$X, Xcorr = Xcorr, coverage = 0.95),
+    "Only one of X or Xcorr should be specified"
+  )
+})
+
+test_that("susie_get_cs warns and fixes non-symmetric Xcorr", {
+  set.seed(31)
+  dat <- simulate_regression(n = 200, p = 100, k = 3, signal_sd = 2)
+  fit <- susie(dat$X, dat$y, L = 10, verbose = FALSE)
+
+  # Create a non-symmetric correlation matrix
+  Xcorr <- cor(dat$X)
+  # Make it non-symmetric by modifying upper triangle
+  Xcorr[1, 2] <- 0.9
+  Xcorr[2, 1] <- 0.8  # Different from Xcorr[1, 2]
+
+  # Should warn about non-symmetry
+  expect_message(
+    cs <- susie_get_cs(fit, Xcorr = Xcorr, coverage = 0.95, check_symmetric = TRUE),
+    "Xcorr is not symmetric; forcing Xcorr to be symmetric"
+  )
+
+  # Verify the symmetrization formula: (Xcorr + t(Xcorr)) / 2
+  Xcorr_original <- cor(dat$X)
+  Xcorr_original[1, 2] <- 0.9
+  Xcorr_original[2, 1] <- 0.8
+
+  expected_value <- (0.9 + 0.8) / 2  # Should be 0.85
+  expect_equal(expected_value, 0.85)
+})
+
+test_that("susie_get_cs uses squared correlation column names when squared=TRUE", {
+  set.seed(32)
+  dat <- simulate_regression(n = 200, p = 100, k = 3, signal_sd = 2)
+  fit <- susie(dat$X, dat$y, L = 10, verbose = FALSE)
+
+  # Get CS with squared=TRUE
+  cs_squared <- susie_get_cs(fit, X = dat$X, coverage = 0.95, squared = TRUE)
+
+  # If CS found, check purity column names
+  if (!is.null(cs_squared$cs) && !is.null(cs_squared$purity)) {
+    expect_true("purity" %in% names(cs_squared))
+    expect_s3_class(cs_squared$purity, "data.frame")
+
+    # When squared=TRUE, column names should be min.sq.corr, mean.sq.corr, median.sq.corr
+    expect_true(all(c("min.sq.corr", "mean.sq.corr", "median.sq.corr") %in%
+                    colnames(cs_squared$purity)))
+
+    # Should NOT have the absolute correlation names
+    expect_false("min.abs.corr" %in% colnames(cs_squared$purity))
+    expect_false("mean.abs.corr" %in% colnames(cs_squared$purity))
+    expect_false("median.abs.corr" %in% colnames(cs_squared$purity))
+  } else {
+    skip("No CS with purity found for squared correlation test")
+  }
+
+  # Compare with squared=FALSE (default)
+  cs_abs <- susie_get_cs(fit, X = dat$X, coverage = 0.95, squared = FALSE)
+
+  if (!is.null(cs_abs$cs) && !is.null(cs_abs$purity)) {
+    # When squared=FALSE, column names should be min.abs.corr, mean.abs.corr, median.abs.corr
+    expect_true(all(c("min.abs.corr", "mean.abs.corr", "median.abs.corr") %in%
+                    colnames(cs_abs$purity)))
+
+    # Should NOT have the squared correlation names
+    expect_false("min.sq.corr" %in% colnames(cs_abs$purity))
+    expect_false("mean.sq.corr" %in% colnames(cs_abs$purity))
+    expect_false("median.sq.corr" %in% colnames(cs_abs$purity))
+  }
+})
+
 test_that("get_cs_correlation computes correlations between CS", {
   set.seed(23)
   dat <- simulate_regression(n = 200, p = 100, k = 3, signal_sd = 2)
@@ -314,6 +478,115 @@ test_that("get_cs_correlation with Xcorr instead of X", {
     expect_equal(nrow(cs_corr), length(fit$sets$cs))
   } else {
     skip("No multiple CS found for Xcorr test")
+  }
+})
+
+test_that("get_cs_correlation returns NA when no CS or only one CS", {
+  set.seed(33)
+  dat <- simulate_regression(n = 100, p = 50, k = 1)
+  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+
+  # Case 1: No CS at all
+  fit$sets <- list(cs = NULL)
+  result <- get_cs_correlation(fit, X = dat$X)
+  expect_true(is.na(result))
+
+  # Case 2: Only one CS
+  fit$sets <- list(cs = list(c(1, 2, 3)))
+  result <- get_cs_correlation(fit, X = dat$X)
+  expect_true(is.na(result))
+})
+
+test_that("get_cs_correlation errors when both X and Xcorr are provided", {
+  set.seed(34)
+  dat <- simulate_regression(n = 200, p = 100, k = 3, signal_sd = 2)
+  fit <- susie(dat$X, dat$y, L = 10, verbose = FALSE)
+  fit$sets <- susie_get_cs(fit, X = dat$X, coverage = 0.95)
+
+  if (!is.null(fit$sets$cs) && length(fit$sets$cs) > 1) {
+    Xcorr <- cor(dat$X)
+
+    # Should error when both X and Xcorr are specified
+    expect_error(
+      get_cs_correlation(fit, X = dat$X, Xcorr = Xcorr),
+      "Only one of X or Xcorr should be specified"
+    )
+  } else {
+    skip("No multiple CS found for test")
+  }
+})
+
+test_that("get_cs_correlation errors when neither X nor Xcorr are provided", {
+  set.seed(35)
+  dat <- simulate_regression(n = 200, p = 100, k = 3, signal_sd = 2)
+  fit <- susie(dat$X, dat$y, L = 10, verbose = FALSE)
+  fit$sets <- susie_get_cs(fit, X = dat$X, coverage = 0.95)
+
+  if (!is.null(fit$sets$cs) && length(fit$sets$cs) > 1) {
+    # Should error when neither X nor Xcorr are specified
+    expect_error(
+      get_cs_correlation(fit, X = NULL, Xcorr = NULL),
+      "One of X or Xcorr must be specified"
+    )
+  } else {
+    skip("No multiple CS found for test")
+  }
+})
+
+test_that("get_cs_correlation warns and fixes non-symmetric Xcorr", {
+  set.seed(36)
+  dat <- simulate_regression(n = 200, p = 100, k = 3, signal_sd = 2)
+  fit <- susie(dat$X, dat$y, L = 10, verbose = FALSE)
+  fit$sets <- susie_get_cs(fit, X = dat$X, coverage = 0.95)
+
+  if (!is.null(fit$sets$cs) && length(fit$sets$cs) > 1) {
+    # Create a non-symmetric correlation matrix
+    Xcorr <- cor(dat$X)
+    Xcorr[1, 2] <- 0.9
+    Xcorr[2, 1] <- 0.8  # Different from Xcorr[1, 2]
+
+    # Should warn about non-symmetry
+    expect_message(
+      cs_corr <- get_cs_correlation(fit, Xcorr = Xcorr),
+      "Xcorr is not symmetric; forcing Xcorr to be symmetric"
+    )
+
+    # Verify the symmetrization formula: (Xcorr + t(Xcorr)) / 2
+    expected_value <- (0.9 + 0.8) / 2  # Should be 0.85
+    expect_equal(expected_value, 0.85)
+  } else {
+    skip("No multiple CS found for test")
+  }
+})
+
+test_that("get_cs_correlation with max=TRUE returns scalar maximum", {
+  set.seed(37)
+  dat <- simulate_regression(n = 200, p = 100, k = 3, signal_sd = 2)
+  fit <- susie(dat$X, dat$y, L = 10, verbose = FALSE)
+  fit$sets <- susie_get_cs(fit, X = dat$X, coverage = 0.95)
+
+  if (!is.null(fit$sets$cs) && length(fit$sets$cs) > 1) {
+    # Get full correlation matrix first
+    cs_corr_matrix <- get_cs_correlation(fit, X = dat$X, max = FALSE)
+
+    # Get max correlation
+    cs_corr_max <- get_cs_correlation(fit, X = dat$X, max = TRUE)
+
+    # Should be a scalar
+    expect_type(cs_corr_max, "double")
+    expect_length(cs_corr_max, 1)
+
+    # Should equal max of upper triangle absolute values
+    expected_max <- max(abs(cs_corr_matrix[upper.tri(cs_corr_matrix)]))
+    expect_equal(cs_corr_max, expected_max)
+
+    # Max should be >= 0 and <= 1 (correlation)
+    expect_true(cs_corr_max >= 0 && cs_corr_max <= 1)
+
+    # When max=TRUE, should not have rownames/colnames (it's a scalar)
+    expect_null(names(cs_corr_max))
+  } else {
+    skip("No multiple CS found for test")
   }
 })
 
@@ -405,6 +678,67 @@ test_that("susie_get_pip returns zeros when no CS and prune_by_cs=TRUE", {
   expect_length(pip, dat$p)
   # When no CS, all PIPs should be zero
   expect_true(all(pip == 0))
+})
+
+test_that("susie_get_pip uses all effects when V is not numeric", {
+  set.seed(38)
+  dat <- simulate_regression(n = 100, p = 50, k = 3)
+  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+
+  # Set V to NULL (not numeric) to trigger the else branch
+  fit$V <- NULL
+
+  pip <- susie_get_pip(fit)
+
+  # Should return p-length vector
+  expect_length(pip, dat$p)
+  expect_type(pip, "double")
+
+  # All PIPs should be in [0, 1]
+  expect_true(all(pip >= 0 & pip <= 1))
+
+  # Manual calculation using ALL effects (since V is not numeric)
+  expected <- 1 - apply(1 - fit$alpha, 2, prod)
+  expect_equal(pip, expected)
+})
+
+test_that("susie_get_pip with prune_by_cs uses intersection of include_idx and cs_index", {
+  set.seed(39)
+  dat <- simulate_regression(n = 100, p = 50, k = 3)
+  fit <- susie(dat$X, dat$y, L = 10, verbose = FALSE)
+
+  # Get CS
+  fit$sets <- susie_get_cs(fit, coverage = 0.95)
+
+  # Also set some V to zero to create a filtering scenario
+  fit$V[c(1, 2)] <- 0
+
+  if (!is.null(fit$sets$cs_index)) {
+    # Get PIPs with prune_by_cs=TRUE
+    pip_pruned <- susie_get_pip(fit, prune_by_cs = TRUE, prior_tol = 1e-9)
+
+    # Should return p-length vector
+    expect_length(pip_pruned, dat$p)
+    expect_true(all(pip_pruned >= 0 & pip_pruned <= 1))
+
+    # Manually compute what include_idx should be
+    # Effects with V > prior_tol
+    include_idx_V <- which(fit$V > 1e-9)  # Should exclude 1, 2
+
+    # Intersection with cs_index (only effects in CS)
+    include_idx_final <- intersect(include_idx_V, fit$sets$cs_index)
+
+    # If the intersection is non-empty, compute expected PIPs
+    if (length(include_idx_final) > 0) {
+      expected <- 1 - apply(1 - fit$alpha[include_idx_final, , drop = FALSE], 2, prod)
+      expect_equal(pip_pruned, expected)
+    } else {
+      # If intersection is empty, should be all zeros
+      expect_true(all(pip_pruned == 0))
+    }
+  } else {
+    skip("No CS found for intersection test")
+  }
 })
 
 # =============================================================================

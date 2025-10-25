@@ -428,8 +428,9 @@ get_cs_correlation <- function(model, X = NULL, Xcorr = NULL, max = FALSE) {
   }
   if (max) {
     cs_corr <- max(abs(cs_corr[upper.tri(cs_corr)]))
+  } else {
+    rownames(cs_corr) <- colnames(cs_corr) <- names(model$sets$cs)
   }
-  rownames(cs_corr) <- colnames(cs_corr) <- names(model$sets$cs)
   return(cs_corr)
 }
 

@@ -103,6 +103,18 @@ test_that("single_effect_regression works with estimate_prior_method='none'", {
   expect_equal(sum(result$alpha), 1, tolerance = 1e-10)
 })
 
+test_that("single_effect_regression rejects invalid estimate_prior_method", {
+  setup <- setup_individual_data(n = 100, p = 50, L = 5)
+  setup$params$estimate_prior_method <- "invalid_method"
+  l <- 1
+  setup$model <- compute_residuals.individual(setup$data, setup$params, setup$model, l)
+
+  expect_error(
+    single_effect_regression(setup$data, setup$params, setup$model, l),
+    "Invalid option for estimate_prior_method: invalid_method"
+  )
+})
+
 # =============================================================================
 # SINGLE_EFFECT_UPDATE
 # =============================================================================

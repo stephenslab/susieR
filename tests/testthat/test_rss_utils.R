@@ -492,3 +492,61 @@ test_that("kriging_rss conditional mean and variance are sensible", {
   # Standardized differences should be finite
   expect_true(all(is.finite(result$conditional_dist$z_std_diff)))
 })
+
+test_that("kriging_rss sets a_max=2 when max(z_std_diff^2) < 1", {
+  # Create data where z-scores are very consistent with R
+  # Use very small z-scores (close to 0) which will have small standardized differences
+  set.seed(34)
+  p <- 50
+
+  # Create identity correlation matrix (independent variables)
+  R <- diag(p)
+
+  # Use very small z-scores (near zero)
+  z <- rnorm(p, mean = 0, sd = 0.3)  # Small standard deviation
+
+  result <- kriging_rss(z, R, n = 100)
+
+  # Verify that max(z_std_diff^2) < 1
+  max_z_std_diff_sq <- max(result$conditional_dist$z_std_diff^2)
+  expect_true(max_z_std_diff_sq < 1)
+
+  # The plot should be created successfully (tests the a_max=2 branch)
+  expect_s3_class(result$plot, "ggplot")
+})
+
+test_that("kriging_rss adds red points when outliers exist (length(idx) > 0)", {
+  # Create scenario that produces outliers with high logLR
+  # Use data with inconsistent z-scores relative to correlation structure
+  set.seed(32)  # This seed produces outliers
+  n <- 200
+  p <- 50
+
+  # Generate data with signal
+  base_data <- generate_base_data(n = n, p = p, k = 5, signal_sd = 2, seed = 32)
+
+  ss <- univariate_regression(base_data$X, base_data$y)
+  R <- cor(base_data$X)
+  z <- with(ss, betahat / sebetahat)
+
+  # Flip some strong z-scores to create allele switch-like pattern
+  strong_idx <- which(abs(z) > 2)
+  if (length(strong_idx) >= 3) {
+    # Flip first 3 strong z-scores
+    flip_idx <- strong_idx[1:3]
+    z[flip_idx] <- -z[flip_idx]
+  }
+
+  result <- kriging_rss(z, R, n = n)
+
+  # Check that outliers were detected
+  outliers <- which(result$conditional_dist$logLR > 2 &
+                    abs(result$conditional_dist$z) > 2)
+
+  # Verify the length(idx) > 0 branch was executed
+  expect_true(length(outliers) > 0)
+
+  # Test that plot was created successfully (with red points added)
+  expect_s3_class(result$plot, "ggplot")
+  expect_s3_class(result$conditional_dist, "data.frame")
+})

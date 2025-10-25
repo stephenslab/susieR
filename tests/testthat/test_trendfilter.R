@@ -172,6 +172,17 @@ test_that("susie_trendfilter use_mad with model_init skips MAD", {
   expect_s3_class(result, "susie")
 })
 
+test_that("susie_trendfilter rejects MAD=0 when use_mad=TRUE", {
+  # Create constant data which will cause MAD = 0
+  # All differences will be 0, so median(abs(diff(y))) = 0
+  y <- rep(5, 50)
+
+  expect_error(
+    susie_trendfilter(y, order = 0, use_mad = TRUE),
+    "Cannot use median absolute deviation \\(MAD\\) to initialize residual variance because MAD = 0 for the input data. Please set 'use_mad = FALSE'"
+  )
+})
+
 # =============================================================================
 # STANDARDIZE AND INTERCEPT OPTIONS
 # =============================================================================

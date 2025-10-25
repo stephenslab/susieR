@@ -168,3 +168,184 @@ test_that("cleanup_model.default removes temporary fields", {
   expect_false("residuals" %in% names(result))
   expect_false("fitted_without_l" %in% names(result))
 })
+
+# =============================================================================
+# DEFAULT METHOD ERROR MESSAGES
+# =============================================================================
+
+test_that("get_var_y.default throws error for unimplemented class", {
+  data <- structure(list(y = rnorm(50)), class = "unsupported_class")
+
+  expect_error(
+    get_var_y.default(data),
+    "get_var_y: no method for class 'unsupported_class'"
+  )
+})
+
+test_that("initialize_susie_model.default throws error for unimplemented class", {
+  data <- structure(list(n = 50, p = 10), class = "unsupported_class")
+  params <- list(L = 5)
+
+  expect_error(
+    initialize_susie_model.default(data, params),
+    "initialize_susie_model: no method for class 'unsupported_class'"
+  )
+})
+
+test_that("initialize_fitted.default throws error for unimplemented class", {
+  data <- structure(list(n = 50, p = 10), class = "unsupported_class")
+  mat_init <- matrix(0, 5, 10)
+
+  expect_error(
+    initialize_fitted.default(data, mat_init),
+    "initialize_fitted: no method for class 'unsupported_class'"
+  )
+})
+
+test_that("compute_residuals.default throws error for unimplemented class", {
+  data <- structure(list(n = 50, p = 10), class = "unsupported_class")
+  params <- list()
+  model <- list(alpha = matrix(1/10, 5, 10), V = rep(1, 5))
+  l <- 1
+
+  expect_error(
+    compute_residuals.default(data, params, model, l),
+    "compute_residuals: no method for class 'unsupported_class'"
+  )
+})
+
+test_that("compute_ser_statistics.default throws error for unimplemented class", {
+  data <- structure(list(n = 50, p = 10), class = "unsupported_class")
+  params <- list()
+  model <- list(alpha = matrix(1/10, 5, 10), residuals = rnorm(50))
+  l <- 1
+
+  expect_error(
+    compute_ser_statistics.default(data, params, model, l),
+    "compute_ser_statistics: no method for class 'unsupported_class'"
+  )
+})
+
+test_that("SER_posterior_e_loglik.default throws error for unimplemented class", {
+  data <- structure(list(n = 50, p = 10), class = "unsupported_class")
+  params <- list()
+  model <- list(alpha = matrix(1/10, 5, 10), lbf_variable = matrix(0, 5, 10))
+  l <- 1
+
+  expect_error(
+    SER_posterior_e_loglik.default(data, params, model, l),
+    "SER_posterior_e_loglik: no method for class 'unsupported_class'"
+  )
+})
+
+test_that("calculate_posterior_moments.default throws error for unimplemented class", {
+  data <- structure(list(n = 50, p = 10), class = "unsupported_class")
+  params <- list()
+  model <- list(alpha = matrix(1/10, 5, 10))
+  V <- 1.0
+
+  expect_error(
+    calculate_posterior_moments.default(data, params, model, V),
+    "calculate_posterior_moments: no method for class 'unsupported_class'"
+  )
+})
+
+test_that("get_ER2.default throws error for unimplemented class", {
+  data <- structure(list(n = 50, p = 10), class = "unsupported_class")
+  model <- list(alpha = matrix(1/10, 5, 10), sigma2 = 1)
+
+  expect_error(
+    get_ER2.default(data, model),
+    "get_ER2: no method for class 'unsupported_class'"
+  )
+})
+
+test_that("Eloglik.default throws error for unimplemented class", {
+  data <- structure(list(n = 50, p = 10), class = "unsupported_class")
+  model <- list(alpha = matrix(1/10, 5, 10), sigma2 = 1)
+
+  expect_error(
+    Eloglik.default(data, model),
+    "Eloglik: no method for class 'unsupported_class'"
+  )
+})
+
+test_that("loglik.default throws error for unimplemented class", {
+  data <- structure(list(n = 50, p = 10), class = "unsupported_class")
+  params <- list()
+  model <- list(alpha = matrix(1/10, 5, 10), sigma2 = 1)
+  V <- 1.0
+  ser_stats <- list(betahat = rnorm(10), shat2 = rep(1, 10))
+
+  expect_error(
+    loglik.default(data, params, model, V, ser_stats),
+    "loglik: no method for class 'unsupported_class'"
+  )
+})
+
+test_that("neg_loglik.default throws error for unimplemented class", {
+  data <- structure(list(n = 50, p = 10), class = "unsupported_class")
+  params <- list()
+  model <- list(alpha = matrix(1/10, 5, 10), sigma2 = 1)
+  V_param <- 0.0  # log scale
+  ser_stats <- list(betahat = rnorm(10), shat2 = rep(1, 10))
+
+  expect_error(
+    neg_loglik.default(data, params, model, V_param, ser_stats),
+    "neg_loglik: no method for class 'unsupported_class'"
+  )
+})
+
+test_that("update_fitted_values.default throws error for unimplemented class", {
+  data <- structure(list(n = 50, p = 10), class = "unsupported_class")
+  params <- list()
+  model <- list(alpha = matrix(1/10, 5, 10), mu = matrix(0, 5, 10))
+  l <- 1
+
+  expect_error(
+    update_fitted_values.default(data, params, model, l),
+    "update_fitted_values: no method for class 'unsupported_class'"
+  )
+})
+
+test_that("get_scale_factors.default throws error for unimplemented class", {
+  data <- structure(list(n = 50, p = 10), class = "unsupported_class")
+  params <- list()
+
+  expect_error(
+    get_scale_factors.default(data, params),
+    "get_scale_factors: no method for class 'unsupported_class'"
+  )
+})
+
+test_that("get_intercept.default throws error for unimplemented class", {
+  data <- structure(list(n = 50, p = 10), class = "unsupported_class")
+  params <- list()
+  model <- list(alpha = matrix(1/10, 5, 10), mu = matrix(0, 5, 10))
+
+  expect_error(
+    get_intercept.default(data, params, model),
+    "get_intercept: no method for class 'unsupported_class'"
+  )
+})
+
+test_that("get_cs.default throws error for unimplemented class", {
+  data <- structure(list(n = 50, p = 10), class = "unsupported_class")
+  params <- list(coverage = 0.95, min_abs_corr = 0.5)
+  model <- list(alpha = matrix(1/10, 5, 10))
+
+  expect_error(
+    get_cs.default(data, params, model),
+    "get_cs: no method for class 'unsupported_class'"
+  )
+})
+
+test_that("get_variable_names.default throws error for unimplemented class", {
+  data <- structure(list(n = 50, p = 10), class = "unsupported_class")
+  model <- list(alpha = matrix(1/10, 5, 10))
+
+  expect_error(
+    get_variable_names.default(data, model),
+    "get_variable_names: no method for class 'unsupported_class'"
+  )
+})
