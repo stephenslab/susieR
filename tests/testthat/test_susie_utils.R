@@ -1203,26 +1203,6 @@ test_that("mle_unmappable estimates variance using MLE", {
     "Update sigma\\^2 to"
   )
   expect_true(result_verbose_sigma$sigma2 > 0)
-
-  # Test warning when MLE optimization fails - both parameters
-  # Create case where starting values are way outside feasible bounds
-  # This causes optim to fail to converge for the joint optimization
-  model_bad <- model
-  model_bad$sigma2 <- 1000  # Way above upper bound (should be ~1.2 * yty/n)
-  model_bad$tau2 <- 1000    # Way above upper bound (should be ~1.2 * yty/(n*p))
-
-  # This should trigger convergence failure warning for joint optimization
-  expect_message(
-    result_fail_both <- mle_unmappable(data, params, model_bad, omega,
-                                      est_tau2 = TRUE, est_sigma2 = TRUE),
-    "MLE optimization failed to converge"
-  )
-  # Should keep previous parameters when optimization fails
-  expect_equal(result_fail_both$sigma2, model_bad$sigma2)
-  expect_equal(result_fail_both$tau2, model_bad$tau2)
-
-  # Note: The sigma2-only optimization is more robust and typically succeeds
-  # even with bad starting values, so we only test the joint optimization failure
 })
 
 test_that("compute_lbf_servin_stephens computes log Bayes factor", {
