@@ -108,12 +108,14 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
   }
   prior_weights <- prior_weights / sum(prior_weights)
 
+  # nocov start
   if (p > 1000 & !requireNamespace("Rfast", quietly = TRUE)) {
     warning_message("For an X with many columns, please consider installing ",
                     "the Rfast package for more efficient credible set (CS) ",
                     "calculations.",
                     style = "hint")
   }
+  # nocov end
 
   # Center y if intercept is included
   if (intercept) {
@@ -250,11 +252,13 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
     ))
   }
 
+  # nocov start
   if (ncol(XtX) > 1000 & !requireNamespace("Rfast", quietly = TRUE)) {
     warning_message("For large R or large XtX, consider installing the ",
                     "Rfast package for better performance.",
                     style = "hint")
   }
+  # nocov end
 
   # Ensure XtX is symmetric
   if (!is_symmetric_matrix(XtX)) {
