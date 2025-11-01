@@ -360,7 +360,7 @@ update_variance_components.ss <- function(data, params, model, ...) {
       intercept     = FALSE,
       standardize   = FALSE,
       sigma2        = mom_result$sigma2,
-      update.sigma2 = FALSE,
+      update.sigma2 = params$update_ash_sigma2,
       max.iter      = 3000
     )
 
