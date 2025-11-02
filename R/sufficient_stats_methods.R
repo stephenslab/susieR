@@ -334,22 +334,18 @@ update_variance_components.ss <- function(data, params, model, ...) {
 
     # Update the sparse effect variance
     sparse_var <- mean(colSums(model$alpha * model$V))
-
-    # Update sigma2 and tau2 via MoM
-    mom_result <- mom_unmappable(data, params, model, omega, sparse_var, est_tau2 = TRUE, est_sigma2 = TRUE)
-
+    
     # Remove the sparse effects
     b <- colSums(model$alpha * model$mu)
     residuals <- data$y - data$X %*% b
 
-    # Specify ash grid
-    if (mom_result$tau2 > 0) {
-      grid_factors <- exp(seq(log(0.1), log(100), length.out = 20 - 1))
-      est_sa2 <- c(0, mom_result$tau2 * grid_factors)
+    # Build ASH grid based on sparse variance and scaling factor
+    if (sparse_var * params$ash_scaling_factor > 1e-8) {
+      grid_factors <- exp(seq(log(0.01), log(10), length.out = 20 - 1))
+      est_sa2 <- c(0, sparse_var * params$ash_scaling_factor * grid_factors)
     } else {
-      # Fallback if MoM gives tau2 = 0
       est_sa2 <- c(0, (2^(0.05*(1:20-1)) - 1)^4)
-      est_sa2 <- est_sa2 * (0.1 / max(est_sa2))
+      est_sa2 <- est_sa2 * (0.01 / max(est_sa2))
     }
 
     # Call mr.ash with residuals
@@ -359,8 +355,8 @@ update_variance_components.ss <- function(data, params, model, ...) {
       sa2           = est_sa2,
       intercept     = FALSE,
       standardize   = FALSE,
-      sigma2        = mom_result$sigma2,
-      update.sigma2 = params$update_ash_sigma2,
+      sigma2        = model$sigma2,
+      update.sigma2 = params$estimate_residual_variance,
       max.iter      = 3000
     )
 
