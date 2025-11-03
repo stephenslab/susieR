@@ -68,18 +68,18 @@ bibentry(header = paste("If estimate_residual_method = 'Servin_Stephens' is used
          author = c(person("William", "R.P. Denault"),
                     person("Peter", "Carbonetto"),
                     person("Ruixi", "Li"),
-                    person("A.D.F.G.", "Consortium"),
+                    person("Alzheimer's Disease Functional Genomics Consortium"),
                     person("Gao", "Wang"),
                     person("Matthew", "Stephens")),
          journal = "bioRxiv",
          year    = "2025",
          note    = "Under review for Nature Methods",
          textVersion =
-           paste("Denault, W.R.P., Carbonetto, P., Li, R., Consortium, A.D.F.G.,",
-                 "Wang, G. & Stephens, M. (2025). Accounting for uncertainty in",
-                 "residual variances improves calibration of the 'Sum of Single",
-                 "Effects' model for small sample sizes. bioRxiv, 2025-05.",
-                 "Under review for Nature Methods."))
+           paste("Denault, W.R.P., Carbonetto, P., Li, R., Alzheimer's Disease",
+                 "Functional Genomics Consortium, Wang, G. & Stephens, M. (2025).",
+                 "Accounting for uncertainty in residual variances improves",
+                 "calibration of the 'Sum of Single Effects' model for small",
+                 "sample sizes. bioRxiv, 2025-05. Under review for Nature Methods."))
 
 bibentry(header = paste("If unmappable_effects = 'inf' is used,",
                         "please also cite:"),
