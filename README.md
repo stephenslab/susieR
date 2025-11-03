@@ -85,11 +85,11 @@ If you use any of the summary data methods such as `susie_ss` or
 If you use the Servin-Stephens prior on residual variance estimates
 (`estimate_residual_method = "Servin_Stephens"`), please also cite:
 
-> Denault, W.R.P., Carbonetto, P., Li, R., Consortium, A.D.F.G., Wang,
-> G. & Stephens, M. (2025). Accounting for uncertainty in residual
-> variances improves calibration of the "Sum of Single Effects" model
-> for small sample sizes. *bioRxiv*, 2025-05. Under review for *Nature
-> Methods*.
+> Denault, W.R.P., Carbonetto, P., Li, R., Alzheimer's Disease Functional
+> Genomics Consortium, Wang, G. & Stephens, M. (2025). Accounting for
+> uncertainty in residual variances improves calibration of the "Sum of
+> Single Effects" model for small sample sizes. *bioRxiv*, 2025-05.
+> Under review for *Nature Methods*.
 
 If you use infinitesimal effects modeling (`unmappable_effects = "inf"`), 
 please also cite:
