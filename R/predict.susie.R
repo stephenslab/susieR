@@ -18,7 +18,16 @@
 #'
 coef.susie <- function(object, ...) {
   s <- object
-  return(c(s$intercept, colSums(s$alpha * s$mu) / s$X_column_scale_factors))
+  # Compute mappable effects
+  mappable_coef <- colSums(s$alpha * s$mu) / s$X_column_scale_factors
+
+  if (!is.null(s$theta)) {
+    total_coef <- mappable_coef + s$theta / s$X_column_scale_factors
+  } else {
+    total_coef <- mappable_coef
+  }
+
+  return(c(s$intercept, total_coef))
 }
 
 #' @title Predict outcomes or extract coefficients from susie fit.
