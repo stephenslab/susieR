@@ -51,6 +51,7 @@
 univariate_regression = function (X, y, Z = NULL, center = TRUE,
                                   scale = FALSE, return_residuals = FALSE,
                                   method = c("sumstats", "lmfit")) {
+  method <- match.arg(method)
   y_na = which(is.na(y))
   if (length(y_na)) {
     X = X[-y_na,]
@@ -70,7 +71,7 @@ univariate_regression = function (X, y, Z = NULL, center = TRUE,
 
   # fast implementation: computes X'X and X'y without forming X
   if (method == "sumstats") {
-    output = try(output <- try({
+    output <- try({
                 n  <- length(y)
                 sy <- sum(y)
                 yy <- sum(y * y)
@@ -110,7 +111,7 @@ univariate_regression = function (X, y, Z = NULL, center = TRUE,
                 }
 
                 res
-              }, silent = TRUE))
+              }, silent = TRUE)
   } else {
     # original .lm.fit-based implementation
     output = try(do.call(rbind,
