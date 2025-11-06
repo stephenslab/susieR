@@ -1,8 +1,7 @@
 #' @title Perform Univariate Linear Regression Separately for Columns of X
 #' 
 #' @description This function performs the univariate linear
-#'   regression y ~ x separately for each column x of X. Each regression
-#'   is implemented using \code{.lm.fit()}. The estimated effect size
+#'   regression y ~ x separately for each column x of X. The estimated effect size
 #'   and stardard error for each variable are outputted.
 #' 
 #' @param X n by p matrix of regressors.
@@ -41,7 +40,6 @@
 #' 
 #' @importFrom stats lm
 #' @importFrom stats .lm.fit
-#' @importFrom stats coef
 #' @importFrom stats summary.lm
 #'
 #' @export
@@ -64,13 +62,47 @@ univariate_regression = function (X, y, Z = NULL, center = TRUE,
       Z = scale(Z,center = TRUE,scale = scale)
     y = .lm.fit(Z,y)$residuals
   }
-  output = try(do.call(rbind,
-                       lapply(1:ncol(X), function (i) {
-                         g = .lm.fit(cbind(1,X[,i]),y)
-                         return(c(coef(g)[2],calc_stderr(cbind(1,X[,i]),
-                                                         g$residuals)[2]))
-                       })),
-               silent = TRUE)
+  output = try(output <- try({
+              n  <- length(y)
+              sy <- sum(y)
+              yy <- sum(y * y)
+              p  <- ncol(X)
+              res <- matrix(NA_real_, nrow = p, ncol = 2)
+
+              for (i in seq_len(p)) {
+                x   <- X[, i]
+                sx  <- sum(x)
+                sxx <- sum(x * x)
+                sxy <- sum(x * y)
+
+                # XtX and Xty for [1, x]
+                # XtX = [[ n,  sx ],
+                #        [ sx, sxx]]
+                detXtX <- n * sxx - sx * sx
+                if (!is.finite(detXtX) || detXtX <= 0) {
+                  res[i, ] <- c(NA_real_, NA_real_)  # constant/degenerate column
+                  next
+                }
+
+                XtX <- matrix(c(n, sx, sx, sxx), nrow = 2, ncol = 2)
+                Xty <- c(sy, sxy)
+
+                # Solve (XtX) beta = Xty via Cholesky
+                R     <- chol(XtX)                                   # XtX = R^T R
+                beta  <- backsolve(R, forwardsolve(t(R), Xty))       # slope is beta[2]
+
+                # RSS = y'y - 2 beta^T X'y + beta^T XtX beta (no need to form residuals)
+                rss    <- yy - 2 * sum(beta * Xty) + as.numeric(crossprod(beta, XtX %*% beta))
+                sigma2 <- rss / (n - 2)                              # p = 2 (intercept + slope)
+
+                # Var(beta) = sigma2 * (XtX)^{-1}; se(slope) = sqrt( ... [2,2] )
+                XtX_inv   <- chol2inv(R)
+                se_slope  <- sqrt(sigma2 * XtX_inv[2, 2])
+                res[i, ] <- c(beta[2], se_slope)
+              }
+
+              res
+            }, silent = TRUE))
   
   # Exception occurs, fall back to a safer but slower calculation.
   if (inherits(output,"try-error")) {
