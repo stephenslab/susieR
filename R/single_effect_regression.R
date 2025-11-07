@@ -109,7 +109,6 @@ single_effect_regression =
 
   }
 
-
   if(!small){
     # log(po) = log(BF * prior) for each SNP
     lbf = dnorm(betahat,0,sqrt(V + shat2),log = TRUE) -
@@ -147,8 +146,8 @@ single_effect_regression =
 
     return(list(alpha = alpha,mu = post_mean,mu2 = post_mean2,lbf = lbf,
                 lbf_model = lbf_model,V = V,loglik = loglik))
-  }
-  if (small) {
+  } else {
+    # In this part, "small" is TRUE.
 
     # This is William's slightly less efficient code for computing the
     # (log) Bayes factors:
@@ -161,9 +160,11 @@ single_effect_regression =
 
     # This code for computing the (log) Bayes factors is somewhat
     # faster.
+    X <- scale(X,center = TRUE,scale = FALSE)
+    y <- drop(scale(y,center = TRUE,scale = FALSE))
     n <- length(y)
-    sumstats <- list(xx  = colSums(X^2),
-                     xy  = drop(crossprod(X,y)),
+    sumstats <- list(xx  = attr(X,"d"),
+                     xy  = Xty,
                      yy  = sum(y^2),
                      sxy = drop(cor(X,y)))
     lbf <- with(sumstats,
@@ -188,43 +189,55 @@ single_effect_regression =
     weighted_sum_w <- sum(w_weighted)
     alpha <- w_weighted/weighted_sum_w
 
+    # Compute the posterior means (post_mean), posterior variances
+    # (post_var) and posterior second moments (post_mean2) of the
+    # coefficients.
     if (V <= 0) {
       post_mean  <- rep(0,ncol(X))
       post_mean2 <- rep(0,ncol(X))
       post_var   <- rep(0,ncol(X))
       beta_1     <- rep(0,ncol(X))
     } else {
-        
-      post_mean <- do.call(c, lapply(1:ncol(X), function(i){
-        posterior_mean_SS_suff((attr(X,"d")[i]) , Xty[i], s0_t=V)
-      }))
-      yty <- t(y)%*%y
 
-      tt= do.call(rbind, lapply(1:ncol(X), function(i){
-        posterior_var_SS_suff(xtx=(attr(X,"d")[i]) , xty= Xty[i],yty=yty,n= nrow(X), s0_t=V)
-      }))
-      beta_1     <- tt[,2]
-      post_var   <- tt[,1]
-      post_mean2 <- post_mean^2+post_var
+      # William's old code for computing posterior statistics (it
+      # seems though there is a bug in computing the posterior
+      # variance, "post_var", since I know my code is correct):
+      #  
+      #   post_mean <- do.call(c,lapply(1:ncol(X),function(i) {
+      #     posterior_mean_SS_suff((attr(X,"d")[i]),Xty[i],s0_t = sqrt(V))
+      #   }))
+      #   yty <- sum(y^2)
+      #   tt <- do.call(rbind,lapply(1:ncol(X),function(i){
+      #       posterior_var_SS_suff(xtx = (attr(X,"d")[i]),xty = Xty[i],
+      #                             yty = yty,n = nrow(X),s0_t = sqrt(V))
+      #   }))
+      #   beta_1     <- tt[,2]
+      #   post_var   <- tt[,1]
+      #   post_mean2 <- post_mean^2 + post_var
+      #
+      out <- with(sumstats,compute_stats_NIG(n,xx,xy,yy,sxy,V,alpha0,beta0))
+      post_mean  <- out$b1
+      post_mean2 <- out$b2
+      post_var   <- out$s1
     }
 
     # BF for single effect model.
-    lbf_model = maxlpo + log(weighted_sum_w)
-    loglik = lbf_model + sum(dnorm(y,0,sqrt(residual_variance),log = TRUE))
+    #
+    # TO DO: Update this code.
+    #   
+    lbf_model <- maxlpo + log(weighted_sum_w)
+    loglik <- lbf_model + sum(dnorm(y,0,sqrt(residual_variance),log = TRUE))
 
-    if(optimize_V == "EM"){
-
-      V =sqrt(sum(alpha * (betahat^2 + ( beta_1/(nrow(X)-2))+ shat2 )))  # sum(alpha*(betahat^2+(beta_1/(nrow(X)-2)) ))
+    # TO DO: Return error if optimize_V is "optim".
+    if (optimize_V == "EM") {
+      V <- with(sumstats,
+                update_prior_variance_NIG_EM(n,xx,xy,yy,sxy,alpha,V,
+                                             alpha0,beta0))
     }
 
-    #    post_mean2 =post_mean^2+ post_var
-    return(list(alpha = alpha,mu = post_mean,mu2 =   post_mean2 ,lbf = lbf,
+    return(list(alpha = alpha,mu = post_mean,mu2 = post_mean2,lbf = lbf,
                 lbf_model = lbf_model,V = V,loglik = loglik))
   }
-
-
-
-
 }
 
 # Estimate prior variance.
@@ -387,20 +400,20 @@ lbf = function (V, shat2, T2) {
 
 #posterior mean for Servin and Stephens prior using sufficient statisitics
 posterior_mean_SS_suff <- function(xtx,xty, s0_t=1){
-  omega <- (( 1/s0_t^2)+xtx)^-1
-  b_bar<- omega%*%(xty)
+  # omega <- (( 1/s0_t^2)+xtx)^-1
+  # b_bar <- omega%*%(xty)  
+  b_bar <- s0_t^2/(s0_t^2 + 1/xtx)*xty/xtx
   return( b_bar)
 }
 
 #posterior variance for Servin and Stephens prior using sufficient statisitics
-
 posterior_var_SS_suff <- function (xtx,xty,yty, n,s0_t=1){
   if(s0_t <0.00001){
     return(c(0,0))
   }
   omega <- (( 1/s0_t^2)+xtx)^-1
   b_bar<- omega%*%(xty)
-  beta1=(yty  -  b_bar *(omega ^(-1))*b_bar)
+  beta1 <- (yty  -  b_bar *(omega ^(-1))*b_bar)
   post_var_up <- 0.5*(yty  -  b_bar *(omega ^(-1))*b_bar)
   post_var_down <- 0.5*(n*(1/omega ))
   post_var <- omega*(post_var_up/post_var_down)* n/(n-2)
@@ -448,4 +461,33 @@ compute_stats_NIG <- function (n, xx, xy, yy, sxy, s0, a0, b0) {
               b2  = s1 + mu1^2,
               s1  = s1,
               rv  = rv))
+}
+
+# EM update for the model with the NIG prior.
+update_prior_variance_NIG_EM <- function (n, xx, xy, yy, sxy, pip, 
+                                          s0, a0, b0) {
+  p    <- length(pip)
+  r0   <- s0/(s0 + 1/xx)
+  rss  <- yy*(1 - r0*sxy^2)
+  a1   <- a0 + n
+  b1   <- b0 + rss  
+  bhat <- xy/xx
+  mu1  <- r0*bhat
+  s1   <- r0/xx
+  #
+  # This was my previous (approximate) Monte Carlo implementation:
+  #
+  #   ns  <- 100000
+  #   out <- 0
+  #   for (i in 1:ns) {
+  #     ss  <- 1/rgamma(p,a1/2,b1/2) # Same as: ss = rinvgamma(p,a1/2,b1/2)
+  #     bb  <- rnorm(p,mu1/sqrt(ss),sqrt(s1))
+  #     out <- out + sum(pip * bb^2)
+  #   }
+  #   return(out/ns)
+  #
+  u  <- gamma(1/2)/beta(a1/2,1/2)
+  mb <- mu1 * sqrt(2/b1) * u
+  vb <- s1 + mu1^2 * 2/b1 * (1/beta(a1/2,1) - u^2)
+  return(sum(pip * (vb + mb^2)))
 }
