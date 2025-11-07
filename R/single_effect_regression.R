@@ -78,6 +78,7 @@
 #' @importFrom stats dnorm
 #' @importFrom stats uniroot
 #' @importFrom stats optim
+#' @importFrom stats cor
 #' @importFrom Matrix colSums
 #'
 #' @keywords internal
@@ -147,58 +148,65 @@ single_effect_regression =
     return(list(alpha = alpha,mu = post_mean,mu2 = post_mean2,lbf = lbf,
                 lbf_model = lbf_model,V = V,loglik = loglik))
   }
-  if(small){
+  if (small) {
 
-    lbf  = do.call(c, lapply(1:ncol(X), function(j){
-      compute_log_ssbf (x=X[,j],y=y,
-                        s0 =sqrt(V),
-                        alpha0=alpha0,
-                        beta0=beta0)
-    }))
+    # This is William's slightly less efficient code for computing the
+    # (log) Bayes factors:
+    #  
+    #   lbf <- do.call(c,lapply(1:ncol(X),function(j) {
+    #     compute_log_ssbf(x = X[,j],y = y,s0 = V,alpha0 = alpha0,
+    #                      beta0 = beta0)
+    #   }))
+    #
 
+    # This code for computing the (log) Bayes factors is somewhat
+    # faster.
+    n <- length(y)
+    sumstats <- list(xx  = colSums(X^2),
+                     xy  = drop(crossprod(X,y)),
+                     yy  = sum(y^2),
+                     sxy = drop(cor(X,y)))
+    lbf <- with(sumstats,
+                compute_stats_NIG(n,xx,xy,yy,sxy,V,alpha0,beta0))$lbf
+    
     lpo = lbf + log(prior_weights + sqrt(.Machine$double.eps))
 
     # Deal with special case of infinite shat2 (e.g., happens if X does
     # not vary).
-    lbf[is.infinite(shat2)] = 0
-    lpo[is.infinite(shat2)] = 0
-    maxlpo = max(lpo)
+    lbf[is.infinite(shat2)] <- 0
+    lpo[is.infinite(shat2)] <- 0
+    maxlpo <- max(lpo)
 
     # w is proportional to
     #
     #   posterior odds = BF * prior,
     #
     # but subtract max for numerical stability.
-    w_weighted = exp(lpo - maxlpo)
+    w_weighted <- exp(lpo - maxlpo)
 
     # Posterior prob for each SNP.
-    weighted_sum_w = sum(w_weighted)
-    alpha = w_weighted / weighted_sum_w
+    weighted_sum_w <- sum(w_weighted)
+    alpha <- w_weighted/weighted_sum_w
 
-
-    if(V <=0){
-      post_mean  = rep(0, ncol(X))
-      post_mean2 = rep(0, ncol(X))
-      post_var   = rep(0, ncol(X))
-      beta_1     = rep(0, ncol(X))
-    }else{
-
-
-      post_mean=do.call(c, lapply(1:ncol(X), function(i){
+    if (V <= 0) {
+      post_mean  <- rep(0,ncol(X))
+      post_mean2 <- rep(0,ncol(X))
+      post_var   <- rep(0,ncol(X))
+      beta_1     <- rep(0,ncol(X))
+    } else {
+        
+      post_mean <- do.call(c, lapply(1:ncol(X), function(i){
         posterior_mean_SS_suff((attr(X,"d")[i]) , Xty[i], s0_t=V)
       }))
-      yty=t(y)%*%y
-
-
+      yty <- t(y)%*%y
 
       tt= do.call(rbind, lapply(1:ncol(X), function(i){
         posterior_var_SS_suff(xtx=(attr(X,"d")[i]) , xty= Xty[i],yty=yty,n= nrow(X), s0_t=V)
       }))
-      beta_1=tt[,2]
-      post_var=tt[,1]
-      post_mean2=  post_mean^2+post_var
+      beta_1     <- tt[,2]
+      post_var   <- tt[,1]
+      post_mean2 <- post_mean^2+post_var
     }
-
 
     # BF for single effect model.
     lbf_model = maxlpo + log(weighted_sum_w)
@@ -399,7 +407,6 @@ posterior_var_SS_suff <- function (xtx,xty,yty, n,s0_t=1){
   return( c( post_var,beta1))
 }
 
-
 compute_log_ssbf <- function (x, y, s0,
                               alpha0=0,
                               beta0=0) {
@@ -413,4 +420,32 @@ compute_log_ssbf <- function (x, y, s0,
   sxy <- xy/sqrt(xx*yy)
   ratio= (beta0+ yy*(1 - r0*sxy^2))/(beta0+ yy)
   return((log(1 - r0) - (n+alpha0)*log(ratio))/2)
+}
+
+# Compute the (log) Bayes factors and additional statistics under the
+# normal-inverse-gamma (NIG) prior given the least-squares estimates
+# (bhat) and their corresponding variances (shat). Additional outputs
+# include the compute the posterior moments, mean (b1), second moment
+# (b2) and variance (s1), and the posterior mode of the residual
+# variance (rv). Here, s0 is the prior variance of the regression
+# coefficient, n is the sample size, yy = sum(y^2), sxy = cor(x,y),
+# and the residual variance has an IG(a0/2,b0/2) prior. I perform all
+# these computations at once because it is just easier that way.
+compute_stats_NIG <- function (n, xx, xy, yy, sxy, s0, a0, b0) {
+  r0   <- s0/(s0 + 1/xx)
+  rss  <- yy*(1 - r0*sxy^2)
+  a1   <- a0 + n
+  b1   <- b0 + rss  
+  lbf  <- -(log(1 + s0*xx) + a1*log(b1/(b0 + yy)))/2
+  # Note that the line above is the same as: 
+  # lbf = (log(1 - r0) - a1*log(b1/(b0 + yy)))/2
+  bhat <- xy/xx
+  mu1  <- r0*bhat
+  s1   <- b1/(a1 - 2)*r0/xx
+  rv   <- (b1/2)/(a1/2 - 1)
+  return(list(lbf = lbf,
+              b1  = mu1,
+              b2  = s1 + mu1^2,
+              s1  = s1,
+              rv  = rv))
 }
