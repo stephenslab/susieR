@@ -222,13 +222,13 @@ single_effect_regression =
     }
 
     # BF for single effect model.
-    #
-    # TO DO: Update this code.
-    #   
+    ll0       <- compute_null_loglik_NIG(n,sumstats$yy,alpha0,beta0)
     lbf_model <- maxlpo + log(weighted_sum_w)
-    loglik <- lbf_model + sum(dnorm(y,0,sqrt(residual_variance),log = TRUE))
+    loglik    <- lbf_model + ll0
 
-    # TO DO: Return error if optimize_V is "optim".
+    # ** Debugging **
+    print(loglik,digits = 12)
+      
     if (optimize_V == "EM") {
       V <- with(sumstats,
                 update_prior_variance_NIG_EM(n,xx,xy,yy,sxy,alpha,V,
@@ -433,6 +433,18 @@ compute_log_ssbf <- function (x, y, s0,
   sxy <- xy/sqrt(xx*yy)
   ratio= (beta0+ yy*(1 - r0*sxy^2))/(beta0+ yy)
   return((log(1 - r0) - (n+alpha0)*log(ratio))/2)
+}
+
+# Compute the log-normalizing factor for the IG(a,b) distribution.
+inv_gamma_factor <- function (a, b)
+  a*log(b) - lgamma(a)
+
+# Compute the log-likelihood under the "null" model under the
+# normal-inverse-gamma (NIG) prior.
+compute_null_loglik_NIG <- function (n, yy, a0, b0) {
+  return(-n*log(2*pi)/2 + 
+         inv_gamma_factor(a0/2,b0/2) - 
+         inv_gamma_factor((a0 + n)/2,(b0 + yy)/2))
 }
 
 # Compute the (log) Bayes factors and additional statistics under the
