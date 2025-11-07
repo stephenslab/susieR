@@ -16,8 +16,11 @@ print(res_susie$sets$cs)
 print(round(res_susie$V,digits = 4))
 print(susie_plot(res_susie,y = "PIP"))
 
+# susie with small = TRUE, L = 1.
 out <- susie(X,y,L = 1,small = TRUE,alpha0 = 0.1,beta0 = 0.1,
              verbose = TRUE)
+print(out$sets$cs)
+print(out$V)
 
 ## ----run-susie-small, message=FALSE, warning=FALSE----
 t0 <- proc.time()

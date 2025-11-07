@@ -347,8 +347,8 @@ susie = function (X,y,L = min(10,ncol(X)),
                    residual_variance_lowerbound = var(drop(y))/1e4,
                    refine = FALSE,
                    n_purity = 100,
-                   alpha0=0,
-                   beta0=0 ) {
+                   alpha0 = 0.1,
+                   beta0 = 0.1) {
 
   # Process input estimate_prior_method.
   estimate_prior_method = match.arg(estimate_prior_method)
@@ -383,9 +383,12 @@ susie = function (X,y,L = min(10,ncol(X)),
       stop("Input y must not contain missing values")
   }
   if(small){
-    warning_message("Option 'small' is set to TRUE: SuSiE will be fitted using the general IBSS algorithm. Note that the ELBO only defined in this setting for L=1; convergence is determined based on the numerical stability of the estimated parameters across iterations. The tolerance parameter is now 'tol_small', the estimate_prior_method option  is set to 'EM'. and 'scaled_prior_variance' is ignored ")
-    estimate_prior_method <- "EM"
+    warning_message("Option 'small' is set to TRUE: SuSiE will be fitted using the general IBSS algorithm. Note that the ELBO only defined in this setting for L=1; convergence is determined based on the numerical stability of the estimated parameters across iterations. The tolerance parameter is now 'tol_small', and 'scaled_prior_variance' is ignored ")
     tol <- tol_small
+    if (estimate_prior_variance & estimate_prior_method != "EM") {
+      warning_message("Only estimate_prior_method = \"EM\" is implemented for the NIG prior (small = TRUE)")
+      estimate_prior_method <- "EM"
+    }
     if( !(residual_variance_upperbound ==Inf )){
       warning_message("residual_variance_upperbound set to a different value than default,
                       when setting small=TRUE this argument is ignored")
