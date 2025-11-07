@@ -199,9 +199,10 @@ single_effect_regression =
       beta_1     <- rep(0,ncol(X))
     } else {
 
-      # William's old code for computing posterior statistics (it
-      # seems though there is a bug in computing the posterior
-      # variance, "post_var", since I know my code is correct):
+      # William's old code for computing posterior statistics. The
+      # calculation of the posterior means (post_mean) looks correct,
+      # but there seems to be a bug in computing the posterior
+      # variances (post_var).
       #  
       #   post_mean <- do.call(c,lapply(1:ncol(X),function(i) {
       #     posterior_mean_SS_suff((attr(X,"d")[i]),Xty[i],s0_t = sqrt(V))
@@ -215,6 +216,9 @@ single_effect_regression =
       #   post_var   <- tt[,1]
       #   post_mean2 <- post_mean^2 + post_var
       #
+      # TO DO: Revisit William's calculations of the posterior means
+      # as well as mine and check for errors.
+      #
       out <- with(sumstats,compute_stats_NIG(n,xx,xy,yy,sxy,V,alpha0,beta0))
       post_mean  <- out$b1
       post_mean2 <- out$b2
@@ -227,7 +231,7 @@ single_effect_regression =
     loglik    <- lbf_model + ll0
 
     # ** Debugging **
-    print(loglik,digits = 12)
+    # print(loglik,digits = 12)
       
     if (optimize_V == "EM") {
       V <- with(sumstats,
