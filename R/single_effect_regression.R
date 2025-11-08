@@ -295,8 +295,6 @@ posterior_moment_SS <- function (x,y,
                                  s0_t=1,
                                  alpha0=0,
                                  beta0=0){
-
-
   x   <- x - mean(x)
   y   <- y - mean(y)
   n   <- length(x)
@@ -325,9 +323,6 @@ posterior_moment_SS <- function (x,y,
   names( out) =c("b_bar",  "post_moment2", "alpha1", "beta1", "s1")
   return(out)
 }
-
-
-
 
 # In these functions, s2 represents residual_variance, and shat2 is an
 # estimate of it.
@@ -397,7 +392,6 @@ lbf = function (V, shat2, T2) {
   l[is.nan(l)] = 0
   return(l)
 }
-
 
 #posterior mean for Servin and Stephens prior using sufficient statisitics
 posterior_mean_SS_suff <- function(xtx,xty, s0_t=1){
