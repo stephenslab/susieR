@@ -216,9 +216,14 @@ single_effect_regression =
       #   post_var   <- tt[,1]
       #   post_mean2 <- post_mean^2 + post_var
       #
-      # TO DO: Revisit William's calculations of the posterior means
-      # as well as mine and check for errors.
+      # TO DO:
       #
+      # - Revisit William's calculations of the posterior means
+      #   as well as mine and check for errors.
+      #
+      # - Update the residual variance parameter by its posterior mean
+      #   under the NIG model.
+      #  
       out <- with(sumstats,compute_stats_NIG(n,xx,xy,yy,sxy,V,alpha0,beta0))
       post_mean  <- out$b1
       post_mean2 <- out$b2
