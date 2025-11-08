@@ -407,7 +407,12 @@ posterior_mean_SS_suff <- function(xtx,xty, s0_t=1){
   return( b_bar)
 }
 
-#posterior variance for Servin and Stephens prior using sufficient statisitics
+# Posterior variance for Servin and Stephens prior using sufficient
+# statisitics.
+#
+# Note that I think there may be a bug in this function since post_var
+# does not match up with the s1 output from compute_stats_NIG(). -PC
+#
 posterior_var_SS_suff <- function (xtx,xty,yty, n,s0_t=1){
   if(s0_t <0.00001){
     return(c(0,0))
