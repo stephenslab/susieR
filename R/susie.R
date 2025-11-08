@@ -480,11 +480,11 @@ susie = function (X,y,L = min(10,ncol(X)),
                            small=small,
                            alpha0=alpha0,
                            beta0=beta0)
-    if(small & i >1){
+    if (small & i > 1) {
       cv_criterion[i] = max(abs(c(alpha_old) - c(s$alpha)))
     }
     if (verbose & L == 1 & small) {
-      print(paste0("objective:",objective_L1_SER(X,y,s)))
+      print(paste0("objective:",s$loglik[1]))
 
       # print( compute_elbo_L1_susie( y=y,X=X,
       #                               alpha= s$alpha,
@@ -499,7 +499,10 @@ susie = function (X,y,L = min(10,ncol(X)),
       #       )
     }
     if (L==1) {
-      elbo[i+1]=objective_L1_SER(X,y,s)
+      if (small)
+        elbo[i+1] <- s$loglik[1]
+      else 
+        elbo[i+1]=objective_L1_SER(X,y,s)
       s$elbo = elbo
     }
     # Compute objective before updating residual variance because part

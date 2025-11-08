@@ -41,6 +41,10 @@ update_each_effect = function (X, y, s, estimate_prior_variance = FALSE,
                                      small = small,
                                      alpha0 = alpha0,
                                      beta0  = beta0)
+
+      # *** debugging ***
+      # print(res$loglik,digits = 12)
+        
       # Update the variational estimate of the posterior mean.
       s$mu[l,]    = res$mu
       s$alpha[l,] = res$alpha
@@ -48,6 +52,7 @@ update_each_effect = function (X, y, s, estimate_prior_variance = FALSE,
       s$V[l]      = res$V
       s$lbf[l]    = res$lbf_model
       s$lbf_variable[l,] = res$lbf
+      s$loglik[l] = res$loglik
       s$KL[l]     = -res$loglik +
         SER_posterior_e_loglik(X,R,s$sigma2,res$alpha * res$mu,
                                res$alpha * res$mu2)
