@@ -219,11 +219,14 @@ single_effect_regression =
       # TO DO:
       #
       # - Revisit William's calculations of the posterior means
-      #   as well as mine and check for errors.
+      #   as well as mine and check for errors. (They aren't actually
+      #   used anywhere, so it is possible they could contain errors.)
       #
       # - Update the residual variance parameter by its posterior mean
       #   under the NIG model.
-      #  
+      #
+      # - Output the correct ELBO calculation for when L = 1.
+      #
       out <- with(sumstats,compute_stats_NIG(n,xx,xy,yy,sxy,V,alpha0,beta0))
       post_mean  <- out$b1
       post_mean2 <- out$b2
