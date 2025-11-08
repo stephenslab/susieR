@@ -357,7 +357,7 @@ update_variance_components.ss <- function(data, params, model, ...) {
     }
 
     # Region 1: Very dense near zero (tau2/100 to tau2/10)
-    small_grid <- exp(seq(log(mom_result$tau2/100), log(mom_result$tau2/10), length.out = 10))
+    small_grid <- exp(seq(log(mom_result$tau2/100), log(mom_result$tau2/10), length.out = 11))
 
     # Region 2: Moderate density around tau2 (tau2/10 to tau2*3)
     medium_grid <- exp(seq(log(mom_result$tau2/10), log(mom_result$tau2*3), length.out = 6))
@@ -365,7 +365,7 @@ update_variance_components.ss <- function(data, params, model, ...) {
     # Region 3: Sparse coverage towards minimum sparse effect
     large_grid <- exp(seq(log(mom_result$tau2*3), log(min_sparse_var), length.out = 3))
 
-    est_sa2 <- c(0, unique(c(small_grid, medium_grid, large_grid)))
+    est_sa2 <- c(unique(c(small_grid, medium_grid, large_grid)))
 
     # Call mr.ash with residuals
     mrash_output <- mr.ash.alpha::mr.ash(
