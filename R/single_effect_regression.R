@@ -160,8 +160,6 @@ single_effect_regression =
 
     # This code for computing the (log) Bayes factors is somewhat
     # faster.
-    X <- scale(X,center = TRUE,scale = FALSE)
-    y <- drop(scale(y,center = TRUE,scale = FALSE))
     n <- length(y)
     sumstats <- list(xx  = attr(X,"d"),
                      xy  = Xty,
