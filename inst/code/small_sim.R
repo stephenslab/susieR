@@ -10,7 +10,6 @@ outfile <- paste0("small_sim_out_v",susie_version,".RData")
 print(outfile)
 N <- 100
 n <- 40
-set.seed(1)
 geno <- readRDS("../datafiles/Thyroid.FMO2.1Mb.RDS")$X
 storage.mode(geno) <- "double"
 
@@ -21,6 +20,7 @@ runtimes        <- data.frame(susie       = rep(0,N),
                               susie_small = rep(0,N))
 for (iter in 1:N) {
   cat(iter,"")
+  set.seed(iter)
 
   # Subsample the genotypes.
   i <- sample(nrow(geno),n)
@@ -48,7 +48,7 @@ for (iter in 1:N) {
                   estimate_prior_method = "EM",small = FALSE,
                   verbose = FALSE))
   t1 <- proc.time()
-  res_susie[[iter]] <- fit1$sets
+  res_susie[[iter]] <- fit1[c("V","sets")]
   runtimes[iter,"susie"] <- (t1 - t0)["elapsed"]
 
   # Run susie with NIG prior. 
@@ -58,7 +58,7 @@ for (iter in 1:N) {
                   estimate_prior_method = "EM",small = TRUE,
                   alpha0 = 2,beta0 = 2,verbose = FALSE))
   t1 <- proc.time()
-  res_susie_small[[iter]] <- fit2$sets
+  res_susie_small[[iter]] <- fit2[c("V","sets")]
   runtimes[iter,"susie_small"] <- (t1 - t0)["elapsed"]
 }
 cat("\n")
