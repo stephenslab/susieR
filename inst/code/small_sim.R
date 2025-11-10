@@ -8,7 +8,7 @@ library(susieR)
 susie_version <- packageVersion("susieR")
 outfile <- paste0("small_sim_out_v",susie_version,".RData")
 print(outfile)
-N <- 100
+N <- 250
 n <- 40
 geno <- readRDS("../datafiles/Thyroid.FMO2.1Mb.RDS")$X
 storage.mode(geno) <- "double"

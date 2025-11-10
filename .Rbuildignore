@@ -19,6 +19,8 @@
 ^inst/code/small_sample_test\.R$
 ^inst/code/small_sim\.R$
 ^inst/code/summarize_small_sim\.R$
+^inst/code/small_sim_V\.pdf$
+^inst/code/small_sim_sizes\.pdf$
 ^LICENSE\.md$
 ^NOTES\.txt$
 ^\.Renviron$
