@@ -1,9 +1,13 @@
 # Small script to evaluate the NIG prior version of SuSiE in
 # simulated data sets.
+#
+# TO DO: Store the running times.
+#
 library(matrixStats)
 library(susieR)
 susie_version <- packageVersion("susieR")
-print(susie_version)
+outfile <- paste0("small_sim_out_v",susie_version,".RData")
+print(outfile)
 N <- 100
 n <- 40
 set.seed(1)
@@ -55,4 +59,4 @@ cat("\n")
 # Save the results.
 save(list = c("n","susie_version","causal_snps","res_susie",
               "res_susie_small"),
-     file = "small_sim_out.RData")
+     file = outfile)
