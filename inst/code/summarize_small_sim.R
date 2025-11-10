@@ -3,11 +3,17 @@
 #
 # TO DO: Compare the running times of the different methods.
 # 
-load("small_sim_out_v0.14.25.RData")
+library(ggplot2)
+library(cowplot)
+load("../datafiles/small_sim_out_v0.14.25.RData")
 res_susie_small_old <- res_susie_small
-load("small_sim_out_v0.14.34.RData")
+causal_snps_old     <- causal_snps
+runtimes_old        <- runtimes
+load("../datafiles/small_sim_out_v0.14.34.RData")
 res_susie_small_new <- res_susie_small
-cat("n =",n,"\n")
+runtimes <- data.frame(susie           = runtimes$susie,
+                       susie_small_old = runtimes_old$susie_small,
+                       susie_small_new = runtimes$susie_small)
 methods <- c("susie","susie_small_old","susie_small_new")
 
 # Summarize coverage, power, purity, and CS sizes.
@@ -18,7 +24,7 @@ names(power)    <- methods
 names(coverage) <- methods
 for (i in 1:N) {
   x1 <- length(intersect(causal_snps[[i]],unlist(res_susie[[i]]$cs)))
-  x2 <- length(intersect(causal_snps[[i]],
+  x2 <- length(intersect(causal_snps_old[[i]],
                          unlist(res_susie_small_old[[i]]$cs)))
   x3 <- length(intersect(causal_snps[[i]],
                          unlist(res_susie_small_new[[i]]$cs)))
@@ -30,7 +36,12 @@ for (i in 1:N) {
   coverage["susie_small_new"] <- coverage["susie_small_new"] + x3
 }
 
-power <- power / sum(sapply(causal_snps,length))
+power["susie"] <- 
+  power["susie"] / sum(sapply(causal_snps,length))
+power["susie_small_old"] <- 
+  power["susie_small_old"] / sum(sapply(causal_snps_old,length))
+power["susie_small_new"] <- 
+  power["susie_small_new"] / sum(sapply(causal_snps,length))
 coverage["susie"] <- 
   coverage["susie"] / sum(sapply(res_susie,function (x) length(x$cs)))
 coverage["susie_small_old"] <- 
@@ -43,6 +54,8 @@ cat("power:\n")
 print(power)
 cat("coverage:\n")
 print(coverage)
+cat("running times:\n")
+print(summary(runtimes))
 
 # Plot the distribution of CS sizes.
 sizes_susie <- unlist(lapply(res_susie,function (x) sapply(x$cs,length)))
@@ -50,8 +63,12 @@ sizes_susie_small_old <- unlist(lapply(res_susie_small_old,
                                        function (x) sapply(x$cs,length)))
 sizes_susie_small_new <- unlist(lapply(res_susie_small_new,
                                        function (x) sapply(x$cs,length)))
-pdat <- rbind(data.frame(method = "susie",size = sizes_susie),
-              data.frame(method = "susie_small",size = sizes_susie_small))
+pdat <- rbind(data.frame(method = "susie",
+                         size   = sizes_susie),
+              data.frame(method = "susie_small_old",
+                         size   = sizes_susie_small_old),
+              data.frame(method = "susie_small_new",
+                         size   = sizes_susie_small_new))
 p <- ggplot(pdat,aes(x = size,fill = method)) +
   geom_histogram(color = "white",position = "dodge") +
   scale_fill_manual(values = c("darkblue","dodgerblue","darkorange")) +
