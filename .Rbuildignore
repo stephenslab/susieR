@@ -18,6 +18,7 @@
 ^inst/code/susie_rss_data\.RData$
 ^inst/code/small_sample_test\.R$
 ^inst/code/small_sim\.R$
+^inst/code/summarize_small_sim\.R$
 ^LICENSE\.md$
 ^NOTES\.txt$
 ^\.Renviron$

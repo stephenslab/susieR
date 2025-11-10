@@ -5,7 +5,7 @@ library(susieR)
 susie_version <- packageVersion("susieR")
 print(susie_version)
 N <- 100
-n <- 80
+n <- 40
 set.seed(1)
 geno <- readRDS("../datafiles/Thyroid.FMO2.1Mb.RDS")$X
 storage.mode(geno) <- "double"
@@ -37,9 +37,10 @@ for (iter in 1:N) {
   causal_snps[[iter]] <- j
 
   # Run susie with normal prior.
-  fit1 <- susie(X,y,L = 10,standardize = FALSE,min_abs_corr = 0.5,
-                estimate_prior_method = "EM",small = FALSE,
-                verbose = FALSE)
+  fit1 <- suppressMessages(
+            susie(X,y,L = 10,standardize = FALSE,min_abs_corr = 0.5,
+                  estimate_prior_method = "EM",small = FALSE,
+                  verbose = FALSE))
   res_susie[[iter]] <- fit1$sets
 
   # Run susie with NIG prior. 
