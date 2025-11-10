@@ -1,14 +1,17 @@
-# TO DO: Explain here what this script is for, and how to use it.
+# Small script to evaluate the NIG prior version of SuSiE in
+# simulated data sets.
 library(matrixStats)
 library(susieR)
-print(packageVersion("susieR"))
+susie_version <- packageVersion("susieR")
+print(susie_version)
 N <- 100
 n <- 80
-set.seed(3)
+set.seed(1)
 geno <- readRDS("../datafiles/Thyroid.FMO2.1Mb.RDS")$X
 storage.mode(geno) <- "double"
 
-res_susie <- vector("list",N)
+causal_snps     <- vector("list",N)
+res_susie       <- vector("list",N)
 res_susie_small <- vector("list",N)
 
 for (iter in 1:N) {
@@ -31,6 +34,7 @@ for (iter in 1:N) {
   b[j] <- sample(c(-1,1),p1,replace = TRUE)
   e    <- rnorm(n,sd = 0.1)
   y    <- drop(X %*% b + e)
+  causal_snps[[iter]] <- j
 
   # Run susie with normal prior.
   fit1 <- susie(X,y,L = 10,standardize = FALSE,min_abs_corr = 0.5,
@@ -46,3 +50,8 @@ for (iter in 1:N) {
   res_susie_small[[iter]] <- fit2$sets
 }
 cat("\n")
+
+# Save the results.
+save(list = c("n","susie_version","causal_snps","res_susie",
+              "res_susie_small"),
+     file = "small_sim_out.RData")
