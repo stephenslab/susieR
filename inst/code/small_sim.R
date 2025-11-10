@@ -17,7 +17,8 @@ storage.mode(geno) <- "double"
 causal_snps     <- vector("list",N)
 res_susie       <- vector("list",N)
 res_susie_small <- vector("list",N)
-
+runtimes        <- data.frame(susie       = rep(0,N),
+                              susie_small = rep(0,N))
 for (iter in 1:N) {
   cat(iter,"")
 
@@ -41,22 +42,28 @@ for (iter in 1:N) {
   causal_snps[[iter]] <- j
 
   # Run susie with normal prior.
+  t0 <- proc.time()
   fit1 <- suppressMessages(
             susie(X,y,L = 10,standardize = FALSE,min_abs_corr = 0.5,
                   estimate_prior_method = "EM",small = FALSE,
                   verbose = FALSE))
+  t1 <- proc.time()
   res_susie[[iter]] <- fit1$sets
+  runtimes[iter,"susie"] <- (t1 - t0)["elapsed"]
 
   # Run susie with NIG prior. 
+  t0 <- proc.time()
   fit2 <- suppressMessages(
             susie(X,y,L = 10,standardize = FALSE,min_abs_corr = 0.5,
                   estimate_prior_method = "EM",small = TRUE,
                   alpha0 = 2,beta0 = 2,verbose = FALSE))
+  t1 <- proc.time()
   res_susie_small[[iter]] <- fit2$sets
+  runtimes[iter,"susie_small"] <- (t1 - t0)["elapsed"]
 }
 cat("\n")
 
 # Save the results.
 save(list = c("n","susie_version","causal_snps","res_susie",
-              "res_susie_small"),
+              "res_susie_small","runtimes"),
      file = outfile)
