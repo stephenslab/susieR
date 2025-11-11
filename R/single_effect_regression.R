@@ -84,12 +84,12 @@
 #' @keywords internal
 #'
 single_effect_regression =
-  function (y, X, V,
+  function (y, X, V, 
             residual_variance = 1,
             prior_weights     = NULL,
             optimize_V        = c("none", "optim", "uniroot", "EM", "simple"),
             check_null_threshold = 0,
-            small             =FALSE,
+            small              = FALSE,
             alpha0             = 0,
             beta0              = 0) {
 
@@ -109,7 +109,7 @@ single_effect_regression =
 
   }
 
-  if(!small){
+  if (!small) {
     # log(po) = log(BF * prior) for each SNP
     lbf = dnorm(betahat,0,sqrt(V + shat2),log = TRUE) -
       dnorm(betahat,0,sqrt(shat2),log = TRUE)
@@ -145,7 +145,7 @@ single_effect_regression =
                                   check_null_threshold = check_null_threshold)
 
     return(list(alpha = alpha,mu = post_mean,mu2 = post_mean2,lbf = lbf,
-                lbf_model = lbf_model,V = V,loglik = loglik))
+                lbf_model = lbf_model,V = V,loglik = loglik,rv = 1))
   } else {
     # In this part, "small" is TRUE.
 
@@ -165,10 +165,9 @@ single_effect_regression =
                      xy  = Xty,
                      yy  = sum(y^2),
                      sxy = drop(cor(X,y)))
-    lbf <- with(sumstats,
-                compute_stats_NIG(n,xx,xy,yy,sxy,V,alpha0,beta0))$lbf
-    
-    lpo = lbf + log(prior_weights + sqrt(.Machine$double.eps))
+    out <- with(sumstats,compute_stats_NIG(n,xx,xy,yy,sxy,V,alpha0,beta0))
+    lbf <- out$lbf
+    lpo <- lbf + log(prior_weights + sqrt(.Machine$double.eps))
 
     # Deal with special case of infinite shat2 (e.g., happens if X does
     # not vary).
@@ -195,6 +194,7 @@ single_effect_regression =
       post_mean2 <- rep(0,ncol(X))
       post_var   <- rep(0,ncol(X))
       beta_1     <- rep(0,ncol(X))
+      rv         <- 1
     } else {
 
       # William's old code for computing posterior statistics. The
@@ -214,10 +214,10 @@ single_effect_regression =
       #   post_var   <- tt[,1]
       #   post_mean2 <- post_mean^2 + post_var
       #
-      out <- with(sumstats,compute_stats_NIG(n,xx,xy,yy,sxy,V,alpha0,beta0))
       post_mean  <- out$b1
       post_mean2 <- out$b2
       post_var   <- out$s1
+      rv         <- out$rv
     }
 
     # BF for single effect model.
@@ -234,8 +234,9 @@ single_effect_regression =
                                              alpha0,beta0))
     }
 
+    rv <- sum(rv * alpha)
     return(list(alpha = alpha,mu = post_mean,mu2 = post_mean2,lbf = lbf,
-                lbf_model = lbf_model,V = V,loglik = loglik))
+                lbf_model = lbf_model,V = V,loglik = loglik,rv = rv))
   }
 }
 

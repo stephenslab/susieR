@@ -50,6 +50,7 @@ update_each_effect = function (X, y, s, estimate_prior_variance = FALSE,
       s$alpha[l,] = res$alpha
       s$mu2[l,]   = res$mu2
       s$V[l]      = res$V
+      s$rv[l]     = res$rv
       s$lbf[l]    = res$lbf_model
       s$lbf_variable[l,] = res$lbf
       s$loglik[l] = res$loglik

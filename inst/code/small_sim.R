@@ -1,8 +1,5 @@
 # Small script to evaluate the NIG prior version of SuSiE in
 # simulated data sets.
-#
-# TO DO: Store the running times.
-#
 library(matrixStats)
 library(susieR)
 susie_version <- packageVersion("susieR")
@@ -39,6 +36,7 @@ for (iter in 1:N) {
   b[j] <- sample(c(-1,1),p1,replace = TRUE)
   e    <- rnorm(n,sd = 0.1)
   y    <- drop(X %*% b + e)
+  y    <- y/sd(y)
   causal_snps[[iter]] <- j
 
   # Run susie with normal prior.
@@ -56,7 +54,7 @@ for (iter in 1:N) {
   fit2 <- suppressMessages(
             susie(X,y,L = 10,standardize = FALSE,min_abs_corr = 0.5,
                   estimate_prior_method = "EM",small = TRUE,
-                  alpha0 = 2,beta0 = 2,verbose = FALSE))
+                  alpha0 = 0.1,beta0 = 0.1,verbose = FALSE))
   t1 <- proc.time()
   res_susie_small[[iter]] <- fit2[c("V","sets")]
   runtimes[iter,"susie_small"] <- (t1 - t0)["elapsed"]

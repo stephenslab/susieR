@@ -80,6 +80,7 @@ init_setup = function (n, p, L, scaled_prior_variance, residual_variance,
            lbf_variable = matrix(as.numeric(NA),L,p),
            sigma2 = residual_variance,
            V      = scaled_prior_variance*varY,
+           rv     = 1,
            pi     = prior_weights)
   if (is.null(null_weight))
     s$null_index = 0

@@ -5,12 +5,13 @@ library(cowplot)
 load("../datafiles/small_sim_out_v0.14.25.RData")
 res_susie_small_old <- res_susie_small
 runtimes_old        <- runtimes
-load("../datafiles/small_sim_out_v0.14.34.RData")
+load("../datafiles/small_sim_out_v0.14.37.RData")
 res_susie_small_new <- res_susie_small
 runtimes <- data.frame(susie           = runtimes$susie,
                        susie_small_old = runtimes_old$susie_small,
                        susie_small_new = runtimes$susie_small)
 methods <- c("susie","susie_small_old","susie_small_new")
+rm(runtimes_old)
 
 # Summarize coverage, power and running times.
 N <- length(causal_snps)
@@ -109,9 +110,11 @@ pdat <- rbind(data.frame(method = "susie",causal = TRUE,V = V1_true),
               data.frame(method = "susie_small_new",causal=TRUE,V=V3_true),
               data.frame(method = "susie_small_new",causal=FALSE,V=V3_false))
 pdat <- transform(pdat,sigma = sqrt(V))
-p2 <- ggplot(pdat,aes(x = sigma,fill = causal)) +
+pdat <- subset(pdat,sigma < 2)
+p2 <- ggplot(pdat,aes(x = sigma,color = causal,fill = causal)) +
   facet_grid(rows = vars(method),scales = "free_y") +
-  geom_histogram(color = "white",bins = 36) +
+  geom_histogram(bins = 24,position = "dodge",linewidth = 0.05) +
+  scale_color_manual(values = c("darkblue","orangered")) +
   scale_fill_manual(values = c("darkblue","orangered")) +
   labs(x = "prior s.d.") +
   theme_cowplot(font_size = 10)

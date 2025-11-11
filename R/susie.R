@@ -541,6 +541,10 @@ susie = function (X,y,L = min(10,ncol(X)),
   elbo = elbo[2:(i+1)]
   s$elbo = elbo
   if(small){
+    # This final adjustment is needed to V to account for the fact
+    # that the prior on b in the NIG model is actually scaled by the
+    # residual variance.
+    s$V <- with(s,rv * V)
     s$cv_criterion=cv_criterion[2:i]
   }
 
