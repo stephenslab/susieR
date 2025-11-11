@@ -12,6 +12,7 @@
 ^inst/datafiles/FinemappingConvergence1k\.RData$
 ^inst/datafiles/SummaryConsistency1k\.RData$
 ^inst/datafiles/small_sample_test2\.RData$
+^inst/datafiles/small_sim_out*\.RData$
 ^inst/datafiles/Thyroid\.FMO2\.1Mb\.RDS$
 ^inst/code/compute_ss_data\.RData$
 ^inst/code/susie_data\.RData$
