@@ -1,5 +1,6 @@
 # susieR
 
+[![CI](https://github.com/stephenslab/susieR/actions/workflows/ci.yml/badge.svg)](https://github.com/stephenslab/susieR/actions/workflows/ci.yml)
 [![CRAN status badge](https://www.r-pkg.org/badges/version/susieR)](https://cran.r-project.org/package=susieR)
 [![Codecov test coverage](https://codecov.io/gh/StatFunGen/susieR/graph/badge.svg)](https://app.codecov.io/gh/StatFunGen/susieR)
 
