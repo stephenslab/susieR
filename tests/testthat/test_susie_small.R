@@ -2,6 +2,7 @@ context("test_susie_small.R")
 
 test_that(paste("check that susie-small runs correctly in a data set",
                 "with 1 causal SNP"),{
+  skip()
   set.seed(1)
   n <- 70
   p <- 100

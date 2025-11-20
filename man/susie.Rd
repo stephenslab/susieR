@@ -8,7 +8,6 @@ susie(
   X,
   y,
   L = min(10, ncol(X)),
-  small = FALSE,
   scaled_prior_variance = 0.2,
   residual_variance = NULL,
   prior_weights = NULL,
@@ -30,54 +29,11 @@ susie(
   na.rm = FALSE,
   max_iter = 100,
   tol = 0.001,
-<<<<<<< HEAD
-  tol_small = 0.0001,
-=======
   convergence_method = c("elbo", "pip"),
->>>>>>> b29fe6c5989e3d25a1084dd6e2357dc92bb024a6
   verbose = FALSE,
   track_fit = FALSE,
   residual_variance_lowerbound = var(drop(y))/10000,
   refine = FALSE,
-<<<<<<< HEAD
-  n_purity = 100,
-  alpha0 = 0,
-  beta0 = 0
-)
-
-susie_suff_stat(
-  XtX,
-  Xty,
-  yty,
-  n,
-  X_colmeans = NA,
-  y_mean = NA,
-  maf = NULL,
-  maf_thresh = 0,
-  L = 10,
-  scaled_prior_variance = 0.2,
-  residual_variance = NULL,
-  estimate_residual_variance = TRUE,
-  estimate_prior_variance = TRUE,
-  estimate_prior_method = c("optim", "EM", "simple"),
-  check_null_threshold = 0,
-  prior_tol = 1e-09,
-  r_tol = 1e-08,
-  prior_weights = NULL,
-  null_weight = 0,
-  standardize = TRUE,
-  max_iter = 100,
-  s_init = NULL,
-  coverage = 0.95,
-  min_abs_corr = 0.5,
-  tol = 0.001,
-  verbose = FALSE,
-  track_fit = FALSE,
-  check_input = FALSE,
-  refine = FALSE,
-  check_prior = FALSE,
-=======
->>>>>>> b29fe6c5989e3d25a1084dd6e2357dc92bb024a6
   n_purity = 100,
   alpha0 = 0,
   beta0 = 0
@@ -90,12 +46,6 @@ susie_suff_stat(
 
 \item{L}{Maximum number of non-zero effects in the model. If L is larger than
 the number of covariates, p, L is set to p.}
-
-\item{small}{Logical. Useful when fitting susie on data with a
-limited sample size. If set to TRUE, susie is fitted using
-single-effect regression with the Servin and Stephens prior
-instead of the default Gaussian prior. This improves the
-calibration of credible sets.  Default is FALSE.}
 
 \item{scaled_prior_variance}{The prior variance, divided by
 \code{var(y)} (or by \code{(1/(n-1))yty} for
@@ -158,9 +108,7 @@ value supplied to \code{scaled_prior_variance}.}
 variance. When \code{estimate_prior_method = "simple"} is used, the
 likelihood at the specified prior variance is compared to the
 likelihood at a variance of zero, and the setting with the larger
-likelihood is retained. The option "EM" is selected by default  when
- setting small=TRUE, i.e., using SuSiE with Servin and Stephens
-SER}
+likelihood is retained.}
 
 \item{unmappable_effects}{The method for modeling unmappable effects:
 "none", "inf", "ash".}
@@ -213,12 +161,6 @@ less than \code{tol}. When \code{converge_method = "pip"} the fitting
 procedure halts when the maximum absolute difference in \code{alpha} is less
 than \code{tol}.}
 
-\item{tol_small}{used for small = TRUE only. Small, non-negative
-number specifying the convergence tolerance for the GIBSS
-fitting procedure. The fitting procedure will halt when the
-difference in the estimated posterior inclusion probability is
-less than \code{tol}.}
-
 \item{verbose}{If \code{verbose = TRUE}, the algorithm's progress,
 a summary of the optimization settings, and refinement progress (if
 \code{refine = TRUE}) are printed to the console.}
@@ -238,19 +180,8 @@ to check and escape from local optima (see details).}
 \item{n_purity}{Passed as argument \code{n_purity} to
 \code{\link{susie_get_cs}}.}
 
-<<<<<<< HEAD
-\item{alpha0}{Numerical parameter for the NIG prior when using Servin
-and Stephens SER.}
-
-\item{beta0}{Mumerical parameter for the NIG prior when using Servin
-and Stephens SER.}
-
-\item{XtX}{A p by p matrix \eqn{X'X} in which the columns of X
-are centered to have mean zero.}
-=======
 \item{alpha0}{Numerical parameter for the NIG prior when using
 \code{estimate_residual_method = "Servin_Stephens"}.}
->>>>>>> b29fe6c5989e3d25a1084dd6e2357dc92bb024a6
 
 \item{beta0}{Numerical parameter for the NIG prior when using
 \code{estimate_residual_method = "Servin_Stephens"}.}
@@ -277,15 +208,7 @@ A \code{"susie"} object with some or all of the following elements:
 
 \item{V}{Prior variance of the non-zero elements of b.}
 
-<<<<<<< HEAD
-\item{elbo}{The value of the variational lower bound, or
-  \dQuote{ELBO} (objective function to be maximized), achieved at
-  each iteration of the IBSS fitting procedure.}
-\item{cv_criterion}{The value of the maximum difference between alpha value
-each iteration between, only returned when argument small set to TRUE}
-=======
 \item{elbo}{The variational lower bound (or ELBO) achieved at each iteration.}
->>>>>>> b29fe6c5989e3d25a1084dd6e2357dc92bb024a6
 
 \item{fitted}{Vector of length n containing the fitted values.}
 
