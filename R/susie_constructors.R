@@ -11,6 +11,7 @@
 #' \item{params}{Validated params object with all input algorithm parameters}
 #'
 #' @keywords internal
+#' @importFrom stats var
 #' @noRd
 individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
                                         scaled_prior_variance = 0.2,

@@ -266,7 +266,10 @@
 #' \item{tau2}{If \code{unmappable_effects = "inf"} or
 #'   \code{unmappable_effects = "ash"}, then \code{tau2} is the unmappable variance.}
 #'
+#' @importFrom stats var
+#' 
 #' @export
+#' 
 susie <- function(X, y, L = min(10, ncol(X)),
                   scaled_prior_variance = 0.2,
                   residual_variance = NULL,

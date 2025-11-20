@@ -21,6 +21,7 @@ configure_data.individual <- function(data, params) {
 
 # Get variance of y
 #' @keywords internal
+#' @importFrom stats var
 get_var_y.individual <- function(data, ...) {
   return(var(drop(data$y)))
 }

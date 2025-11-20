@@ -11,6 +11,7 @@
 #' @return Initialized SuSiE model object with alpha, mu, mu2, V, sigma2, and fitted values
 #'
 #' @keywords internal
+#' @importFrom utils modifyList
 #' @noRd
 ibss_initialize <- function(data, params) {
 

@@ -950,6 +950,7 @@ est_residual_variance <- function(data, model) {
 
 # Helper function to update variance components and derived quantities
 #' @keywords internal
+#' @importFrom utils modifyList
 update_model_variance <- function(data, params, model) {
   # Update variance components
   variance_result <- update_variance_components(data, params, model)
