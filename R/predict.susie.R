@@ -11,14 +11,23 @@
 #' @importFrom stats coef
 #'
 #' @method coef susie
-#' 
+#'
 #' @export coef.susie
-#' 
+#'
 #' @export
 #'
-coef.susie = function (object, ...) {
-  s = object
-  return(c(s$intercept,colSums(s$alpha*s$mu)/s$X_column_scale_factors))
+coef.susie <- function(object, ...) {
+  s <- object
+  # Compute mappable effects
+  mappable_coef <- colSums(s$alpha * s$mu) / s$X_column_scale_factors
+
+  if (!is.null(s$theta)) {
+    total_coef <- mappable_coef + s$theta / s$X_column_scale_factors
+  } else {
+    total_coef <- mappable_coef
+  }
+
+  return(c(s$intercept, total_coef))
 }
 
 #' @title Predict outcomes or extract coefficients from susie fit.
@@ -37,32 +46,35 @@ coef.susie = function (object, ...) {
 #' @return For \code{type = "response"}, predicted or fitted outcomes
 #'   are returned; for \code{type = "coefficients"}, the estimated
 #'   coefficients are returned. If the susie fit has intercept =
-#'   \code{NA} (which is common when using \code{susie_suff_stat}) then
+#'   \code{NA} (which is common when using \code{susie_ss}) then
 #'   predictions are computed using an intercept of 0, and a warning is
 #'   emitted.
 #'
 #' @importFrom stats coef
 #'
 #' @method predict susie
-#' 
+#'
 #' @export predict.susie
-#' 
+#'
 #' @export
 #'
-predict.susie = function (object, newx = NULL,
-                          type = c("response","coefficients"), ...) {
-  s = object
-  type = match.arg(type)
+predict.susie <- function(object, newx = NULL,
+                          type = c("response", "coefficients"), ...) {
+  s <- object
+  type <- match.arg(type)
   if (type == "coefficients") {
-    if (!missing(newx))
+    if (!missing(newx)) {
       stop("Do not supply newx when predicting coefficients")
+    }
     return(coef(s))
   }
-  if (missing(newx))
+  if (missing(newx)) {
     return(s$fitted)
+  }
   if (is.na(s$intercept)) {
-    warning("The prediction assumes intercept = 0")
+    warning_message("The prediction assumes intercept = 0")
     return(drop(newx %*% coef(s)[-1]))
-  } else
+  } else {
     return(drop(s$intercept + newx %*% coef(s)[-1]))
+  }
 }

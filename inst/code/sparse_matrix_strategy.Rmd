@@ -121,7 +121,7 @@ p <- 10000
 
 ```{r}
 X.dense  <- create_sparsity_mat(0.99,n,p)
-X.sparse <- as(X.dense,"dgCMatrix")
+X.sparse <- as(X.dense,"sparseMatrix")
 X.tilde  <- susieR:::set_X_attributes(X.dense) #returns a scaled X if input is a dense matrix
 X <- susieR:::set_X_attributes(X.sparse) #return an unsacled sparse X if input is a sparse matrix 
                                      #but computes column means and standard deviations

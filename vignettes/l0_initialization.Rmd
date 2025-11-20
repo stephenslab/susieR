@@ -4,7 +4,7 @@ author: "Kaiqian Zhang"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{L0Learn initialization demo}
+  %\VignetteIndexEntry{SuSiE with L0Learn initialization example}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -79,7 +79,7 @@ to create an `s.init` object. We then run susie with this
 initialization.
 
 ```{r}
-susieL0.fit = susie(X,y,s_init=s.init)
+susieL0.fit = susie(X,y,model_init=s.init)
 susieL0.fit$sets$cs
 ```
 

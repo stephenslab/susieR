@@ -4,4 +4,8 @@
 .Rproj.user
 .RData
 .Ruserdata
+.pixi/
 Rplots.pdf
+docs
+pixi.lock
+**/*.html

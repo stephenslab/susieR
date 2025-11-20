@@ -1,5 +1,0 @@
-# For Matrix version 1.4-2.
-export R_BUILD_ENVIRON=$HOME/git/susieR/.Renviron
-export R_CHECK_ENVIRON=$HOME/git/susieR/.Renviron
-R CMD build susieR
-R CMD check susieR_0.12.26.tar.gz

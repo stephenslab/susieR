@@ -4,7 +4,7 @@ author: "Matthew Stephens"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Trend filtering demo}
+  %\VignetteIndexEntry{Trend filtering}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

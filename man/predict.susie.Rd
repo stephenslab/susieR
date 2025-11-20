@@ -22,7 +22,7 @@ extra arguments are not used here.}
 For \code{type = "response"}, predicted or fitted outcomes
   are returned; for \code{type = "coefficients"}, the estimated
   coefficients are returned. If the susie fit has intercept =
-  \code{NA} (which is common when using \code{susie_suff_stat}) then
+  \code{NA} (which is common when using \code{susie_ss}) then
   predictions are computed using an intercept of 0, and a warning is
   emitted.
 }

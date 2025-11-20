@@ -14,4 +14,5 @@ else
     git add $ROOT_DIR/DESCRIPTION
     git commit --amend -C HEAD --no-verify
     echo "Amend current commit to incorporate version bump"
+    exit 0
 fi
