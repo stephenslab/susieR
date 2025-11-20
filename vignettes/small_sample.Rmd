@@ -70,11 +70,11 @@ plot(y, ypred, pch = 20,
 abline(0, 1, col = "magenta", lty = "dotted")
 ```
 
-## SuSiE with Servin–Stephens SER (small = TRUE)
-Setting `small = TRUE` switches SuSiE to a variant of single-effect regression (SER) that properly accounts for uncertainty in the residual, i.e. Servin-Stephens single effect regression ([Servin and Stephens 2007 PLOS Genetics](https://doi.org/10.1371/journal.pgen.0030114)).
+## SuSiE with Servin–Stephens SER
+Setting `estimate_residual_method="Servin_Stephens"` switches SuSiE to a variant of single-effect regression (SER) that properly accounts for uncertainty in the residual, i.e. Servin-Stephens single effect regression ([Servin and Stephens 2007 PLOS Genetics](https://doi.org/10.1371/journal.pgen.0030114)).
 
 ```{r run-susie-small, message=FALSE, warning=FALSE} 
-res_susie_small <- susie(X,y,L = 10,small = TRUE,verbose = TRUE)
+res_susie_small <- susie(X,y,L = 10,estimate_residual_method="Servin_Stephens",verbose = TRUE)
 res_susie_small$sets$cs
 ```
 
