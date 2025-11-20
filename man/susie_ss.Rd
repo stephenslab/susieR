@@ -53,6 +53,9 @@ susie_ss(
 
 \item{n}{The sample size.}
 
+\item{L}{Maximum number of non-zero effects in the model. If L is larger than
+the number of covariates, p, L is set to p.}
+
 \item{X_colmeans}{A p-vector of column means of \code{X}. If both
 \code{X_colmeans} and \code{y_mean} are provided, the intercept
 is estimated; otherwise, the intercept is NA.}
@@ -74,9 +77,131 @@ additional checks on \code{XtX} and \code{Xty}. The checks are:
 \item{r_tol}{Tolerance level for eigenvalue check of positive semidefinite
 matrix \code{XtX}.}
 
+\item{standardize}{If \code{standardize = TRUE}, standardize the
+columns of X to unit variance prior to fitting (or equivalently
+standardize XtX and Xty to have the same effect). Note that
+\code{scaled_prior_variance} specifies the prior on the
+coefficients of X \emph{after} standardization (if it is
+performed). If you do not standardize, you may need to think more
+carefully about specifying \code{scaled_prior_variance}. Whatever
+your choice, the coefficients returned by \code{coef} are given for
+\code{X} on the original input scale. Any column of \code{X} that
+has zero variance is not standardized.}
+
+\item{scaled_prior_variance}{The prior variance, divided by
+\code{var(y)} (or by \code{(1/(n-1))yty} for
+\code{susie_ss}); that is, the prior variance of each
+non-zero element of b is \code{var(y) * scaled_prior_variance}. The
+value provided should be either a scalar or a vector of length
+\code{L}. If \code{estimate_prior_variance = TRUE}, this provides
+initial estimates of the prior variances.}
+
+\item{residual_variance}{Variance of the residual. If
+\code{estimate_residual_variance = TRUE}, this value provides the
+initial estimate of the residual variance. By default, it is set to
+\code{var(y)} in \code{susie} and \code{(1/(n-1))yty} in
+\code{susie_ss}.}
+
+\item{prior_weights}{A vector of length p, in which each entry
+gives the prior probability that corresponding column of X has a
+nonzero effect on the outcome, y.}
+
+\item{null_weight}{Prior probability of no effect (a number between 0 and 1,
+and cannot be exactly 1).}
+
+\item{model_init}{A previous susie fit with which to initialize.}
+
+\item{estimate_residual_variance}{If
+\code{estimate_residual_variance = TRUE}, the residual variance is
+estimated, using \code{residual_variance} as an initial value. If
+\code{estimate_residual_variance = FALSE}, the residual variance is
+fixed to the value supplied by \code{residual_variance}.}
+
+\item{estimate_residual_method}{The method used for estimating residual variance.
+For the original SuSiE model, "MLE" and "MoM" estimation is equivalent, but for
+the infinitesimal model, "MoM" is more stable. We recommend using "Servin_Stephens"
+when n < 80 for improved coverage, although it is currently only implemented
+for individual-level data.}
+
+\item{residual_variance_lowerbound}{Lower limit on the estimated
+residual variance. It is only relevant when
+\code{estimate_residual_variance = TRUE}.}
+
+\item{residual_variance_upperbound}{Upper limit on the estimated
+residual variance. It is only relevant when
+\code{estimate_residual_variance = TRUE}.}
+
+\item{estimate_prior_variance}{If \code{estimate_prior_variance =
+TRUE}, the prior variance is estimated (this is a separate
+parameter for each of the L effects). If provided,
+\code{scaled_prior_variance} is then used as an initial value for
+the optimization. When \code{estimate_prior_variance = FALSE}, the
+prior variance for each of the L effects is determined by the
+value supplied to \code{scaled_prior_variance}.}
+
+\item{estimate_prior_method}{The method used for estimating prior
+variance. When \code{estimate_prior_method = "simple"} is used, the
+likelihood at the specified prior variance is compared to the
+likelihood at a variance of zero, and the setting with the larger
+likelihood is retained.}
+
+\item{unmappable_effects}{The method for modeling unmappable effects:
+"none", "inf", "ash".}
+
+\item{check_null_threshold}{When the prior variance is estimated,
+compare the estimate with the null, and set the prior variance to
+zero unless the log-likelihood using the estimate is larger by this
+threshold amount. For example, if you set
+\code{check_null_threshold = 0.1}, this will "nudge" the estimate
+towards zero when the difference in log-likelihoods is small. A
+note of caution that setting this to a value greater than zero may
+lead the IBSS fitting procedure to occasionally decrease the ELBO. This
+setting is disabled when using \code{unmappable_effects = "inf"} or
+\code{unmappable_effects = "ash"}.}
+
+\item{prior_tol}{When the prior variance is estimated, compare the
+estimated value to \code{prior_tol} at the end of the computation,
+and exclude a single effect from PIP computation if the estimated
+prior variance is smaller than this tolerance value.}
+
+\item{max_iter}{Maximum number of IBSS iterations to perform.}
+
+\item{tol}{tol A small, non-negative number specifying the convergence
+tolerance for the IBSS fitting procedure..}
+
+\item{convergence_method}{When \code{converge_method = "elbo"} the fitting
+procedure halts when the difference in the variational lower bound, or
+\dQuote{ELBO} (the objective function to be maximized), is
+less than \code{tol}. When \code{converge_method = "pip"} the fitting
+procedure halts when the maximum absolute difference in \code{alpha} is less
+than \code{tol}.}
+
+\item{coverage}{A number between 0 and 1 specifying the
+\dQuote{coverage} of the estimated confidence sets.}
+
+\item{min_abs_corr}{Minimum absolute correlation allowed in a
+credible set. The default, 0.5, corresponds to a squared
+correlation of 0.25, which is a commonly used threshold for
+genotype data in genetic studies.}
+
+\item{n_purity}{Passed as argument \code{n_purity} to
+\code{\link{susie_get_cs}}.}
+
+\item{verbose}{If \code{verbose = TRUE}, the algorithm's progress,
+a summary of the optimization settings, and refinement progress (if
+\code{refine = TRUE}) are printed to the console.}
+
+\item{track_fit}{If \code{track_fit = TRUE}, \code{trace}
+is also returned containing detailed information about the
+estimates at each iteration of the IBSS fitting procedure.}
+
 \item{check_prior}{If \code{check_prior = TRUE}, it checks if the
 estimated prior variance becomes unreasonably large (comparing with
 10 * max(abs(z))^2).}
+
+\item{refine}{If \code{refine = TRUE}, then an additional
+iterative refinement procedure is used, after the IBSS algorithm,
+to check and escape from local optima (see details).}
 }
 \description{
 Performs SuSiE regression using sufficient statistics (XtX, Xty,

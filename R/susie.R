@@ -333,6 +333,8 @@ susie <- function(X, y, L = min(10, ncol(X)),
 
 #' @title SuSiE using Sufficient Statistics
 #'
+#' @inheritParams susie
+#' 
 #' @description Performs SuSiE regression using sufficient statistics (XtX, Xty,
 #' yty, n) instead of individual-level data (X, y).
 #'
@@ -370,6 +372,7 @@ susie <- function(X, y, L = min(10, ncol(X)),
 #'   10 * max(abs(z))^2).
 #'
 #' @export
+#' 
 susie_ss <- function(XtX, Xty, yty, n,
                      L = min(10, ncol(XtX)),
                      X_colmeans = NA, y_mean = NA,
@@ -434,6 +437,8 @@ susie_ss <- function(XtX, Xty, yty, n,
 
 #' @title SuSiE with Regression Summary Statistics (RSS)
 #'
+#' @inheritParams susie
+#' 
 #' @description Performs SuSiE regression using z-scores and correlation matrix.
 #' Supports both standard RSS (lambda = 0) and RSS with regularized LD matrix (lambda > 0).
 #'
