@@ -1,27 +1,29 @@
-#' @rdname susie
-#'
+# =============================================================================
+# SuSiE WITH INDIVIDUAL-LEVEL DATA
+# =============================================================================
+
 #' @title Sum of Single Effects (SuSiE) Regression
 #'
 #' @description Performs a sparse Bayesian multiple linear regression
-#'   of y on X, using the "Sum of Single Effects" model from Wang et al
-#'   (2020). In brief, this function fits the regression model \eqn{y =
-#'   \mu + X b + e}, where elements of \eqn{e} are \emph{i.i.d.} normal
-#'   with zero mean and variance \code{residual_variance}, \eqn{\mu} is
-#'   an intercept term and \eqn{b} is a vector of length p representing
-#'   the effects to be estimated. The \dQuote{susie assumption} is that
-#'   \eqn{b = \sum_{l=1}^L b_l} where each \eqn{b_l} is a vector of
-#'   length p with exactly one non-zero element. The prior on the
-#'   non-zero element is normal with zero mean and variance \code{var(y)
-#'   * scaled_prior_variance}. The value of \code{L} is fixed, and
-#'   should be chosen to provide a reasonable upper bound on the number
-#'   of non-zero effects to be detected. Typically, the hyperparameters
-#'   \code{residual_variance} and \code{scaled_prior_variance} will be
-#'   estimated during model fitting, although they can also be fixed as
-#'   specified by the user. See functions \code{\link{susie_get_cs}} and
-#'   other functions of form \code{susie_get_*} to extract the most
-#'   commonly-used results from a susie fit.
+#' of y on X, using the "Sum of Single Effects" model from Wang et al
+#' (2020). In brief, this function fits the regression model \eqn{y =
+#' \mu + X b + e}, where elements of \eqn{e} are \emph{i.i.d.} normal
+#' with zero mean and variance \code{residual_variance}, \eqn{\mu} is
+#' an intercept term and \eqn{b} is a vector of length p representing
+#' the effects to be estimated. The \dQuote{susie assumption} is that
+#' \eqn{b = \sum_{l=1}^L b_l} where each \eqn{b_l} is a vector of
+#' length p with exactly one non-zero element. The prior on the
+#' non-zero element is normal with zero mean and variance \code{var(y)
+#' * scaled_prior_variance}. The value of \code{L} is fixed, and
+#' should be chosen to provide a reasonable upper bound on the number
+#' of non-zero effects to be detected. Typically, the hyperparameters
+#' \code{residual_variance} and \code{scaled_prior_variance} will be
+#' estimated during model fitting, although they can also be fixed as
+#' specified by the user. See functions \code{\link{susie_get_cs}} and
+#' other functions of form \code{susie_get_*} to extract the most
+#' commonly-used results from a susie fit.
 #'
-#' @details The function \code{susie} implements the IBSS algorithm
+#' #' @details The function \code{susie} implements the IBSS algorithm
 #' from Wang et al (2020). The option \code{refine = TRUE} implements
 #' an additional step to help reduce problems caused by convergence of
 #' the IBSS algorithm to poor local optima (which is rare in our
@@ -29,12 +31,12 @@
 #' refinement step incurs additional computational expense that
 #' increases with the number of CSs found in the initial run.
 #'
-#' The function \code{susie_suff_stat} implements essentially the same
+#' The function \code{susie_ss} implements essentially the same
 #' algorithms, but using sufficient statistics. (The statistics are
 #' sufficient for the regression coefficients \eqn{b}, but not for the
 #' intercept \eqn{\mu}; see below for how the intercept is treated.)
 #' If the sufficient statistics are computed correctly then the
-#' results from \code{susie_suff_stat} should be the same as (or very
+#' results from \code{susie_ss} should be the same as (or very
 #' similar to) \code{susie}, although runtimes will differ as
 #' discussed below. The sufficient statistics are the sample
 #' size \code{n}, and then the p by p matrix \eqn{X'X}, the p-vector
@@ -42,7 +44,7 @@
 #' after centering the columns of \eqn{X} and the vector \eqn{y} to
 #' have mean 0; these can be computed using \code{compute_suff_stat}.
 #'
-#' The handling of the intercept term in \code{susie_suff_stat} needs
+#' The handling of the intercept term in \code{susie_ss} needs
 #' some additional explanation. Computing the summary data after
 #' centering \code{X} and \code{y} effectively ensures that the
 #' resulting posterior quantities for \eqn{b} allow for an intercept
@@ -55,7 +57,7 @@
 #' the intercept be 0 instead of \code{NA} then set
 #' \code{X_colmeans = 0,y_mean = 0}.
 #'
-#' For completeness, we note that if \code{susie_suff_stat} is run on
+#' For completeness, we note that if \code{susie_ss} is run on
 #' \eqn{X'X, X'y, y'y} computed \emph{without} centering \eqn{X} and
 #' \eqn{y}, and with \code{X_colmeans = 0,y_mean = 0}, this is
 #' equivalent to \code{susie} applied to \eqn{X, y} with
@@ -65,48 +67,41 @@
 #' recommended for for most situations.
 #'
 #' The computational complexity of \code{susie} is \eqn{O(npL)} per
-#' iteration, whereas \code{susie_suff_stat} is \eqn{O(p^2L)} per
+#' iteration, whereas \code{susie_ss} is \eqn{O(p^2L)} per
 #' iteration (not including the cost of computing the sufficient
 #' statistics, which is dominated by the \eqn{O(np^2)} cost of
 #' computing \eqn{X'X}). Because of the cost of computing \eqn{X'X},
 #' \code{susie} will usually be faster. However, if \eqn{n >> p},
 #' and/or if \eqn{X'X} is already computed, then
-#' \code{susie_suff_stat} may be faster.
+#' \code{susie_ss} may be faster.
 #'
 #' @param X An n by p matrix of covariates.
 #'
 #' @param y The observed responses, a vector of length n.
 #'
-#' @param L Maximum number of non-zero effects in the susie
-#'   regression model. If L is larger than the number of covariates, p,
-#'   L is set to p.
+#' @param L Maximum number of non-zero effects in the model. If L is larger than
+#' the number of covariates, p, L is set to p.
 #'
 #' @param scaled_prior_variance The prior variance, divided by
 #'   \code{var(y)} (or by \code{(1/(n-1))yty} for
-#'   \code{susie_suff_stat}); that is, the prior variance of each
+#'   \code{susie_ss}); that is, the prior variance of each
 #'   non-zero element of b is \code{var(y) * scaled_prior_variance}. The
 #'   value provided should be either a scalar or a vector of length
 #'   \code{L}. If \code{estimate_prior_variance = TRUE}, this provides
 #'   initial estimates of the prior variances.
 #'
-#' @param small Logical. Useful when fitting susie on data with a
-#'   limited sample size. If set to TRUE, susie is fitted using
-#'   single-effect regression with the Servin and Stephens prior
-#'   instead of the default Gaussian prior. This improves the
-#'   calibration of credible sets.  Default is FALSE.
-#'
 #' @param residual_variance Variance of the residual. If
 #'   \code{estimate_residual_variance = TRUE}, this value provides the
 #'   initial estimate of the residual variance. By default, it is set to
 #'   \code{var(y)} in \code{susie} and \code{(1/(n-1))yty} in
-#'   \code{susie_suff_stat}.
+#'   \code{susie_ss}.
 #'
 #' @param prior_weights A vector of length p, in which each entry
 #'   gives the prior probability that corresponding column of X has a
 #'   nonzero effect on the outcome, y.
 #'
-#' @param null_weight Prior probability of no effect (a number between
-#'   0 and 1, and cannot be exactly 1).
+#' @param null_weight Prior probability of no effect (a number between 0 and 1,
+#' and cannot be exactly 1).
 #'
 #' @param standardize If \code{standardize = TRUE}, standardize the
 #'   columns of X to unit variance prior to fitting (or equivalently
@@ -130,6 +125,12 @@
 #'   \code{estimate_residual_variance = FALSE}, the residual variance is
 #'   fixed to the value supplied by \code{residual_variance}.
 #'
+#' @param estimate_residual_method The method used for estimating residual variance.
+#'   For the original SuSiE model, "MLE" and "MoM" estimation is equivalent, but for
+#'   the infinitesimal model, "MoM" is more stable. We recommend using "Servin_Stephens"
+#'   when n < 80 for improved coverage, although it is currently only implemented
+#'   for individual-level data.
+#'
 #' @param estimate_prior_variance If \code{estimate_prior_variance =
 #'   TRUE}, the prior variance is estimated (this is a separate
 #'   parameter for each of the L effects). If provided,
@@ -142,9 +143,10 @@
 #'   variance. When \code{estimate_prior_method = "simple"} is used, the
 #'   likelihood at the specified prior variance is compared to the
 #'   likelihood at a variance of zero, and the setting with the larger
-#'   likelihood is retained. The option "EM" is selected by default  when
-#'    setting small=TRUE, i.e., using SuSiE with Servin and Stephens
-#'   SER
+#'   likelihood is retained.
+#'
+#' @param unmappable_effects The method for modeling unmappable effects:
+#'   "none", "inf", "ash".
 #'
 #' @param check_null_threshold When the prior variance is estimated,
 #'   compare the estimate with the null, and set the prior variance to
@@ -153,7 +155,9 @@
 #'   \code{check_null_threshold = 0.1}, this will "nudge" the estimate
 #'   towards zero when the difference in log-likelihoods is small. A
 #'   note of caution that setting this to a value greater than zero may
-#'   lead the IBSS fitting procedure to occasionally decrease the ELBO.
+#'   lead the IBSS fitting procedure to occasionally decrease the ELBO. This
+#'   setting is disabled when using \code{unmappable_effects = "inf"} or
+#'   \code{unmappable_effects = "ash"}.
 #'
 #' @param prior_tol When the prior variance is estimated, compare the
 #'   estimated value to \code{prior_tol} at the end of the computation,
@@ -164,7 +168,7 @@
 #'   residual variance. It is only relevant when
 #'   \code{estimate_residual_variance = TRUE}.
 #'
-#' @param s_init A previous susie fit with which to initialize.
+#' @param model_init A previous susie fit with which to initialize.
 #'
 #' @param coverage A number between 0 and 1 specifying the
 #'   \dQuote{coverage} of the estimated confidence sets.
@@ -182,21 +186,19 @@
 #'
 #' @param max_iter Maximum number of IBSS iterations to perform.
 #'
-#' @param tol A small, non-negative number specifying the convergence
-#'   tolerance for the IBSS fitting procedure. The fitting procedure
-#'   will halt when the difference in the variational lower bound, or
-#'   \dQuote{ELBO} (the objective function to be maximized), is
-#'   less than \code{tol}.
+#' @param tol tol A small, non-negative number specifying the convergence
+#'   tolerance for the IBSS fitting procedure..
 #'
-#' @param tol_small used for small = TRUE only. Small, non-negative
-#'   number specifying the convergence tolerance for the GIBSS
-#'   fitting procedure. The fitting procedure will halt when the
-#'   difference in the estimated posterior inclusion probability is
-#'   less than \code{tol}.
+#' @param convergence_method When \code{converge_method = "elbo"} the fitting
+#'   procedure halts when the difference in the variational lower bound, or
+#'   \dQuote{ELBO} (the objective function to be maximized), is
+#'   less than \code{tol}. When \code{converge_method = "pip"} the fitting
+#'   procedure halts when the maximum absolute difference in \code{alpha} is less
+#'   than \code{tol}.
 #'
 #' @param verbose If \code{verbose = TRUE}, the algorithm's progress,
-#'   and a summary of the optimization settings, are printed to the
-#'   console.
+#'  a summary of the optimization settings, and refinement progress (if
+#'  \code{refine = TRUE}) are printed to the console.
 #'
 #' @param track_fit If \code{track_fit = TRUE}, \code{trace}
 #'   is also returned containing detailed information about the
@@ -213,458 +215,321 @@
 #' @param n_purity Passed as argument \code{n_purity} to
 #'   \code{\link{susie_get_cs}}.
 #'
-#' @param alpha0 Numerical parameter for the NIG prior when using Servin
-#'   and Stephens SER.
+#' @param alpha0 Numerical parameter for the NIG prior when using
+#' \code{estimate_residual_method = "Servin_Stephens"}.
 #'
-#' @param beta0 Mumerical parameter for the NIG prior when using Servin
-#'   and Stephens SER.
+#' @param beta0 Numerical parameter for the NIG prior when using
+#' \code{estimate_residual_method = "Servin_Stephens"}.
 #'
-#' @return A \code{"susie"} object with some or all of the following
-#'   elements:
+#' @return A \code{"susie"} object with some or all of the following elements:
 #'
-#' \item{alpha}{An L by p matrix of posterior inclusion probabilites.}
+#' \item{alpha}{An L by p matrix of posterior inclusion probabilities.}
 #'
-#' \item{mu}{An L by p matrix of posterior means, conditional on
+#' \item{mu}{An L by p matrix of posterior means, conditional on inclusion.}
+#'
+#' \item{mu2}{An L by p matrix of posterior second moments, conditional on
 #'   inclusion.}
 #'
-#' \item{mu2}{An L by p matrix of posterior second moments,
-#'   conditional on inclusion.}
+#' \item{Xr}{A vector of length n, equal to \code{X \%*\% colSums(alpha * mu)}.}
 #'
-#' \item{Xr}{A vector of length n, equal to \code{X \%*\% colSums(alpha
-#'   * mu)}.}
+#' \item{lbf}{Log-Bayes Factor for each single effect.}
 #'
-#' \item{lbf}{log-Bayes Factor for each single effect.}
-#'
-#' \item{lbf_variable}{log-Bayes Factor for each variable and single effect.}
+#' \item{lbf_variable}{Log-Bayes Factor for each variable and single effect.}
 #'
 #' \item{intercept}{Intercept (fixed or estimated).}
 #'
 #' \item{sigma2}{Residual variance (fixed or estimated).}
 #'
-#' \item{V}{Prior variance of the non-zero elements of b, equal to
-#'   \code{scaled_prior_variance * var(y)}.}
+#' \item{V}{Prior variance of the non-zero elements of b.}
 #'
-#' \item{elbo}{The value of the variational lower bound, or
-#'   \dQuote{ELBO} (objective function to be maximized), achieved at
-#'   each iteration of the IBSS fitting procedure.}
-#' \item{cv_criterion}{The value of the maximum difference between alpha value
-#' each iteration between, only returned when argument small set to TRUE}
+#' \item{elbo}{The variational lower bound (or ELBO) achieved at each iteration.}
 #'
-#' \item{fitted}{Vector of length n containing the fitted values of
-#'   the outcome.}
+#' \item{fitted}{Vector of length n containing the fitted values.}
 #'
-#' \item{sets}{Credible sets estimated from model fit; see
-#'   \code{\link{susie_get_cs}} for details.}
+#' \item{sets}{Credible sets estimated from model fit.}
 #'
-#' \item{pip}{A vector of length p giving the (marginal) posterior
-#'   inclusion probabilities for all p covariates.}
+#' \item{pip}{A vector of length p giving the marginal posterior inclusion
+#'   probabilities.}
 #'
 #' \item{z}{A vector of univariate z-scores.}
 #'
-#' \item{niter}{Number of IBSS iterations that were performed.}
+#' \item{niter}{Number of IBSS iterations performed.}
 #'
 #' \item{converged}{\code{TRUE} or \code{FALSE} indicating whether
 #'   the IBSS converged to a solution within the chosen tolerance
 #'   level.}
 #'
-#' \code{susie_suff_stat} returns also outputs:
+#' \item{theta}{If \code{unmappable_effects = "inf"} or
+#'   \code{unmappable_effects = "ash"}, then \code{theta} is a p-vector of posterior
+#'   means for the unmappable effects.}
 #'
-#' \item{XtXr}{A p-vector of \code{t(X)} times the fitted values,
-#'   \code{X \%*\% colSums(alpha*mu)}.}
-#'
-#' @references
-#' G. Wang, A. Sarkar, P. Carbonetto and M. Stephens (2020). A simple
-#' new approach to variable selection in regression, with application
-#' to genetic fine-mapping. \emph{Journal of the Royal Statistical
-#' Society, Series B} \bold{82}, 1273-1300 \doi{10.1101/501114}.
-#'
-#' Y. Zou, P. Carbonetto, G. Wang, G and M. Stephens
-#' (2022). Fine-mapping from summary data with the \dQuote{Sum of
-#' Single Effects} model. \emph{PLoS Genetics} \bold{18},
-#' e1010299. \doi{10.1371/journal.pgen.1010299}.
-#'
-#' @seealso \code{\link{susie_get_cs}} and other \code{susie_get_*}
-#' functions for extracting results; \code{\link{susie_trendfilter}} for
-#' applying the SuSiE model to non-parametric regression, particularly
-#' changepoint problems, and \code{\link{susie_rss}} for applying the
-#' SuSiE model when one only has access to limited summary statistics
-#' related to \eqn{X} and \eqn{y} (typically in genetic applications).
-#'
-#' @examples
-#' # susie example
-#' set.seed(1)
-#' n = 1000
-#' p = 1000
-#' beta = rep(0,p)
-#' beta[1:4] = 1
-#' X = matrix(rnorm(n*p),nrow = n,ncol = p)
-#' X = scale(X,center = TRUE,scale = TRUE)
-#' y = drop(X %*% beta + rnorm(n))
-#' res1 = susie(X,y,L = 10)
-#' susie_get_cs(res1) # extract credible sets from fit
-#' plot(beta,coef(res1)[-1])
-#' abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
-#' plot(y,predict(res1))
-#' abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
-#'
-#' # susie_suff_stat example
-#' input_ss = compute_suff_stat(X,y)
-#' res2 = with(input_ss,
-#'             susie_suff_stat(XtX = XtX,Xty = Xty,yty = yty,n = n,
-#'                             X_colmeans = X_colmeans,y_mean = y_mean,L = 10))
-#' plot(coef(res1),coef(res2))
-#' abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
-#'
-#' @importFrom stats var
-#' @importFrom utils modifyList
+#' \item{tau2}{If \code{unmappable_effects = "inf"} or
+#'   \code{unmappable_effects = "ash"}, then \code{tau2} is the unmappable variance.}
 #'
 #' @export
+susie <- function(X, y, L = min(10, ncol(X)),
+                  scaled_prior_variance = 0.2,
+                  residual_variance = NULL,
+                  prior_weights = NULL,
+                  null_weight = 0,
+                  standardize = TRUE,
+                  intercept = TRUE,
+                  estimate_residual_variance = TRUE,
+                  estimate_residual_method = c("MoM", "MLE", "Servin_Stephens"),
+                  estimate_prior_variance = TRUE,
+                  estimate_prior_method = c("optim", "EM", "simple"),
+                  unmappable_effects = c("none", "inf", "ash"),
+                  check_null_threshold = 0,
+                  prior_tol = 1e-9,
+                  residual_variance_upperbound = Inf,
+                  model_init = NULL,
+                  coverage = 0.95,
+                  min_abs_corr = 0.5,
+                  compute_univariate_zscore = FALSE,
+                  na.rm = FALSE,
+                  max_iter = 100,
+                  tol = 1e-3,
+                  convergence_method = c("elbo", "pip"),
+                  verbose = FALSE,
+                  track_fit = FALSE,
+                  residual_variance_lowerbound = var(drop(y)) / 1e4,
+                  refine = FALSE,
+                  n_purity = 100,
+                  alpha0 = 0,
+                  beta0 = 0) {
+
+  # Validate method arguments
+  unmappable_effects       <- match.arg(unmappable_effects)
+  estimate_prior_method    <- match.arg(estimate_prior_method)
+  estimate_residual_method <- match.arg(estimate_residual_method)
+  convergence_method       <- match.arg(convergence_method)
+
+  # Construct data and params objects
+  susie_objects <- individual_data_constructor(
+    X, y, L, scaled_prior_variance, residual_variance,
+    prior_weights, null_weight, standardize, intercept,
+    estimate_residual_variance, estimate_residual_method,
+    estimate_prior_variance, estimate_prior_method,
+    unmappable_effects, check_null_threshold, prior_tol,
+    residual_variance_upperbound, model_init, coverage,
+    min_abs_corr, compute_univariate_zscore, na.rm,
+    max_iter, tol, convergence_method, verbose, track_fit,
+    residual_variance_lowerbound, refine, n_purity,
+    alpha0, beta0
+  )
+
+  # Run main SuSiE algorithm
+  model <- susie_workhorse(susie_objects$data, susie_objects$params)
+
+  return(model)
+}
+
+# =============================================================================
+# SuSiE WITH SUFFICIENT STATISTICS
+# =============================================================================
+
+#' @title SuSiE using Sufficient Statistics
 #'
-susie = function (X,y,L = min(10,ncol(X)),
-                   small=FALSE,
-                   scaled_prior_variance = 0.2,
-                   residual_variance = NULL,
-                   prior_weights = NULL,
-                   null_weight = 0,
-                   standardize = TRUE,
-                   intercept = TRUE,
-                   estimate_residual_variance = TRUE,
-                   estimate_prior_variance = TRUE,
-                   estimate_prior_method = c("optim", "EM", "simple"),
-                   check_null_threshold = 0,
-                   prior_tol = 1e-9,
-                   residual_variance_upperbound = Inf,
-                   s_init = NULL,
-                   coverage = 0.95,
-                   min_abs_corr = 0.5,
-                   compute_univariate_zscore = FALSE,
-                   na.rm = FALSE,
-                   max_iter = 100,
-                   tol = 1e-3,
-                   tol_small = 1e-4,
-                   verbose = FALSE,
-                   track_fit = FALSE,
-                   residual_variance_lowerbound = var(drop(y))/1e4,
-                   refine = FALSE,
-                   n_purity = 100,
-                   alpha0=0,
-                   beta0=0 ) {
+#' @description Performs SuSiE regression using sufficient statistics (XtX, Xty,
+#' yty, n) instead of individual-level data (X, y).
+#'
+#' @param XtX A p by p matrix, X'X, with columns of X centered to have mean zero.
+#'
+#' @param Xty A p-vector, X'y, with y and columns of X centered to have mean zero.
+#'
+#' @param yty A scalar, y'y, with y centered to have mean zero.
+#'
+#' @param n The sample size.
+#'
+#' @param X_colmeans A p-vector of column means of \code{X}. If both
+#'   \code{X_colmeans} and \code{y_mean} are provided, the intercept
+#'   is estimated; otherwise, the intercept is NA.
+#'
+#' @param y_mean A scalar containing the mean of \code{y}. If both
+#'   \code{X_colmeans} and \code{y_mean} are provided, the intercept
+#'   is estimated; otherwise, the intercept is NA.
+#'
+#' @param maf A p-vector of minor allele frequencies; to be used along with
+#'   \code{maf_thresh} to filter input summary statistics.
+#'
+#' @param maf_thresh Variants with MAF smaller than this threshold are not used.
+#'
+#' @param check_input If \code{check_input = TRUE}, \code{susie_ss} performs
+#'   additional checks on \code{XtX} and \code{Xty}. The checks are:
+#'   (1) check that \code{XtX} is positive semidefinite; (2) check that
+#'   \code{Xty} is in the space spanned by the non-zero eigenvectors of \code{XtX}.
+#'
+#' @param r_tol Tolerance level for eigenvalue check of positive semidefinite
+#'   matrix \code{XtX}.
+#'
+#' @param check_prior If \code{check_prior = TRUE}, it checks if the
+#'   estimated prior variance becomes unreasonably large (comparing with
+#'   10 * max(abs(z))^2).
+#'
+#' @export
+susie_ss <- function(XtX, Xty, yty, n,
+                     L = min(10, ncol(XtX)),
+                     X_colmeans = NA, y_mean = NA,
+                     maf = NULL, maf_thresh = 0,
+                     check_input = FALSE,
+                     r_tol = 1e-8,
+                     standardize = TRUE,
+                     scaled_prior_variance = 0.2,
+                     residual_variance = NULL,
+                     prior_weights = NULL,
+                     null_weight = 0,
+                     model_init = NULL,
+                     estimate_residual_variance = TRUE,
+                     estimate_residual_method = c("MoM", "MLE", "Servin_Stephens"),
+                     residual_variance_lowerbound = 0,
+                     residual_variance_upperbound = Inf,
+                     estimate_prior_variance = TRUE,
+                     estimate_prior_method = c("optim", "EM", "simple"),
+                     unmappable_effects = c("none", "inf"),
+                     check_null_threshold = 0,
+                     prior_tol = 1e-9,
+                     max_iter = 100,
+                     tol = 1e-3,
+                     convergence_method = c("elbo", "pip"),
+                     coverage = 0.95,
+                     min_abs_corr = 0.5,
+                     n_purity = 100,
+                     verbose = FALSE,
+                     track_fit = FALSE,
+                     check_prior = FALSE,
+                     refine = FALSE,
+                     ...) {
 
-  # Process input estimate_prior_method.
-  estimate_prior_method = match.arg(estimate_prior_method)
+  # Validate method arguments
+  unmappable_effects       <- match.arg(unmappable_effects)
+  estimate_prior_method    <- match.arg(estimate_prior_method)
+  estimate_residual_method <- match.arg(estimate_residual_method)
+  convergence_method       <- match.arg(convergence_method)
 
-  # Check input X.
-  if (!(is.double(X) & is.matrix(X)) &
-      !inherits(X,"CsparseMatrix") &
-      is.null(attr(X,"matrix.type")))
-    stop("Input X must be a double-precision matrix, or a sparse matrix, or ",
-         "a trend filtering matrix")
-  if (is.numeric(null_weight) && null_weight == 0)
-    null_weight = NULL
-  if (!is.null(null_weight) && is.null(attr(X,"matrix.type"))) {
-    if (!is.numeric(null_weight))
-      stop("Null weight must be numeric")
-    if (null_weight < 0 || null_weight >= 1)
-      stop("Null weight must be between 0 and 1")
-    if (missing(prior_weights))
-      prior_weights = c(rep(1/ncol(X) * (1 - null_weight),ncol(X)),null_weight)
-    else
-      prior_weights = c(prior_weights * (1-null_weight),null_weight)
-    X = cbind(X,0)
-  }
-  if (anyNA(X))
-    stop("Input X must not contain missing values")
-  if (anyNA(y)) {
-    if (na.rm) {
-      samples_kept = which(!is.na(y))
-      y = y[samples_kept]
-      X = X[samples_kept,,drop = FALSE]
-    } else
-      stop("Input y must not contain missing values")
-  }
-  if(small){
-    warning_message("Option 'small' is set to TRUE: SuSiE will be fitted using the general IBSS algorithm. Note that the ELBO only defined in this setting for L=1; convergence is determined based on the numerical stability of the estimated parameters across iterations. The tolerance parameter is now 'tol_small', the estimate_prior_method option  is set to 'EM'. and 'scaled_prior_variance' is ignored ")
-    estimate_prior_method <- "EM"
-    tol <- tol_small
-    if( !(residual_variance_upperbound ==Inf )){
-      warning_message("residual_variance_upperbound set to a different value than default,
-                      when setting small=TRUE this argument is ignored")
-    }
-    if( !(is.null(residual_variance))){
-      warning_message("residual_variance set to a different value than default
-                      when setting small=TRUE this argument is ignored")
-    }
+  # Construct data and params objects
+  susie_objects <- sufficient_stats_constructor(
+    XtX, Xty, yty, n, L, X_colmeans, y_mean,
+    maf, maf_thresh, check_input, r_tol, standardize,
+    scaled_prior_variance, residual_variance, prior_weights, null_weight,
+    model_init, estimate_residual_variance, estimate_residual_method,
+    residual_variance_lowerbound, residual_variance_upperbound,
+    estimate_prior_variance, estimate_prior_method, unmappable_effects,
+    check_null_threshold, prior_tol, max_iter, tol, convergence_method,
+    coverage, min_abs_corr, n_purity, verbose, track_fit, check_prior,
+    refine
+  )
 
-  }
-  p = ncol(X)
-  if (p > 1000 & !requireNamespace("Rfast",quietly = TRUE))
-    warning_message("For an X with many columns, please consider installing",
-                    "the Rfast package for more efficient credible set (CS)",
-                    "calculations.", style="hint")
+  # Run main SuSiE algorithm
+  model <- susie_workhorse(susie_objects$data, susie_objects$params)
 
-  # Check input y.
-  n = nrow(X)
-  if( (n <80) & !small ){
-    warning_message("The dataset contains fewer than 80 individuals. Credible sets may be poorly calibrated when using the default Gaussian prior with limited data. Consider setting small = TRUE to use the Servin and Stephens prior, which provides better calibration in small sample sizes.",style = "hint")
+  return(model)
+}
 
-  }
-  mean_y = mean(y)
+# =============================================================================
+# SuSiE WITH REGRESSION SUMMARY STATISTICS
+# =============================================================================
 
-  # Center and scale input.
-  if (intercept)
-    y = y - mean_y
+#' @title SuSiE with Regression Summary Statistics (RSS)
+#'
+#' @description Performs SuSiE regression using z-scores and correlation matrix.
+#' Supports both standard RSS (lambda = 0) and RSS with regularized LD matrix (lambda > 0).
+#'
+#' @param z A p-vector of z-scores.
+#'
+#' @param R A p by p correlation matrix.
+#'
+#' @param n The sample size, not required but recommended.
+#'
+#' @param bhat Alternative summary data giving the estimated effects
+#'   (a vector of length p). This, together with \code{shat}, may be
+#'   provided instead of \code{z}.
+#'
+#' @param shat Alternative summary data giving the standard errors of
+#'   the estimated effects (a vector of length p). This, together with
+#'   \code{bhat}, may be provided instead of \code{z}.
+#'
+#' @param lambda Regularization parameter for LD matrix. When
+#' \code{lambda} > 0, you cannot use \code{unmappable_effects} methods.
+#'
+#' @param z_ld_weight This parameter is included for backwards
+#'   compatibility with previous versions of the function, but it is no
+#'   longer recommended to set this to a non-zero value. When
+#'   \code{z_ld_weight > 0}, the matrix \code{R} is adjusted to be
+#'   \code{cov2cor((1-w)*R + w*tcrossprod(z))}, where \code{w =
+#'   z_ld_weight}.
+#'
+#' @param estimate_residual_variance The default is FALSE, the
+#'   residual variance is fixed to 1 or variance of y. If the in-sample
+#'   LD matrix is provided, we recommend setting
+#'   \code{estimate_residual_variance = TRUE}.
+#'
+#' @param check_R If TRUE, check that R is positive semidefinite.
+#'
+#' @param check_z If TRUE, check that z lies in column space of R.
+#'
+#' @export
+susie_rss <- function(z = NULL, R, n = NULL,
+                      bhat = NULL, shat = NULL, var_y = NULL,
+                      L = min(10, ncol(R)),
+                      lambda = 0,
+                      maf = NULL,
+                      maf_thresh = 0,
+                      z_ld_weight = 0,
+                      prior_variance = 50,
+                      scaled_prior_variance = 0.2,
+                      residual_variance = NULL,
+                      prior_weights = NULL,
+                      null_weight = 0,
+                      standardize = TRUE,
+                      intercept_value = 0,
+                      estimate_residual_variance = FALSE,
+                      estimate_residual_method = c("MoM", "MLE"),
+                      estimate_prior_variance = TRUE,
+                      estimate_prior_method = c("optim", "EM", "simple"),
+                      unmappable_effects = c("none", "inf"),
+                      check_null_threshold = 0,
+                      prior_tol = 1e-9,
+                      residual_variance_lowerbound = 0,
+                      residual_variance_upperbound = Inf,
+                      model_init = NULL,
+                      coverage = 0.95,
+                      min_abs_corr = 0.5,
+                      max_iter = 100,
+                      tol = 1e-3,
+                      convergence_method = c("elbo", "pip"),
+                      verbose = FALSE,
+                      track_fit = FALSE,
+                      check_input = FALSE,
+                      check_prior = TRUE,
+                      check_R = TRUE,
+                      check_z = FALSE,
+                      n_purity = 100,
+                      r_tol = 1e-8,
+                      refine = FALSE) {
 
-  # Set three attributes for matrix X: attr(X,'scaled:center') is a
-  # p-vector of column means of X if center=TRUE, a p vector of zeros
-  # otherwise; 'attr(X,'scaled:scale') is a p-vector of column
-  # standard deviations of X if scale=TRUE, a p vector of ones
-  # otherwise; 'attr(X,'d') is a p-vector of column sums of
-  # X.standardized^2,' where X.standardized is the matrix X centered
-  # by attr(X,'scaled:center') and scaled by attr(X,'scaled:scale').
-  out = compute_colstats(X,center = intercept,scale = standardize)
-  attr(X,"scaled:center") = out$cm
-  attr(X,"scaled:scale") = out$csd
-  attr(X,"d") = out$d
+  # Validate method arguments
+  unmappable_effects       <- match.arg(unmappable_effects)
+  estimate_prior_method    <- match.arg(estimate_prior_method)
+  estimate_residual_method <- match.arg(estimate_residual_method)
+  convergence_method       <- match.arg(convergence_method)
 
-  # Initialize susie fit.
-  s = init_setup(n,p,L,scaled_prior_variance,residual_variance,prior_weights,
-                 null_weight,as.numeric(var(y)),standardize)
-  if (!missing(s_init) && !is.null(s_init)) {
-    if (!inherits(s_init,"susie"))
-      stop("s_init should be a susie object")
-    if (max(s_init$alpha) > 1 || min(s_init$alpha) < 0)
-      stop("s_init$alpha has invalid values outside range [0,1]; please ",
-           "check your input")
+  # Construct data and params objects with ALL parameters
+  susie_objects <- summary_stats_constructor(
+    z, R, n, bhat, shat, var_y, L, lambda, maf, maf_thresh,
+    z_ld_weight, prior_variance, scaled_prior_variance,
+    residual_variance, prior_weights, null_weight, standardize,
+    intercept_value, estimate_residual_variance, estimate_residual_method,
+    estimate_prior_variance, estimate_prior_method,
+    unmappable_effects, check_null_threshold, prior_tol,
+    residual_variance_lowerbound, residual_variance_upperbound,
+    model_init, coverage, min_abs_corr,
+    max_iter, tol, convergence_method, verbose, track_fit, check_input,
+    check_prior, check_R, check_z, n_purity, r_tol, compute_univariate_zscore,
+    refine
+  )
 
-    # First, remove effects with s_init$V = 0
-    s_init = susie_prune_single_effects(s_init)
-    num_effects = nrow(s_init$alpha)
-    if(missing(L)){
-      L = num_effects
-    }else if(min(p,L) < num_effects){
-      warning_message(paste("Specified number of effects L =",min(p,L),
-                    "is smaller than the number of effects",num_effects,
-                    "in input SuSiE model. The SuSiE model will have",
-                    num_effects,"effects."))
-      L = num_effects
-    }
-    # expand s_init if L > num_effects.
-    s_init = susie_prune_single_effects(s_init, min(p, L), s$V)
-    s = modifyList(s,s_init)
-    s = init_finalize(s,X = X)
-  } else {
-    s = init_finalize(s)
-  }
+  # Run main SuSiE algorithm
+  model <- susie_workhorse(susie_objects$data, susie_objects$params)
 
-  # Initialize elbo to NA.
-  elbo = rep(as.numeric(NA),max_iter + 1)
-  elbo[1] = -Inf;
-  tracking = list()
-  if(small ){
-    cv_criterion= rep(as.numeric(NA),max_iter + 1)
-    cv_criterion[1]=1
-  }
-
-  for (i in 1:max_iter) {
-    if (track_fit)
-      tracking[[i]] = susie_slim(s)
-    if(small & i >1){
-     alpha_old= c(s$alpha)
-    }
-    s = update_each_effect(X,y,s,
-                           estimate_prior_variance,estimate_prior_method,
-                           check_null_threshold,
-                           small=small,
-                           alpha0=alpha0,
-                           beta0=beta0)
-    if(small & i >1){
-      cv_criterion[i] = max(abs(c(alpha_old) - c(s$alpha)))
-    }
-    if (verbose & L == 1 & small) {
-      print(paste0("objective:",objective_L1_SER(X,y,s)))
-
-      # print( compute_elbo_L1_susie( y=y,X=X,
-      #                               alpha= s$alpha,
-      #                              mu= s$mu,
-      #                              s2= s$mu2-s$mu^2,
-                                   # a=max (alpha0,0.1 )+n,
-                                  # b=  (s$V[1]) + max (beta0,0.1 ), # here the pb #X%*%res_susie_small$mu
-      #                             a0= max (alpha0,0.1 ),
-
-      #                             b0= max (beta0,0.1 ),
-      #                            pi= s$pi)
-      #       )
-    }
-    if (L==1) {
-      elbo[i+1]=objective_L1_SER(X,y,s)
-      s$elbo = elbo
-    }
-    # Compute objective before updating residual variance because part
-    # of the objective s$kl has already been computed under the
-    # residual variance before the update.
-    if (!small) {
-      elbo[i+1] = get_objective(X,y,s)
-      if ((elbo[i+1] - elbo[i]) < tol) {
-        s$converged = TRUE
-        break
-      }
-    }
-    if (small & i > 2) {
-        d <- (cv_criterion[i] + cv_criterion[i-1])/2
-      if (verbose) 
-        print(paste0("max change in alpha: ",d))
-      if (d < tol) {
-        # this force to have at least 3 consecutive iteration with small
-        # variation in terms of alpha
-        s$converged <- TRUE
-        break
-      }
-    }
-
-    if (estimate_residual_variance) {
-      s$sigma2 = pmax(residual_variance_lowerbound,
-                      estimate_residual_variance(X,y,s))
-      if (s$sigma2 > residual_variance_upperbound)
-        s$sigma2 = residual_variance_upperbound
-      if (verbose & !small)
-        print(paste0("objective:",get_objective(X,y,s)))
-    }
-  }
-
-  # Remove first (infinite) entry, and trailing NAs.
-  elbo = elbo[2:(i+1)]
-  s$elbo = elbo
-  if(small){
-    s$cv_criterion=cv_criterion[2:i]
-  }
-
-  s$niter = i
-
-  if (is.null(s$converged)) {
-    warning(paste("IBSS algorithm did not converge in",max_iter,"iterations!"))
-    s$converged = FALSE
-  }
-
-  if (intercept) {
-
-    # Estimate unshrunk intercept.
-    s$intercept = mean_y - sum(attr(X,"scaled:center") *
-      (colSums(s$alpha * s$mu)/attr(X,"scaled:scale")))
-    s$fitted = s$Xr + mean_y
-  } else {
-    s$intercept = 0
-    s$fitted = s$Xr
-  }
-  s$fitted = drop(s$fitted)
-  names(s$fitted) = `if`(is.null(names(y)),rownames(X),names(y))
-
-  if (track_fit)
-    s$trace = tracking
-
-  # SuSiE CS and PIP.
-  if (!is.null(coverage) && !is.null(min_abs_corr)) {
-    s$sets = susie_get_cs(s,coverage = coverage,X = X,
-                          min_abs_corr = min_abs_corr,
-                          n_purity = n_purity)
-    s$pip = susie_get_pip(s,prune_by_cs = FALSE,prior_tol = prior_tol)
-  }
-
-  if (!is.null(colnames(X))) {
-    variable_names = colnames(X)
-    if (!is.null(null_weight)) {
-      variable_names[length(variable_names)] = "null"
-      names(s$pip) = variable_names[-p]
-    } else
-      names(s$pip)    = variable_names
-    colnames(s$alpha) = variable_names
-    colnames(s$mu)    = variable_names
-    colnames(s$mu2)   = variable_names
-    colnames(s$lbf_variable) = variable_names
-  }
-  # report z-scores from univariate regression.
-  if (compute_univariate_zscore) {
-    if (!is.matrix(X))
-      warning("Calculation of univariate regression z-scores is not ",
-              "implemented specifically for sparse or trend filtering ",
-              "matrices, so this step may be slow if the matrix is large; ",
-              "to skip this step set compute_univariate_zscore = FALSE")
-    if (!is.null(null_weight) && null_weight != 0)
-      X = X[,1:(ncol(X) - 1)]
-    s$z = calc_z(X,y,center = intercept,scale = standardize)
-  }
-
-  # For prediction.
-  s$X_column_scale_factors = attr(X,"scaled:scale")
-
-  if (refine) {
-    if (!missing(s_init) && !is.null(s_init))
-      warning("The given s_init is not used in refinement")
-    if (!is.null(null_weight) && null_weight != 0) {
-
-      ## if null_weight is specified, we compute the original prior_weight
-      pw_s = s$pi[-s$null_index]/(1-null_weight)
-      if (!compute_univariate_zscore)
-
-        ## if null_weight is specified, and the extra 0 column is not
-        ## removed from compute_univariate_zscore, we remove it here
-        X = X[,1:(ncol(X) - 1)]
-    } else
-      pw_s = s$pi
-    conti = TRUE
-    while (conti & length(s$sets$cs)>0) {
-      m = list()
-      for(cs in 1:length(s$sets$cs)){
-        pw_cs = pw_s
-        pw_cs[s$sets$cs[[cs]]] = 0
-        if(all(pw_cs == 0)){
-          break
-        }
-        s2 = susie(X,y,L = L,scaled_prior_variance = scaled_prior_variance,
-            residual_variance = residual_variance,
-            prior_weights = pw_cs, s_init = NULL,null_weight = null_weight,
-            standardize = standardize,intercept = intercept,
-            estimate_residual_variance = estimate_residual_variance,
-            estimate_prior_variance = estimate_prior_variance,
-            estimate_prior_method = estimate_prior_method,
-            check_null_threshold = check_null_threshold,
-            prior_tol = prior_tol,coverage = coverage,
-            residual_variance_upperbound = residual_variance_upperbound,
-            min_abs_corr = min_abs_corr,
-            compute_univariate_zscore = compute_univariate_zscore,
-            na.rm = na.rm,max_iter = max_iter,tol = tol,verbose = FALSE,
-            track_fit = FALSE,residual_variance_lowerbound = var(drop(y))/1e4,
-            refine = FALSE)
-        sinit2 = s2[c("alpha","mu","mu2")]
-        class(sinit2) = "susie"
-        s3 = susie(X,y,L = L,scaled_prior_variance = scaled_prior_variance,
-            residual_variance = residual_variance,prior_weights = pw_s,
-            s_init = sinit2,null_weight = null_weight,
-            standardize = standardize,intercept = intercept,
-            estimate_residual_variance = estimate_residual_variance,
-            estimate_prior_variance = estimate_prior_variance,
-            estimate_prior_method = estimate_prior_method,
-            check_null_threshold = check_null_threshold,
-            prior_tol = prior_tol,coverage = coverage,
-            residual_variance_upperbound = residual_variance_upperbound,
-            min_abs_corr = min_abs_corr,
-            compute_univariate_zscore = compute_univariate_zscore,
-            na.rm = na.rm,max_iter = max_iter,tol = tol,verbose = FALSE,
-            track_fit = FALSE,residual_variance_lowerbound = var(drop(y))/1e4,
-            refine = FALSE)
-        m = c(m,list(s3))
-      }
-      if(length(m) == 0){
-        conti = FALSE
-      }else{
-        elbo = sapply(m,function(x) susie_get_objective(x))
-        if ((max(elbo) - susie_get_objective(s)) <= 0)
-          conti = FALSE
-        else
-          s = m[[which.max(elbo)]]
-      }
-    }
-    if(small==TRUE)
-      s$KL=NA
-  }
-  return(s)
+  return(model)
 }

@@ -1,76 +1,82 @@
 url: https://stephenslab.github.io/susieR
 
 template:
-  bootstrap: 5
-  light-switch: true
-  math-rendering: katex
-  bslib:
-    base_font: { google: "Roboto" }
-    heading_font: { google: "Roboto Slab" }
-    code_font: { google: "JetBrains Mono" }
+ bootstrap: 5
+ light-switch: true
+ math-rendering: katex
+ bslib:
+  base_font: { google: "Roboto" }
+  heading_font: { google: "Roboto Slab" }
+  code_font: { google: "JetBrains Mono" }
 
 development:
-  mode: auto
+ mode: auto
 
-#home:
-#  links:
-#    - text: Learn more
-#      href: https://github.com/stephenslab/susieR
-#    - text: Report a bug
-#      href: https://github.com/stephenslab/susieR/issues
-
-#authors:
-  # Add your package authors here following the same format
-  # Example:
-  # John Doe:
-  #   href: https://johndoe.com/
-  # Jane Smith:
-  #   href: https://github.com/janesmith
+home:
+ links:
+ - text: Learn more
+   href: https://github.com/stephenslab/susieR
+ - text: Report a bug
+   href: https://github.com/stephenslab/susieR/issues
 
 navbar:
-  structure:
-    left: [intro, reference, articles, news]
-    right: [search, github, lightswitch]
-  components:
-    intro:
-      icon: fa fa-play-circle
-      text: Get Started
-      href: articles/finemapping.html
-      aria-label: Get started with susieR
-    reference:
-      icon: fa fa-file-code
-      text: Functions
-      href: reference/index.html
-      aria-label: Function reference
-    articles:
-      icon: fa fa-book-reader
-      text: Vignettes
-      href: articles/index.html
-      aria-label: Articles and vignettes
-    news:
-      icon: fa fa-newspaper
-      text: News
-      href: news/index.html
-      aria-label: Package news
-    github:
-      icon: fab fa-github
-      href: https://github.com/stephenslab/susieR
-      aria-label: View source on GitHub
+ structure:
+  left: [intro, reference, articles, news]
+  right: [search, github, lightswitch]
+ components:
+  intro:
+   icon: fa fa-play-circle
+   text: Get Started
+   href: articles/mwe.html
+   aria-label: Get started with susieR
+  reference:
+   icon: fa fa-file-code
+   text: Functions
+   href: reference/index.html
+   aria-label: Function reference
+  articles:
+   icon: fa fa-book-reader
+   text: Vignettes
+   href: articles/index.html
+   aria-label: Articles and vignettes
+  news:
+   icon: fa fa-newspaper
+   text: News
+   href: articles/announcements.html
+   aria-label: Package news
+  github:
+   icon: fab fa-github
+   href: https://github.com/StatFunGen/susieR
+   aria-label: View source on GitHub
 
 articles:
-  - title: "Vignettes"
-    desc: >
-      The following vignettes provide detailed illustrations of the
-      susieR package, as well as guidance on correct application of the
-      statistical methods.
+  - title: "Getting Started"
+    navbar: ~
     contents:
     - mwe
+  - title: "Fine-mapping Applications"
+    desc: >
+      Detailed tutorials for genetic fine-mapping using susieR with 
+      individual-level and summary statistics data.
+    contents:
     - finemapping
     - finemapping_summary_statistics
     - susie_rss
     - susierss_diagnostic
-    - l0_initialization
-    - trend_filtering
+  - title: "Advanced Topics"
+    desc: >
+      Advanced features and specialized applications of the susieR package.
+    contents:
     - sparse_susie_eval
     - susie_refine
-    - small_sample
+    - l0_initialization
+    - trend_filtering
+  - title: "Package Information"
+    navbar: ~
+    contents:
+    - announcements
+
+footer:
+ structure:
+  left: developed_by
+  right: built_with

@@ -23,6 +23,7 @@ Authors:
 \itemize{
   \item Gao Wang \email{wang.gao@columbia.edu}
   \item Yuxin Zou
+  \item Alexander McCreight
   \item Kaiqian Zhang
   \item William R.P. Denault
   \item Matthew Stephens

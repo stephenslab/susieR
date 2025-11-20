@@ -19,6 +19,7 @@ Date: 2025-11-20
 Version: 0.14.26
 Authors@R: c(person("Gao","Wang",role="aut",email="wang.gao@columbia.edu"),
              person("Yuxin","Zou",role="aut"),
+             person("Alexander","McCreight",role="aut"),
              person("Kaiqian","Zhang",role="aut"),
              person("William","R.P. Denault",role="aut"),
              person("Peter","Carbonetto",role=c("aut","cre"),
@@ -46,7 +47,8 @@ Suggests:
     knitr,
     rmarkdown,
     Rfast,
-    cowplot
+    cowplot,
+    L0Learn
 LazyData: yes
 LazyDataCompression: xz
 NeedsCompilation: no

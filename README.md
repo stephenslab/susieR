@@ -1,10 +1,7 @@
 # susieR
 
 [![CRAN status badge](https://www.r-pkg.org/badges/version/susieR)](https://cran.r-project.org/package=susieR)
-[![Travis Build Status](https://travis-ci.org/stephenslab/susieR.svg?branch=master)](https://app.travis-ci.com/stephenslab/susieR)
-[![Appveyor Build status](https://ci.appveyor.com/api/projects/status/tcgeqxd8q8krija6?svg=true)](https://ci.appveyor.com/project/pcarbo/susier)
-[![CircleCI](https://dl.circleci.com/status-badge/img/gh/stephenslab/susieR/tree/master.svg?style=svg)](https://app.circleci.com/pipelines/github/stephenslab/susieR?branch=master)
-[![codecov](https://codecov.io/gh/stephenslab/susieR/branch/master/graph/badge.svg)](https://app.codecov.io/gh/stephenslab/susieR)
+[![Codecov test coverage](https://codecov.io/gh/StatFunGen/susieR/graph/badge.svg)](https://app.codecov.io/gh/StatFunGen/susieR)
 
 The `susieR` package implements a simple new way to perform variable
 selection in multiple regression ($y=Xb+e$). The methods implemented
@@ -17,10 +14,9 @@ should also be useful more generally.
 
 The methods are based on a new model for sparse multiple regression,
 which we call the "Sum of Single Effects" (SuSiE) model.  This model,
-which will be described in a manuscript in preparation (Wang et al),
-lends itself to a particularly simple and intuitive fitting procedure
--- effectively a Bayesian modification of simple forward selection,
-which we call "Iterative Bayesian Step-wise Selection".
+which is described in [Wang et al. (2020)](https://doi.org/10.1111/rssb.12388), lends itself to a particularly simple and intuitive fitting 
+procedure -- effectively a Bayesian modification of simple forward 
+selection, which we call "Iterative Bayesian Step-wise Selection".
 
 The output of the fitting procedure is a number of "Credible Sets"
 (CSs), which are each designed to have high probability to contain a
@@ -30,10 +26,12 @@ correlated" variables that are each associated with the response: you
 can be confident that one of the variables has a non-zero coefficient,
 but they are too correlated to be sure which one.
 
-The package is developed by Gao Wang, Peter Carbonetto, Yuxin Zou,
-Kaiqian Zhang, and Matthew Stephens from the
+The package was initially developed by Gao Wang, Peter Carbonetto,
+Yuxin Zou, Kaiqian Zhang, and Matthew Stephens from the
 [Stephens Lab](https://stephenslab.uchicago.edu) at the University of
-Chicago.
+Chicago. It was later extended with new methods and implementations by
+Alexander McCreight from the [StatFunGen Lab](https://wanggroup.org/) at
+Columbia University.
 
 Please
 [post issues](https://github.com/stephenslab/susieR/issues) to ask
@@ -64,20 +62,41 @@ please visit https://stephenslab.github.io/susieR
 ## Citing this work
 
 If you find the `susieR` package or any of the source code in this
-repository useful for your work, please cite:
+repository useful for your work, please cite both:
 
-> G. Wang, G., Sarkar, A., Carbonetto, P. & Stephens, M. (2020). A
+> Wang, G., Sarkar, A., Carbonetto, P. & Stephens, M. (2020). A
 > simple new approach to variable selection in regression, with
 > application to genetic fine mapping. *Journal of the Royal
 > Statistical Society, Series B* **82**, 1273–1300.
 > https://doi.org/10.1111/rssb.12388
 
-If you use any of the summary data methods such as `susie_suff_stat`
-or `susie_rss`, please also cite:
+> McCreight, A., Cho, Y., Nachun, D., Li, R., Gan, H-Y., Stephens,
+> M., Carbonetto, P., Denault, W.R.P. & Wang, G. (2025). SuSiE 2.0:
+> improved methods and implementations for genetic fine-mapping and
+> phenotype prediction. Submitting to *Genome Biology*.
+
+If you use any of the summary data methods such as `susie_ss` or 
+`susie_rss`, please also cite:
 
 > Zou, Y., Carbonetto, P., Wang, G. & Stephens, M. (2022). Fine-mapping
 > from summary data with the "Sum of Single Effects" model. *PLoS
 > Genetics* **18**, e1010299. https://doi.org/10.1371/journal.pgen.1010299
+
+If you use the Servin-Stephens prior on residual variance estimates
+(`estimate_residual_method = "Servin_Stephens"`), please also cite:
+
+> Denault, W.R.P., Carbonetto, P., Li, R., Alzheimer's Disease Functional
+> Genomics Consortium, Wang, G. & Stephens, M. (2025). Accounting for
+> uncertainty in residual variances improves calibration of the "Sum of
+> Single Effects" model for small sample sizes. *bioRxiv*, 2025-05.
+> Under review for *Nature Methods*.
+
+If you use infinitesimal effects modeling (`unmappable_effects = "inf"`), 
+please also cite:
+
+> Cui, R., Elzur, R.A., Kanai, M. et al. (2024). Improving fine-mapping
+> by modeling infinitesimal effects. *Nature Genetics* **56**, 162–169.
+> https://doi.org/10.1038/s41588-023-01597-3
 
 ## Developer notes
 
