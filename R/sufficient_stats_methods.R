@@ -84,7 +84,7 @@ validate_prior.ss <- function(data, params, model, ...) {
       )
     }
   }
-  return(validate_prior.default(data, model, check_prior, ...))
+  return(validate_prior.default(data, params, model, ...))
 }
 
 # Track core parameters across iterations

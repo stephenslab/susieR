@@ -8,6 +8,7 @@
 ^\.Rproj\.user$
 ^\.travis\.yml$
 ^.*\.Rproj$
+^data/data_small\.RData$
 ^tests/testthat/full_data_1_sim_gaussian_null_1\.rds$
 ^inst/datafiles/FinemappingConvergence1k\.RData$
 ^inst/datafiles/SummaryConsistency1k\.RData$

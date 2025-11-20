@@ -315,7 +315,7 @@ susie <- function(X, y, L = min(10, ncol(X)),
     estimate_prior_variance, estimate_prior_method,
     unmappable_effects, check_null_threshold, prior_tol,
     residual_variance_upperbound, model_init, coverage,
-    min_abs_corr, compute_univariate_zscore, na.rm,
+    min_abs_corr, compute_univariate_zscore = FALSE, na.rm,
     max_iter, tol, convergence_method, verbose, track_fit,
     residual_variance_lowerbound, refine, n_purity,
     alpha0, beta0
@@ -527,8 +527,8 @@ susie_rss <- function(z = NULL, R, n = NULL,
     residual_variance_lowerbound, residual_variance_upperbound,
     model_init, coverage, min_abs_corr,
     max_iter, tol, convergence_method, verbose, track_fit, check_input,
-    check_prior, check_R, check_z, n_purity, r_tol, compute_univariate_zscore,
-    refine
+    check_prior, check_R, check_z, n_purity, r_tol, 
+    compute_univariate_zscore, refine
   )
 
   # Run main SuSiE algorithm
