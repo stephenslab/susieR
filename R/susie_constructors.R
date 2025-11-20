@@ -67,6 +67,18 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
   }
   mean_y <- mean(y)
 
+  # Force required preprocessing for unmappable effects methods
+  if (unmappable_effects != "none") {
+    if (!intercept) {
+      warning_message("Unmappable effects methods require centered data. Setting intercept=TRUE.")
+      intercept <- TRUE
+    }
+    if (!standardize) {
+      warning_message("Unmappable effects methods require scaled data. Setting standardize=TRUE.")
+      standardize <- TRUE
+    }
+  }
+
   # Handle null weights
   if (is.numeric(null_weight) && null_weight == 0) {
     null_weight <- NULL
