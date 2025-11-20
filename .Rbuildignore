@@ -14,6 +14,7 @@
 ^inst/code/compute_ss_data\.RData$
 ^inst/code/susie_data\.RData$
 ^inst/code/susie_rss_data\.RData$
+^vignettes/small_sample\.Rmd$
 ^LICENSE\.md$
 ^NOTES\.txt$
 ^\.Renviron$
