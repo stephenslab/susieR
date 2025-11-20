@@ -509,7 +509,6 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
                                       check_z = FALSE,
                                       n_purity = 100,
                                       r_tol = 1e-8,
-                                      compute_univariate_zscore = FALSE,
                                       refine = FALSE) {
 
   # Check if this should use RSS-lambda path
