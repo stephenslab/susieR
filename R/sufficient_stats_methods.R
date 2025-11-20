@@ -45,7 +45,7 @@ initialize_susie_model.ss <- function(data, params, var_y, ...) {
   if (params$unmappable_effects %in% c("inf", "ash")) {
 
     # Initialize omega quantities for unmappable effects
-    omega_res               <- compute_omega_quantities(data, tau2 = 0, sigma2 = 1)
+    omega_res               <- compute_omega_quantities(data, tau2 = 0, sigma2 = var_y)
     model$omega_var         <- omega_res$omega_var
     model$predictor_weights <- omega_res$diagXtOmegaX
     model$XtOmegay          <- data$eigen_vectors %*% (data$VtXty / omega_res$omega_var)
@@ -291,10 +291,8 @@ neg_loglik.ss <- function(data, params, model, V_param, ser_stats, ...) {
 #' @keywords internal
 update_fitted_values.ss <- function(data, params, model, l) {
   if (params$unmappable_effects != "none") {
-    model$XtXr <- compute_Xb(data$XtX, colSums(model$alpha * model$mu) + model$theta)
+    model$XtXr <- as.vector(data$XtX %*% (colSums(model$alpha * model$mu) + model$theta))
   } else {
-    # Fix: Use direct matrix multiplication to match original implementation
-    # Original: s$XtXr = s$XtXr + XtX %*% (s$alpha[l,] * s$mu[l,])
     model$XtXr <- model$fitted_without_l + as.vector(data$XtX %*% (model$alpha[l, ] * model$mu[l, ]))
   }
   return(model)
@@ -344,7 +342,7 @@ update_variance_components.ss <- function(data, params, model, ...) {
       ))
     }
 
-    # Remove the sparse effects
+    # Remove the sparse effects to compute residuals for mr.ash
     b <- colSums(model$alpha * model$mu)
     residuals <- data$y - data$X %*% b
 
