@@ -240,6 +240,7 @@ update_fitted_values.rss_lambda <- function(data, params, model, l) {
 
 # Update variance components
 #' @keywords internal
+#' @importFrom stats optimize
 update_variance_components.rss_lambda <- function(data, params, model, ...) {
   upper_bound <- 1 - data$lambda
 

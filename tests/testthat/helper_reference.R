@@ -6,6 +6,8 @@
 # package (stephenslab/susieR@1f9166c) to ensure results are identical.
 #
 # Strategy: Use pkgload to load both packages into separate environments
+library(pkgload)
+library(rprojroot)
 
 # Reference package details
 .ref_repo <- "stephenslab/susieR"
