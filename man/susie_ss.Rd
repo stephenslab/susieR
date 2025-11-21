@@ -166,7 +166,7 @@ prior variance is smaller than this tolerance value.}
 \item{max_iter}{Maximum number of IBSS iterations to perform.}
 
 \item{tol}{tol A small, non-negative number specifying the convergence
-tolerance for the IBSS fitting procedure..}
+tolerance for the IBSS fitting procedure.}
 
 \item{convergence_method}{When \code{converge_method = "elbo"} the fitting
 procedure halts when the difference in the variational lower bound, or

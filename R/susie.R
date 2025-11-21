@@ -470,13 +470,17 @@ susie_ss <- function(XtX, Xty, yty, n,
 #'   \code{cov2cor((1-w)*R + w*tcrossprod(z))}, where \code{w =
 #'   z_ld_weight}.
 #'
+#' @param prior_variance This specifies the prior variance parameter
+#'   for the SuSiE-RSS variant with the \dQuote{regularized} LD matrix R.
+#'   This is ignored when \code{lambda = 0}.
+#' 
 #' @param estimate_residual_variance The default is FALSE, the
 #'   residual variance is fixed to 1 or variance of y. If the in-sample
 #'   LD matrix is provided, we recommend setting
 #'   \code{estimate_residual_variance = TRUE}.
 #'
 #' @param intercept_value Real number specifying the intercept. This
-#'   argument is ignored when lambda = 0.
+#'   is ignored when \code{lambda = 0}.
 #' 
 #' @param check_R If TRUE, check that R is positive semidefinite.
 #'

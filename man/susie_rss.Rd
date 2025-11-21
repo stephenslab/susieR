@@ -87,6 +87,10 @@ longer recommended to set this to a non-zero value. When
 \code{cov2cor((1-w)*R + w*tcrossprod(z))}, where \code{w =
 z_ld_weight}.}
 
+\item{prior_variance}{This specifies the prior variance parameter
+for the SuSiE-RSS variant with the \dQuote{regularized} LD matrix R.
+This is ignored when \code{lambda = 0}.}
+
 \item{scaled_prior_variance}{The prior variance, divided by
 \code{var(y)} (or by \code{(1/(n-1))yty} for
 \code{susie_ss}); that is, the prior variance of each
@@ -120,7 +124,7 @@ your choice, the coefficients returned by \code{coef} are given for
 has zero variance is not standardized.}
 
 \item{intercept_value}{Real number specifying the intercept. This
-argument is ignored when lambda = 0.}
+is ignored when \code{lambda = 0}.}
 
 \item{estimate_residual_variance}{The default is FALSE, the
 residual variance is fixed to 1 or variance of y. If the in-sample
@@ -187,7 +191,7 @@ genotype data in genetic studies.}
 \item{max_iter}{Maximum number of IBSS iterations to perform.}
 
 \item{tol}{tol A small, non-negative number specifying the convergence
-tolerance for the IBSS fitting procedure..}
+tolerance for the IBSS fitting procedure.}
 
 \item{convergence_method}{When \code{converge_method = "elbo"} the fitting
 procedure halts when the difference in the variational lower bound, or
