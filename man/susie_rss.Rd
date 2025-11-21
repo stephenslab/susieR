@@ -114,6 +114,9 @@ your choice, the coefficients returned by \code{coef} are given for
 \code{X} on the original input scale. Any column of \code{X} that
 has zero variance is not standardized.}
 
+\item{intercept_value}{Real number specifying the intercept. This
+argument is ignored when lambda = 0.}
+
 \item{estimate_residual_variance}{The default is FALSE, the
 residual variance is fixed to 1 or variance of y. If the in-sample
 LD matrix is provided, we recommend setting

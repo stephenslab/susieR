@@ -470,6 +470,9 @@ susie_ss <- function(XtX, Xty, yty, n,
 #'   LD matrix is provided, we recommend setting
 #'   \code{estimate_residual_variance = TRUE}.
 #'
+#' @param intercept_value Real number specifying the intercept. This
+#'   argument is ignored when lambda = 0.
+#' 
 #' @param check_R If TRUE, check that R is positive semidefinite.
 #'
 #' @param check_z If TRUE, check that z lies in column space of R.
