@@ -70,6 +70,11 @@ the number of covariates, p, L is set to p.}
 \item{lambda}{Regularization parameter for LD matrix. When
 \code{lambda} > 0, you cannot use \code{unmappable_effects} methods.}
 
+\item{maf}{A p-vector of minor allele frequencies; to be used along with
+\code{maf_thresh} to filter input summary statistics.}
+
+\item{maf_thresh}{Variants with MAF smaller than this threshold are not used.}
+
 \item{z_ld_weight}{This parameter is included for backwards
 compatibility with previous versions of the function, but it is no
 longer recommended to set this to a non-zero value. When
@@ -191,12 +196,24 @@ a summary of the optimization settings, and refinement progress (if
 is also returned containing detailed information about the
 estimates at each iteration of the IBSS fitting procedure.}
 
+\item{check_input}{If \code{check_input = TRUE}, \code{susie_ss} performs
+additional checks on \code{XtX} and \code{Xty}. The checks are:
+(1) check that \code{XtX} is positive semidefinite; (2) check that
+\code{Xty} is in the space spanned by the non-zero eigenvectors of \code{XtX}.}
+
+\item{check_prior}{If \code{check_prior = TRUE}, it checks if the
+estimated prior variance becomes unreasonably large (comparing with
+10 * max(abs(z))^2).}
+
 \item{check_R}{If TRUE, check that R is positive semidefinite.}
 
 \item{check_z}{If TRUE, check that z lies in column space of R.}
 
 \item{n_purity}{Passed as argument \code{n_purity} to
 \code{\link{susie_get_cs}}.}
+
+\item{r_tol}{Tolerance level for eigenvalue check of positive semidefinite
+matrix \code{XtX}.}
 
 \item{refine}{If \code{refine = TRUE}, then an additional
 iterative refinement procedure is used, after the IBSS algorithm,

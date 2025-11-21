@@ -437,7 +437,7 @@ susie_ss <- function(XtX, Xty, yty, n,
 
 #' @title SuSiE with Regression Summary Statistics (RSS)
 #'
-#' @inheritParams susie
+#' @inheritParams susie_ss
 #' 
 #' @description Performs SuSiE regression using z-scores and correlation matrix.
 #' Supports both standard RSS (lambda = 0) and RSS with regularized LD matrix (lambda > 0).
@@ -476,6 +476,7 @@ susie_ss <- function(XtX, Xty, yty, n,
 #' @param check_z If TRUE, check that z lies in column space of R.
 #'
 #' @export
+#' 
 susie_rss <- function(z = NULL, R, n = NULL,
                       bhat = NULL, shat = NULL, var_y = NULL,
                       L = min(10, ncol(R)),
