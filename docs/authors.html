@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">susieR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.14.21</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.14.43</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -15,13 +15,13 @@
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="articles/finemapping.html" aria-label="Get started with susieR"><span class="fa fa-play-circle"></span> Get Started</a></li>
+      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="articles/mwe.html" aria-label="Get started with susieR"><span class="fa fa-play-circle"></span> Get Started</a></li>
 <li class="nav-item"><a class="nav-link" href="reference/index.html" aria-label="Function reference"><span class="fa fa-file-code"></span> Functions</a></li>
 <li class="nav-item"><a class="nav-link" href="articles/index.html" aria-label="Articles and vignettes"><span class="fa fa-book-reader"></span> Vignettes</a></li>
-<li class="nav-item"><a class="nav-link" href="news/index.html" aria-label="Package news"><span class="fa fa-newspaper"></span> News</a></li>
+<li class="nav-item"><a class="nav-link" href="articles/announcements.html" aria-label="Package news"><span class="fa fa-newspaper"></span> News</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="search.json"></form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/stephenslab/susieR" aria-label="View source on GitHub"><span class="fa fab fa-github"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/StatFunGen/susieR" aria-label="View source on GitHub"><span class="fa fab fa-github"></span></a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-lightswitch" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true" aria-label="Light switch"><span class="fa fa-sun"></span></button>
   <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-lightswitch"><li><button class="dropdown-item" data-bs-theme-value="light"><span class="fa fa-sun"></span> Light</button></li>
@@ -51,6 +51,10 @@
           </p>
         </li>
         <li>
+          <p><strong>Alexander McCreight</strong>. Author.
+          </p>
+        </li>
+        <li>
           <p><strong>Kaiqian Zhang</strong>. Author.
           </p>
         </li>
@@ -72,7 +76,7 @@
       <h2 id="citation">Citation</h2>
       <p><small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/HEAD/inst/CITATION" class="external-link"><code>inst/CITATION</code></a></small></p>
 
-      <p>Gao Wang, Abhishek Sarkar, Peter Carbonetto and Matthew Stephens (2020). A simple new approach to variable selection in regression, with application to genetic fine mapping. Journal of the Royal Statistical Society, Series B, 82, 1273-1300, doi:10.1101/501114</p>
+      <p>Wang, G., Sarkar, A., Carbonetto, P. &amp; Stephens, M. (2020). A simple new approach to variable selection in regression, with application to genetic fine mapping. Journal of the Royal Statistical Society, Series B 82, 1273-1300. https://doi.org/10.1111/rssb.12388</p>
       <pre>@Article{,
   title = {A simple new approach to variable selection in regression, with application to genetic fine mapping},
   author = {Gao Wang and Abhishek Sarkar and Peter Carbonetto and Matthew Stephens},
@@ -80,9 +84,16 @@
   year = {2020},
   volume = {82},
   pages = {1273-1300},
-  doi = {10.1101/501114},
+  doi = {10.1111/rssb.12388},
 }</pre>
-      <p>Yuxin Zou, Peter Carbonetto, Gao Wang and Matthew Stephens (2022). Fine-mapping from summary data with the "Sum of Single Effects" model. PLoS Genetics 18, e1010299 doi:10.1371/journal.pgen.1010299</p>
+      <p>McCreight, A., Cho, Y., Nachun, D., Li, R., Gan, H-Y., Stephens, M., Carbonetto, P., Denault, W.R.P. &amp; Wang, G. (2025). SuSiE 2.0: improved methods and implementations for genetic fine-mapping and phenotype prediction. Submitting to Genome Biology.</p>
+      <pre>@Article{,
+  title = {SuSiE 2.0: improved methods and implementations for genetic fine-mapping and phenotype prediction},
+  author = {Alexander McCreight and Yanghyeon Cho and Daniel Nachun and Ruixi Li and Hao-Yu Gan and Matthew Stephens and Peter Carbonetto and William {R.P. Denault} and Gao Wang},
+  journal = {Submitting to Genome Biology},
+  year = {2025},
+}</pre>
+      <p>Zou, Y., Carbonetto, P., Wang, G. &amp; Stephens, M. (2022). Fine-mapping from summary data with the "Sum of Single Effects" model. PLoS Genetics 18, e1010299. https://doi.org/10.1371/journal.pgen.1010299</p>
       <pre>@Article{,
   title = {Fine-mapping from summary data with the "Sum of Single Effects" model},
   author = {Yuxin Zou and Peter Carbonetto and Gao Wang and Matthew Stephens},
@@ -92,6 +103,24 @@
   pages = {e1010299},
   doi = {10.1371/journal.pgen.1010299},
 }</pre>
+      <p>Denault, W.R.P., Carbonetto, P., Li, R., Alzheimer's Disease Functional Genomics Consortium, Wang, G. &amp; Stephens, M. (2025). Accounting for uncertainty in residual variances improves calibration of the 'Sum of Single Effects' model for small sample sizes. bioRxiv, 2025-05. Under review for Nature Methods.</p>
+      <pre>@Article{,
+  title = {Accounting for uncertainty in residual variances improves calibration of the 'Sum of Single Effects' model for small sample sizes},
+  author = {William {R.P. Denault} and Peter Carbonetto and Ruixi Li and {Alzheimer's Disease Functional Genomics Consortium} and Gao Wang and Matthew Stephens},
+  journal = {bioRxiv},
+  year = {2025},
+  note = {Under review for Nature Methods},
+}</pre>
+      <p>Cui, R., Elzur, R.A., Kanai, M. et al. (2024). Improving fine-mapping by modeling infinitesimal effects. Nature Genetics 56, 162-169. https://doi.org/10.1038/s41588-023-01597-3</p>
+      <pre>@Article{,
+  title = {Improving fine-mapping by modeling infinitesimal effects},
+  author = {Rui Cui and R.A. Elzur and M. Kanai and {et al.}},
+  journal = {Nature Genetics},
+  volume = {56},
+  year = {2024},
+  pages = {162-169},
+  doi = {10.1038/s41588-023-01597-3},
+}</pre>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
@@ -99,7 +128,7 @@
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Gao Wang, Yuxin Zou, Kaiqian Zhang, William R.P. Denault, Peter Carbonetto, Matthew Stephens.</p>
+  <p>Developed by Gao Wang, Yuxin Zou, Alexander McCreight, Kaiqian Zhang, William R.P. Denault, Peter Carbonetto, Matthew Stephens.</p>
 </div>
 
 <div class="pkgdown-footer-right">

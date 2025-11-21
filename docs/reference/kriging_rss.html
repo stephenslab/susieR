@@ -23,7 +23,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">susieR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.14.21</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.14.43</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -31,13 +31,13 @@
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/finemapping.html" aria-label="Get started with susieR"><span class="fa fa-play-circle"></span> Get Started</a></li>
+      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/mwe.html" aria-label="Get started with susieR"><span class="fa fa-play-circle"></span> Get Started</a></li>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html" aria-label="Function reference"><span class="fa fa-file-code"></span> Functions</a></li>
 <li class="nav-item"><a class="nav-link" href="../articles/index.html" aria-label="Articles and vignettes"><span class="fa fa-book-reader"></span> Vignettes</a></li>
-<li class="nav-item"><a class="nav-link" href="../news/index.html" aria-label="Package news"><span class="fa fa-newspaper"></span> News</a></li>
+<li class="nav-item"><a class="nav-link" href="../articles/announcements.html" aria-label="Package news"><span class="fa fa-newspaper"></span> News</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/stephenslab/susieR" aria-label="View source on GitHub"><span class="fa fab fa-github"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/StatFunGen/susieR" aria-label="View source on GitHub"><span class="fa fab fa-github"></span></a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-lightswitch" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true" aria-label="Light switch"><span class="fa fa-sun"></span></button>
   <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-lightswitch"><li><button class="dropdown-item" data-bs-theme-value="light"><span class="fa fa-sun"></span> Light</button></li>
@@ -53,7 +53,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Compute Distribution of z-scores of Variant j Given Other z-scores, and Detect Possible Allele Switch Issue</h1>
-      <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/HEAD/R/susie_utils.R" class="external-link"><code>R/susie_utils.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/stephenslab/susieR/blob/HEAD/R/susie_rss_utils.R" class="external-link"><code>R/susie_rss_utils.R</code></a></small>
       <div class="d-none name"><code>kriging_rss.Rd</code></div>
     </div>
 
@@ -123,23 +123,18 @@ semidefinite matrix of R.</p></dd>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># See also the vignette, "Diagnostic for fine-mapping with summary</span></span></span>
 <span class="r-in"><span><span class="co"># statistics."</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">n</span> <span class="op">=</span> <span class="fl">500</span></span></span>
-<span class="r-in"><span><span class="va">p</span> <span class="op">=</span> <span class="fl">1000</span></span></span>
-<span class="r-in"><span><span class="va">beta</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>,<span class="va">p</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">beta</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">4</span><span class="op">]</span> <span class="op">=</span> <span class="fl">0.01</span></span></span>
-<span class="r-in"><span><span class="va">X</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">*</span><span class="va">p</span><span class="op">)</span>,nrow <span class="op">=</span> <span class="va">n</span>,ncol <span class="op">=</span> <span class="va">p</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">X</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/scale.html" class="external-link">scale</a></span><span class="op">(</span><span class="va">X</span>,center <span class="op">=</span> <span class="cn">TRUE</span>,scale <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">y</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/drop.html" class="external-link">drop</a></span><span class="op">(</span><span class="va">X</span> <span class="op"><a href="https://rdrr.io/r/base/matmult.html" class="external-link">%*%</a></span> <span class="va">beta</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">ss</span> <span class="op">=</span> <span class="fu"><a href="univariate_regression.html">univariate_regression</a></span><span class="op">(</span><span class="va">X</span>,<span class="va">y</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">R</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></span><span class="op">(</span><span class="va">X</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">R</span>,<span class="st">"eigen"</span><span class="op">)</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/eigen.html" class="external-link">eigen</a></span><span class="op">(</span><span class="va">R</span>,symmetric <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">zhat</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/with.html" class="external-link">with</a></span><span class="op">(</span><span class="va">ss</span>,<span class="va">betahat</span><span class="op">/</span><span class="va">sebetahat</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">cond_dist</span> <span class="op">=</span> <span class="fu">kriging_rss</span><span class="op">(</span><span class="va">zhat</span>,<span class="va">R</span>,n <span class="op">=</span> <span class="va">n</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>`aes_string()` was deprecated in ggplot2 3.0.0.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Please use tidy evaluation idioms with `aes()`.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> See also `vignette("ggplot2-in-packages")` for more information.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> The deprecated feature was likely used in the <span style="color: #0000BB;">susieR</span> package.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span>   Please report the issue at <span style="color: #0000BB; font-style: italic;">&lt;</span><a href="https://github.com/stephenslab/susieR/issues" class="external-link"><span style="color: #0000BB; font-style: italic;">https://github.com/stephenslab/susieR/issues</span></a><span style="color: #0000BB; font-style: italic;">&gt;</span>.</span>
+<span class="r-in"><span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">500</span></span></span>
+<span class="r-in"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fl">1000</span></span></span>
+<span class="r-in"><span><span class="va">beta</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">p</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">beta</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">4</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">0.01</span></span></span>
+<span class="r-in"><span><span class="va">X</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span> <span class="op">*</span> <span class="va">p</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="va">n</span>, ncol <span class="op">=</span> <span class="va">p</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">X</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/scale.html" class="external-link">scale</a></span><span class="op">(</span><span class="va">X</span>, center <span class="op">=</span> <span class="cn">TRUE</span>, scale <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/drop.html" class="external-link">drop</a></span><span class="op">(</span><span class="va">X</span> <span class="op"><a href="https://rdrr.io/r/base/matmult.html" class="external-link">%*%</a></span> <span class="va">beta</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ss</span> <span class="op">&lt;-</span> <span class="fu"><a href="univariate_regression.html">univariate_regression</a></span><span class="op">(</span><span class="va">X</span>, <span class="va">y</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">R</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></span><span class="op">(</span><span class="va">X</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">R</span>, <span class="st">"eigen"</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/eigen.html" class="external-link">eigen</a></span><span class="op">(</span><span class="va">R</span>, symmetric <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">zhat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/with.html" class="external-link">with</a></span><span class="op">(</span><span class="va">ss</span>, <span class="va">betahat</span> <span class="op">/</span> <span class="va">sebetahat</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">cond_dist</span> <span class="op">&lt;-</span> <span class="fu">kriging_rss</span><span class="op">(</span><span class="va">zhat</span>, <span class="va">R</span>, n <span class="op">=</span> <span class="va">n</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">cond_dist</span><span class="op">$</span><span class="va">plot</span></span></span>
 <span class="r-plt img"><img src="kriging_rss-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
@@ -150,7 +145,7 @@ semidefinite matrix of R.</p></dd>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Gao Wang, Yuxin Zou, Kaiqian Zhang, William R.P. Denault, Peter Carbonetto, Matthew Stephens.</p>
+  <p>Developed by Gao Wang, Yuxin Zou, Alexander McCreight, Kaiqian Zhang, William R.P. Denault, Peter Carbonetto, Matthew Stephens.</p>
 </div>
 
 <div class="pkgdown-footer-right">
