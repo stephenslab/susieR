@@ -64,6 +64,11 @@ provided instead of \code{z}.}
 the estimated effects (a vector of length p). This, together with
 \code{bhat}, may be provided instead of \code{z}.}
 
+\item{var_y}{The sample variance of y, defined as \eqn{y'y/(n-1)}.
+When the sample variance is not provided, the coefficients
+(returned from \code{coef}) are computed on the
+\dQuote{standardized} X, y scale.}
+
 \item{L}{Maximum number of non-zero effects in the model. If L is larger than
 the number of covariates, p, L is set to p.}
 

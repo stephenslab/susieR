@@ -187,7 +187,7 @@
 #' @param max_iter Maximum number of IBSS iterations to perform.
 #'
 #' @param tol tol A small, non-negative number specifying the convergence
-#'   tolerance for the IBSS fitting procedure..
+#'   tolerance for the IBSS fitting procedure.
 #'
 #' @param convergence_method When \code{converge_method = "elbo"} the fitting
 #'   procedure halts when the difference in the variational lower bound, or
@@ -455,6 +455,11 @@ susie_ss <- function(XtX, Xty, yty, n,
 #'   the estimated effects (a vector of length p). This, together with
 #'   \code{bhat}, may be provided instead of \code{z}.
 #'
+#' @param var_y The sample variance of y, defined as \eqn{y'y/(n-1)}.
+#'   When the sample variance is not provided, the coefficients
+#'   (returned from \code{coef}) are computed on the
+#'   \dQuote{standardized} X, y scale.
+#' 
 #' @param lambda Regularization parameter for LD matrix. When
 #' \code{lambda} > 0, you cannot use \code{unmappable_effects} methods.
 #'
