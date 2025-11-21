@@ -403,8 +403,7 @@ susie_ss <- function(XtX, Xty, yty, n,
                      verbose = FALSE,
                      track_fit = FALSE,
                      check_prior = FALSE,
-                     refine = FALSE,
-                     ...) {
+                     refine = FALSE) {
 
   # Validate method arguments
   unmappable_effects       <- match.arg(unmappable_effects)

@@ -40,8 +40,7 @@ susie_ss(
   verbose = FALSE,
   track_fit = FALSE,
   check_prior = FALSE,
-  refine = FALSE,
-  ...
+  refine = FALSE
 )
 }
 \arguments{
