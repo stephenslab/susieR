@@ -16,7 +16,7 @@ Description: Implements methods for variable selection in linear
     and fast, allowing the SuSiE model be fit to large data sets
     (thousands of samples and hundreds of thousands of variables).
 Date: 2025-11-21
-Version: 0.14.36
+Version: 0.14.37
 Authors@R: c(person("Gao","Wang",role="aut",email="wang.gao@columbia.edu"),
              person("Yuxin","Zou",role="aut"),
              person("Alexander","McCreight",role="aut"),
@@ -39,7 +39,8 @@ Imports:
     mixsqp,
     reshape,
     crayon,
-    ggplot2
+    ggplot2,
+    mr.ash.alpha
 Suggests:
     curl,
     pkgload,
@@ -51,6 +52,7 @@ Suggests:
     Rfast,
     cowplot,
     L0Learn
+Remotes: stephenslab/mr.ash.alpha
 LazyData: yes
 LazyDataCompression: xz
 NeedsCompilation: no

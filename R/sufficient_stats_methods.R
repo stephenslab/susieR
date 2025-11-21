@@ -299,6 +299,7 @@ update_fitted_values.ss <- function(data, params, model, l) {
 }
 
 # Update variance components for ss data
+#' @importFrom mr.ash.alpha mr.ash
 #' @keywords internal
 update_variance_components.ss <- function(data, params, model, ...) {
   if (params$unmappable_effects == "inf") {
@@ -366,7 +367,7 @@ update_variance_components.ss <- function(data, params, model, ...) {
     est_sa2 <- c(0, unique(c(small_grid, medium_grid, large_grid)))
 
     # Call mr.ash with residuals
-    mrash_output <- mr.ash.alpha::mr.ash(
+    mrash_output <- mr.ash(
       X             = data$X,
       y             = residuals,
       sa2           = est_sa2,
