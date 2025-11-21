@@ -18,8 +18,7 @@ test_that("univariate_regression returns correct structure", {
 })
 
 test_that("univariate_regression computes correct coefficients", {
-  set.seed(2)
-  base_data <- generate_base_data(n = 100, p = 5, k = 0, seed = NULL)
+  base_data <- generate_base_data(n = 100, p = 5, k = 0, seed = 2)
   beta_true <- c(1, -0.5, 0.8, 0, 0.3)
   y <- base_data$X %*% beta_true + rnorm(base_data$n, sd = 0.1)
 
@@ -102,8 +101,7 @@ test_that("univariate_regression with center=FALSE, scale=TRUE", {
 })
 
 test_that("univariate_regression scaling affects coefficient magnitude", {
-  set.seed(9)
-  base_data <- generate_base_data(n = 100, p = 5, k = 0, seed = NULL)
+  base_data <- generate_base_data(n = 100, p = 5, k = 0, seed = 9)
   # Create X with different variances
   X_varied <- matrix(rnorm(base_data$n * base_data$p, sd = rep(c(1, 5, 10, 2, 3), each = base_data$n)), base_data$n, base_data$p)
 
@@ -119,8 +117,7 @@ test_that("univariate_regression scaling affects coefficient magnitude", {
 # =============================================================================
 
 test_that("univariate_regression with covariates Z", {
-  set.seed(10)
-  base_data <- generate_base_data(n = 100, p = 5, k = 0, seed = NULL)
+  base_data <- generate_base_data(n = 100, p = 5, k = 0, seed = 10)
   k <- 2
   Z <- matrix(rnorm(base_data$n * k), base_data$n, k)
 
@@ -134,8 +131,7 @@ test_that("univariate_regression with covariates Z", {
 })
 
 test_that("univariate_regression with Z adjusts for confounders", {
-  set.seed(11)
-  base_data <- generate_base_data(n = 200, p = 5, k = 0, seed = NULL)
+  base_data <- generate_base_data(n = 200, p = 5, k = 0, seed = 11)
   # Create confounder
   Z <- matrix(rnorm(base_data$n), base_data$n, 1)
   # X correlated with Z
@@ -152,8 +148,7 @@ test_that("univariate_regression with Z adjusts for confounders", {
 })
 
 test_that("univariate_regression with Z and return_residuals=TRUE", {
-  set.seed(12)
-  base_data <- generate_base_data(n = 100, p = 5, k = 0, seed = NULL)
+  base_data <- generate_base_data(n = 100, p = 5, k = 0, seed = 12)
   k <- 2
   Z <- matrix(rnorm(base_data$n * k), base_data$n, k)
 
@@ -175,8 +170,7 @@ test_that("univariate_regression return_residuals=TRUE without Z omits residuals
 })
 
 test_that("univariate_regression residuals from Z are centered", {
-  set.seed(14)
-  base_data <- generate_base_data(n = 100, p = 5, k = 0, seed = NULL)
+  base_data <- generate_base_data(n = 100, p = 5, k = 0, seed = 14)
   k <- 2
   Z <- matrix(rnorm(base_data$n * k), base_data$n, k)
 
@@ -203,8 +197,7 @@ test_that("univariate_regression handles NA values in y", {
 })
 
 test_that("univariate_regression removes corresponding X rows when y has NA", {
-  set.seed(16)
-  base_data <- generate_base_data(n = 100, p = 5, k = 0, seed = NULL)
+  base_data <- generate_base_data(n = 100, p = 5, k = 0, seed = 16)
   beta_true <- rep(1, base_data$p)
   y_with_signal <- base_data$X %*% beta_true + rnorm(base_data$n, sd = 0.1)
 
@@ -228,7 +221,11 @@ test_that("univariate_regression with zero-variance column", {
   base_data <- generate_base_data(n = 100, p = 5, k = 0, seed = 17)
   base_data$X[, 3] <- 5  # Constant column
 
-  result <- univariate_regression(base_data$X, base_data$y, center = TRUE, scale = FALSE)
+  # Should produce a warning message for the constant column
+  expect_message(
+    result <- univariate_regression(base_data$X, base_data$y, center = TRUE, scale = FALSE),
+    "WARNING:.*Column 3 has zero variance"
+  )
 
   # Constant column becomes zero after centering
   expect_equal(result$betahat[3], 0)
@@ -272,8 +269,7 @@ test_that("univariate_regression with very small sample size", {
 # =============================================================================
 
 test_that("univariate_regression enables z-score calculation", {
-  set.seed(21)
-  base_data <- generate_base_data(n = 100, p = 10, k = 0, seed = NULL)
+  base_data <- generate_base_data(n = 100, p = 10, k = 0, seed = 21)
   beta_true <- c(rep(1, 3), rep(0, 7))
   y_signal <- base_data$X %*% beta_true + rnorm(base_data$n)
 
@@ -290,11 +286,141 @@ test_that("univariate_regression enables z-score calculation", {
 })
 
 # =============================================================================
+# METHOD COMPARISON: LMFIT VS SUMSTATS
+# =============================================================================
+
+test_that("univariate_regression methods lmfit and sumstats agree", {
+  base_data <- generate_base_data(n = 100, p = 10, k = 0, seed = 22)
+
+  res1 <- univariate_regression(base_data$X, base_data$y, method = "lmfit")
+  res2 <- univariate_regression(base_data$X, base_data$y, method = "sumstats")
+
+  expect_equal(res1$betahat, res2$betahat, tolerance = 1e-8)
+  expect_equal(res1$sebetahat, res2$sebetahat, tolerance = 1e-8)
+})
+
+test_that("lmfit and sumstats agree with center=TRUE, scale=FALSE", {
+  base_data <- generate_base_data(n = 100, p = 10, k = 0, seed = 23)
+
+  res1 <- univariate_regression(base_data$X, base_data$y, center = TRUE,
+                                scale = FALSE, method = "lmfit")
+  res2 <- univariate_regression(base_data$X, base_data$y, center = TRUE,
+                                scale = FALSE, method = "sumstats")
+
+  expect_equal(res1$betahat, res2$betahat, tolerance = 1e-8)
+  expect_equal(res1$sebetahat, res2$sebetahat, tolerance = 1e-8)
+})
+
+test_that("lmfit and sumstats agree with center=TRUE, scale=TRUE", {
+  base_data <- generate_base_data(n = 100, p = 10, k = 0, seed = 24)
+
+  res1 <- univariate_regression(base_data$X, base_data$y, center = TRUE,
+                                scale = TRUE, method = "lmfit")
+  res2 <- univariate_regression(base_data$X, base_data$y, center = TRUE,
+                                scale = TRUE, method = "sumstats")
+
+  expect_equal(res1$betahat, res2$betahat, tolerance = 1e-8)
+  expect_equal(res1$sebetahat, res2$sebetahat, tolerance = 1e-8)
+})
+
+test_that("lmfit and sumstats agree with center=FALSE, scale=FALSE", {
+  base_data <- generate_base_data(n = 100, p = 10, k = 0, seed = 25)
+
+  res1 <- univariate_regression(base_data$X, base_data$y, center = FALSE,
+                                scale = FALSE, method = "lmfit")
+  res2 <- univariate_regression(base_data$X, base_data$y, center = FALSE,
+                                scale = FALSE, method = "sumstats")
+
+  expect_equal(res1$betahat, res2$betahat, tolerance = 1e-8)
+  expect_equal(res1$sebetahat, res2$sebetahat, tolerance = 1e-8)
+})
+
+test_that("lmfit and sumstats agree with center=FALSE, scale=TRUE", {
+  base_data <- generate_base_data(n = 100, p = 10, k = 0, seed = 26)
+
+  res1 <- univariate_regression(base_data$X, base_data$y, center = FALSE,
+                                scale = TRUE, method = "lmfit")
+  res2 <- univariate_regression(base_data$X, base_data$y, center = FALSE,
+                                scale = TRUE, method = "sumstats")
+
+  expect_equal(res1$betahat, res2$betahat, tolerance = 1e-8)
+  expect_equal(res1$sebetahat, res2$sebetahat, tolerance = 1e-8)
+})
+
+test_that("lmfit and sumstats agree with covariates Z", {
+  base_data <- generate_base_data(n = 100, p = 10, k = 0, seed = 27)
+  k <- 3
+  Z <- matrix(rnorm(base_data$n * k), base_data$n, k)
+
+  res1 <- univariate_regression(base_data$X, base_data$y, Z = Z,
+                                center = TRUE, method = "lmfit")
+  res2 <- univariate_regression(base_data$X, base_data$y, Z = Z,
+                                center = TRUE, method = "sumstats")
+
+  expect_equal(res1$betahat, res2$betahat, tolerance = 1e-8)
+  expect_equal(res1$sebetahat, res2$sebetahat, tolerance = 1e-8)
+})
+
+test_that("lmfit and sumstats agree with NA values in y", {
+  base_data <- generate_base_data(n = 100, p = 10, k = 0, seed = 28)
+  base_data$y[c(5, 20, 35)] <- NA
+
+  res1 <- univariate_regression(base_data$X, base_data$y, method = "lmfit")
+  res2 <- univariate_regression(base_data$X, base_data$y, method = "sumstats")
+
+  expect_equal(res1$betahat, res2$betahat, tolerance = 1e-8)
+  expect_equal(res1$sebetahat, res2$sebetahat, tolerance = 1e-8)
+})
+
+test_that("lmfit and sumstats agree with zero-variance column", {
+  base_data <- generate_base_data(n = 100, p = 10, k = 0, seed = 29)
+  base_data$X[, 5] <- 3  # Constant column
+
+  # Both methods should produce warning messages
+  expect_message(
+    res1 <- univariate_regression(base_data$X, base_data$y, center = TRUE,
+                                  scale = FALSE, method = "lmfit"),
+    "WARNING:.*Column 5 has zero variance"
+  )
+
+  expect_message(
+    res2 <- univariate_regression(base_data$X, base_data$y, center = TRUE,
+                                  scale = FALSE, method = "sumstats"),
+    "WARNING:.*Column 5 has zero variance"
+  )
+
+  expect_equal(res1$betahat, res2$betahat, tolerance = 1e-8)
+  expect_equal(res1$sebetahat, res2$sebetahat, tolerance = 1e-8)
+})
+
+test_that("lmfit and sumstats agree with single column X", {
+  base_data <- generate_base_data(n = 100, p = 1, k = 0, seed = 30)
+
+  res1 <- univariate_regression(base_data$X, base_data$y, method = "lmfit")
+  res2 <- univariate_regression(base_data$X, base_data$y, method = "sumstats")
+
+  expect_equal(res1$betahat, res2$betahat, tolerance = 1e-8)
+  expect_equal(res1$sebetahat, res2$sebetahat, tolerance = 1e-8)
+})
+
+test_that("lmfit and sumstats agree with large dataset", {
+  base_data <- generate_base_data(n = 500, p = 5000, k = 0, seed = 31)
+
+  res1 <- univariate_regression(base_data$X, base_data$y, center = TRUE,
+                                scale = TRUE, method = "lmfit")
+  res2 <- univariate_regression(base_data$X, base_data$y, center = TRUE,
+                                scale = TRUE, method = "sumstats")
+
+  expect_equal(res1$betahat, res2$betahat, tolerance = 1e-8)
+  expect_equal(res1$sebetahat, res2$sebetahat, tolerance = 1e-8)
+})
+
+# =============================================================================
 # COMPARISON WITH SIMPLE LM
 # =============================================================================
 
 test_that("univariate_regression agrees with lm for each column", {
-  base_data <- generate_base_data(n = 50, p = 5, k = 0, seed = 22)
+  base_data <- generate_base_data(n = 50, p = 5, k = 0, seed = 32)
 
   result <- univariate_regression(base_data$X, base_data$y, center = TRUE, scale = FALSE)
 
@@ -317,7 +443,7 @@ test_that("univariate_regression agrees with lm for each column", {
 # =============================================================================
 
 test_that("univariate_regression fallback works when fast method fails", {
-  base_data <- generate_base_data(n = 100, p = 5, k = 0, seed = 23)
+  base_data <- generate_base_data(n = 100, p = 5, k = 0, seed = 33)
 
   # Normal execution should work
   result <- univariate_regression(base_data$X, base_data$y)
@@ -328,8 +454,7 @@ test_that("univariate_regression fallback works when fast method fails", {
 })
 
 test_that("univariate_regression handles nearly singular design matrix", {
-  set.seed(24)
-  base_data <- generate_base_data(n = 100, p = 5, k = 0, seed = NULL)
+  base_data <- generate_base_data(n = 100, p = 5, k = 0, seed = 34)
   # Make two columns nearly identical
   base_data$X[, 2] <- base_data$X[, 1] + rnorm(base_data$n, sd = 1e-10)
 
@@ -345,8 +470,7 @@ test_that("univariate_regression handles nearly singular design matrix", {
 # =============================================================================
 
 test_that("univariate_regression output usable for RSS methods", {
-  set.seed(25)
-  base_data <- generate_base_data(n = 200, p = 100, k = 0, seed = NULL)
+  base_data <- generate_base_data(n = 200, p = 100, k = 0, seed = 35)
   beta_true <- rep(0, base_data$p)
   beta_true[1:5] <- rnorm(5)
   y_causal <- base_data$X %*% beta_true + rnorm(base_data$n)
@@ -367,7 +491,7 @@ test_that("univariate_regression output usable for RSS methods", {
 })
 
 test_that("univariate_regression with center and scale matches susie preprocessing", {
-  base_data <- generate_base_data(n = 100, p = 50, k = 0, seed = 26)
+  base_data <- generate_base_data(n = 100, p = 50, k = 0, seed = 36)
 
   # This should match what susie does internally for univariate regression
   result <- univariate_regression(base_data$X, base_data$y, center = TRUE, scale = TRUE)
@@ -382,7 +506,7 @@ test_that("univariate_regression with center and scale matches susie preprocessi
 # =============================================================================
 
 test_that("calc_z returns correct z-scores for single outcome (vector Y)", {
-  base_data <- generate_base_data(n = 100, p = 10, k = 0, seed = 27)
+  base_data <- generate_base_data(n = 100, p = 10, k = 0, seed = 37)
 
   # Compute z-scores using calc_z
   z <- susieR:::calc_z(base_data$X, base_data$y, center = FALSE, scale = FALSE)
@@ -397,7 +521,7 @@ test_that("calc_z returns correct z-scores for single outcome (vector Y)", {
 })
 
 test_that("calc_z returns correct z-scores for multiple outcomes (matrix Y)", {
-  set.seed(28)
+  set.seed(38)
   n <- 100
   p <- 10
   m <- 3  # Number of outcomes
@@ -421,7 +545,7 @@ test_that("calc_z returns correct z-scores for multiple outcomes (matrix Y)", {
 })
 
 test_that("calc_z with center=TRUE centers data before computing z-scores", {
-  set.seed(29)
+  set.seed(39)
   n <- 100
   p <- 10
   X <- matrix(rnorm(n * p, mean = 5, sd = 2), n, p)
@@ -439,7 +563,7 @@ test_that("calc_z with center=TRUE centers data before computing z-scores", {
 })
 
 test_that("calc_z with scale=TRUE scales data before computing z-scores", {
-  set.seed(30)
+  set.seed(40)
   n <- 100
   p <- 10
   X <- matrix(rnorm(n * p, sd = c(1, 5, 10, 2, 3, 1, 4, 8, 1, 2)), n, p)
@@ -457,7 +581,7 @@ test_that("calc_z with scale=TRUE scales data before computing z-scores", {
 })
 
 test_that("calc_z with center=TRUE and scale=TRUE", {
-  set.seed(31)
+  set.seed(41)
   n <- 100
   p <- 10
   X <- matrix(rnorm(n * p, mean = 3, sd = c(1, 5, 10, 2, 3, 1, 4, 8, 1, 2)), n, p)
@@ -475,7 +599,7 @@ test_that("calc_z with center=TRUE and scale=TRUE", {
 })
 
 test_that("calc_z handles matrix Y with different centering/scaling", {
-  set.seed(32)
+  set.seed(42)
   n <- 100
   p <- 8
   m <- 4
@@ -507,7 +631,7 @@ test_that("calc_z handles matrix Y with different centering/scaling", {
 })
 
 test_that("calc_z matrix Y branch is tested (is.null(dim(Y)) = FALSE)", {
-  set.seed(33)
+  set.seed(43)
   n <- 50
   p <- 5
   m <- 2
@@ -526,7 +650,7 @@ test_that("calc_z matrix Y branch is tested (is.null(dim(Y)) = FALSE)", {
 })
 
 test_that("calc_z vector Y branch is tested (is.null(dim(Y)) = TRUE)", {
-  set.seed(34)
+  set.seed(44)
   n <- 50
   p <- 5
   X <- matrix(rnorm(n * p), n, p)
