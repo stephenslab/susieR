@@ -63,6 +63,7 @@ articles:
     - finemapping_summary_statistics
     - susie_rss
     - susierss_diagnostic
+    - small_sample
   - title: "Advanced Topics"
     desc: >
       Advanced features and specialized applications of the susieR package.
