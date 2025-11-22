@@ -32,21 +32,22 @@ single_effect_regression <- function(data, params, model, l) {
     loglik_res <- loglik(data, params, model, V, ser_stats)
 
     # Compute posterior moments
-    moments    <- calculate_posterior_moments(data, params, model, V)
+    moments    <- calculate_posterior_moments(data, params, model, V, loglik_res)
 
     # Expectation-maximization prior variance update using posterior moments
     if (params$estimate_prior_method == "EM") {
-      V <- optimize_prior_variance(data, params, model, ser_stats,
-        loglik_res$alpha, moments, V_init = NULL)
+      V <- optimize_prior_variance(data, params, model, ser_stats, loglik_res$alpha, moments, V_init = V)
     }
 
     return(list(
-      alpha     = loglik_res$alpha,
-      mu        = moments$post_mean,
-      mu2       = moments$post_mean2,
-      lbf       = loglik_res$lbf,
-      lbf_model = loglik_res$lbf_model,
-      V         = V
+      alpha           = loglik_res$alpha,
+      mu              = moments$post_mean,
+      mu2             = moments$post_mean2,
+      lbf             = loglik_res$lbf,
+      lbf_model       = loglik_res$lbf_model,
+      V               = V,
+      rv              = moments$rv,
+      marginal_loglik = loglik_res$marginal_loglik
     ))
   }
 
@@ -98,8 +99,11 @@ optimize_prior_variance <- function(data, params, model, ser_stats,
       V <- V_new
     } else if (params$estimate_prior_method == "EM") {
       if (params$use_servin_stephens) {
-        # Servin-Stephens EM update
-        V <- sqrt(sum(alpha * (ser_stats$betahat^2 + moments$beta_1/(data$n - 2) + ser_stats$shat2)))
+        # Compute EM update analytically
+        V <- update_prior_variance_NIG_EM(data$n, model$predictor_weights,
+                                           model$residuals, sum(model$raw_residuals^2),
+                                           drop(cor(data$X, model$raw_residuals)),
+                                           alpha, V_init, params$alpha0, params$beta0)
       } else {
         # Standard EM update
         V <- sum(alpha * moments$post_mean2)
@@ -162,7 +166,7 @@ single_effect_update <- function(data, params, model, l) {
   model$KL[l]             <- compute_kl(data, params, model, l)
 
   # Update fitted values
-  model <- update_fitted_values(data, params, model, l)
+  model <- update_fitted_values(data, params, model, l, res)
 
   return(model)
 }

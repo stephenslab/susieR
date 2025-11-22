@@ -127,7 +127,7 @@ SER_posterior_e_loglik.rss_lambda <- function(data, params, model, l) {
 
 # Calculate posterior moments for single effect regression
 #' @keywords internal
-calculate_posterior_moments.rss_lambda <- function(data, params, model, V, ...) {
+calculate_posterior_moments.rss_lambda <- function(data, params, model, V, loglik_res, ...) {
   post_var   <- (model$RjSinvRj + 1 / V)^(-1)
   post_mean  <- sapply(1:data$p, function(j) {
     post_var[j] * sum(model$SinvRj[, j] * model$residuals)
@@ -137,7 +137,8 @@ calculate_posterior_moments.rss_lambda <- function(data, params, model, V, ...) 
   return(list(
     post_mean  = post_mean,
     post_mean2 = post_mean2,
-    post_var   = post_var
+    post_var   = post_var,
+    rv         = 1
   ))
 }
 
@@ -231,7 +232,7 @@ neg_loglik.rss_lambda <- function(data, params, model, V_param, ser_stats, ...) 
 
 # Update fitted values
 #' @keywords internal
-update_fitted_values.rss_lambda <- function(data, params, model, l) {
+update_fitted_values.rss_lambda <- function(data, params, model, l, res, ...) {
   model$Rz <- model$fitted_without_l + as.vector(data$R %*% (model$alpha[l, ] * model$mu[l, ]))
   model    <- precompute_rss_lambda_terms(data, model)
 

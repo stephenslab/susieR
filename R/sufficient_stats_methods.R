@@ -194,7 +194,7 @@ SER_posterior_e_loglik.ss <- function(data, params, model, l) {
 
 # Calculate posterior moments for single effect regression
 #' @keywords internal
-calculate_posterior_moments.ss <- function(data, params, model, V, ...) {
+calculate_posterior_moments.ss <- function(data, params, model, V, loglik_res, ...) {
   # Standard Gaussian posterior calculations
   post_var   <- (1 / V + model$predictor_weights / model$residual_variance)^(-1)
   post_mean  <- (1 / model$residual_variance) * post_var * model$residuals
@@ -203,7 +203,8 @@ calculate_posterior_moments.ss <- function(data, params, model, V, ...) {
   return(list(
     post_mean  = post_mean,
     post_mean2 = post_mean2,
-    post_var   = post_var
+    post_var   = post_var,
+    rv         = 1
   ))
 }
 
@@ -289,7 +290,7 @@ neg_loglik.ss <- function(data, params, model, V_param, ser_stats, ...) {
 
 # Update fitted values
 #' @keywords internal
-update_fitted_values.ss <- function(data, params, model, l) {
+update_fitted_values.ss <- function(data, params, model, l, res, ...) {
   if (params$unmappable_effects != "none") {
     model$XtXr <- as.vector(data$XtX %*% (colSums(model$alpha * model$mu) + model$theta))
   } else {
