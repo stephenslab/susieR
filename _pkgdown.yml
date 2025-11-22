@@ -46,7 +46,7 @@ navbar:
    aria-label: Package news
   github:
    icon: fab fa-github
-   href: https://github.com/StatFunGen/susieR
+   href: https://github.com/stephenslab/susieR
    aria-label: View source on GitHub
 
 articles:
