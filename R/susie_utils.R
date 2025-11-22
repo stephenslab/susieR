@@ -131,6 +131,11 @@ compute_colstats <- function(X, center = TRUE, scale = TRUE) {
   return(list(cm = cm, csd = csd, d = d))
 }
 
+# Compute standard error for regression coef.
+# S = (X'X)^-1 \Sigma
+calc_stderr = function (X, residuals)
+  sqrt(diag(sum(residuals^2)/(nrow(X) - 2) * chol2inv(chol(crossprod(X)))))
+
 # =============================================================================
 # DATA PROCESSING & VALIDATION
 #
