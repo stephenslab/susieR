@@ -79,12 +79,17 @@ track_ibss_fit.default <- function(data, params, model, tracking, iter, elbo, ..
   if (iter == 1) {
     tracking$convergence <- list(
       prev_elbo  = -Inf,
-      prev_alpha = model$alpha
+      prev_alpha = model$alpha,
+      prev_pip_diff = NULL
     )
   } else {
+    # Compute PIP difference for this iteration
+    pip_diff <- max(abs(tracking$convergence$prev_alpha - model$alpha))
+
     # Update previous values for convergence checking
     tracking$convergence$prev_elbo  <- elbo[iter]
     tracking$convergence$prev_alpha <- model$alpha
+    tracking$convergence$prev_pip_diff <- pip_diff
   }
 
   # Store additional tracking information if requested
@@ -142,11 +147,11 @@ SER_posterior_e_loglik.default <- function(data, params, model, l) {
 
 # Calculate posterior moments for single effect regression
 #' @keywords internal
-calculate_posterior_moments <- function(data, params, model, V, ...) {
+calculate_posterior_moments <- function(data, params, model, V, loglik_res, ...) {
   UseMethod("calculate_posterior_moments")
 }
 #' @keywords internal
-calculate_posterior_moments.default <- function(data, params, model, V, ...) {
+calculate_posterior_moments.default <- function(data, params, model, V, loglik_res, ...) {
   stop("calculate_posterior_moments: no method for class '", class(data)[1], "'")
 }
 
@@ -212,11 +217,11 @@ neg_loglik.default <- function(data, params, model, V_param, ser_stats, ...) {
 
 # Update fitted values
 #' @keywords internal
-update_fitted_values <- function(data, params, model, l) {
+update_fitted_values <- function(data, params, model, l, res, ...) {
   UseMethod("update_fitted_values")
 }
 #' @keywords internal
-update_fitted_values.default <- function(data, params, model, l) {
+update_fitted_values.default <- function(data, params, model, l, res, ...) {
   stop("update_fitted_values: no method for class '", class(data)[1], "'")
 }
 

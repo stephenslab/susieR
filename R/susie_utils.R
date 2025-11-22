@@ -752,6 +752,8 @@ compute_lbf_gradient <- function(alpha, betahat, shat2, V, use_servin_stephens =
 #
 # Functions: mom_unmappable, mle_unmappable, compute_lbf_servin_stephens,
 # posterior_mean_servin_stephens, posterior_var_servin_stephens,
+# compute_stats_NIG, update_prior_variance_NIG_EM, compute_kl_NIG,
+# inv_gamma_factor, compute_null_loglik_NIG, compute_marginal_loglik,
 # est_residual_variance, update_model_variance
 # =============================================================================
 
@@ -938,6 +940,130 @@ posterior_var_servin_stephens <- function(xtx, xty, yty, n, s0_t = 1) {
   return(list(post_var = post_var, beta1 = beta1))
 }
 
+# Compute the (log) Bayes factors and additional statistics under Normal-Inverse-Gamma (NIG) prior
+#' @keywords internal
+compute_stats_NIG <- function(n, xx, xy, yy, sxy, s0, a0, b0) {
+
+  r0 <- s0 / (s0 + 1 / xx)
+  rss <- yy * (1 - r0 * sxy^2)
+
+  # Update inverse-gamma parameters
+  a1 <- a0 + n
+  b1 <- b0 + rss
+
+  # Compute log Bayes factor for each variable
+  lbf <- -(log(1 + s0 * xx) + a1 * log(b1 / (b0 + yy))) / 2
+
+  # Compute least-squares estimate for each variable
+  bhat <- xy / xx
+
+  # Compute posterior mean
+  post_mean <- r0 * bhat
+
+  # Compute posterior variance
+  post_var <- b1 / (a1 - 2) * r0 / xx
+
+  # Compute posterior mode of residual variance
+  rv <- (b1 / 2) / (a1 / 2 - 1)
+
+  return(list(
+    lbf        = lbf,
+    post_mean  = post_mean,
+    post_mean2 = post_var + post_mean^2,
+    post_var   = post_var,
+    rv         = rv
+  ))
+}
+
+# EM update for prior variance under Normal-Inverse-Gamma (NIG) prior
+#' @keywords internal
+update_prior_variance_NIG_EM <- function(n, xx, xy, yy, sxy, pip, s0, a0, b0) {
+  r0   <- s0 / (s0 + 1 / xx)
+  rss  <- yy * (1 - r0 * sxy^2)
+
+  # Update inverse-gamma parameters
+  a1   <- a0 + n
+  b1   <- b0 + rss
+
+  # Compute posterior mean and variance component
+  bhat <- xy / xx
+  post_mean  <- r0 * bhat
+  post_var   <- r0 / xx
+
+  u  <- gamma(1/2) / beta(a1/2, 1/2)
+  mb <- post_mean * sqrt(2 / b1) * u
+  vb <- post_var + post_mean^2 * 2 / b1 * (1 / beta(a1/2, 1) - u^2)
+
+  return(sum(pip * (vb + mb^2)))
+}
+
+# Compute KL divergence for Normal-Inverse-Gamma (NIG) prior
+#' @keywords internal
+compute_kl_NIG <- function(alpha, post_mean, post_mean2, pi, V, a0, b0, a_post, b_post) {
+  eps <- .Machine$double.eps
+
+  # Posterior variance from second moment
+  post_var <- pmax(post_mean2 - post_mean^2, eps)
+
+  # Prior precision (tau2 = 1/V)
+  tau2 <- 1 / V
+
+  # KL for gamma
+  KL_gamma <- sum(alpha * (log(pmax(alpha, eps)) - log(pmax(pi, eps))))
+
+  # Expectations under posterior q(sigma^2) ~ IG(a_post, b_post)
+  E_log_sigma2 <- digamma(a_post) - log(b_post)
+  E_inv_sigma2 <- a_post / b_post
+
+  # KL divergence for beta given sigma^2
+  KL_beta <- 0.5 * sum(alpha * (
+    E_log_sigma2 + log(tau2) - log(pmax(post_var, eps)) +
+      E_inv_sigma2 * (post_var + post_mean^2) / tau2 - 1
+  ))
+
+  # KL divergence between IG posterior and IG prior
+  KL_sigma2 <- lgamma(a0) - lgamma(a_post) +
+    a0 * log(b_post / b0) +
+    (a_post - a0) * digamma(a_post) -
+    a_post + (a_post * b0) / b_post
+
+  # Total KL divergence
+  KL_total <- KL_gamma + KL_beta + KL_sigma2
+
+  return(as.numeric(KL_total))
+}
+
+# Compute log-normalizing factor for the IG(a,b) distribution
+#' @keywords internal
+inv_gamma_factor <- function(a, b) {
+  return(a * log(b) - lgamma(a))
+}
+
+# Compute null log-likelihood under NIG prior
+#' @keywords internal
+compute_null_loglik_NIG <- function(n, yy, a0, b0, use_servin_stephens = FALSE) {
+  # No null log-likelihood for non-Servin-Stephens prior
+  if (!use_servin_stephens) {
+    return(NULL)
+  }
+
+  return(-n * log(2 * pi) / 2 +
+         inv_gamma_factor(a0 / 2, b0 / 2) -
+         inv_gamma_factor((a0 + n) / 2, (b0 + yy) / 2))
+}
+
+# Compute marginal log-likelihood for single effect regression
+#' @keywords internal
+compute_marginal_loglik <- function(lbf_model, n, yy, a0, b0, use_servin_stephens = FALSE) {
+  # No marginal log-likelihood computation for non-Servin-Stephens prior
+  if (!use_servin_stephens) {
+    return(NULL)
+  }
+
+  ll0 <- compute_null_loglik_NIG(n, yy, a0, b0, use_servin_stephens = TRUE)
+  return(lbf_model + ll0)
+}
+
 # Estimate residual variance
 #' @keywords internal
 est_residual_variance <- function(data, model) {
@@ -995,9 +1121,32 @@ check_convergence <- function(params, model, elbo, iter, tracking) {
                              value. Using pip-based convergence this iteration."))
     }
 
-    # Calculate difference in alpha values
-    PIP_diff <- max(abs(tracking$convergence$prev_alpha - model$alpha))
-    return(PIP_diff < params$tol)
+    # For Servin-Stephens prior, require at least 3 iterations and average convergence
+    # over 2 consecutive iterations for more stable convergence
+    if (params$use_servin_stephens) {
+      if (iter <= 2) {
+        return(FALSE)  # Require at least 3 iterations
+      }
+
+      # Current iteration PIP difference
+      current_diff <- max(abs(tracking$convergence$prev_alpha - model$alpha))
+
+      # Average with previous iteration's difference if available
+      if (!is.null(tracking$convergence$prev_pip_diff)) {
+        avg_diff <- (current_diff + tracking$convergence$prev_pip_diff) / 2
+      } else {
+        avg_diff <- current_diff
+      }
+
+      # Store current diff for next iteration
+      tracking$convergence$prev_pip_diff <- current_diff
+
+      return(avg_diff < params$tol)
+    } else {
+      # Standard PIP convergence
+      PIP_diff <- max(abs(tracking$convergence$prev_alpha - model$alpha))
+      return(PIP_diff < params$tol)
+    }
   }
   return(ELBO_diff < params$tol)
 }
@@ -1022,6 +1171,8 @@ get_objective <- function(data, params, model) {
       data$eigen_vectors, data$eigen_values,
       data$VtXty, data$yty
     )
+  } else if (params$use_servin_stephens && nrow(model$alpha) == 1) {
+    objective <- model$marginal_loglik[1]
   } else {
     # Standard ELBO computation
     objective <- Eloglik(data, model) - sum(model$KL)

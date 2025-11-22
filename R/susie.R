@@ -298,8 +298,8 @@ susie <- function(X, y, L = min(10, ncol(X)),
                   residual_variance_lowerbound = var(drop(y)) / 1e4,
                   refine = FALSE,
                   n_purity = 100,
-                  alpha0 = 0,
-                  beta0 = 0) {
+                  alpha0 = 0.1,
+                  beta0 = 0.1) {
 
   # Validate method arguments
   unmappable_effects       <- match.arg(unmappable_effects)
