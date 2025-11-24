@@ -142,7 +142,7 @@ calculate_posterior_moments.individual <- function(data, params, model, V, l, ..
       # Zero variance case
       post_mean  <- rep(0, data$p)
       post_mean2 <- rep(0, data$p)
-      rv         <- 1
+      model$rv[l] <- 1
     } else {
       # Compute posterior moments for NIG prior
       moments <- compute_posterior_moments_NIG(data$n, model$predictor_weights,
@@ -154,24 +154,18 @@ calculate_posterior_moments.individual <- function(data, params, model, V, l, ..
       post_mean2 <- moments$post_mean2
 
       # Compute weighted average of residual variance modes using PIPs
-      rv <- sum(model$alpha[l, ] * moments$rv)
+      model$rv[l] <- sum(model$alpha[l, ] * moments$rv)
     }
   } else {
     # Standard Gaussian posterior calculations
     post_var   <- (1 / V + model$predictor_weights / model$residual_variance)^(-1)
     post_mean  <- (1 / model$residual_variance) * post_var * model$residuals
     post_mean2 <- post_var + post_mean^2
-    rv         <- 1
   }
 
   # Store posterior moments in model
   model$mu[l, ] <- post_mean
   model$mu2[l, ] <- post_mean2
-
-  # Store rv if Servin-Stephens (rv != 1)
-  if (rv != 1) {
-    model$rv[l] <- rv
-  }
 
   return(model)
 }
