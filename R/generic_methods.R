@@ -162,8 +162,7 @@ compute_kl <- function(data, params, model, l) {
 }
 #' @keywords internal
 compute_kl.default <- function(data, params, model, l) {
-  kl <- -model$lbf[l] + SER_posterior_e_loglik(data, params, model, l)
-  model$KL[l] <- kl
+  model$KL[l] <- -model$lbf[l] + SER_posterior_e_loglik(data, params, model, l)
   return(model)
 }
 
