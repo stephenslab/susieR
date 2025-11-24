@@ -127,24 +127,25 @@ SER_posterior_e_loglik.rss_lambda <- function(data, params, model, l) {
 
 # Calculate posterior moments for single effect regression
 #' @keywords internal
-calculate_posterior_moments.rss_lambda <- function(data, params, model, V, ...) {
+calculate_posterior_moments.rss_lambda <- function(data, params, model, V, l, ...) {
   post_var   <- (model$RjSinvRj + 1 / V)^(-1)
   post_mean  <- sapply(1:data$p, function(j) {
     post_var[j] * sum(model$SinvRj[, j] * model$residuals)
   })
   post_mean2 <- post_var + post_mean^2
 
-  return(list(
-    post_mean  = post_mean,
-    post_mean2 = post_mean2,
-    post_var   = post_var
-  ))
+  # Store posterior moments in model
+  model$mu[l, ] <- post_mean
+  model$mu2[l, ] <- post_mean2
+
+  return(model)
 }
 
 # Calculate KL divergence
 #' @keywords internal
 compute_kl.rss_lambda <- function(data, params, model, l) {
-  return(compute_kl.default(data, params, model, l))
+  model <- compute_kl.default(data, params, model, l)
+  return(model)
 }
 
 # Expected squared residuals
@@ -193,7 +194,7 @@ Eloglik.rss_lambda <- function(data, model) {
 
 # Log-likelihood for RSS
 #' @keywords internal
-loglik.rss_lambda <- function(data, params, model, V, ser_stats, ...) {
+loglik.rss_lambda <- function(data, params, model, V, ser_stats, l = NULL, ...) {
   # Compute log Bayes factors
   lbf <- -0.5 * log(1 + V / ser_stats$shat2) +
     0.5 * (V / (1 + V / ser_stats$shat2)) * (crossprod(model$SinvRj, model$residuals)^2)
@@ -204,19 +205,23 @@ loglik.rss_lambda <- function(data, params, model, V, ser_stats, ...) {
   # Compute posterior weights
   weights_res <- compute_posterior_weights(stable_res$lpo)
 
-  return(list(
-    lbf       = stable_res$lbf,
-    lbf_model = weights_res$lbf_model,
-    alpha     = weights_res$alpha
-  ))
+  # Store in model if l is provided, otherwise return lbf_model for prior variance optimization
+  if (!is.null(l)) {
+    model$alpha[l, ] <- weights_res$alpha
+    model$lbf[l] <- weights_res$lbf_model
+    model$lbf_variable[l, ] <- stable_res$lbf
+    return(model)
+  } else {
+    return(weights_res$lbf_model)
+  }
 }
 
 #' @keywords internal
 neg_loglik.rss_lambda <- function(data, params, model, V_param, ser_stats, ...) {
   # Convert parameter to V based on optimization scale (always log for RSS lambda)
-  V   <- exp(V_param)
-  res <- loglik.rss_lambda(data, params, model, V, ser_stats)
-  return(-res$lbf_model)
+  V <- exp(V_param)
+  lbf_model <- loglik.rss_lambda(data, params, model, V, ser_stats)
+  return(-lbf_model)
 }
 
 # =============================================================================
@@ -231,7 +236,7 @@ neg_loglik.rss_lambda <- function(data, params, model, V_param, ser_stats, ...) 
 
 # Update fitted values
 #' @keywords internal
-update_fitted_values.rss_lambda <- function(data, params, model, l) {
+update_fitted_values.rss_lambda <- function(data, params, model, l, ...) {
   model$Rz <- model$fitted_without_l + as.vector(data$R %*% (model$alpha[l, ] * model$mu[l, ]))
   model    <- precompute_rss_lambda_terms(data, model)
 

@@ -10,7 +10,7 @@
 #' @param model Current SuSiE model object
 #' @param l Effect index being updated
 #'
-#' @return List with alpha, mu, mu2, lbf, lbf_model, and V for the lth effect
+#' @return Updated model with alpha, mu, mu2, lbf, lbf_variable, V, and KL stored for the lth effect
 #'
 #' @keywords internal
 #' @noRd
@@ -29,25 +29,25 @@ single_effect_regression <- function(data, params, model, l) {
     }
 
     # Compute logged Bayes factors and posterior inclusion probabilities
-    loglik_res <- loglik(data, params, model, V, ser_stats)
+    model <- loglik(data, params, model, V, ser_stats, l)
 
     # Compute posterior moments
-    moments    <- calculate_posterior_moments(data, params, model, V)
+    model <- calculate_posterior_moments(data, params, model, V, l)
+
+    # Compute KL divergence
+    model <- compute_kl(data, params, model, l)
 
     # Expectation-maximization prior variance update using posterior moments
     if (params$estimate_prior_method == "EM") {
-      V <- optimize_prior_variance(data, params, model, ser_stats,
-        loglik_res$alpha, moments, V_init = NULL)
+      V <- optimize_prior_variance(data, params, model, ser_stats, model$alpha[l, ],
+                                    list(post_mean = model$mu[l, ], post_mean2 = model$mu2[l, ]),
+                                    V_init = V)
     }
 
-    return(list(
-      alpha     = loglik_res$alpha,
-      mu        = moments$post_mean,
-      mu2       = moments$post_mean2,
-      lbf       = loglik_res$lbf,
-      lbf_model = loglik_res$lbf_model,
-      V         = V
-    ))
+    # Store prior variance
+    model$V[l] <- V
+
+    return(model)
   }
 
 # =============================================================================
@@ -98,8 +98,11 @@ optimize_prior_variance <- function(data, params, model, ser_stats,
       V <- V_new
     } else if (params$estimate_prior_method == "EM") {
       if (params$use_servin_stephens) {
-        # Servin-Stephens EM update
-        V <- sqrt(sum(alpha * (ser_stats$betahat^2 + moments$beta_1/(data$n - 2) + ser_stats$shat2)))
+        # Compute EM update analytically
+        V <- update_prior_variance_NIG_EM(data$n, model$predictor_weights,
+                                           model$residuals, sum(model$raw_residuals^2),
+                                           drop(cor(data$X, model$raw_residuals)),
+                                           alpha, V_init, params$alpha0, params$beta0)
       } else {
         # Standard EM update
         V <- sum(alpha * moments$post_mean2)
@@ -120,8 +123,8 @@ optimize_prior_variance <- function(data, params, model, ser_stats,
   # non-zeros estimates unless they are indeed small enough to be
   # neglible. See more intuition at
   # https://stephens999.github.io/fiveMinuteStats/LR_and_BF.html
-  if (loglik(data, params, model, 0, ser_stats)$lbf_model +
-    params$check_null_threshold >= loglik(data, params, model, V, ser_stats)$lbf_model) {
+  if (loglik(data, params, model, 0, ser_stats) +
+    params$check_null_threshold >= loglik(data, params, model, V, ser_stats)) {
     V <- 0
   }
 
@@ -150,16 +153,7 @@ single_effect_update <- function(data, params, model, l) {
   model <- compute_residuals(data, params, model, l)
 
   # Run Single Effect Regression
-  res <- single_effect_regression(data, params, model, l)
-
-  # Store results from SER
-  model$alpha[l, ]        <- res$alpha
-  model$mu[l, ]           <- res$mu
-  model$mu2[l, ]          <- res$mu2
-  model$V[l]              <- res$V
-  model$lbf[l]            <- res$lbf_model
-  model$lbf_variable[l, ] <- res$lbf
-  model$KL[l]             <- compute_kl(data, params, model, l)
+  model <- single_effect_regression(data, params, model, l)
 
   # Update fitted values
   model <- update_fitted_values(data, params, model, l)

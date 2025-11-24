@@ -132,6 +132,9 @@ ibss_finalize <- function(data, params, model, elbo = NULL, iter = NA_integer_,
   # Append ELBO & iteration count to model output
   model$niter <- iter
 
+  # For Servin-Stephens (NIG prior), scale prior variance by residual variance mode
+  if (params$use_servin_stephens) model$V <- model$V * model$rv
+
   # Intercept & Fitted Values
   model$X_column_scale_factors <- get_scale_factors(data, params)
   model$intercept              <- get_intercept(data, params, model)

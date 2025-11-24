@@ -265,18 +265,14 @@ test_that("calculate_posterior_moments.ss computes posterior correctly", {
   V <- 1.0
 
   model <- compute_residuals.ss(setup$data, setup$params, setup$model, l)
-  moments <- calculate_posterior_moments.ss(setup$data, setup$params, model, V)
+  model <- calculate_posterior_moments.ss(setup$data, setup$params, model, V, l)
 
-  expect_true("post_mean" %in% names(moments))
-  expect_true("post_mean2" %in% names(moments))
-  expect_true("post_var" %in% names(moments))
+  expect_length(model$mu[l, ], setup$data$p)
+  expect_length(model$mu2[l, ], setup$data$p)
 
-  expect_length(moments$post_mean, setup$data$p)
-  expect_length(moments$post_mean2, setup$data$p)
-  expect_length(moments$post_var, setup$data$p)
-
-  expect_true(all(moments$post_var >= 0))
-  expect_true(all(moments$post_mean2 >= moments$post_mean^2 - 1e-10))
+  post_var <- model$mu2[l, ] - model$mu[l, ]^2
+  expect_true(all(post_var >= -1e-10))
+  expect_true(all(model$mu2[l, ] >= model$mu[l, ]^2 - 1e-10))
 })
 
 test_that("compute_kl.ss delegates to default method", {
@@ -289,10 +285,10 @@ test_that("compute_kl.ss delegates to default method", {
   setup$model$mu2[l, ] <- setup$model$mu[l, ]^2 + 0.1
 
   model <- compute_residuals.ss(setup$data, setup$params, setup$model, l)
-  kl <- compute_kl.ss(setup$data, setup$params, model, l)
+  model <- compute_kl.ss(setup$data, setup$params, model, l)
 
-  expect_type(kl, "double")
-  expect_length(kl, 1)
+  expect_type(model$KL[l], "double")
+  expect_length(model$KL[l], 1)
 })
 
 test_that("get_ER2.ss computes expected squared residuals", {
@@ -321,18 +317,14 @@ test_that("loglik.ss computes log Bayes factors", {
 
   model <- compute_residuals.ss(setup$data, setup$params, setup$model, l)
   ser_stats <- compute_ser_statistics.ss(setup$data, setup$params, model, l)
-  result <- loglik.ss(setup$data, setup$params, model, V, ser_stats)
+  model <- loglik.ss(setup$data, setup$params, model, V, ser_stats, l)
 
-  expect_true("lbf" %in% names(result))
-  expect_true("lbf_model" %in% names(result))
-  expect_true("alpha" %in% names(result))
-  expect_true("gradient" %in% names(result))
+  expect_length(model$lbf_variable[l, ], setup$data$p)
+  expect_length(model$alpha[l, ], setup$data$p)
 
-  expect_length(result$lbf, setup$data$p)
-  expect_length(result$alpha, setup$data$p)
-
-  expect_true(all(result$alpha >= 0))
-  expect_true(abs(sum(result$alpha) - 1) < 1e-10)
+  expect_true(all(model$alpha[l, ] >= 0))
+  expect_true(abs(sum(model$alpha[l, ]) - 1) < 1e-10)
+  expect_true(is.numeric(model$lbf[l]))
 })
 
 test_that("neg_loglik.ss returns negative log-likelihood for unmappable_effects='none'", {

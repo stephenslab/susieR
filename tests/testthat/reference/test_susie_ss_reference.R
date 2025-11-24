@@ -1,5 +1,5 @@
 # Source helper functions
-source(file.path("..", "helpers", "helper_reference.R"), local = TRUE)
+source(file.path("..", "helper_reference.R"), local = TRUE)
 
 context("susie_ss reference comparison")
 

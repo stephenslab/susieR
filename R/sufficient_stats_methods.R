@@ -194,23 +194,24 @@ SER_posterior_e_loglik.ss <- function(data, params, model, l) {
 
 # Calculate posterior moments for single effect regression
 #' @keywords internal
-calculate_posterior_moments.ss <- function(data, params, model, V, ...) {
+calculate_posterior_moments.ss <- function(data, params, model, V, l, ...) {
   # Standard Gaussian posterior calculations
   post_var   <- (1 / V + model$predictor_weights / model$residual_variance)^(-1)
   post_mean  <- (1 / model$residual_variance) * post_var * model$residuals
   post_mean2 <- post_var + post_mean^2
 
-  return(list(
-    post_mean  = post_mean,
-    post_mean2 = post_mean2,
-    post_var   = post_var
-  ))
+  # Store posterior moments in model
+  model$mu[l, ] <- post_mean
+  model$mu2[l, ] <- post_mean2
+
+  return(model)
 }
 
 # Calculate KL divergence
 #' @keywords internal
 compute_kl.ss <- function(data, params, model, l) {
-  return(compute_kl.default(data, params, model, l))
+  model <- compute_kl.default(data, params, model, l)
+  return(model)
 }
 
 # Expected Squared Residuals
@@ -236,7 +237,7 @@ Eloglik.ss <- function(data, model) {
 #' @importFrom Matrix colSums
 #' @importFrom stats dnorm
 #' @keywords internal
-loglik.ss <- function(data, params, model, V, ser_stats, ...) {
+loglik.ss <- function(data, params, model, V, ser_stats, l = NULL, ...) {
   # log(bf) for each SNP
   lbf <- dnorm(ser_stats$betahat, 0, sqrt(V + ser_stats$shat2), log = TRUE) -
     dnorm(ser_stats$betahat, 0, sqrt(ser_stats$shat2), log = TRUE)
@@ -247,15 +248,15 @@ loglik.ss <- function(data, params, model, V, ser_stats, ...) {
   # Compute posterior weights
   weights_res <- compute_posterior_weights(stable_res$lpo)
 
-  # Compute gradient
-  gradient    <- compute_lbf_gradient(weights_res$alpha, ser_stats$betahat, ser_stats$shat2, V)
-
-  return(list(
-    lbf       = stable_res$lbf,
-    lbf_model = weights_res$lbf_model,
-    alpha     = weights_res$alpha,
-    gradient  = gradient
-  ))
+  # Store in model if l is provided, otherwise return lbf_model for prior variance optimization
+  if (!is.null(l)) {
+    model$alpha[l, ] <- weights_res$alpha
+    model$lbf[l] <- weights_res$lbf_model
+    model$lbf_variable[l, ] <- stable_res$lbf
+    return(model)
+  } else {
+    return(weights_res$lbf_model)
+  }
 }
 
 #' @keywords internal
@@ -265,8 +266,8 @@ neg_loglik.ss <- function(data, params, model, V_param, ser_stats, ...) {
 
   if (params$unmappable_effects == "none") {
     # Standard objective
-    res <- loglik.ss(data, params, model, V, ser_stats)
-    return(-res$lbf_model)
+    lbf_model <- loglik.ss(data, params, model, V, ser_stats)
+    return(-lbf_model)
   } else {
     # Unmappable objective with logSumExp trick
     return(-matrixStats::logSumExp(
@@ -289,7 +290,7 @@ neg_loglik.ss <- function(data, params, model, V_param, ser_stats, ...) {
 
 # Update fitted values
 #' @keywords internal
-update_fitted_values.ss <- function(data, params, model, l) {
+update_fitted_values.ss <- function(data, params, model, l, ...) {
   if (params$unmappable_effects != "none") {
     model$XtXr <- as.vector(data$XtX %*% (colSums(model$alpha * model$mu) + model$theta))
   } else {
