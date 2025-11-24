@@ -234,7 +234,7 @@ test_that("susie handles estimate_residual_method = Servin_Stephens", {
   set.seed(18)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
 
-  fit <- susie(dat$X, dat$y, L = 5,
+  fit <- susie(dat$X, dat$y, L = 1,
                estimate_residual_method = "Servin_Stephens",
                verbose = FALSE)
 

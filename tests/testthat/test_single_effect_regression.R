@@ -12,13 +12,18 @@ test_that("single_effect_regression returns correct structure", {
   result <- single_effect_regression(setup$data, setup$params, setup$model, l)
 
   expect_type(result, "list")
-  expect_named(result, c("alpha", "mu", "mu2", "lbf", "lbf_model", "V"))
-  expect_length(result$alpha, setup$data$p)
-  expect_length(result$mu, setup$data$p)
-  expect_length(result$mu2, setup$data$p)
-  expect_length(result$lbf, setup$data$p)
-  expect_length(result$lbf_model, 1)
-  expect_length(result$V, 1)
+  expect_true("alpha" %in% names(result))
+  expect_true("mu" %in% names(result))
+  expect_true("mu2" %in% names(result))
+  expect_true("lbf" %in% names(result))
+  expect_true("lbf_variable" %in% names(result))
+  expect_true("V" %in% names(result))
+  expect_length(result$alpha[l, ], setup$data$p)
+  expect_length(result$mu[l, ], setup$data$p)
+  expect_length(result$mu2[l, ], setup$data$p)
+  expect_length(result$lbf_variable[l, ], setup$data$p)
+  expect_length(result$lbf[l], 1)
+  expect_length(result$V[l], 1)
 })
 
 # =============================================================================
@@ -32,8 +37,8 @@ test_that("single_effect_regression alpha is valid probability distribution", {
 
   result <- single_effect_regression(setup$data, setup$params, setup$model, l)
 
-  expect_equal(sum(result$alpha), 1, tolerance = 1e-10)
-  expect_true(all(result$alpha >= 0 & result$alpha <= 1))
+  expect_equal(sum(result$alpha[l, ]), 1, tolerance = 1e-10)
+  expect_true(all(result$alpha[l, ] >= 0 & result$alpha[l, ] <= 1))
 })
 
 # =============================================================================
@@ -47,8 +52,8 @@ test_that("single_effect_regression V is non-negative and finite", {
 
   result <- single_effect_regression(setup$data, setup$params, setup$model, l)
 
-  expect_true(result$V >= 0)
-  expect_true(is.finite(result$V))
+  expect_true(result$V[l] >= 0)
+  expect_true(is.finite(result$V[l]))
 })
 
 # =============================================================================
@@ -63,8 +68,8 @@ test_that("single_effect_regression works with estimate_prior_method='optim'", {
 
   result <- single_effect_regression(setup$data, setup$params, setup$model, l)
 
-  expect_true(result$V >= 0)
-  expect_equal(sum(result$alpha), 1, tolerance = 1e-10)
+  expect_true(result$V[l] >= 0)
+  expect_equal(sum(result$alpha[l, ]), 1, tolerance = 1e-10)
 })
 
 test_that("single_effect_regression works with estimate_prior_method='EM'", {
@@ -75,8 +80,8 @@ test_that("single_effect_regression works with estimate_prior_method='EM'", {
 
   result <- single_effect_regression(setup$data, setup$params, setup$model, l)
 
-  expect_true(result$V >= 0)
-  expect_equal(sum(result$alpha), 1, tolerance = 1e-10)
+  expect_true(result$V[l] >= 0)
+  expect_equal(sum(result$alpha[l, ]), 1, tolerance = 1e-10)
 })
 
 test_that("single_effect_regression works with estimate_prior_method='simple'", {
@@ -87,8 +92,8 @@ test_that("single_effect_regression works with estimate_prior_method='simple'", 
 
   result <- single_effect_regression(setup$data, setup$params, setup$model, l)
 
-  expect_true(result$V >= 0)
-  expect_equal(sum(result$alpha), 1, tolerance = 1e-10)
+  expect_true(result$V[l] >= 0)
+  expect_equal(sum(result$alpha[l, ]), 1, tolerance = 1e-10)
 })
 
 test_that("single_effect_regression works with estimate_prior_method='none'", {
@@ -99,8 +104,8 @@ test_that("single_effect_regression works with estimate_prior_method='none'", {
 
   result <- single_effect_regression(setup$data, setup$params, setup$model, l)
 
-  expect_true(result$V >= 0)
-  expect_equal(sum(result$alpha), 1, tolerance = 1e-10)
+  expect_true(result$V[l] >= 0)
+  expect_equal(sum(result$alpha[l, ]), 1, tolerance = 1e-10)
 })
 
 test_that("single_effect_regression rejects invalid estimate_prior_method", {
@@ -165,8 +170,8 @@ test_that("SER variance decomposition", {
 
   result <- single_effect_regression(setup$data, setup$params, setup$model, l)
 
-  post_second_moment <- sum(result$alpha * result$mu2)
-  post_mean_squared <- (sum(result$alpha * result$mu))^2
+  post_second_moment <- sum(result$alpha[l, ] * result$mu2[l, ])
+  post_mean_squared <- (sum(result$alpha[l, ] * result$mu[l, ]))^2
   post_var <- post_second_moment - post_mean_squared
 
   expect_true(post_var >= -1e-10)
@@ -179,8 +184,8 @@ test_that("SER log Bayes factors are finite", {
 
   result <- single_effect_regression(setup$data, setup$params, setup$model, l)
 
-  expect_true(all(is.finite(result$lbf)))
-  expect_true(is.finite(result$lbf_model))
+  expect_true(all(is.finite(result$lbf_variable[l, ])))
+  expect_true(is.finite(result$lbf[l]))
 })
 
 test_that("SER posterior moments are finite", {
@@ -190,9 +195,9 @@ test_that("SER posterior moments are finite", {
 
   result <- single_effect_regression(setup$data, setup$params, setup$model, l)
 
-  expect_true(all(is.finite(result$mu)))
-  expect_true(all(is.finite(result$mu2)))
-  expect_true(all(result$mu2 >= 0))
+  expect_true(all(is.finite(result$mu[l, ])))
+  expect_true(all(is.finite(result$mu2[l, ])))
+  expect_true(all(result$mu2[l, ] >= 0))
 })
 
 # =============================================================================

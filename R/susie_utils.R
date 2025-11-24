@@ -980,6 +980,52 @@ compute_stats_NIG <- function(n, xx, xy, yy, sxy, s0, a0, b0) {
   ))
 }
 
+# Compute log Bayes factors under Normal-Inverse-Gamma (NIG) prior
+#' @keywords internal
+compute_lbf_NIG <- function(n, xx, xy, yy, sxy, s0, a0, b0) {
+  r0 <- s0 / (s0 + 1 / xx)
+  rss <- yy * (1 - r0 * sxy^2)
+
+  # Update inverse-gamma parameters
+  a1 <- a0 + n
+  b1 <- b0 + rss
+
+  # Compute log Bayes factor for each variable
+  lbf <- -(log(1 + s0 * xx) + a1 * log(b1 / (b0 + yy))) / 2
+
+  return(lbf)
+}
+
+# Compute posterior moments under Normal-Inverse-Gamma (NIG) prior
+#' @keywords internal
+compute_posterior_moments_NIG <- function(n, xx, xy, yy, sxy, s0, a0, b0) {
+  r0 <- s0 / (s0 + 1 / xx)
+  rss <- yy * (1 - r0 * sxy^2)
+
+  # Update inverse-gamma parameters
+  a1 <- a0 + n
+  b1 <- b0 + rss
+
+  # Compute least-squares estimate for each variable
+  bhat <- xy / xx
+
+  # Compute posterior mean
+  post_mean <- r0 * bhat
+
+  # Compute posterior variance
+  post_var <- b1 / (a1 - 2) * r0 / xx
+
+  # Compute posterior mode of residual variance
+  rv <- (b1 / 2) / (a1 / 2 - 1)
+
+  return(list(
+    post_mean  = post_mean,
+    post_mean2 = post_var + post_mean^2,
+    post_var   = post_var,
+    rv         = rv
+  ))
+}
+
 # EM update for prior variance under Normal-Inverse-Gamma (NIG) prior
 #' @keywords internal
 update_prior_variance_NIG_EM <- function(n, xx, xy, yy, sxy, pip, s0, a0, b0) {
@@ -1128,7 +1174,7 @@ check_convergence <- function(params, model, elbo, iter, tracking) {
 
     # For Servin-Stephens prior, require at least 3 iterations and average convergence
     # over 2 consecutive iterations for more stable convergence
-    if (params$use_servin_stephens) {
+    if (!is.null(params$use_servin_stephens) && params$use_servin_stephens) {
       if (iter <= 2) {
         return(FALSE)  # Require at least 3 iterations
       }

@@ -10,7 +10,7 @@
 #' @param model Current SuSiE model object
 #' @param l Effect index being updated
 #'
-#' @return List with alpha, mu, mu2, lbf, lbf_model, and V for the lth effect
+#' @return Updated model with alpha, mu, mu2, lbf, lbf_variable, V, and KL stored for the lth effect
 #'
 #' @keywords internal
 #' @noRd
@@ -29,26 +29,25 @@ single_effect_regression <- function(data, params, model, l) {
     }
 
     # Compute logged Bayes factors and posterior inclusion probabilities
-    loglik_res <- loglik(data, params, model, V, ser_stats)
+    model <- loglik(data, params, model, V, ser_stats, l)
 
     # Compute posterior moments
-    moments    <- calculate_posterior_moments(data, params, model, V, loglik_res)
+    model <- calculate_posterior_moments(data, params, model, V, l)
+
+    # Compute KL divergence
+    model <- compute_kl(data, params, model, l)
 
     # Expectation-maximization prior variance update using posterior moments
     if (params$estimate_prior_method == "EM") {
-      V <- optimize_prior_variance(data, params, model, ser_stats, loglik_res$alpha, moments, V_init = V)
+      V <- optimize_prior_variance(data, params, model, ser_stats, model$alpha[l, ],
+                                    list(post_mean = model$mu[l, ], post_mean2 = model$mu2[l, ]),
+                                    V_init = V)
     }
 
-    return(list(
-      alpha           = loglik_res$alpha,
-      mu              = moments$post_mean,
-      mu2             = moments$post_mean2,
-      lbf             = loglik_res$lbf,
-      lbf_model       = loglik_res$lbf_model,
-      V               = V,
-      rv              = moments$rv,
-      marginal_loglik = loglik_res$marginal_loglik
-    ))
+    # Store prior variance
+    model$V[l] <- V
+
+    return(model)
   }
 
 # =============================================================================
@@ -154,19 +153,10 @@ single_effect_update <- function(data, params, model, l) {
   model <- compute_residuals(data, params, model, l)
 
   # Run Single Effect Regression
-  res <- single_effect_regression(data, params, model, l)
-
-  # Store results from SER
-  model$alpha[l, ]        <- res$alpha
-  model$mu[l, ]           <- res$mu
-  model$mu2[l, ]          <- res$mu2
-  model$V[l]              <- res$V
-  model$lbf[l]            <- res$lbf_model
-  model$lbf_variable[l, ] <- res$lbf
-  model$KL[l]             <- compute_kl(data, params, model, l)
+  model <- single_effect_regression(data, params, model, l)
 
   # Update fitted values
-  model <- update_fitted_values(data, params, model, l, res)
+  model <- update_fitted_values(data, params, model, l)
 
   return(model)
 }

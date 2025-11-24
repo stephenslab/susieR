@@ -282,10 +282,10 @@ test_that("compute_kl.rss_lambda delegates to default method", {
   model$mu2[l, ] <- model$mu[l, ]^2 + 0.1
 
   model <- compute_residuals.rss_lambda(data, params, model, l)
-  kl <- compute_kl.rss_lambda(data, params, model, l)
+  model <- compute_kl.rss_lambda(data, params, model, l)
 
-  expect_type(kl, "double")
-  expect_length(kl, 1)
+  expect_type(model$KL[l], "double")
+  expect_length(model$KL[l], 1)
 })
 
 
@@ -308,22 +308,18 @@ test_that("calculate_posterior_moments.rss_lambda computes moments", {
   model <- compute_residuals.rss_lambda(data, params, model, l = 1)
 
   V <- 0.2
-  moments <- calculate_posterior_moments.rss_lambda(data, params, model, V)
+  l <- 1
+  model <- calculate_posterior_moments.rss_lambda(data, params, model, V, l)
 
-  expect_type(moments, "list")
-  expect_true("post_mean" %in% names(moments))
-  expect_true("post_mean2" %in% names(moments))
-  expect_true("post_var" %in% names(moments))
-
-  expect_length(moments$post_mean, dat$p)
-  expect_length(moments$post_mean2, dat$p)
-  expect_length(moments$post_var, dat$p)
+  expect_length(model$mu[l, ], dat$p)
+  expect_length(model$mu2[l, ], dat$p)
 
   # Variance should be positive
-  expect_true(all(moments$post_var > 0))
+  post_var <- model$mu2[l, ] - model$mu[l, ]^2
+  expect_true(all(post_var > -1e-10))
 
   # post_mean2 = post_var + post_mean^2
-  expect_equal(moments$post_mean2, moments$post_var + moments$post_mean^2)
+  expect_equal(model$mu2[l, ], post_var + model$mu[l, ]^2)
 })
 
 

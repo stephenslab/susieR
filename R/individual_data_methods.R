@@ -46,6 +46,12 @@ initialize_susie_model.individual <- function(data, params, var_y, ...) {
   # Append predictor weights
   model$predictor_weights <- attr(data$X, "d")
 
+  # Initialize Servin-Stephens parameters
+  if (params$use_servin_stephens) {
+    model$rv <- rep(1, params$L)
+    model$marginal_loglik <- rep(as.numeric(NA), params$L)
+  }
+
   return(model)
 }
 
@@ -130,22 +136,25 @@ SER_posterior_e_loglik.individual <- function(data, params, model, l) {
 
 # Calculate posterior moments for single effect regression
 #' @keywords internal
-calculate_posterior_moments.individual <- function(data, params, model, V, loglik_res, ...) {
+calculate_posterior_moments.individual <- function(data, params, model, V, l, ...) {
   if (params$use_servin_stephens) {
     if (V <= 0) {
       # Zero variance case
       post_mean  <- rep(0, data$p)
       post_mean2 <- rep(0, data$p)
-      post_var   <- rep(0, data$p)
       rv         <- 1
     } else {
-      # Use precomputed posterior statistics from loglik
-      post_mean       <- loglik_res$posterior_stats$post_mean
-      post_mean2      <- loglik_res$posterior_stats$post_mean2
-      post_var        <- loglik_res$posterior_stats$post_var
+      # Compute posterior moments for NIG prior
+      moments <- compute_posterior_moments_NIG(data$n, model$predictor_weights,
+                                               model$residuals, sum(model$raw_residuals^2),
+                                               drop(cor(data$X, model$raw_residuals)),
+                                               V, params$alpha0, params$beta0)
+
+      post_mean  <- moments$post_mean
+      post_mean2 <- moments$post_mean2
 
       # Compute weighted average of residual variance modes using PIPs
-      rv <- sum(loglik_res$alpha * loglik_res$posterior_stats$rv)
+      rv <- sum(model$alpha[l, ] * moments$rv)
     }
   } else {
     # Standard Gaussian posterior calculations
@@ -155,25 +164,38 @@ calculate_posterior_moments.individual <- function(data, params, model, V, logli
     rv         <- 1
   }
 
-  return(list(
-    post_mean  = post_mean,
-    post_mean2 = post_mean2,
-    post_var   = post_var,
-    rv         = rv
-  ))
+  # Store posterior moments in model
+  model$mu[l, ] <- post_mean
+  model$mu2[l, ] <- post_mean2
+
+  # Store rv if Servin-Stephens (rv != 1)
+  if (rv != 1) {
+    model$rv[l] <- rv
+  }
+
+  return(model)
 }
 
 # Calculate KL divergence
 #' @keywords internal
 compute_kl.individual <- function(data, params, model, l) {
   if (params$use_servin_stephens) {
-    return(compute_kl_NIG(model$alpha[l, ], model$mu[l, ], model$mu2[l, ], model$pi, model$V[l],
-                         a0 = 1, b0 = 1, a_post = data$n / 2 + 1, b_post = data$n * model$sigma2 + 1))
+    # KL divergence for Servin-Stephens is only valid for L=1
+    if (params$L == 1) {
+      kl <- compute_kl_NIG(model$alpha[l, ], model$mu[l, ], model$mu2[l, ], model$pi, model$V[l],
+                           a0 = 1, b0 = 1, a_post = data$n / 2 + 1, b_post = data$n * model$sigma2 + 1)
+    } else {
+      kl <- 0
+    }
   } else {
     # Standard Gaussian KL divergence
     loglik_term <- model$lbf[l] + sum(dnorm(model$raw_residuals, 0, sqrt(model$sigma2), log = TRUE))
-    return(-loglik_term + SER_posterior_e_loglik(data, params, model, l))
+    kl <- -loglik_term + SER_posterior_e_loglik(data, params, model, l)
   }
+
+  # Store in model and return
+  model$KL[l] <- kl
+  return(model)
 }
 
 # Expected squared residuals
@@ -195,21 +217,18 @@ Eloglik.individual <- function(data, model) {
 #' @importFrom stats dnorm
 #' @importFrom stats cor
 #' @keywords internal
-loglik.individual <- function(data, params, model, V, ser_stats, ...) {
+loglik.individual <- function(data, params, model, V, ser_stats, l = NULL, ...) {
   # Check if using Servin-Stephens prior
   if (params$use_servin_stephens) {
-    # Compute lbf, posterior mean, posterior second moment, and posterior variance
-    posterior_stats <- compute_stats_NIG(data$n, model$predictor_weights,
-                                          model$residuals, sum(model$raw_residuals^2),
-                                          drop(cor(data$X, model$raw_residuals)),
-                                          V, params$alpha0, params$beta0)
-
-    lbf <- posterior_stats$lbf
+    # Compute log Bayes factors for NIG prior
+    lbf <- compute_lbf_NIG(data$n, model$predictor_weights,
+                           model$residuals, sum(model$raw_residuals^2),
+                           drop(cor(data$X, model$raw_residuals)),
+                           V, params$alpha0, params$beta0)
   } else {
     # Standard Gaussian prior log Bayes factors
     lbf <- dnorm(ser_stats$betahat, 0, sqrt(V + ser_stats$shat2), log = TRUE) -
       dnorm(ser_stats$betahat, 0, sqrt(ser_stats$shat2), log = TRUE)
-    posterior_stats <- NULL
   }
 
   # Stabilize logged Bayes Factor
@@ -228,14 +247,28 @@ loglik.individual <- function(data, params, model, V, ser_stats, ...) {
                                               params$alpha0, params$beta0,
                                               params$use_servin_stephens)
 
-  return(list(
+  # Prepare results
+  results <- list(
     lbf             = stable_res$lbf,
     lbf_model       = weights_res$lbf_model,
     alpha           = weights_res$alpha,
     gradient        = gradient,
-    posterior_stats = posterior_stats,
     marginal_loglik = marginal_loglik
-  ))
+  )
+
+  # Store in model if l is provided
+  if (!is.null(l)) {
+    model$alpha[l, ] <- results$alpha
+    model$lbf[l] <- results$lbf_model
+    model$lbf_variable[l, ] <- results$lbf
+    if (!is.null(results$marginal_loglik)) {
+      model$marginal_loglik[l] <- results$marginal_loglik
+    }
+    return(model)
+  } else {
+    # Return list for optimization use (neg_loglik)
+    return(results)
+  }
 }
 
 #' @keywords internal
@@ -258,14 +291,8 @@ neg_loglik.individual <- function(data, params, model, V_param, ser_stats, ...) 
 
 # Update fitted values
 #' @keywords internal
-update_fitted_values.individual <- function(data, params, model, l, res, ...) {
+update_fitted_values.individual <- function(data, params, model, l, ...) {
   model$Xr <- model$fitted_without_l + compute_Xb(data$X, model$alpha[l, ] * model$mu[l, ])
-
-  # Store Servin-Stephens specific quantities
-  if (params$use_servin_stephens) {
-    model$rv[l] <- res$rv
-    model$marginal_loglik[l] <- res$marginal_loglik
-  }
 
   return(model)
 }

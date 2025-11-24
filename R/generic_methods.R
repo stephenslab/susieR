@@ -147,11 +147,11 @@ SER_posterior_e_loglik.default <- function(data, params, model, l) {
 
 # Calculate posterior moments for single effect regression
 #' @keywords internal
-calculate_posterior_moments <- function(data, params, model, V, loglik_res, ...) {
+calculate_posterior_moments <- function(data, params, model, V, l, ...) {
   UseMethod("calculate_posterior_moments")
 }
 #' @keywords internal
-calculate_posterior_moments.default <- function(data, params, model, V, loglik_res, ...) {
+calculate_posterior_moments.default <- function(data, params, model, V, l = NULL, ...) {
   stop("calculate_posterior_moments: no method for class '", class(data)[1], "'")
 }
 
@@ -162,7 +162,9 @@ compute_kl <- function(data, params, model, l) {
 }
 #' @keywords internal
 compute_kl.default <- function(data, params, model, l) {
-  return(-model$lbf[l] + SER_posterior_e_loglik(data, params, model, l))
+  kl <- -model$lbf[l] + SER_posterior_e_loglik(data, params, model, l)
+  model$KL[l] <- kl
+  return(model)
 }
 
 # Expected squared residuals
@@ -187,11 +189,11 @@ Eloglik.default <- function(data, model) {
 
 # Log-likelihood for prior variance optimization
 #' @keywords internal
-loglik <- function(data, params, model, V, ser_stats, ...) {
+loglik <- function(data, params, model, V, ser_stats, l = NULL, ...) {
   UseMethod("loglik")
 }
 #' @keywords internal
-loglik.default <- function(data, params, model, V, ser_stats, ...) {
+loglik.default <- function(data, params, model, V, ser_stats, l = NULL, ...) {
   stop("loglik: no method for class '", class(data)[1], "'")
 }
 
@@ -217,11 +219,11 @@ neg_loglik.default <- function(data, params, model, V_param, ser_stats, ...) {
 
 # Update fitted values
 #' @keywords internal
-update_fitted_values <- function(data, params, model, l, res, ...) {
+update_fitted_values <- function(data, params, model, l, ...) {
   UseMethod("update_fitted_values")
 }
 #' @keywords internal
-update_fitted_values.default <- function(data, params, model, l, res, ...) {
+update_fitted_values.default <- function(data, params, model, l, ...) {
   stop("update_fitted_values: no method for class '", class(data)[1], "'")
 }
 
