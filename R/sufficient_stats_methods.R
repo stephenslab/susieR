@@ -248,26 +248,14 @@ loglik.ss <- function(data, params, model, V, ser_stats, l = NULL, ...) {
   # Compute posterior weights
   weights_res <- compute_posterior_weights(stable_res$lpo)
 
-  # Compute gradient
-  gradient    <- compute_lbf_gradient(weights_res$alpha, ser_stats$betahat, ser_stats$shat2, V)
-
-  # Prepare results
-  results <- list(
-    lbf       = stable_res$lbf,
-    lbf_model = weights_res$lbf_model,
-    alpha     = weights_res$alpha,
-    gradient  = gradient
-  )
-
-  # Store in model if l is provided
+  # Store in model if l is provided, otherwise return lbf_model for prior variance optimization
   if (!is.null(l)) {
-    model$alpha[l, ] <- results$alpha
-    model$lbf[l] <- results$lbf_model
-    model$lbf_variable[l, ] <- results$lbf
+    model$alpha[l, ] <- weights_res$alpha
+    model$lbf[l] <- weights_res$lbf_model
+    model$lbf_variable[l, ] <- stable_res$lbf
     return(model)
   } else {
-    # Return list for optimization use (neg_loglik)
-    return(results)
+    return(weights_res$lbf_model)
   }
 }
 
@@ -278,8 +266,8 @@ neg_loglik.ss <- function(data, params, model, V_param, ser_stats, ...) {
 
   if (params$unmappable_effects == "none") {
     # Standard objective
-    res <- loglik.ss(data, params, model, V, ser_stats)
-    return(-res$lbf_model)
+    lbf_model <- loglik.ss(data, params, model, V, ser_stats)
+    return(-lbf_model)
   } else {
     # Unmappable objective with logSumExp trick
     return(-matrixStats::logSumExp(

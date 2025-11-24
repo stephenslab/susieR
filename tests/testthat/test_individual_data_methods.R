@@ -181,18 +181,14 @@ test_that("loglik.individual computes log Bayes factors", {
 
   model <- compute_residuals.individual(setup$data, setup$params, setup$model, l)
   ser_stats <- compute_ser_statistics.individual(setup$data, setup$params, model, l)
-  result <- loglik.individual(setup$data, setup$params, model, V, ser_stats)
+  model <- loglik.individual(setup$data, setup$params, model, V, ser_stats, l)
 
-  expect_true("lbf" %in% names(result))
-  expect_true("lbf_model" %in% names(result))
-  expect_true("alpha" %in% names(result))
-  expect_true("gradient" %in% names(result))
+  expect_length(model$lbf_variable[l, ], setup$data$p)
+  expect_length(model$alpha[l, ], setup$data$p)
 
-  expect_length(result$lbf, setup$data$p)
-  expect_length(result$alpha, setup$data$p)
-
-  expect_true(all(result$alpha >= 0))
-  expect_true(abs(sum(result$alpha) - 1) < 1e-10)
+  expect_true(all(model$alpha[l, ] >= 0))
+  expect_true(abs(sum(model$alpha[l, ]) - 1) < 1e-10)
+  expect_true(is.numeric(model$lbf[l]))
 })
 
 test_that("neg_loglik.individual returns negative log-likelihood", {

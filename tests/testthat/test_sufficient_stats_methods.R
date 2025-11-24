@@ -317,18 +317,14 @@ test_that("loglik.ss computes log Bayes factors", {
 
   model <- compute_residuals.ss(setup$data, setup$params, setup$model, l)
   ser_stats <- compute_ser_statistics.ss(setup$data, setup$params, model, l)
-  result <- loglik.ss(setup$data, setup$params, model, V, ser_stats)
+  model <- loglik.ss(setup$data, setup$params, model, V, ser_stats, l)
 
-  expect_true("lbf" %in% names(result))
-  expect_true("lbf_model" %in% names(result))
-  expect_true("alpha" %in% names(result))
-  expect_true("gradient" %in% names(result))
+  expect_length(model$lbf_variable[l, ], setup$data$p)
+  expect_length(model$alpha[l, ], setup$data$p)
 
-  expect_length(result$lbf, setup$data$p)
-  expect_length(result$alpha, setup$data$p)
-
-  expect_true(all(result$alpha >= 0))
-  expect_true(abs(sum(result$alpha) - 1) < 1e-10)
+  expect_true(all(model$alpha[l, ] >= 0))
+  expect_true(abs(sum(model$alpha[l, ]) - 1) < 1e-10)
+  expect_true(is.numeric(model$lbf[l]))
 })
 
 test_that("neg_loglik.ss returns negative log-likelihood for unmappable_effects='none'", {

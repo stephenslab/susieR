@@ -237,46 +237,30 @@ loglik.individual <- function(data, params, model, V, ser_stats, l = NULL, ...) 
   # Compute posterior weights
   weights_res <- compute_posterior_weights(stable_res$lpo)
 
-  # Compute gradient
-  gradient    <- compute_lbf_gradient(weights_res$alpha, ser_stats$betahat,
-                                      ser_stats$shat2, V, params$use_servin_stephens)
-
-  # Compute marginal log-likelihood for NIG prior
-  marginal_loglik <- compute_marginal_loglik(weights_res$lbf_model, data$n,
-                                              sum(model$raw_residuals^2),
-                                              params$alpha0, params$beta0,
-                                              params$use_servin_stephens)
-
-  # Prepare results
-  results <- list(
-    lbf             = stable_res$lbf,
-    lbf_model       = weights_res$lbf_model,
-    alpha           = weights_res$alpha,
-    gradient        = gradient,
-    marginal_loglik = marginal_loglik
-  )
-
-  # Store in model if l is provided
+  # Store in model if l is provided, otherwise return lbf_model for prior variance optimization
   if (!is.null(l)) {
-    model$alpha[l, ] <- results$alpha
-    model$lbf[l] <- results$lbf_model
-    model$lbf_variable[l, ] <- results$lbf
-    if (!is.null(results$marginal_loglik)) {
-      model$marginal_loglik[l] <- results$marginal_loglik
-    }
+    # Store results in model
+    model$alpha[l, ] <- weights_res$alpha
+    model$lbf[l] <- weights_res$lbf_model
+    model$lbf_variable[l, ] <- stable_res$lbf
+
+    # Compute and store marginal log-likelihood for NIG prior
+    model$marginal_loglik[l] <- compute_marginal_loglik(weights_res$lbf_model, data$n,
+                                                         sum(model$raw_residuals^2),
+                                                         params$alpha0, params$beta0,
+                                                         params$use_servin_stephens)
     return(model)
   } else {
-    # Return list for optimization use (neg_loglik)
-    return(results)
+    return(weights_res$lbf_model)
   }
 }
 
 #' @keywords internal
 neg_loglik.individual <- function(data, params, model, V_param, ser_stats, ...) {
   # Convert parameter to V based on optimization scale (always log for individual)
-  V   <- exp(V_param)
-  res <- loglik.individual(data, params, model, V, ser_stats)
-  return(-res$lbf_model)
+  V <- exp(V_param)
+  lbf_model <- loglik.individual(data, params, model, V, ser_stats)
+  return(-lbf_model)
 }
 
 # =============================================================================
