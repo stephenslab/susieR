@@ -946,7 +946,7 @@ test_that("sufficient_stats_constructor rejects Servin_Stephens", {
   expect_error(
     sufficient_stats_constructor(XtX, Xty, yty, n = base_data$n,
                                 estimate_residual_method = "Servin_Stephens"),
-    "Small sample correction not implemented for SS/RSS data"
+    "Servin-Stephens prior on residual variance is not implemented for SS/RSS models"
   )
 })
 
@@ -1256,7 +1256,7 @@ test_that("rss_lambda_constructor rejects Servin_Stephens", {
   expect_error(
     rss_lambda_constructor(z, R, lambda = 0.5,
                           estimate_residual_method = "Servin_Stephens"),
-    "Servin Stephens small sample correction is not implemented"
+    "Servin-Stephens prior on residual variance is not implemented"
   )
 })
 
