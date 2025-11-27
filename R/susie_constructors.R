@@ -427,7 +427,7 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
 
   # Handle SS-specific validation before general validation
   if (params_object$estimate_residual_method == "Servin_Stephens") {
-    stop("Small sample correction not implemented for SS/RSS data.")
+    stop("Servin-Stephens prior on residual variance is not implemented for SS/RSS models.")
   }
 
   if (params_object$unmappable_effects == "ash") {
@@ -759,7 +759,7 @@ rss_lambda_constructor <- function(z, R, n = NULL,
   }
 
   if (estimate_residual_method == "Servin_Stephens") {
-    stop("Servin Stephens small sample correction is not implemented for RSS with lambda > 0. ",
+    stop("Servin-Stephens prior on residual variance is not implemented for RSS with lambda > 0. ",
          "Please use estimate_residual_method = 'MLE' instead.")
   }
 
