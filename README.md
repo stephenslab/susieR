@@ -71,8 +71,8 @@ repository useful for your work, please cite both:
 > Statistical Society, Series B* **82**, 1273–1300.
 > https://doi.org/10.1111/rssb.12388
 
-> McCreight, A., Cho, Y., Nachun, D., Li, R., Gan, H-Y., Stephens,
-> M., Carbonetto, P., Denault, W.R.P. & Wang, G. (2025). SuSiE 2.0:
+> McCreight, A., Cho, Y., Li, R., Nachun, D., Gan, H-Y., Carbonetto, P., Stephens,
+> M., Denault, W.R.P. & Wang, G. (2025). SuSiE 2.0:
 > improved methods and implementations for genetic fine-mapping and
 > phenotype prediction. Submitting to *Genome Biology*.
 
