@@ -72,6 +72,7 @@ articles:
     - susie_refine
     - l0_initialization
     - trend_filtering
+    - susie_unmappable_effects
   - title: "Package Information"
     navbar: ~
     contents:
