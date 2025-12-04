@@ -53,7 +53,7 @@ The original SuSiE method displays signs of misscalibration: the
 result is highly suspicious as we find 10 credible sets in a data set
 containing only 47 samples.
 
-```{r run-susie, fig.height=3, fig.width=5, message=FALSE}
+```{r run-susie, fig.height=3.5, fig.width=5, message=FALSE}
 res_susie <- susie(X,y,L = 10,verbose = TRUE)
 res_susie$sets$cs
 susie_plot(res_susie,y = "PIP")
@@ -67,8 +67,8 @@ ypred <- predict(res_susie, X)
 pve <- 1 - drop(res_susie$sigma2 / var(y))
 round(100 * pve, 3)
 plot(y, ypred, pch = 20,
-     xlab = "Phenotype",
-     ylab = "Predicted")
+     xlab = "observed",
+     ylab = "predicted")
 abline(0, 1, col = "magenta", lty = "dotted")
 ```
 
@@ -82,7 +82,7 @@ regression model for single-SNP association tests described in
 
 ```{r run-susie-small, message=FALSE, warning=FALSE} 
 res_susie_small <-
-  susie(X,y,L = 10,estimate_residual_method = "Servin_Stephens",
+  susie(X,y,L = 1,estimate_residual_method = "Servin_Stephens",
         verbose = TRUE)
 res_susie_small$sets$cs
 ```
@@ -99,8 +99,8 @@ to "overfit" the expression data quite so strongly.
 ```{r, fig.height=4.5, fig.width=4}
 pred_small <- predict(res_susie_small, X)
 plot(y, ypred, pch = 20,col = "darkblue",
-     xlab = "Phenotype",
-     ylab = "Predicted")
+     xlab = "observed",
+     ylab = "predicted")
 points(y, pred_small, pch = 20, col = "darkorange")
 abline(0, 1, col = "magenta", lty = "dotted")
 legend("topleft", pch = c(20, 20), col = c("darkblue","darkorange"),
