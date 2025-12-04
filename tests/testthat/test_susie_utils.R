@@ -1351,7 +1351,8 @@ test_that("check_convergence detects convergence correctly", {
 
   params <- list(
     convergence_method = "elbo",
-    tol = 1e-4
+    tol = 1e-4,
+    verbose = FALSE
   )
 
   model <- list(
@@ -1386,7 +1387,8 @@ test_that("check_convergence detects convergence correctly", {
   # Test: PIP convergence
   params_pip <- list(
     convergence_method = "pip",
-    tol = 1e-4
+    tol = 1e-4,
+    verbose = FALSE
   )
 
   # PIP converged (alpha unchanged)
