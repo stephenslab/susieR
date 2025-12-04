@@ -1,0 +1,125 @@
+---
+title: "Fine-mapping with SuSiE-ash and SuSiE-inf"
+author: "Alex McCreight"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Fine-mapping with SuSiE-ash and SuSiE-inf}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE,comment = "#",fig.width = 5,
+                      fig.height = 3,fig.align = "center",
+                      dpi = 120)
+```
+
+This vignette demonstrates how to use the SuSiE-ash and SuSiE-inf models.
+We use a simulated data set with n = 1000 individuals, p = 5000 variants, and
+5 simulated non-zero effects (of equal magnitude).
+
+## Data
+
+```{r}
+library(susieR)
+data(unmappable_data)
+
+X <- unmappable_data$X
+y <- as.vector(unmappable_data$y)
+b <- unmappable_data$beta
+causal <- unmappable_data$causal
+
+plot(b, ylab = "Effect Size")
+causal
+```
+
+The causal signals are: 754, 2477, 2544, 3197, 4708.
+
+## Fitting the Three Models
+
+SuSiE can model unmappable (polygenic) effects alongside sparse causal effects via the `unmappable_effects` parameter.
+
+- **"none"** (default): Standard SuSiE model
+- **"inf"**: SuSiE-inf model, uses an infinitesimal component to model unmappable effects
+- **"ash"**: SuSiE-ash model, uses adaptive shrinkage to model unmappable effects
+
+
+### Standard SuSiE
+
+```{r}
+fit_susie <- susie(X, y, L = 10)
+```
+
+### SuSiE-inf
+
+```{r}
+fit_inf <- susie(X, y, L = 10, unmappable_effects = "inf", convergence_method = "pip")
+```
+
+### SuSiE-ash
+
+```{r}
+fit_ash <- susie(X, y, L = 10, unmappable_effects = "ash", convergence_method = "pip")
+```
+
+## Comparing Results
+
+### Credible Sets
+
+The three methods identify different numbers of credible sets:
+
+```{r}
+cat("SuSiE (standard):", length(fit_susie$sets$cs), "credible sets\n")
+cat("SuSiE-inf:", length(fit_inf$sets$cs), "credible sets\n")
+cat("SuSiE-ash:", length(fit_ash$sets$cs), "credible sets\n")
+```
+
+We can check which credible sets contain true causal signals:
+
+```{r}
+check_cs <- function(fit, name) {
+  cat(name, ":\n")
+  for (i in seq_along(fit$sets$cs)) {
+    cs <- fit$sets$cs[[i]]
+    in_causal <- any(cs %in% causal)
+    cat("  CS", i, ": size=", length(cs),
+        ", contains causal=", in_causal, "\n")
+  }
+}
+
+check_cs(fit_susie, "SuSiE")
+check_cs(fit_inf, "SuSiE-inf")
+check_cs(fit_ash, "SuSiE-ash")
+```
+
+### PIP Comparison
+
+Standard SuSiE identifies 4 credible sets, but one (light blue) does not contain
+the true causal variant. This is a false positive in a high-LD region where
+the causal signal is narrowly missed.
+
+```{r}
+susie_plot(fit_susie, y = "PIP", b = b, main = "SuSiE (standard)")
+```
+
+SuSiE-inf is more conservative, finding only 2 credible sets. Both contain
+true causal variants, but it misses 3 of the 5 causal signals.
+
+```{r}
+susie_plot(fit_inf, y = "PIP", b = b, main = "SuSiE-inf")
+```
+
+SuSiE-ash finds 4 credible sets, all containing true causal variants. It
+successfully retains the causal signal in the high-LD region that standard
+SuSiE missed.
+
+```{r}
+susie_plot(fit_ash, y = "PIP", b = b, main = "SuSiE-ash")
+```
+
+## Session Information
+
+```{r}
+sessionInfo()
+```
