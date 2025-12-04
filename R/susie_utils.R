@@ -418,9 +418,9 @@ validate_and_override_params <- function(params) {
   if (params$estimate_residual_method == "Servin_Stephens") {
     params$use_servin_stephens <- TRUE
 
-    # Override convergence method
-    if (params$convergence_method != "pip") {
-      warning_message("Servin_Stephens method requires PIP convergence. Setting convergence_method='pip'.")
+    # Override convergence method only when L > 1
+    if (params$L > 1 && params$convergence_method != "pip") {
+      warning_message("Servin_Stephens method with L > 1 requires PIP convergence. Setting convergence_method='pip'.")
       params$convergence_method <- "pip"
     }
 
@@ -1192,13 +1192,27 @@ check_convergence <- function(params, model, elbo, iter, tracking) {
       # Store current diff for next iteration
       tracking$convergence$prev_pip_diff <- current_diff
 
+      if (params$verbose) {
+        message("max |change in PIP| (avg): ", format(avg_diff, digits = 6))
+      }
+
       return(avg_diff < params$tol)
     } else {
       # Standard PIP convergence
       PIP_diff <- max(abs(tracking$convergence$prev_alpha - model$alpha))
+
+      if (params$verbose) {
+        message("max |change in PIP|: ", format(PIP_diff, digits = 6))
+      }
+
       return(PIP_diff < params$tol)
     }
   }
+
+  if (params$verbose) {
+    message("ELBO: ", format(elbo[iter + 1], digits = 6))
+  }
+
   return(ELBO_diff < params$tol)
 }
 
@@ -1231,9 +1245,6 @@ get_objective <- function(data, params, model) {
 
   if (is.infinite(objective)) {
     stop("get_objective() produced an infinite ELBO value")
-  }
-  if (params$verbose) {
-    message("objective:", objective)
   }
   return(objective)
 }

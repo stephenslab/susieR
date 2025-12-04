@@ -547,6 +547,7 @@ test_that("reconstruct_full_weights reconstructs prior weights with null compone
 test_that("validate_and_override_params validates and adjusts parameters", {
   # Valid params
   valid_params <- list(
+    L = 10,
     prior_tol = 1e-9,
     residual_variance_upperbound = 1e10,
     scaled_prior_variance = 0.2,
@@ -614,8 +615,9 @@ test_that("validate_and_override_params validates and adjusts parameters", {
     "Refinement is not supported with unmappable effects"
   )
 
-  # Test: Servin_Stephens overrides
+  # Test: Servin_Stephens overrides convergence method when L > 1
   ss_params <- valid_params
+  ss_params$L <- 10
   ss_params$estimate_residual_method <- "Servin_Stephens"
   ss_params$convergence_method <- "elbo"
   ss_params$estimate_prior_method <- "simple"
@@ -632,6 +634,20 @@ test_that("validate_and_override_params validates and adjusts parameters", {
   expect_true(result$use_servin_stephens)
   expect_equal(result$convergence_method, "pip")
   expect_equal(result$estimate_prior_method, "EM")
+
+  # Test: Servin_Stephens does NOT override convergence method when L = 1
+  # (ELBO is well-defined for single-effect models)
+  ss_params_l1 <- valid_params
+  ss_params_l1$L <- 1
+  ss_params_l1$estimate_residual_method <- "Servin_Stephens"
+  ss_params_l1$convergence_method <- "elbo"
+  ss_params_l1$estimate_prior_method <- "EM"
+
+  result_l1 <- validate_and_override_params(ss_params_l1)
+
+  expect_true(result_l1$use_servin_stephens)
+  expect_equal(result_l1$convergence_method, "elbo")  # Not overridden
+  expect_equal(result_l1$estimate_prior_method, "EM")
 
   # Test: estimate_prior_variance = FALSE
   no_est_params <- valid_params
@@ -1335,7 +1351,8 @@ test_that("check_convergence detects convergence correctly", {
 
   params <- list(
     convergence_method = "elbo",
-    tol = 1e-4
+    tol = 1e-4,
+    verbose = FALSE
   )
 
   model <- list(
@@ -1370,7 +1387,8 @@ test_that("check_convergence detects convergence correctly", {
   # Test: PIP convergence
   params_pip <- list(
     convergence_method = "pip",
-    tol = 1e-4
+    tol = 1e-4,
+    verbose = FALSE
   )
 
   # PIP converged (alpha unchanged)
