@@ -418,9 +418,9 @@ validate_and_override_params <- function(params) {
   if (params$estimate_residual_method == "Servin_Stephens") {
     params$use_servin_stephens <- TRUE
 
-    # Override convergence method
-    if (params$convergence_method != "pip") {
-      warning_message("Servin_Stephens method requires PIP convergence. Setting convergence_method='pip'.")
+    # Override convergence method only when L > 1
+    if (params$L > 1 && params$convergence_method != "pip") {
+      warning_message("Servin_Stephens method with L > 1 requires PIP convergence. Setting convergence_method='pip'.")
       params$convergence_method <- "pip"
     }
 
