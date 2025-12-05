@@ -87,7 +87,7 @@ res_susie_small <-
 res_susie_small$sets$cs
 ```
 
-This analysis looks more plausible as it identifies only 3 CSs:
+This analysis looks more plausible as it identifies only 1 CS:
 
 ```{r, fig.height=3, fig.width=5}
 susie_plot(res_susie_small,y = "PIP")
