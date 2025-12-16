@@ -17,7 +17,7 @@ knitr::opts_chunk$set(collapse = TRUE,comment = "#",fig.width = 5,
 
 This vignette demonstrates how to use the SuSiE-ash and SuSiE-inf models.
 We use a simulated data set with n = 1000 individuals, p = 5000 variants, and
-5 simulated non-zero effects (of equal magnitude).
+a complex genetic architecture combining 3 sparse, 5 oligogenic, and 15 polygenic effects.
 
 ## Data
 
@@ -28,95 +28,188 @@ data(unmappable_data)
 X <- unmappable_data$X
 y <- as.vector(unmappable_data$y)
 b <- unmappable_data$beta
-causal <- unmappable_data$causal
 
-plot(b, ylab = "Effect Size")
-causal
+plot(abs(b), ylab = "Absolute Effect Size", pch = 16)
+points(which(b != 0), abs(b[b != 0]), col = 2, pch = 16)
 ```
 
-The causal signals are: 754, 2477, 2544, 3197, 4708.
+## Summary Statistics and Z-Scores
 
-## Fitting the Three Models
+Before fitting the models, we can examine the marginal association statistics.
+We use `univariate_regression()` to compute effect sizes and standard errors,
+then derive z-scores:
 
-SuSiE can model unmappable (polygenic) effects alongside sparse causal effects via the `unmappable_effects` parameter.
+```{r}
+sumstats <- univariate_regression(X, y)
+z_scores <- sumstats$betahat / sumstats$sebetahat
+```
 
-- **"none"** (default): Standard SuSiE model
-- **"inf"**: SuSiE-inf model, uses an infinitesimal component to model unmappable effects
-- **"ash"**: SuSiE-ash model, uses adaptive shrinkage to model unmappable effects
+The z-scores show the strength of marginal association for each variant.
+Red points indicate non-zero effect sizes:
 
+```{r}
+susie_plot(z_scores, y = "z", b = b)
+```
 
-### Standard SuSiE
+Here we can see the signal landscape before fine-mapping. Note that 
+some causal variants have strong z-scores while others may be weaker
+or masked by LD with nearby variants.
+
+## Step 1: Standard SuSiE and False Positives
+
+We first fit standard SuSiE:
 
 ```{r}
 fit_susie <- susie(X, y, L = 10)
-```
-
-### SuSiE-inf
-
-```{r}
-fit_inf <- susie(X, y, L = 10, unmappable_effects = "inf", convergence_method = "pip")
-```
-
-### SuSiE-ash
-
-```{r}
-fit_ash <- susie(X, y, L = 10, unmappable_effects = "ash", convergence_method = "pip")
-```
-
-## Comparing Results
-
-### Credible Sets
-
-The three methods identify different numbers of credible sets:
-
-```{r}
-cat("SuSiE (standard):", length(fit_susie$sets$cs), "credible sets\n")
-cat("SuSiE-inf:", length(fit_inf$sets$cs), "credible sets\n")
-cat("SuSiE-ash:", length(fit_ash$sets$cs), "credible sets\n")
-```
-
-We can check which credible sets contain true causal signals:
-
-```{r}
-check_cs <- function(fit, name) {
-  cat(name, ":\n")
-  for (i in seq_along(fit$sets$cs)) {
-    cs <- fit$sets$cs[[i]]
-    in_causal <- any(cs %in% causal)
-    cat("  CS", i, ": size=", length(cs),
-        ", contains causal=", in_causal, "\n")
-  }
-}
-
-check_cs(fit_susie, "SuSiE")
-check_cs(fit_inf, "SuSiE-inf")
-check_cs(fit_ash, "SuSiE-ash")
-```
-
-### PIP Comparison
-
-Standard SuSiE identifies 4 credible sets, but one (light blue) does not contain
-the true causal variant. This is a false positive in a high-LD region where
-the causal signal is narrowly missed.
-
-```{r}
 susie_plot(fit_susie, y = "PIP", b = b, main = "SuSiE (standard)")
 ```
 
-SuSiE-inf is more conservative, finding only 2 credible sets. Both contain
-true causal variants, but it misses 3 of the 5 causal signals.
+To see which true effects the credible sets capture, we plot the CS on the true effect sizes:
 
 ```{r}
+plot_cs_effects <- function(fit, b, main = "") {
+  colors <- c("dodgerblue2", "green4", "#6A3D9A", "#FF7F00", "gold1")
+  plot(abs(b), pch = 16, ylab = "Absolute Effect Size", main = main)
+  if (!is.null(fit$sets$cs)) {
+    color <- colors
+    for (i in rev(seq_along(fit$sets$cs))) {
+      cs_idx <- fit$sets$cs[[i]]
+      points(cs_idx, abs(b[cs_idx]), col = color[1], pch = 16, cex = 1.5)
+      color <- c(color[-1], color[1])
+    }
+  }
+}
+plot_cs_effects(fit_susie, b, main = "SuSiE CS on true effects")
+```
+
+```{r}
+cat("Number of credible sets:", length(fit_susie$sets$cs), "\n")
+```
+
+SuSiE identifies 5 credible sets, but examining them more closely reveals a problem.
+Many of these credible sets appear to be false positives arising from
+synthetic associations.
+
+A synthetic association occurs when a non-causal variant shows an association
+with the phenotype because it is in LD with true causal variants. The non-causal
+variant "borrows" signal from correlated effect variants, and when it is
+correlated with multiple effect variants, these contributions can accumulate
+to create an inflated signal.
+
+Let's examine one of the false positive credible sets to see this in action:
+
+```{r}
+nonzero_idx <- which(b != 0)
+fp_cs <- fit_susie$sets$cs[["L4"]]
+top_var <- fp_cs[which.max(fit_susie$pip[fp_cs])]
+
+cat("False positive CS top variant:", top_var, "\n")
+cat("True effect (beta):", b[top_var], "\n")
+cat("Z-score:", round(z_scores[top_var], 2), "\n\n")
+
+cat("LD with true effect variants and their contributions:\n")
+contributions <- data.frame(
+  variant = nonzero_idx,
+  r = round(sapply(nonzero_idx, function(v) cor(X[, top_var], X[, v])), 2),
+  beta = round(b[nonzero_idx], 2)
+)
+contributions$r_times_beta <- round(contributions$r * contributions$beta, 2)
+contributions <- contributions[order(-abs(contributions$r_times_beta)), ]
+print(head(contributions[abs(contributions$r) > 0.1, ], 6), row.names = FALSE)
+```
+
+Variant `r top_var` has **no true effect** (beta = 0), yet it has a z-score of
+`r round(z_scores[top_var], 2)`. This synthetic signal arises because it is
+correlated with multiple effect variants. Notice that:
+
+- It has **negative LD** with negative-effect variants (2714, 2939, 2943), giving **positive** contributions
+- It has **positive LD** with a positive-effect variant (2903), also giving a **positive** contribution
+
+These contributions accumulate to create a synthetic signal at the non-causal
+variant, which SuSiE then incorrectly identifies as a distinct effect. The other
+false positive credible sets arise from the same artifact.
+
+## Step 2: Increasing Purity to Reduce False Positives
+
+One approach to reduce false positives is to increase the purity threshold.
+By default, SuSiE uses `min_abs_corr = 0.5`. Let's try `min_abs_corr = 0.8`:
+
+```{r}
+cs_pure <- susie_get_cs(fit_susie, X = X, min_abs_corr = 0.8)
+cat("Number of CSs with purity >= 0.8:", length(cs_pure$cs), "\n")
+```
+
+Raising the purity threshold removes some false positives, but not all of them.
+Some false positive credible sets have high purity because the non-causal
+variants within them are highly correlated with each other. These sets pass the
+purity filter yet still fail to contain any true causal variants.
+
+## Step 3: Fitting SuSiE-inf
+
+SuSiE-inf models an infinitesimal component to account for unmappable effects:
+
+```{r}
+fit_inf <- susie(X, y, L = 10, unmappable_effects = "inf", convergence_method = "pip")
 susie_plot(fit_inf, y = "PIP", b = b, main = "SuSiE-inf")
 ```
 
-SuSiE-ash finds 4 credible sets, all containing true causal variants. It
-successfully retains the causal signal in the high-LD region that standard
-SuSiE missed.
+```{r}
+plot_cs_effects(fit_inf, b, main = "SuSiE-inf CS on true effects")
+```
 
 ```{r}
+cat("Number of credible sets:", length(fit_inf$sets$cs), "\n")
+```
+
+SuSiE-inf is more conservative and finds only 1 credible set, eliminating the
+false positives. However, it also loses the true signal around position 3500
+that standard SuSiE correctly identified.
+
+Even if we lower the coverage threshold, we cannot recover the lost signals:
+
+```{r}
+for (cov in c(0.9, 0.8, 0.7, 0.5)) {
+  cs <- susie_get_cs(fit_inf, X = X, coverage = cov)
+  cat(sprintf("Coverage=%.1f: %d credible sets\n", cov, length(cs$cs)))
+}
+```
+
+## Step 4: SuSiE-ash Achieves the Middle Ground
+
+SuSiE-ash uses adaptive shrinkage to model the unmappable effects, providing
+a middle ground between standard SuSiE and SuSiE-inf:
+
+```{r}
+fit_ash <- susie(X, y, L = 10, unmappable_effects = "ash", convergence_method = "pip")
 susie_plot(fit_ash, y = "PIP", b = b, main = "SuSiE-ash")
 ```
+
+```{r}
+plot_cs_effects(fit_ash, b, main = "SuSiE-ash CS on true effects")
+```
+
+```{r}
+cat("Number of credible sets:", length(fit_ash$sets$cs), "\n")
+```
+
+SuSiE-ash finds 2 credible sets - both containing true causal variants. It
+successfully:
+
+1. **Removes the false positives** that plagued standard SuSiE
+2. **Retains the true signals** that SuSiE-inf was too aggressive to keep
+
+The adaptive shrinkage approach allows SuSiE-ash to distinguish between true
+sparse signals and the polygenic background more effectively than either
+standard SuSiE or SuSiE-inf alone.
+
+## Summary
+
+| Method | Credible Sets | False Positives | True Signals Captured |
+|--------|---------------|-----------------|----------------------|
+| SuSiE (purity=0.5) | 5 | 4 | Partial |
+| SuSiE (purity=0.8) | 3 | 2 | Partial |
+| SuSiE-inf | 1 | 0 | Limited |
+| SuSiE-ash | 2 | 0 | Good |
 
 ## Session Information
 
