@@ -80,6 +80,14 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
     }
   }
 
+  # Check for incompatible parameter combination
+  if (unmappable_effects != "none" &&
+      estimate_residual_method == "Servin_Stephens") {
+    stop("The combination of unmappable_effects = '", unmappable_effects,
+         "' with estimate_residual_method = 'Servin_Stephens' is not supported. ",
+         "Please use estimate_residual_method = 'MoM' or 'MLE' instead.")
+  }
+
   # Handle null weights
   if (is.numeric(null_weight) && null_weight == 0) {
     null_weight <- NULL
