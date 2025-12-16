@@ -60,11 +60,15 @@ or masked by LD with nearby variants.
 We first fit standard SuSiE:
 
 ```{r}
+t0 <- proc.time()
 fit_susie <- susie(X, y, L = 10)
+t1 <- proc.time()
+t1 - t0
 susie_plot(fit_susie, y = "PIP", b = b, main = "SuSiE (standard)")
 ```
 
-To see which true effects the credible sets capture, we plot the CS on the true effect sizes:
+To see which true effects the credible sets capture, we plot the CS on
+the true effect sizes:
 
 ```{r}
 plot_cs_effects <- function(fit, b, main = "") {
@@ -149,9 +153,14 @@ purity filter yet still fail to contain any true causal variants.
 SuSiE-inf models an infinitesimal component to account for unmappable effects:
 
 ```{r}
-fit_inf <- susie(X, y, L = 10, unmappable_effects = "inf", convergence_method = "pip")
+t0 <- proc.time()
+fit_inf <- susie(X, y, L = 10, unmappable_effects = "inf")
+t1 <- proc.time()
+t1 - t0
 susie_plot(fit_inf, y = "PIP", b = b, main = "SuSiE-inf")
 ```
+
+(Note that it may take several minutes to fit the SuSiE-Inf model.)
 
 ```{r}
 plot_cs_effects(fit_inf, b, main = "SuSiE-inf CS on true effects")
@@ -180,9 +189,14 @@ SuSiE-ash uses adaptive shrinkage to model the unmappable effects, providing
 a middle ground between standard SuSiE and SuSiE-inf:
 
 ```{r}
-fit_ash <- susie(X, y, L = 10, unmappable_effects = "ash", convergence_method = "pip")
+t0 <- proc.time()
+fit_ash <- susie(X, y, L = 10, unmappable_effects = "ash")
+t1 <- proc.time()
+t1 - t0
 susie_plot(fit_ash, y = "PIP", b = b, main = "SuSiE-ash")
 ```
+
+(Note that it may take several minutes to fit the SuSiE-ash model.)
 
 ```{r}
 plot_cs_effects(fit_ash, b, main = "SuSiE-ash CS on true effects")
