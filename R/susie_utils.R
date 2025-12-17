@@ -903,6 +903,52 @@ mle_unmappable <- function(data, params, model, omega, est_tau2 = TRUE, est_sigm
   return(list(sigma2 = sigma2, tau2 = tau2))
 }
 
+# Simplified variance initialization for ash (avoids full MoM omega computation)
+#' @keywords internal
+initialize_variance_simple <- function(data, model, verbose = FALSE) {
+  # Remove sparse effects
+  b <- colSums(model$alpha * model$mu)
+  Vtb <- as.vector(crossprod(data$eigen_vectors, b))
+  
+  # Simplified: approximate posterior second moment as point estimate
+  # (ignores posterior variance, which requires expensive omega computation)
+  diagVtMV <- Vtb^2
+  
+  # System of equations from MoM derivation
+  # [n,        sum(D)    ] [sigma2]   [x1]
+  # [sum(D),   sum(D^2)  ] [tau2  ] = [x2]
+  D <- data$eigen_values
+  
+  A11 <- data$n
+  A12 <- sum(D)
+  A22 <- sum(D^2)
+  
+  x1 <- data$yty - 2 * sum(b * data$Xty) + sum(D * diagVtMV)
+  x2 <- sum(data$Xty^2) - 2 * sum(Vtb * data$VtXty * D) + sum(D^2 * diagVtMV)
+  
+  # Solve 2x2 system via Cramer's rule
+  det_A <- A11 * A22 - A12 * A12
+  sigma2 <- (A22 * x1 - A12 * x2) / det_A
+  tau2 <- (A11 * x2 - A12 * x1) / det_A
+  
+  # Handle negative solutions
+  if (sigma2 <= 0 || tau2 < 0) {
+    if (verbose) {
+      cat("  -> Negative solution, falling back to simple estimate\n")
+    }
+    sigma2 <- max(x1 / data$n, 1e-10)
+    tau2 <- 0
+  }
+  
+  if (verbose) {
+    cat("  sigma2 (init) =", sigma2, "\n")
+    cat("  tau2 (init) =", tau2, "\n")
+    cat("=========================================\n")
+  }
+  
+  return(list(sigma2 = sigma2, tau2 = tau2))
+}
+
 # Compute log Bayes factor for Servin and Stephens prior
 #' @keywords internal
 compute_lbf_servin_stephens <- function(x, y, s0, alpha0 = 0, beta0 = 0) {

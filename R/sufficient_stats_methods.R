@@ -326,19 +326,12 @@ update_variance_components.ss <- function(data, params, model, ...) {
                   theta  = theta))
     }
   } else if (params$unmappable_effects == "ash") {
-    # Compute omega from current iteration
-    L         <- nrow(model$alpha)
-    omega_res <- compute_omega_quantities(data, model$tau2, model$sigma2)
-    omega     <- matrix(rep(omega_res$diagXtOmegaX, L), nrow = L, ncol = data$p, byrow = TRUE) +
-      matrix(rep(1 / model$V, data$p), nrow = L, ncol = data$p, byrow = FALSE)
-
-    # Update sigma2 and tau2 via MoM
-    mom_result <- mom_unmappable(data, params, model, omega, model$tau2)
+    init <- initialize_variance_simple(data, model, verbose = params$verbose)
 
     # If tau2 = 0 skip ash entirely
-    if (mom_result$tau2 == 0) {
+    if (init$tau2 == 0) {
       return(list(
-        sigma2 = mom_result$sigma2,
+        sigma2 = init$sigma2,
         tau2   = 0,
         theta  = rep(0, data$p)
       ))
@@ -357,13 +350,13 @@ update_variance_components.ss <- function(data, params, model, ...) {
     }
 
     # Region 1: Very dense near zero (tau2/100 to tau2/10)
-    small_grid <- exp(seq(log(mom_result$tau2/100), log(mom_result$tau2/10), length.out = 10))
+    small_grid <- exp(seq(log(init$tau2/100), log(init$tau2/10), length.out = 10))
 
     # Region 2: Moderate density around tau2 (tau2/10 to tau2*3)
-    medium_grid <- exp(seq(log(mom_result$tau2/10), log(mom_result$tau2*3), length.out = 6))
+    medium_grid <- exp(seq(log(init$tau2/10), log(init$tau2*3), length.out = 6))
 
     # Region 3: Sparse coverage towards minimum sparse effect
-    large_grid <- exp(seq(log(mom_result$tau2*3), log(min_sparse_var), length.out = 3))
+    large_grid <- exp(seq(log(init$tau2*3), log(min_sparse_var), length.out = 3))
 
     est_sa2 <- c(0, unique(c(small_grid, medium_grid, large_grid)))
 
@@ -374,14 +367,22 @@ update_variance_components.ss <- function(data, params, model, ...) {
       sa2           = est_sa2,
       intercept     = FALSE,
       standardize   = FALSE,
-      sigma2        = mom_result$sigma2,
+      sigma2        = init$sigma2,
       update.sigma2 = params$estimate_residual_variance,
       max.iter      = 3000
     )
-
+    tau2_out <- sum(mrash_output$data$sa2 * mrash_output$pi) 
+    if (params$verbose) {
+      cat("  mr.ash sigma2 =", mrash_output$sigma2, "\n")
+      cat("  mr.ash tau2 =", tau2_out, "\n")
+      cat("  mr.ash max|theta| =", max(abs(mrash_output$beta)), "\n")
+      cat("  mr.ash pi[1] (null) =", mrash_output$pi[1], "\n")
+      cat("============================================\n")
+    }
+    
     return(list(
       sigma2 = mrash_output$sigma2,
-      tau2   = sum(mrash_output$data$sa2 * mrash_output$pi),
+      tau2   = tau2_out,
       theta  = mrash_output$beta,
       ash_pi = mrash_output$pi,
       sa2    = mrash_output$data$sa2
