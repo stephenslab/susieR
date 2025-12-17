@@ -920,17 +920,23 @@ initialize_mrash <- function(data, model, verbose = FALSE) {
   b <- colSums(model$alpha * model$mu)
   residuals <- as.vector(data$y - data$X %*% b)
   
-  # Simplified MoM for sigma2/tau2
+  # Simplified MoM for sigma2/tau
+  # approximate posterior second moment as point estimate
+  # (ignores posterior variance, which requires expensive omega computation)2
   Vtb <- as.vector(crossprod(data$eigen_vectors, b))
   D <- data$eigen_values
   diagVtMV <- Vtb^2
-  
+
+  # System of equations from MoM derivation
+  # [n,        sum(D)    ] [sigma2]   [x1]
+  # [sum(D),   sum(D^2)  ] [tau2  ] = [x2]
   A11 <- data$n
   A12 <- sum(D)
   A22 <- sum(D^2)
   x1 <- data$yty - 2 * sum(b * data$Xty) + sum(D * diagVtMV)
   x2 <- sum(data$Xty^2) - 2 * sum(Vtb * data$VtXty * D) + sum(D^2 * diagVtMV)
-  
+
+  # Solve 2x2 system via Cramer's rule
   det_A <- A11 * A22 - A12 * A12
   sigma2 <- (A22 * x1 - A12 * x2) / det_A
   tau2 <- (A11 * x2 - A12 * x1) / det_A
