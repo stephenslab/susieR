@@ -903,50 +903,79 @@ mle_unmappable <- function(data, params, model, omega, est_tau2 = TRUE, est_sigm
   return(list(sigma2 = sigma2, tau2 = tau2))
 }
 
-# Simplified variance initialization for ash (avoids full MoM omega computation)
+#' Combine and thin variance grids
 #' @keywords internal
-initialize_variance_simple <- function(data, model, verbose = FALSE) {
-  # Remove sparse effects
+combine_grids <- function(..., rel_tol = 0.1) {
+  grids <- c(...)
+  grids <- unique(sort(grids[grids > 0]))
+  if (length(grids) <= 1) return(c(0, grids))
+  rel_diff <- diff(grids) / head(grids, -1)
+  c(0, grids[c(TRUE, rel_diff > rel_tol)])
+}
+
+#' Prepare inputs for mr.ash in SuSiE-ash
+#' @keywords internal
+initialize_mrash <- function(data, model, verbose = FALSE) {
+  # Sparse effects and residuals 
   b <- colSums(model$alpha * model$mu)
+  residuals <- as.vector(data$y - data$X %*% b)
+  
+  # Simplified MoM for sigma2/tau2
   Vtb <- as.vector(crossprod(data$eigen_vectors, b))
-  
-  # Simplified: approximate posterior second moment as point estimate
-  # (ignores posterior variance, which requires expensive omega computation)
-  diagVtMV <- Vtb^2
-  
-  # System of equations from MoM derivation
-  # [n,        sum(D)    ] [sigma2]   [x1]
-  # [sum(D),   sum(D^2)  ] [tau2  ] = [x2]
   D <- data$eigen_values
+  diagVtMV <- Vtb^2
   
   A11 <- data$n
   A12 <- sum(D)
   A22 <- sum(D^2)
-  
   x1 <- data$yty - 2 * sum(b * data$Xty) + sum(D * diagVtMV)
   x2 <- sum(data$Xty^2) - 2 * sum(Vtb * data$VtXty * D) + sum(D^2 * diagVtMV)
   
-  # Solve 2x2 system via Cramer's rule
   det_A <- A11 * A22 - A12 * A12
   sigma2 <- (A22 * x1 - A12 * x2) / det_A
   tau2 <- (A11 * x2 - A12 * x1) / det_A
   
-  # Handle negative solutions
   if (sigma2 <= 0 || tau2 < 0) {
-    if (verbose) {
-      cat("  -> Negative solution, falling back to simple estimate\n")
-    }
+    if (verbose) cat("  -> Negative solution, falling back to simple estimate\n")
     sigma2 <- max(x1 / data$n, 1e-10)
     tau2 <- 0
   }
   
   if (verbose) {
-    cat("  sigma2 (init) =", sigma2, "\n")
-    cat("  tau2 (init) =", tau2, "\n")
-    cat("=========================================\n")
+    cat("  sigma2 (init) =", sigma2, "  tau2 (init) =", tau2, "\n")
   }
   
-  return(list(sigma2 = sigma2, tau2 = tau2))
+  # Early return if no signal
+  if (tau2 == 0) {
+    return(list(sigma2 = sigma2, tau2 = 0, residuals = NULL, sa2 = NULL))
+  }
+
+  # Get minimum of active sparse effect variances as upper bound
+  active_V <- model$V[model$V > 0.01]
+  min_sparse_var <- if (length(active_V) > 0) min(active_V) else 0.01
+  
+  # Region 1: Very dense near zero (tau2/100 to tau2/10)
+  small_grid <- exp(seq(log(tau2/100), log(tau2/10), length.out = 10))
+  # Region 2: Moderate density around tau2 (tau2/10 to tau2*3)
+  medium_grid <- exp(seq(log(tau2/10), log(tau2*3), length.out = 6))
+  # Region 3: Sparse coverage towards minimum sparse effect
+  large_grid <- exp(seq(log(tau2*3), log(min_sparse_var), length.out = 3))
+  
+  # Data-driven grid (reuses residuals computed above)
+  xtx_diag <- colSums(data$X^2)
+  theta_hat <- as.vector(crossprod(data$X, residuals)) / xtx_diag
+  data_var <- median(theta_hat^2)
+  data_grid <- data_var * c(0.1, 1, 10)
+  
+  sa2 <- combine_grids(small_grid, medium_grid, large_grid, data_grid)
+  
+  if (verbose) {
+    cat("  grid length =", length(sa2), ", range = [", 
+        format(min(sa2[sa2 > 0]), digits = 3), ",", 
+        format(max(sa2), digits = 3), "]\n")
+  }
+  
+  return(list(sigma2 = sigma2, tau2 = tau2, residuals = residuals, sa2 = sa2))
 }
 
 # Compute log Bayes factor for Servin and Stephens prior
