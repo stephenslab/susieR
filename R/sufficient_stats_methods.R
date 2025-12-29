@@ -326,32 +326,25 @@ update_variance_components.ss <- function(data, params, model, ...) {
                   theta  = theta))
     }
   } else if (params$unmappable_effects == "ash") {
-    init <- initialize_mrash(data, model, verbose = params$verbose)
-    if (init$tau2 == 0) {
-      return(list(sigma2 = init$sigma2, tau2 = 0, theta = rep(0, data$p)))
-    }
-  
+    # Remove the sparse effects to compute residuals for mr.ash
+    b <- colSums(model$alpha * model$mu)
+    residuals <- data$y - data$X %*% b
+
+    # Call mr.ash with residuals
     mrash_output <- mr.ash(
       X             = data$X,
-      y             = init$residuals,
-      sa2           = init$sa2,
+      y             = residuals,
+      sa2           = NULL,
       intercept     = FALSE,
       standardize   = FALSE,
-      sigma2        = init$sigma2,
+      sigma2        = model$sigma2,
       update.sigma2 = params$estimate_residual_variance,
-      max.iter      = 500
+      max.iter      = 3000
     )
-  
-    tau2_out <- sum(mrash_output$data$sa2 * mrash_output$pi)
-  
-    if (params$verbose) {
-      cat("  mr.ash:", mrash_output$iter, "iters, sigma2 =", 
-          round(mrash_output$sigma2, 4), ", tau2 =", format(tau2_out, digits = 4), "\n")
-    }
-  
+
     return(list(
       sigma2 = mrash_output$sigma2,
-      tau2   = tau2_out,
+      tau2   = sum(mrash_output$data$sa2 * mrash_output$pi) * mrash_output$sigma2,
       theta  = mrash_output$beta,
       ash_pi = mrash_output$pi,
       sa2    = mrash_output$data$sa2
