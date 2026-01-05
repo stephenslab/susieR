@@ -330,10 +330,10 @@ update_variance_components.ss <- function(data, params, model, ...) {
     b <- colSums(model$alpha * model$mu)
     residuals <- data$y - data$X %*% b
 
-    # Build grid using default mr.ash scaling but with exponent 3 (denser near zero)
+    # Build grid
     n <- nrow(data$X)
     w <- colSums(data$X^2)
-    sa2 <- (2^((0:19) / 20) - 1)^3 * n / median(w)
+    sa2 <- (2^((0:19) / 20) - 1)^2.5 * n / median(w)
 
     # Call mr.ash with modified grid
     mrash_output <- mr.ash(
