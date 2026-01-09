@@ -330,12 +330,10 @@ update_variance_components.ss <- function(data, params, model, ...) {
     b <- colSums(model$alpha * model$mu)
     residuals <- data$y - data$X %*% b
 
-    # Build grid
-    n <- nrow(data$X)
-    w <- colSums(data$X^2)
-    sa2 <- (2^((0:19) / 20) - 1)^2.5 * n / median(w)
+    # Build ash grid
+    sa2 <- create_ash_grid(data)
 
-    # Call mr.ash with modified grid
+    # Call mr.ash
     mrash_output <- mr.ash(
       X             = data$X,
       y             = residuals,
@@ -344,7 +342,7 @@ update_variance_components.ss <- function(data, params, model, ...) {
       standardize   = FALSE,
       sigma2        = model$sigma2,
       update.sigma2 = params$estimate_residual_variance,
-      max.iter      = 3000
+      max.iter      = 1000
     )
 
     return(list(
