@@ -88,6 +88,13 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
          "Please use estimate_residual_method = 'MoM' or 'MLE' instead.")
   }
 
+  # Check for incompatible parameter combination
+  if (unmappable_effects == "ash" && estimate_prior_method == "EM") {
+    stop("The combination of unmappable_effects = 'ash' with ",
+         "estimate_prior_method = 'EM' is not supported. ",
+         "Please use estimate_prior_method = 'optim' instead.")
+  }
+
   # Handle null weights
   if (is.numeric(null_weight) && null_weight == 0) {
     null_weight <- NULL

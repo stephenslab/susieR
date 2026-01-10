@@ -278,12 +278,9 @@ test_that("individual_data_constructor warns about Rfast when p > 1000 and Rfast
 
 test_that("individual_data_constructor does not warn when p <= 1000", {
   # This should never warn regardless of Rfast availability
-  base_data <- generate_base_data(n = 100, p = 1000, k = 0, seed = 18.6)
-
-  # Use expect_no_message which is more lenient than expect_silent
+  base_data <- generate_base_data(n = 100, p = 1000, k = 0, seed = 18.75)
   result <- individual_data_constructor(base_data$X, base_data$y)
 
-  # Just verify it worked
   expect_equal(result$data$p, 1000)
 })
 
@@ -308,6 +305,45 @@ test_that("individual_data_constructor stores all parameters", {
   expect_true(result$params$estimate_prior_variance)
   expect_equal(result$params$max_iter, 50)
   expect_equal(result$params$tol, 1e-4)
+})
+
+# =============================================================================
+# INDIVIDUAL DATA CONSTRUCTOR - Incompatible Parameter Combinations
+# =============================================================================
+
+test_that("individual_data_constructor rejects unmappable_effects with Servin_Stephens", {
+  base_data <- generate_base_data(n = 100, p = 50, k = 0, seed = 19.5)
+
+  expect_error(
+    individual_data_constructor(
+      base_data$X, base_data$y,
+      unmappable_effects = "inf",
+      estimate_residual_method = "Servin_Stephens"
+    ),
+    "The combination of unmappable_effects = 'inf' with estimate_residual_method = 'Servin_Stephens' is not supported"
+  )
+
+  expect_error(
+    individual_data_constructor(
+      base_data$X, base_data$y,
+      unmappable_effects = "ash",
+      estimate_residual_method = "Servin_Stephens"
+    ),
+    "The combination of unmappable_effects = 'ash' with estimate_residual_method = 'Servin_Stephens' is not supported"
+  )
+})
+
+test_that("individual_data_constructor rejects unmappable_effects='ash' with estimate_prior_method='EM'", {
+  base_data <- generate_base_data(n = 100, p = 50, k = 0, seed = 19.75)
+
+  expect_error(
+    individual_data_constructor(
+      base_data$X, base_data$y,
+      unmappable_effects = "ash",
+      estimate_prior_method = "EM"
+    ),
+    "The combination of unmappable_effects = 'ash' with estimate_prior_method = 'EM' is not supported"
+  )
 })
 
 # =============================================================================
