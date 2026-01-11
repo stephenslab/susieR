@@ -64,6 +64,7 @@ initialize_susie_model.ss <- function(data, params, var_y, ...) {
     model$XtX_theta         <- rep(0, data$p)
     model$contested         <- rep(FALSE, data$p)  # Track contested variants for LD-aware exclusion
     model$ash_iter          <- 0                   # Track Mr.ASH iterations
+    model$min_purity        <- rep(1, params$L)    # Track minimum purity observed per effect
 
   } else {
     model$predictor_weights <- attr(data$XtX, "d")
@@ -364,7 +365,10 @@ update_variance_components.ss <- function(data, params, model, ...) {
     sentinel_ld_threshold <- if (!is.null(params$sentinel_ld_threshold)) params$sentinel_ld_threshold else 0.9
     # ash_warmup: number of iterations to let SuSiE run before Mr.ASH starts
     # This allows SuSiE to find signals first before Mr.ASH can absorb them
-    ash_warmup            <- if (!is.null(params$ash_warmup)) params$ash_warmup else 3
+    ash_warmup            <- if (!is.null(params$ash_warmup)) params$ash_warmup else 0
+    # n_purity_iterations: number of iterations (after warmup) to track minimum purity
+    # Effects that show low purity during these iterations stay exposed
+    n_purity_iterations   <- if (!is.null(params$n_purity_iterations)) params$n_purity_iterations else 1
 
     n <- data$n
     L <- nrow(model$alpha)
@@ -385,7 +389,8 @@ update_variance_components.ss <- function(data, params, model, ...) {
         sigma2_tilde = model$sigma2,
         XtX_theta    = rep(0, p),
         contested    = model$contested,
-        ash_iter     = model$ash_iter
+        ash_iter     = model$ash_iter,
+        min_purity   = model$min_purity
       ))
     }
 
@@ -415,7 +420,15 @@ update_variance_components.ss <- function(data, params, model, ...) {
       purity <- get_purity(cs_indices, X = NULL, Xcorr = Xcorr, use_rfast = FALSE)[1]  # min purity
       effect_purity[l] <- purity
       
-      if (purity >= purity_threshold) {
+      # Track minimum purity during tracking window (after warmup)
+      if (n_purity_iterations > 0 && model$ash_iter <= ash_warmup + n_purity_iterations) {
+        model$min_purity[l] <- min(model$min_purity[l], purity)
+      }
+      
+      # Determine purity to use for protection decision
+      purity_for_decision <- if (n_purity_iterations > 0) model$min_purity[l] else purity
+      
+      if (purity_for_decision >= purity_threshold) {
         # High purity: subtract from residuals AND protect entire effect
         b_confident <- b_confident + model$alpha[l,] * model$mu[l,]
         pip_protected <- pip_protected + model$alpha[l,]
@@ -505,6 +518,7 @@ update_variance_components.ss <- function(data, params, model, ...) {
       XtX_theta    = XtX_theta_new,
       contested    = contested,
       ash_iter     = model$ash_iter,
+      min_purity   = model$min_purity,
       ash_pi       = mrash_output$pi,
       sa2          = mrash_output$data$sa2
     ))
@@ -610,7 +624,7 @@ cleanup_model.ss <- function(data, params, model, ...) {
       }
     }
   } else if (!is.null(params$unmappable_effects) && params$unmappable_effects == "ash") {
-    ash_fields <- c("sigma2_tilde", "XtX_theta", "contested", "ash_iter")
+    ash_fields <- c("sigma2_tilde", "XtX_theta", "contested", "ash_iter", "min_purity")
     
     for (field in ash_fields) {
       if (field %in% names(model)) {
