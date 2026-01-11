@@ -431,20 +431,19 @@ update_variance_components.ss <- function(data, params, model, ...) {
       purity_for_decision <- if (n_purity_iterations > 0) model$min_purity[l] else purity
       
       if (purity < cs_formation_threshold) {
-  	sentinel <- which.max(model$alpha[l,])
-	# 1. Protect sentinel's LD block
-  	moderate_ld_with_sentinel <- abs(Xcorr[sentinel,]) > ld_threshold
-  	# 2. Protect positions with meaningful alpha
-  	meaningful_alpha <- model$alpha[l,] > 5/p
-  	# Union of both
-  	to_protect <- moderate_ld_with_sentinel | meaningful_alpha
-  	pip_protected[to_protect] <- pip_protected[to_protect] + model$alpha[l, to_protect]
+  		sentinel <- which.max(model$alpha[l,])
+		# 1. Protect sentinel's LD block
+  		moderate_ld_with_sentinel <- abs(Xcorr[sentinel,]) > ld_threshold
+  		# 2. Protect positions with meaningful alpha
+  		meaningful_alpha <- model$alpha[l,] > 5/p
+  		# Union of both
+  		to_protect <- moderate_ld_with_sentinel | meaningful_alpha
+  		pip_protected[to_protect] <- pip_protected[to_protect] + model$alpha[l, to_protect]
       } else if (purity_for_decision < purity_threshold) {
         # CS formed (purity >= cs_formation_threshold) but was/is impure
         # THIS is LD interference - expose sentinel to Mr.ASH
         sentinel <- which.max(model$alpha[l,])
         tight_ld_with_sentinel <- abs(Xcorr[sentinel,]) > sentinel_ld_threshold
-        
         # Add alpha to protection, but zero out sentinel's tight LD block
         alpha_protected <- model$alpha[l,]
         alpha_protected[tight_ld_with_sentinel] <- 0
@@ -516,9 +515,9 @@ update_variance_components.ss <- function(data, params, model, ...) {
       cat(sprintf("  LD-exclusion: %d newly contested, %d total contested\n",
                   sum(new_contested), sum(contested)))
       for (l in 1:L) {
-  	max_alpha_l <- max(model$alpha[l,])
-  	sentinel_l <- which.max(model$alpha[l,])
-  	cat(sprintf("  Effect %d: max_alpha=%.3f, purity=%.2f, min_purity=%.2f, sentinel=%d, lbf=%.1f\n",
+  		max_alpha_l <- max(model$alpha[l,])
+  		sentinel_l <- which.max(model$alpha[l,])
+  		cat(sprintf("  Effect %d: max_alpha=%.3f, purity=%.2f, min_purity=%.2f, sentinel=%d, lbf=%.1f\n",
               l, max_alpha_l, effect_purity[l], model$min_purity[l], sentinel_l, model$lbf[l]))
       }
     }
