@@ -394,7 +394,7 @@ update_variance_components.ss <- function(data, params, model, ...) {
     
     for (l in 1:L) {
       # Get CS for this effect (variants with non-negligible alpha)
-      cs_threshold <- 0.9  # coverage threshold
+      cs_threshold <- 0.9 # params$coverage  # coverage threshold, a bit more lenient for this purpose, not default 95%
       alpha_order <- order(model$alpha[l,], decreasing = TRUE)
       cumsum_alpha <- cumsum(model$alpha[l, alpha_order])
       cs_size <- sum(cumsum_alpha <= cs_threshold) + 1
