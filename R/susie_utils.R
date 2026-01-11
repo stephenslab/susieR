@@ -912,6 +912,106 @@ create_ash_grid <- function(data, grid_length = 25, exponent = 2) {
   return(sa2)
 }
 
+#' Diagnostic function for SuSiE-ash iteration
+#' @keywords internal
+diagnose_susie_ash_iter <- function(data, model, params, Xcorr, mrash_output, 
+                                     residuals, b_confident, effect_purity,
+                                     pip_protected, neighborhood_pip, contested,
+                                     sigma2_new, tau2_new, sa2) {
+  
+  L <- nrow(model$alpha)
+  p <- ncol(model$alpha)
+  purity_threshold <- if (!is.null(params$purity_threshold)) params$purity_threshold else 0.5
+  
+  theta_sum2_before <- sum(mrash_output$beta^2)
+  theta_max_before <- max(abs(mrash_output$beta))
+  n_high_purity <- sum(effect_purity >= purity_threshold, na.rm = TRUE)
+  n_low_purity <- sum(!is.na(effect_purity)) - n_high_purity
+  b_full <- colSums(model$alpha * model$mu)
+  grid_scale <- data$n / median(colSums(data$X^2))
+  pi_null <- mrash_output$pi[1]
+  pi_nonnull <- 1 - pi_null
+  theta_new <- mrash_output$beta
+  theta_new[contested] <- 0
+  
+  cat(sprintf("SuSiE-ash iter %d:\n", model$ash_iter))
+  cat(sprintf("  Purity: %d high (>=%.2f), %d low | current: %s\n", 
+              n_high_purity, purity_threshold, n_low_purity,
+              paste(round(effect_purity[!is.na(effect_purity)], 2), collapse=", ")))
+  cat(sprintf("  Effect lbf: %s\n", paste(round(model$lbf, 1), collapse=", ")))
+  cat(sprintf("  Residuals: var(y-Xb_conf)=%.4f | b_full²=%.2e, b_conf²=%.2e\n",
+              var(as.vector(residuals)), sum(b_full^2), sum(b_confident^2)))
+  cat(sprintf("  Grid: scale=%.3f (n/med(w)) | sa2 range=[%.2e, %.2e]\n",
+              grid_scale, min(sa2), max(sa2)))
+  cat(sprintf("  Mr.ASH: sigma2=%.4f, tau2=%.2e | pi_null=%.1f%%, pi_nonnull=%.1f%%\n",
+              sigma2_new, tau2_new, pi_null*100, pi_nonnull*100))
+  cat(sprintf("  Theta before: sum²=%.2e, max|θ|=%.4f | after exclusion: sum²=%.2e\n",
+              theta_sum2_before, theta_max_before, sum(theta_new^2)))
+  cat(sprintf("  LD-exclusion: %d total contested\n", sum(contested)))
+  cat(sprintf("  Pre-MrASH: var(residuals)=%.6f, sum(residuals)=%.6f, residuals[1:3]=%.4f,%.4f,%.4f\n",
+            var(as.vector(residuals)), sum(residuals), residuals[1], residuals[2], residuals[3]))
+
+  # Top Mr.ASH signals before zeroing
+  top_theta_idx <- order(abs(mrash_output$beta), decreasing = TRUE)[1:10]
+  cat(sprintf("  Top 10 |theta| before zeroing:\n"))
+  for (k in 1:10) {
+    idx <- top_theta_idx[k]
+    cat(sprintf("    %d: theta=%.4f, contested=%s, pip_prot=%.3f, nbhd_pip=%.3f\n",
+                idx, mrash_output$beta[idx], contested[idx], 
+                pip_protected[idx], neighborhood_pip[idx]))
+  }
+  
+  # Contested variants with non-trivial Mr.ASH signal
+  contested_with_signal <- which(contested & abs(mrash_output$beta) > 0.001)
+  if (length(contested_with_signal) > 0) {
+    cat(sprintf("  Contested variants with |theta|>0.001 (%d total):\n", length(contested_with_signal)))
+    top_contested <- contested_with_signal[order(abs(mrash_output$beta[contested_with_signal]), decreasing=TRUE)]
+    for (k in 1:min(10, length(top_contested))) {
+      idx <- top_contested[k]
+      cat(sprintf("    %d: theta=%.4f, nbhd_pip=%.3f\n",
+                  idx, mrash_output$beta[idx], neighborhood_pip[idx]))
+    }
+  }
+  
+  # For each active effect, show nearby theta and potentially missed variants
+  cat(sprintf("  Mr.ASH near CS sentinels:\n"))
+  for (l in 1:L) {
+    max_alpha_l <- max(model$alpha[l,])
+    if (max_alpha_l - min(model$alpha[l,]) < 1E-6) next
+    sentinel_l <- which.max(model$alpha[l,])
+    
+    # Variants in moderate LD with sentinel
+    near_sentinel <- which(abs(Xcorr[sentinel_l,]) > 0.3)
+    if (length(near_sentinel) > 0) {
+      theta_near <- mrash_output$beta[near_sentinel]
+      top_near <- near_sentinel[order(abs(theta_near), decreasing = TRUE)[1:min(5, length(near_sentinel))]]
+      cat(sprintf("    Effect %d (sentinel=%d): nearby theta = ", l, sentinel_l))
+      cat(paste0(top_near, "(", round(mrash_output$beta[top_near], 4), ", r=", 
+                 round(Xcorr[sentinel_l, top_near], 2), ")", collapse=", "))
+      cat("\n")
+    }
+  }
+
+  # Check marginal z-score at variants with Mr.ASH signal but weak SuSiE
+  cat(sprintf("  Marginal z-scores in residuals for top theta variants:\n"))
+  for (k in 1:min(5, length(top_theta_idx))) {
+    idx <- top_theta_idx[k]
+    x_j <- data$X[, idx]
+    z_resid <- as.numeric(crossprod(x_j, residuals)) / sqrt(sum(x_j^2) * sigma2_new)
+    cat(sprintf("    %d: z=%.2f, theta=%.4f, contested=%s\n",
+                idx, z_resid, mrash_output$beta[idx], contested[idx]))
+  }
+  
+  # Effect summary
+  for (l in 1:L) {
+    max_alpha_l <- max(model$alpha[l,])
+    if (max_alpha_l - min(model$alpha[l,]) < 1E-6) next
+    sentinel_l <- which.max(model$alpha[l,])
+    cat(sprintf("  Effect %d: max_alpha=%.3f, purity=%.2f, min_purity=%.2f, sentinel=%d, lbf=%.1f\n",
+                l, max_alpha_l, effect_purity[l], model$min_purity[l], sentinel_l, model$lbf[l]))
+  }
+}
+
 # Compute log Bayes factor for Servin and Stephens prior
 #' @keywords internal
 compute_lbf_servin_stephens <- function(x, y, s0, alpha0 = 0, beta0 = 0) {

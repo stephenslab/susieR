@@ -231,7 +231,6 @@ susie_get_posterior_samples <- function(susie_fit, num_samples) {
 }
 
 #' @rdname susie_get_methods
-#'
 #' @param X n by p matrix of values of the p variables (covariates) in
 #'   n samples. When provided, correlation between variables will be
 #'   computed and used to remove CSs whose minimum correlation among
@@ -252,7 +251,7 @@ susie_get_posterior_samples <- function(susie_fit, num_samples) {
 #' @param dedup If \code{dedup = TRUE}, remove duplicate CSs.
 #'
 #' @param squared If \code{squared = TRUE}, report min, mean and
-#' median of squared correlation instead of the absolute correlation.
+#'   median of squared correlation instead of the absolute correlation.
 #'
 #' @param check_symmetric If \code{check_symmetric = TRUE}, perform a
 #'   check for symmetry of matrix \code{Xcorr} when \code{Xcorr} is
@@ -267,12 +266,16 @@ susie_get_posterior_samples <- function(susie_fit, num_samples) {
 #'   By default \code{use_rfast = TRUE} if the Rfast package is
 #'   installed.
 #'
+#' @param ld_extend_threshold Threshold for extending CS by LD (default 0.99).
+#'   Variants with |correlation| > threshold with any CS member are added.
+#'   Set to NULL to disable LD extension. Requires X or Xcorr.
 #'
 #' @export
 #'
 susie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
                          min_abs_corr = 0.5, dedup = TRUE, squared = FALSE,
-                         check_symmetric = TRUE, n_purity = 100, use_rfast) {
+                         check_symmetric = TRUE, n_purity = 100, use_rfast,
+                         ld_extend_threshold = 0.99) {
   if (!is.null(X) && !is.null(Xcorr)) {
     stop("Only one of X or Xcorr should be specified")
   }
@@ -291,10 +294,11 @@ susie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
   include_idx <- rep(TRUE, nrow(res$alpha))
   if (!is.null(res$null_index)) null_index <- res$null_index
   if (is.numeric(res$V)) include_idx <- res$V > 1e-9
-  # L x P binary matrix.
+  
+  # L x P binary matrix
   status <- in_CS(res$alpha, coverage)
 
-  # L-list of CS positions.
+  # L-list of CS positions
   cs <- lapply(1:nrow(status), function(i) which(status[i, ] != 0))
   claimed_coverage <- sapply(
     1:length(cs),
@@ -315,60 +319,95 @@ susie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
       requested_coverage = coverage
     ))
   }
+  
   cs <- cs[include_idx]
   claimed_coverage <- claimed_coverage[include_idx]
+  # Track which original effects these correspond to
+  effect_indices <- which(include_idx)
 
-  # Compute and filter by "purity".
+  # Compute and filter by "purity"
   if (missing(use_rfast)) {
     use_rfast <- requireNamespace("Rfast", quietly = TRUE)
   }
+  
+  # If no correlation info, return without purity or LD extension
   if (is.null(Xcorr) && is.null(X)) {
-    names(cs) <- paste0("L", which(include_idx))
+    names(cs) <- paste0("L", effect_indices)
     return(list(
       cs = cs,
       coverage = claimed_coverage,
       requested_coverage = coverage
     ))
-  } else {
-    purity <- NULL
+  }
+  
+  # Compute Xcorr from X if needed (for LD extension and/or purity)
+  if (is.null(Xcorr)) {
+    if (use_rfast) {
+      Xcorr <- Rfast::cora(X)
+    } else {
+      Xcorr <- cor(X)
+    }
+    # Set X to NULL since we now have Xcorr
+    X <- NULL
+  }
+  
+  # Extend CS by LD if threshold is set
+  if (!is.null(ld_extend_threshold)) {
     for (i in 1:length(cs)) {
-      if (null_index > 0 && null_index %in% cs[[i]]) {
-        purity <- rbind(purity, c(-9, -9, -9))
-      } else {
-        purity <-
-          rbind(
-            purity,
-            matrix(get_purity(cs[[i]], X, Xcorr, squared, n_purity, use_rfast), 1, 3)
-          )
-      }
+      cs_idx <- cs[[i]]
+      # Find variants in tight LD with any CS member
+      ld_with_cs <- abs(Xcorr[cs_idx, , drop = FALSE]) > ld_extend_threshold
+      in_tight_ld <- which(colSums(ld_with_cs) > 0)
+      # Extend CS
+      cs[[i]] <- sort(unique(c(cs_idx, in_tight_ld)))
+      # Update coverage for extended CS
+      claimed_coverage[i] <- sum(res$alpha[effect_indices[i], cs[[i]]])
     }
-    purity <- as.data.frame(purity)
-    if (squared) {
-      colnames(purity) <- c("min.sq.corr", "mean.sq.corr", "median.sq.corr")
-    } else {
-      colnames(purity) <- c("min.abs.corr", "mean.abs.corr", "median.abs.corr")
-    }
-    threshold <- ifelse(squared, min_abs_corr^2, min_abs_corr)
-    is_pure <- which(purity[, 1] >= threshold)
-    if (length(is_pure) > 0) {
-      cs <- cs[is_pure]
-      purity <- purity[is_pure, ]
-      row_names <- paste0("L", which(include_idx)[is_pure])
-      names(cs) <- row_names
-      rownames(purity) <- row_names
+  }
 
-      # Re-order CS list and purity rows based on purity.
-      ordering <- order(purity[, 1], decreasing = TRUE)
-      return(list(
-        cs = cs[ordering],
-        purity = purity[ordering, ],
-        cs_index = which(include_idx)[is_pure[ordering]],
-        coverage = claimed_coverage[ordering],
-        requested_coverage = coverage
-      ))
+  # Compute purity for each CS
+  purity <- NULL
+  for (i in 1:length(cs)) {
+    if (null_index > 0 && null_index %in% cs[[i]]) {
+      purity <- rbind(purity, c(-9, -9, -9))
     } else {
-      return(list(cs = NULL, coverage = NULL, requested_coverage = coverage))
+      purity <- rbind(
+        purity,
+        matrix(get_purity(cs[[i]], X, Xcorr, squared, n_purity, use_rfast), 1, 3)
+      )
     }
+  }
+  purity <- as.data.frame(purity)
+  if (squared) {
+    colnames(purity) <- c("min.sq.corr", "mean.sq.corr", "median.sq.corr")
+  } else {
+    colnames(purity) <- c("min.abs.corr", "mean.abs.corr", "median.abs.corr")
+  }
+  
+  threshold <- ifelse(squared, min_abs_corr^2, min_abs_corr)
+  is_pure <- which(purity[, 1] >= threshold)
+  
+  if (length(is_pure) > 0) {
+    cs <- cs[is_pure]
+    purity <- purity[is_pure, , drop = FALSE]
+    claimed_coverage <- claimed_coverage[is_pure]
+    effect_indices <- effect_indices[is_pure]
+    
+    row_names <- paste0("L", effect_indices)
+    names(cs) <- row_names
+    rownames(purity) <- row_names
+    
+    # Re-order CS list and purity rows based on purity
+    ordering <- order(purity[, 1], decreasing = TRUE)
+    return(list(
+      cs = cs[ordering],
+      purity = purity[ordering, , drop = FALSE],
+      cs_index = effect_indices[ordering],
+      coverage = claimed_coverage[ordering],
+      requested_coverage = coverage
+    ))
+  } else {
+    return(list(cs = NULL, coverage = NULL, requested_coverage = coverage))
   }
 }
 

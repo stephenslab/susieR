@@ -406,10 +406,12 @@ update_variance_components.ss <- function(data, params, model, ...) {
 
     # Compute purity for each effect and build:
     # 1. b_confident: effects to subtract from residuals (high purity only)
-    # 2. pip_protected: PIPs that contribute to protection
+    # 2. alpha_protected: alpha values that contribute to protection
+    # 3. high_purity_sentinels: sentinels of confident effects (for un-contesting aliases)
     b_confident <- rep(0, p)
     alpha_protected <- matrix(0, nrow = L, ncol = p)
     effect_purity <- rep(NA, L)
+    high_purity_sentinels <- integer(0)
     
     for (l in 1:L) {
       # Get CS for this effect (variants with non-negligible alpha)
@@ -431,14 +433,14 @@ update_variance_components.ss <- function(data, params, model, ...) {
       purity_for_decision <- if (n_purity_iterations > 0) model$min_purity[l] else purity
       
       if (purity < cs_formation_threshold) {
-  		sentinel <- which.max(model$alpha[l,])
-		# 1. Protect sentinel's LD block
-  		moderate_ld_with_sentinel <- abs(Xcorr[sentinel,]) > ld_threshold
-  		# 2. Protect positions with meaningful alpha
-  		meaningful_alpha <- model$alpha[l,] > 5/p
-  		# Union of both
-  		to_protect <- moderate_ld_with_sentinel | meaningful_alpha
-  		alpha_protected[l, to_protect] <- model$alpha[l, to_protect]
+        sentinel <- which.max(model$alpha[l,])
+        # 1. Protect sentinel's LD block
+        moderate_ld_with_sentinel <- abs(Xcorr[sentinel,]) > ld_threshold
+        # 2. Protect positions with meaningful alpha
+        meaningful_alpha <- model$alpha[l,] > 5/p
+        # Union of both
+        to_protect <- moderate_ld_with_sentinel | meaningful_alpha
+        alpha_protected[l, to_protect] <- model$alpha[l, to_protect]
       } else if (purity_for_decision < purity_threshold) {
         # CS formed (purity >= cs_formation_threshold) but was/is impure
         # THIS is LD interference - expose sentinel to Mr.ASH
@@ -451,6 +453,7 @@ update_variance_components.ss <- function(data, params, model, ...) {
         # CS formed and consistently high purity: subtract from residuals AND protect
         b_confident <- b_confident + model$alpha[l,] * model$mu[l,]
         alpha_protected[l,] <- model$alpha[l,]
+        high_purity_sentinels <- c(high_purity_sentinels, which.max(model$alpha[l,]))
       }
     }
 
@@ -485,43 +488,21 @@ update_variance_components.ss <- function(data, params, model, ...) {
     # Update contested: once contested, always contested (monotonic to prevent cycling)
     new_contested <- neighborhood_pip > pip_threshold
     contested <- model$contested | new_contested
+    
+    # Un-contest variants in tight LD with high-purity sentinels
+    # These are aliases of confident signals, not competing signals
+    for (sentinel in high_purity_sentinels) {
+      contested[abs(Xcorr[sentinel,]) > sentinel_ld_threshold] <- FALSE
+    }
 
     # Zero out theta for contested variants
     theta_new[contested] <- 0
 
     if (FALSE) {
-      # Debug diagnostics
-      theta_sum2_before <- sum(mrash_output$beta^2)
-      theta_max_before <- max(abs(mrash_output$beta))
-      n_high_purity <- sum(effect_purity >= purity_threshold, na.rm = TRUE)
-      n_low_purity <- L - n_high_purity
-      b_full <- colSums(model$alpha * model$mu)
-      w <- colSums(data$X^2)
-      grid_scale <- n / median(w)
-      pi_null <- mrash_output$pi[1]
-      pi_nonnull <- 1 - pi_null
-      
-      cat(sprintf("SuSiE-ash iter %d:\n", model$ash_iter))
-      cat(sprintf("  Purity: %d high (>=%.2f), %d low | current: %s\n", 
-                  n_high_purity, purity_threshold, n_low_purity,
-                  paste(round(effect_purity, 2), collapse=", ")))
-      cat(sprintf("  Effect lbf: %s\n", paste(round(model$lbf, 1), collapse=", ")))
-      cat(sprintf("  Residuals: var(y-Xb_conf)=%.4f | b_full²=%.2e, b_conf²=%.2e\n",
-                  var(as.vector(residuals)), sum(b_full^2), sum(b_confident^2)))
-      cat(sprintf("  Grid: scale=%.3f (n/med(w)) | sa2 range=[%.2e, %.2e]\n",
-                  grid_scale, min(sa2), max(sa2)))
-      cat(sprintf("  Mr.ASH: sigma2=%.4f, tau2=%.2e | pi_null=%.1f%%, pi_nonnull=%.1f%%\n",
-                  sigma2_new, tau2_new, pi_null*100, pi_nonnull*100))
-      cat(sprintf("  Theta before: sum²=%.2e, max|θ|=%.4f | after exclusion: sum²=%.2e\n",
-                  theta_sum2_before, theta_max_before, sum(theta_new^2)))
-      cat(sprintf("  LD-exclusion: %d newly contested, %d total contested\n",
-                  sum(new_contested), sum(contested)))
-      for (l in 1:L) {
-  		max_alpha_l <- max(model$alpha[l,])
-  		sentinel_l <- which.max(model$alpha[l,])
-  		cat(sprintf("  Effect %d: max_alpha=%.3f, purity=%.2f, min_purity=%.2f, sentinel=%d, lbf=%.1f\n",
-              l, max_alpha_l, effect_purity[l], model$min_purity[l], sentinel_l, model$lbf[l]))
-      }
+      diagnose_susie_ash_iter(data, model, params, Xcorr, mrash_output,
+                               residuals, b_confident, effect_purity,
+                               pip_protected, neighborhood_pip, contested,
+                               sigma2_new, tau2_new, sa2)
     }
 
     # Compute derived quantities for explicit residualization
@@ -641,7 +622,7 @@ cleanup_model.ss <- function(data, params, model, ...) {
         model[[field]] <- NULL
       }
     }
-  } else if (!is.null(params$unmappable_effects) && params$unmappable_effects == "ash") {
+  } else if (!is.null(params$unmappable_effects) && params$unmappable_effects == "ash" && params$verbose == FALSE) {
     ash_fields <- c("sigma2_tilde", "XtX_theta", "contested", "ash_iter", "min_purity")
     
     for (field in ash_fields) {
