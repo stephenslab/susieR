@@ -268,7 +268,7 @@ susie_get_posterior_samples <- function(susie_fit, num_samples) {
 #'
 #' @param ld_extend_threshold Threshold for extending CS by LD (default 0.99).
 #'   Variants with |correlation| > threshold with any CS member are added.
-#'   Set to NULL to disable LD extension. Requires X or Xcorr.
+#'   Set to NULL to disable LD extension. Requires Xcorr (would not work if only X is provided).
 #'
 #' @export
 #'
@@ -340,19 +340,10 @@ susie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
     ))
   }
   
-  # Compute Xcorr from X if needed (for LD extension and/or purity)
-  if (is.null(Xcorr)) {
-    if (use_rfast) {
-      Xcorr <- Rfast::cora(X)
-    } else {
-      Xcorr <- cor(X)
-    }
-    # Set X to NULL since we now have Xcorr
-    X <- NULL
-  }
-  
-  # Extend CS by LD if threshold is set
-  if (!is.null(ld_extend_threshold)) {
+  # Extend CS by LD if threshold is set and Xcorr is available
+  # Note: LD extension requires Xcorr; if only X is provided, skip extension
+  # (X may be sparse, and computing full Xcorr is expensive/infeasible)
+  if (!is.null(ld_extend_threshold) && !is.null(Xcorr)) {
     for (i in 1:length(cs)) {
       cs_idx <- cs[[i]]
       # Find variants in tight LD with any CS member
