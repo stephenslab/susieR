@@ -905,7 +905,7 @@ mle_unmappable <- function(data, params, model, omega, est_tau2 = TRUE, est_sigm
 
 #' Create variance grid for mr.ash
 #' @keywords internal
-create_ash_grid <- function(data, grid_length = 20, exponent = 2.5) {
+create_ash_grid <- function(data, grid_length = 25, exponent = 2) {
   n <- data$n
   w <- colSums(data$X^2)
   sa2 <- (2^((0:(grid_length - 1)) / grid_length) - 1)^exponent * n / median(w)
