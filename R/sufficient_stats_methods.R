@@ -408,7 +408,7 @@ update_variance_components.ss <- function(data, params, model, ...) {
     # 1. b_confident: effects to subtract from residuals (high purity only)
     # 2. pip_protected: PIPs that contribute to protection
     b_confident <- rep(0, p)
-    pip_protected <- rep(0, p)
+    alpha_protected <- matrix(0, nrow = L, ncol = p)
     effect_purity <- rep(NA, L)
     
     for (l in 1:L) {
@@ -438,22 +438,24 @@ update_variance_components.ss <- function(data, params, model, ...) {
   		meaningful_alpha <- model$alpha[l,] > 5/p
   		# Union of both
   		to_protect <- moderate_ld_with_sentinel | meaningful_alpha
-  		pip_protected[to_protect] <- pip_protected[to_protect] + model$alpha[l, to_protect]
+  		alpha_protected[l, to_protect] <- model$alpha[l, to_protect]
       } else if (purity_for_decision < purity_threshold) {
         # CS formed (purity >= cs_formation_threshold) but was/is impure
         # THIS is LD interference - expose sentinel to Mr.ASH
         sentinel <- which.max(model$alpha[l,])
         tight_ld_with_sentinel <- abs(Xcorr[sentinel,]) > sentinel_ld_threshold
-        # Add alpha to protection, but zero out sentinel's tight LD block
-        alpha_protected <- model$alpha[l,]
-        alpha_protected[tight_ld_with_sentinel] <- 0
-        pip_protected <- pip_protected + alpha_protected
+        # Store alpha for protection, but zero out sentinel's tight LD block
+        alpha_protected[l,] <- model$alpha[l,]
+        alpha_protected[l, tight_ld_with_sentinel] <- 0
       } else {
         # CS formed and consistently high purity: subtract from residuals AND protect
         b_confident <- b_confident + model$alpha[l,] * model$mu[l,]
-        pip_protected <- pip_protected + model$alpha[l,]
+        alpha_protected[l,] <- model$alpha[l,]
       }
     }
+
+    # Compute proper PIP using the correct formula: 1 - prod(1 - alpha)
+    pip_protected <- susie_get_pip(alpha_protected)
 
     # Compute residuals using only high-purity effects
     residuals <- data$y - data$X %*% b_confident
