@@ -467,7 +467,7 @@ update_variance_components.ss <- function(data, params, model, ...) {
     # Zero out theta for contested variants
     theta_new[contested] <- 0
 
-    if (TRUE) {
+    if (FALSE) {
       n_high_purity <- sum(effect_purity >= purity_threshold, na.rm = TRUE)
       n_low_purity <- L - n_high_purity
       b_full <- colSums(model$alpha * model$mu)
