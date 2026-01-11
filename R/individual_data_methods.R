@@ -14,7 +14,7 @@ configure_data.individual <- function(data, params) {
   if (params$unmappable_effects == "none") {
     return(configure_data.default(data, params))
   } else {
-    warning_message("Individual-level data will be converted to sufficient statistics for unmappable effects methods (this step may take awhile for a large data set)")
+    warning_message("Individual-level data will be converted to sufficient statistics for unmappable effects methods (this step may take a while for a large data set)")
     return(convert_individual_to_ss(data, params))
   }
 }

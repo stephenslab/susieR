@@ -363,6 +363,10 @@ update_variance_components.ss <- function(data, params, model, ...) {
     ld_threshold          <- if (!is.null(params$ld_threshold)) params$ld_threshold else 0.5
     purity_threshold      <- if (!is.null(params$purity_threshold)) params$purity_threshold else 0.5
     sentinel_ld_threshold <- if (!is.null(params$sentinel_ld_threshold)) params$sentinel_ld_threshold else 0.9
+    cs_threshold <- 0.9  # coverage threshold for CS formation
+    # cs_formation_threshold: purity must exceed this to be considered "CS formed"
+    # Below this, effect is too diffuse (purity close to 0), not LD interference - don't expose
+    cs_formation_threshold <- if (!is.null(params$cs_formation_threshold)) params$cs_formation_threshold else 0.09
     # ash_warmup: number of iterations to let SuSiE run before Mr.ASH starts
     # This allows SuSiE to find signals first before Mr.ASH can absorb them
     ash_warmup            <- if (!is.null(params$ash_warmup)) params$ash_warmup else 0
@@ -370,7 +374,6 @@ update_variance_components.ss <- function(data, params, model, ...) {
     # Effects that show low purity during these iterations stay exposed
     n_purity_iterations   <- if (!is.null(params$n_purity_iterations)) params$n_purity_iterations else 1
 
-    n <- data$n
     L <- nrow(model$alpha)
     p <- ncol(model$alpha)
 
@@ -410,7 +413,6 @@ update_variance_components.ss <- function(data, params, model, ...) {
     
     for (l in 1:L) {
       # Get CS for this effect (variants with non-negligible alpha)
-      cs_threshold <- 0.9 # params$coverage  # coverage threshold, a bit more lenient for this purpose, not default 95%
       alpha_order <- order(model$alpha[l,], decreasing = TRUE)
       cumsum_alpha <- cumsum(model$alpha[l, alpha_order])
       cs_size <- sum(cumsum_alpha <= cs_threshold) + 1
@@ -428,12 +430,18 @@ update_variance_components.ss <- function(data, params, model, ...) {
       # Determine purity to use for protection decision
       purity_for_decision <- if (n_purity_iterations > 0) model$min_purity[l] else purity
       
-      if (purity_for_decision >= purity_threshold) {
-        # High purity: subtract from residuals AND protect entire effect
-        b_confident <- b_confident + model$alpha[l,] * model$mu[l,]
-        pip_protected <- pip_protected + model$alpha[l,]
-      } else {
-        # Low purity: DON'T subtract, protect everything EXCEPT sentinel + tight LD neighbors
+      if (purity < cs_formation_threshold) {
+  	sentinel <- which.max(model$alpha[l,])
+	# 1. Protect sentinel's LD block
+  	moderate_ld_with_sentinel <- abs(Xcorr[sentinel,]) > ld_threshold
+  	# 2. Protect positions with meaningful alpha
+  	meaningful_alpha <- model$alpha[l,] > 5/p
+  	# Union of both
+  	to_protect <- moderate_ld_with_sentinel | meaningful_alpha
+  	pip_protected[to_protect] <- pip_protected[to_protect] + model$alpha[l, to_protect]
+      } else if (purity_for_decision < purity_threshold) {
+        # CS formed (purity >= cs_formation_threshold) but was/is impure
+        # THIS is LD interference - expose sentinel to Mr.ASH
         sentinel <- which.max(model$alpha[l,])
         tight_ld_with_sentinel <- abs(Xcorr[sentinel,]) > sentinel_ld_threshold
         
@@ -441,6 +449,10 @@ update_variance_components.ss <- function(data, params, model, ...) {
         alpha_protected <- model$alpha[l,]
         alpha_protected[tight_ld_with_sentinel] <- 0
         pip_protected <- pip_protected + alpha_protected
+      } else {
+        # CS formed and consistently high purity: subtract from residuals AND protect
+        b_confident <- b_confident + model$alpha[l,] * model$mu[l,]
+        pip_protected <- pip_protected + model$alpha[l,]
       }
     }
 
@@ -473,14 +485,13 @@ update_variance_components.ss <- function(data, params, model, ...) {
     new_contested <- neighborhood_pip > pip_threshold
     contested <- model$contested | new_contested
 
-    # Store theta stats before exclusion for diagnostics
-    theta_sum2_before <- sum(theta_new^2)
-    theta_max_before <- max(abs(theta_new))
-
     # Zero out theta for contested variants
     theta_new[contested] <- 0
 
     if (FALSE) {
+      # Debug diagnostics
+      theta_sum2_before <- sum(mrash_output$beta^2)
+      theta_max_before <- max(abs(mrash_output$beta))
       n_high_purity <- sum(effect_purity >= purity_threshold, na.rm = TRUE)
       n_low_purity <- L - n_high_purity
       b_full <- colSums(model$alpha * model$mu)
@@ -504,6 +515,12 @@ update_variance_components.ss <- function(data, params, model, ...) {
                   theta_sum2_before, theta_max_before, sum(theta_new^2)))
       cat(sprintf("  LD-exclusion: %d newly contested, %d total contested\n",
                   sum(new_contested), sum(contested)))
+      for (l in 1:L) {
+  	max_alpha_l <- max(model$alpha[l,])
+  	sentinel_l <- which.max(model$alpha[l,])
+  	cat(sprintf("  Effect %d: max_alpha=%.3f, purity=%.2f, min_purity=%.2f, sentinel=%d, lbf=%.1f\n",
+              l, max_alpha_l, effect_purity[l], model$min_purity[l], sentinel_l, model$lbf[l]))
+      }
     }
 
     # Compute derived quantities for explicit residualization
