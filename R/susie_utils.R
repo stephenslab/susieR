@@ -916,7 +916,7 @@ create_ash_grid <- function(data, grid_length = 25, exponent = 2) {
 #' @keywords internal
 diagnose_susie_ash_iter <- function(data, model, params, Xcorr, mrash_output, 
                                      residuals, b_confident, effect_purity,
-                                     pip_protected, neighborhood_pip, contested,
+                                     pip_protected, neighborhood_pip, masked,
                                      sigma2_new, tau2_new, sa2) {
   
   L <- nrow(model$alpha)
@@ -932,7 +932,7 @@ diagnose_susie_ash_iter <- function(data, model, params, Xcorr, mrash_output,
   pi_null <- mrash_output$pi[1]
   pi_nonnull <- 1 - pi_null
   theta_new <- mrash_output$beta
-  theta_new[contested] <- 0
+  theta_new[masked] <- 0
   
   cat(sprintf("SuSiE-ash iter %d:\n", model$ash_iter))
   cat(sprintf("  Purity: %d high (>=%.2f), %d low | current: %s\n", 
@@ -947,7 +947,7 @@ diagnose_susie_ash_iter <- function(data, model, params, Xcorr, mrash_output,
               sigma2_new, tau2_new, pi_null*100, pi_nonnull*100))
   cat(sprintf("  Theta before: sum²=%.2e, max|θ|=%.4f | after exclusion: sum²=%.2e\n",
               theta_sum2_before, theta_max_before, sum(theta_new^2)))
-  cat(sprintf("  LD-exclusion: %d total contested\n", sum(contested)))
+  cat(sprintf("  LD-exclusion: %d total masked\n", sum(masked)))
   cat(sprintf("  Pre-MrASH: var(residuals)=%.6f, sum(residuals)=%.6f, residuals[1:3]=%.4f,%.4f,%.4f\n",
             var(as.vector(residuals)), sum(residuals), residuals[1], residuals[2], residuals[3]))
 
@@ -956,18 +956,18 @@ diagnose_susie_ash_iter <- function(data, model, params, Xcorr, mrash_output,
   cat(sprintf("  Top 10 |theta| before zeroing:\n"))
   for (k in 1:10) {
     idx <- top_theta_idx[k]
-    cat(sprintf("    %d: theta=%.4f, contested=%s, pip_prot=%.3f, nbhd_pip=%.3f\n",
-                idx, mrash_output$beta[idx], contested[idx], 
+    cat(sprintf("    %d: theta=%.4f, masked=%s, pip_prot=%.3f, nbhd_pip=%.3f\n",
+                idx, mrash_output$beta[idx], masked[idx], 
                 pip_protected[idx], neighborhood_pip[idx]))
   }
   
-  # Contested variants with non-trivial Mr.ASH signal
-  contested_with_signal <- which(contested & abs(mrash_output$beta) > 0.001)
-  if (length(contested_with_signal) > 0) {
-    cat(sprintf("  Contested variants with |theta|>0.001 (%d total):\n", length(contested_with_signal)))
-    top_contested <- contested_with_signal[order(abs(mrash_output$beta[contested_with_signal]), decreasing=TRUE)]
-    for (k in 1:min(10, length(top_contested))) {
-      idx <- top_contested[k]
+  # masked variants with non-trivial Mr.ASH signal
+  masked_with_signal <- which(masked & abs(mrash_output$beta) > 0.001)
+  if (length(masked_with_signal) > 0) {
+    cat(sprintf("  masked variants with |theta|>0.001 (%d total):\n", length(masked_with_signal)))
+    top_masked <- masked_with_signal[order(abs(mrash_output$beta[masked_with_signal]), decreasing=TRUE)]
+    for (k in 1:min(10, length(top_masked))) {
+      idx <- top_masked[k]
       cat(sprintf("    %d: theta=%.4f, nbhd_pip=%.3f\n",
                   idx, mrash_output$beta[idx], neighborhood_pip[idx]))
     }
@@ -998,8 +998,8 @@ diagnose_susie_ash_iter <- function(data, model, params, Xcorr, mrash_output,
     idx <- top_theta_idx[k]
     x_j <- data$X[, idx]
     z_resid <- as.numeric(crossprod(x_j, residuals)) / sqrt(sum(x_j^2) * sigma2_new)
-    cat(sprintf("    %d: z=%.2f, theta=%.4f, contested=%s\n",
-                idx, z_resid, mrash_output$beta[idx], contested[idx]))
+    cat(sprintf("    %d: z=%.2f, theta=%.4f, masked=%s\n",
+                idx, z_resid, mrash_output$beta[idx], masked[idx]))
   }
   
   # Effect summary
