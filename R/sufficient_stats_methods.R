@@ -11,13 +11,10 @@
 # Configure ss data for specified method
 #' @keywords internal
 configure_data.ss <- function(data, params) {
-  if (params$unmappable_effects == "none") {
-    return(configure_data.default(data, params))
-  } else if (params$unmappable_effects == "ash") {
-    # SuSiE-ash: no eigen decomposition needed for explicit residualization
-    return(data)
-  } else {
+  if (params$unmappable_effects == "inf") {
     return(add_eigen_decomposition(data, params))
+  } else {
+    return(configure_data.default(data, params))
   }
 }
 
@@ -527,17 +524,10 @@ update_derived_quantities.ss <- function(data, params, model) {
     model$omega_var         <- omega_res$omega_var
     model$predictor_weights <- omega_res$diagXtOmegaX
     model$XtOmegay          <- data$eigen_vectors %*% (data$VtXty / omega_res$omega_var)
-
     # Update fitted values to include theta
     b          <- colSums(model$alpha * model$mu)
     model$XtXr <- data$XtX %*% (b + model$theta)
-
     return(model)
-
-  } else if (params$unmappable_effects == "ash") {
-    # SuSiE-ash: no Omega updates needed, quantities updated in update_variance_components
-    return(model)
-
   } else {
     return(update_derived_quantities.default(data, params, model))
   }
