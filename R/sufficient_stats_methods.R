@@ -373,7 +373,7 @@ update_variance_components.ss <- function(data, params, model, ...) {
     purity_threshold <- if (!is.null(params$purity_threshold)) params$purity_threshold else 0.5
     
     # sentinel_ld_threshold: tight LD threshold for exposing sentinel region
-    sentinel_ld_threshold <- if (!is.null(params$sentinel_ld_threshold)) params$sentinel_ld_threshold else 0.9
+    sentinel_ld_threshold <- if (!is.null(params$sentinel_ld_threshold)) params$sentinel_ld_threshold else 0.95
     
     # cs_threshold: coverage threshold for defining credible set
     cs_threshold <- 0.9
