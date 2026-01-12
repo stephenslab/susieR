@@ -524,7 +524,24 @@ update_variance_components.ss <- function(data, params, model, ...) {
 
     pip_protected <- susie_get_pip(alpha_protected)
     residuals <- data$y - data$X %*% b_confident
- 
+    
+    sa2 <- create_ash_grid(data)
+
+    mrash_output <- mr.ash(
+      X             = data$X,
+      y             = residuals,
+      sa2           = sa2,
+      intercept     = FALSE,
+      standardize   = FALSE,
+      sigma2        = model$sigma2,
+      update.sigma2 = params$estimate_residual_variance,
+      max.iter      = 1000
+    )
+
+    theta_new  <- mrash_output$beta
+    sigma2_new <- mrash_output$sigma2
+    tau2_new   <- sum(mrash_output$data$sa2 * mrash_output$pi) * mrash_output$sigma2
+
     # =========================================================================
     # Compute masking decisions
     # =========================================================================
@@ -536,8 +553,8 @@ update_variance_components.ss <- function(data, params, model, ...) {
     # The direct threshold catches isolated signals that don't have correlated
     # neighbors to boost their neighborhood_pip, preventing Mr.ASH from absorbing
     # moderate-strength signals that SuSiE is still working to resolve.
-    # =========================================================================   
-
+    # =========================================================================
+    
     LD_adj <- abs(Xcorr) > ld_threshold
     neighborhood_pip <- as.vector(LD_adj %*% pip_protected)
 
@@ -547,40 +564,14 @@ update_variance_components.ss <- function(data, params, model, ...) {
     # Once masked, always masked (monotonic to prevent cycling between SuSiE and Mr.ASH)
     masked <- model$masked | new_masked
     
-    # Un-mask variants in tight LD with confident sentinels
+    # Variants in tight LD with confident sentinels are likely aliases, not competing signals.
+    # We un-mask them so Mr.ASH can absorb correlated polygenic signal there.
     for (sentinel in high_purity_sentinels) {
       masked[abs(Xcorr[sentinel,]) > sentinel_ld_threshold] <- FALSE
     }
-    
-    # Fit Mr.ASH only on unmasked positions
-    unmasked_idx <- which(!masked)
-    
-    sa2 <- create_ash_grid(data)
 
-    if (length(unmasked_idx) > 0) {
-      mrash_output <- mr.ash(
-        X             = data$X[, unmasked_idx, drop = FALSE],
-        y             = residuals,
-        sa2           = sa2,
-        intercept     = FALSE,
-        standardize   = FALSE,
-        sigma2        = model$sigma2,
-        update.sigma2 = params$estimate_residual_variance,
-        max.iter      = 1000
-      )
-      
-      # Reconstruct full theta vector
-      theta_new <- rep(0, p)
-      theta_new[unmasked_idx] <- mrash_output$beta
-      sigma2_new <- mrash_output$sigma2
-      tau2_new   <- sum(mrash_output$data$sa2 * mrash_output$pi) * mrash_output$sigma2
-    } else {
-      # All positions masked, no Mr.ASH fitting
-      theta_new <- rep(0, p)
-      sigma2_new <- model$sigma2
-      tau2_new <- 0
-      mrash_output <- list(pi = rep(0, length(sa2)), data = list(sa2 = sa2))
-    }
+    # Zero out theta for masked variants
+    theta_new[masked] <- 0
 
     if (FALSE) {
       diagnose_susie_ash_iter(data, model, params, Xcorr, mrash_output,
