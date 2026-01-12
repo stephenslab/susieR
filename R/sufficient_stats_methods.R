@@ -66,7 +66,8 @@ initialize_susie_model.ss <- function(data, params, var_y, ...) {
     model$ash_iter          <- 0                # Track Mr.ASH iterations
     model$low_purity_iter_count <- rep(0, params$L)
     model$min_purity        <- rep(1, params$L) # Track minimum purity observed per effect
-
+    model$prev_sentinel <- rep(0, params$L)  # Track sentinel varables
+    model$prev_purity <- rep(0, params$L) # Track previous purity
   } else {
     model$predictor_weights <- attr(data$XtX, "d")
   }
@@ -386,7 +387,14 @@ update_variance_components.ss <- function(data, params, model, ...) {
     # the low-purity state (CS formed but low purity) before we expose its sentinel.
     # This gives true signals time to crystallize before assuming LD interference.
     # Set to 1 to disable
-    low_purity_iter_count <- if (!is.null(params$low_purity_iter_count)) params$low_purity_iter_count else 3
+    low_purity_iter_count <- if (!is.null(params$low_purity_iter_count)) params$low_purity_iter_count else 2
+    
+    # track_sentinel: if TRUE, reset counter when sentinel changes
+    track_sentinel <- if (!is.null(params$track_sentinel)) params$track_sentinel else FALSE
+
+    # purity_improvement_threshold: reset counter if purity improves by more than this
+    # Set to 0 to disable purity tracking
+    purity_improvement_threshold <- if (!is.null(params$purity_improvement_threshold)) params$purity_improvement_threshold else 0.1
     
     # n_purity_iterations: number of iterations to track minimum purity
     # Effects that show low purity during these iterations stay exposed
@@ -451,7 +459,6 @@ update_variance_components.ss <- function(data, params, model, ...) {
         # Union of both protection criteria
         to_protect <- moderate_ld_with_sentinel | meaningful_alpha
         alpha_protected[l, to_protect] <- model$alpha[l, to_protect]
-        
       } else if (purity_for_decision < purity_threshold) {
         # -----------------------------------------------------------------
         # CASE 2: CS formed but low purity (potential LD interference)
@@ -461,25 +468,42 @@ update_variance_components.ss <- function(data, params, model, ...) {
         # This suggests LD interference: the true causal may not be the sentinel.
         #
         # Strategy: Wait low_purity_iter_count iterations before exposing.
-        # True signals often start low purity but crystallize; LD interference stays stuck.
+        # Optionally reset counter if sentinel changes or purity improves,
+        # because those are indications that SuSiE is still working on them
+        # so we should not expose them to Mr.ASH
         # -----------------------------------------------------------------
         
         sentinel <- which.max(model$alpha[l,])
+        
+        # Check reset conditions based on parameters
+        should_reset <- FALSE
+        if (track_sentinel && sentinel != model$prev_sentinel[l]) {
+          should_reset <- TRUE  # Sentinel changed - still exploring
+        }
+        if (purity_improvement_threshold > 0 && 
+            (purity - model$prev_purity[l]) > purity_improvement_threshold) {
+          should_reset <- TRUE  # Purity improved - crystallizing
+        }
+        
+        if (should_reset) {
+          model$low_purity_iter_count[l] <- 0
+        }
+        model$prev_sentinel[l] <- sentinel
+        model$prev_purity[l] <- purity
         
         # Track consecutive iterations in low purity state
         model$low_purity_iter_count[l] <- model$low_purity_iter_count[l] + 1
         
         if (model$low_purity_iter_count[l] >= low_purity_iter_count) {
-          # Stuck in low purity state for multiple iterations - likely LD interference
+          # Stuck in low purity state - likely LD interference
           # Expose the sentinel's tight LD block to Mr.ASH
           tight_ld_with_sentinel <- abs(Xcorr[sentinel,]) > sentinel_ld_threshold
           alpha_protected[l,] <- model$alpha[l,]
           alpha_protected[l, tight_ld_with_sentinel] <- 0
         } else {
-          # Still might crystallize into a pure CS - protect fully
+          # Still exploring or crystallizing - protect fully
           alpha_protected[l,] <- model$alpha[l,]
         }
-        
       } else {
         # -----------------------------------------------------------------
         # CASE 3: CS formed and high purity (confident signal)
