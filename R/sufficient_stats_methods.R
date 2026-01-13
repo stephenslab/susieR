@@ -396,7 +396,8 @@ update_variance_components.ss <- function(data, params, model, ...) {
     ld_threshold <- if (!is.null(params$ld_threshold)) params$ld_threshold else 0.5
     
     # --- Purity thresholds ---
-    cs_threshold <- 0.9  # Coverage for CS formation
+    # Tentative CS purity
+    cs_threshold <- if (!is.null(params$cs_threshold)) params$working_cs_threshold else 0.9
     cs_formation_threshold <- if (!is.null(params$cs_formation_threshold)) params$cs_formation_threshold else 0.1
     purity_threshold <- if (!is.null(params$purity_threshold)) params$purity_threshold else 0.5
     sentinel_ld_threshold <- if (!is.null(params$sentinel_ld_threshold)) params$sentinel_ld_threshold else 0.95
@@ -411,6 +412,10 @@ update_variance_components.ss <- function(data, params, model, ...) {
     # --- Second chance mechanism ---
     # After force-exposing, wait N iterations then restore protection
     second_chance_wait <- if (!is.null(params$second_chance_wait)) params$second_chance_wait else 3
+    
+    # --- Collision detection thresholds ---
+    collision_free_threshold <- if (!is.null(params$collision_free_threshold)) params$collision_free_threshold else 2
+
     
     L <- nrow(model$alpha)
     p <- ncol(model$alpha)
@@ -441,14 +446,19 @@ update_variance_components.ss <- function(data, params, model, ...) {
     # =========================================================================
     current_collision <- rep(FALSE, L)
     for (l in 1:L) {
-      sentinel_l <- sentinels[l]
-      other_sentinels <- sentinels[-l]
+      # Skip effects with uniform/near-uniform alpha (no meaningful signal)
+      if (max(model$alpha[l,]) - min(model$alpha[l,]) < 1e-6) next
       
-      if (length(other_sentinels) > 0) {
-        if (any(abs(Xcorr[sentinel_l, other_sentinels]) > sentinel_ld_threshold)) {
+      sentinel_l <- sentinels[l]
+      
+      # Only compare with other effects that have meaningful signal
+      for (other_l in (1:L)[-l]) {
+        if (max(model$alpha[other_l,]) - min(model$alpha[other_l,]) < 1e-6) next
+        
+        if (abs(Xcorr[sentinel_l, sentinels[other_l]]) > sentinel_ld_threshold) {
           current_collision[l] <- TRUE
           model$ever_diffuse[l] <- TRUE
-          model$collision_sentinel[l] <- sentinel_l  # Record WHERE collision happened
+          model$collision_sentinel[l] <- sentinel_l
           model$collision_free_count[l] <- 0
         }
       }
@@ -456,15 +466,16 @@ update_variance_components.ss <- function(data, params, model, ...) {
     
     # Clear ever_diffuse only if: no collision AND still at SAME sentinel where collision happened
     for (l in 1:L) {
+      # Skip uniform effects
+      if (max(model$alpha[l,]) - min(model$alpha[l,]) < 1e-6) next
+      
       if (isTRUE(model$ever_diffuse[l]) && !current_collision[l]) {
         if (sentinels[l] == model$collision_sentinel[l]) {
-          # Stayed at contested position, others left → won the fight
           model$collision_free_count[l] <- model$collision_free_count[l] + 1
-          if (model$collision_free_count[l] >= 3) {
+          if (model$collision_free_count[l] >= collision_free_threshold) {
             model$ever_diffuse[l] <- FALSE
           }
         }
-        # If moved to different position, ever_diffuse stays TRUE (ran away)
       }
     }
 
@@ -472,6 +483,7 @@ update_variance_components.ss <- function(data, params, model, ...) {
     b_confident <- rep(0, p)
     alpha_protected <- matrix(0, nrow = L, ncol = p)
     force_unmask <- rep(FALSE, p)
+    force_mask <- rep(FALSE, p)
  
     # =========================================================================
     # Second pass: Classify effects and determine protection
@@ -500,7 +512,8 @@ update_variance_components.ss <- function(data, params, model, ...) {
         meaningful_alpha <- model$alpha[l,] > 5/p
         to_protect <- moderate_ld_with_sentinel | meaningful_alpha
         alpha_protected[l, to_protect] <- model$alpha[l, to_protect]
-        
+        # Force mask neighborhood to prevent signal leakage
+        force_mask <- force_mask | moderate_ld_with_sentinel
       } else if (!can_be_confident) {
         # =================================================================
         # CASE 2: Uncertain (current_collision OR ever_diffuse OR low purity)
@@ -581,7 +594,9 @@ update_variance_components.ss <- function(data, params, model, ...) {
     # =========================================================================
     LD_adj <- abs(Xcorr) > ld_threshold
     neighborhood_pip <- as.vector(LD_adj %*% pip_protected)
-    want_masked <- (neighborhood_pip > pip_threshold) | (pip_protected > direct_pip_threshold)
+    want_masked <- (neighborhood_pip > pip_threshold) | 
+                   (pip_protected > direct_pip_threshold) |
+                   force_mask
 
     # Track iterations wanting unmask (for stable unmask after N iterations)
     dont_want_mask <- !want_masked
