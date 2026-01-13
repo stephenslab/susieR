@@ -201,7 +201,7 @@ susie_plot(fit_ash, y = "PIP", b = b, main = "SuSiE-ash")
 plot_cs_effects(fit_ash, b, main = "SuSiE-ash CS on true effects")
 ```
 
-SuSiE-ash finds 4 credible sets correctly.
+SuSiE-ash finds 3 correct credible sets.
 
 The adaptive shrinkage approach allows SuSiE-ash to distinguish between true
 sparse signals and the polygenic background more effectively than either
@@ -214,7 +214,7 @@ standard SuSiE or SuSiE-inf alone.
 | SuSiE (purity=0.5) | 5 | 4 |
 | SuSiE (purity=0.8) | 3 | 2 |
 | SuSiE-inf | 1 | 0 |
-| SuSiE-ash | 4 | 0 |
+| SuSiE-ash | 3 | 0 |
 
 ## Session Information
 

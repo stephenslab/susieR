@@ -10,7 +10,7 @@ diagnose_susie_ash_iter <- function(data, model, params, Xcorr, mrash_output,
   p <- ncol(model$alpha)
   purity_threshold <- if (!is.null(params$purity_threshold)) params$purity_threshold else 0.5
   cs_formation_threshold <- if (!is.null(params$cs_formation_threshold)) params$cs_formation_threshold else 0.1
-  low_purity_iter_count_threshold <- if (!is.null(params$low_purity_iter_count)) params$low_purity_iter_count else 2
+  diffuse_iter_count_threshold <- if (!is.null(params$diffuse_iter_count)) params$diffuse_iter_count else 2
   sentinel_ld_threshold <- if (!is.null(params$sentinel_ld_threshold)) params$sentinel_ld_threshold else 0.95
   
   theta_new <- mrash_output$beta
@@ -104,7 +104,7 @@ diagnose_susie_ash_iter <- function(data, model, params, Xcorr, mrash_output,
     
     # Counter for CASE 2 (only for low purity, not ever_diffuse)
     cnt_str <- if(case_str == "C2" && !is_ever_diffuse) {
-      sprintf("%d/%d", model$low_purity_iter_count[l], low_purity_iter_count_threshold)
+      sprintf("%d/%d", model$diffuse_iter_count[l], diffuse_iter_count_threshold)
     } else "-"
     
     # Flags

@@ -63,7 +63,7 @@ initialize_susie_model.ss <- function(data, params, var_y, ...) {
     model$XtX_theta         <- rep(0, data$p)
     model$masked         <- rep(FALSE, data$p)  # Track masked variants for LD-aware exclusion
     model$ash_iter          <- 0                # Track Mr.ASH iterations
-    model$low_purity_iter_count <- rep(0, params$L)
+    model$diffuse_iter_count <- rep(0, params$L)
     model$prev_sentinel <- rep(0, params$L)  # Track sentinel varables
     model$unmask_candidate_iters <- rep(0, data$p)  
     model$ever_unmasked <- rep(FALSE, data$p)
@@ -389,27 +389,40 @@ update_variance_components.ss <- function(data, params, model, ...) {
     # =========================================================================
     
     # --- Protection thresholds ---
-    pip_threshold <- if (!is.null(params$pip_threshold)) params$pip_threshold else 0.5
+    # cPIP > 50% in reasonable LD range is plausible signal that we should mask from mr.ash
+    neighborhood_pip_threshold <- if (!is.null(params$neighborhood_pip_threshold)) params$neighborhood_pip_threshold else 0.5
+    # >10% chance of signal is something we are potentionally interested in 
     direct_pip_threshold <- if (!is.null(params$direct_pip_threshold)) params$direct_pip_threshold else 0.1
+    # R^2 0.25 is reasonable LD range 
     ld_threshold <- if (!is.null(params$ld_threshold)) params$ld_threshold else 0.5
     
     # --- Purity thresholds ---
-    # Tentative CS purity
+    # Tentative CS purity, default to 0.9 because it is tentative we dont have to require 0.95
+    # Potentially we can even make it 0.85 ...
     cs_threshold <- if (!is.null(params$cs_threshold)) params$working_cs_threshold else 0.9
+    # >10% chance of signal is something we are potentionally interested in 
     cs_formation_threshold <- if (!is.null(params$cs_formation_threshold)) params$cs_formation_threshold else 0.1
+    # R^2 0.25 is reasonable purity 
     purity_threshold <- if (!is.null(params$purity_threshold)) params$purity_threshold else 0.5
+    # |R| = 0.95 is tight enough of LD
     sentinel_ld_threshold <- if (!is.null(params$sentinel_ld_threshold)) params$sentinel_ld_threshold else 0.95
     
     # --- Iteration counters for CASE 2 ---
-    low_purity_iter_count <- if (!is.null(params$low_purity_iter_count)) params$low_purity_iter_count else 2
+    # Wait before expose to mr.ash
+    # Default to 2 to expose early (not over-protecting it)
+    diffuse_iter_count <- if (!is.null(params$diffuse_iter_count)) params$diffuse_iter_count else 2
     track_sentinel <- if (!is.null(params$track_sentinel)) params$track_sentinel else TRUE
 
-    # --- Unmasking thresholds ---
-    unmask_iter_threshold <- if (!is.null(params$unmask_iter_threshold)) params$unmask_iter_threshold else 3
-    
     # --- Second chance mechanism ---
     # After force-exposing, wait N iterations then restore protection
+    # Default to 3 to allow enough time for SuSiE to land on something else
     second_chance_wait <- if (!is.null(params$second_chance_wait)) params$second_chance_wait else 3
+
+    # --- Unmasking stability ---
+    # A masked position unmasks when SuSiE loses interest (PIP drops).
+    # We wait 2 iterations to confirm this is stable, not oscillation.
+    delayed_unmask_iter <- 2  # set this to 2 to prevent oscillation which is the minimum we can do
+    
     
     L <- nrow(model$alpha)
     p <- ncol(model$alpha)
@@ -454,21 +467,6 @@ update_variance_components.ss <- function(data, params, model, ...) {
       }
     }
 
-    # Clear ever_diffuse if: no collision AND passed exposure test
-    # (all positions near sentinel have been tested via second_chance)
-    for (l in 1:L) {
-      if (max(model$alpha[l,]) - min(model$alpha[l,]) < 1e-6) next
-      
-      if (isTRUE(model$ever_diffuse[l]) && !current_collision[l]) {
-        sentinel_l <- sentinels[l]
-        sentinel_neighborhood <- abs(Xcorr[sentinel_l,]) > sentinel_ld_threshold
-        if (all(model$second_chance_used[sentinel_neighborhood])) {
-          model$ever_diffuse[l] <- FALSE
-        }
-      }
-    }
-
-    
     # Initialize per-iteration outputs
     b_confident <- rep(0, p)
     alpha_protected <- matrix(0, nrow = L, ncol = p)
@@ -484,7 +482,7 @@ update_variance_components.ss <- function(data, params, model, ...) {
 
       # Reset counter if sentinel changed
       if (track_sentinel && sentinel != model$prev_sentinel[l] && model$prev_sentinel[l] > 0) {
-        model$low_purity_iter_count[l] <- 0
+        model$diffuse_iter_count[l] <- 0
       }
 
       is_ever_diffuse <- isTRUE(model$ever_diffuse[l])
@@ -496,13 +494,12 @@ update_variance_components.ss <- function(data, params, model, ...) {
         # =================================================================
         # CASE 1: Diffuse within effect (purity < 0.1)
         # =================================================================
-        model$low_purity_iter_count[l] <- 0
+        model$diffuse_iter_count[l] <- 0
         
         moderate_ld_with_sentinel <- abs(Xcorr[sentinel,]) > ld_threshold
         meaningful_alpha <- model$alpha[l,] > 5/p
         to_protect <- moderate_ld_with_sentinel | meaningful_alpha
         alpha_protected[l, to_protect] <- model$alpha[l, to_protect]
-        # Force mask neighborhood to prevent signal leakage
         force_mask <- force_mask | moderate_ld_with_sentinel
       } else if (!can_be_confident) {
         # =================================================================
@@ -511,19 +508,19 @@ update_variance_components.ss <- function(data, params, model, ...) {
         
         if (current_collision[l]) {
           # Active collision: NO protection (let Mr.ASH decide)
-          model$low_purity_iter_count[l] <- 0
+          model$diffuse_iter_count[l] <- 0
           # alpha_protected[l,] stays all zeros
           
         } else {
           # ever_diffuse (no current collision) OR low purity: wait then expose
           # This keeps testing if signal is real
           if (track_sentinel && sentinel != model$prev_sentinel[l]) {
-            model$low_purity_iter_count[l] <- 0
+            model$diffuse_iter_count[l] <- 0
           }
           
-          model$low_purity_iter_count[l] <- model$low_purity_iter_count[l] + 1
+          model$diffuse_iter_count[l] <- model$diffuse_iter_count[l] + 1
           
-          if (model$low_purity_iter_count[l] >= low_purity_iter_count) {
+          if (model$diffuse_iter_count[l] >= diffuse_iter_count) {
             tight_ld_with_sentinel <- abs(Xcorr[sentinel,]) > sentinel_ld_threshold
             
             newly_exposed <- tight_ld_with_sentinel & 
@@ -532,7 +529,7 @@ update_variance_components.ss <- function(data, params, model, ...) {
             model$force_exposed_iter[newly_exposed] <- model$ash_iter
             
             if (any(newly_exposed)) {
-              model$low_purity_iter_count[l] <- 0
+              model$diffuse_iter_count[l] <- 0
             }
             
             alpha_protected[l,] <- model$alpha[l,]
@@ -549,7 +546,7 @@ update_variance_components.ss <- function(data, params, model, ...) {
         # =================================================================
         # CASE 3: Confident (good purity AND never cross-effect diffuse)
         # =================================================================
-        model$low_purity_iter_count[l] <- 0
+        model$diffuse_iter_count[l] <- 0
         b_confident <- b_confident + model$alpha[l,] * model$mu[l,]
         alpha_protected[l,] <- model$alpha[l,]
       }
@@ -584,7 +581,7 @@ update_variance_components.ss <- function(data, params, model, ...) {
     # =========================================================================
     LD_adj <- abs(Xcorr) > ld_threshold
     neighborhood_pip <- as.vector(LD_adj %*% pip_protected)
-    want_masked <- (neighborhood_pip > pip_threshold) | 
+    want_masked <- (neighborhood_pip > neighborhood_pip_threshold) | 
                    (pip_protected > direct_pip_threshold) |
                    force_mask
 
@@ -596,7 +593,7 @@ update_variance_components.ss <- function(data, params, model, ...) {
 
     # Unmask if stable for N iterations (one-chance rule), or force unmask from CASE 2
     ready_to_unmask <- (model$masked & 
-                       (model$unmask_candidate_iters >= unmask_iter_threshold) &
+                       (model$unmask_candidate_iters >= delayed_unmask_iter) &
                        !model$ever_unmasked) |
                        (model$masked & force_unmask)
 
@@ -641,7 +638,7 @@ update_variance_components.ss <- function(data, params, model, ...) {
       ash_pi              = mrash_output$pi,
       sa2                 = mrash_output$data$sa2,
       ash_iter            = model$ash_iter,
-      low_purity_iter_count = model$low_purity_iter_count,
+      diffuse_iter_count = model$diffuse_iter_count,
       prev_sentinel       = model$prev_sentinel,
       masked              = masked,
       unmask_candidate_iters = model$unmask_candidate_iters,
