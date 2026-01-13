@@ -69,8 +69,6 @@ initialize_susie_model.ss <- function(data, params, var_y, ...) {
     model$ever_unmasked <- rep(FALSE, data$p)
     model$force_exposed_iter <- rep(0, data$p)     # When position was force-exposed (0 = never)
     model$ever_diffuse <- rep(FALSE, params$L)
-    model$collision_free_count <- rep(0, params$L)
-    model$collision_sentinel <- rep(0, params$L)
     model$second_chance_used <- rep(FALSE, data$p) # Permanent protection after second chance
   } else {
     model$predictor_weights <- attr(data$XtX, "d")
@@ -413,10 +411,6 @@ update_variance_components.ss <- function(data, params, model, ...) {
     # After force-exposing, wait N iterations then restore protection
     second_chance_wait <- if (!is.null(params$second_chance_wait)) params$second_chance_wait else 3
     
-    # --- Collision detection thresholds ---
-    collision_free_threshold <- if (!is.null(params$collision_free_threshold)) params$collision_free_threshold else 2
-
-    
     L <- nrow(model$alpha)
     p <- ncol(model$alpha)
     model$ash_iter <- model$ash_iter + 1
@@ -441,9 +435,7 @@ update_variance_components.ss <- function(data, params, model, ...) {
       effect_purity[l] <- get_purity(cs_indices, X = NULL, Xcorr = Xcorr, use_rfast = FALSE)[1]
     }
 
-    # =========================================================================
     # Detect current collision and update ever_diffuse
-    # =========================================================================
     current_collision <- rep(FALSE, L)
     for (l in 1:L) {
       # Skip effects with uniform/near-uniform alpha (no meaningful signal)
@@ -458,27 +450,25 @@ update_variance_components.ss <- function(data, params, model, ...) {
         if (abs(Xcorr[sentinel_l, sentinels[other_l]]) > sentinel_ld_threshold) {
           current_collision[l] <- TRUE
           model$ever_diffuse[l] <- TRUE
-          model$collision_sentinel[l] <- sentinel_l
-          model$collision_free_count[l] <- 0
-        }
-      }
-    }
-    
-    # Clear ever_diffuse only if: no collision AND still at SAME sentinel where collision happened
-    for (l in 1:L) {
-      # Skip uniform effects
-      if (max(model$alpha[l,]) - min(model$alpha[l,]) < 1e-6) next
-      
-      if (isTRUE(model$ever_diffuse[l]) && !current_collision[l]) {
-        if (sentinels[l] == model$collision_sentinel[l]) {
-          model$collision_free_count[l] <- model$collision_free_count[l] + 1
-          if (model$collision_free_count[l] >= collision_free_threshold) {
-            model$ever_diffuse[l] <- FALSE
-          }
         }
       }
     }
 
+    # Clear ever_diffuse if: no collision AND passed exposure test
+    # (all positions near sentinel have been tested via second_chance)
+    for (l in 1:L) {
+      if (max(model$alpha[l,]) - min(model$alpha[l,]) < 1e-6) next
+      
+      if (isTRUE(model$ever_diffuse[l]) && !current_collision[l]) {
+        sentinel_l <- sentinels[l]
+        sentinel_neighborhood <- abs(Xcorr[sentinel_l,]) > sentinel_ld_threshold
+        if (all(model$second_chance_used[sentinel_neighborhood])) {
+          model$ever_diffuse[l] <- FALSE
+        }
+      }
+    }
+
+    
     # Initialize per-iteration outputs
     b_confident <- rep(0, p)
     alpha_protected <- matrix(0, nrow = L, ncol = p)
@@ -633,7 +623,7 @@ update_variance_components.ss <- function(data, params, model, ...) {
     
     # Zero out theta for masked variants
     theta_new[masked] <- 0
-    if (TRUE) {
+    if (FALSE) {
       diagnose_susie_ash_iter(data, model, params, Xcorr, mrash_output,
                       residuals, b_confident, effect_purity, sentinels,
                       pip_protected, neighborhood_pip, masked,
@@ -658,10 +648,8 @@ update_variance_components.ss <- function(data, params, model, ...) {
       ever_unmasked       = model$ever_unmasked,
       force_exposed_iter  = model$force_exposed_iter,
       second_chance_used  = model$second_chance_used,
-      ever_diffuse        = model$ever_diffuse,
-      collision_free_count = model$collision_free_count,
-      collision_sentinel = model$collision_sentinel
-    ))
+      ever_diffuse        = model$ever_diffuse
+      ))
   } else {
     # Use default method for standard SuSiE
     return(update_variance_components.default(data, params, model))
