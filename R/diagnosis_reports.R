@@ -1,7 +1,7 @@
 #' Diagnostic function for SuSiE-ash iteration
 #' @keywords internal
 diagnose_susie_ash_iter <- function(data, model, params, Xcorr, mrash_output, 
-                                     residuals, b_confident, effect_purity,
+                                     residuals, b_confident, effect_purity, sentinels,
                                      pip_protected, neighborhood_pip, masked,
                                      sigma2_new, tau2_new, sa2,
                                      want_masked, ready_to_unmask, force_unmask) {
@@ -10,170 +10,141 @@ diagnose_susie_ash_iter <- function(data, model, params, Xcorr, mrash_output,
   p <- ncol(model$alpha)
   purity_threshold <- if (!is.null(params$purity_threshold)) params$purity_threshold else 0.5
   cs_formation_threshold <- if (!is.null(params$cs_formation_threshold)) params$cs_formation_threshold else 0.1
-  late_emergence_purity_threshold <- if (!is.null(params$late_emergence_purity_threshold)) params$late_emergence_purity_threshold else 0.8
-  pip_threshold <- if (!is.null(params$pip_threshold)) params$pip_threshold else 0.5
-  direct_pip_threshold <- if (!is.null(params$direct_pip_threshold)) params$direct_pip_threshold else 0.1
-  unmask_iter_threshold <- if (!is.null(params$unmask_iter_threshold)) params$unmask_iter_threshold else 3
+  low_purity_iter_count_threshold <- if (!is.null(params$low_purity_iter_count)) params$low_purity_iter_count else 2
+  sentinel_ld_threshold <- if (!is.null(params$sentinel_ld_threshold)) params$sentinel_ld_threshold else 0.95
   
-  theta_sum2_before <- sum(mrash_output$beta^2)
-  theta_max_before <- max(abs(mrash_output$beta))
-  n_high_purity <- sum(effect_purity >= purity_threshold, na.rm = TRUE)
-  n_low_purity <- sum(!is.na(effect_purity)) - n_high_purity
-  b_full <- colSums(model$alpha * model$mu)
-  grid_scale <- data$n / median(colSums(data$X^2))
-  pi_null <- mrash_output$pi[1]
-  pi_nonnull <- 1 - pi_null
   theta_new <- mrash_output$beta
   theta_new[masked] <- 0
   
+  # Detect current collision for display
+  current_collision <- rep(FALSE, L)
+  for (l in 1:L) {
+    sentinel_l <- sentinels[l]
+    other_sentinels <- sentinels[-l]
+    if (length(other_sentinels) > 0) {
+      current_collision[l] <- any(abs(Xcorr[sentinel_l, other_sentinels]) > sentinel_ld_threshold)
+    }
+  }
+  
+  # Count effects by CASE
+  n_case1 <- n_case2 <- n_case3 <- 0
+  for (l in 1:L) {
+    if (max(model$alpha[l,]) - min(model$alpha[l,]) < 1E-6) next
+    is_ever_diffuse <- isTRUE(model$ever_diffuse[l])
+    can_conf <- (effect_purity[l] >= purity_threshold) && !is_ever_diffuse
+    if (effect_purity[l] < cs_formation_threshold) n_case1 <- n_case1 + 1
+    else if (!can_conf) n_case2 <- n_case2 + 1
+    else n_case3 <- n_case3 + 1
+  }
+  
+  n_ever_diffuse <- sum(sapply(1:L, function(l) isTRUE(model$ever_diffuse[l])))
+  n_current_collision <- sum(current_collision)
+  
   cat(sprintf("\n========== SuSiE-ash iter %d ==========\n", model$ash_iter))
   
-  # Purity and effect summary
-  cat(sprintf("  Purity: %d high (>=%.2f), %d low | current: %s\n", 
-              n_high_purity, purity_threshold, n_low_purity,
-              paste(round(effect_purity[!is.na(effect_purity)], 2), collapse=", ")))
-  cat(sprintf("  Effect lbf: %s\n", paste(round(model$lbf, 1), collapse=", ")))
+  # === Compact header ===
+  cat(sprintf("  Effects: %d CASE3, %d CASE2, %d CASE1 | ever_diffuse: %d, collision: %d\n", 
+              n_case3, n_case2, n_case1, n_ever_diffuse, n_current_collision))
+  cat(sprintf("  Mr.ASH: σ²=%.4f, τ²=%.2e, π_null=%.1f%% | θ: max=%.4f, Σ²=%.2e→%.2e\n",
+              sigma2_new, tau2_new, mrash_output$pi[1]*100,
+              max(abs(mrash_output$beta)), sum(mrash_output$beta^2), sum(theta_new^2)))
   
-  # Residual diagnostics
-  cat(sprintf("  Residuals: var(y-Xb_conf)=%.4f | b_full²=%.2e, b_conf²=%.2e\n",
-              var(as.vector(residuals)), sum(b_full^2), sum(b_confident^2)))
+  # === Masking summary ===
+  n_prev <- sum(model$masked)
+  n_new <- sum(masked & !model$masked)
+  n_unmask <- sum(ready_to_unmask)
+  n_force <- sum(model$masked & force_unmask)
+  cat(sprintf("  Mask: %d→%d (%+d,-%d) | ever_unmask=%d", 
+              n_prev, sum(masked), n_new, n_unmask, sum(model$ever_unmasked)))
+  if (n_force > 0) cat(sprintf(" | force=%d", n_force))
+  cat("\n")
   
-  # Mr.ASH output
-  cat(sprintf("  Grid: scale=%.3f (n/med(w)) | sa2 range=[%.2e, %.2e]\n",
-              grid_scale, min(sa2), max(sa2)))
-  cat(sprintf("  Mr.ASH: sigma2=%.4f, tau2=%.2e | pi_null=%.1f%%, pi_nonnull=%.1f%%\n",
-              sigma2_new, tau2_new, pi_null*100, pi_nonnull*100))
-  cat(sprintf("  Variance for SuSiE: sigma2=%.4f (NOT sigma2_tilde=%.4f)\n",
-              sigma2_new, sigma2_new + tau2_new))
-  cat(sprintf("  Theta before masking: sum²=%.2e, max|θ|=%.4f | after: sum²=%.2e\n",
-              theta_sum2_before, theta_max_before, sum(theta_new^2)))
-  
-  # =========================================================================
-  # Masking/Un-masking diagnostics
-  # =========================================================================
-  n_previously_masked <- sum(model$masked)
-  n_newly_masked <- sum(masked & !model$masked)
-  n_unmasked_this_iter <- sum(ready_to_unmask)
-  n_force_unmasked <- sum(model$masked & force_unmask)
-  n_ever_unmasked <- sum(model$ever_unmasked)
-  
-  cat(sprintf("\n  --- Masking Summary ---\n"))
-  cat(sprintf("  Previous iter: %d masked\n", n_previously_masked))
-  cat(sprintf("  This iter: %d total masked (+%d new, -%d unmasked)\n", 
-              sum(masked), n_newly_masked, n_unmasked_this_iter))
-  if (n_force_unmasked > 0) {
-    cat(sprintf("  Force-unmasked (tight LD exposure): %d positions\n", n_force_unmasked))
-  }
-  cat(sprintf("  Ever un-masked (one-chance used): %d positions\n", n_ever_unmasked))
-  
-  # Positions being un-masked this iteration
-  if (sum(ready_to_unmask) > 0) {
-    unmask_idx <- which(ready_to_unmask)
-    cat(sprintf("  UN-MASKING %d positions this iter:\n", length(unmask_idx)))
-    for (idx in unmask_idx[1:min(10, length(unmask_idx))]) {
-      unmask_reason <- if (force_unmask[idx]) "force" else "stable"
-      cat(sprintf("    %d: nbhd_pip=%.3f, pip_prot=%.3f, theta=%.4f, iters_waiting=%d [%s]\n",
-                  idx, neighborhood_pip[idx], pip_protected[idx], 
-                  mrash_output$beta[idx], model$unmask_candidate_iters[idx], unmask_reason))
-    }
-    if (length(unmask_idx) > 10) cat(sprintf("    ... and %d more\n", length(unmask_idx) - 10))
+  # Unmasking details
+  if (n_unmask > 0) {
+    unmask_idx <- which(ready_to_unmask)[1:min(5, n_unmask)]
+    unmask_info <- sapply(unmask_idx, function(i) {
+      sprintf("%d[%s]", i, if(force_unmask[i]) "F" else "S")
+    })
+    cat(sprintf("  Unmasking: %s%s\n", paste(unmask_info, collapse=" "),
+                if(n_unmask > 5) sprintf(" +%d", n_unmask-5) else ""))
   }
   
-  # Positions close to being un-masked
-  close_to_unmask <- model$masked & !model$ever_unmasked & 
-                     (model$unmask_candidate_iters > 0) &
-                     (model$unmask_candidate_iters < unmask_iter_threshold)
-  if (sum(close_to_unmask) > 0) {
-    close_idx <- which(close_to_unmask)
-    cat(sprintf("  Approaching un-mask (%d positions, need %d iters):\n", 
-                length(close_idx), unmask_iter_threshold))
-    for (idx in close_idx[1:min(5, length(close_idx))]) {
-      cat(sprintf("    %d: iters=%d/%d, nbhd_pip=%.3f, pip_prot=%.3f\n",
-                  idx, model$unmask_candidate_iters[idx], unmask_iter_threshold,
-                  neighborhood_pip[idx], pip_protected[idx]))
-    }
-  }
+  # Second chance pending
+  pending <- sum(model$force_exposed_iter > 0 & !model$second_chance_used)
+  if (pending > 0) cat(sprintf("  2nd-chance pending: %d pos\n", pending))
   
-  # =========================================================================
-  # Top Mr.ASH signals
-  # =========================================================================
-  cat(sprintf("\n  --- Top Mr.ASH Signals ---\n"))
-  top_theta_idx <- order(abs(mrash_output$beta), decreasing = TRUE)[1:10]
-  cat(sprintf("  Top 10 |theta| before zeroing:\n"))
-  for (k in 1:10) {
-    idx <- top_theta_idx[k]
-    status <- if (masked[idx]) "MASKED" else "active"
-    cat(sprintf("    %d: theta=%.4f [%s], pip_prot=%.3f, nbhd_pip=%.3f\n",
-                idx, mrash_output$beta[idx], status, 
-                pip_protected[idx], neighborhood_pip[idx]))
-  }
+  # === Per-Effect Table ===
+  cat(sprintf("\n  --- Effects ---\n"))
+  cat(sprintf("  %2s %5s %5s %5s %5s %4s  %s\n", 
+              "L", "Sent", "Pur", "LBF", "Case", "Cnt", "Flags"))
+  cat(sprintf("  %s\n", paste(rep("-", 45), collapse="")))
   
-  # Masked variants with non-trivial Mr.ASH signal (potential signal loss)
-  masked_with_signal <- which(masked & abs(mrash_output$beta) > 0.01)
-  if (length(masked_with_signal) > 0) {
-    cat(sprintf("\n  WARNING: %d masked variants with |theta|>0.01 (signal zeroed):\n", 
-                length(masked_with_signal)))
-    top_masked <- masked_with_signal[order(abs(mrash_output$beta[masked_with_signal]), decreasing=TRUE)]
-    for (k in 1:min(10, length(top_masked))) {
-      idx <- top_masked[k]
-      why_masked <- if (neighborhood_pip[idx] > pip_threshold) "nbhd_pip" 
-                    else if (pip_protected[idx] > direct_pip_threshold) "direct_pip"
-                    else "inherited"
-      cat(sprintf("    %d: theta=%.4f, nbhd_pip=%.3f, pip_prot=%.3f, reason=%s\n",
-                  idx, mrash_output$beta[idx], neighborhood_pip[idx], 
-                  pip_protected[idx], why_masked))
-    }
-  }
-  
-  # =========================================================================
-  # Per-effect details
-  # =========================================================================
-  cat(sprintf("\n  --- Per-Effect Summary ---\n"))
   for (l in 1:L) {
     max_alpha_l <- max(model$alpha[l,])
     if (max_alpha_l - min(model$alpha[l,]) < 1E-6) next
-    sentinel_l <- which.max(model$alpha[l,])
     
-    # Determine effect state (matching actual CASE 1/2/3 logic)
-    was_ever_diffuse <- model$min_purity[l] < cs_formation_threshold
-    effective_threshold <- if (was_ever_diffuse) late_emergence_purity_threshold else purity_threshold
+    sentinel_l <- sentinels[l]
+    purity_l <- effect_purity[l]
+    is_ever_diffuse <- isTRUE(model$ever_diffuse[l])
+    has_collision <- current_collision[l]
+    can_be_confident <- (purity_l >= purity_threshold) && !is_ever_diffuse
     
-    state <- if (effect_purity[l] < cs_formation_threshold) "diffuse"
-             else if (effect_purity[l] < effective_threshold) "low_purity"
-             else "high_purity"
-    
-    cat(sprintf("  Effect %d [%s]: sentinel=%d, max_alpha=%.3f, purity=%.2f (min=%.2f), lbf=%.1f\n",
-                l, state, sentinel_l, max_alpha_l, effect_purity[l], model$min_purity[l], model$lbf[l]))
-    
-    if (state == "low_purity") {
-      cat(sprintf("           low_purity_count=%d/%d\n", 
-                  model$low_purity_iter_count[l],
-                  if (!is.null(params$low_purity_iter_count)) params$low_purity_iter_count else 2))
+    # Determine CASE and reason
+    if (purity_l < cs_formation_threshold) {
+      case_str <- "C1"
+      reason <- "dif"
+    } else if (!can_be_confident) {
+      case_str <- "C2"
+      if (is_ever_diffuse) reason <- "edif"
+      else reason <- "pur"
+    } else {
+      case_str <- "C3"
+      reason <- "ok"
     }
     
-    # Nearby theta for this effect
-    near_sentinel <- which(abs(Xcorr[sentinel_l,]) > 0.3)
-    if (length(near_sentinel) > 0) {
-      theta_near <- mrash_output$beta[near_sentinel]
-      top_near <- near_sentinel[order(abs(theta_near), decreasing = TRUE)[1:min(3, length(near_sentinel))]]
-      near_info <- sapply(top_near, function(j) {
-        sprintf("%d(θ=%.3f,r=%.2f,%s)", j, mrash_output$beta[j], 
-                Xcorr[sentinel_l, j], if(masked[j]) "M" else ".")
-      })
-      cat(sprintf("           nearby theta: %s\n", paste(near_info, collapse=", ")))
-    }
+    # Counter for CASE 2 (only for low purity, not ever_diffuse)
+    cnt_str <- if(case_str == "C2" && !is_ever_diffuse) {
+      sprintf("%d/%d", model$low_purity_iter_count[l], low_purity_iter_count_threshold)
+    } else "-"
+    
+    # Flags
+    flags <- c()
+    if (has_collision) flags <- c(flags, "COL")
+    if (is_ever_diffuse) flags <- c(flags, "ED")
+    if (masked[sentinel_l]) flags <- c(flags, "M")
+    flag_str <- paste(flags, collapse=",")
+    
+    cat(sprintf("  %2d %5d %5.2f %5.1f %2s-%s %4s  %s\n",
+                l, sentinel_l, purity_l, model$lbf[l], case_str, reason, cnt_str, flag_str))
   }
   
-  # =========================================================================
-  # Marginal z-scores check
-  # =========================================================================
-  cat(sprintf("\n  --- Marginal z-scores for top theta ---\n"))
-  for (k in 1:min(5, length(top_theta_idx))) {
-    idx <- top_theta_idx[k]
-    x_j <- data$X[, idx]
-    z_resid <- as.numeric(crossprod(x_j, residuals)) / sqrt(sum(x_j^2) * sigma2_new)
-    cat(sprintf("    %d: z=%.2f, theta=%.4f, masked=%s\n",
-                idx, z_resid, mrash_output$beta[idx], masked[idx]))
+  # === Top θ signals ===
+  cat(sprintf("\n  --- Top |θ| ---\n"))
+  top_idx <- order(abs(mrash_output$beta), decreasing = TRUE)[1:8]
+  
+  header <- sprintf("  %5s %8s %2s %4s %5s  %s", "Pos", "θ", "St", "Pip", "Nbhd", "Info")
+  cat(header, "\n")
+  
+  for (idx in top_idx) {
+    st <- if(masked[idx]) "M" else "."
+    
+    # Is it a sentinel?
+    sent_for <- which(sentinels == idx)
+    info <- if(length(sent_for) > 0) sprintf("←E%d", sent_for[1]) else ""
+    
+    cat(sprintf("  %5d %+8.4f %2s %4.2f %5.2f  %s\n",
+                idx, mrash_output$beta[idx], st,
+                pip_protected[idx], neighborhood_pip[idx], info))
+  }
+  
+  # === Warning: masked with signal ===
+  masked_signal <- which(masked & abs(mrash_output$beta) > 0.01)
+  if (length(masked_signal) > 0) {
+    top_masked <- head(masked_signal[order(abs(mrash_output$beta[masked_signal]), decreasing=TRUE)], 3)
+    info <- sapply(top_masked, function(i) sprintf("%d(%.3f)", i, mrash_output$beta[i]))
+    cat(sprintf("\n  ⚠ Masked |θ|>0.01: %s", paste(info, collapse=", ")))
+    if (length(masked_signal) > 3) cat(sprintf(" +%d", length(masked_signal)-3))
+    cat("\n")
   }
   
   cat(sprintf("==========================================\n"))

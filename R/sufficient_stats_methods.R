@@ -64,11 +64,14 @@ initialize_susie_model.ss <- function(data, params, var_y, ...) {
     model$masked         <- rep(FALSE, data$p)  # Track masked variants for LD-aware exclusion
     model$ash_iter          <- 0                # Track Mr.ASH iterations
     model$low_purity_iter_count <- rep(0, params$L)
-    model$min_purity        <- rep(1, params$L) # Track minimum purity observed per effect
     model$prev_sentinel <- rep(0, params$L)  # Track sentinel varables
-    model$prev_purity <- rep(0, params$L) # Track previous purity
     model$unmask_candidate_iters <- rep(0, data$p)  
     model$ever_unmasked <- rep(FALSE, data$p)
+    model$force_exposed_iter <- rep(0, data$p)     # When position was force-exposed (0 = never)
+    model$ever_diffuse <- rep(FALSE, params$L)
+    model$collision_free_count <- rep(0, params$L)
+    model$collision_sentinel <- rep(0, params$L)
+    model$second_chance_used <- rep(FALSE, data$p) # Permanent protection after second chance
   } else {
     model$predictor_weights <- attr(data$XtX, "d")
   }
@@ -360,57 +363,57 @@ update_variance_components.ss <- function(data, params, model, ...) {
                   theta  = theta))
     }
   } else if (params$unmappable_effects == "ash") {
-    # pip_threshold: neighborhood PIP above this triggers masking
-    pip_threshold <- if (!is.null(params$pip_threshold)) params$pip_threshold else 0.5
-   
-    # direct_pip_threshold: direct protected PIP above this triggers masking
-    # This protects isolated signals that don't have high neighborhood PIP
-    # Set to 1 to disable it
-    direct_pip_threshold <- if (!is.null(params$direct_pip_threshold)) params$direct_pip_threshold else 0.1
+    # =========================================================================
+    # SuSiE-ash: Hybrid sparse + adaptive shrinkage model
+    # 
+    # KEY INSIGHT: Protect SuSiE's sparse effects from Mr.ASH absorption,
+    # but let Mr.ASH absorb unmappable and unreliable signals.
+    # 
+    # Two types of diffusion (both indicate unreliable effects):
+    #   1. WITHIN-EFFECT: Low purity - spread across variants not in tight LD
+    #   2. CROSS-EFFECT: Sentinel collision - multiple effects compete for 
+    #      same position (composite signal, not clean single causal)
+    #
+    # Classification into three cases:
+    #   CASE 1 (diffuse): purity < 0.1 - protect neighborhood loosely
+    #   CASE 2 (uncertain): low purity OR ever_diffuse - expose to Mr.ASH
+    #   CASE 3 (confident): purity >= 0.5 AND never diffuse - subtract from residuals
+    #
+    # Cross-effect diffusion tracking:
+    #   - Detect via sentinel collision (sentinels in tight LD across effects)
+    #   - Mark effect as ever_diffuse (sticky, effect-level)
+    #   - ever_diffuse effects get zero protection permanently
+    #   - Real signals survive Mr.ASH competition; composites get absorbed
+    #
+    # Low purity (non-diffuse) effects:
+    #   - Use wait-then-expose mechanism
+    #   - Second chance allows recovery after Mr.ASH testing
+    # =========================================================================
     
-    # ld_threshold: correlation threshold for defining "neighborhood" 
+    # --- Protection thresholds ---
+    pip_threshold <- if (!is.null(params$pip_threshold)) params$pip_threshold else 0.5
+    direct_pip_threshold <- if (!is.null(params$direct_pip_threshold)) params$direct_pip_threshold else 0.1
     ld_threshold <- if (!is.null(params$ld_threshold)) params$ld_threshold else 0.5
     
-    # purity_threshold: CS purity above this is considered "high purity"
+    # --- Purity thresholds ---
+    cs_threshold <- 0.9  # Coverage for CS formation
+    cs_formation_threshold <- if (!is.null(params$cs_formation_threshold)) params$cs_formation_threshold else 0.1
     purity_threshold <- if (!is.null(params$purity_threshold)) params$purity_threshold else 0.5
-    
-    # sentinel_ld_threshold: tight LD threshold for exposing sentinel region
     sentinel_ld_threshold <- if (!is.null(params$sentinel_ld_threshold)) params$sentinel_ld_threshold else 0.95
     
-    # cs_threshold: coverage threshold for defining credible set
-    cs_threshold <- 0.9
-    
-    # cs_formation_threshold: purity must exceed this to be considered "CS formed"
-    # Below this threshold, the effect is too diffuse (purity close to 0) - this is
-    # NOT LD interference, just weak/no signal. We don't expose these.
-    cs_formation_threshold <- if (!is.null(params$cs_formation_threshold)) params$cs_formation_threshold else 0.1
-    
-    # low_purity_iter_count: number of consecutive iterations an effect must be in
-    # the low-purity state (CS formed but low purity) before we expose its sentinel.
-    # This gives true signals time to crystallize before assuming LD interference.
-    # Set to very large number like 9999 to disable so we never expose to sentinel
+    # --- Iteration counters for CASE 2 ---
     low_purity_iter_count <- if (!is.null(params$low_purity_iter_count)) params$low_purity_iter_count else 2
-    
-    # track_sentinel: if TRUE, reset counter when sentinel changes
     track_sentinel <- if (!is.null(params$track_sentinel)) params$track_sentinel else TRUE
 
-    # purity_improvement_threshold: reset counter if purity improves by more than this
-    # Set to 0 to disable purity tracking
-    purity_improvement_threshold <- if (!is.null(params$purity_improvement_threshold)) params$purity_improvement_threshold else 0.1
-    
-    # late_emergence_purity_threshold: stricter purity threshold for effects that were  
-    # initially diffuse (min_purity < cs_formation_threshold). These "late bloomer" effects
-    # may have settled on the wrong sentinel, so we require higher purity before trusting them.
-    late_emergence_purity_threshold <- if (!is.null(params$late_emergence_purity_threshold)) params$late_emergence_purity_threshold else 0.8
-
-    # Unmask to expose to Mr.ASH if it is stable for N iterations and never un-masked before
-    # Set very high like 9999 to make a mask permanent once masked
+    # --- Unmasking thresholds ---
     unmask_iter_threshold <- if (!is.null(params$unmask_iter_threshold)) params$unmask_iter_threshold else 3
+    
+    # --- Second chance mechanism ---
+    # After force-exposing, wait N iterations then restore protection
+    second_chance_wait <- if (!is.null(params$second_chance_wait)) params$second_chance_wait else 3
     
     L <- nrow(model$alpha)
     p <- ncol(model$alpha)
-
-    # Update iteration counter
     model$ash_iter <- model$ash_iter + 1
 
     if (any(!(diag(data$XtX) %in% c(0, 1)))) {
@@ -419,117 +422,141 @@ update_variance_components.ss <- function(data, params, model, ...) {
       Xcorr <- data$XtX
     }
 
-    # 1. b_confident: effects to subtract from residuals (high purity only)
-    # 2. alpha_protected: alpha values that contribute to masking decisions
-    b_confident <- rep(0, p)
-    alpha_protected <- matrix(0, nrow = L, ncol = p)
+    # =========================================================================
+    # First pass: Compute sentinels and purity
+    # =========================================================================
+    sentinels <- apply(model$alpha, 1, which.max)
     effect_purity <- rep(NA, L)
-    force_unmask <- rep(FALSE, p)
- 
+    
     for (l in 1:L) {
       alpha_order <- order(model$alpha[l,], decreasing = TRUE)
       cumsum_alpha <- cumsum(model$alpha[l, alpha_order])
       cs_size <- sum(cumsum_alpha <= cs_threshold) + 1
       cs_indices <- alpha_order[1:min(cs_size, p)]
-      purity <- get_purity(cs_indices, X = NULL, Xcorr = Xcorr, use_rfast = FALSE)[1]
-      effect_purity[l] <- purity
+      effect_purity[l] <- get_purity(cs_indices, X = NULL, Xcorr = Xcorr, use_rfast = FALSE)[1]
+    }
 
-      # Track minimum purity continuously (for detecting late-emerging effects)
-      model$min_purity[l] <- min(model$min_purity[l], purity)
+    # =========================================================================
+    # Detect current collision and update ever_diffuse
+    # =========================================================================
+    current_collision <- rep(FALSE, L)
+    for (l in 1:L) {
+      sentinel_l <- sentinels[l]
+      other_sentinels <- sentinels[-l]
       
-      # Late-emerging effects (were ever diffuse) need stricter purity threshold
-      # because their sentinel position may not be correct yet
-      was_ever_diffuse <- model$min_purity[l] < cs_formation_threshold
-      effective_purity_threshold <- if (was_ever_diffuse) late_emergence_purity_threshold else purity_threshold
+      if (length(other_sentinels) > 0) {
+        if (any(abs(Xcorr[sentinel_l, other_sentinels]) > sentinel_ld_threshold)) {
+          current_collision[l] <- TRUE
+          model$ever_diffuse[l] <- TRUE
+          model$collision_sentinel[l] <- sentinel_l  # Record WHERE collision happened
+          model$collision_free_count[l] <- 0
+        }
+      }
+    }
+    
+    # Clear ever_diffuse only if: no collision AND still at SAME sentinel where collision happened
+    for (l in 1:L) {
+      if (isTRUE(model$ever_diffuse[l]) && !current_collision[l]) {
+        if (sentinels[l] == model$collision_sentinel[l]) {
+          # Stayed at contested position, others left → won the fight
+          model$collision_free_count[l] <- model$collision_free_count[l] + 1
+          if (model$collision_free_count[l] >= 3) {
+            model$ever_diffuse[l] <- FALSE
+          }
+        }
+        # If moved to different position, ever_diffuse stays TRUE (ran away)
+      }
+    }
+
+    # Initialize per-iteration outputs
+    b_confident <- rep(0, p)
+    alpha_protected <- matrix(0, nrow = L, ncol = p)
+    force_unmask <- rep(FALSE, p)
+ 
+    # =========================================================================
+    # Second pass: Classify effects and determine protection
+    # =========================================================================
+    for (l in 1:L) {
+      purity <- effect_purity[l]
+      sentinel <- sentinels[l]
+
+      # Reset counter if sentinel changed
+      if (track_sentinel && sentinel != model$prev_sentinel[l] && model$prev_sentinel[l] > 0) {
+        model$low_purity_iter_count[l] <- 0
+      }
+
+      is_ever_diffuse <- isTRUE(model$ever_diffuse[l])
+      
+      # Can enter CASE 3? Need: good purity AND never cross-effect diffuse
+      can_be_confident <- (purity >= purity_threshold) && !is_ever_diffuse
 
       if (purity < cs_formation_threshold) {
-        # -----------------------------------------------------------------
-        # CASE 1: No CS formed (purity very low, effect is diffuse)
-        # -----------------------------------------------------------------
-        # This is NOT LD interference - the effect is just weak or spread thin.
-        # We protect the sentinel's neighborhood to give it time to crystallize,
-        # but don't expose anything to Mr.ASH.
-        # Reset the low-purity iteration counter since we're not in low purity state.
-        # -----------------------------------------------------------------
-        
+        # =================================================================
+        # CASE 1: Diffuse within effect (purity < 0.1)
+        # =================================================================
         model$low_purity_iter_count[l] <- 0
-        sentinel <- which.max(model$alpha[l,])
         
-        # Protect positions in moderate LD with sentinel
         moderate_ld_with_sentinel <- abs(Xcorr[sentinel,]) > ld_threshold
-        
-        # Also protect positions where this effect has meaningful alpha
-        # (captures signal even if spread across weakly correlated variants)
         meaningful_alpha <- model$alpha[l,] > 5/p
-        
-        # Union of both protection criteria
         to_protect <- moderate_ld_with_sentinel | meaningful_alpha
         alpha_protected[l, to_protect] <- model$alpha[l, to_protect]
-      } else if (purity < effective_purity_threshold) {
-        # -----------------------------------------------------------------
-        # CASE 2: CS formed but low purity (potential LD interference)
-        # -----------------------------------------------------------------
-        # The effect has crystallized enough to form a CS (purity > 0.09)
-        # but the CS contains poorly correlated variants (purity < 0.5).
-        # This suggests LD interference: the true causal may not be the sentinel.
-        #
-        # Strategy: Wait low_purity_iter_count iterations before exposing.
-        # Optionally reset counter if sentinel changes or purity improves,
-        # because those are indications that SuSiE is still working on them
-        # so we should not expose them to Mr.ASH
-        # -----------------------------------------------------------------
         
-        sentinel <- which.max(model$alpha[l,])
+      } else if (!can_be_confident) {
+        # =================================================================
+        # CASE 2: Uncertain (current_collision OR ever_diffuse OR low purity)
+        # =================================================================
         
-        # Check reset conditions based on parameters
-        should_reset <- FALSE
-        if (track_sentinel && sentinel != model$prev_sentinel[l]) {
-          should_reset <- TRUE  # Sentinel changed - still exploring
-        }
-        if (purity_improvement_threshold > 0 && 
-            (purity - model$prev_purity[l]) > purity_improvement_threshold) {
-          should_reset <- TRUE  # Purity improved - crystallizing
-        }
-        
-        if (should_reset) {
+        if (current_collision[l]) {
+          # Active collision: NO protection (let Mr.ASH decide)
           model$low_purity_iter_count[l] <- 0
-        }
-        model$prev_sentinel[l] <- sentinel
-        model$prev_purity[l] <- purity
-        
-        # Track consecutive iterations in low purity state
-        model$low_purity_iter_count[l] <- model$low_purity_iter_count[l] + 1
-        
-        if (model$low_purity_iter_count[l] >= low_purity_iter_count) {
-          # Stuck in low purity state - likely LD interference
-          # Expose the sentinel's tight LD block to Mr.ASH
-          tight_ld_with_sentinel <- abs(Xcorr[sentinel,]) > sentinel_ld_threshold
-          alpha_protected[l,] <- model$alpha[l,]
-          alpha_protected[l, tight_ld_with_sentinel] <- 0
-          force_unmask <- force_unmask | tight_ld_with_sentinel
+          # alpha_protected[l,] stays all zeros
+          
         } else {
-          # Still exploring or crystallizing - protect fully
-          alpha_protected[l,] <- model$alpha[l,]
+          # ever_diffuse (no current collision) OR low purity: wait then expose
+          # This keeps testing if signal is real
+          if (track_sentinel && sentinel != model$prev_sentinel[l]) {
+            model$low_purity_iter_count[l] <- 0
+          }
+          
+          model$low_purity_iter_count[l] <- model$low_purity_iter_count[l] + 1
+          
+          if (model$low_purity_iter_count[l] >= low_purity_iter_count) {
+            tight_ld_with_sentinel <- abs(Xcorr[sentinel,]) > sentinel_ld_threshold
+            
+            newly_exposed <- tight_ld_with_sentinel & 
+                            !model$second_chance_used & 
+                            (model$force_exposed_iter == 0)
+            model$force_exposed_iter[newly_exposed] <- model$ash_iter
+            
+            if (any(newly_exposed)) {
+              model$low_purity_iter_count[l] <- 0
+            }
+            
+            alpha_protected[l,] <- model$alpha[l,]
+            expose_positions <- tight_ld_with_sentinel & !model$second_chance_used
+            alpha_protected[l, expose_positions] <- 0
+            force_unmask <- force_unmask | expose_positions
+          } else {
+            # Still waiting - protect fully
+            alpha_protected[l,] <- model$alpha[l,]
+          }
         }
-      } else {
-        # -----------------------------------------------------------------
-        # CASE 3: CS formed and high purity (confident signal)
-        # -----------------------------------------------------------------
-        # This is a well-resolved sparse effect. We:
-        # 1. Subtract it from residuals so Mr.ASH doesn't try to fit it
-        # 2. Fully protect it (add to alpha_protected)
-        # Reset the low-purity counter since we've reached high purity.
-        # -----------------------------------------------------------------
         
+      } else {
+        # =================================================================
+        # CASE 3: Confident (good purity AND never cross-effect diffuse)
+        # =================================================================
         model$low_purity_iter_count[l] <- 0
         b_confident <- b_confident + model$alpha[l,] * model$mu[l,]
         alpha_protected[l,] <- model$alpha[l,]
       }
+      
+      model$prev_sentinel[l] <- sentinel
     }
 
+    # Compute residuals (with confident effects removed) and run Mr.ASH
     pip_protected <- susie_get_pip(alpha_protected)
     residuals <- data$y - data$X %*% b_confident
-    
     sa2 <- create_ash_grid(data)
 
     mrash_output <- mr.ash(
@@ -548,55 +575,58 @@ update_variance_components.ss <- function(data, params, model, ...) {
     tau2_new   <- sum(mrash_output$data$sa2 * mrash_output$pi) * mrash_output$sigma2
 
     # =========================================================================
-    # Compute masking decisions
+    # Masking logic
+    # Mask Mr.ASH theta at positions where SuSiE has signal (or nearby).
+    # This prevents double-counting between SuSiE and Mr.ASH.
     # =========================================================================
-    # 
-    # A position is masked if:
-    # 1. Its neighborhood has high protected PIP (neighborhood_pip > pip_threshold), OR
-    # 2. It has high direct protected PIP (pip_protected > direct_pip_threshold)
-    #
-    # The direct threshold catches isolated signals that don't have correlated
-    # neighbors to boost their neighborhood_pip, preventing Mr.ASH from absorbing
-    # moderate-strength signals that SuSiE is still working to resolve.
-    # =========================================================================
-    
     LD_adj <- abs(Xcorr) > ld_threshold
     neighborhood_pip <- as.vector(LD_adj %*% pip_protected)
-
-    # Current masking decision
     want_masked <- (neighborhood_pip > pip_threshold) | (pip_protected > direct_pip_threshold)
 
-    # Track how long each masked position has wanted to be un-masked
+    # Track iterations wanting unmask (for stable unmask after N iterations)
     dont_want_mask <- !want_masked
     model$unmask_candidate_iters[model$masked & dont_want_mask] <- 
       model$unmask_candidate_iters[model$masked & dont_want_mask] + 1
     model$unmask_candidate_iters[want_masked | !model$masked] <- 0
 
-    # Un-mask if: (1) stable for N iters and never unmasked, OR (2) force unmask
+    # Unmask if stable for N iterations (one-chance rule), or force unmask from CASE 2
     ready_to_unmask <- (model$masked & 
                        (model$unmask_candidate_iters >= unmask_iter_threshold) &
                        !model$ever_unmasked) |
                        (model$masked & force_unmask)
 
-    # Record un-masking (one chance per position)
     model$ever_unmasked[ready_to_unmask] <- TRUE
-
-    # Update mask: add new, remove ready-to-unmask, NEVER re-mask once unmasked
     masked <- (model$masked | want_masked) & !ready_to_unmask & !model$ever_unmasked
 
+    # =========================================================================
+    # Second chance: restore protection after wait period
+    # 
+    # After CASE 2 force-exposes positions, Mr.ASH has N iterations to absorb
+    # any noise. If positions are re-masked after this window, SuSiE can
+    # potentially recover the signal if it was legitimate.
+    # =========================================================================
+    waited_long_enough <- (model$force_exposed_iter > 0) & 
+                          (model$ash_iter - model$force_exposed_iter) >= second_chance_wait
+    should_restore <- waited_long_enough & !model$second_chance_used
+    
+    if (any(should_restore)) {
+      model$second_chance_used[should_restore] <- TRUE
+      model$force_exposed_iter[should_restore] <- 0
+      model$ever_unmasked[should_restore] <- FALSE
+      masked[should_restore] <- TRUE
+    }
+    
     # Zero out theta for masked variants
     theta_new[masked] <- 0
-
-    if (FALSE) {
+    if (TRUE) {
       diagnose_susie_ash_iter(data, model, params, Xcorr, mrash_output,
-                      residuals, b_confident, effect_purity,
+                      residuals, b_confident, effect_purity, sentinels,
                       pip_protected, neighborhood_pip, masked,
                       sigma2_new, tau2_new, sa2,
                       want_masked, ready_to_unmask, force_unmask)
     }
 
-    sigma2_tilde <- sigma2_new + tau2_new # updated variance component; not used
-    XtX_theta_new    <- as.vector(data$XtX %*% theta_new)
+    XtX_theta_new <- as.vector(data$XtX %*% theta_new)
 
     return(list(
       sigma2              = sigma2_new,
@@ -606,13 +636,16 @@ update_variance_components.ss <- function(data, params, model, ...) {
       ash_pi              = mrash_output$pi,
       sa2                 = mrash_output$data$sa2,
       ash_iter            = model$ash_iter,
-      min_purity          = model$min_purity,
       low_purity_iter_count = model$low_purity_iter_count,
-      prev_sentinel = model$prev_sentinel,
-      prev_purity = model$prev_purity,
+      prev_sentinel       = model$prev_sentinel,
       masked              = masked,
       unmask_candidate_iters = model$unmask_candidate_iters,
-      ever_unmasked       = model$ever_unmasked  
+      ever_unmasked       = model$ever_unmasked,
+      force_exposed_iter  = model$force_exposed_iter,
+      second_chance_used  = model$second_chance_used,
+      ever_diffuse        = model$ever_diffuse,
+      collision_free_count = model$collision_free_count,
+      collision_sentinel = model$collision_sentinel
     ))
   } else {
     # Use default method for standard SuSiE
@@ -716,7 +749,7 @@ cleanup_model.ss <- function(data, params, model, ...) {
       }
     }
   } else if (!is.null(params$unmappable_effects) && params$unmappable_effects == "ash" && params$verbose == FALSE) {
-    ash_fields <- c("XtX_theta", "masked", "ash_iter", "min_purity")
+    ash_fields <- c("XtX_theta", "masked", "ash_iter")
     
     for (field in ash_fields) {
       if (field %in% names(model)) {
