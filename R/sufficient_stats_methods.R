@@ -60,7 +60,6 @@ initialize_susie_model.ss <- function(data, params, var_y, ...) {
     model$predictor_weights <- attr(data$XtX, "d")
     model$tau2              <- 0
     model$theta             <- rep(0, data$p)
-    model$sigma2_tilde      <- var_y
     model$XtX_theta         <- rep(0, data$p)
     model$masked         <- rep(FALSE, data$p)  # Track masked variants for LD-aware exclusion
     model$ash_iter          <- 0                # Track Mr.ASH iterations
@@ -68,6 +67,8 @@ initialize_susie_model.ss <- function(data, params, var_y, ...) {
     model$min_purity        <- rep(1, params$L) # Track minimum purity observed per effect
     model$prev_sentinel <- rep(0, params$L)  # Track sentinel varables
     model$prev_purity <- rep(0, params$L) # Track previous purity
+    model$unmask_candidate_iters <- rep(0, data$p)  
+    model$ever_unmasked <- rep(FALSE, data$p)
   } else {
     model$predictor_weights <- attr(data$XtX, "d")
   }
@@ -159,7 +160,8 @@ compute_residuals.ss <- function(data, params, model, l, ...) {
     # Store residuals and parameters
     model$residuals         <- XtR
     model$fitted_without_l  <- XtXr_without_l
-    model$residual_variance <- model$sigma2_tilde
+    model$residual_variance <- model$sigma2
+    
 
     return(model)
 
@@ -364,7 +366,7 @@ update_variance_components.ss <- function(data, params, model, ...) {
     # direct_pip_threshold: direct protected PIP above this triggers masking
     # This protects isolated signals that don't have high neighborhood PIP
     # Set to 1 to disable it
-    direct_pip_threshold <- if (!is.null(params$direct_pip_threshold)) params$direct_pip_threshold else 0.15
+    direct_pip_threshold <- if (!is.null(params$direct_pip_threshold)) params$direct_pip_threshold else 0.1
     
     # ld_threshold: correlation threshold for defining "neighborhood" 
     ld_threshold <- if (!is.null(params$ld_threshold)) params$ld_threshold else 0.5
@@ -381,25 +383,30 @@ update_variance_components.ss <- function(data, params, model, ...) {
     # cs_formation_threshold: purity must exceed this to be considered "CS formed"
     # Below this threshold, the effect is too diffuse (purity close to 0) - this is
     # NOT LD interference, just weak/no signal. We don't expose these.
-    cs_formation_threshold <- if (!is.null(params$cs_formation_threshold)) params$cs_formation_threshold else 0.09
+    cs_formation_threshold <- if (!is.null(params$cs_formation_threshold)) params$cs_formation_threshold else 0.1
     
     # low_purity_iter_count: number of consecutive iterations an effect must be in
     # the low-purity state (CS formed but low purity) before we expose its sentinel.
     # This gives true signals time to crystallize before assuming LD interference.
-    # Set to 1 to disable
+    # Set to very large number like 9999 to disable so we never expose to sentinel
     low_purity_iter_count <- if (!is.null(params$low_purity_iter_count)) params$low_purity_iter_count else 2
     
     # track_sentinel: if TRUE, reset counter when sentinel changes
-    track_sentinel <- if (!is.null(params$track_sentinel)) params$track_sentinel else FALSE
+    track_sentinel <- if (!is.null(params$track_sentinel)) params$track_sentinel else TRUE
 
     # purity_improvement_threshold: reset counter if purity improves by more than this
     # Set to 0 to disable purity tracking
     purity_improvement_threshold <- if (!is.null(params$purity_improvement_threshold)) params$purity_improvement_threshold else 0.1
     
-    # n_purity_iterations: number of iterations to track minimum purity
-    # Effects that show low purity during these iterations stay exposed
-    n_purity_iterations <- if (!is.null(params$n_purity_iterations)) params$n_purity_iterations else 1
+    # late_emergence_purity_threshold: stricter purity threshold for effects that were  
+    # initially diffuse (min_purity < cs_formation_threshold). These "late bloomer" effects
+    # may have settled on the wrong sentinel, so we require higher purity before trusting them.
+    late_emergence_purity_threshold <- if (!is.null(params$late_emergence_purity_threshold)) params$late_emergence_purity_threshold else 0.8
 
+    # Unmask to expose to Mr.ASH if it is stable for N iterations and never un-masked before
+    # Set very high like 9999 to make a mask permanent once masked
+    unmask_iter_threshold <- if (!is.null(params$unmask_iter_threshold)) params$unmask_iter_threshold else 3
+    
     L <- nrow(model$alpha)
     p <- ncol(model$alpha)
 
@@ -414,12 +421,11 @@ update_variance_components.ss <- function(data, params, model, ...) {
 
     # 1. b_confident: effects to subtract from residuals (high purity only)
     # 2. alpha_protected: alpha values that contribute to masking decisions
-    # 3. high_purity_sentinels: sentinels of confident effects (for un-masking aliases)
     b_confident <- rep(0, p)
     alpha_protected <- matrix(0, nrow = L, ncol = p)
     effect_purity <- rep(NA, L)
-    high_purity_sentinels <- integer(0)
-    
+    force_unmask <- rep(FALSE, p)
+ 
     for (l in 1:L) {
       alpha_order <- order(model$alpha[l,], decreasing = TRUE)
       cumsum_alpha <- cumsum(model$alpha[l, alpha_order])
@@ -427,15 +433,15 @@ update_variance_components.ss <- function(data, params, model, ...) {
       cs_indices <- alpha_order[1:min(cs_size, p)]
       purity <- get_purity(cs_indices, X = NULL, Xcorr = Xcorr, use_rfast = FALSE)[1]
       effect_purity[l] <- purity
+
+      # Track minimum purity continuously (for detecting late-emerging effects)
+      model$min_purity[l] <- min(model$min_purity[l], purity)
       
-      # Track minimum purity during tracking window
-      if (n_purity_iterations > 0 && model$ash_iter <= n_purity_iterations) {
-        model$min_purity[l] <- min(model$min_purity[l], purity)
-      }
-      
-      # Determine purity to use for protection decision
-      purity_for_decision <- if (n_purity_iterations > 0) model$min_purity[l] else purity
-      
+      # Late-emerging effects (were ever diffuse) need stricter purity threshold
+      # because their sentinel position may not be correct yet
+      was_ever_diffuse <- model$min_purity[l] < cs_formation_threshold
+      effective_purity_threshold <- if (was_ever_diffuse) late_emergence_purity_threshold else purity_threshold
+
       if (purity < cs_formation_threshold) {
         # -----------------------------------------------------------------
         # CASE 1: No CS formed (purity very low, effect is diffuse)
@@ -459,7 +465,7 @@ update_variance_components.ss <- function(data, params, model, ...) {
         # Union of both protection criteria
         to_protect <- moderate_ld_with_sentinel | meaningful_alpha
         alpha_protected[l, to_protect] <- model$alpha[l, to_protect]
-      } else if (purity_for_decision < purity_threshold) {
+      } else if (purity < effective_purity_threshold) {
         # -----------------------------------------------------------------
         # CASE 2: CS formed but low purity (potential LD interference)
         # -----------------------------------------------------------------
@@ -500,6 +506,7 @@ update_variance_components.ss <- function(data, params, model, ...) {
           tight_ld_with_sentinel <- abs(Xcorr[sentinel,]) > sentinel_ld_threshold
           alpha_protected[l,] <- model$alpha[l,]
           alpha_protected[l, tight_ld_with_sentinel] <- 0
+          force_unmask <- force_unmask | tight_ld_with_sentinel
         } else {
           # Still exploring or crystallizing - protect fully
           alpha_protected[l,] <- model$alpha[l,]
@@ -511,14 +518,12 @@ update_variance_components.ss <- function(data, params, model, ...) {
         # This is a well-resolved sparse effect. We:
         # 1. Subtract it from residuals so Mr.ASH doesn't try to fit it
         # 2. Fully protect it (add to alpha_protected)
-        # 3. Record sentinel for un-masking aliases later
         # Reset the low-purity counter since we've reached high purity.
         # -----------------------------------------------------------------
         
         model$low_purity_iter_count[l] <- 0
         b_confident <- b_confident + model$alpha[l,] * model$mu[l,]
         alpha_protected[l,] <- model$alpha[l,]
-        high_purity_sentinels <- c(high_purity_sentinels, which.max(model$alpha[l,]))
       }
     }
 
@@ -558,43 +563,56 @@ update_variance_components.ss <- function(data, params, model, ...) {
     LD_adj <- abs(Xcorr) > ld_threshold
     neighborhood_pip <- as.vector(LD_adj %*% pip_protected)
 
-    # Masking decision: neighborhood OR direct protection
-    new_masked <- (neighborhood_pip > pip_threshold) | (pip_protected > direct_pip_threshold)
-    
-    # Once masked, always masked (monotonic to prevent cycling between SuSiE and Mr.ASH)
-    masked <- model$masked | new_masked
-    
-    # Variants in tight LD with confident sentinels are likely aliases, not competing signals.
-    # We un-mask them so Mr.ASH can absorb correlated polygenic signal there.
-    for (sentinel in high_purity_sentinels) {
-      masked[abs(Xcorr[sentinel,]) > sentinel_ld_threshold] <- FALSE
-    }
+    # Current masking decision
+    want_masked <- (neighborhood_pip > pip_threshold) | (pip_protected > direct_pip_threshold)
+
+    # Track how long each masked position has wanted to be un-masked
+    dont_want_mask <- !want_masked
+    model$unmask_candidate_iters[model$masked & dont_want_mask] <- 
+      model$unmask_candidate_iters[model$masked & dont_want_mask] + 1
+    model$unmask_candidate_iters[want_masked | !model$masked] <- 0
+
+    # Un-mask if: (1) stable for N iters and never unmasked, OR (2) force unmask
+    ready_to_unmask <- (model$masked & 
+                       (model$unmask_candidate_iters >= unmask_iter_threshold) &
+                       !model$ever_unmasked) |
+                       (model$masked & force_unmask)
+
+    # Record un-masking (one chance per position)
+    model$ever_unmasked[ready_to_unmask] <- TRUE
+
+    # Update mask: add new, remove ready-to-unmask, NEVER re-mask once unmasked
+    masked <- (model$masked | want_masked) & !ready_to_unmask & !model$ever_unmasked
 
     # Zero out theta for masked variants
     theta_new[masked] <- 0
 
     if (FALSE) {
       diagnose_susie_ash_iter(data, model, params, Xcorr, mrash_output,
-                              residuals, b_confident, effect_purity,
-                              pip_protected, neighborhood_pip, masked,
-                              sigma2_new, tau2_new, sa2)
+                      residuals, b_confident, effect_purity,
+                      pip_protected, neighborhood_pip, masked,
+                      sigma2_new, tau2_new, sa2,
+                      want_masked, ready_to_unmask, force_unmask)
     }
 
-    sigma2_tilde_new <- sigma2_new + tau2_new
+    sigma2_tilde <- sigma2_new + tau2_new # updated variance component; not used
     XtX_theta_new    <- as.vector(data$XtX %*% theta_new)
 
     return(list(
       sigma2              = sigma2_new,
       tau2                = tau2_new,
       theta               = theta_new,
-      sigma2_tilde        = sigma2_tilde_new,
       XtX_theta           = XtX_theta_new,
-      masked              = masked,
+      ash_pi              = mrash_output$pi,
+      sa2                 = mrash_output$data$sa2,
       ash_iter            = model$ash_iter,
       min_purity          = model$min_purity,
       low_purity_iter_count = model$low_purity_iter_count,
-      ash_pi              = mrash_output$pi,
-      sa2                 = mrash_output$data$sa2
+      prev_sentinel = model$prev_sentinel,
+      prev_purity = model$prev_purity,
+      masked              = masked,
+      unmask_candidate_iters = model$unmask_candidate_iters,
+      ever_unmasked       = model$ever_unmasked  
     ))
   } else {
     # Use default method for standard SuSiE
@@ -698,7 +716,7 @@ cleanup_model.ss <- function(data, params, model, ...) {
       }
     }
   } else if (!is.null(params$unmappable_effects) && params$unmappable_effects == "ash" && params$verbose == FALSE) {
-    ash_fields <- c("sigma2_tilde", "XtX_theta", "masked", "ash_iter", "min_purity")
+    ash_fields <- c("XtX_theta", "masked", "ash_iter", "min_purity")
     
     for (field in ash_fields) {
       if (field %in% names(model)) {
