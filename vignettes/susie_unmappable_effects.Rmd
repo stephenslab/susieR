@@ -55,6 +55,22 @@ Here we can see the signal landscape before fine-mapping. Note that
 some causal variants have strong z-scores while others may be weaker
 or masked by LD with nearby variants.
 
+Notably, variant 2714 has the largest true effect size in the simulation:
+
+```{r}
+strongest_idx <- which.max(abs(b))
+cat("Strongest effect variant:", strongest_idx, "\n")
+cat("True effect size:", round(b[strongest_idx], 3), "\n")
+cat("Marginal z-score:", round(z_scores[strongest_idx], 3), "\n")
+cat("Marginal p-value:", format.pval(2 * pnorm(-abs(z_scores[strongest_idx]))), "\n")
+```
+
+Despite having the largest true effect, this variant has a very small marginal z-score and 
+a large p-value. This illustrates a fundamental challenge in fine-mapping: the marginal 
+association of a large-effect causal variant can be masked by other variants in LD, 
+while smaller-effect variants may show stronger marginal signals. 
+This masking makes it difficult to identify the true causal variants from marginal statistics alone.
+
 ## Step 1: Standard SuSiE and False Positives
 
 We first fit standard SuSiE:
@@ -66,6 +82,9 @@ t1 <- proc.time()
 t1 - t0
 susie_plot(fit_susie, y = "PIP", b = b, main = "SuSiE (standard)")
 ```
+
+We set `L = 10` to allow SuSiE to capture up to 10 sparse effects. 
+However, given the complex architecture with 23 true causal variants, this may be insufficient.
 
 To see which true effects the credible sets capture, we plot the CS on
 the true effect sizes:
@@ -173,7 +192,24 @@ SuSiE-inf is more conservative and finds only 1 credible set, eliminating the
 false positives. However, it also loses the true signal around position 3500
 that standard SuSiE correctly identified.
 
-Even if we lower the coverage threshold, we cannot recover the lost signals:
+Remarkably, SuSiE-inf identifies the variant with the strongest true effect, the 
+same variant we noted earlier has a very small marginal z-score and large p-value:
+
+```{r}
+if (length(fit_inf$sets$cs) > 0) {
+  inf_cs <- fit_inf$sets$cs[[1]]
+  cat("SuSiE-inf CS contains variant", strongest_idx, ":", strongest_idx %in% inf_cs, "\n")
+  cat("This variant has the largest true effect (beta =", round(b[strongest_idx], 3), 
+      ") but marginal z-score of only", round(z_scores[strongest_idx], 3), "\n")
+}
+```
+
+This is a striking, as SuSiE-inf recovers the strongest causal signal that is completely 
+invisible in marginal statistics. The intuition is that by modeling background polygenic 
+effects, SuSiE-inf effectively conditions on other variants, revealing signals that are otherwise masked.
+
+However, for other signals, even if we lower the coverage threshold, we cannot recover 
+them, potentially because SuSiE-inf was too aggressive removing them early-on in the SuSiE fit:
 
 ```{r}
 for (cov in c(0.9, 0.8, 0.7, 0.5)) {
@@ -203,7 +239,8 @@ plot_cs_effects(fit_ash, b, main = "SuSiE-ash CS on true effects")
 
 SuSiE-ash finds 3 correct credible sets.
 
-The adaptive shrinkage approach allows SuSiE-ash to distinguish between true
+Still, it does not discover all 23 causal variants, nor does it recover the strongest effect (variant 2714) that SuSiE-inf found.
+However, the adaptive shrinkage approach allows SuSiE-ash to distinguish between true
 sparse signals and the polygenic background more effectively than either
 standard SuSiE or SuSiE-inf alone.
 
@@ -215,6 +252,34 @@ standard SuSiE or SuSiE-inf alone.
 | SuSiE (purity=0.8) | 3 | 2 |
 | SuSiE-inf | 1 | 0 |
 | SuSiE-ash | 3 | 0 |
+
+## What if we increase L for standard SuSiE?
+
+Since the true simulation has 23 causal variants, 
+one might ask: what if we simply increase `L` to give SuSiE more capacity? 
+Let's try `L = 40`:
+
+```{r}
+t0 <- proc.time()
+fit_susie_L40 <- susie(X, y, L = 40)
+t1 <- proc.time()
+t1 - t0
+susie_plot(fit_susie_L40, y = "PIP", b = b, main = "SuSiE (L=40)")
+plot_cs_effects(fit_susie_L40, b, main = "SuSiE L=40 CS on true effects")
+```
+
+With `L = 40`, standard SuSiE does improve! Now it captures 4 CS with two of them true positives. 
+However, it still produces false positives and takes considerably longer to converge.
+
+The rationale for SuSiE-ash is to avoid this concern: rather than specifying a large `L` to account 
+for all potential effects, we use a reasonable `L` for sparse signals and let the adaptive shrinkage 
+component absorb effects that cannot be mapped due to insufficiently specified `L`. 
+This provides a more principled and computationally efficient approach.
+
+Naturally as a result, SuSiE-ash is more robust to the choice of `L` compared to SuSiE. 
+For this example, setting `L` anywhere from 5 to 40 yields similar results, 
+unlike standard SuSiE where performance varies substantially with `L`. 
+(Readers can verify this on their own with this data-set)
 
 ## Session Information
 
