@@ -427,7 +427,6 @@ update_variance_components.ss <- function(data, params, model, ...) {
     # We wait 2 iterations to confirm this is stable, not oscillation.
     delayed_unmask_iter <- 2  # set this to 2 to prevent oscillation which is the minimum we can do
     
-    
     L <- nrow(model$alpha)
     p <- ncol(model$alpha)
     model$ash_iter <- model$ash_iter + 1

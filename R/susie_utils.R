@@ -1352,17 +1352,15 @@ get_purity <- function(pos, X, Xcorr, squared = FALSE, n = 100,
     get_median <- Rfast::med
   } else {
     get_upper_tri <- function(R) R[upper.tri(R)]
-    get_median <- stats::median
+    get_median <- median
   }
   if (length(pos) == 1) {
     return(c(1, 1, 1))
   } else {
-    # Subsample the columns if necessary.
-    if (length(pos) > n) {
-      pos <- sample(pos, n)
-    }
-
     if (is.null(Xcorr)) {
+      if (length(pos) > n) {
+        pos <- sample(pos, n)
+      }
       X_sub <- X[, pos]
       X_sub <- as.matrix(X_sub)
       value <- abs(get_upper_tri(muffled_corr(X_sub)))
@@ -1372,11 +1370,15 @@ get_purity <- function(pos, X, Xcorr, squared = FALSE, n = 100,
     if (squared) {
       value <- value^2
     }
-    return(c(
+    result <- c(
       min(value),
       sum(value) / length(value),
       get_median(value)
-    ))
+    )
+    if (any(is.na(result) | is.nan(result))) {
+      stop("get_purity returned NaN/NA. Check for constant columns or data issues.")
+    }
+    return(result)
   }
 }
 

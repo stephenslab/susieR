@@ -56,6 +56,13 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
     stop("X contains NA values.")
   }
 
+  col_vars <- apply(X, 2, var)
+  const_cols <- which(col_vars == 0 | is.na(col_vars))
+  if (length(const_cols) > 0) {
+    warning_message(sprintf("X contains %d constant columns (first few cols: %s).",
+                 length(const_cols), paste(head(const_cols, 10), collapse = ", ")))
+  }
+
   # Handle missing values in y
   if (anyNA(y)) {
     if (na.rm) {
@@ -192,7 +199,6 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
 
   # Validate and apply parameter overrides
   params_object <- validate_and_override_params(params_object)
-
   data_object <- structure(
     list(
       X = X,
