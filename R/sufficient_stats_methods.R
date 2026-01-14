@@ -399,7 +399,7 @@ update_variance_components.ss <- function(data, params, model, ...) {
     # --- Purity thresholds ---
     # Tentative CS purity, default to 0.9 because it is tentative we dont have to require 0.95
     # Potentially we can even make it 0.85 ...
-    cs_threshold <- if (!is.null(params$cs_threshold)) params$working_cs_threshold else 0.9
+    cs_threshold <- if (!is.null(params$working_cs_threshold)) params$working_cs_threshold else 0.9
     # >10% chance of signal is something we are potentionally interested in 
     cs_formation_threshold <- if (!is.null(params$cs_formation_threshold)) params$cs_formation_threshold else 0.1
     # R^2 0.25 is reasonable purity 
