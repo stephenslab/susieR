@@ -387,25 +387,29 @@ update_variance_components.ss <- function(data, params, model, ...) {
     #   - Use wait-then-expose mechanism
     #   - Second chance allows recovery after Mr.ASH testing
     # =========================================================================
-    
+
     # --- Protection thresholds ---
-    # cPIP > 50% in reasonable LD range is plausible signal that we should mask from mr.ash
-    neighborhood_pip_threshold <- if (!is.null(params$neighborhood_pip_threshold)) params$neighborhood_pip_threshold else 0.5
-    # >10% chance of signal is something we are potentionally interested in 
+    # cPIP > 25% in reasonable LD range is plausible signal that we should mask from mr.ash
+    # Consistent with direct_pip_threshold: 2-3 variants each with ~10% PIP = 25%
+    neighborhood_pip_threshold <- if (!is.null(params$neighborhood_pip_threshold)) params$neighborhood_pip_threshold else 0.25
+    # >10% chance of signal from a standalone variant is something we are potentially interested in 
     direct_pip_threshold <- if (!is.null(params$direct_pip_threshold)) params$direct_pip_threshold else 0.1
-    # R^2 0.25 is reasonable LD range 
+    # |R| = 0.5 (R^2 = 0.25) is reasonable LD range, following SuSiE default
     ld_threshold <- if (!is.null(params$ld_threshold)) params$ld_threshold else 0.5
     
     # --- Purity thresholds ---
-    # Tentative CS purity, default to 0.9 because it is tentative we dont have to require 0.95
-    # Potentially we can even make it 0.85 ...
+    # Tentative CS coverage, default to 0.9 because it is tentative we don't have to require 0.95
     cs_threshold <- if (!is.null(params$working_cs_threshold)) params$working_cs_threshold else 0.9
-    # >10% chance of signal is something we are potentionally interested in 
+    # >10% CS formation threshold - if cannot form 10% CS with reasonable purity, effect is emerging
     cs_formation_threshold <- if (!is.null(params$cs_formation_threshold)) params$cs_formation_threshold else 0.1
-    # R^2 0.25 is reasonable purity 
+    # |R| = 0.5 (R^2 = 0.25) is reasonable purity for confident effects, following SuSiE default
     purity_threshold <- if (!is.null(params$purity_threshold)) params$purity_threshold else 0.5
-    # |R| = 0.95 is tight enough of LD
-    sentinel_ld_threshold <- if (!is.null(params$sentinel_ld_threshold)) params$sentinel_ld_threshold else 0.95
+    
+    # --- LD thresholds for collision and exposure ---
+    # |R| = 0.9 (R^2 = 0.81) for collision detection - effects sharing 81% variance are clearly competing
+    collision_ld_threshold <- if (!is.null(params$collision_ld_threshold)) params$collision_ld_threshold else 0.9
+    # |R| = 0.95 for tight LD neighborhood in exposure - variants nearly indistinguishable for fine-mapping
+    tight_ld_threshold <- if (!is.null(params$tight_ld_threshold)) params$tight_ld_threshold else 0.95
     
     # --- Iteration counters for CASE 2 ---
     # Wait before expose to mr.ash
@@ -460,7 +464,8 @@ update_variance_components.ss <- function(data, params, model, ...) {
       for (other_l in (1:L)[-l]) {
         if (max(model$alpha[other_l,]) - min(model$alpha[other_l,]) < 1e-6) next
         
-        if (abs(Xcorr[sentinel_l, sentinels[other_l]]) > sentinel_ld_threshold) {
+        # Use collision_ld_threshold (0.9) - effects sharing 81% variance are competing
+        if (abs(Xcorr[sentinel_l, sentinels[other_l]]) > collision_ld_threshold) {
           current_collision[l] <- TRUE
           model$ever_diffuse[l] <- TRUE
         }
@@ -519,9 +524,9 @@ update_variance_components.ss <- function(data, params, model, ...) {
           }
           
           model$diffuse_iter_count[l] <- model$diffuse_iter_count[l] + 1
-          
           if (model$diffuse_iter_count[l] >= diffuse_iter_count) {
-            tight_ld_with_sentinel <- abs(Xcorr[sentinel,]) > sentinel_ld_threshold
+            # Use tight_ld_threshold (0.95) for exposure - only expose nearly indistinguishable variants
+            tight_ld_with_sentinel <- abs(Xcorr[sentinel,]) > tight_ld_threshold
             
             newly_exposed <- tight_ld_with_sentinel & 
                             !model$second_chance_used & 
