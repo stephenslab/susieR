@@ -5,7 +5,7 @@
 # for other functions. These include matrix operations, statistical computations,
 # and general-purpose helper functions.
 #
-# Functions: warning_message, muffled_corr, muffled_cov2cor, is_symmetric_matrix,
+# Functions: warning_message, safe_cor, safe_cov2cor, is_symmetric_matrix,
 # apply_nonzeros, compute_colSds, compute_colstats
 # =============================================================================
 
@@ -23,24 +23,38 @@ warning_message <- function(..., style = c("warning", "hint")) {
   }
 }
 
-# Correlation function with specified warning muffled.
-#' @importFrom stats cor
+#' Converts covariance matrix to correlation matrix
+#' Constant variables (zero variance) get correlation 0 with others, 1 with self
+#'
+#' @param V Covariance matrix
+#' @return Correlation matrix
 #' @keywords internal
-muffled_corr <- function(x) {
-  withCallingHandlers(cor(x), warning = function(w) {
-    if (grepl("the standard deviation is zero", w$message)) {
-      invokeRestart("muffleWarning")}
-    })
+safe_cov2cor <- function(V) {
+  d <- sqrt(diag(V))
+  d_inv <- 1 / d
+  d_inv[d == 0] <- 0
+  R <- V * outer(d_inv, d_inv)
+  diag(R) <- 1
+  R
 }
 
-# cov2cor function with specified warning muffled.
-#' @importFrom stats cov2cor
+#' Computes correlation matrix from data matrix
+#' Handles constant columns without warnings - returns 0 correlation for constant cols
+#' Uses crossprod for speed (faster than base cor)
+#'
+#' @param X Data matrix (n x p)
+#' @return Correlation matrix (p x p)
 #' @keywords internal
-muffled_cov2cor <- function(x) {
-  withCallingHandlers(cov2cor(x), warning = function(w) {
-    if (grepl("had.*(0|non-positive).*NA entries.*result.*(dubious|doubtful)", w$message)){
-      invokeRestart("muffleWarning")}
-    })
+safe_cor <- function(X) {
+  n <- nrow(X)
+  X_centered <- X - rep(colMeans(X), each = n)
+  sds <- sqrt(colSums(X_centered^2) / n)
+  sds_inv <- 1 / sds
+  sds_inv[sds == 0] <- 0
+  X_scaled <- X_centered * rep(sds_inv, each = n)
+  R <- crossprod(X_scaled) / n
+  diag(R) <- 1
+  R
 }
 
 # Check for symmetric matrix.
@@ -1363,7 +1377,7 @@ get_purity <- function(pos, X, Xcorr, squared = FALSE, n = 100,
       }
       X_sub <- X[, pos]
       X_sub <- as.matrix(X_sub)
-      value <- abs(get_upper_tri(muffled_corr(X_sub)))
+      value <- abs(get_upper_tri(safe_cor(X_sub)))
     } else {
       value <- abs(get_upper_tri(Xcorr[pos, pos]))
     }

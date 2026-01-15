@@ -452,7 +452,7 @@ get_cs_correlation <- function(model, X = NULL, Xcorr = NULL, max = FALSE) {
   max_pip_idx <- sapply(model$sets$cs, function(cs) cs[which.max(model$pip[cs])])
   if (is.null(Xcorr)) {
     X_sub <- X[, max_pip_idx]
-    cs_corr <- muffled_corr(as.matrix(X_sub))
+    cs_corr <- safe_cor(as.matrix(X_sub))
   } else {
     cs_corr <- Xcorr[max_pip_idx, max_pip_idx]
   }

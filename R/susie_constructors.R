@@ -56,11 +56,14 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
     stop("X contains NA values.")
   }
 
-  col_vars <- apply(X, 2, var)
-  const_cols <- which(col_vars == 0 | is.na(col_vars))
-  if (length(const_cols) > 0) {
-    warning_message(sprintf("X contains %d constant columns (first few cols: %s).",
+  # Constant column check for regular matrix
+  if (is.null(attr(X, "matrix.type")) || attr(X, "matrix.type") != "tfmatrix") {
+    col_vars <- apply(X, 2, var)
+    const_cols <- which(col_vars == 0 | is.na(col_vars))
+    if (length(const_cols) > 0) {
+      warning_message(sprintf("X contains %d constant columns (first few cols: %s).",
                  length(const_cols), paste(head(const_cols, 10), collapse = ", ")))
+    }
   }
 
   # Handle missing values in y
@@ -651,7 +654,7 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
   if (z_ld_weight > 0) {
     warning_message("As of version 0.11.0, use of non-zero z_ld_weight is no longer ",
             "recommended.")
-    R <- muffled_cov2cor((1 - z_ld_weight) * R + z_ld_weight * tcrossprod(z))
+    R <- safe_cov2cor((1 - z_ld_weight) * R + z_ld_weight * tcrossprod(z))
     R <- (R + t(R)) / 2
   }
 

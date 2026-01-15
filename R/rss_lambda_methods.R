@@ -316,7 +316,7 @@ get_cs.rss_lambda <- function(data, params, model, ...) {
   }
 
   return(susie_get_cs(model,
-                      Xcorr           = muffled_cov2cor(data$R),
+                      Xcorr           = safe_cov2cor(data$R),
                       check_symmetric = FALSE,
                       coverage        = params$coverage,
                       min_abs_corr    = params$min_abs_corr,

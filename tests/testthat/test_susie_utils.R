@@ -37,10 +37,10 @@ test_that("warning_message displays warnings correctly", {
   )
 })
 
-test_that("muffled_corr computes correlation and muffles zero sd warning", {
+test_that("safe_cor computes correlation and muffles zero sd warning", {
   # Normal correlation
   x <- matrix(c(1, 2, 3, 4, 5, 6), nrow = 3, ncol = 2)
-  result <- muffled_corr(x)
+  result <- safe_cor(x)
   expected <- cor(x)
   expect_equal(result, expected)
 
@@ -51,16 +51,16 @@ test_that("muffled_corr computes correlation and muffles zero sd warning", {
   expect_warning(cor(x_const), "the standard deviation is zero")
 
   # With muffling, no warning
-  expect_silent(result <- muffled_corr(x_const))
+  expect_silent(result <- safe_cor(x_const))
 
   # Check that result has NAs where expected
   expect_true(any(is.na(result)))
 })
 
-test_that("muffled_cov2cor computes correlation from covariance and muffles warnings", {
+test_that("safe_cov2cor computes correlation from covariance and muffles warnings", {
   # Normal case
   cov_mat <- matrix(c(4, 2, 2, 3), nrow = 2)
-  result <- muffled_cov2cor(cov_mat)
+  result <- safe_cov2cor(cov_mat)
   expected <- cov2cor(cov_mat)
   expect_equal(result, expected)
 
@@ -71,39 +71,39 @@ test_that("muffled_cov2cor computes correlation from covariance and muffles warn
   expect_warning(cov2cor(cov_mat_zero))
 
   # Muffled version may still warn in newer R versions due to different warning text
-  result <- suppressWarnings(muffled_cov2cor(cov_mat_zero))
+  result <- suppressWarnings(safe_cov2cor(cov_mat_zero))
   expect_true(any(is.na(result)))
 })
 
-test_that("muffled_corr executes invokeRestart('muffleWarning') when pattern matches", {
+test_that("safe_cor executes invokeRestart('muffleWarning') when pattern matches", {
   # Create data that triggers the warning
   x_const <- matrix(c(1, 2, 3, 4, 5, 6, 1, 1, 1), nrow = 3, ncol = 3)
 
   # Verify the warning exists
   expect_warning(cor(x_const), "the standard deviation is zero")
 
-  # Test that muffled_corr suppresses it (invokeRestart is called)
-  expect_silent(muffled_corr(x_const))
+  # Test that safe_cor suppresses it (invokeRestart is called)
+  expect_silent(safe_cor(x_const))
 
   # Verify result is still computed
-  result <- muffled_corr(x_const)
+  result <- safe_cor(x_const)
   expect_true(is.matrix(result))
   expect_true(any(is.na(result)))
 })
 
-test_that("muffled_cov2cor executes invokeRestart('muffleWarning') when pattern matches", {
+test_that("safe_cov2cor executes invokeRestart('muffleWarning') when pattern matches", {
   # Create covariance matrix that triggers the warning
   cov_mat_zero <- matrix(c(0, 0, 0, 3), nrow = 2)
 
   # Verify the warning exists without muffling
   expect_warning(cov2cor(cov_mat_zero))
 
-  # Test that muffled_cov2cor suppresses it (invokeRestart is called)
+  # Test that safe_cov2cor suppresses it (invokeRestart is called)
   # The updated pattern should match both old and new R warning messages
-  expect_silent(muffled_cov2cor(cov_mat_zero))
+  expect_silent(safe_cov2cor(cov_mat_zero))
 
   # Verify result is still computed
-  result <- muffled_cov2cor(cov_mat_zero)
+  result <- safe_cov2cor(cov_mat_zero)
   expect_true(is.matrix(result))
   expect_true(any(is.na(result)))
 })

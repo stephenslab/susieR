@@ -432,7 +432,7 @@ update_variance_components.ss <- function(data, params, model, ...) {
     model$ash_iter <- model$ash_iter + 1
 
     if (any(!(diag(data$XtX) %in% c(0, 1)))) {
-      Xcorr <- muffled_cov2cor(data$XtX)
+      Xcorr <- safe_cov2cor(data$XtX)
     } else {
       Xcorr <- data$XtX
     }
@@ -712,7 +712,7 @@ get_cs.ss <- function(data, params, model, ...) {
   }
 
   if (any(!(diag(data$XtX) %in% c(0, 1)))) {
-    Xcorr <- muffled_cov2cor(data$XtX)
+    Xcorr <- safe_cov2cor(data$XtX)
   } else {
     Xcorr <- data$XtX
   }
