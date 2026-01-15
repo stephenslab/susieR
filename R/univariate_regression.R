@@ -159,3 +159,181 @@ calc_z = function (X, Y, center = FALSE, scale = FALSE) {
                                                          center = center,
                                                          scale = scale))))
 }
+
+
+# ----------------------------------------------------------------------
+# Some miscellaneuous auxiliary functions are listed below.
+# Some functions are directly copied from varbvs,
+# https://github.com/pcarbo/varbvs
+# ----------------------------------------------------------------------
+
+# Remove covariate effects Regresses Z out from X and y; that is, X
+# and y are projected into the space orthogonal to Z.
+#' 
+#' @importFrom Matrix forceSymmetric
+#'
+remove_covariate <- function (X, y, Z, standardize = FALSE, intercept = TRUE) {
+  
+  # check if Z is null and intercept = FALSE
+  if (is.null(Z) & (intercept == FALSE)) {
+    return(list(X = X, y = y, Z = Z,
+                ZtZiZX = rep(0,dim(X)[2]), ZtZiZy = 0))
+  }
+  
+  # redefine y
+  y = c(as.double(y))
+  n = length(y)
+  
+  # add intercept if intercept = TRUE
+  if (intercept) {
+    if (is.null(Z))
+      Z <- matrix(1,n,1)
+    else
+      Z <- cbind(1,Z)
+  }
+  
+  if (ncol(Z) == 1) {
+    ZtZ         = forceSymmetric(crossprod(Z))       # (Z^T Z) symmetric
+    ZtZiZy      = as.vector(solve(ZtZ,c(y %*% Z)))   # (Z^T Z)^{-1} Z^T y
+    ZtZiZX      = as.matrix(solve(ZtZ,t(Z) %*% X))   # (Z^T Z)^{-1} Z^T X
+    X           = scale(X, center = intercept, scale = standardize)
+    alpha       = mean(y)
+    y           = y - alpha
+    
+  } else {
+    ZtZ         = forceSymmetric(crossprod(Z))       # (Z^T Z) symmetric
+    ZtZiZy      = as.vector(solve(ZtZ,c(y %*% Z)))   # (Z^T Z)^{-1} Z^T y
+    ZtZiZX      = as.matrix(solve(ZtZ,t(Z) %*% X))   # (Z^T Z)^{-1} Z^T X
+    
+    #   y = y - Z (Z^T Z)^{-1} Z^T y
+    #   X = X - Z (Z^T Z)^{-1} Z^T X  
+    y     = y - c(Z %*% ZtZiZy)
+    X     = X - Z %*% ZtZiZX
+  }
+  
+  return(list(X = X, y = y, Z = Z,
+              ZtZiZX = ZtZiZX, ZtZiZy = ZtZiZy))
+}
+
+#' @title Ordering of Predictors from Univariate Regression
+#' 
+#' @description This function extracts the ordering of the predictors
+#'   according to the coefficients estimated in a basic univariate
+#'   regression; in particular, the predictors are ordered in decreasing
+#'   order by magnitude of the univariate regression coefficient
+#'   estimate.
+#' 
+#' @param X An input design matrix. This may be centered and/or
+#'   standardized prior to calling function.
+#' 
+#' @param y A vector of response variables.
+#'
+#' @return An ordering of the predictors.
+#' 
+#' @examples
+#' ### generate synthetic data
+#' set.seed(1)
+#' n           = 200
+#' p           = 300
+#' X           = matrix(rnorm(n*p),n,p)
+#' beta        = double(p)
+#' beta[1:10]  = 1:10
+#' y           = X %*% beta + rnorm(n)
+#' 
+#' univ.order = univar.order(X,y)
+#' 
+#' @export
+#' 
+univar.order = function(X, y) {
+  colnorm = c(colMeans(X^2))
+  return (order(abs(c(t(X) %*% y) / colnorm), decreasing = TRUE))
+}
+
+#' @title Ordering of Predictors from Coefficient Estimates 
+#' 
+#' @param beta A vector of estimated regression coefficients.
+#' 
+#' @description This function orders the predictors by decreasing
+#'   order of the magnitude of the estimated regression coefficient.
+#'
+#' @return An ordering of the predictors.
+#' 
+#' @examples
+#' ### generate synthetic data
+#' set.seed(1)
+#' n           = 200
+#' p           = 300
+#' X           = matrix(rnorm(n*p),n,p)
+#' beta        = double(p)
+#' beta[1:10]  = 1:10
+#' y           = X %*% beta + rnorm(n)
+#' 
+#' ### glmnet fit
+#' library(glmnet)
+#' beta.lasso = coef(cv.glmnet(X, y))[-1]
+#' lasso.order = absolute.order(beta.lasso)
+#' 
+#' ### ncvreg fit
+#' library(ncvreg)
+#' beta.scad = c(coef(cv.ncvreg(X, y))[-1])
+#' scad.order = absolute.order(beta.scad)
+#' 
+#' @export
+#' 
+absolute.order = function (beta) {
+  abs_order = c(order(abs(beta), decreasing = TRUE))
+  return (abs_order)
+}
+
+#' @title Ordering of Predictors by Regularization Path
+#' 
+#' @param fit The output of a function such as \code{glmnet} from the
+#'   \code{glmnet} package or \code{ncvreg} from the \code{ncvfeg} that
+#'   estimates a "regularization path" for all predictors.
+#' 
+#' @description This function determines an ordering of the predictors
+#'  based on the regularization path of the penalized regression; in
+#'   particular, the predictors are ordered based on the order in which
+#'   the coefficients are included in the model as the penalty strength
+#'   decreases.
+#' 
+#' @return An ordering of the predictors.
+#' 
+#' @examples
+#' ### generate synthetic data
+#' set.seed(1)
+#' n           = 200
+#' p           = 300
+#' X           = matrix(rnorm(n*p),n,p)
+#' beta        = double(p)
+#' beta[1:10]  = 1:10
+#' y           = X %*% beta + rnorm(n)
+#' 
+#' ### glmnet fit
+#' library(glmnet)
+#' fit.lasso = glmnet(X, y)
+#' lasso.order = path.order(fit.lasso)
+#' 
+#' ### ncvreg fit
+#' library(ncvreg)
+#' fit.scad = ncvreg(X, y)
+#' scad.order = path.order(fit.scad)
+#'
+#' @export
+#' 
+path.order = function (fit) {
+  beta_path = coef(fit)[-1,]
+  K = dim(beta_path)[2]
+  path_order = c()
+  for (k in 1:K) {
+    crt_path = which(beta_path[,k] != 0)
+    if (length(crt_path) != 0 & length(path_order) == 0) {
+      path_order = c(path_order, crt_path)
+    } else if(length(crt_path) != 0) {
+      path_order = c(path_order, crt_path[-which(crt_path %in% path_order)] )
+    }
+  }
+  path_order = unname(path_order)
+  index_order = c(path_order, seq(1,dim(beta_path)[1])[-path_order])
+  return (index_order)
+}

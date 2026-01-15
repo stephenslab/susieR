@@ -10,3 +10,5 @@ Rplots.pdf
 docs
 pixi.lock
 **/*.html
+**/*.so
+**/*.o

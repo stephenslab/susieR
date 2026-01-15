@@ -335,7 +335,6 @@ update_fitted_values.ss <- function(data, params, model, l, ...) {
 }
 
 # Update variance components for ss data
-#' @importFrom mr.ash.alpha mr.ash
 #' @keywords internal
 update_variance_components.ss <- function(data, params, model, ...) {
   if (params$unmappable_effects == "inf") {

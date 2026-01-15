@@ -30,6 +30,7 @@ BugReports: https://github.com/stephenslab/susieR/issues
 License: BSD_3_clause + file LICENSE
 Depends: R (>= 3.0.0)
 Imports:
+    Rcpp (>= 1.0.1),
     methods,
     graphics,
     grDevices,
@@ -39,8 +40,10 @@ Imports:
     mixsqp,
     reshape,
     crayon,
-    ggplot2,
-    mr.ash.alpha
+    ggplot2
+LinkingTo:
+    Rcpp,
+    RcppArmadillo (>= 0.9.700.2)
 Suggests:
     curl,
     pkgload,
@@ -52,7 +55,6 @@ Suggests:
     Rfast,
     cowplot,
     L0Learn
-Remotes: stephenslab/mr.ash.alpha
 LazyData: yes
 LazyDataCompression: xz
 NeedsCompilation: no

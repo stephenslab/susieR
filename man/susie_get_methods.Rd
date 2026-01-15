@@ -39,7 +39,8 @@ susie_get_cs(
   squared = FALSE,
   check_symmetric = TRUE,
   n_purity = 100,
-  use_rfast
+  use_rfast,
+  ld_extend_threshold = 0.99
 )
 
 susie_get_pip(res, prune_by_cs = FALSE, prior_tol = 1e-09)
@@ -99,6 +100,10 @@ greater than this number, the CS variables are randomly subsampled.}
 \item{use_rfast}{Use the Rfast package for the purity calculations.
 By default \code{use_rfast = TRUE} if the Rfast package is
 installed.}
+
+\item{ld_extend_threshold}{Threshold for extending CS by LD (default 0.99).
+Variants with |correlation| > threshold with any CS member are added.
+Set to NULL to disable LD extension. Requires Xcorr (would not work if only X is provided).}
 
 \item{prune_by_cs}{Whether or not to ignore single effects not in
 a reported CS when calculating PIP.}
