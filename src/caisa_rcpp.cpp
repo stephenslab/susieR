@@ -106,6 +106,7 @@ Rcpp::List caisa_rcpp       (const arma::mat& X, const arma::vec& y,
     // CHECK CONVERGENCE
     // ---------------------------------------------------------------------
     if (iter >= miniter - 1) {
+      // FIXME: (Gao Wang) shouldn't we use sqrt(p) instead of p, because this is L2 norm?
       if (arma::norm(betaold - beta) < convtol * p) {
         iter++;
         break;

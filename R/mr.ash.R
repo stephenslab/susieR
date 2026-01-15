@@ -298,7 +298,7 @@ mr.ash                      = function(X, y, Z = NULL, sa2 = NULL,
   pi[1]            <- pi[1] + 0
   
   # verbose = TRUE (TO DO LIST)
-  verbose           = TRUE
+  verbose           = FALSE
   
   # run algorithm
   
