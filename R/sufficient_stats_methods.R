@@ -68,7 +68,7 @@ initialize_susie_model.ss <- function(data, params, var_y, ...) {
     model$unmask_candidate_iters <- rep(0, data$p)  
     model$ever_unmasked <- rep(FALSE, data$p)
     model$force_exposed_iter <- rep(0, data$p)     # When position was force-exposed (0 = never)
-    model$ever_diffuse <- rep(FALSE, params$L)
+    model$ever_diffuse <- rep(0, params$L)
     model$second_chance_used <- rep(FALSE, data$p) # Permanent protection after second chance
   } else {
     model$predictor_weights <- attr(data$XtX, "d")
@@ -455,20 +455,22 @@ update_variance_components.ss <- function(data, params, model, ...) {
     current_collision <- rep(FALSE, L)
     for (l in 1:L) {
       # Skip effects with uniform/near-uniform alpha (no meaningful signal)
-      if (max(model$alpha[l,]) - min(model$alpha[l,]) < 1e-6) next
+      if (max(model$alpha[l,]) - min(model$alpha[l,]) < 1e-4) next
       
       sentinel_l <- sentinels[l]
       
       # Only compare with other effects that have meaningful signal
       for (other_l in (1:L)[-l]) {
-        if (max(model$alpha[other_l,]) - min(model$alpha[other_l,]) < 1e-6) next
+        if (max(model$alpha[other_l,]) - min(model$alpha[other_l,]) < 1e-4) next
         
         # Use collision_ld_threshold (0.9) - effects sharing 81% variance are competing
         if (abs(Xcorr[sentinel_l, sentinels[other_l]]) > collision_ld_threshold) {
           current_collision[l] <- TRUE
-          model$ever_diffuse[l] <- TRUE
         }
       }
+      # FIXME: this only counts if it is ever diffused but not how many collision partners --- which might be alternatively informative
+      # To do that, we can add this line instead to right below "current_collision[l] <- TRUE"
+      model$ever_diffuse[l] <- model$ever_diffuse[l] + current_collision[l]
     }
 
     # Initialize per-iteration outputs
@@ -489,7 +491,7 @@ update_variance_components.ss <- function(data, params, model, ...) {
         model$diffuse_iter_count[l] <- 0
       }
 
-      is_ever_diffuse <- isTRUE(model$ever_diffuse[l])
+      is_ever_diffuse <- model$ever_diffuse[l] > 0
       
       # Can enter CASE 3? Need: good purity AND never cross-effect diffuse
       can_be_confident <- (purity >= purity_threshold) && !is_ever_diffuse
@@ -625,11 +627,14 @@ update_variance_components.ss <- function(data, params, model, ...) {
     # Zero out theta for masked variants
     theta_new[masked] <- 0
     if (FALSE) {
-      diagnose_susie_ash_iter(data, model, params, Xcorr, mrash_output,
-                      residuals, b_confident, effect_purity, sentinels,
-                      pip_protected, neighborhood_pip, masked,
-                      sigma2_new, tau2_new, sa2,
-                      want_masked, ready_to_unmask, force_unmask)
+      diagnose_susie_ash_iter(data, model, Xcorr, mrash_output,
+                      effect_purity, sentinels, current_collision,
+                      alpha_protected, pip_protected, neighborhood_pip, 
+                      masked, sigma2_new, tau2_new,
+                      want_masked, ready_to_unmask, force_unmask, force_mask,
+                      purity_threshold, cs_formation_threshold,
+                      collision_ld_threshold, tight_ld_threshold,
+                      ld_threshold, diffuse_iter_count)
     }
 
     XtX_theta_new <- as.vector(data$XtX %*% theta_new)
@@ -742,6 +747,8 @@ get_zscore.ss <- function(data, params, model, ...) {
 cleanup_model.ss <- function(data, params, model, ...) {
   # Remove common fields
   model <- cleanup_model.default(data, params, model, ...)
+
+  # FIXME: for non-standard fields please connect them to "runtime_xx" where xx is unmappable effect option
   
   # Remove SS-specific fields for unmappable effects
   if (!is.null(params$unmappable_effects) && params$unmappable_effects == "inf") {
@@ -752,7 +759,7 @@ cleanup_model.ss <- function(data, params, model, ...) {
         model[[field]] <- NULL
       }
     }
-  } else if (!is.null(params$unmappable_effects) && params$unmappable_effects == "ash" && params$verbose == FALSE) {
+  } else if (!is.null(params$unmappable_effects) && params$unmappable_effects == "ash") {
     ash_fields <- c("XtX_theta", "masked", "ash_iter")
     
     for (field in ash_fields) {
