@@ -455,14 +455,13 @@ update_variance_components.ss <- function(data, params, model, ...) {
     current_collision <- rep(FALSE, L)
     for (l in 1:L) {
       # Skip effects with uniform/near-uniform alpha (no meaningful signal)
-      if (max(model$alpha[l,]) - min(model$alpha[l,]) < 1e-4) next
+      if (max(model$alpha[l,]) - min(model$alpha[l,]) < 5e-5) next
       
       sentinel_l <- sentinels[l]
       
       # Only compare with other effects that have meaningful signal
       for (other_l in (1:L)[-l]) {
-        if (max(model$alpha[other_l,]) - min(model$alpha[other_l,]) < 1e-4) next
-        
+        if (max(model$alpha[other_l,]) - min(model$alpha[other_l,]) < 5e-5) next
         # Use collision_ld_threshold (0.9) - effects sharing 81% variance are competing
         if (abs(Xcorr[sentinel_l, sentinels[other_l]]) > collision_ld_threshold) {
           current_collision[l] <- TRUE

@@ -18,7 +18,7 @@ diagnose_susie_ash_iter <- function(data, model, Xcorr, mrash_output,
   
   # Identify active effects (non-uniform alpha)
   is_active <- sapply(1:L, function(l) {
-    max(model$alpha[l,]) - min(model$alpha[l,]) >= 1e-6
+    max(model$alpha[l,]) - min(model$alpha[l,]) >= 5e-5
   })
   active_effects <- which(is_active)
   
