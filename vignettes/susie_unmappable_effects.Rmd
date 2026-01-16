@@ -48,7 +48,7 @@ The z-scores show the strength of marginal association for each variant.
 Red points indicate non-zero effect sizes:
 
 ```{r}
-susie_plot(z_scores, y = "z", b = b)
+susie_plot(z_scores, y = "z", b = b, add_legend = TRUE)
 ```
 
 Here we can see the signal landscape before fine-mapping. Note that 
@@ -80,7 +80,7 @@ t0 <- proc.time()
 fit_susie <- susie(X, y, L = 10)
 t1 <- proc.time()
 t1 - t0
-susie_plot(fit_susie, y = "PIP", b = b, main = "SuSiE (standard)")
+susie_plot(fit_susie, y = "PIP", b = b, main = "SuSiE (standard)", add_legend = TRUE)
 ```
 
 We set `L = 10` to allow SuSiE to capture up to 10 sparse effects. 
@@ -179,7 +179,7 @@ t0 <- proc.time()
 fit_inf <- susie(X, y, L = 10, unmappable_effects = "inf")
 t1 <- proc.time()
 t1 - t0
-susie_plot(fit_inf, y = "PIP", b = b, main = "SuSiE-inf")
+susie_plot(fit_inf, y = "PIP", b = b, main = "SuSiE-inf", add_legend = TRUE)
 ```
 
 (Note that it may take several minutes to fit the SuSiE-Inf model.)
@@ -225,10 +225,10 @@ a middle ground between standard SuSiE and SuSiE-inf:
 
 ```{r}
 t0 <- proc.time()
-fit_ash <- susie(X, y, L = 10, unmappable_effects = "ash")
+fit_ash <- susie(X, y, L = 10, unmappable_effects = "ash", verbose = TRUE)
 t1 <- proc.time()
 t1 - t0
-susie_plot(fit_ash, y = "PIP", b = b, main = "SuSiE-ash")
+susie_plot(fit_ash, y = "PIP", b = b, main = "SuSiE-ash", add_legend = TRUE)
 ```
 
 (Note that it may take several minutes to fit the SuSiE-ash model.)
@@ -264,7 +264,7 @@ t0 <- proc.time()
 fit_susie_L40 <- susie(X, y, L = 40)
 t1 <- proc.time()
 t1 - t0
-susie_plot(fit_susie_L40, y = "PIP", b = b, main = "SuSiE (L=40)")
+susie_plot(fit_susie_L40, y = "PIP", b = b, main = "SuSiE (L=40)", add_legend = TRUE)
 plot_cs_effects(fit_susie_L40, b, main = "SuSiE L=40 CS on true effects")
 ```
 

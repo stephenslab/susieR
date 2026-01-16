@@ -43,7 +43,6 @@ initialize_susie_model.ss <- function(data, params, var_y, ...) {
 
   # Append predictor weights and initialize non-sparse quantities
   if (params$unmappable_effects == "inf") {
-
     # Initialize omega quantities for unmappable effects
     omega_res               <- compute_omega_quantities(data, tau2 = 0, sigma2 = var_y)
     model$omega_var         <- omega_res$omega_var
@@ -55,14 +54,13 @@ initialize_susie_model.ss <- function(data, params, var_y, ...) {
     model$theta <- rep(0, data$p)
 
   } else if (params$unmappable_effects == "ash") {
-
-    # SuSiE-ash: explicit residualization approach
     model$predictor_weights <- attr(data$XtX, "d")
     model$tau2              <- 0
     model$theta             <- rep(0, data$p)
     model$XtX_theta         <- rep(0, data$p)
     model$masked         <- rep(FALSE, data$p)  # Track masked variants for LD-aware exclusion
     model$ash_iter          <- 0                # Track Mr.ASH iterations
+    model$ash_pi          <- NULL
     model$diffuse_iter_count <- rep(0, params$L)
     model$prev_sentinel <- rep(0, params$L)  # Track sentinel varables
     model$unmask_candidate_iters <- rep(0, data$p)  
@@ -561,22 +559,6 @@ update_variance_components.ss <- function(data, params, model, ...) {
     # Compute residuals (with confident effects removed) and run Mr.ASH
     pip_protected <- susie_get_pip(alpha_protected)
     residuals <- data$y - data$X %*% b_confident
-    sa2 <- create_ash_grid(data)
-
-    mrash_output <- mr.ash(
-      X             = data$X,
-      y             = residuals,
-      sa2           = sa2,
-      intercept     = FALSE,
-      standardize   = FALSE,
-      sigma2        = model$sigma2,
-      update.sigma2 = params$estimate_residual_variance,
-      max.iter      = 1000
-    )
-
-    theta_new  <- mrash_output$beta
-    sigma2_new <- mrash_output$sigma2
-    tau2_new   <- sum(mrash_output$data$sa2 * mrash_output$pi) * mrash_output$sigma2
 
     # =========================================================================
     # Masking logic
@@ -621,6 +603,26 @@ update_variance_components.ss <- function(data, params, model, ...) {
       model$ever_unmasked[should_restore] <- FALSE
       masked[should_restore] <- TRUE
     }
+
+    # Fit Mr.ASH: initialize from previous fit
+    convtol <- if (model$ash_iter < 2) 1e-3 else 1e-4
+    mrash_output <- mr.ash(
+      X             = data$X,
+      y             = residuals,
+      intercept     = FALSE,
+      standardize   = FALSE,
+      sigma2        = model$sigma2,
+      update.sigma2 = params$estimate_residual_variance,
+      beta.init     = model$theta,
+      pi            = model$ash_pi,
+      tol = list(convtol = convtol, epstol = 1e-12),
+      verbose = param$verbose,
+      max.iter      = 1000
+    )
+
+    theta_new  <- mrash_output$beta
+    sigma2_new <- mrash_output$sigma2
+    tau2_new   <- sum(mrash_output$data$sa2 * mrash_output$pi) * mrash_output$sigma2
     
     # Zero out theta for masked variants
     theta_new[masked] <- 0

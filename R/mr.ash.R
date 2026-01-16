@@ -120,13 +120,12 @@
 #' 
 #' @param tol Additional settings controlling behaviour of the model
 #'   fitting algorithm. \code{tol$convtol} controls the termination
-#'   criterion for the model fitting. When \code{update.pi = TRUE}, the
-#'   outer-loop updates stop when the largest change in the mixture
-#'   weights is less than \code{convtol*K}; when \code{update.pi =
-#'   FALSE}, the outer-loop updates stop when the largest change in the
-#'   estimates of the posterior mean coefficients is less than
-#'   \code{convtol*K}. \code{tol$epstol} is a small, positive number
-#'   added to the likelihoods to avoid logarithms of zero.
+#'   criterion for the model fitting. The outer-loop updates stop when
+#'   the relative L2 change in the estimates of the posterior mean
+#'   coefficients is less than \code{convtol}, i.e., \code{||beta_new -
+#'   beta_old||_2 / max(1, ||beta_old||_2) < convtol}.
+#'   \code{tol$epstol} is a small, positive number added to the
+#'   likelihoods to avoid logarithms of zero.
 #' 
 #' @return A list object with the following elements:
 #' 
@@ -214,7 +213,8 @@ mr.ash                      = function(X, y, Z = NULL, sa2 = NULL,
                                        update.sigma2 = TRUE, sigma2 = NULL,
                                        update.order = NULL,
                                        standardize = FALSE, intercept = TRUE,
-                                       tol = set_default_tolerance()){
+                                       tol = set_default_tolerance(), 
+                                       verbose = TRUE){
   
   # get sizes
   n                 = nrow(X)
@@ -271,7 +271,7 @@ mr.ash                      = function(X, y, Z = NULL, sa2 = NULL,
   
   # set sa2 if missing
   if ( is.null(sa2) ) {
-    sa2             = (2^((0:19) / 20) - 1)^2
+    sa2             = (2^((0:24) / 25) - 1)^2
     sa2             = sa2 / median(data$w) * n
   }
   K                 = length(sa2)
@@ -296,9 +296,6 @@ mr.ash                      = function(X, y, Z = NULL, sa2 = NULL,
   } else
     Phi             = matrix(rep(pi, each = p), nrow = p)
   pi[1]            <- pi[1] + 0
-  
-  # verbose = TRUE (TO DO LIST)
-  verbose           = FALSE
   
   # run algorithm
   
@@ -451,7 +448,7 @@ predict.mr.ash               = function(object,newx = NULL,
 
 set_default_tolerance       = function(){
   epstol    = 1e-12
-  convtol   = 1e-8
+  convtol   = 1e-4
   
   return ( list(epstol = epstol, convtol = convtol ) )
 }
