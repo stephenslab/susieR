@@ -28,16 +28,15 @@ test_that("configure_data.ss adds eigen decomposition for unmappable_effects='in
   expect_true("VtXty" %in% names(result))
 })
 
-test_that("configure_data.ss requires individual data for unmappable_effects='ash'", {
-  setup <- setup_ss_data(unmappable_effects = "none")
-  setup$params$unmappable_effects <- "ash"
-
-  # Remove X and y (individual data) to test error
-  setup$data$X <- NULL
-  setup$data$y <- NULL
+test_that("sufficient_stats_constructor rejects unmappable_effects='ash'", {
+  base_data <- generate_base_data(n = 100, p = 50, k = 0, seed = 1)
+  XtX <- crossprod(base_data$X)
+  Xty <- crossprod(base_data$X, base_data$y)
+  yty <- sum(base_data$y^2)
 
   expect_error(
-    configure_data.ss(setup$data, setup$params),
+    sufficient_stats_constructor(XtX, Xty, yty, n = base_data$n,
+                                 unmappable_effects = "ash"),
     "Adaptive shrinkage \\(ash\\) requires individual-level data"
   )
 })
