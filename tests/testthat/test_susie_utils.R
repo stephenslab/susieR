@@ -37,75 +37,98 @@ test_that("warning_message displays warnings correctly", {
   )
 })
 
-test_that("safe_cor computes correlation and muffles zero sd warning", {
+test_that("safe_cor computes correlation and handles zero sd columns", {
   # Normal correlation
   x <- matrix(c(1, 2, 3, 4, 5, 6), nrow = 3, ncol = 2)
   result <- safe_cor(x)
   expected <- cor(x)
   expect_equal(result, expected)
 
-  # With constant column (zero sd) - should muffle warning
+  # With constant column (zero sd) - should handle without warning
+
   x_const <- cbind(x, rep(1, 3))
 
-  # Without muffling, cor() would warn
+  # Without safe_cor, cor() would warn
   expect_warning(cor(x_const), "the standard deviation is zero")
 
-  # With muffling, no warning
+  # safe_cor handles this without warning and returns 0 for constant column correlations
   expect_silent(result <- safe_cor(x_const))
 
-  # Check that result has NAs where expected
-  expect_true(any(is.na(result)))
+  # Check that correlations involving constant column are 0 (not NA)
+  expect_equal(result[3, 1], 0)
+  expect_equal(result[3, 2], 0)
+  expect_equal(result[1, 3], 0)
+  expect_equal(result[2, 3], 0)
+  # Diagonal should still be 1
+  expect_equal(diag(result), c(1, 1, 1))
 })
 
-test_that("safe_cov2cor computes correlation from covariance and muffles warnings", {
+test_that("safe_cov2cor computes correlation from covariance and handles zero variance", {
   # Normal case
   cov_mat <- matrix(c(4, 2, 2, 3), nrow = 2)
   result <- safe_cov2cor(cov_mat)
   expected <- cov2cor(cov_mat)
   expect_equal(result, expected)
 
-  # With zero/NA entries
+  # With zero variance entry - safe_cov2cor handles this without warning
   cov_mat_zero <- matrix(c(0, 0, 0, 3), nrow = 2)
 
-  # Without muffling, cov2cor() would warn
+  # Without safe_cov2cor, cov2cor() would warn
   expect_warning(cov2cor(cov_mat_zero))
 
-  # Muffled version may still warn in newer R versions due to different warning text
-  result <- suppressWarnings(safe_cov2cor(cov_mat_zero))
-  expect_true(any(is.na(result)))
+  # safe_cov2cor handles zero variance by returning 0 correlations (not NA)
+  expect_silent(result <- safe_cov2cor(cov_mat_zero))
+  expect_true(is.matrix(result))
+  # Diagonal should be 1
+  expect_equal(diag(result), c(1, 1))
+  # Off-diagonal correlations involving zero-variance variable should be 0
+
+  expect_equal(result[1, 2], 0)
+  expect_equal(result[2, 1], 0)
 })
 
-test_that("safe_cor executes invokeRestart('muffleWarning') when pattern matches", {
-  # Create data that triggers the warning
+test_that("safe_cor handles constant columns without warnings", {
+  # Create data with a constant column that would trigger a warning in base cor()
   x_const <- matrix(c(1, 2, 3, 4, 5, 6, 1, 1, 1), nrow = 3, ncol = 3)
 
-  # Verify the warning exists
+  # Verify that base cor() would warn
   expect_warning(cor(x_const), "the standard deviation is zero")
 
-  # Test that safe_cor suppresses it (invokeRestart is called)
+  # Test that safe_cor handles it silently
   expect_silent(safe_cor(x_const))
 
-  # Verify result is still computed
+  # Verify result is computed correctly
   result <- safe_cor(x_const)
   expect_true(is.matrix(result))
-  expect_true(any(is.na(result)))
+  # Correlations involving the constant column (col 3) should be 0, not NA
+
+  expect_equal(result[3, 1], 0)
+  expect_equal(result[3, 2], 0)
+  expect_equal(result[1, 3], 0)
+  expect_equal(result[2, 3], 0)
+  # Diagonal should be 1
+  expect_equal(diag(result), c(1, 1, 1))
 })
 
-test_that("safe_cov2cor executes invokeRestart('muffleWarning') when pattern matches", {
-  # Create covariance matrix that triggers the warning
+test_that("safe_cov2cor handles zero variance without warnings", {
+  # Create covariance matrix with zero variance that would trigger a warning in base cov2cor()
   cov_mat_zero <- matrix(c(0, 0, 0, 3), nrow = 2)
 
-  # Verify the warning exists without muffling
+  # Verify that base cov2cor() would warn
   expect_warning(cov2cor(cov_mat_zero))
 
-  # Test that safe_cov2cor suppresses it (invokeRestart is called)
-  # The updated pattern should match both old and new R warning messages
+  # Test that safe_cov2cor handles it silently
   expect_silent(safe_cov2cor(cov_mat_zero))
 
-  # Verify result is still computed
+  # Verify result is computed correctly
   result <- safe_cov2cor(cov_mat_zero)
   expect_true(is.matrix(result))
-  expect_true(any(is.na(result)))
+  # Correlations involving zero-variance variable should be 0, not NA
+
+  expect_equal(result[1, 2], 0)
+  expect_equal(result[2, 1], 0)
+  # Diagonal should be 1
+  expect_equal(diag(result), c(1, 1))
 })
 
 test_that("is_symmetric_matrix correctly identifies symmetric matrices", {
