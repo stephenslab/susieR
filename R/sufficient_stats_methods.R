@@ -484,7 +484,9 @@ update_variance_components.ss <- function(data, params, model, ...) {
 
       # Reset counter if sentinel changed
       if (track_sentinel && sentinel != model$prev_sentinel[l] && model$prev_sentinel[l] > 0) {
-        model$diffuse_iter_count[l] <- 0
+        if (abs(Xcorr[sentinel, model$prev_sentinel[l]]) < tight_ld_threshold) {
+          model$diffuse_iter_count[l] <- 0
+        }
       }
 
       is_ever_diffuse <- model$ever_diffuse[l] > 0
@@ -497,7 +499,6 @@ update_variance_components.ss <- function(data, params, model, ...) {
         # CASE 1: Diffuse within effect (purity < 0.1)
         # =================================================================
         model$diffuse_iter_count[l] <- 0
-        
         moderate_ld_with_sentinel <- abs(Xcorr[sentinel,]) > ld_threshold
         meaningful_alpha <- model$alpha[l,] > 5/p
         to_protect <- moderate_ld_with_sentinel | meaningful_alpha
@@ -507,19 +508,12 @@ update_variance_components.ss <- function(data, params, model, ...) {
         # =================================================================
         # CASE 2: Uncertain (current_collision OR ever_diffuse OR low purity)
         # =================================================================
-        
         if (current_collision[l]) {
           # Active collision: NO protection (let Mr.ASH decide)
-          model$diffuse_iter_count[l] <- 0
-          # alpha_protected[l,] stays all zeros
-          
+          model$diffuse_iter_count[l] <- 0          
         } else {
           # ever_diffuse (no current collision) OR low purity: wait then expose
           # This keeps testing if signal is real
-          if (track_sentinel && sentinel != model$prev_sentinel[l]) {
-            model$diffuse_iter_count[l] <- 0
-          }
-          
           model$diffuse_iter_count[l] <- model$diffuse_iter_count[l] + 1
           if (model$diffuse_iter_count[l] >= diffuse_iter_count) {
             # Use tight_ld_threshold (0.95) for exposure - only expose nearly indistinguishable variants
@@ -543,7 +537,6 @@ update_variance_components.ss <- function(data, params, model, ...) {
             alpha_protected[l,] <- model$alpha[l,]
           }
         }
-        
       } else {
         # =================================================================
         # CASE 3: Confident (good purity AND never cross-effect diffuse)
