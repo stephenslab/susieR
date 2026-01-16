@@ -616,7 +616,7 @@ update_variance_components.ss <- function(data, params, model, ...) {
       beta.init     = model$theta,
       pi            = model$ash_pi,
       tol = list(convtol = convtol, epstol = 1e-12),
-      verbose = param$verbose,
+      verbose = params$verbose,
       max.iter      = 1000
     )
 
