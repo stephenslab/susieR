@@ -1,6 +1,6 @@
 # susieR Testing Framework
 
-This directory contains the comprehensive test suite for the susieR 2.0 package, with **1,013 total tests** ensuring code correctness, stability, and consistency with the reference implementation.
+This directory contains the comprehensive test suite for the susieR 2.0 package, with **>1,000 total tests** ensuring code correctness, stability, and consistency with the reference implementation.
 
 ## File Organization
 

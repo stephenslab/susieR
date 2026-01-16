@@ -958,3 +958,117 @@ test_that("susie() matches reference with residual_variance_lowerbound - simple"
   compare_to_reference("susie", args, tolerance = 1e-5)
 })
 
+# =============================================================================
+# Part 15: na.rm parameter
+# =============================================================================
+
+test_that("susie() matches reference with na.rm=TRUE - optim", {
+  skip_if_no_reference()
+
+  set.seed(19)
+  n <- 100
+  p <- 50
+  X <- matrix(rnorm(n * p), n, p)
+  beta <- rep(0, p)
+  beta[1:4] <- c(2, 3, -2, 1.5)
+  y <- as.vector(X %*% beta + rnorm(n))
+
+  # Introduce NA values
+  y[c(1, 25, 50)] <- NA
+
+  args <- list(X = X, y = y, L = 10, na.rm = TRUE, estimate_prior_method = "optim")
+  compare_to_reference("susie", args, tolerance = 1e-5)
+})
+
+test_that("susie() matches reference with na.rm=TRUE - EM", {
+  skip_if_no_reference()
+
+  set.seed(19)
+  n <- 100
+  p <- 50
+  X <- matrix(rnorm(n * p), n, p)
+  beta <- rep(0, p)
+  beta[1:4] <- c(2, 3, -2, 1.5)
+  y <- as.vector(X %*% beta + rnorm(n))
+
+  # Introduce NA values
+  y[c(1, 25, 50)] <- NA
+
+  args <- list(X = X, y = y, L = 10, na.rm = TRUE, estimate_prior_method = "EM")
+  compare_to_reference("susie", args, tolerance = 1e-5)
+})
+
+test_that("susie() matches reference with na.rm=TRUE - simple", {
+  skip_if_no_reference()
+
+  set.seed(19)
+  n <- 100
+  p <- 50
+  X <- matrix(rnorm(n * p), n, p)
+  beta <- rep(0, p)
+  beta[1:4] <- c(2, 3, -2, 1.5)
+  y <- as.vector(X %*% beta + rnorm(n))
+
+  # Introduce NA values
+  y[c(1, 25, 50)] <- NA
+
+  args <- list(X = X, y = y, L = 10, na.rm = TRUE, estimate_prior_method = "simple")
+  compare_to_reference("susie", args, tolerance = 1e-5)
+})
+
+test_that("susie() matches reference with na.rm=TRUE and single NA - optim", {
+  skip_if_no_reference()
+
+  set.seed(20)
+  n <- 100
+  p <- 50
+  X <- matrix(rnorm(n * p), n, p)
+  beta <- rep(0, p)
+  beta[1:4] <- c(2, 3, -2, 1.5)
+  y <- as.vector(X %*% beta + rnorm(n))
+
+  # Single NA (the bug report case)
+  y[1] <- NA
+
+  args <- list(X = X, y = y, L = 10, na.rm = TRUE, estimate_prior_method = "optim")
+  compare_to_reference("susie", args, tolerance = 1e-5)
+})
+
+test_that("susie() matches reference with na.rm=TRUE and standardize=FALSE", {
+  skip_if_no_reference()
+
+  set.seed(21)
+  n <- 100
+  p <- 50
+  X <- matrix(rnorm(n * p), n, p)
+  beta <- rep(0, p)
+  beta[1:4] <- c(2, 3, -2, 1.5)
+  y <- as.vector(X %*% beta + rnorm(n))
+
+  # Introduce NA values
+  y[c(5, 10, 15)] <- NA
+
+  args <- list(X = X, y = y, L = 10, na.rm = TRUE, standardize = FALSE,
+               estimate_prior_method = "optim")
+  compare_to_reference("susie", args, tolerance = 1e-5)
+})
+
+test_that("susie() matches reference with na.rm=TRUE and intercept=FALSE", {
+  skip_if_no_reference()
+
+  set.seed(22)
+  n <- 100
+  p <- 50
+  X <- matrix(rnorm(n * p), n, p)
+  beta <- rep(0, p)
+  beta[1:4] <- c(2, 3, -2, 1.5)
+  y <- as.vector(X %*% beta + rnorm(n))
+
+  # Introduce NA values
+  y[c(10, 20, 30)] <- NA
+
+  args <- list(X = X, y = y, L = 10, na.rm = TRUE, intercept = FALSE,
+               estimate_prior_method = "optim")
+  compare_to_reference("susie", args, tolerance = 1e-5)
+})
+
