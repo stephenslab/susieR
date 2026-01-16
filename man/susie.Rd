@@ -32,7 +32,7 @@ susie(
   convergence_method = c("elbo", "pip"),
   verbose = FALSE,
   track_fit = FALSE,
-  residual_variance_lowerbound = var(drop(y))/10000,
+  residual_variance_lowerbound = NULL,
   refine = FALSE,
   n_purity = 100,
   alpha0 = 0.1,

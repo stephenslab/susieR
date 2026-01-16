@@ -21,7 +21,8 @@ mr.ash(
   update.order = NULL,
   standardize = FALSE,
   intercept = TRUE,
-  tol = set_default_tolerance()
+  tol = set_default_tolerance(),
+  verbose = TRUE
 )
 }
 \arguments{
@@ -108,13 +109,12 @@ included in the regression model.}
 
 \item{tol}{Additional settings controlling behaviour of the model
 fitting algorithm. \code{tol$convtol} controls the termination
-criterion for the model fitting. When \code{update.pi = TRUE}, the
-outer-loop updates stop when the largest change in the mixture
-weights is less than \code{convtol*K}; when \code{update.pi =
-FALSE}, the outer-loop updates stop when the largest change in the
-estimates of the posterior mean coefficients is less than
-\code{convtol*K}. \code{tol$epstol} is a small, positive number
-added to the likelihoods to avoid logarithms of zero.}
+criterion for the model fitting. The outer-loop updates stop when
+the relative L2 change in the estimates of the posterior mean
+coefficients is less than \code{convtol}, i.e., \code{||beta_new -
+beta_old||_2 / max(1, ||beta_old||_2) < convtol}.
+\code{tol$epstol} is a small, positive number added to the
+likelihoods to avoid logarithms of zero.}
 }
 \value{
 A list object with the following elements:
