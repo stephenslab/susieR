@@ -92,16 +92,9 @@ test_that("individual_data_constructor handles y with NAs when na.rm=TRUE", {
 })
 
 test_that("individual_data_constructor computes residual_variance_lowerbound after NA removal", {
-
-  # This test verifies the fix for the bug where residual_variance_lowerbound
-
-  # was computed before NA values were removed from y, causing var(y) to return NA
   base_data <- generate_base_data(n = 100, p = 10, k = 0, seed = 7.25)
   base_data$y[1] <- NA
 
-  # This should work without error - the bug caused:
-
-  # "Error in if (neg_loglik(...) > : missing value where TRUE/FALSE needed"
   result <- individual_data_constructor(base_data$X, base_data$y, na.rm = TRUE)
 
   # Verify residual_variance_lowerbound is computed correctly (not NA)
