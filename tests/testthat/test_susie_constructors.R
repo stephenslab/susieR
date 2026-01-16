@@ -91,6 +91,58 @@ test_that("individual_data_constructor handles y with NAs when na.rm=TRUE", {
   expect_false(anyNA(result$data$y))
 })
 
+test_that("individual_data_constructor computes residual_variance_lowerbound after NA removal", {
+
+  # This test verifies the fix for the bug where residual_variance_lowerbound
+
+  # was computed before NA values were removed from y, causing var(y) to return NA
+  base_data <- generate_base_data(n = 100, p = 10, k = 0, seed = 7.25)
+  base_data$y[1] <- NA
+
+  # This should work without error - the bug caused:
+
+  # "Error in if (neg_loglik(...) > : missing value where TRUE/FALSE needed"
+  result <- individual_data_constructor(base_data$X, base_data$y, na.rm = TRUE)
+
+  # Verify residual_variance_lowerbound is computed correctly (not NA)
+  expect_true(is.finite(result$params$residual_variance_lowerbound))
+  expect_true(result$params$residual_variance_lowerbound > 0)
+
+  # Verify it equals var(y_clean) / 1e4 where y_clean has NA removed
+  y_clean <- base_data$y[!is.na(base_data$y)]
+  expected_lowerbound <- var(y_clean) / 1e4
+  expect_equal(result$params$residual_variance_lowerbound, expected_lowerbound)
+})
+
+test_that("individual_data_constructor allows custom residual_variance_lowerbound with NA in y", {
+  base_data <- generate_base_data(n = 100, p = 10, k = 0, seed = 7.5)
+  base_data$y[1] <- NA
+
+  custom_lowerbound <- 0.001
+  result <- individual_data_constructor(
+    base_data$X, base_data$y,
+    na.rm = TRUE,
+    residual_variance_lowerbound = custom_lowerbound
+  )
+
+  expect_equal(result$params$residual_variance_lowerbound, custom_lowerbound)
+})
+
+test_that("individual_data_constructor handles multiple NAs in y with na.rm=TRUE", {
+  base_data <- generate_base_data(n = 100, p = 10, k = 0, seed = 7.75)
+  # Set multiple NAs at different positions
+
+  base_data$y[c(1, 25, 50, 75, 100)] <- NA
+
+  result <- individual_data_constructor(base_data$X, base_data$y, na.rm = TRUE)
+
+  expect_equal(result$data$n, 95)
+  expect_equal(nrow(result$data$X), 95)
+  expect_length(result$data$y, 95)
+  expect_false(anyNA(result$data$y))
+  expect_true(is.finite(result$params$residual_variance_lowerbound))
+})
+
 # =============================================================================
 # INDIVIDUAL DATA CONSTRUCTOR - Centering and Scaling
 # =============================================================================

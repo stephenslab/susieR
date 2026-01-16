@@ -38,7 +38,7 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
                                         convergence_method = "elbo",
                                         verbose = FALSE,
                                         track_fit = FALSE,
-                                        residual_variance_lowerbound = var(drop(y)) / 1e4,
+                                        residual_variance_lowerbound = NULL,
                                         refine = FALSE,
                                         n_purity = 100,
                                         alpha0 = 0,
@@ -71,11 +71,17 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
     if (na.rm) {
       samples_kept <- which(!is.na(y))
       y <- y[samples_kept]
-      X <- X[samples_kept, ]
+      X <- X[samples_kept, , drop = FALSE]
     } else {
       stop("Input y must not contain missing values.")
     }
   }
+
+  # Set residual_variance_lowerbound
+  if (is.null(residual_variance_lowerbound)) {
+    residual_variance_lowerbound <- var(drop(y)) / 1e4
+  }
+
   mean_y <- mean(y)
 
   # Force required preprocessing for unmappable effects methods
