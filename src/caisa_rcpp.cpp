@@ -121,7 +121,8 @@ Rcpp::List caisa_rcpp       (const arma::mat& X, const arma::vec& y,
   }
   
   if (verbose) {
-    Rprintf("Mr.ASH terminated at iteration %d.\n", iter);
+    Rprintf("Mr.ASH terminated at iteration %d: max|beta|=%.4e, sigma2=%.4e, pi0=%.4f\n", 
+              iter, arma::max(arma::abs(beta)), sigma2, pi(0));
   }
   // ---------------------------------------------------------------------
   // RETURN VALUES
