@@ -33,10 +33,9 @@ susie_workhorse <- function(data, params) {
 
     # Calculate objective and check convergence
     elbo[iter + 1] <- get_objective(data, params, model)
-    converged      <- check_convergence(params, model, elbo, iter, tracking)
+    model <- check_convergence(data, params, model, elbo, iter, tracking)
 
-    if (converged) {
-      model$converged <- TRUE
+    if (model$converged) {
       break
     }
 
@@ -48,9 +47,8 @@ susie_workhorse <- function(data, params) {
   }
 
   # Check final convergence status
-  if (is.null(model$converged)) {
+  if (!model$converged) {
     warning_message(paste("IBSS algorithm did not converge in", params$max_iter, "iterations!"))
-    model$converged <- FALSE
   }
 
   # Set ELBO from iterations

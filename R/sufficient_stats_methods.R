@@ -386,9 +386,8 @@ update_variance_components.ss <- function(data, params, model, ...) {
     # =========================================================================
 
     # --- Protection thresholds ---
-    # cPIP > 25% in reasonable LD range is plausible signal that we should mask from mr.ash
-    # Consistent with direct_pip_threshold: 2-3 variants each with ~10% PIP = 25%
-    neighborhood_pip_threshold <- if (!is.null(params$neighborhood_pip_threshold)) params$neighborhood_pip_threshold else 0.25
+    # cPIP > 40% in reasonable LD range is plausible signal that we should mask from mr.ash
+    neighborhood_pip_threshold <- if (!is.null(params$neighborhood_pip_threshold)) params$neighborhood_pip_threshold else 0.4
     # >10% chance of signal from a standalone variant is something we are potentially interested in 
     direct_pip_threshold <- if (!is.null(params$direct_pip_threshold)) params$direct_pip_threshold else 0.1
     # |R| = 0.5 (R^2 = 0.25) is reasonable LD range, following SuSiE default

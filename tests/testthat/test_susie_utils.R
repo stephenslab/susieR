@@ -1390,22 +1390,22 @@ test_that("check_convergence detects convergence correctly", {
   )
 
   # Test: first iteration (should not converge)
-  result_iter1 <- check_convergence(params, model, elbo = c(-1000, -999),
+  result_iter1 <- check_convergence(NULL, params, model, elbo = c(-1000, -999),
                                    iter = 1, tracking = tracking)
-  expect_false(result_iter1)
+  expect_false(result_iter1$converged)
 
   # Test: ELBO converged
   elbo_converged <- c(-1000, -999.99)
-  result_elbo_conv <- check_convergence(params, model, elbo = elbo_converged,
+  result_elbo_conv <- check_convergence(NULL, params, model, elbo = elbo_converged,
                                        iter = 2, tracking = tracking)
-  expect_true(result_elbo_conv)
+  expect_true(result_elbo_conv$converged)
 
   # Test: ELBO not converged
   tracking$convergence$prev_elbo <- -1000
   elbo_not_conv <- c(NA, NA, -990)
-  result_elbo_not <- check_convergence(params, model, elbo = elbo_not_conv,
+  result_elbo_not <- check_convergence(NULL, params, model, elbo = elbo_not_conv,
                                       iter = 2, tracking = tracking)
-  expect_false(result_elbo_not)
+  expect_false(result_elbo_not$converged)
 
   # Test: PIP convergence
   params_pip <- list(
@@ -1415,25 +1415,25 @@ test_that("check_convergence detects convergence correctly", {
   )
 
   # PIP converged (alpha unchanged)
-  result_pip_conv <- check_convergence(params_pip, model, elbo = c(-1000, -999),
+  result_pip_conv <- check_convergence(NULL, params_pip, model, elbo = c(-1000, -999),
                                       iter = 2, tracking = tracking)
-  expect_true(result_pip_conv)
+  expect_true(result_pip_conv$converged)
 
   # PIP not converged (alpha changed)
   model_changed <- model
   model_changed$alpha[1, 1] <- 0.5
-  result_pip_not <- check_convergence(params_pip, model_changed,
+  result_pip_not <- check_convergence(NULL, params_pip, model_changed,
                                      elbo = c(-1000, -999),
                                      iter = 2, tracking = tracking)
-  expect_false(result_pip_not)
+  expect_false(result_pip_not$converged)
 
   # Test: ELBO is NA/Inf (fallback to PIP)
   expect_message(
-    result_na <- check_convergence(params, model, elbo = c(-1000, NA),
+    result_na <- check_convergence(NULL, params, model, elbo = c(-1000, NA),
                                   iter = 2, tracking = tracking),
     "NA/infinite ELBO"
   )
-  expect_true(result_na)  # Alpha unchanged, so converged by PIP
+  expect_true(result_na$converged)  # Alpha unchanged, so converged by PIP
 })
 
 test_that("get_objective computes ELBO correctly", {
