@@ -25,7 +25,7 @@ dependencies = {"r-base" = "4.5.*"}
 
 [environments]
 r44 = {features = ["r44"]}
-r43 = {features = ["r44"]}
+r45 = {features = ["r45"]}
 
 [target.linux-64.dependencies]
 "gcc" = "*"
