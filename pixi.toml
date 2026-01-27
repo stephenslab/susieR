@@ -48,7 +48,6 @@ r43 = {features = ["r44"]}
 "r-testthat" = "*"
 "r-microbenchmark" = "*"
 "r-knitr" = "*"
-"r-l0learn" = "*"
 "r-rmarkdown" = "*"
 "r-rfast" = "*"
 "r-cowplot" = "*"
