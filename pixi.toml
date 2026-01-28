@@ -1,4 +1,4 @@
-[project]
+[workspace]
 name = "r-susier"
 channels = ["dnachun", "conda-forge", "bioconda"]
 platforms = ["linux-64", "osx-arm64"]
@@ -17,18 +17,23 @@ use_minor_version = "cd $GITHUB_WORKSPACE; R -e 'usethis::use_version(which = \"
 use_patch_version = "cd $GITHUB_WORKSPACE; R -e 'usethis::use_version(which = \"patch\", push = FALSE)'"
 pkgdown_build = "cd $GITHUB_WORKSPACE; R -e 'pkgdown::build_site_github_pages(new_process = FALSE, install = TRUE)'"
 
-[feature.r43]
-dependencies = {"r-base" = "4.3.*"}
-
 [feature.r44]
 dependencies = {"r-base" = "4.4.*"}
 
+[feature.r45]
+dependencies = {"r-base" = "4.5.*"}
+
 [environments]
 r44 = {features = ["r44"]}
-r43 = {features = ["r44"]}
+r45 = {features = ["r45"]}
+
+[target.linux-64.dependencies]
+"gcc" = "*"
 
 [dependencies]
 # Core dependencies (from Imports)
+"r-rcpp" = "*"
+"r-rcpparmadillo" = "*"
 "r-matrix" = "*"
 "r-matrixstats" = "*"
 "r-mixsqp" = "*"
@@ -37,6 +42,7 @@ r43 = {features = ["r44"]}
 "r-ggplot2" = "*"
 "r-l0learn" = "*"
 "r-glmnet" = "*"
+"r-survival" = "*"
 
 # Suggested dependencies (for testing and documentation)
 "r-curl" = "*"

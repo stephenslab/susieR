@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        environment: ["r43", "r44"]
+        environment: ["r44", "r45"]
 
     steps:
       - name: Checkout pull request branch
@@ -50,11 +50,11 @@ jobs:
 
   ci_osx-arm64:
     name: osx-arm64 CI
-    runs-on: macos-14
+    runs-on: macos-latest
     strategy:
       fail-fast: false
       matrix:
-        environment: ["r43", "r44"]
+        environment: ["r44", "r45"]
     
     steps:
       - name: Checkout pull request branch
