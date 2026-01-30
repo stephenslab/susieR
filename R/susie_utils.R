@@ -1169,10 +1169,11 @@ update_model_variance <- function(data, params, model) {
 
 # Check convergence
 #' @keywords internal
-check_convergence <- function(params, model, elbo, iter, tracking) {
+check_convergence <- function(data, params, model, elbo, iter, tracking) {
   # Skip convergence check on first iteration
   if(iter == 1) {
-    return(FALSE)
+    model$converged <- FALSE
+    return(model)
   }
 
   # Calculate difference in ELBO values
@@ -1190,7 +1191,8 @@ check_convergence <- function(params, model, elbo, iter, tracking) {
     # over 2 consecutive iterations for more stable convergence
     if (!is.null(params$use_servin_stephens) && params$use_servin_stephens) {
       if (iter <= 2) {
-        return(FALSE)  # Require at least 3 iterations
+        model$converged <- FALSE
+        return(model)  # Require at least 3 iterations
       }
 
       # Current iteration PIP difference
@@ -1210,7 +1212,12 @@ check_convergence <- function(params, model, elbo, iter, tracking) {
         message("max |change in PIP| (avg): ", format(avg_diff, digits = 6))
       }
 
-      return(avg_diff < params$tol)
+      model$converged <- (avg_diff < params$tol)
+      if (model$converged && !is.null(params$unmappable_effects) &&
+          params$unmappable_effects == "ash") {
+        model <- run_final_ash_pass(data, params, model)
+      }
+      return(model)
     } else {
       # Standard PIP convergence
       PIP_diff <- max(abs(tracking$convergence$prev_alpha - model$alpha))
@@ -1219,7 +1226,12 @@ check_convergence <- function(params, model, elbo, iter, tracking) {
         message("max |change in PIP|: ", format(PIP_diff, digits = 6))
       }
 
-      return(PIP_diff < params$tol)
+      model$converged <- (PIP_diff < params$tol)
+      if (model$converged && !is.null(params$unmappable_effects) &&
+          params$unmappable_effects == "ash") {
+        model <- run_final_ash_pass(data, params, model)
+      }
+      return(model)
     }
   }
 
@@ -1227,7 +1239,56 @@ check_convergence <- function(params, model, elbo, iter, tracking) {
     message("ELBO: ", format(elbo[iter + 1], digits = 6))
   }
 
-  return(ELBO_diff < params$tol)
+  model$converged <- (ELBO_diff < params$tol)
+  if (model$converged && !is.null(params$unmappable_effects) &&
+      params$unmappable_effects == "ash") {
+    model <- run_final_ash_pass(data, params, model)
+  }
+  return(model)
+}
+
+# Run final unmasked ASH pass after convergence
+#
+# After SuSiE converges, runs Mr.ASH one final time without masking
+# to get accurate theta estimates for prediction. This addresses the
+# issue that during iteration, theta values at masked positions are
+# forcibly set to 0 to prevent double-counting, but after convergence
+# we want the true Mr.ASH estimates.
+#
+# @param data Data object (must have $X and $y for ASH)
+# @param params Parameters object
+# @param model Converged SuSiE model
+#
+# @return Model with updated theta, XtX_theta, tau2, ash_pi
+#
+# @keywords internal
+run_final_ash_pass <- function(data, params, model) {
+  # Compute residuals with ALL SuSiE effects removed
+  b_susie <- colSums(model$alpha * model$mu)
+  residuals <- data$y - data$X %*% b_susie
+
+  # Run Mr.ASH with warm start from current fit
+  mrash_output <- mr.ash(
+    X             = data$X,
+    y             = residuals,
+    intercept     = FALSE,
+    standardize   = FALSE,
+    sigma2        = model$sigma2,
+    update.sigma2 = FALSE,
+    beta.init     = model$theta,
+    pi            = model$ash_pi,
+    tol           = list(convtol = 1e-4, epstol = 1e-12),
+    verbose       = params$verbose,
+    max.iter      = 1000
+  )
+
+  # Update model with UNMASKED theta (no zeroing)
+  model$theta     <- mrash_output$beta
+  model$XtX_theta <- as.vector(data$XtX %*% model$theta)
+  model$tau2      <- sum(mrash_output$data$sa2 * mrash_output$pi) * model$sigma2
+  model$ash_pi    <- mrash_output$pi
+
+  return(model)
 }
 
 # Objective function (ELBO)

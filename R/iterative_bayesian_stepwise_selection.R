@@ -74,6 +74,7 @@ ibss_initialize <- function(data, params) {
              fitted)
 
   class(model) <- "susie"
+  model$converged <- FALSE
 
   return(model)
 }

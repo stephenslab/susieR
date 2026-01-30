@@ -68,6 +68,7 @@ initialize_susie_model.ss <- function(data, params, var_y, ...) {
     model$force_exposed_iter <- rep(0, data$p)     # When position was force-exposed (0 = never)
     model$ever_diffuse <- rep(0, params$L)
     model$second_chance_used <- rep(FALSE, data$p) # Permanent protection after second chance
+    model$prev_case <- rep(0, params$L)            # Track previous case assignment for oscillation detection
   } else {
     model$predictor_weights <- attr(data$XtX, "d")
   }
@@ -386,9 +387,8 @@ update_variance_components.ss <- function(data, params, model, ...) {
     # =========================================================================
 
     # --- Protection thresholds ---
-    # cPIP > 25% in reasonable LD range is plausible signal that we should mask from mr.ash
-    # Consistent with direct_pip_threshold: 2-3 variants each with ~10% PIP = 25%
-    neighborhood_pip_threshold <- if (!is.null(params$neighborhood_pip_threshold)) params$neighborhood_pip_threshold else 0.25
+    # cPIP > 40% in reasonable LD range is plausible signal that we should mask from mr.ash
+    neighborhood_pip_threshold <- if (!is.null(params$neighborhood_pip_threshold)) params$neighborhood_pip_threshold else 0.4
     # >10% chance of signal from a standalone variant is something we are potentially interested in 
     direct_pip_threshold <- if (!is.null(params$direct_pip_threshold)) params$direct_pip_threshold else 0.1
     # |R| = 0.5 (R^2 = 0.25) is reasonable LD range, following SuSiE default
@@ -478,6 +478,8 @@ update_variance_components.ss <- function(data, params, model, ...) {
     # =========================================================================
     # Second pass: Classify effects and determine protection
     # =========================================================================
+    current_case <- rep(0, L)  # Track current case for oscillation detection
+
     for (l in 1:L) {
       purity <- effect_purity[l]
       sentinel <- sentinels[l]
@@ -490,7 +492,7 @@ update_variance_components.ss <- function(data, params, model, ...) {
       }
 
       is_ever_diffuse <- model$ever_diffuse[l] > 0
-      
+
       # Can enter CASE 3? Need: good purity AND never cross-effect diffuse
       can_be_confident <- (purity >= purity_threshold) && !is_ever_diffuse
 
@@ -498,6 +500,7 @@ update_variance_components.ss <- function(data, params, model, ...) {
         # =================================================================
         # CASE 1: Diffuse within effect (purity < 0.1)
         # =================================================================
+        current_case[l] <- 1
         model$diffuse_iter_count[l] <- 0
         moderate_ld_with_sentinel <- abs(Xcorr[sentinel,]) > ld_threshold
         meaningful_alpha <- model$alpha[l,] > 5/p
@@ -508,9 +511,10 @@ update_variance_components.ss <- function(data, params, model, ...) {
         # =================================================================
         # CASE 2: Uncertain (current_collision OR ever_diffuse OR low purity)
         # =================================================================
+        current_case[l] <- 2
         if (current_collision[l]) {
           # Active collision: NO protection (let Mr.ASH decide)
-          model$diffuse_iter_count[l] <- 0          
+          model$diffuse_iter_count[l] <- 0
         } else {
           # ever_diffuse (no current collision) OR low purity: wait then expose
           # This keeps testing if signal is real
@@ -518,16 +522,16 @@ update_variance_components.ss <- function(data, params, model, ...) {
           if (model$diffuse_iter_count[l] >= diffuse_iter_count) {
             # Use tight_ld_threshold (0.95) for exposure - only expose nearly indistinguishable variants
             tight_ld_with_sentinel <- abs(Xcorr[sentinel,]) > tight_ld_threshold
-            
-            newly_exposed <- tight_ld_with_sentinel & 
-                            !model$second_chance_used & 
+
+            newly_exposed <- tight_ld_with_sentinel &
+                            !model$second_chance_used &
                             (model$force_exposed_iter == 0)
             model$force_exposed_iter[newly_exposed] <- model$ash_iter
-            
+
             if (any(newly_exposed)) {
               model$diffuse_iter_count[l] <- 0
             }
-            
+
             alpha_protected[l,] <- model$alpha[l,]
             expose_positions <- tight_ld_with_sentinel & !model$second_chance_used
             alpha_protected[l, expose_positions] <- 0
@@ -541,13 +545,45 @@ update_variance_components.ss <- function(data, params, model, ...) {
         # =================================================================
         # CASE 3: Confident (good purity AND never cross-effect diffuse)
         # =================================================================
+        current_case[l] <- 3
         model$diffuse_iter_count[l] <- 0
         b_confident <- b_confident + model$alpha[l,] * model$mu[l,]
         alpha_protected[l,] <- model$alpha[l,]
       }
-      
+
       model$prev_sentinel[l] <- sentinel
     }
+
+    # =========================================================================
+    # Oscillation detection: C2 <-> C3 transitions indicate unstable effects
+    # When detected, mark as ever_diffuse to prevent future C3 classification
+    # This breaks the feedback loop that causes non-convergence
+    # =========================================================================
+    for (l in 1:L) {
+      prev <- model$prev_case[l]
+      curr <- current_case[l]
+
+      # Skip inactive effects (case 0) and first iteration (prev_case = 0)
+      if (curr == 0 || prev == 0) next
+
+      # Detect C2 <-> C3 oscillation (transition in either direction)
+      if ((prev == 2 && curr == 3) || (prev == 3 && curr == 2)) {
+        # Mark effect as oscillating - this makes ever_diffuse > 0
+        # which permanently prevents C3 classification
+        model$ever_diffuse[l] <- model$ever_diffuse[l] + 1
+
+        # If we just classified as C3 but detected oscillation,
+        # we need to undo the C3 treatment for this iteration
+        if (curr == 3) {
+          # Remove from b_confident
+          b_confident <- b_confident - model$alpha[l,] * model$mu[l,]
+          # Keep alpha_protected as is (will be treated as C2 effectively)
+        }
+      }
+    }
+
+    # Update prev_case for next iteration
+    model$prev_case <- current_case
 
     # Compute residuals (with confident effects removed) and run Mr.ASH
     pip_protected <- susie_get_pip(alpha_protected)
@@ -647,7 +683,8 @@ update_variance_components.ss <- function(data, params, model, ...) {
       ever_unmasked       = model$ever_unmasked,
       force_exposed_iter  = model$force_exposed_iter,
       second_chance_used  = model$second_chance_used,
-      ever_diffuse        = model$ever_diffuse
+      ever_diffuse        = model$ever_diffuse,
+      prev_case           = model$prev_case
       ))
   } else {
     # Use default method for standard SuSiE
