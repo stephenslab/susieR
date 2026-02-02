@@ -27,7 +27,7 @@ jobs:
           ref: master
 
       - name: Setup pixi
-        uses: prefix-dev/setup-pixi@v0.9.0
+        uses: prefix-dev/setup-pixi@v0.9.4
 
       - name: Update pkgdown site
         run: pixi run -e r44 pkgdown_build
