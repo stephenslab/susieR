@@ -16,7 +16,7 @@ Description: Implements methods for variable selection in linear
     and fast, allowing the SuSiE model be fit to large data sets
     (thousands of samples and hundreds of thousands of variables).
 Date: 2026-02-06
-Version: 0.15.42
+Version: 0.15.43
 Authors@R: c(person("Gao","Wang",role="aut",email="wang.gao@columbia.edu"),
              person("Yuxin","Zou",role="aut"),
              person("Alexander","McCreight",role="aut"),
@@ -28,7 +28,7 @@ Authors@R: c(person("Gao","Wang",role="aut",email="wang.gao@columbia.edu"),
 URL: https://github.com/stephenslab/susieR
 BugReports: https://github.com/stephenslab/susieR/issues
 License: BSD_3_clause + file LICENSE
-Depends: R (>= 3.0.0)
+Depends: R (>= 3.0.2)
 Imports:
     Rcpp (>= 1.0.1),
     methods,
