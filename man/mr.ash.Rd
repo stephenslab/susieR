@@ -115,6 +115,9 @@ coefficients is less than \code{convtol}, i.e., \code{||beta_new -
 beta_old||_2 / max(1, ||beta_old||_2) < convtol}.
 \code{tol$epstol} is a small, positive number added to the
 likelihoods to avoid logarithms of zero.}
+
+\item{verbose}{If \code{verbose = TRUE}, some information about the
+status of the model fitting is printed to the console.}
 }
 \value{
 A list object with the following elements:
