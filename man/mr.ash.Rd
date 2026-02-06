@@ -47,9 +47,9 @@ setting, \code{sa2[1] = 0}, and \code{sa2[20]} is roughly 1.}
 
 \item{method_q}{The algorithm used to update the variational
 approximation to the posterior distribution of the regression
-coefficients, \code{method = "sigma_dep_q"}, \code{method =
-"sigma_indep_q"} and \code{"sigma_scaled_beta"}, take different
-approaches to updating the residual variance \eqn{sigma^2}.}
+coefficients, \code{method = "sigma_dep_q"} and \code{method =
+"sigma_indep_q"}, take different approaches to updating the
+residual variance \eqn{sigma^2}.}
 
 \item{method_g}{\code{method = "caisa"}, an abbreviation of
 "Cooridinate Ascent Iterative Shinkage Algorithm", fits the model
@@ -206,8 +206,7 @@ y           = X \%*\% beta + rnorm(n)
 
 ### fit Mr.ASH
 fit.mr.ash  = mr.ash(X,y, method_q = "sigma_indep_q")
-fit.mr.ash  = mr.ash(X,y, method_q = "sigma_scaled_beta")
-fit.mr.ash  = mr.ash(X,y, method_q = "sigma_dep_q")
+#' fit.mr.ash  = mr.ash(X,y, method_q = "sigma_dep_q")
 
 ### prediction routine
 Xnew        = matrix(rnorm(n*p),n,p)
