@@ -539,7 +539,8 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
                                       check_z = FALSE,
                                       n_purity = 100,
                                       r_tol = 1e-8,
-                                      refine = FALSE) {
+                                      refine = FALSE,
+                                      stochastic_ld_sample = NULL) {
 
   # Check if this should use RSS-lambda path
   if (lambda != 0) {
@@ -676,6 +677,29 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
     p <- length(z)
   }
 
+  # Precompute stochastic LD inflation (before sufficient stats conversion)
+  # The inflation factor tau_j^2 / sigma_{j,0}^2 is computed from R and is
+  # constant across IBSS iterations.
+  shat2_inflation <- NULL
+  stochastic_ld_diagnostics <- NULL
+  if (!is.null(stochastic_ld_sample)) {
+    B <- stochastic_ld_sample
+    R_sq_mat  <- R %*% R                       # R^2, O(p^3) via BLAS
+    sigma2_j0 <- rowSums(R * R_sq_mat)         # diag(R^3) = signal variances
+    R_frob_sq <- sum(R * R)                    # ||R||_F^2
+    R_diag    <- diag(R)
+    # Inflation = tau_j^2 / sigma_{j,0}^2; guard against sigma2_j0 == 0
+    shat2_inflation <- ifelse(sigma2_j0 > 0,
+      1 + 1 / B + R_diag * R_frob_sq / (B * sigma2_j0), Inf)
+    stochastic_ld_diagnostics <- list(
+      B = B,
+      p = length(z),
+      effective_rank = length(z)^2 / R_frob_sq,
+      r_over_B = (length(z)^2 / R_frob_sq) / B,
+      per_snp_inflation = shat2_inflation - 1
+    )
+  }
+
   # Convert to sufficient statistics format
   if (is.null(n)) {
     # Sample size not provided - use unadjusted z-scores
@@ -705,7 +729,7 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
   }
 
   # Use sufficient_stats_constructor with ALL parameters
-  return(sufficient_stats_constructor(
+  result <- sufficient_stats_constructor(
     XtX = XtX, Xty = Xty, yty = yty, n = n,
     L = L, X_colmeans = NA, y_mean = NA,
     maf = NULL, maf_thresh = 0, check_input = check_input,
@@ -725,7 +749,15 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
     coverage = coverage, min_abs_corr = min_abs_corr, n_purity = n_purity,
     verbose = verbose, track_fit = track_fit, check_prior = check_prior,
     refine = refine
-  ))
+  )
+
+  # Attach stochastic LD correction to data object
+  if (!is.null(shat2_inflation)) {
+    result$data$shat2_inflation <- shat2_inflation
+    result$data$stochastic_ld_diagnostics <- stochastic_ld_diagnostics
+  }
+
+  return(result)
 }
 
 # =============================================================================

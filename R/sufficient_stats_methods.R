@@ -187,6 +187,10 @@ compute_ser_statistics.ss <- function(data, params, model, l, ...) {
   betahat <- (1 / model$predictor_weights) * model$residuals
   shat2   <- model$residual_variance / model$predictor_weights
 
+  # Inflate shat2 for stochastic LD correction (tau_j^2 / sigma_{j,0}^2)
+  if (!is.null(data$shat2_inflation))
+    shat2 <- shat2 * data$shat2_inflation
+
   # Optimization parameters
   if (params$unmappable_effects == "inf") {
     # SuSiE-inf: optimize on linear scale
@@ -227,9 +231,15 @@ SER_posterior_e_loglik.ss <- function(data, params, model, l) {
 # Calculate posterior moments for single effect regression
 #' @keywords internal
 calculate_posterior_moments.ss <- function(data, params, model, V, l, ...) {
-  # Standard Gaussian posterior calculations
-  post_var   <- (1 / V + model$predictor_weights / model$residual_variance)^(-1)
-  post_mean  <- (1 / model$residual_variance) * post_var * model$residuals
+  # Compute shat2 = null variance of betahat, with stochastic LD inflation
+  shat2 <- model$residual_variance / model$predictor_weights
+  if (!is.null(data$shat2_inflation))
+    shat2 <- shat2 * data$shat2_inflation
+
+  # Posterior calculations using shat2 (equivalent to standard formulas when
+  # shat2_inflation is NULL: post_var = (1/V + pw/sigma2)^(-1), etc.)
+  post_var   <- V * shat2 / (V + shat2)
+  post_mean  <- V * (model$residuals / model$predictor_weights) / (V + shat2)
   post_mean2 <- post_var + post_mean^2
 
   # Store posterior moments in model
@@ -298,9 +308,12 @@ neg_loglik.ss <- function(data, params, model, V_param, ser_stats, ...) {
 
   if (params$unmappable_effects == "inf") {
     # SuSiE-inf: Omega-weighted objective with logSumExp trick
+    # Apply stochastic LD inflation: effective pw = pw / inflation
+    pw   <- model$predictor_weights
+    infl <- if (!is.null(data$shat2_inflation)) data$shat2_inflation else 1
     return(-matrixStats::logSumExp(
-      -0.5 * log(1 + V * model$predictor_weights) +
-        V * model$residuals^2 / (2 * (1 + V * model$predictor_weights)) +
+      -0.5 * log(1 + V * pw / infl) +
+        V * model$residuals^2 / (2 * infl * (1 + V * pw / infl)) +
         log(model$pi + sqrt(.Machine$double.eps))
     ))
   } else {

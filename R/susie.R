@@ -486,6 +486,34 @@ susie_ss <- function(XtX, Xty, yty, n,
 #'
 #' @param check_z If TRUE, check that z lies in column space of R.
 #'
+#' @param stochastic_ld_sample When the LD matrix \code{R} is
+#'   estimated from a stochastic sketch (or an internal subsample) with
+#'   \code{B} random projections, set this to the value of \code{B}.
+#'   This inflates the null variance of each SNP's score statistic to
+#'   account for LD estimation uncertainty in the Single Effect
+#'   Regression (SER), attenuating Bayes factors and
+#'   posterior means for SNPs where LD uncertainty is large. Must be at
+#'   least 1000. Not supported with \code{lambda != 0}. When provided,
+#'   the output includes a \code{stochastic_ld_diagnostics} element
+#'   with per-region and per-SNP quality metrics.
+#'
+#' @return In addition to the standard \code{"susie"} output (see
+#'   \code{\link{susie}}), the returned object may contain:
+#'
+#' \item{stochastic_ld_diagnostics}{A list of diagnostics for the
+#'   stochastic LD correction (only present when
+#'   \code{stochastic_ld_sample} is provided), containing:
+#'   \code{B} (the sketch sample size);
+#'   \code{p} (number of SNPs);
+#'   \code{effective_rank} (\eqn{\hat{r} = p^2 / \|R\|_F^2});
+#'   \code{r_over_B} (\eqn{\hat{r}/B}, one number per region; values
+#'     \eqn{\le 0.2} indicate the sketch is adequate for all high-LD
+#'     SNPs);
+#'   \code{per_snp_inflation} (\eqn{v_j / \sigma_{j,0}^2 = \tau_j^2 /
+#'     \sigma_{j,0}^2 - 1}, one number per SNP; values \eqn{\le 0.2}
+#'     indicate minimal power loss at that SNP, values \eqn{\gg 1}
+#'     flag SNPs where the correction is doing heavy lifting).}
+#'
 #' @export
 #' 
 susie_rss <- function(z = NULL, R, n = NULL,
@@ -525,13 +553,24 @@ susie_rss <- function(z = NULL, R, n = NULL,
                       check_z = FALSE,
                       n_purity = 100,
                       r_tol = 1e-8,
-                      refine = FALSE) {
+                      refine = FALSE,
+                      stochastic_ld_sample = NULL) {
 
   # Validate method arguments
   unmappable_effects       <- match.arg(unmappable_effects)
   estimate_prior_method    <- match.arg(estimate_prior_method)
   estimate_residual_method <- match.arg(estimate_residual_method)
   convergence_method       <- match.arg(convergence_method)
+
+  # Validate stochastic_ld_sample
+  if (!is.null(stochastic_ld_sample)) {
+    if (!is.numeric(stochastic_ld_sample) || length(stochastic_ld_sample) != 1)
+      stop("stochastic_ld_sample must be a numeric scalar.")
+    if (stochastic_ld_sample < 1000)
+      stop("stochastic_ld_sample must be >= 1000.")
+    if (lambda != 0)
+      stop("stochastic_ld_sample is not supported with lambda != 0.")
+  }
 
   # Construct data and params objects with ALL parameters
   susie_objects <- summary_stats_constructor(
@@ -544,7 +583,8 @@ susie_rss <- function(z = NULL, R, n = NULL,
     residual_variance_lowerbound, residual_variance_upperbound,
     model_init, coverage, min_abs_corr,
     max_iter, tol, convergence_method, verbose, track_fit, check_input,
-    check_prior, check_R, check_z, n_purity, r_tol, refine
+    check_prior, check_R, check_z, n_purity, r_tol, refine,
+    stochastic_ld_sample = stochastic_ld_sample
   )
 
   # Run main SuSiE algorithm

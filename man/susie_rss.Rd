@@ -46,7 +46,8 @@ susie_rss(
   check_z = FALSE,
   n_purity = 100,
   r_tol = 1e-08,
-  refine = FALSE
+  refine = FALSE,
+  stochastic_ld_sample = NULL
 )
 }
 \arguments{
@@ -230,6 +231,35 @@ matrix \code{XtX}.}
 \item{refine}{If \code{refine = TRUE}, then an additional
 iterative refinement procedure is used, after the IBSS algorithm,
 to check and escape from local optima (see details).}
+
+\item{stochastic_ld_sample}{When the LD matrix \code{R} is
+estimated from a stochastic sketch (or an internal subsample) with
+\code{B} random projections, set this to the value of \code{B}.
+This inflates the null variance of each SNP's score statistic to
+account for LD estimation uncertainty in the Single Effect
+Regression (SER), attenuating Bayes factors and
+posterior means for SNPs where LD uncertainty is large. Must be at
+least 1000. Not supported with \code{lambda != 0}. When provided,
+the output includes a \code{stochastic_ld_diagnostics} element
+with per-region and per-SNP quality metrics.}
+}
+\value{
+In addition to the standard \code{"susie"} output (see
+  \code{\link{susie}}), the returned object may contain:
+
+\item{stochastic_ld_diagnostics}{A list of diagnostics for the
+  stochastic LD correction (only present when
+  \code{stochastic_ld_sample} is provided), containing:
+  \code{B} (the sketch sample size);
+  \code{p} (number of SNPs);
+  \code{effective_rank} (\eqn{\hat{r} = p^2 / \|R\|_F^2});
+  \code{r_over_B} (\eqn{\hat{r}/B}, one number per region; values
+    \eqn{\le 0.2} indicate the sketch is adequate for all high-LD
+    SNPs);
+  \code{per_snp_inflation} (\eqn{v_j / \sigma_{j,0}^2 = \tau_j^2 /
+    \sigma_{j,0}^2 - 1}, one number per SNP; values \eqn{\le 0.2}
+    indicate minimal power loss at that SNP, values \eqn{\gg 1}
+    flag SNPs where the correction is doing heavy lifting).}
 }
 \description{
 Performs SuSiE regression using z-scores and correlation matrix.

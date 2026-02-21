@@ -152,6 +152,10 @@ ibss_finalize <- function(data, params, model, elbo = NULL, iter = NA_integer_,
   # Assign Variable Names
   model <- get_variable_names(data, model)
 
+  # Stochastic LD diagnostics (from data → model, following sets/pip/z pattern)
+  if (!is.null(data$stochastic_ld_diagnostics))
+    model$stochastic_ld_diagnostics <- data$stochastic_ld_diagnostics
+
   # Clean up temporary computational fields
   model <- cleanup_model(data, params, model)
 
