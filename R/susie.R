@@ -591,6 +591,16 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
     if (!is.matrix(X) || !is.numeric(X))
       stop("X must be a numeric matrix.")
 
+    # Center columns of X so that crossprod gives covariance-like quantities.
+    # This ensures users can provide raw, centered, or standardized X and
+    # get correct results. (The full-rank path centers via safe_cor(); the
+    # low-rank path needs explicit centering here.)
+    # Use a relative threshold to avoid perturbing already-centered matrices
+    # with near-zero means, which can cause SVD instability.
+    cm <- colMeans(X)
+    if (max(abs(cm)) > 1e-10 * max(abs(X)))
+      X <- t(t(X) - cm)
+
     # Features incompatible with the low-rank path: fall back to forming R
     needs_R <- z_ld_weight > 0 || (!is.null(var_y) && !is.null(shat))
     if (needs_R && nrow(X) < ncol(X)) {
