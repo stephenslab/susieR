@@ -763,9 +763,9 @@ get_cs.ss <- function(data, params, model, ...) {
   }
 
   if (!is.null(data$X)) {
-    # Low-rank X path: use X directly for purity
+    # Low-rank X path: data$X is B x p, columns are variables
     return(susie_get_cs(model,
-                        X               = t(data$X),
+                        X               = data$X,
                         coverage        = params$coverage,
                         min_abs_corr    = params$min_abs_corr,
                         n_purity        = params$n_purity))
