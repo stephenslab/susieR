@@ -327,6 +327,7 @@ convert_individual_to_ss <- function(data, params) {
   ss_data <- structure(
     list(
       XtX = XtX,
+      X = NULL,
       Xty = Xty,
       yty = yty,
       n = data$n,
@@ -337,7 +338,7 @@ convert_individual_to_ss <- function(data, params) {
     class = "ss"
   )
 
-  # Copy attributes from X to XtX
+  # Set attributes on XtX from individual X
   attr(ss_data$XtX, "d") <- attr(data$X, "d")
   attr(ss_data$XtX, "scaled:scale") <- attr(data$X, "scaled:scale")
 
@@ -608,6 +609,43 @@ add_null_effect <- function(model_init, V) {
 }
 
 # =============================================================================
+# MATRIX-VECTOR PRODUCT HELPERS
+#
+# Unified helpers for predictor-matrix-times-vector operations across
+# SS (XtX) and RSS-lambda (R) data types. These dispatch on what's available
+# on the data object: data$X (low-rank factor), data$XtX, or data$R.
+# When data$X is stored (B×p, B < p), the two-step product X'(Xv) avoids
+# forming the p×p matrix, reducing cost from O(p²) to O(Bp).
+#
+# Functions: compute_Rv, compute_BR
+# =============================================================================
+
+# Compute predictor-matrix times vector: XtX %*% v, R %*% v, or X'(Xv)
+#' @keywords internal
+compute_Rv <- function(data, v) {
+  if (!is.null(data$X)) {
+    return(as.vector(crossprod(data$X, data$X %*% v)))
+  } else if (!is.null(data$XtX)) {
+    return(as.vector(data$XtX %*% v))
+  } else if (!is.null(data$R)) {
+    return(as.vector(data$R %*% v))
+  }
+  stop("No predictor matrix available on data object.")
+}
+
+# Compute B_mat %*% predictor-matrix: (L×p) times (p×p) → (L×p)
+# Used in get_ER2.ss for the quadratic form B %*% XtX
+#' @keywords internal
+compute_BR <- function(data, B_mat) {
+  if (!is.null(data$X)) {
+    return((B_mat %*% t(data$X)) %*% data$X)
+  } else if (!is.null(data$XtX)) {
+    return(B_mat %*% data$XtX)
+  }
+  stop("No predictor matrix available for compute_BR.")
+}
+
+# =============================================================================
 # CORE ALGORITHM COMPONENTS
 #
 # Key computational functions that implement the mathematical core of the
@@ -615,13 +653,30 @@ add_null_effect <- function(model_init, V) {
 # and log Bayes factor calculations.
 #
 # Functions: compute_eigen_decomposition, add_eigen_decomposition,
-# compute_omega_quantities, scale_design_matrix, compute_theta_blup, 
+# compute_omega_quantities, scale_design_matrix, compute_theta_blup,
 # lbf_stabilization, compute_posterior_weights, compute_lbf_gradient
 # =============================================================================
 
 # Compute eigenvalue decomposition for unmappable methods
+# When X (low-rank factor) is available, uses thin SVD (O(pB²)) instead
+# of eigen decomposition of XtX (O(p³)).
 #' @keywords internal
-compute_eigen_decomposition <- function(XtX, n) {
+compute_eigen_decomposition <- function(XtX, n, X = NULL) {
+  if (!is.null(X)) {
+    # Thin SVD: O(p·B²) instead of O(p³)
+    p <- ncol(X)
+    sv <- svd(X, nu = 0)
+    V <- sv$v                        # p × min(B,p) right singular vectors
+    Dsq <- pmax(sv$d^2, 0)           # eigenvalues of X'X
+    # Pad to length p with zeros (null-space eigenvectors)
+    if (ncol(V) < p) {
+      V <- cbind(V, matrix(0, p, p - ncol(V)))
+      Dsq <- c(Dsq, rep(0, p - length(Dsq)))
+    }
+    idx <- order(Dsq, decreasing = TRUE)
+    return(list(V = V[, idx], Dsq = Dsq[idx], VtXty = NULL))
+  }
+
   LD  <- XtX / n
   eig <- eigen(LD, symmetric = TRUE)
   idx <- order(eig$values, decreasing = TRUE)
@@ -636,8 +691,8 @@ compute_eigen_decomposition <- function(XtX, n) {
 # Add eigen decomposition to ss data objects for unmappable methods
 #' @keywords internal
 add_eigen_decomposition <- function(data, params, individual_data = NULL) {
-  # Compute eigen decomposition
-  eigen_decomp <- compute_eigen_decomposition(data$XtX, data$n)
+  # Compute eigen decomposition (thin SVD when X is available)
+  eigen_decomp <- compute_eigen_decomposition(data$XtX, data$n, X = data$X)
 
   # Append eigen components to data object
   data$eigen_vectors <- eigen_decomp$V
@@ -1284,7 +1339,7 @@ run_final_ash_pass <- function(data, params, model) {
 
   # Update model with UNMASKED theta (no zeroing)
   model$theta     <- mrash_output$beta
-  model$XtX_theta <- as.vector(data$XtX %*% model$theta)
+  model$XtX_theta <- compute_Rv(data, model$theta)
   model$tau2      <- sum(mrash_output$data$sa2 * mrash_output$pi) * model$sigma2
   model$ash_pi    <- mrash_output$pi
 

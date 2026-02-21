@@ -6,12 +6,13 @@
 \usage{
 susie_rss(
   z = NULL,
-  R,
+  R = NULL,
   n = NULL,
+  X = NULL,
   bhat = NULL,
   shat = NULL,
   var_y = NULL,
-  L = min(10, ncol(R)),
+  L = min(10, if (!is.null(R)) ncol(R) else ncol(X)),
   lambda = 0,
   maf = NULL,
   maf_thresh = 0,
@@ -53,9 +54,20 @@ susie_rss(
 \arguments{
 \item{z}{A p-vector of z-scores.}
 
-\item{R}{A p by p correlation matrix.}
+\item{R}{A p by p correlation matrix. Exactly one of \code{R} or
+\code{X} must be provided.}
 
 \item{n}{The sample size, not required but recommended.}
+
+\item{X}{A factor matrix (B x p) such that \code{R = crossprod(X) /
+nrow(X)} approximates the LD (correlation) matrix. When
+\code{nrow(X) >= ncol(X)}, the correlation matrix \code{R} is
+formed explicitly and the standard path is used. When
+\code{nrow(X) < ncol(X)}, a low-rank path is used that avoids
+forming the p x p matrix, reducing per-iteration cost from
+O(Lp^2) to O(LBp). Columns of \code{X} are standardized
+internally. Cannot be combined with \code{z_ld_weight} or
+\code{var_y + shat}.}
 
 \item{bhat}{Alternative summary data giving the estimated effects
 (a vector of length p). This, together with \code{shat}, may be

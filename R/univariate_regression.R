@@ -273,11 +273,6 @@ univar.order = function(X, y) {
 #' beta.lasso = coef(cv.glmnet(X, y))[-1]
 #' lasso.order = absolute.order(beta.lasso)
 #' 
-#' ### ncvreg fit
-#' library(ncvreg)
-#' beta.scad = c(coef(cv.ncvreg(X, y))[-1])
-#' scad.order = absolute.order(beta.scad)
-#' 
 #' @export
 #' 
 absolute.order = function (beta) {

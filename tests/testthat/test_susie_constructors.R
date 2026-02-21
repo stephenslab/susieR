@@ -401,7 +401,7 @@ test_that("sufficient_stats_constructor returns correct structure", {
   Xty <- crossprod(base_data$X, base_data$y)
   yty <- sum(base_data$y^2)
 
-  result <- sufficient_stats_constructor(XtX, Xty, yty, base_data$n)
+  result <- sufficient_stats_constructor(Xty = Xty, yty = yty, n = base_data$n, XtX = XtX)
 
   expect_type(result, "list")
   expect_true("data" %in% names(result))
@@ -415,7 +415,7 @@ test_that("sufficient_stats_constructor creates data object with correct fields"
   Xty <- crossprod(base_data$X, base_data$y)
   yty <- sum(base_data$y^2)
 
-  result <- sufficient_stats_constructor(XtX, Xty, yty, base_data$n)
+  result <- sufficient_stats_constructor(Xty = Xty, yty = yty, n = base_data$n, XtX = XtX)
 
   expect_true("XtX" %in% names(result$data))
   expect_true("Xty" %in% names(result$data))
@@ -430,7 +430,7 @@ test_that("sufficient_stats_constructor sets correct dimensions", {
   Xty <- crossprod(base_data$X, base_data$y)
   yty <- sum(base_data$y^2)
 
-  result <- sufficient_stats_constructor(XtX, Xty, yty, base_data$n)
+  result <- sufficient_stats_constructor(Xty = Xty, yty = yty, n = base_data$n, XtX = XtX)
 
   expect_equal(result$data$n, base_data$n)
   expect_equal(result$data$p, base_data$p)
@@ -448,7 +448,7 @@ test_that("sufficient_stats_constructor requires n", {
   yty <- 10
 
   expect_error(
-    sufficient_stats_constructor(XtX, Xty, yty),
+    sufficient_stats_constructor(Xty = Xty, yty = yty, XtX = XtX),
     "n must be provided"
   )
 })
@@ -459,7 +459,7 @@ test_that("sufficient_stats_constructor rejects n <= 1", {
   yty <- 10
 
   expect_error(
-    sufficient_stats_constructor(XtX, Xty, yty, n = 1),
+    sufficient_stats_constructor(Xty = Xty, yty = yty, n = 1, XtX = XtX),
     "n must be greater than 1"
   )
 })
@@ -484,7 +484,7 @@ test_that("sufficient_stats_constructor rejects non-matrix XtX", {
   n <- 100
 
   expect_error(
-    sufficient_stats_constructor(XtX_df, Xty, yty, n),
+    sufficient_stats_constructor(Xty = Xty, yty = yty, n = n, XtX = XtX_df),
     "XtX must be a numeric dense or sparse matrix"
   )
 })
@@ -497,7 +497,7 @@ test_that("sufficient_stats_constructor rejects integer matrix XtX", {
   n <- 100
 
   expect_error(
-    sufficient_stats_constructor(XtX_int, Xty, yty, n),
+    sufficient_stats_constructor(Xty = Xty, yty = yty, n = n, XtX = XtX_int),
     "XtX must be a numeric dense or sparse matrix"
   )
 })
@@ -510,7 +510,7 @@ test_that("sufficient_stats_constructor rejects non-numeric XtX", {
   n <- 100
 
   expect_error(
-    sufficient_stats_constructor(XtX_char, Xty, yty, n),
+    sufficient_stats_constructor(Xty = Xty, yty = yty, n = n, XtX = XtX_char),
     "XtX must be a numeric dense or sparse matrix"
   )
 })
@@ -523,7 +523,7 @@ test_that("sufficient_stats_constructor rejects vector XtX", {
   n <- 100
 
   expect_error(
-    sufficient_stats_constructor(XtX_vec, Xty, yty, n),
+    sufficient_stats_constructor(Xty = Xty, yty = yty, n = n, XtX = XtX_vec),
     "XtX must be a numeric dense or sparse matrix"
   )
 })
@@ -535,7 +535,7 @@ test_that("sufficient_stats_constructor rejects dimension mismatch", {
   yty <- 100
 
   expect_error(
-    sufficient_stats_constructor(XtX, Xty, yty, base_data$n),
+    sufficient_stats_constructor(Xty = Xty, yty = yty, n = base_data$n, XtX = XtX),
     "does not agree with expected"
   )
 })
@@ -548,7 +548,7 @@ test_that("sufficient_stats_constructor rejects non-symmetric XtX", {
   n <- 100
 
   expect_message(
-    result <- sufficient_stats_constructor(XtX, Xty, yty, n),
+    result <- sufficient_stats_constructor(Xty = Xty, yty = yty, n = n, XtX = XtX),
     "XtX not symmetric"
   )
 
@@ -563,7 +563,7 @@ test_that("sufficient_stats_constructor rejects XtX with NAs", {
   n <- 100
 
   expect_error(
-    sufficient_stats_constructor(XtX, Xty, yty, n),
+    sufficient_stats_constructor(Xty = Xty, yty = yty, n = n, XtX = XtX),
     "Input XtX matrix contains NAs"
   )
 })
@@ -576,7 +576,7 @@ test_that("sufficient_stats_constructor handles Xty with NAs", {
   yty <- 100
 
   expect_message(
-    result <- sufficient_stats_constructor(XtX, Xty, yty, base_data$n),
+    result <- sufficient_stats_constructor(Xty = Xty, yty = yty, n = base_data$n, XtX = XtX),
     "NA values in Xty are replaced with 0"
   )
 
@@ -592,7 +592,7 @@ test_that("sufficient_stats_constructor rejects infinite Xty", {
   n <- 100
 
   expect_error(
-    sufficient_stats_constructor(XtX, Xty, yty, n),
+    sufficient_stats_constructor(Xty = Xty, yty = yty, n = n, XtX = XtX),
     "Input Xty contains infinite values"
   )
 })
@@ -609,7 +609,7 @@ test_that("sufficient_stats_constructor standardizes when requested", {
   Xty <- crossprod(base_data$X, base_data$y)
   yty <- sum(base_data$y^2)
 
-  result <- sufficient_stats_constructor(XtX, Xty, yty, n = base_data$n, standardize = TRUE)
+  result <- sufficient_stats_constructor(Xty = Xty, yty = yty, n = base_data$n, XtX = XtX, standardize = TRUE)
 
   d_attr <- attr(result$data$XtX, "d")
   expect_length(d_attr, base_data$p)
@@ -622,7 +622,7 @@ test_that("sufficient_stats_constructor does not standardize when standardize=FA
   Xty <- crossprod(base_data$X, base_data$y)
   yty <- sum(base_data$y^2)
 
-  result <- sufficient_stats_constructor(XtX, Xty, yty, n = base_data$n, standardize = FALSE)
+  result <- sufficient_stats_constructor(Xty = Xty, yty = yty, n = base_data$n, XtX = XtX, standardize = FALSE)
 
   csd_attr <- attr(result$data$XtX, "scaled:scale")
   expect_true(all(csd_attr == 1))
@@ -643,7 +643,7 @@ test_that("sufficient_stats_constructor warns about Rfast when p > 1000 and Rfas
   yty <- sum(base_data$y^2)
 
   expect_message(
-    result <- sufficient_stats_constructor(XtX, Xty, yty, n = base_data$n),
+    result <- sufficient_stats_constructor(Xty = Xty, yty = yty, n = base_data$n, XtX = XtX),
     "consider installing the Rfast package",
     fixed = FALSE
   )
@@ -659,7 +659,7 @@ test_that("sufficient_stats_constructor does not warn when p <= 1000", {
   Xty <- crossprod(base_data$X, base_data$y)
   yty <- sum(base_data$y^2)
 
-  result <- sufficient_stats_constructor(XtX, Xty, yty, n = base_data$n)
+  result <- sufficient_stats_constructor(Xty = Xty, yty = yty, n = base_data$n, XtX = XtX)
 
   # Just verify it worked
   expect_equal(result$data$p, 1000)
@@ -677,7 +677,7 @@ test_that("sufficient_stats_constructor applies MAF filter", {
   maf <- runif(base_data$p, 0, 0.5)
 
   result <- sufficient_stats_constructor(
-    XtX, Xty, yty, n = base_data$n,
+    Xty = Xty, yty = yty, n = base_data$n, XtX = XtX,
     maf = maf, maf_thresh = 0.1
   )
 
@@ -698,7 +698,7 @@ test_that("sufficient_stats_constructor rejects MAF with incorrect length", {
 
   expect_error(
     sufficient_stats_constructor(
-      XtX, Xty, yty, n = base_data$n,
+      Xty = Xty, yty = yty, n = base_data$n, XtX = XtX,
       maf = maf_wrong_length, maf_thresh = 0.1
     ),
     "The length of maf does not agree with expected"
@@ -716,7 +716,7 @@ test_that("sufficient_stats_constructor rejects MAF that is too long", {
 
   expect_error(
     sufficient_stats_constructor(
-      XtX, Xty, yty, n = base_data$n,
+      Xty = Xty, yty = yty, n = base_data$n, XtX = XtX,
       maf = maf_too_long, maf_thresh = 0.1
     ),
     "The length of maf does not agree with expected"
@@ -741,7 +741,7 @@ test_that("sufficient_stats_constructor rejects non-positive-semidefinite XtX wh
 
   expect_error(
     sufficient_stats_constructor(
-      XtX, Xty, yty, n = base_data$n,
+      Xty = Xty, yty = yty, n = base_data$n, XtX = XtX,
       check_input = TRUE
     ),
     "XtX is not a positive semidefinite matrix"
@@ -757,7 +757,7 @@ test_that("sufficient_stats_constructor accepts positive-semidefinite XtX when c
 
   # This should work without error
   result <- sufficient_stats_constructor(
-    XtX, Xty, yty, n = base_data$n,
+    Xty = Xty, yty = yty, n = base_data$n, XtX = XtX,
     check_input = TRUE
   )
 
@@ -780,7 +780,7 @@ test_that("sufficient_stats_constructor warns when Xty not in column space of Xt
 
   expect_message(
     result <- sufficient_stats_constructor(
-      XtX, Xty, yty, n = n,
+      Xty = Xty, yty = yty, n = n, XtX = XtX,
       check_input = TRUE
     ),
     "Xty does not lie in the space of the non-zero eigenvectors"
@@ -796,7 +796,7 @@ test_that("sufficient_stats_constructor does not warn when Xty in column space",
 
   # This should work without warning since Xty = X'y by construction
   result <- sufficient_stats_constructor(
-    XtX, Xty, yty, n = base_data$n,
+    Xty = Xty, yty = yty, n = base_data$n, XtX = XtX,
     check_input = TRUE
   )
 
@@ -815,7 +815,7 @@ test_that("sufficient_stats_constructor adds null column when null_weight > 0", 
   yty <- sum(base_data$y^2)
 
   result <- sufficient_stats_constructor(
-    XtX, Xty, yty, n = base_data$n,
+    Xty = Xty, yty = yty, n = base_data$n, XtX = XtX,
     null_weight = 0.1,
     X_colmeans = rep(0, base_data$p)
   )
@@ -837,7 +837,7 @@ test_that("sufficient_stats_constructor adjusts custom prior weights with null_w
   custom_weights <- custom_weights / sum(custom_weights)  # Normalize to sum to 1
 
   result <- sufficient_stats_constructor(
-    XtX, Xty, yty, n = base_data$n,
+    Xty = Xty, yty = yty, n = base_data$n, XtX = XtX,
     prior_weights = custom_weights,
     null_weight = 0.25,
     X_colmeans = rep(0, base_data$p)
@@ -869,7 +869,7 @@ test_that("sufficient_stats_constructor rejects non-numeric null_weight", {
 
   expect_error(
     sufficient_stats_constructor(
-      XtX, Xty, yty, n = base_data$n,
+      Xty = Xty, yty = yty, n = base_data$n, XtX = XtX,
       null_weight = "invalid"
     ),
     "Null weight must be numeric"
@@ -884,7 +884,7 @@ test_that("sufficient_stats_constructor rejects negative null_weight", {
 
   expect_error(
     sufficient_stats_constructor(
-      XtX, Xty, yty, n = base_data$n,
+      Xty = Xty, yty = yty, n = base_data$n, XtX = XtX,
       null_weight = -0.1
     ),
     "Null weight must be between 0 and 1"
@@ -900,7 +900,7 @@ test_that("sufficient_stats_constructor rejects null_weight >= 1", {
   # Test null_weight = 1
   expect_error(
     sufficient_stats_constructor(
-      XtX, Xty, yty, n = base_data$n,
+      Xty = Xty, yty = yty, n = base_data$n, XtX = XtX,
       null_weight = 1
     ),
     "Null weight must be between 0 and 1"
@@ -909,7 +909,7 @@ test_that("sufficient_stats_constructor rejects null_weight >= 1", {
   # Test null_weight > 1
   expect_error(
     sufficient_stats_constructor(
-      XtX, Xty, yty, n = base_data$n,
+      Xty = Xty, yty = yty, n = base_data$n, XtX = XtX,
       null_weight = 1.5
     ),
     "Null weight must be between 0 and 1"
@@ -924,7 +924,7 @@ test_that("sufficient_stats_constructor replicates scalar X_colmeans when null_w
 
   # Provide scalar X_colmeans which should be replicated to length p
   result <- sufficient_stats_constructor(
-    XtX, Xty, yty, n = base_data$n,
+    Xty = Xty, yty = yty, n = base_data$n, XtX = XtX,
     null_weight = 0.1,
     X_colmeans = 0  # Scalar value
   )
@@ -942,7 +942,7 @@ test_that("sufficient_stats_constructor rejects wrong length X_colmeans with nul
   # Provide X_colmeans with wrong length
   expect_error(
     sufficient_stats_constructor(
-      XtX, Xty, yty, n = base_data$n,
+      Xty = Xty, yty = yty, n = base_data$n, XtX = XtX,
       null_weight = 0.1,
       X_colmeans = rep(0, base_data$p - 10)  # Wrong length
     ),
@@ -958,7 +958,7 @@ test_that("sufficient_stats_constructor replicates scalar X_colmeans without nul
 
   # Provide scalar X_colmeans which should be replicated to length p
   result <- sufficient_stats_constructor(
-    XtX, Xty, yty, n = base_data$n,
+    Xty = Xty, yty = yty, n = base_data$n, XtX = XtX,
     X_colmeans = 0  # Scalar value
   )
 
@@ -975,7 +975,7 @@ test_that("sufficient_stats_constructor rejects wrong length X_colmeans without 
   # Provide X_colmeans with wrong length
   expect_error(
     sufficient_stats_constructor(
-      XtX, Xty, yty, n = base_data$n,
+      Xty = Xty, yty = yty, n = base_data$n, XtX = XtX,
       X_colmeans = rep(0, base_data$p - 10)  # Wrong length
     ),
     "X_colmeans.*does not match number of variables"
@@ -991,7 +991,7 @@ test_that("sufficient_stats_constructor rejects wrong length prior_weights", {
   # Provide prior_weights with wrong length
   expect_error(
     sufficient_stats_constructor(
-      XtX, Xty, yty, n = base_data$n,
+      Xty = Xty, yty = yty, n = base_data$n, XtX = XtX,
       prior_weights = rep(1, base_data$p - 10)  # Wrong length
     ),
     "Prior weights must have length p"
@@ -1007,7 +1007,7 @@ test_that("sufficient_stats_constructor rejects all-zero prior_weights", {
   # Provide all-zero prior_weights
   expect_error(
     sufficient_stats_constructor(
-      XtX, Xty, yty, n = base_data$n,
+      Xty = Xty, yty = yty, n = base_data$n, XtX = XtX,
       prior_weights = rep(0, base_data$p)  # All zeros
     ),
     "Prior weight should be greater than 0 for at least one variable"
@@ -1025,7 +1025,7 @@ test_that("sufficient_stats_constructor rejects Servin_Stephens", {
   yty <- 100
 
   expect_error(
-    sufficient_stats_constructor(XtX, Xty, yty, n = base_data$n,
+    sufficient_stats_constructor(Xty = Xty, yty = yty, n = base_data$n, XtX = XtX,
                                 estimate_residual_method = "Servin_Stephens"),
     "Servin-Stephens prior on residual variance is not implemented for SS/RSS models"
   )
@@ -1038,7 +1038,7 @@ test_that("sufficient_stats_constructor rejects unmappable_effects='ash'", {
   yty <- 100
 
   expect_error(
-    sufficient_stats_constructor(XtX, Xty, yty, n = base_data$n,
+    sufficient_stats_constructor(Xty = Xty, yty = yty, n = base_data$n, XtX = XtX,
                                 unmappable_effects = "ash"),
     "Adaptive shrinkage \\(ash\\) requires individual-level data"
   )
@@ -1813,7 +1813,7 @@ test_that("sufficient_stats_constructor output works with ibss_initialize", {
   Xty <- crossprod(base_data$X, base_data$y)
   yty <- sum(base_data$y^2)
 
-  result <- sufficient_stats_constructor(XtX, Xty, yty, n = base_data$n, L = 5)
+  result <- sufficient_stats_constructor(Xty = Xty, yty = yty, n = base_data$n, XtX = XtX, L = 5)
 
   expect_error(
     model <- ibss_initialize(result$data, result$params),

@@ -50,7 +50,7 @@ initialize_susie_model.rss_lambda <- function(data, params, var_y, ...) {
 # Initialize fitted values
 #' @keywords internal
 initialize_fitted.rss_lambda <- function(data, mat_init) {
-  return(list(Rz = as.vector(data$R %*% colSums(mat_init$alpha * mat_init$mu))))
+  return(list(Rz = as.vector(compute_Rv(data, colSums(mat_init$alpha * mat_init$mu)))))
 }
 
 # Validate prior variance
@@ -80,7 +80,7 @@ track_ibss_fit.rss_lambda <- function(data, params, model, tracking, iter, elbo,
 #' @keywords internal
 compute_residuals.rss_lambda <- function(data, params, model, l, ...) {
   # Remove lth effect from fitted values
-  Rz_without_l <- model$Rz - data$R %*% (model$alpha[l, ] * model$mu[l, ])
+  Rz_without_l <- model$Rz - compute_Rv(data, model$alpha[l, ] * model$mu[l, ])
 
   # Compute residuals
   r <- data$z - Rz_without_l
@@ -119,7 +119,7 @@ SER_posterior_e_loglik.rss_lambda <- function(data, params, model, l) {
   Eb2    <- model$alpha[l, ] * model$mu2[l, ]
   V      <- data$eigen_R$vectors
   Dinv   <- compute_Dinv(model, data)
-  rR     <- data$R %*% model$residuals
+  rR     <- compute_Rv(data, model$residuals)
   SinvEb <- V %*% (Dinv * crossprod(V, Eb))
 
   return(-0.5 * (-2 * sum(rR * SinvEb) + sum(model$RjSinvRj * Eb2)))
@@ -237,7 +237,7 @@ neg_loglik.rss_lambda <- function(data, params, model, V_param, ser_stats, ...) 
 # Update fitted values
 #' @keywords internal
 update_fitted_values.rss_lambda <- function(data, params, model, l, ...) {
-  model$Rz <- model$fitted_without_l + as.vector(data$R %*% (model$alpha[l, ] * model$mu[l, ]))
+  model$Rz <- model$fitted_without_l + as.vector(compute_Rv(data, model$alpha[l, ] * model$mu[l, ]))
   model    <- precompute_rss_lambda_terms(data, model)
 
   return(model)
@@ -313,6 +313,15 @@ get_fitted.rss_lambda <- function(data, params, model, ...) {
 get_cs.rss_lambda <- function(data, params, model, ...) {
   if (is.null(params$coverage) || is.null(params$min_abs_corr)) {
     return(NULL)
+  }
+
+  if (!is.null(data$X)) {
+    # Low-rank X path: use X directly for purity
+    return(susie_get_cs(model,
+                        X               = t(data$X),
+                        coverage        = params$coverage,
+                        min_abs_corr    = params$min_abs_corr,
+                        n_purity        = params$n_purity))
   }
 
   return(susie_get_cs(model,

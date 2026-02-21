@@ -54,7 +54,8 @@ initialize_susie_model.ss <- function(data, params, var_y, ...) {
     model$theta <- rep(0, data$p)
 
   } else if (params$unmappable_effects == "ash") {
-    model$predictor_weights <- attr(data$XtX, "d")
+    pm <- if (!is.null(data$XtX)) data$XtX else data$X
+    model$predictor_weights <- attr(pm, "d")
     model$tau2              <- 0
     model$theta             <- rep(0, data$p)
     model$XtX_theta         <- rep(0, data$p)
@@ -70,7 +71,8 @@ initialize_susie_model.ss <- function(data, params, var_y, ...) {
     model$second_chance_used <- rep(FALSE, data$p) # Permanent protection after second chance
     model$prev_case <- rep(0, params$L)            # Track previous case assignment for oscillation detection
   } else {
-    model$predictor_weights <- attr(data$XtX, "d")
+    pm <- if (!is.null(data$XtX)) data$XtX else data$X
+    model$predictor_weights <- attr(pm, "d")
   }
 
   return(model)
@@ -79,7 +81,7 @@ initialize_susie_model.ss <- function(data, params, var_y, ...) {
 # Initialize fitted values
 #' @keywords internal
 initialize_fitted.ss <- function(data, mat_init) {
-  return(list(XtXr = as.vector(data$XtX %*% colSums(mat_init$alpha * mat_init$mu))))
+  return(list(XtXr = compute_Rv(data, colSums(mat_init$alpha * mat_init$mu))))
 }
 
 # Validate Prior Variance
@@ -152,7 +154,7 @@ compute_residuals.ss <- function(data, params, model, l, ...) {
 
   } else if (params$unmappable_effects == "ash") {
     # SuSiE-ash: explicit residualization
-    XtXr_without_l <- model$XtXr - data$XtX %*% (model$alpha[l, ] * model$mu[l, ])
+    XtXr_without_l <- model$XtXr - compute_Rv(data, model$alpha[l, ] * model$mu[l, ])
 
     # Subtract X'X*theta from residuals
     XtR <- data$Xty - model$XtX_theta - XtXr_without_l
@@ -167,7 +169,7 @@ compute_residuals.ss <- function(data, params, model, l, ...) {
 
   } else {
     # Remove lth effect from fitted values
-    XtXr_without_l <- model$XtXr - data$XtX %*% (model$alpha[l, ] * model$mu[l, ])
+    XtXr_without_l <- model$XtXr - compute_Rv(data, model$alpha[l, ] * model$mu[l, ])
 
     # Compute Residuals
     XtR <- data$Xty - XtXr_without_l
@@ -260,11 +262,11 @@ compute_kl.ss <- function(data, params, model, l) {
 #' @keywords internal
 get_ER2.ss <- function(data, model) {
   B       <- model$alpha * model$mu
-  XB2     <- sum((B %*% data$XtX) * B)
+  XB2     <- sum(compute_BR(data, B) * B)
   betabar <- colSums(B)
   postb2  <- model$alpha * model$mu2 # Posterior second moment.
 
-  return(data$yty - 2 * sum(betabar * data$Xty) + sum(betabar * (data$XtX %*% betabar)) -
+  return(data$yty - 2 * sum(betabar * data$Xty) + sum(betabar * compute_Rv(data, betabar)) -
            XB2 + sum(model$predictor_weights * t(postb2)))
 }
 
@@ -338,10 +340,10 @@ neg_loglik.ss <- function(data, params, model, V_param, ser_stats, ...) {
 update_fitted_values.ss <- function(data, params, model, l, ...) {
   if (params$unmappable_effects == "inf") {
     # SuSiE-inf: include theta in fitted values
-    model$XtXr <- as.vector(data$XtX %*% (colSums(model$alpha * model$mu) + model$theta))
+    model$XtXr <- as.vector(compute_Rv(data, colSums(model$alpha * model$mu) + model$theta))
   } else {
     # Standard SuSiE and SuSiE-ash: sparse component only
-    model$XtXr <- model$fitted_without_l + as.vector(data$XtX %*% (model$alpha[l, ] * model$mu[l, ]))
+    model$XtXr <- model$fitted_without_l + as.vector(compute_Rv(data, model$alpha[l, ] * model$mu[l, ]))
   }
   return(model)
 }
@@ -679,7 +681,7 @@ update_variance_components.ss <- function(data, params, model, ...) {
                       ld_threshold, diffuse_iter_count)
     }
 
-    XtX_theta_new <- as.vector(data$XtX %*% theta_new)
+    XtX_theta_new <- as.vector(compute_Rv(data, theta_new))
 
     return(list(
       sigma2              = sigma2_new,
@@ -716,7 +718,7 @@ update_derived_quantities.ss <- function(data, params, model) {
     model$XtOmegay          <- data$eigen_vectors %*% (data$VtXty / omega_res$omega_var)
     # Update fitted values to include theta
     b          <- colSums(model$alpha * model$mu)
-    model$XtXr <- data$XtX %*% (b + model$theta)
+    model$XtXr <- compute_Rv(data, b + model$theta)
     return(model)
   } else {
     return(update_derived_quantities.default(data, params, model))
@@ -737,7 +739,8 @@ update_derived_quantities.ss <- function(data, params, model) {
 # Get column scale factors
 #' @keywords internal
 get_scale_factors.ss <- function(data, params) {
-  return(attr(data$XtX, "scaled:scale"))
+  pm <- if (!is.null(data$XtX)) data$XtX else data$X
+  return(attr(pm, "scaled:scale"))
 }
 
 # Get intercept
@@ -759,6 +762,15 @@ get_cs.ss <- function(data, params, model, ...) {
     return(NULL)
   }
 
+  if (!is.null(data$X)) {
+    # Low-rank X path: use X directly for purity
+    return(susie_get_cs(model,
+                        X               = t(data$X),
+                        coverage        = params$coverage,
+                        min_abs_corr    = params$min_abs_corr,
+                        n_purity        = params$n_purity))
+  }
+
   if (any(!(diag(data$XtX) %in% c(0, 1)))) {
     Xcorr <- safe_cov2cor(data$XtX)
   } else {
@@ -776,7 +788,8 @@ get_cs.ss <- function(data, params, model, ...) {
 # Get Variable Names
 #' @keywords internal
 get_variable_names.ss <- function(data, model, ...) {
-  return(assign_names(data, model, colnames(data$XtX)))
+  pm <- if (!is.null(data$XtX)) data$XtX else data$X
+  return(assign_names(data, model, colnames(pm)))
 }
 
 # Get univariate z-score

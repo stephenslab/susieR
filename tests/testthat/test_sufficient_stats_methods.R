@@ -35,7 +35,7 @@ test_that("sufficient_stats_constructor rejects unmappable_effects='ash'", {
   yty <- sum(base_data$y^2)
 
   expect_error(
-    sufficient_stats_constructor(XtX, Xty, yty, n = base_data$n,
+    sufficient_stats_constructor(Xty = Xty, yty = yty, n = base_data$n, XtX = XtX,
                                  unmappable_effects = "ash"),
     "Adaptive shrinkage \\(ash\\) requires individual-level data"
   )

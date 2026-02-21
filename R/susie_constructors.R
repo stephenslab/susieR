@@ -239,8 +239,9 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
 #'
 #' @keywords internal
 #' @noRd
-sufficient_stats_constructor <- function(XtX, Xty, yty, n,
-                                         L = min(10, ncol(XtX)),
+sufficient_stats_constructor <- function(Xty, yty, n,
+                                         XtX = NULL, X = NULL,
+                                         L = min(10, if (!is.null(XtX)) ncol(XtX) else ncol(X)),
                                          X_colmeans = NA, y_mean = NA,
                                          maf = NULL, maf_thresh = 0,
                                          check_input = FALSE,
@@ -278,78 +279,90 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
   if (n <= 1) {
     stop("n must be greater than 1.")
   }
-  if (missing(XtX) || missing(Xty) || missing(yty)) {
-    stop("XtX, Xty, yty must all be provided.")
-  }
 
-  if (!(is.double(XtX) && is.matrix(XtX)) &&
-      !inherits(XtX, "sparseMatrix")) {
-    stop("XtX must be a numeric dense or sparse matrix.")
-  }
-
-  if (ncol(XtX) != length(Xty)) {
-    stop(paste0(
-      "The dimension of XtX (", nrow(XtX), " by ", ncol(XtX),
-      ") does not agree with expected (", length(Xty), " by ",
-      length(Xty), ")."
-    ))
-  }
-
-  # nocov start
-  if (ncol(XtX) > 1000 & !requireNamespace("Rfast", quietly = TRUE)) {
-    warning_message("For large R or large XtX, consider installing the ",
-                    "Rfast package for better performance.",
-                    style = "hint")
-  }
-  # nocov end
-
-  # Ensure XtX is symmetric
-  if (!is_symmetric_matrix(XtX)) {
-    warning_message("XtX not symmetric; using (XtX + t(XtX))/2.")
-    XtX <- (XtX + t(XtX)) / 2
-  }
-
-  # Apply MAF filter if provided
-  if (!is.null(maf)) {
-    if (length(maf) != length(Xty)) {
-      stop(paste("The length of maf does not agree with expected", length(Xty), "."))
+  if (is.null(X)) {
+    # XtX path: validate XtX
+    if (is.null(XtX) || missing(Xty) || missing(yty)) {
+      stop("XtX, Xty, yty must all be provided.")
     }
-    id <- which(maf > maf_thresh)
-    XtX <- XtX[id, id]
-    Xty <- Xty[id]
+
+    if (!(is.double(XtX) && is.matrix(XtX)) &&
+        !inherits(XtX, "sparseMatrix")) {
+      stop("XtX must be a numeric dense or sparse matrix.")
+    }
+
+    if (ncol(XtX) != length(Xty)) {
+      stop(paste0(
+        "The dimension of XtX (", nrow(XtX), " by ", ncol(XtX),
+        ") does not agree with expected (", length(Xty), " by ",
+        length(Xty), ")."
+      ))
+    }
+
+    # nocov start
+    if (ncol(XtX) > 1000 & !requireNamespace("Rfast", quietly = TRUE)) {
+      warning_message("For large R or large XtX, consider installing the ",
+                      "Rfast package for better performance.",
+                      style = "hint")
+    }
+    # nocov end
+
+    # Ensure XtX is symmetric
+    if (!is_symmetric_matrix(XtX)) {
+      warning_message("XtX not symmetric; using (XtX + t(XtX))/2.")
+      XtX <- (XtX + t(XtX)) / 2
+    }
+
+    # Apply MAF filter if provided
+    if (!is.null(maf)) {
+      if (length(maf) != length(Xty)) {
+        stop(paste("The length of maf does not agree with expected", length(Xty), "."))
+      }
+      id <- which(maf > maf_thresh)
+      XtX <- XtX[id, id]
+      Xty <- Xty[id]
+    }
+
+    # Additional validation
+    if (anyNA(XtX)) {
+      stop("Input XtX matrix contains NAs.")
+    }
+
+    # Positive-semidefinite check
+    if (check_input) {
+      semi_pd <- check_semi_pd(XtX, r_tol)
+      if (!semi_pd$status) {
+        stop("XtX is not a positive semidefinite matrix.")
+      }
+
+      # Check whether Xty lies in space spanned by non-zero eigenvectors of XtX
+      proj <- check_projection(semi_pd$matrix, Xty)
+      if (!proj$status) {
+        warning_message("Xty does not lie in the space of the non-zero eigenvectors ",
+                        "of XtX.")
+      }
+    }
+  } else {
+    # X low-rank path: validate X
+    if (ncol(X) != length(Xty)) {
+      stop(paste0(
+        "The number of columns of X (", ncol(X),
+        ") does not agree with the length of Xty (", length(Xty), ")."
+      ))
+    }
   }
 
-  # Additional validation
+  # Common validation for Xty
   if (any(is.infinite(Xty))) {
     stop("Input Xty contains infinite values.")
   }
-  if (anyNA(XtX)) {
-    stop("Input XtX matrix contains NAs.")
-  }
-
-  # Replace NAs in Xty with zeros
   if (anyNA(Xty)) {
     warning_message("NA values in Xty are replaced with 0.")
     Xty[is.na(Xty)] <- 0
   }
 
-  # Positive-semidefinite check
-  if (check_input) {
-    semi_pd <- check_semi_pd(XtX, r_tol)
-    if (!semi_pd$status) {
-      stop("XtX is not a positive semidefinite matrix.")
-    }
-
-    # Check whether Xty lies in space spanned by non-zero eigenvectors of XtX
-    proj <- check_projection(semi_pd$matrix, Xty)
-    if (!proj$status) {
-      warning_message("Xty does not lie in the space of the non-zero eigenvectors ",
-                      "of XtX.")
-    }
-  }
-
   # Define p before null_weight handling
-  p <- ncol(XtX)
+  p <- if (!is.null(XtX)) ncol(XtX) else ncol(X)
 
   # Handle null weights
   if (is.numeric(null_weight) && null_weight == 0) {
@@ -368,7 +381,12 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
     } else {
       prior_weights <- c(prior_weights * (1 - null_weight), null_weight)
     }
-    XtX <- cbind(rbind(XtX, 0), 0)
+    if (!is.null(XtX)) {
+      XtX <- cbind(rbind(XtX, 0), 0)
+    }
+    if (!is.null(X)) {
+      X <- cbind(X, 0)
+    }
     Xty <- c(Xty, 0)
     if (length(X_colmeans) == 1) {
       X_colmeans <- rep(X_colmeans, p)
@@ -379,7 +397,7 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
     # Add 0 for null column
     X_colmeans <- c(X_colmeans, 0)
     # Update p after adding null column
-    p <- ncol(XtX)
+    p <- p + 1
   }
 
   # Set uniform prior weights if not provided
@@ -397,18 +415,34 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
   prior_weights <- prior_weights / sum(prior_weights)
 
   # Standardize if requested
-  if (standardize) {
-    dXtX <- diag(XtX)
-    csd <- sqrt(dXtX / (n - 1))
-    csd[csd == 0] <- 1
-    XtX <- t((1 / csd) * XtX) / csd
-    Xty <- Xty / csd
+  if (!is.null(X)) {
+    # Low-rank X path: standardize columns of X
+    if (standardize) {
+      dXtX <- colSums(X^2)
+      csd <- sqrt(dXtX / (n - 1))
+      csd[csd == 0] <- 1
+      X <- t(t(X) / csd)
+      Xty <- Xty / csd
+    } else {
+      csd <- rep(1, length = p)
+    }
+    attr(X, "d") <- colSums(X^2)
+    attr(X, "scaled:scale") <- csd
+    colnames(X) <- names(Xty)
   } else {
-    csd <- rep(1, length = p)
+    # XtX path: standardize XtX
+    if (standardize) {
+      dXtX <- diag(XtX)
+      csd <- sqrt(dXtX / (n - 1))
+      csd[csd == 0] <- 1
+      XtX <- t((1 / csd) * XtX) / csd
+      Xty <- Xty / csd
+    } else {
+      csd <- rep(1, length = p)
+    }
+    attr(XtX, "d") <- diag(XtX)
+    attr(XtX, "scaled:scale") <- csd
   }
-
-  attr(XtX, "d") <- diag(XtX)
-  attr(XtX, "scaled:scale") <- csd
 
   if (length(X_colmeans) == 1) {
     X_colmeans <- rep(X_colmeans, p)
@@ -472,6 +506,7 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
   data_object <- structure(
     list(
       XtX = XtX,
+      X = X,
       Xty = Xty,
       yty = yty,
       n = n,
@@ -502,9 +537,10 @@ sufficient_stats_constructor <- function(XtX, Xty, yty, n,
 #'
 #' @keywords internal
 #' @noRd
-summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
+summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
+                                      n = NULL, bhat = NULL,
                                       shat = NULL, var_y = NULL,
-                                      L = min(10, ncol(R)),
+                                      L = min(10, if (!is.null(R)) ncol(R) else ncol(X)),
                                       lambda = 0,
                                       maf = NULL,
                                       maf_thresh = 0,
@@ -564,7 +600,7 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
 
     # Delegate to rss_lambda_constructor with ALL parameters
     return(rss_lambda_constructor(
-      z = z, R = R, n = n, bhat = bhat, shat = shat, var_y = var_y,
+      z = z, R = R, X = X, n = n, bhat = bhat, shat = shat, var_y = var_y,
       L = L, lambda = lambda, maf = maf, maf_thresh = maf_thresh,
       z_ld_weight = z_ld_weight, prior_variance = prior_variance,
       scaled_prior_variance = scaled_prior_variance,
@@ -604,7 +640,7 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
             "X before computing R.")
   }
 
-  # Check input R
+  # Determine p from z or bhat
   if (is.null(z) && !is.null(bhat)) {
     p <- length(bhat)
   } else if (!is.null(z)) {
@@ -613,11 +649,21 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
     stop("Please provide either z or (bhat, shat).")
   }
 
-  if (nrow(R) != p) {
-    stop(paste0(
-      "The dimension of R (", nrow(R), " x ", ncol(R), ") does not ",
-      "agree with expected (", p, " x ", p, ")."
-    ))
+  # Check dimensions of R or X
+  if (!is.null(R)) {
+    if (nrow(R) != p) {
+      stop(paste0(
+        "The dimension of R (", nrow(R), " x ", ncol(R), ") does not ",
+        "agree with expected (", p, " x ", p, ")."
+      ))
+    }
+  } else if (!is.null(X)) {
+    if (ncol(X) != p) {
+      stop(paste0(
+        "The number of columns of X (", ncol(X), ") does not ",
+        "agree with expected (", p, ")."
+      ))
+    }
   }
 
   # Check input n
@@ -671,26 +717,41 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
       stop(paste0("The length of maf does not agree with expected ", length(z)))
     }
     id <- which(maf > maf_thresh)
-    R <- R[id, id]
+    if (!is.null(R)) R <- R[id, id]
+    if (!is.null(X)) X <- X[, id, drop = FALSE]
     z <- z[id]
     # Update p after filtering
     p <- length(z)
   }
 
   # Precompute stochastic LD inflation (before sufficient stats conversion)
-  # The inflation factor tau_j^2 / sigma_{j,0}^2 is computed from R and is
-  # constant across IBSS iterations.
+  # The inflation factor tau_j^2 / sigma_{j,0}^2 is computed from R or X
+  # and is constant across IBSS iterations.
   shat2_inflation <- NULL
   stochastic_ld_diagnostics <- NULL
   if (!is.null(stochastic_ld_sample)) {
     B <- stochastic_ld_sample
-    R_sq_mat  <- R %*% R                       # R^2, O(p^3) via BLAS
-    sigma2_j0 <- rowSums(R * R_sq_mat)         # diag(R^3) = signal variances
-    R_frob_sq <- sum(R * R)                    # ||R||_F^2
-    R_diag    <- diag(R)
+
+    if (!is.null(X)) {
+      # Compute from X: O(pB_x^2 + B_x^3) where B_x = nrow(X)
+      B_x <- nrow(X)
+      A         <- tcrossprod(X)                    # B_x x B_x Gram matrix
+      A2        <- A %*% A                          # B_x x B_x
+      d_R       <- colSums(X^2) / B_x              # diag(R) where R = X'X/B_x
+      R_frob_sq <- sum(A * A) / B_x^2              # ||R||_F^2 = tr(A^2)/B_x^2
+      A2X       <- A2 %*% X                        # B_x x p
+      sigma2_j0 <- colSums(A2X * X) / B_x^3        # diag(R^3)
+    } else {
+      # Compute from R: O(p^3)
+      R_sq_mat  <- R %*% R                         # R^2, O(p^3) via BLAS
+      sigma2_j0 <- rowSums(R * R_sq_mat)           # diag(R^3) = signal variances
+      R_frob_sq <- sum(R * R)                      # ||R||_F^2
+      d_R       <- diag(R)
+    }
+
     # Inflation = tau_j^2 / sigma_{j,0}^2; guard against sigma2_j0 == 0
     shat2_inflation <- ifelse(sigma2_j0 > 0,
-      1 + 1 / B + R_diag * R_frob_sq / (B * sigma2_j0), Inf)
+      1 + 1 / B + d_R * R_frob_sq / (B * sigma2_j0), Inf)
     stochastic_ld_diagnostics <- list(
       B = B,
       p = length(z),
@@ -701,12 +762,18 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
   }
 
   # Convert to sufficient statistics format
+  XtX <- NULL
   if (is.null(n)) {
     # Sample size not provided - use unadjusted z-scores
     warning_message("Providing the sample size (n), or even a rough estimate of n, ",
             "is highly recommended. Without n, the implicit assumption is ",
             "n is large (Inf) and the effect sizes are small (close to zero).")
-    XtX <- R
+    if (!is.null(R)) {
+      XtX <- R
+    } else {
+      # X path: scale so X'X = R (i.e., X'X/B_x = R, we want X'X = R)
+      X <- X / sqrt(nrow(X))
+    }
     Xty <- z
     yty <- 1
     n <- 2
@@ -714,7 +781,7 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
   } else {
     # Sample size provided - use PVE-adjusted z-scores
     if (!is.null(shat) && !is.null(var_y)) {
-      # var_y and shat provided - effects on original scale
+      # var_y and shat provided - effects on original scale (R path only)
       XtXdiag <- var_y * adj / (shat^2)
       XtX <- t(R * sqrt(XtXdiag)) * sqrt(XtXdiag)
       XtX <- (XtX + t(XtX)) / 2
@@ -722,7 +789,12 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
       yty <- (n - 1) * var_y
     } else {
       # Effects on standardized X, y scale
-      XtX <- (n - 1) * R
+      if (!is.null(R)) {
+        XtX <- (n - 1) * R
+      } else {
+        # X path: scale so X'X = (n-1)*R
+        X <- X * sqrt((n - 1) / nrow(X))
+      }
       Xty <- sqrt(n - 1) * z
       yty <- (n - 1) * (if (!is.null(var_y)) var_y else 1)
     }
@@ -730,7 +802,7 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
 
   # Use sufficient_stats_constructor with ALL parameters
   result <- sufficient_stats_constructor(
-    XtX = XtX, Xty = Xty, yty = yty, n = n,
+    Xty = Xty, yty = yty, n = n, XtX = XtX, X = X,
     L = L, X_colmeans = NA, y_mean = NA,
     maf = NULL, maf_thresh = 0, check_input = check_input,
     r_tol = r_tol, standardize = standardize,
@@ -774,9 +846,9 @@ summary_stats_constructor <- function(z = NULL, R, n = NULL, bhat = NULL,
 #'
 #' @keywords internal
 #' @noRd
-rss_lambda_constructor <- function(z, R, n = NULL,
+rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
                                    bhat = NULL, shat = NULL, var_y = NULL,
-                                   L = min(10, ncol(R)),
+                                   L = min(10, if (!is.null(R)) ncol(R) else ncol(X)),
                                    lambda = 0,
                                    maf = NULL,
                                    maf_thresh = 0,
@@ -825,19 +897,31 @@ rss_lambda_constructor <- function(z, R, n = NULL,
          "Please use estimate_residual_method = 'MLE' instead.")
   }
 
-  # Check input R
-  if (nrow(R) != length(z)) {
-    stop(paste0(
-      "The dimension of correlation matrix (", nrow(R), " by ",
-      ncol(R), ") does not agree with expected (", length(z), " by ",
-      length(z), ")."
-    ))
-  }
-  if (!isSymmetric(R)) {
-    stop("R is not a symmetric matrix.")
-  }
-  if (!(is.double(R) & is.matrix(R)) & !inherits(R, "sparseMatrix")) {
-    stop("Input R must be a double-precision matrix or a sparse matrix.")
+  if (is.null(X)) {
+    # R path: validate R
+    if (is.null(R))
+      stop("Please provide either R or X for rss_lambda_constructor.")
+    if (nrow(R) != length(z)) {
+      stop(paste0(
+        "The dimension of correlation matrix (", nrow(R), " by ",
+        ncol(R), ") does not agree with expected (", length(z), " by ",
+        length(z), ")."
+      ))
+    }
+    if (!isSymmetric(R)) {
+      stop("R is not a symmetric matrix.")
+    }
+    if (!(is.double(R) & is.matrix(R)) & !inherits(R, "sparseMatrix")) {
+      stop("Input R must be a double-precision matrix or a sparse matrix.")
+    }
+  } else {
+    # X path: validate X
+    if (ncol(X) != length(z)) {
+      stop(paste0(
+        "The number of columns of X (", ncol(X),
+        ") does not agree with expected (", length(z), ")."
+      ))
+    }
   }
 
   # MAF filter
@@ -846,7 +930,8 @@ rss_lambda_constructor <- function(z, R, n = NULL,
       stop(paste0("The length of maf does not agree with expected ", length(z), "."))
     }
     id <- which(maf > maf_thresh)
-    R <- R[id, id]
+    if (!is.null(R)) R <- R[id, id]
+    if (!is.null(X)) X <- X[, id, drop = FALSE]
     z <- z[id]
   }
 
@@ -854,8 +939,8 @@ rss_lambda_constructor <- function(z, R, n = NULL,
     stop("z contains infinite values.")
   }
 
-  # Check for NAs in R
-  if (anyNA(R)) {
+  # Check for NAs
+  if (!is.null(R) && anyNA(R)) {
     stop("R matrix contains missing values.")
   }
 
@@ -876,26 +961,44 @@ rss_lambda_constructor <- function(z, R, n = NULL,
     if (null_weight < 0 || null_weight >= 1) {
       stop("Null weight must be between 0 and 1.")
     }
+    p_cur <- if (!is.null(R)) ncol(R) else ncol(X)
     if (is.null(prior_weights)) {
-      prior_weights <- c(rep(1 / ncol(R) * (1 - null_weight), ncol(R)), null_weight)
+      prior_weights <- c(rep(1 / p_cur * (1 - null_weight), p_cur), null_weight)
     } else {
       prior_weights <- c(prior_weights * (1 - null_weight), null_weight)
     }
-    R <- cbind(rbind(R, 0), 0)
+    if (!is.null(R)) R <- cbind(rbind(R, 0), 0)
+    if (!is.null(X)) X <- cbind(X, 0)
     z <- c(z, 0)
   }
 
-  # Eigen decomposition for R
-  p <- ncol(R)
+  # Determine p and set prior weights
+  p <- if (!is.null(R)) ncol(R) else ncol(X)
 
-  # Set uniform prior weights if not provided
   if (is.null(prior_weights)) {
     prior_weights <- rep(1 / p, p)
   }
 
-  eigen_R <- eigen(R, symmetric = TRUE)
+  # Eigen decomposition: from R or SVD of X
+  if (!is.null(X)) {
+    # SVD of X: eigenvalues of R = X'X/B_x are d^2/B_x
+    B_x <- nrow(X)
+    sv <- svd(X, nu = 0)
+    eigen_values <- pmax(sv$d^2 / B_x, 0)
+    eigen_vectors <- sv$v
+    # Pad with zeros for null-space eigenvectors
+    if (ncol(eigen_vectors) < p) {
+      eigen_vectors <- cbind(eigen_vectors, matrix(0, p, p - ncol(eigen_vectors)))
+      eigen_values <- c(eigen_values, rep(0, p - length(eigen_values)))
+    }
+    # Sort descending
+    idx <- order(eigen_values, decreasing = TRUE)
+    eigen_R <- list(values = eigen_values[idx], vectors = eigen_vectors[, idx])
+  } else {
+    eigen_R <- eigen(R, symmetric = TRUE)
+  }
 
-  if (check_R && any(eigen_R$values < -r_tol)) {
+  if (is.null(X) && check_R && any(eigen_R$values < -r_tol)) {
     stop(paste0(
       "The correlation matrix (", nrow(R), " by ", ncol(R),
       ") is not a positive semidefinite matrix. ",
@@ -907,8 +1010,7 @@ rss_lambda_constructor <- function(z, R, n = NULL,
   }
 
   # Check whether z in space spanned by the non-zero eigenvectors of R
-  if (check_z) {
-    # Project z onto null space of R
+  if (is.null(X) && check_z) {
     colspace <- which(eigen_R$values > r_tol)
     if (length(colspace) < length(z)) {
       znull <- crossprod(eigen_R$vectors[, -colspace], z)
@@ -932,7 +1034,7 @@ rss_lambda_constructor <- function(z, R, n = NULL,
     if (length(colspace) == length(z)) {
       lambda <- 0
     } else {
-      znull <- crossprod(eigen_R$vectors[, -colspace], z) # U2^T z
+      znull <- crossprod(eigen_R$vectors[, -colspace], z)
       lambda <- sum(znull^2) / length(znull)
     }
   }
@@ -986,6 +1088,7 @@ rss_lambda_constructor <- function(z, R, n = NULL,
     list(
       z = z,
       R = R,
+      X = X,
       n = length(z),
       p = length(z),
       lambda = lambda,

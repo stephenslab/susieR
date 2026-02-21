@@ -413,15 +413,26 @@ susie_ss <- function(XtX, Xty, yty, n,
 
   # Construct data and params objects
   susie_objects <- sufficient_stats_constructor(
-    XtX, Xty, yty, n, L, X_colmeans, y_mean,
-    maf, maf_thresh, check_input, r_tol, standardize,
-    scaled_prior_variance, residual_variance, prior_weights, null_weight,
-    model_init, estimate_residual_variance, estimate_residual_method,
-    residual_variance_lowerbound, residual_variance_upperbound,
-    estimate_prior_variance, estimate_prior_method, unmappable_effects,
-    check_null_threshold, prior_tol, max_iter, tol, convergence_method,
-    coverage, min_abs_corr, n_purity, verbose, track_fit, check_prior,
-    refine
+    Xty = Xty, yty = yty, n = n, XtX = XtX,
+    L = L, X_colmeans = X_colmeans, y_mean = y_mean,
+    maf = maf, maf_thresh = maf_thresh,
+    check_input = check_input, r_tol = r_tol, standardize = standardize,
+    scaled_prior_variance = scaled_prior_variance,
+    residual_variance = residual_variance,
+    prior_weights = prior_weights, null_weight = null_weight,
+    model_init = model_init,
+    estimate_residual_variance = estimate_residual_variance,
+    estimate_residual_method = estimate_residual_method,
+    residual_variance_lowerbound = residual_variance_lowerbound,
+    residual_variance_upperbound = residual_variance_upperbound,
+    estimate_prior_variance = estimate_prior_variance,
+    estimate_prior_method = estimate_prior_method,
+    unmappable_effects = unmappable_effects,
+    check_null_threshold = check_null_threshold, prior_tol = prior_tol,
+    max_iter = max_iter, tol = tol, convergence_method = convergence_method,
+    coverage = coverage, min_abs_corr = min_abs_corr, n_purity = n_purity,
+    verbose = verbose, track_fit = track_fit, check_prior = check_prior,
+    refine = refine
   )
 
   # Run main SuSiE algorithm
@@ -443,9 +454,21 @@ susie_ss <- function(XtX, Xty, yty, n,
 #'
 #' @param z A p-vector of z-scores.
 #'
-#' @param R A p by p correlation matrix.
+#' @param R A p by p correlation matrix. Exactly one of \code{R} or
+#'   \code{X} must be provided.
 #'
 #' @param n The sample size, not required but recommended.
+#'
+#' @param X A factor matrix (B x p) such that \code{R = crossprod(X) /
+#'   nrow(X)} approximates the LD (correlation) matrix. When
+#'   \code{nrow(X) >= ncol(X)}, the correlation matrix \code{R} is
+#'   formed explicitly and the standard path is used. When
+#'   \code{nrow(X) < ncol(X)}, a low-rank path is used that avoids
+#'   forming the p x p matrix, reducing per-iteration cost from
+#'   O(Lp^2) to O(LBp). Columns of \code{X} are standardized
+#'   internally. If \code{z_ld_weight > 0} or \code{var_y} with
+#'   \code{shat} are provided, the full correlation matrix is formed
+#'   from \code{X} and the standard path is used.
 #'
 #' @param bhat Alternative summary data giving the estimated effects
 #'   (a vector of length p). This, together with \code{shat}, may be
@@ -516,9 +539,10 @@ susie_ss <- function(XtX, Xty, yty, n,
 #'
 #' @export
 #' 
-susie_rss <- function(z = NULL, R, n = NULL,
+susie_rss <- function(z = NULL, R = NULL, n = NULL,
+                      X = NULL,
                       bhat = NULL, shat = NULL, var_y = NULL,
-                      L = min(10, ncol(R)),
+                      L = min(10, if (!is.null(R)) ncol(R) else ncol(X)),
                       lambda = 0,
                       maf = NULL,
                       maf_thresh = 0,
@@ -556,6 +580,37 @@ susie_rss <- function(z = NULL, R, n = NULL,
                       refine = FALSE,
                       stochastic_ld_sample = NULL) {
 
+  # Validate: exactly one of R or X must be provided
+  if (is.null(R) && is.null(X))
+    stop("Please provide either R (correlation matrix) or X (factor matrix).")
+  if (!is.null(R) && !is.null(X))
+    stop("Please provide either R or X, but not both.")
+
+  # Handle X input
+  if (!is.null(X)) {
+    if (!is.matrix(X) || !is.numeric(X))
+      stop("X must be a numeric matrix.")
+
+    # Features incompatible with the low-rank path: fall back to forming R
+    needs_R <- z_ld_weight > 0 || (!is.null(var_y) && !is.null(shat))
+    if (needs_R && nrow(X) < ncol(X)) {
+      warning_message(
+        "X is provided as a low-rank factor matrix, but z_ld_weight or ",
+        "var_y/shat require the full correlation matrix R. Forming ",
+        "R = cov2cor(crossprod(X)/nrow(X)) and using the standard path.")
+    }
+
+    # If nrow(X) >= ncol(X) or features require R, form R and use standard path
+    if (nrow(X) >= ncol(X) || needs_R) {
+      R <- safe_cor(X)
+      X <- NULL
+    } else {
+      # Low-rank path: skip R checks
+      check_R <- FALSE
+      check_z <- FALSE
+    }
+  }
+
   # Validate method arguments
   unmappable_effects       <- match.arg(unmappable_effects)
   estimate_prior_method    <- match.arg(estimate_prior_method)
@@ -572,18 +627,48 @@ susie_rss <- function(z = NULL, R, n = NULL,
       stop("stochastic_ld_sample is not supported with lambda != 0.")
   }
 
+  # Stochastic LD consistency checks for low-rank X input
+  if (!is.null(X)) {
+    if (!is.null(stochastic_ld_sample)) {
+      if (nrow(X) != stochastic_ld_sample)
+        stop("When X is provided with stochastic_ld_sample, nrow(X) must equal ",
+             "stochastic_ld_sample (nrow(X) = ", nrow(X),
+             ", stochastic_ld_sample = ", stochastic_ld_sample, ").")
+    } else {
+      warning_message(
+        "X is provided as a low-rank factor matrix (nrow(X) = ", nrow(X),
+        " < ncol(X) = ", ncol(X), ") without specifying stochastic_ld_sample. ",
+        "If X is an in-sample LD factor computed from the same data that ",
+        "produced the summary statistics, no action is needed. ",
+        "If X is an out-of-sample sketch matrix used to approximate LD, ",
+        "please set stochastic_ld_sample = nrow(X) to enable the SER ",
+        "variance inflation correction for stochastic LD estimation.")
+    }
+  }
+
   # Construct data and params objects with ALL parameters
   susie_objects <- summary_stats_constructor(
-    z, R, n, bhat, shat, var_y, L, lambda, maf, maf_thresh,
-    z_ld_weight, prior_variance, scaled_prior_variance,
-    residual_variance, prior_weights, null_weight, standardize,
-    intercept_value, estimate_residual_variance, estimate_residual_method,
-    estimate_prior_variance, estimate_prior_method,
-    unmappable_effects, check_null_threshold, prior_tol,
-    residual_variance_lowerbound, residual_variance_upperbound,
-    model_init, coverage, min_abs_corr,
-    max_iter, tol, convergence_method, verbose, track_fit, check_input,
-    check_prior, check_R, check_z, n_purity, r_tol, refine,
+    z = z, R = R, X = X, n = n,
+    bhat = bhat, shat = shat, var_y = var_y,
+    L = L, lambda = lambda, maf = maf, maf_thresh = maf_thresh,
+    z_ld_weight = z_ld_weight, prior_variance = prior_variance,
+    scaled_prior_variance = scaled_prior_variance,
+    residual_variance = residual_variance,
+    prior_weights = prior_weights, null_weight = null_weight,
+    standardize = standardize, intercept_value = intercept_value,
+    estimate_residual_variance = estimate_residual_variance,
+    estimate_residual_method = estimate_residual_method,
+    estimate_prior_variance = estimate_prior_variance,
+    estimate_prior_method = estimate_prior_method,
+    unmappable_effects = unmappable_effects,
+    check_null_threshold = check_null_threshold, prior_tol = prior_tol,
+    residual_variance_lowerbound = residual_variance_lowerbound,
+    residual_variance_upperbound = residual_variance_upperbound,
+    model_init = model_init, coverage = coverage, min_abs_corr = min_abs_corr,
+    max_iter = max_iter, tol = tol, convergence_method = convergence_method,
+    verbose = verbose, track_fit = track_fit, check_input = check_input,
+    check_prior = check_prior, check_R = check_R, check_z = check_z,
+    n_purity = n_purity, r_tol = r_tol, refine = refine,
     stochastic_ld_sample = stochastic_ld_sample
   )
 
