@@ -403,7 +403,9 @@ susie_ss <- function(XtX, Xty, yty, n,
                      verbose = FALSE,
                      track_fit = FALSE,
                      check_prior = FALSE,
-                     refine = FALSE) {
+                     refine = FALSE,
+                     alpha0 = 0.1,
+                     beta0 = 0.1) {
 
   # Validate method arguments
   unmappable_effects       <- match.arg(unmappable_effects)
@@ -432,7 +434,7 @@ susie_ss <- function(XtX, Xty, yty, n,
     max_iter = max_iter, tol = tol, convergence_method = convergence_method,
     coverage = coverage, min_abs_corr = min_abs_corr, n_purity = n_purity,
     verbose = verbose, track_fit = track_fit, check_prior = check_prior,
-    refine = refine
+    refine = refine, alpha0 = alpha0, beta0 = beta0
   )
 
   # Run main SuSiE algorithm
@@ -555,7 +557,7 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
                       standardize = TRUE,
                       intercept_value = 0,
                       estimate_residual_variance = FALSE,
-                      estimate_residual_method = c("MoM", "MLE"),
+                      estimate_residual_method = c("MoM", "MLE", "Servin_Stephens"),
                       estimate_prior_variance = TRUE,
                       estimate_prior_method = c("optim", "EM", "simple"),
                       unmappable_effects = c("none", "inf"),
@@ -578,7 +580,9 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
                       n_purity = 100,
                       r_tol = 1e-8,
                       refine = FALSE,
-                      stochastic_ld_sample = NULL) {
+                      stochastic_ld_sample = NULL,
+                      alpha0 = 0.1,
+                      beta0 = 0.1) {
 
   # Validate: exactly one of R or X must be provided
   if (is.null(R) && is.null(X))
@@ -679,7 +683,8 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
     verbose = verbose, track_fit = track_fit, check_input = check_input,
     check_prior = check_prior, check_R = check_R, check_z = check_z,
     n_purity = n_purity, r_tol = r_tol, refine = refine,
-    stochastic_ld_sample = stochastic_ld_sample
+    stochastic_ld_sample = stochastic_ld_sample,
+    alpha0 = alpha0, beta0 = beta0
   )
 
   # Run main SuSiE algorithm

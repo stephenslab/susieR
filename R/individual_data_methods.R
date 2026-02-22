@@ -145,10 +145,10 @@ calculate_posterior_moments.individual <- function(data, params, model, V, l, ..
       model$rv[l] <- 1
     } else {
       # Compute posterior moments for NIG prior
+      nig_ss <- get_nig_sufficient_stats(data, model)
       moments <- compute_posterior_moments_NIG(data$n, model$predictor_weights,
-                                               model$residuals, sum(model$raw_residuals^2),
-                                               drop(cor(data$X, model$raw_residuals)),
-                                               V, params$alpha0, params$beta0)
+                                               model$residuals, nig_ss$yy, nig_ss$sxy,
+                                               V, params$alpha0, params$beta0, nig_ss$tau)
 
       post_mean  <- moments$post_mean
       post_mean2 <- moments$post_mean2
@@ -215,10 +215,10 @@ loglik.individual <- function(data, params, model, V, ser_stats, l = NULL, ...) 
   # Check if using Servin-Stephens prior
   if (params$use_servin_stephens) {
     # Compute log Bayes factors for NIG prior
+    nig_ss <- get_nig_sufficient_stats(data, model)
     lbf <- compute_lbf_NIG(data$n, model$predictor_weights,
-                           model$residuals, sum(model$raw_residuals^2),
-                           drop(cor(data$X, model$raw_residuals)),
-                           V, params$alpha0, params$beta0)
+                           model$residuals, nig_ss$yy, nig_ss$sxy,
+                           V, params$alpha0, params$beta0, nig_ss$tau)
   } else {
     # Standard Gaussian prior log Bayes factors
     lbf <- dnorm(ser_stats$betahat, 0, sqrt(V + ser_stats$shat2), log = TRUE) -
@@ -239,10 +239,11 @@ loglik.individual <- function(data, params, model, V, ser_stats, l = NULL, ...) 
     model$lbf_variable[l, ] <- stable_res$lbf
 
     # Compute and store marginal log-likelihood for NIG prior
-    model$marginal_loglik[l] <- compute_marginal_loglik(weights_res$lbf_model, data$n,
-                                                         sum(model$raw_residuals^2),
-                                                         params$alpha0, params$beta0,
-                                                         params$use_servin_stephens)
+    if (params$use_servin_stephens) {
+      model$marginal_loglik[l] <- compute_marginal_loglik(weights_res$lbf_model, data$n,
+                                                           nig_ss$yy, params$alpha0, params$beta0,
+                                                           TRUE)
+    }
     return(model)
   } else {
     return(weights_res$lbf_model)

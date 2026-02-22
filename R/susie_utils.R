@@ -444,14 +444,27 @@ validate_and_override_params <- function(params) {
   if (params$estimate_residual_method == "Servin_Stephens") {
     params$use_servin_stephens <- TRUE
 
+    # The NIG prior inherently estimates residual variance (integrates out sigma^2).
+    # If estimate_residual_variance is FALSE, override it — the user chose a method
+    # that estimates sigma^2 by design. To suppress this warning, explicitly set
+    # estimate_residual_variance = TRUE in the function call.
+    if (!isTRUE(params$estimate_residual_variance)) {
+      warning_message("Servin_Stephens prior integrates out residual variance, ",
+                      "implying estimate_residual_variance = TRUE. ",
+                      "Setting estimate_residual_variance = TRUE. ",
+                      "To suppress this warning, explicitly set ",
+                      "estimate_residual_variance = TRUE in the function call.")
+      params$estimate_residual_variance <- TRUE
+    }
+
     # Override convergence method only when L > 1
     if (params$L > 1 && params$convergence_method != "pip") {
       warning_message("Servin_Stephens method with L > 1 requires PIP convergence. Setting convergence_method='pip'.")
       params$convergence_method <- "pip"
     }
 
-    # Override prior variance estimation method
-    if (params$estimate_prior_method != "EM") {
+    # Override prior variance estimation method (only when estimation is enabled)
+    if (params$estimate_prior_variance && params$estimate_prior_method != "EM") {
       warning_message("Servin_Stephens method works better with EM. Setting estimate_prior_method='EM'.")
       params$estimate_prior_method <- "EM"
     }
@@ -983,6 +996,29 @@ mle_unmappable <- function(data, params, model, omega, est_tau2 = TRUE, est_sigm
   return(list(sigma2 = sigma2, tau2 = tau2))
 }
 
+# Extract NIG sufficient statistics from model, regardless of data type
+# This is the ONLY function that needs to know whether we have individual or SS data.
+# All other NIG functions work with (yy, sxy, tau) uniformly.
+#' @keywords internal
+get_nig_sufficient_stats <- function(data, model) {
+  if (!is.null(model$raw_residuals)) {
+    # Individual data path: compute from raw residuals
+    yy  <- sum(model$raw_residuals^2)
+    sxy <- drop(cor(data$X, model$raw_residuals))
+    tau <- 1
+  } else {
+    # SS/RSS path: use pre-computed quantities
+    yy  <- model$yy_residual
+    sxy <- model$residuals / sqrt(model$predictor_weights * yy)
+    # Clamp sxy to [-1, 1]: with approximate LD (stochastic sketches),
+    # Cauchy-Schwarz may be violated numerically, giving |sxy| > 1.
+    # This would make rss = yy*(1 - r0*sxy^2) negative, producing NaN in log BF.
+    sxy <- pmin(pmax(sxy, -1), 1)
+    tau <- if (!is.null(data$shat2_inflation)) data$shat2_inflation else 1
+  }
+  list(yy = yy, sxy = sxy, tau = tau)
+}
+
 # Compute log Bayes factor for Servin and Stephens prior
 #' @keywords internal
 compute_lbf_servin_stephens <- function(x, y, s0, alpha0 = 0, beta0 = 0) {
@@ -1027,9 +1063,9 @@ posterior_var_servin_stephens <- function(xtx, xty, yty, n, s0_t = 1) {
 
 # Compute the (log) Bayes factors and additional statistics under Normal-Inverse-Gamma (NIG) prior
 #' @keywords internal
-compute_stats_NIG <- function(n, xx, xy, yy, sxy, s0, a0, b0) {
+compute_stats_NIG <- function(n, xx, xy, yy, sxy, s0, a0, b0, tau = 1) {
 
-  r0 <- s0 / (s0 + 1 / xx)
+  r0 <- s0 / (s0 + tau / xx)
   rss <- yy * (1 - r0 * sxy^2)
 
   # Update inverse-gamma parameters
@@ -1037,7 +1073,7 @@ compute_stats_NIG <- function(n, xx, xy, yy, sxy, s0, a0, b0) {
   b1 <- b0 + rss
 
   # Compute log Bayes factor for each variable
-  lbf <- -(log(1 + s0 * xx) + a1 * log(b1 / (b0 + yy))) / 2
+  lbf <- -(log(1 + s0 * xx / tau) + a1 * log(b1 / (b0 + yy))) / 2
 
   # Compute least-squares estimate for each variable
   bhat <- xy / xx
@@ -1046,7 +1082,7 @@ compute_stats_NIG <- function(n, xx, xy, yy, sxy, s0, a0, b0) {
   post_mean <- r0 * bhat
 
   # Compute posterior variance
-  post_var <- b1 / (a1 - 2) * r0 / xx
+  post_var <- b1 / (a1 - 2) * r0 * tau / xx
 
   # Compute posterior mode of residual variance
   rv <- (b1 / 2) / (a1 / 2 - 1)
@@ -1062,8 +1098,8 @@ compute_stats_NIG <- function(n, xx, xy, yy, sxy, s0, a0, b0) {
 
 # Compute log Bayes factors under Normal-Inverse-Gamma (NIG) prior
 #' @keywords internal
-compute_lbf_NIG <- function(n, xx, xy, yy, sxy, s0, a0, b0) {
-  r0 <- s0 / (s0 + 1 / xx)
+compute_lbf_NIG <- function(n, xx, xy, yy, sxy, s0, a0, b0, tau = 1) {
+  r0 <- s0 / (s0 + tau / xx)
   rss <- yy * (1 - r0 * sxy^2)
 
   # Update inverse-gamma parameters
@@ -1071,15 +1107,15 @@ compute_lbf_NIG <- function(n, xx, xy, yy, sxy, s0, a0, b0) {
   b1 <- b0 + rss
 
   # Compute log Bayes factor for each variable
-  lbf <- -(log(1 + s0 * xx) + a1 * log(b1 / (b0 + yy))) / 2
+  lbf <- -(log(1 + s0 * xx / tau) + a1 * log(b1 / (b0 + yy))) / 2
 
   return(lbf)
 }
 
 # Compute posterior moments under Normal-Inverse-Gamma (NIG) prior
 #' @keywords internal
-compute_posterior_moments_NIG <- function(n, xx, xy, yy, sxy, s0, a0, b0) {
-  r0 <- s0 / (s0 + 1 / xx)
+compute_posterior_moments_NIG <- function(n, xx, xy, yy, sxy, s0, a0, b0, tau = 1) {
+  r0 <- s0 / (s0 + tau / xx)
   rss <- yy * (1 - r0 * sxy^2)
 
   # Update inverse-gamma parameters
@@ -1093,7 +1129,7 @@ compute_posterior_moments_NIG <- function(n, xx, xy, yy, sxy, s0, a0, b0) {
   post_mean <- r0 * bhat
 
   # Compute posterior variance
-  post_var <- b1 / (a1 - 2) * r0 / xx
+  post_var <- b1 / (a1 - 2) * r0 * tau / xx
 
   # Compute posterior mode of residual variance
   rv <- (b1 / 2) / (a1 / 2 - 1)
@@ -1108,8 +1144,8 @@ compute_posterior_moments_NIG <- function(n, xx, xy, yy, sxy, s0, a0, b0) {
 
 # EM update for prior variance under Normal-Inverse-Gamma (NIG) prior
 #' @keywords internal
-update_prior_variance_NIG_EM <- function(n, xx, xy, yy, sxy, pip, s0, a0, b0) {
-  r0   <- s0 / (s0 + 1 / xx)
+update_prior_variance_NIG_EM <- function(n, xx, xy, yy, sxy, pip, s0, a0, b0, tau = 1) {
+  r0   <- s0 / (s0 + tau / xx)
   rss  <- yy * (1 - r0 * sxy^2)
 
   # Update inverse-gamma parameters
@@ -1119,7 +1155,7 @@ update_prior_variance_NIG_EM <- function(n, xx, xy, yy, sxy, pip, s0, a0, b0) {
   # Compute posterior mean and variance component
   bhat <- xy / xx
   post_mean  <- r0 * bhat
-  post_var   <- r0 / xx
+  post_var   <- r0 * tau / xx
 
   u  <- gamma(1/2) / beta(a1/2, 1/2)
   mb <- post_mean * sqrt(2 / b1) * u

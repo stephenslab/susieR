@@ -73,6 +73,12 @@ initialize_susie_model.ss <- function(data, params, var_y, ...) {
   } else {
     pm <- if (!is.null(data$XtX)) data$XtX else data$X
     model$predictor_weights <- attr(pm, "d")
+
+    # Initialize Servin-Stephens (NIG) parameters
+    if (params$use_servin_stephens) {
+      model$rv <- rep(1, params$L)
+      model$marginal_loglik <- rep(as.numeric(NA), params$L)
+    }
   }
 
   return(model)
@@ -179,6 +185,14 @@ compute_residuals.ss <- function(data, params, model, l, ...) {
     model$fitted_without_l  <- XtXr_without_l # For fitted update
     model$residual_variance <- model$sigma2  # Standard residual variance
 
+    # Compute r'r for Servin-Stephens (NIG) prior
+    if (params$use_servin_stephens) {
+      b_minus_l <- colSums(model$alpha * model$mu) - model$alpha[l, ] * model$mu[l, ]
+      model$yy_residual <- as.numeric(
+        data$yty - 2 * sum(b_minus_l * data$Xty) + sum(b_minus_l * XtXr_without_l))
+      model$yy_residual <- max(model$yy_residual, .Machine$double.eps)
+    }
+
     return(model)
   }
 }
@@ -233,16 +247,31 @@ SER_posterior_e_loglik.ss <- function(data, params, model, l) {
 # Calculate posterior moments for single effect regression
 #' @keywords internal
 calculate_posterior_moments.ss <- function(data, params, model, V, l, ...) {
-  # Compute shat2 = null variance of betahat, with stochastic LD inflation
-  shat2 <- model$residual_variance / model$predictor_weights
-  if (!is.null(data$shat2_inflation))
-    shat2 <- shat2 * data$shat2_inflation
+  if (params$use_servin_stephens) {
+    # Servin-Stephens (NIG) posterior moments
+    if (V <= 0) {
+      post_mean  <- rep(0, data$p)
+      post_mean2 <- rep(0, data$p)
+      model$rv[l] <- 1
+    } else {
+      nig_ss <- get_nig_sufficient_stats(data, model)
+      moments <- compute_posterior_moments_NIG(data$n, model$predictor_weights,
+                                               model$residuals, nig_ss$yy, nig_ss$sxy,
+                                               V, params$alpha0, params$beta0, nig_ss$tau)
+      post_mean  <- moments$post_mean
+      post_mean2 <- moments$post_mean2
+      model$rv[l] <- sum(model$alpha[l, ] * moments$rv)
+    }
+  } else {
+    # Standard Gaussian posterior calculations
+    shat2 <- model$residual_variance / model$predictor_weights
+    if (!is.null(data$shat2_inflation))
+      shat2 <- shat2 * data$shat2_inflation
 
-  # Posterior calculations using shat2 (equivalent to standard formulas when
-  # shat2_inflation is NULL: post_var = (1/V + pw/sigma2)^(-1), etc.)
-  post_var   <- V * shat2 / (V + shat2)
-  post_mean  <- V * (model$residuals / model$predictor_weights) / (V + shat2)
-  post_mean2 <- post_var + post_mean^2
+    post_var   <- V * shat2 / (V + shat2)
+    post_mean  <- V * (model$residuals / model$predictor_weights) / (V + shat2)
+    post_mean2 <- post_var + post_mean^2
+  }
 
   # Store posterior moments in model
   model$mu[l, ] <- post_mean
@@ -254,7 +283,19 @@ calculate_posterior_moments.ss <- function(data, params, model, V, l, ...) {
 # Calculate KL divergence
 #' @keywords internal
 compute_kl.ss <- function(data, params, model, l) {
-  model <- compute_kl.default(data, params, model, l)
+  if (params$use_servin_stephens) {
+    if (params$L == 1) {
+      model$KL[l] <- compute_kl_NIG(model$alpha[l, ], model$mu[l, ], model$mu2[l, ],
+                                     model$pi, model$V[l],
+                                     a0 = 1, b0 = 1,
+                                     a_post = data$n / 2 + 1,
+                                     b_post = data$n * model$sigma2 + 1)
+    } else {
+      model$KL[l] <- 0
+    }
+  } else {
+    model <- compute_kl.default(data, params, model, l)
+  }
   return(model)
 }
 
@@ -282,9 +323,17 @@ Eloglik.ss <- function(data, model) {
 #' @importFrom stats dnorm
 #' @keywords internal
 loglik.ss <- function(data, params, model, V, ser_stats, l = NULL, ...) {
-  # log(bf) for each SNP
-  lbf <- dnorm(ser_stats$betahat, 0, sqrt(V + ser_stats$shat2), log = TRUE) -
-    dnorm(ser_stats$betahat, 0, sqrt(ser_stats$shat2), log = TRUE)
+  if (params$use_servin_stephens) {
+    # Servin-Stephens (NIG) log Bayes factors
+    nig_ss <- get_nig_sufficient_stats(data, model)
+    lbf <- compute_lbf_NIG(data$n, model$predictor_weights,
+                            model$residuals, nig_ss$yy, nig_ss$sxy,
+                            V, params$alpha0, params$beta0, nig_ss$tau)
+  } else {
+    # Standard Gaussian prior log Bayes factors
+    lbf <- dnorm(ser_stats$betahat, 0, sqrt(V + ser_stats$shat2), log = TRUE) -
+      dnorm(ser_stats$betahat, 0, sqrt(ser_stats$shat2), log = TRUE)
+  }
 
   # Stabilize logged Bayes Factor
   stable_res  <- lbf_stabilization(lbf, model$pi, ser_stats$shat2)
@@ -297,6 +346,13 @@ loglik.ss <- function(data, params, model, V, ser_stats, l = NULL, ...) {
     model$alpha[l, ] <- weights_res$alpha
     model$lbf[l] <- weights_res$lbf_model
     model$lbf_variable[l, ] <- stable_res$lbf
+
+    # Compute and store marginal log-likelihood for NIG prior
+    if (params$use_servin_stephens) {
+      model$marginal_loglik[l] <- compute_marginal_loglik(weights_res$lbf_model, data$n,
+                                                           nig_ss$yy, params$alpha0, params$beta0,
+                                                           TRUE)
+    }
     return(model)
   } else {
     return(weights_res$lbf_model)

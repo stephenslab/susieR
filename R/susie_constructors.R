@@ -270,7 +270,9 @@ sufficient_stats_constructor <- function(Xty, yty, n,
                                          verbose = FALSE,
                                          track_fit = FALSE,
                                          check_prior = FALSE,
-                                         refine = FALSE) {
+                                         refine = FALSE,
+                                         alpha0 = 0.1,
+                                         beta0 = 0.1) {
 
   # Validate required inputs
   if (missing(n)) {
@@ -481,19 +483,15 @@ sufficient_stats_constructor <- function(Xty, yty, n,
     residual_variance_lowerbound = residual_variance_lowerbound,
     refine = refine,
     n_purity = n_purity,
-    alpha0 = 0,  # SS doesn't support Servin_Stephens
-    beta0 = 0,   # SS doesn't support Servin_Stephens
-    use_servin_stephens = FALSE,  # SS doesn't support Servin_Stephens
+    alpha0 = alpha0,
+    beta0 = beta0,
+    use_servin_stephens = FALSE,
     intercept = FALSE,  # SS always uses intercept = FALSE
     standardize = standardize,
     check_prior = check_prior
   )
 
   # Handle SS-specific validation before general validation
-  if (params_object$estimate_residual_method == "Servin_Stephens") {
-    stop("Servin-Stephens prior on residual variance is not implemented for SS/RSS models.")
-  }
-
   if (params_object$unmappable_effects == "ash") {
     stop("Adaptive shrinkage (ash) requires individual-level data and cannot be used with sufficient statistics. ",
          "Please provide X and y instead of XtX, Xty, and yty.")
@@ -576,7 +574,9 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
                                       n_purity = 100,
                                       r_tol = 1e-8,
                                       refine = FALSE,
-                                      stochastic_ld_sample = NULL) {
+                                      stochastic_ld_sample = NULL,
+                                      alpha0 = 0.1,
+                                      beta0 = 0.1) {
 
   # Check if this should use RSS-lambda path
   if (lambda != 0) {
@@ -833,7 +833,7 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
     max_iter = max_iter, tol = tol, convergence_method = convergence_method,
     coverage = coverage, min_abs_corr = min_abs_corr, n_purity = n_purity,
     verbose = verbose, track_fit = track_fit, check_prior = check_prior,
-    refine = refine
+    refine = refine, alpha0 = alpha0, beta0 = beta0
   )
 
   # Attach stochastic LD correction to data object

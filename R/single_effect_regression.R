@@ -99,10 +99,11 @@ optimize_prior_variance <- function(data, params, model, ser_stats,
     } else if (params$estimate_prior_method == "EM") {
       if (params$use_servin_stephens) {
         # Compute EM update analytically
+        nig_ss <- get_nig_sufficient_stats(data, model)
         V <- update_prior_variance_NIG_EM(data$n, model$predictor_weights,
-                                           model$residuals, sum(model$raw_residuals^2),
-                                           drop(cor(data$X, model$raw_residuals)),
-                                           alpha, V_init, params$alpha0, params$beta0)
+                                           model$residuals, nig_ss$yy, nig_ss$sxy,
+                                           alpha, V_init, params$alpha0, params$beta0,
+                                           nig_ss$tau)
       } else {
         # Standard EM update
         V <- sum(alpha * moments$post_mean2)

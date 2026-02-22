@@ -233,8 +233,15 @@ update_variance_components <- function(data, params, model, ...) {
 }
 #' @keywords internal
 update_variance_components.default <- function(data, params, model, ...) {
-  # Standard MLE estimation (MLE and MoM are equivalent for standard SuSiE)
-  sigma2 <- est_residual_variance(data, model)
+  if (params$use_servin_stephens) {
+    # NIG posterior mode: the NIG prior integrates out sigma^2 analytically,
+    # producing per-effect posterior modes model$rv[l]. We aggregate across
+    # effects by averaging.
+    sigma2 <- mean(model$rv)
+  } else {
+    # Standard MLE estimation (MLE and MoM are equivalent for standard SuSiE)
+    sigma2 <- est_residual_variance(data, model)
+  }
   return(list(sigma2 = sigma2))
 }
 

@@ -1018,17 +1018,16 @@ test_that("sufficient_stats_constructor rejects all-zero prior_weights", {
 # SUFFICIENT STATISTICS CONSTRUCTOR - Method Restrictions
 # =============================================================================
 
-test_that("sufficient_stats_constructor rejects Servin_Stephens", {
+test_that("sufficient_stats_constructor accepts Servin_Stephens", {
   base_data <- generate_base_data(n = 100, p = 10, k = 0, seed = 29)
   XtX <- crossprod(base_data$X)
   Xty <- crossprod(base_data$X, base_data$y)
   yty <- 100
 
-  expect_error(
-    sufficient_stats_constructor(Xty = Xty, yty = yty, n = base_data$n, XtX = XtX,
-                                estimate_residual_method = "Servin_Stephens"),
-    "Servin-Stephens prior on residual variance is not implemented for SS/RSS models"
-  )
+  result <- sufficient_stats_constructor(Xty = Xty, yty = yty, n = base_data$n, XtX = XtX,
+                                         estimate_residual_method = "Servin_Stephens")
+  expect_true(result$params$use_servin_stephens)
+  expect_equal(result$params$estimate_prior_method, "EM")
 })
 
 test_that("sufficient_stats_constructor rejects unmappable_effects='ash'", {

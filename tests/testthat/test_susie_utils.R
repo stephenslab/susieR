@@ -579,6 +579,7 @@ test_that("validate_and_override_params validates and adjusts parameters", {
     estimate_prior_variance = TRUE,
     estimate_prior_method = "EM",
     estimate_residual_method = "MLE",
+    estimate_residual_variance = TRUE,
     refine = FALSE
   )
 
@@ -672,11 +673,62 @@ test_that("validate_and_override_params validates and adjusts parameters", {
   expect_equal(result_l1$convergence_method, "elbo")  # Not overridden
   expect_equal(result_l1$estimate_prior_method, "EM")
 
+  # Test: Servin_Stephens overrides estimate_residual_variance = FALSE
+  ss_erv_params <- valid_params
+  ss_erv_params$estimate_residual_method <- "Servin_Stephens"
+  ss_erv_params$estimate_residual_variance <- FALSE
+  ss_erv_params$estimate_prior_method <- "EM"
+
+  expect_message(
+    result <- validate_and_override_params(ss_erv_params),
+    "estimate_residual_variance = TRUE"
+  )
+  expect_true(result$estimate_residual_variance)
+
+  # Test: Servin_Stephens with explicit estimate_residual_variance = TRUE produces no warning
+  ss_erv_params2 <- valid_params
+  ss_erv_params2$estimate_residual_method <- "Servin_Stephens"
+  ss_erv_params2$estimate_residual_variance <- TRUE
+  ss_erv_params2$estimate_prior_method <- "EM"
+
+  # Should not produce the "estimate_residual_variance" warning
+  expect_no_message(
+    result <- validate_and_override_params(ss_erv_params2),
+    message = "integrates out residual variance"
+  )
+  expect_true(result$estimate_residual_variance)
+
   # Test: estimate_prior_variance = FALSE
   no_est_params <- valid_params
   no_est_params$estimate_prior_variance <- FALSE
   result <- validate_and_override_params(no_est_params)
   expect_equal(result$estimate_prior_method, "none")
+
+  # Test: Servin_Stephens with estimate_prior_variance = FALSE respects user choice
+  # The EM override should NOT happen when user explicitly disables prior variance estimation
+  ss_no_prior_params <- valid_params
+  ss_no_prior_params$estimate_residual_method <- "Servin_Stephens"
+  ss_no_prior_params$estimate_prior_variance <- FALSE
+  ss_no_prior_params$estimate_prior_method <- "optim"
+
+  result <- validate_and_override_params(ss_no_prior_params)
+  expect_true(result$use_servin_stephens)
+  # estimate_prior_variance = FALSE -> estimate_prior_method stays "none" (set earlier)
+  # The SS block should NOT override to "EM" because estimation is disabled
+  expect_equal(result$estimate_prior_method, "none")
+
+  # Test: Servin_Stephens with estimate_prior_variance = TRUE overrides to EM
+  ss_yes_prior_params <- valid_params
+  ss_yes_prior_params$estimate_residual_method <- "Servin_Stephens"
+  ss_yes_prior_params$estimate_prior_variance <- TRUE
+  ss_yes_prior_params$estimate_prior_method <- "simple"
+
+  expect_message(
+    result <- validate_and_override_params(ss_yes_prior_params),
+    "EM"
+  )
+  expect_true(result$use_servin_stephens)
+  expect_equal(result$estimate_prior_method, "EM")
 })
 
 # =============================================================================
@@ -1362,6 +1414,33 @@ test_that("update_model_variance updates variance components", {
   # Check it's finite and positive
   expect_true(is.finite(result$sigma2))
   expect_true(result$sigma2 > 0)
+})
+
+test_that("update_model_variance uses NIG posterior mode when Servin-Stephens is active", {
+  # Setup individual data
+  setup <- setup_individual_data(n = 100, p = 50, L = 5, seed = 999)
+  data <- setup$data
+  params <- setup$params
+  params$estimate_residual_variance <- TRUE
+  params$estimate_residual_method <- "Servin_Stephens"
+  params$use_servin_stephens <- TRUE
+  params$residual_variance_lowerbound <- 0.01
+  params$residual_variance_upperbound <- 10
+  params$unmappable_effects <- "none"
+  model <- setup$model
+
+  # Add NIG posterior modes (model$rv) that the NIG prior would produce
+  model$rv <- c(0.8, 1.2, 0.9, 1.1, 1.0)
+
+  result <- update_model_variance(data, params, model)
+
+  # sigma2 should be the mean of model$rv (NIG posterior mode), NOT from MoM/MLE
+  expected_sigma2 <- mean(model$rv)
+  expect_equal(result$sigma2, expected_sigma2)
+
+  # Verify it's within bounds
+  expect_true(result$sigma2 >= params$residual_variance_lowerbound)
+  expect_true(result$sigma2 <= params$residual_variance_upperbound)
 })
 
 # =============================================================================
