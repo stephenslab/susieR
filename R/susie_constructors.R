@@ -757,9 +757,9 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
     # Debias using Wishart moment identities (Proposition 4.4 in note)
     R_frob_sq_db <- (B * R_frob_sq - p_stoch^2) / (B + 1)
     ell_j_db     <- (B * ell_j - p_stoch) / (B + 1)
-    sigma2_j0_db <- (B^2 * sigma2_j0 -
-                       (B + 1) * (2 * p_stoch * ell_j_db + R_frob_sq_db) -
-                       p_stoch^2) / (B^2 + 3 * B + 4)
+    sigma2_j0_db <- pmax((B^2 * sigma2_j0 -
+                           (B + 1) * (2 * p_stoch * ell_j_db + R_frob_sq_db) -
+                           p_stoch^2) / (B^2 + 3 * B + 4), 1)
 
     # Debiased tau_j^2 and inflation factor
     tau2_j <- (1 + 1 / B) * sigma2_j0_db + d_R * R_frob_sq_db / B
