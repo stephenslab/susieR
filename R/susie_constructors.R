@@ -727,36 +727,49 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
   # Precompute stochastic LD inflation (before sufficient stats conversion)
   # The inflation factor tau_j^2 / sigma_{j,0}^2 is computed from R or X
   # and is constant across IBSS iterations.
+  # Uses debiased Wishart moment estimators to avoid upward bias in the
+  # plug-in estimates of sigma_{j,0}^2, ell_j, and ||R||_F^2.
   shat2_inflation <- NULL
   stochastic_ld_diagnostics <- NULL
   if (!is.null(stochastic_ld_sample)) {
     B <- stochastic_ld_sample
+    p_stoch <- length(z)
 
     if (!is.null(X)) {
-      # Compute from X: O(pB_x^2 + B_x^3) where B_x = nrow(X)
+      # Compute plug-in estimates from X (= t(U)): O(pB^2 + B^3)
       B_x <- nrow(X)
-      A         <- tcrossprod(X)                    # B_x x B_x Gram matrix
-      A2        <- A %*% A                          # B_x x B_x
-      d_R       <- colSums(X^2) / B_x              # diag(R) where R = X'X/B_x
-      R_frob_sq <- sum(A * A) / B_x^2              # ||R||_F^2 = tr(A^2)/B_x^2
-      A2X       <- A2 %*% X                        # B_x x p
-      sigma2_j0 <- colSums(A2X * X) / B_x^3        # diag(R^3)
+      A         <- tcrossprod(X)                    # B_x x B_x Gram matrix (U'U)
+      AX        <- A %*% X                         # B_x x p (intermediate)
+      A2X       <- A %*% AX                        # B_x x p (= A^2 U')
+      d_R       <- colSums(X^2) / B_x              # diag(Rhat)
+      ell_j     <- colSums(AX * X) / B_x^2         # (Rhat^2)_{jj} plug-in LD scores
+      sigma2_j0 <- colSums(A2X * X) / B_x^3        # (Rhat^3)_{jj} plug-in signal var
+      R_frob_sq <- sum(A * A) / B_x^2              # ||Rhat||_F^2
     } else {
-      # Compute from R: O(p^3)
+      # Compute plug-in estimates from R: O(p^3)
       R_sq_mat  <- R %*% R                         # R^2, O(p^3) via BLAS
-      sigma2_j0 <- rowSums(R * R_sq_mat)           # diag(R^3) = signal variances
-      R_frob_sq <- sum(R * R)                      # ||R||_F^2
-      d_R       <- diag(R)
+      d_R       <- diag(R)                          # diag(Rhat)
+      ell_j     <- rowSums(R * R)                   # (Rhat^2)_{jj} plug-in LD scores
+      sigma2_j0 <- rowSums(R * R_sq_mat)           # (Rhat^3)_{jj} plug-in signal var
+      R_frob_sq <- sum(ell_j)                       # ||Rhat||_F^2
     }
 
-    # Inflation = tau_j^2 / sigma_{j,0}^2; guard against sigma2_j0 == 0
-    shat2_inflation <- ifelse(sigma2_j0 > 0,
-      1 + 1 / B + d_R * R_frob_sq / (B * sigma2_j0), Inf)
+    # Debias using Wishart moment identities (Proposition 4.4 in note)
+    R_frob_sq_db <- (B * R_frob_sq - p_stoch^2) / (B + 1)
+    ell_j_db     <- (B * ell_j - p_stoch) / (B + 1)
+    sigma2_j0_db <- (B^2 * sigma2_j0 -
+                       (B + 1) * (2 * p_stoch * ell_j_db + R_frob_sq_db) -
+                       p_stoch^2) / (B^2 + 3 * B + 4)
+
+    # Debiased tau_j^2 and inflation factor
+    tau2_j <- (1 + 1 / B) * sigma2_j0_db + d_R * R_frob_sq_db / B
+    shat2_inflation <- ifelse(sigma2_j0_db > 0, tau2_j / sigma2_j0_db, Inf)
+
     stochastic_ld_diagnostics <- list(
       B = B,
-      p = length(z),
-      effective_rank = length(z)^2 / R_frob_sq,
-      r_over_B = (length(z)^2 / R_frob_sq) / B,
+      p = p_stoch,
+      effective_rank = p_stoch^2 / R_frob_sq_db,
+      r_over_B = (p_stoch^2 / R_frob_sq_db) / B,
       per_snp_inflation = shat2_inflation - 1
     )
   }
