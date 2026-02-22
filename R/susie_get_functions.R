@@ -274,8 +274,8 @@ susie_get_posterior_samples <- function(susie_fit, num_samples) {
 #'
 susie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
                          min_abs_corr = 0.5, dedup = TRUE, squared = FALSE,
-                         check_symmetric = TRUE, n_purity = 100, use_rfast,
-                         ld_extend_threshold = 0.99) {
+                         check_symmetric = TRUE, n_purity = 100,
+                         use_rfast = NULL, ld_extend_threshold = 0.99) {
   if (!is.null(X) && !is.null(Xcorr)) {
     stop("Only one of X or Xcorr should be specified")
   }
@@ -326,7 +326,7 @@ susie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
   effect_indices <- which(include_idx)
 
   # Compute and filter by "purity"
-  if (missing(use_rfast)) {
+  if (is.null(use_rfast)) {
     use_rfast <- requireNamespace("Rfast", quietly = TRUE)
   }
   

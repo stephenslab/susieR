@@ -1475,8 +1475,8 @@ n_in_CS <- function(res, coverage = 0.9) {
 #' @importFrom stats median
 #' @keywords internal
 get_purity <- function(pos, X, Xcorr, squared = FALSE, n = 100,
-                       use_rfast) {
-  if (missing(use_rfast)) {
+                       use_rfast = NULL) {
+  if (is.null(use_rfast)) {
     use_rfast <- requireNamespace("Rfast", quietly = TRUE)
   }
   if (use_rfast) {
