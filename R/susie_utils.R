@@ -40,15 +40,26 @@ safe_cov2cor <- function(V) {
 
 #' Computes correlation matrix from data matrix
 #' Handles constant columns without warnings - returns 0 correlation for constant cols
-#' Uses crossprod for speed (faster than base cor)
+#' Uses Rfast::cora when available (much faster for large matrices), falls back
+#' to crossprod-based computation otherwise.
 #'
 #' @param X Data matrix (n x p)
 #' @return Correlation matrix (p x p)
 #' @keywords internal
 safe_cor <- function(X) {
   n <- nrow(X)
-  X_centered <- X - rep(colMeans(X), each = n)
-  sds <- sqrt(colSums(X_centered^2) / n)
+  cm <- colMeans(X)
+  css <- colSums(X^2) - n * cm^2   # column sum of squares (centered)
+  has_const <- any(css == 0)
+
+  # Fast path: use Rfast::cora when available and no constant columns
+  if (!has_const && requireNamespace("Rfast", quietly = TRUE)) {
+    return(Rfast::cora(X))
+  }
+
+  # Fallback: manual crossprod, handling constant columns
+  X_centered <- X - rep(cm, each = n)
+  sds <- sqrt(css / n)
   sds_inv <- 1 / sds
   sds_inv[sds == 0] <- 0
   X_scaled <- X_centered * rep(sds_inv, each = n)
