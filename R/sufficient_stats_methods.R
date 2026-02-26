@@ -537,5 +537,11 @@ cleanup_model.ss <- function(data, params, model, ...) {
     model <- cleanup_ash_fields(model)
   }
   
+  # Remove Servin-stephens specific temporary fields
+  if (params$use_servin_stephens) {
+    model$marginal_loglik <- NULL
+    if (nrow(model$alpha) > 1) model$elbo <- NULL
+  }
+  
   return(model)
 }
