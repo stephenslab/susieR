@@ -9,3 +9,7 @@ random_order <- function(p, numiter) {
     .Call('_susieR_random_order', PACKAGE = 'susieR', p, numiter)
 }
 
+rcpp_mr_ash_rss <- function(bhat, shat, z, R, var_y, n, sigma2_e, s0, w0, mu1_init, tol = 1e-8, max_iter = 1e5L, update_w0 = TRUE, update_sigma = TRUE, compute_ELBO = TRUE, standardize = FALSE, ncpus = 1L) {
+    .Call('_susieR_rcpp_mr_ash_rss', PACKAGE = 'susieR', bhat, shat, z, R, var_y, n, sigma2_e, s0, w0, mu1_init, tol, max_iter, update_w0, update_sigma, compute_ELBO, standardize, ncpus)
+}
+

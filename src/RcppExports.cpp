@@ -50,10 +50,38 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rcpp_mr_ash_rss
+List rcpp_mr_ash_rss(const NumericVector& bhat, const NumericVector& shat, const NumericVector& z, const NumericMatrix& R, double var_y, int n, double sigma2_e, const NumericVector& s0, const NumericVector& w0, const NumericVector& mu1_init, double tol, int max_iter, bool update_w0, bool update_sigma, bool compute_ELBO, bool standardize, int ncpus);
+RcppExport SEXP _susieR_rcpp_mr_ash_rss(SEXP bhatSEXP, SEXP shatSEXP, SEXP zSEXP, SEXP RSEXP, SEXP var_ySEXP, SEXP nSEXP, SEXP sigma2_eSEXP, SEXP s0SEXP, SEXP w0SEXP, SEXP mu1_initSEXP, SEXP tolSEXP, SEXP max_iterSEXP, SEXP update_w0SEXP, SEXP update_sigmaSEXP, SEXP compute_ELBOSEXP, SEXP standardizeSEXP, SEXP ncpusSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type bhat(bhatSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type shat(shatSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type z(zSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type R(RSEXP);
+    Rcpp::traits::input_parameter< double >::type var_y(var_ySEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma2_e(sigma2_eSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type s0(s0SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type w0(w0SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type mu1_init(mu1_initSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    Rcpp::traits::input_parameter< int >::type max_iter(max_iterSEXP);
+    Rcpp::traits::input_parameter< bool >::type update_w0(update_w0SEXP);
+    Rcpp::traits::input_parameter< bool >::type update_sigma(update_sigmaSEXP);
+    Rcpp::traits::input_parameter< bool >::type compute_ELBO(compute_ELBOSEXP);
+    Rcpp::traits::input_parameter< bool >::type standardize(standardizeSEXP);
+    Rcpp::traits::input_parameter< int >::type ncpus(ncpusSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_mr_ash_rss(bhat, shat, z, R, var_y, n, sigma2_e, s0, w0, mu1_init, tol, max_iter, update_w0, update_sigma, compute_ELBO, standardize, ncpus));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_susieR_caisa_rcpp", (DL_FUNC) &_susieR_caisa_rcpp, 17},
     {"_susieR_random_order", (DL_FUNC) &_susieR_random_order, 2},
+    {"_susieR_rcpp_mr_ash_rss", (DL_FUNC) &_susieR_rcpp_mr_ash_rss, 17},
     {NULL, NULL, 0}
 };
 
