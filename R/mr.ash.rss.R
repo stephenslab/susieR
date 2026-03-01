@@ -33,6 +33,11 @@
 #'
 #' @return A list containing the following components:
 #' \describe{
+#'   \item{beta}{Numeric vector of posterior mean coefficients (same as mu1).}
+#'   \item{sigma2}{Numeric value of the residual variance (same as sigma2_e).}
+#'   \item{pi}{Numeric vector of mixture weights (same as w0).}
+#'   \item{iter}{Integer, number of iterations performed.}
+#'   \item{varobj}{Numeric vector of ELBO values per iteration.}
 #'   \item{mu1}{Numeric vector of the posterior mean of the coefficients.}
 #'   \item{sigma2_1}{Numeric vector of the posterior variance of the coefficients.}
 #'   \item{w1}{Numeric matrix of the posterior assignment probabilities.}
@@ -103,6 +108,13 @@ mr.ash.rss <- function(bhat, shat, R, var_y, n,
     compute_ELBO = compute_ELBO, standardize = standardize,
     ncpus = ncpu
   )
+
+  # Add mr.ash-compatible output names for consistency
+  result$beta <- c(result$mu1)        # posterior mean coefficients
+  result$sigma2 <- c(result$sigma2_e) # residual variance (scalar)
+  result$pi <- c(result$w0)           # mixture weights
+  result$iter <- as.integer(c(result$iter))  # iteration count
+  result$varobj <- c(result$varobj)   # ELBO per iteration
 
   return(result)
 }

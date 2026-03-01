@@ -312,11 +312,16 @@ mr.ash                      = function(X, y, Z = NULL, sa2 = NULL,
   out               = caisa_rcpp (data$X, data$y, w, sa2, pi, data$beta, r, sigma2, o,
                                   max.iter, min.iter, tol$convtol, tol$epstol,
                                   method_q, update.pi, update.sigma2, verbose)
-  
+
+  ## Convert to plain numeric vectors (drop matrix dim from Armadillo)
+  out$beta          = c(out$beta)
+  out$pi            = c(out$pi)
+  out$sigma2        = c(out$sigma2)
+
   if (method_q == "sigma_scaled_beta") {
     out$beta        = out$beta * sqrt(out$sigma2)
   }
-  
+
   ## polish return object
   out$intercept     = c(data$ZtZiZy - data$ZtZiZX %*% out$beta)
   data["beta"]      = NULL

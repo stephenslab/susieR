@@ -63,9 +63,12 @@ unordered_map<string, vec> bayes_mix_sufficient(double xTx, double xTy, double s
 	int K = sigma2_0.n_elem;
 
 	// Compute the Bayes factors and posterior statistics separately for each mixture component
+	// Note: sigma2_0[i] is the prior variance scale parameter (like sa2 in mr.ash).
+	// The actual prior variance is sigma2_e * sigma2_0[i], matching mr.ash's model:
+	//   beta_j ~ sum_k pi_k * N(0, sigma2 * sa2[k])
 	mat out(K, 5);
 	for (int i = 0; i < K; i++) {
-		unordered_map<string, double> ridge_out = bayes_ridge_sufficient(xTx, xTy, sigma2_e, sigma2_0[i]);
+		unordered_map<string, double> ridge_out = bayes_ridge_sufficient(xTx, xTy, sigma2_e, sigma2_e * sigma2_0[i]);
 		out(i, 0) = ridge_out["bhat"];
 		out(i, 1) = ridge_out["s2"];
 		out(i, 2) = ridge_out["mu1"];
@@ -129,12 +132,13 @@ unordered_map<string, mat> mr_ash_sufficient(const vec& XTy, const mat& XTX, dou
 	mat w1_t(p, K, fill::zeros);
 	mat mu1_k_t(p, K, fill::zeros);
 	mat sigma2_1_k_t(p, K, fill::zeros);
-	vec err(p, fill::value(datum::inf));
 	int t = 0;
 	double ELBO = 0;
+	vec varobj_vec(max_iter, fill::zeros);
+	bool converged = false;
 
 	// Iterate until convergence
-	while (any(err > tol)) {
+	while (!converged) {
 		double ELBO0 = ELBO;
 		double var_part_ERSS = 0;
 		double neg_KL = 0;
@@ -144,6 +148,7 @@ unordered_map<string, mat> mr_ash_sufficient(const vec& XTy, const mat& XTX, dou
 
 		// Exit loop if maximum number of iterations is reached
 		if (t > max_iter) {
+			t = max_iter;  // Clamp to valid index range
 			cerr << "Max number of iterations reached. Try increasing max_iter." << endl;
 			break;
 		}
@@ -186,34 +191,42 @@ unordered_map<string, mat> mr_ash_sufficient(const vec& XTy, const mat& XTX, dou
 			w0 = sum(w1_t, 0).t() / p;
 		}
 
-		// Compute distance in mu1 between two successive iterations
-		err = abs(mu1_t - mu1_tminus1);
+		// Compute convergence using relative L2 norm (matching mr.ash)
+		double beta_diff = norm(mu1_t - mu1_tminus1, 2);
+		double beta_norm = norm(mu1_t, 2);
 
 		// Compute ERSS and ELBO
 		double ERSS = yTy - 2 * dot(XTy, mu1_t) + as_scalar(mu1_t.t() * XTX * mu1_t) + var_part_ERSS;
 		if (compute_ELBO) {
 			ELBO = -0.5 * log(n) - 0.5 * n * log(2 * datum::pi * sigma2_e) - (1 / (2 * sigma2_e)) * ERSS + neg_KL;
 			if (verbose) {
-				// Print out useful info
-				cout << "Iteration: " << t << ", Max beta diff: " << max(err) << ", ELBO diff: " << ELBO - ELBO0 << ", ELBO: " << ELBO << endl;
+				cout << "Iteration: " << t << ", Beta diff: " << beta_diff << ", ELBO diff: " << ELBO - ELBO0 << ", ELBO: " << ELBO << endl;
 			}
 		} else {
 			if (verbose) {
-				// Print out useful info
-				cout << "Iteration: " << t << ", Max beta diff: " << max(err) << endl;
+				cout << "Iteration: " << t << ", Beta diff: " << beta_diff << endl;
 			}
 		}
+		varobj_vec[t - 1] = ELBO;
 
-		// Update residual variance if requested
+		// Update residual variance using mr.ash's sigma_dep_q formula:
+		// sigma2 = (y'y - beta'X'y) / n
 		if (update_sigma) {
-			sigma2_e = ERSS / n;
+			sigma2_e = (yTy - dot(XTy, mu1_t)) / n;
+		}
+
+		// Check convergence (matching mr.ash's relative L2 criterion)
+		if (t >= 2 && beta_diff < tol * max(1.0, beta_norm)) {
+			converged = true;
 		}
 	}
 
-	// Return the posterior assignment probabilities (w1), the posterior mean (mu1) and variance (sigma2_1) of the coefficients,
-	// the error variance (sigma2_e), the mixture weights (w0), and optionally the ELBO
+	// Return results including iteration count and ELBO trajectory
 	return {{"mu1", mat(mu1_t)}, {"sigma2_1", mat(sigma2_1_t)}, {"w1", w1_t},
-		{"sigma2_e", mat(1, 1, fill::value(sigma2_e))}, {"w0", mat(w0)}, {"ELBO", mat(1, 1, fill::value(ELBO))}};
+		{"sigma2_e", mat(1, 1, fill::value(sigma2_e))}, {"w0", mat(w0)},
+		{"ELBO", mat(1, 1, fill::value(ELBO))},
+		{"iter", mat(1, 1, fill::value((double)t))},
+		{"varobj", mat(varobj_vec.subvec(0, t - 1))}};
 }
 
 /**
@@ -315,7 +328,8 @@ unordered_map<string, mat> mr_ash_rss(const vec& bhat, const vec& shat, const ve
 	}
 
 	return {{"mu1", result["mu1"]}, {"sigma2_1", result["sigma2_1"]}, {"w1", result["w1"]},
-		{"sigma2_e", result["sigma2_e"]}, {"w0", result["w0"]}, {"ELBO", result["ELBO"]}};
+		{"sigma2_e", result["sigma2_e"]}, {"w0", result["w0"]}, {"ELBO", result["ELBO"]},
+		{"iter", result["iter"]}, {"varobj", result["varobj"]}};
 };
 
 #endif
