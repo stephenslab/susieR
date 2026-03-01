@@ -634,6 +634,17 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
             "X before computing R.")
   }
 
+
+  # For SuSiE-ash with summary statistics, recommend providing bhat/shat/var_y
+  # for best agreement with individual-level analysis. The z+R-only path
+  # operates on a standardized scale (var_y=1) and may give different results.
+  if (unmappable_effects == "ash" && is.null(bhat) && is.null(var_y)) {
+    warning_message("SuSiE-ash with z-scores and R only operates on a ",
+            "standardized scale. For best agreement with ",
+            "individual-level analysis, provide bhat, shat, and ",
+            "var_y instead of z-scores.")
+  }
+
   # Determine p from z or bhat
   if (is.null(z) && !is.null(bhat)) {
     p <- length(bhat)

@@ -278,6 +278,50 @@ cat("PIP correlation:", cor(pip_ind, pip_ss), "\n")
 cat("Max |theta difference|:", max(abs(fit_ash$theta - fit_ash_ss$theta)), "\n")
 ```
 
+When only GWAS summary statistics are available, `susie_rss()` can be used.
+For best agreement with individual-level analysis, we recommend providing
+effect sizes (`bhat`), standard errors (`shat`), and the phenotypic variance
+(`var_y`) along with the in-sample LD matrix (`R`) and sample size (`n`).
+This preserves the original data scale, allowing the adaptive shrinkage
+component to calibrate correctly:
+
+```{r}
+R <- cor(X)
+bhat <- sumstats$betahat
+shat <- sumstats$sebetahat
+
+t0 <- proc.time()
+fit_ash_rss <- susie_rss(bhat = bhat, shat = shat, R = R,
+                          var_y = var(y), n = n,
+                          L = 10, unmappable_effects = "ash",
+                          estimate_residual_variance = TRUE, verbose = TRUE)
+t1 <- proc.time()
+t1 - t0
+susie_plot(fit_ash_rss, y = "PIP", b = b, main = "SuSiE-ash (RSS)", add_legend = TRUE)
+```
+
+```{r}
+plot_cs_effects(fit_ash_rss, b, main = "SuSiE-ash (RSS) CS on true effects")
+```
+
+With `bhat`, `shat`, `var_y`, and in-sample LD, `susie_rss` results match
+`susie_ss` closely:
+
+```{r}
+pip_rss <- susie_get_pip(fit_ash_rss)
+cat("Max |PIP difference| (SS vs RSS):", max(abs(pip_ss - pip_rss)), "\n")
+cat("PIP correlation (SS vs RSS):", cor(pip_ss, pip_rss), "\n")
+```
+
+When only z-scores and an LD matrix are available (without `bhat`, `shat`,
+or `var_y`), `susie_rss` operates on a standardized scale where `var(y) = 1`.
+The credible sets are typically still correct, but the estimated `sigma2`
+will be on the standardized scale rather than the original scale.
+Note that when the LD matrix is not computed from the same sample as the
+summary statistics (out-of-sample LD), setting
+`estimate_residual_variance = FALSE` may be more appropriate to avoid
+bias from LD mismatch.
+
 ## Summary
 
 | Method | Credible Sets | False Positives |
@@ -287,6 +331,7 @@ cat("Max |theta difference|:", max(abs(fit_ash$theta - fit_ash_ss$theta)), "\n")
 | SuSiE-inf | 1 | 0 |
 | SuSiE-ash | 3 | 0 |
 | SuSiE-ash (SS) | 3 | 0 |
+| SuSiE-ash (RSS) | 3 | 0 |
 
 ## What if we increase L for standard SuSiE?
 
