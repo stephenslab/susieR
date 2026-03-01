@@ -11,13 +11,7 @@
 #'   If NULL, it is set to Inf (effects on standardized scale).
 #' @param n Integer value of the sample size.
 #' @param s0 Numeric vector of prior variances for the mixture components.
-#'   If \code{NULL} (default), a 25-component grid is used matching the
-#'   \code{mr.ash} default: \code{(2^((0:24)/25) - 1)^2}, scaled by
-#'   \code{n / median(1/shat^2)} to put the grid on the appropriate scale
-#'   for the data.
 #' @param w0 Numeric vector of prior weights for the mixture components.
-#'   If \code{NULL} (default), uniform weights \code{rep(1/K, K)} are used
-#'   where \code{K = length(s0)}, matching the \code{mr.ash} default.
 #' @param sigma2_e Numeric value of the initial error variance estimate.
 #'   If \code{NULL} (default), initialized to \code{var_y} (matching
 #'   \code{mr.ash} behavior of using residual variance with zero
@@ -86,7 +80,7 @@
 #' var_y <- var(y)
 #' sigmasq_init <- 1.5
 #'
-#' # Run mr.ash.rss with explicit prior
+#' # Run mr.ash.rss
 #' out <- mr.ash.rss(b.hat, s.hat,
 #'   R = R.hat, var_y = var_y, n = n,
 #'   sigma2_e = sigmasq_init, s0 = sigma0, w0 = omega0,
@@ -95,12 +89,9 @@
 #'   standardize = FALSE
 #' )
 #'
-#' # Run mr.ash.rss with defaults (auto-sets prior grid and weights)
-#' out2 <- mr.ash.rss(b.hat, s.hat, R = R.hat, var_y = var_y, n = n)
-#'
 #' @export
 mr.ash.rss <- function(bhat, shat, R, var_y, n,
-                       s0 = NULL, w0 = NULL,
+                       s0, w0,
                        sigma2_e = NULL, mu1_init = numeric(0),
                        tol = 1e-8, max_iter = 1e5, z = numeric(0),
                        update_w0 = TRUE, update_sigma = TRUE,
@@ -112,22 +103,6 @@ mr.ash.rss <- function(bhat, shat, R, var_y, n,
 
   if (is.null(var_y)) var_y <- Inf
   if (identical(z, numeric(0))) z <- bhat / shat
-
-  # Default s0: 25-component prior variance grid matching mr.ash
-  # In mr.ash: sa2 = (2^((0:24)/25) - 1)^2, scaled by n / median(w)
-  # where w = colSums(X^2). For RSS, 1/shat^2 approximates w (= X'X diagonal),
-  # so we scale by n / median(1/shat^2).
-  if (is.null(s0)) {
-    sa2 <- (2^((0:24) / 25) - 1)^2
-    w_approx <- 1 / shat^2  # approximation to diag(X'X)
-    s0 <- sa2 / median(w_approx) * n
-  }
-
-  # Default w0: uniform weights matching mr.ash
-  K <- length(s0)
-  if (is.null(w0)) {
-    w0 <- rep(1 / K, K)
-  }
 
   # Default sigma2_e: use var_y when available (matches mr.ash behavior of
   # initializing to var(residuals) when beta.init is zero, since var(y - X*0) = var(y)).
