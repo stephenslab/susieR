@@ -555,9 +555,7 @@ susie_init_coef = function (coef_index, coef_value, p) {
     alpha[i,coef_index[i]] = 1
     mu[i,coef_index[i]] = coef_value[i]
   }
-  # Add prior variances V field (required by new architecture)
-  V = rep(0.2, L)  # Default scaled prior variance for each effect
-  out = list(alpha = alpha, mu = mu, mu2 = mu*mu, V = V)
+  out = list(alpha = alpha, mu = mu, mu2 = mu*mu)
   class(out) = c("susie","list")
   return(out)
 }

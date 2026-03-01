@@ -25,7 +25,7 @@ susie_rss(
   standardize = TRUE,
   intercept_value = 0,
   estimate_residual_variance = FALSE,
-  estimate_residual_method = c("MoM", "MLE"),
+  estimate_residual_method = c("MoM", "MLE", "Servin_Stephens"),
   estimate_prior_variance = TRUE,
   estimate_prior_method = c("optim", "EM", "simple"),
   unmappable_effects = c("none", "inf"),
@@ -34,6 +34,7 @@ susie_rss(
   residual_variance_lowerbound = 0,
   residual_variance_upperbound = Inf,
   model_init = NULL,
+  s_init = NULL,
   coverage = 0.95,
   min_abs_corr = 0.5,
   max_iter = 100,
@@ -48,7 +49,9 @@ susie_rss(
   n_purity = 100,
   r_tol = 1e-08,
   refine = FALSE,
-  stochastic_ld_sample = NULL
+  stochastic_ld_sample = NULL,
+  alpha0 = 0.1,
+  beta0 = 0.1
 )
 }
 \arguments{
@@ -66,8 +69,9 @@ formed explicitly and the standard path is used. When
 \code{nrow(X) < ncol(X)}, a low-rank path is used that avoids
 forming the p x p matrix, reducing per-iteration cost from
 O(Lp^2) to O(LBp). Columns of \code{X} are standardized
-internally. Cannot be combined with \code{z_ld_weight} or
-\code{var_y + shat}.}
+internally. If \code{z_ld_weight > 0} or \code{var_y} with
+\code{shat} are provided, the full correlation matrix is formed
+from \code{X} and the standard path is used.}
 
 \item{bhat}{Alternative summary data giving the estimated effects
 (a vector of length p). This, together with \code{shat}, may be
@@ -193,6 +197,10 @@ residual variance. It is only relevant when
 
 \item{model_init}{A previous susie fit with which to initialize.}
 
+\item{s_init}{Deprecated; please use \code{model_init} instead. If
+both \code{s_init} and \code{model_init} are provided, an error
+is thrown.}
+
 \item{coverage}{A number between 0 and 1 specifying the
 \dQuote{coverage} of the estimated confidence sets.}
 
@@ -254,6 +262,12 @@ posterior means for SNPs where LD uncertainty is large. Must be at
 least 1000. Not supported with \code{lambda != 0}. When provided,
 the output includes a \code{stochastic_ld_diagnostics} element
 with per-region and per-SNP quality metrics.}
+
+\item{alpha0}{Numerical parameter for the NIG prior when using
+\code{estimate_residual_method = "Servin_Stephens"}.}
+
+\item{beta0}{Numerical parameter for the NIG prior when using
+\code{estimate_residual_method = "Servin_Stephens"}.}
 }
 \value{
 In addition to the standard \code{"susie"} output (see

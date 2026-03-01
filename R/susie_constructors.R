@@ -29,6 +29,7 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
                                         prior_tol = 1e-9,
                                         residual_variance_upperbound = Inf,
                                         model_init = NULL,
+                                        s_init = NULL,
                                         coverage = 0.95,
                                         min_abs_corr = 0.5,
                                         compute_univariate_zscore = FALSE,
@@ -43,6 +44,15 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
                                         n_purity = 100,
                                         alpha0 = 0,
                                         beta0 = 0) {
+
+  # Handle deprecated s_init argument
+  if (!is.null(s_init)) {
+    if (!is.null(model_init))
+      stop("Cannot specify both 's_init' and 'model_init'.")
+    warning_message("s_init is deprecated and will be removed in a future ",
+                    "version of susieR. Please use model_init instead.")
+    model_init <- s_init
+  }
 
   # Validate input X
   if (!(is.double(X) & is.matrix(X)) &
@@ -252,6 +262,7 @@ sufficient_stats_constructor <- function(Xty, yty, n,
                                          prior_weights = NULL,
                                          null_weight = 0,
                                          model_init = NULL,
+                                         s_init = NULL,
                                          estimate_residual_variance = TRUE,
                                          estimate_residual_method = "MoM",
                                          residual_variance_lowerbound = 0,
@@ -273,6 +284,15 @@ sufficient_stats_constructor <- function(Xty, yty, n,
                                          refine = FALSE,
                                          alpha0 = 0.1,
                                          beta0 = 0.1) {
+
+  # Handle deprecated s_init argument
+  if (!is.null(s_init)) {
+    if (!is.null(model_init))
+      stop("Cannot specify both 's_init' and 'model_init'.")
+    warning_message("s_init is deprecated and will be removed in a future ",
+                    "version of susieR. Please use model_init instead.")
+    model_init <- s_init
+  }
 
   # Validate required inputs
   if (missing(n)) {
@@ -554,6 +574,7 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
                                       residual_variance_lowerbound = 0,
                                       residual_variance_upperbound = Inf,
                                       model_init = NULL,
+                                      s_init = NULL,
                                       coverage = 0.95,
                                       min_abs_corr = 0.5,
                                       max_iter = 100,
@@ -571,6 +592,15 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
                                       stochastic_ld_sample = NULL,
                                       alpha0 = 0.1,
                                       beta0 = 0.1) {
+
+  # Handle deprecated s_init argument
+  if (!is.null(s_init)) {
+    if (!is.null(model_init))
+      stop("Cannot specify both 's_init' and 'model_init'.")
+    warning_message("s_init is deprecated and will be removed in a future ",
+                    "version of susieR. Please use model_init instead.")
+    model_init <- s_init
+  }
 
   # Check if this should use RSS-lambda path
   if (lambda != 0) {

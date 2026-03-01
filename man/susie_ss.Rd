@@ -22,6 +22,7 @@ susie_ss(
   prior_weights = NULL,
   null_weight = 0,
   model_init = NULL,
+  s_init = NULL,
   estimate_residual_variance = TRUE,
   estimate_residual_method = c("MoM", "MLE", "Servin_Stephens"),
   residual_variance_lowerbound = 0,
@@ -40,7 +41,9 @@ susie_ss(
   verbose = FALSE,
   track_fit = FALSE,
   check_prior = FALSE,
-  refine = FALSE
+  refine = FALSE,
+  alpha0 = 0.1,
+  beta0 = 0.1
 )
 }
 \arguments{
@@ -109,6 +112,10 @@ nonzero effect on the outcome, y.}
 and cannot be exactly 1).}
 
 \item{model_init}{A previous susie fit with which to initialize.}
+
+\item{s_init}{Deprecated; please use \code{model_init} instead. If
+both \code{s_init} and \code{model_init} are provided, an error
+is thrown.}
 
 \item{estimate_residual_variance}{If
 \code{estimate_residual_variance = TRUE}, the residual variance is
@@ -201,6 +208,12 @@ estimated prior variance becomes unreasonably large (comparing with
 \item{refine}{If \code{refine = TRUE}, then an additional
 iterative refinement procedure is used, after the IBSS algorithm,
 to check and escape from local optima (see details).}
+
+\item{alpha0}{Numerical parameter for the NIG prior when using
+\code{estimate_residual_method = "Servin_Stephens"}.}
+
+\item{beta0}{Numerical parameter for the NIG prior when using
+\code{estimate_residual_method = "Servin_Stephens"}.}
 }
 \description{
 Performs SuSiE regression using sufficient statistics (XtX, Xty,
