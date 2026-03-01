@@ -491,12 +491,6 @@ sufficient_stats_constructor <- function(Xty, yty, n,
     check_prior = check_prior
   )
 
-  # Handle SS-specific validation before general validation
-  if (params_object$unmappable_effects == "ash") {
-    stop("Adaptive shrinkage (ash) requires individual-level data and cannot be used with sufficient statistics. ",
-         "Please provide X and y instead of XtX, Xty, and yty.")
-  }
-
   # Validate and apply parameter overrides
   params_object <- validate_and_override_params(params_object)
 

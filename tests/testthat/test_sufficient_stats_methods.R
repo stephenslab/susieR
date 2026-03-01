@@ -28,17 +28,17 @@ test_that("configure_data.ss adds eigen decomposition for unmappable_effects='in
   expect_true("VtXty" %in% names(result))
 })
 
-test_that("sufficient_stats_constructor rejects unmappable_effects='ash'", {
+test_that("sufficient_stats_constructor accepts unmappable_effects='ash'", {
   base_data <- generate_base_data(n = 100, p = 50, k = 0, seed = 1)
   XtX <- crossprod(base_data$X)
   Xty <- crossprod(base_data$X, base_data$y)
   yty <- sum(base_data$y^2)
 
-  expect_error(
-    sufficient_stats_constructor(Xty = Xty, yty = yty, n = base_data$n, XtX = XtX,
-                                 unmappable_effects = "ash"),
-    "Adaptive shrinkage \\(ash\\) requires individual-level data"
-  )
+  # ash is now supported for sufficient statistics via mr.ash.rss
+  result <- sufficient_stats_constructor(Xty = Xty, yty = yty, n = base_data$n, XtX = XtX,
+                                          unmappable_effects = "ash")
+  expect_true(inherits(result$data, "ss"))
+  expect_equal(result$params$unmappable_effects, "ash")
 })
 
 test_that("get_var_y.ss computes variance of y", {

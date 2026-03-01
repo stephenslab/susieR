@@ -11,9 +11,10 @@
 # Configure individual data for specified method
 #' @keywords internal
 configure_data.individual <- function(data, params) {
-  if (params$unmappable_effects == "none") {
+  if (params$unmappable_effects == "none" || params$unmappable_effects == "ash") {
     return(configure_data.default(data, params))
   } else {
+    # "inf" mode still requires sufficient statistics conversion
     warning_message("Individual-level data will be converted to sufficient statistics for unmappable effects methods (this step may take a while for a large data set)")
     return(convert_individual_to_ss(data, params))
   }
@@ -52,6 +53,11 @@ initialize_susie_model.individual <- function(data, params, var_y, ...) {
     model$marginal_loglik <- rep(as.numeric(NA), params$L)
   }
 
+  # Initialize ash (Mr.ASH) tracking fields
+  if (params$unmappable_effects == "ash") {
+    model <- init_ash_fields(model, data$n, data$p, params$L, is_individual = TRUE)
+  }
+
   return(model)
 }
 
@@ -70,6 +76,13 @@ validate_prior.individual <- function(data, params, model, ...) {
 # Track core parameters across iterations
 #' @keywords internal
 track_ibss_fit.individual <- function(data, params, model, tracking, iter, elbo, ...) {
+  if (params$unmappable_effects == "ash") {
+    tracking <- track_ibss_fit.default(data, params, model, tracking, iter, elbo, ...)
+    if (isTRUE(params$track_fit)) {
+      tracking[[iter]]$tau2 <- model$tau2
+    }
+    return(tracking)
+  }
   return(track_ibss_fit.default(data, params, model, tracking, iter, elbo, ...))
 }
 
@@ -91,7 +104,12 @@ compute_residuals.individual <- function(data, params, model, l, ...) {
   Xr_without_l <- model$Xr - compute_Xb(data$X, model$alpha[l, ] * model$mu[l, ])
 
   # Compute residuals
-  R   <- data$y - Xr_without_l
+  if (params$unmappable_effects == "ash") {
+    # Subtract both sparse effects (without l) and ash theta
+    R <- data$y - Xr_without_l - model$X_theta
+  } else {
+    R <- data$y - Xr_without_l
+  }
   XtR <- compute_Xty(data$X, R)
 
   # Store unified residuals in model
@@ -197,7 +215,9 @@ compute_kl.individual <- function(data, params, model, l) {
 get_ER2.individual <- function(data, model) {
   Xr_L <- compute_MXt(model$alpha * model$mu, data$X)
   postb2 <- model$alpha * model$mu2
-  return(sum((data$y - model$Xr)^2) - sum(Xr_L^2) + sum(model$predictor_weights * t(postb2)))
+  # For ash, subtract theta contribution from residuals
+  y_adj <- if (!is.null(model$X_theta)) data$y - model$X_theta else data$y
+  return(sum((y_adj - model$Xr)^2) - sum(Xr_L^2) + sum(model$predictor_weights * t(postb2)))
 }
 
 # Expected log-likelihood
@@ -279,12 +299,23 @@ update_fitted_values.individual <- function(data, params, model, l, ...) {
 # Update variance components for individual data
 #' @keywords internal
 update_variance_components.individual <- function(data, params, model, ...) {
+  if (params$unmappable_effects == "ash") {
+    # SuSiE-ash: shared update dispatches to mr.ash for individual data
+    return(update_ash_variance_components(data, model, params))
+  }
   return(update_variance_components.default(data, params, model, ...))
 }
 
 # Update derived quantities for individual data
 #' @keywords internal
 update_derived_quantities.individual <- function(data, params, model) {
+  if (params$unmappable_effects == "ash") {
+    # For ash, recompute full Xr including sparse effects only
+    # (theta is tracked separately via X_theta)
+    b <- colSums(model$alpha * model$mu)
+    model$Xr <- as.vector(compute_Xb(data$X, b))
+    return(model)
+  }
   return(update_derived_quantities.default(data, params, model))
 }
 
@@ -323,6 +354,11 @@ get_fitted.individual <- function(data, params, model, ...) {
     fitted <- model$Xr + data$mean_y
   } else {
     fitted <- model$Xr
+  }
+
+  # Include ash theta contribution
+  if (!is.null(model$X_theta)) {
+    fitted <- fitted + model$X_theta
   }
 
   fitted <- drop(fitted)
@@ -389,6 +425,11 @@ cleanup_model.individual <- function(data, params, model, ...) {
   if (params$use_servin_stephens) {
     model$marginal_loglik <- NULL
     if (nrow(model$alpha) > 1) model$elbo <- NULL
+  }
+
+  # Remove ash-specific runtime fields
+  if (!is.null(params$unmappable_effects) && params$unmappable_effects == "ash") {
+    model <- cleanup_ash_fields(model)
   }
 
   return(model)

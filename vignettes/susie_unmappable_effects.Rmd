@@ -244,6 +244,40 @@ However, the adaptive shrinkage approach allows SuSiE-ash to distinguish between
 sparse signals and the polygenic background more effectively than either
 standard SuSiE or SuSiE-inf alone.
 
+
+SuSiE-ash can also be used with summary statistics via `susie_ss()`, using
+`mr.ash.rss` as the backend for the adaptive shrinkage component. This enables
+fine-mapping with unmappable effects when only sufficient statistics (X'X, X'y,
+y'y) are available.
+
+```{r}
+XtX <- crossprod(X)
+Xty <- crossprod(X, y)
+yty <- sum(y^2)
+n <- nrow(X)
+
+t0 <- proc.time()
+fit_ash_ss <- susie_ss(XtX = XtX, Xty = Xty, yty = yty, n = n,
+                        L = 10, unmappable_effects = "ash", verbose = TRUE)
+t1 <- proc.time()
+t1 - t0
+susie_plot(fit_ash_ss, y = "PIP", b = b, main = "SuSiE-ash (SS)", add_legend = TRUE)
+```
+
+```{r}
+plot_cs_effects(fit_ash_ss, b, main = "SuSiE-ash (SS) CS on true effects")
+```
+
+We can verify the agreement between the two approaches:
+
+```{r}
+pip_ind <- susie_get_pip(fit_ash)
+pip_ss <- susie_get_pip(fit_ash_ss)
+cat("Max |PIP difference|:", max(abs(pip_ind - pip_ss)), "\n")
+cat("PIP correlation:", cor(pip_ind, pip_ss), "\n")
+cat("Max |theta difference|:", max(abs(fit_ash$theta - fit_ash_ss$theta)), "\n")
+```
+
 ## Summary
 
 | Method | Credible Sets | False Positives |
@@ -252,6 +286,7 @@ standard SuSiE or SuSiE-inf alone.
 | SuSiE (purity=0.8) | 3 | 2 |
 | SuSiE-inf | 1 | 0 |
 | SuSiE-ash | 3 | 0 |
+| SuSiE-ash (SS) | 3 | 0 |
 
 ## What if we increase L for standard SuSiE?
 

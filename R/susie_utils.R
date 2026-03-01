@@ -723,22 +723,6 @@ add_eigen_decomposition <- function(data, params, individual_data = NULL) {
   data$eigen_values  <- eigen_decomp$Dsq
   data$VtXty         <- t(eigen_decomp$V) %*% data$Xty
 
-  if (params$unmappable_effects == "ash") {
-    if (is.null(individual_data)) {
-      stop("Adaptive shrinkage (ash) requires individual-level data")
-    }
-
-    X_scaled <- scale_design_matrix(
-      individual_data$X,
-      center = attr(individual_data$X, "scaled:center"),
-      scale = attr(individual_data$X, "scaled:scale")
-    )
-
-    data$X    <- X_scaled               
-    data$y    <- individual_data$y       
-    data$VtXt <- t(data$eigen_vectors) %*% t(X_scaled)
-  }
-
   return(data)
 }
 
@@ -1349,46 +1333,532 @@ check_convergence <- function(data, params, model, elbo, iter, tracking) {
   return(model)
 }
 
-# Run final unmasked ASH pass after convergence
+# =============================================================================
+# SuSiE-ASH SHARED UTILITIES
 #
-# After SuSiE converges, runs Mr.ASH one final time without masking
-# to get accurate theta estimates for prediction. This addresses the
-# issue that during iteration, theta values at masked positions are
-# forcibly set to 0 to prevent double-counting, but after convergence
-# we want the true Mr.ASH estimates.
+# Functions shared between individual-level and summary-statistics ash paths.
+# The masking logic is data-type-agnostic (only needs correlation matrix),
+# while the mr.ash fitting is dispatched to either mr.ash (individual) or
+# mr.ash.rss (summary stats).
 #
-# @param data Data object (must have $X and $y for ASH)
-# @param params Parameters object
-# @param model Converged SuSiE model
+# Design: individual-level data uses mr.ash directly, SS data uses mr.ash.rss.
+# The init/masking/cleanup logic is shared since it depends only on model
+# dimensions (n, p, L), not on data representation.
+# =============================================================================
+
+# Initialize ash tracking fields on a model object
 #
-# @return Model with updated theta, XtX_theta, tau2, ash_pi
+# Shared between individual and SS model initialization.
+# Individual models store X_theta (n-vector); SS models store XtX_theta (p-vector).
+#
+# @param model Model object to augment
+# @param n Number of observations (used only by individual path for X_theta)
+# @param p Number of predictors
+# @param L Number of single effects
+# @param is_individual Whether this is individual-level data
+#
+# @return Model with ash tracking fields added
 #
 # @keywords internal
-run_final_ash_pass <- function(data, params, model) {
-  # Compute residuals with ALL SuSiE effects removed
-  b_susie <- colSums(model$alpha * model$mu)
-  residuals <- data$y - data$X %*% b_susie
+init_ash_fields <- function(model, n, p, L, is_individual = FALSE) {
+  model$tau2              <- 0
+  model$theta             <- rep(0, p)
+  model$masked            <- rep(FALSE, p)
+  model$ash_iter          <- 0
+  model$ash_pi            <- NULL
+  model$ash_s0            <- NULL
+  model$diffuse_iter_count <- rep(0, L)
+  model$prev_sentinel     <- rep(0, L)
+  model$unmask_candidate_iters <- rep(0, p)
+  model$ever_unmasked     <- rep(FALSE, p)
+  model$force_exposed_iter <- rep(0, p)
+  model$ever_diffuse      <- rep(0, L)
+  model$second_chance_used <- rep(FALSE, p)
+  model$prev_case         <- rep(0, L)
 
-  # Run Mr.ASH with warm start from current fit
+  # Data-representation-specific fitted theta
+  if (is_individual) {
+    model$X_theta <- rep(0, n)
+  } else {
+    model$XtX_theta <- rep(0, p)
+  }
+
+  return(model)
+}
+
+# Shared ash variance component update
+#
+# Performs the full ash update cycle: get correlation matrix, compute masking,
+# fit mr.ash (individual or SS), mask theta, compute fitted theta.
+# Called by both update_variance_components.individual() and .ss().
+#
+# @param data Data object (individual or SS)
+# @param model Current SuSiE model
+# @param params Parameters object
+#
+# @return List with sigma2, tau2, theta, fitted theta, and all tracking fields
+#
+# @keywords internal
+update_ash_variance_components <- function(data, model, params) {
+  is_individual <- inherits(data, "individual")
+
+  # Step 1: Get correlation matrix (cached after first call)
+  xcorr_result <- get_xcorr(data)
+  Xcorr <- xcorr_result$Xcorr
+  data <- xcorr_result$data
+
+  # Step 2: Compute masking (shared 3-case classification)
+  mask_result <- compute_ash_masking(Xcorr, model, params)
+  b_confident <- mask_result$b_confident
+  masked <- mask_result$masked
+  model <- mask_result$model
+
+  # Step 3: Fit Mr.ASH (dispatch to individual or SS backend)
+  convtol <- if (model$ash_iter < 2) 1e-3 else 1e-4
+  if (is_individual) {
+    mrash_output <- compute_ash_from_individual_data(
+      data$X, data$y, b_confident, model, params, convtol
+    )
+  } else {
+    mrash_output <- compute_ash_from_summary_stats(
+      data, b_confident, model, params, convtol
+    )
+  }
+
+  # Step 4: Zero out theta for masked variants
+  theta_new <- mrash_output$beta
+  theta_new[masked] <- 0
+
+  # Step 5: Compute fitted theta (data-representation-specific)
+  result <- list(
+    sigma2              = mrash_output$sigma2,
+    tau2                = mrash_output$tau2,
+    theta               = theta_new,
+    ash_pi              = mrash_output$pi,
+    sa2                 = mrash_output$sa2,
+    ash_iter            = model$ash_iter,
+    diffuse_iter_count  = model$diffuse_iter_count,
+    prev_sentinel       = model$prev_sentinel,
+    masked              = masked,
+    unmask_candidate_iters = model$unmask_candidate_iters,
+    ever_unmasked       = model$ever_unmasked,
+    force_exposed_iter  = model$force_exposed_iter,
+    second_chance_used  = model$second_chance_used,
+    ever_diffuse        = model$ever_diffuse,
+    prev_case           = model$prev_case
+  )
+
+  if (is_individual) {
+    result$X_theta <- as.vector(data$X %*% theta_new)
+  } else {
+    result$XtX_theta <- as.vector(compute_Rv(data, theta_new))
+  }
+
+  return(result)
+}
+
+# Remove ash-specific runtime fields from model
+#
+# Shared between cleanup_model.individual() and cleanup_model.ss().
+#
+# @param model Model object
+#
+# @return Model with ash runtime fields removed
+#
+# @keywords internal
+cleanup_ash_fields <- function(model) {
+  for (field in c("X_theta", "XtX_theta", "masked", "ash_iter")) {
+    model[[field]] <- NULL
+  }
+  return(model)
+}
+
+# Get or compute correlation matrix for ash masking
+#
+# For SS data: derives from XtX via safe_cov2cor (cheap scaling).
+# For individual data: computes cor(X) and caches it on the data object.
+#
+# @param data Data object
+#
+# @return List with Xcorr and (possibly updated) data object
+#
+# @keywords internal
+get_xcorr <- function(data) {
+  # Check for cached correlation matrix
+  if (!is.null(data$Xcorr_cache)) {
+    return(list(Xcorr = data$Xcorr_cache, data = data))
+  }
+
+  if (!is.null(data$XtX)) {
+    # SS path: derive from XtX
+    if (any(!(diag(data$XtX) %in% c(0, 1)))) {
+      Xcorr <- safe_cov2cor(data$XtX)
+    } else {
+      Xcorr <- data$XtX
+    }
+  } else if (!is.null(data$X)) {
+    # Individual path: compute correlation from X
+    Xcorr <- safe_cor(data$X)
+  } else {
+    stop("Cannot compute correlation matrix: data has neither XtX nor X")
+  }
+
+  # Cache for future iterations
+  data$Xcorr_cache <- Xcorr
+  return(list(Xcorr = Xcorr, data = data))
+}
+
+# Compute ash masking: classify effects, determine protection/masking
+#
+# KEY INSIGHT: Protect SuSiE's sparse effects from Mr.ASH absorption,
+# but let Mr.ASH absorb unmappable and unreliable signals.
+#
+# Two types of diffusion (both indicate unreliable effects):
+#   1. WITHIN-EFFECT: Low purity - spread across variants not in tight LD
+#   2. CROSS-EFFECT: Sentinel collision - multiple effects compete for
+#      same position (composite signal, not clean single causal)
+#
+# Classification into three cases:
+#   CASE 1 (diffuse): purity < 0.1 - protect neighborhood loosely
+#   CASE 2 (uncertain): low purity OR ever_diffuse - expose to Mr.ASH
+#   CASE 3 (confident): purity >= 0.5 AND never diffuse - subtract from residuals
+#
+# Cross-effect diffusion tracking:
+#   - Detect via sentinel collision (sentinels in tight LD across effects)
+#   - Mark effect as ever_diffuse (sticky, effect-level)
+#   - ever_diffuse effects get zero protection permanently
+#   - Real signals survive Mr.ASH competition; composites get absorbed
+#
+# Low purity (non-diffuse) effects:
+#   - Use wait-then-expose mechanism
+#   - After diffuse_iter_count stable iterations, expose sentinel neighborhood
+#   - If Mr.ASH absorbs it, the signal was synthetic
+#   - Second-chance mechanism: after wait period, restore masking to check
+#
+# @param Xcorr Correlation matrix (p x p)
+# @param model Current SuSiE model (with alpha, mu, tracking fields)
+# @param params Parameters object
+#
+# @return List with b_confident, masked, and updated model tracking fields
+#
+# @keywords internal
+compute_ash_masking <- function(Xcorr, model, params) {
+  # --- Protection thresholds ---
+  neighborhood_pip_threshold <- if (!is.null(params$neighborhood_pip_threshold)) params$neighborhood_pip_threshold else 0.4
+  direct_pip_threshold <- if (!is.null(params$direct_pip_threshold)) params$direct_pip_threshold else 0.1
+  ld_threshold <- if (!is.null(params$ld_threshold)) params$ld_threshold else 0.5
+
+  # --- Purity thresholds ---
+  cs_threshold <- if (!is.null(params$working_cs_threshold)) params$working_cs_threshold else 0.9
+  cs_formation_threshold <- if (!is.null(params$cs_formation_threshold)) params$cs_formation_threshold else 0.1
+  purity_threshold <- if (!is.null(params$purity_threshold)) params$purity_threshold else 0.5
+
+  # --- LD thresholds for collision and exposure ---
+  collision_ld_threshold <- if (!is.null(params$collision_ld_threshold)) params$collision_ld_threshold else 0.9
+  tight_ld_threshold <- if (!is.null(params$tight_ld_threshold)) params$tight_ld_threshold else 0.95
+
+  # --- Iteration counters for CASE 2 ---
+  diffuse_iter_count <- if (!is.null(params$diffuse_iter_count)) params$diffuse_iter_count else 2
+  track_sentinel <- if (!is.null(params$track_sentinel)) params$track_sentinel else TRUE
+
+  # --- Second chance mechanism ---
+  second_chance_wait <- if (!is.null(params$second_chance_wait)) params$second_chance_wait else 3
+
+  # --- Unmasking stability ---
+  delayed_unmask_iter <- 2
+
+  L <- nrow(model$alpha)
+  p <- ncol(model$alpha)
+  model$ash_iter <- model$ash_iter + 1
+
+  # =========================================================================
+  # First pass: Compute sentinels and purity
+  # =========================================================================
+  sentinels <- apply(model$alpha, 1, which.max)
+  effect_purity <- rep(NA, L)
+
+  for (l in 1:L) {
+    alpha_order <- order(model$alpha[l,], decreasing = TRUE)
+    cumsum_alpha <- cumsum(model$alpha[l, alpha_order])
+    cs_size <- sum(cumsum_alpha <= cs_threshold) + 1
+    cs_indices <- alpha_order[1:min(cs_size, p)]
+    effect_purity[l] <- get_purity(cs_indices, X = NULL, Xcorr = Xcorr, use_rfast = FALSE)[1]
+  }
+
+  # Detect current collision and update ever_diffuse
+  current_collision <- rep(FALSE, L)
+  for (l in 1:L) {
+    if (max(model$alpha[l,]) - min(model$alpha[l,]) < 5e-5) next
+    sentinel_l <- sentinels[l]
+    for (other_l in (1:L)[-l]) {
+      if (max(model$alpha[other_l,]) - min(model$alpha[other_l,]) < 5e-5) next
+      if (abs(Xcorr[sentinel_l, sentinels[other_l]]) > collision_ld_threshold) {
+        current_collision[l] <- TRUE
+      }
+    }
+    model$ever_diffuse[l] <- model$ever_diffuse[l] + current_collision[l]
+  }
+
+  # Initialize per-iteration outputs
+  b_confident <- rep(0, p)
+  alpha_protected <- matrix(0, nrow = L, ncol = p)
+  force_unmask <- rep(FALSE, p)
+  force_mask <- rep(FALSE, p)
+
+  # =========================================================================
+  # Second pass: Classify effects and determine protection
+  # =========================================================================
+  current_case <- rep(0, L)
+
+  for (l in 1:L) {
+    purity <- effect_purity[l]
+    sentinel <- sentinels[l]
+
+    if (track_sentinel && sentinel != model$prev_sentinel[l] && model$prev_sentinel[l] > 0) {
+      if (abs(Xcorr[sentinel, model$prev_sentinel[l]]) < tight_ld_threshold) {
+        model$diffuse_iter_count[l] <- 0
+      }
+    }
+
+    is_ever_diffuse <- model$ever_diffuse[l] > 0
+    can_be_confident <- (purity >= purity_threshold) && !is_ever_diffuse
+
+    if (purity < cs_formation_threshold) {
+      # CASE 1: Diffuse within effect
+      current_case[l] <- 1
+      model$diffuse_iter_count[l] <- 0
+      moderate_ld_with_sentinel <- abs(Xcorr[sentinel,]) > ld_threshold
+      meaningful_alpha <- model$alpha[l,] > 5/p
+      to_protect <- moderate_ld_with_sentinel | meaningful_alpha
+      alpha_protected[l, to_protect] <- model$alpha[l, to_protect]
+      force_mask <- force_mask | moderate_ld_with_sentinel
+    } else if (!can_be_confident) {
+      # CASE 2: Uncertain
+      current_case[l] <- 2
+      if (current_collision[l]) {
+        model$diffuse_iter_count[l] <- 0
+      } else {
+        model$diffuse_iter_count[l] <- model$diffuse_iter_count[l] + 1
+        if (model$diffuse_iter_count[l] >= diffuse_iter_count) {
+          tight_ld_with_sentinel <- abs(Xcorr[sentinel,]) > tight_ld_threshold
+          newly_exposed <- tight_ld_with_sentinel &
+                          !model$second_chance_used &
+                          (model$force_exposed_iter == 0)
+          model$force_exposed_iter[newly_exposed] <- model$ash_iter
+          if (any(newly_exposed)) {
+            model$diffuse_iter_count[l] <- 0
+          }
+          alpha_protected[l,] <- model$alpha[l,]
+          expose_positions <- tight_ld_with_sentinel & !model$second_chance_used
+          alpha_protected[l, expose_positions] <- 0
+          force_unmask <- force_unmask | expose_positions
+        } else {
+          alpha_protected[l,] <- model$alpha[l,]
+        }
+      }
+    } else {
+      # CASE 3: Confident
+      current_case[l] <- 3
+      model$diffuse_iter_count[l] <- 0
+      b_confident <- b_confident + model$alpha[l,] * model$mu[l,]
+      alpha_protected[l,] <- model$alpha[l,]
+    }
+
+    model$prev_sentinel[l] <- sentinel
+  }
+
+  # =========================================================================
+  # Oscillation detection
+  # =========================================================================
+  for (l in 1:L) {
+    prev <- model$prev_case[l]
+    curr <- current_case[l]
+    if (curr == 0 || prev == 0) next
+    if ((prev == 2 && curr == 3) || (prev == 3 && curr == 2)) {
+      model$ever_diffuse[l] <- model$ever_diffuse[l] + 1
+      if (curr == 3) {
+        b_confident <- b_confident - model$alpha[l,] * model$mu[l,]
+      }
+    }
+  }
+  model$prev_case <- current_case
+
+  # =========================================================================
+  # Masking logic
+  # =========================================================================
+  pip_protected <- susie_get_pip(alpha_protected)
+
+  LD_adj <- abs(Xcorr) > ld_threshold
+  neighborhood_pip <- as.vector(LD_adj %*% pip_protected)
+  want_masked <- (neighborhood_pip > neighborhood_pip_threshold) |
+                 (pip_protected > direct_pip_threshold) |
+                 force_mask
+
+  dont_want_mask <- !want_masked
+  model$unmask_candidate_iters[model$masked & dont_want_mask] <-
+    model$unmask_candidate_iters[model$masked & dont_want_mask] + 1
+  model$unmask_candidate_iters[want_masked | !model$masked] <- 0
+
+  ready_to_unmask <- (model$masked &
+                     (model$unmask_candidate_iters >= delayed_unmask_iter) &
+                     !model$ever_unmasked) |
+                     (model$masked & force_unmask)
+
+  model$ever_unmasked[ready_to_unmask] <- TRUE
+  masked <- (model$masked | want_masked) & !ready_to_unmask & !model$ever_unmasked
+
+  # Second chance
+  waited_long_enough <- (model$force_exposed_iter > 0) &
+                        (model$ash_iter - model$force_exposed_iter) >= second_chance_wait
+  should_restore <- waited_long_enough & !model$second_chance_used
+  if (any(should_restore)) {
+    model$second_chance_used[should_restore] <- TRUE
+    model$force_exposed_iter[should_restore] <- 0
+    model$ever_unmasked[should_restore] <- FALSE
+    masked[should_restore] <- TRUE
+  }
+
+  list(
+    b_confident = b_confident,
+    masked = masked,
+    model = model
+  )
+}
+
+# Run Mr.ASH on individual-level data
+#
+# Computes residuals from raw X, y and calls mr.ash directly.
+#
+# @param X Design matrix (n x p)
+# @param y Response vector (n)
+# @param b_confident Vector of confident effects to subtract from residuals
+# @param model Current SuSiE model
+# @param params Parameters object
+# @param convtol Convergence tolerance for mr.ash
+#
+# @return List with beta, sigma2, pi, sa2, tau2
+#
+# @keywords internal
+compute_ash_from_individual_data <- function(X, y, b_confident, model, params, convtol = 1e-4) {
+  residuals <- y - X %*% b_confident
+
   mrash_output <- mr.ash(
-    X             = data$X,
+    X             = X,
     y             = residuals,
     intercept     = FALSE,
     standardize   = FALSE,
     sigma2        = model$sigma2,
-    update.sigma2 = FALSE,
+    update.sigma2 = params$estimate_residual_variance,
     beta.init     = model$theta,
     pi            = model$ash_pi,
-    tol           = list(convtol = 1e-4, epstol = 1e-12),
+    tol           = list(convtol = convtol, epstol = 1e-12),
     verbose       = params$verbose,
     max.iter      = 1000
   )
 
-  # Update model with UNMASKED theta (no zeroing)
-  model$theta     <- mrash_output$beta
-  model$XtX_theta <- compute_Rv(data, model$theta)
-  model$tau2      <- sum(mrash_output$data$sa2 * mrash_output$pi) * model$sigma2
-  model$ash_pi    <- mrash_output$pi
+  list(
+    beta = mrash_output$beta,
+    sigma2 = mrash_output$sigma2,
+    pi = mrash_output$pi,
+    sa2 = mrash_output$data$sa2,
+    tau2 = sum(mrash_output$data$sa2 * mrash_output$pi) * mrash_output$sigma2
+  )
+}
+
+# Run Mr.ASH using summary statistics (via mr.ash.rss)
+#
+# Computes residual summary statistics from sufficient statistics and
+# calls mr.ash.rss. This enables the "ash" unmappable effects mode
+# for susie_ss() and susie_rss() without requiring raw X and y.
+#
+# @param data Data object (must have $XtX, $Xty, $yty, $n)
+# @param b_confident Vector of confident effects to subtract from residuals
+# @param model Current SuSiE model
+# @param params Parameters object
+# @param convtol Convergence tolerance for mr.ash.rss
+#
+# @return List with beta, sigma2, pi, sa2, tau2
+#
+# @keywords internal
+compute_ash_from_summary_stats <- function(data, b_confident, model, params, convtol = 1e-4) {
+  # Compute residual sufficient statistics: r = y - X*b_confident
+  # X'r = X'y - X'X * b_confident
+  Xtr <- as.vector(data$Xty - data$XtX %*% b_confident)
+  # r'r = y'y - 2*b'*X'y + b'*X'X*b
+  rtr <- data$yty - 2 * sum(b_confident * data$Xty) +
+         as.numeric(t(b_confident) %*% data$XtX %*% b_confident)
+
+  XtXdiag <- diag(data$XtX)
+  bhat <- Xtr / XtXdiag
+  # Use n-2 df to match PVE adjustment in mr.ash.rss
+  shat <- sqrt(pmax(0, (rtr - Xtr^2 / XtXdiag) / ((data$n - 2) * XtXdiag)))
+  R_mat <- safe_cov2cor(data$XtX)
+  var_r <- rtr / (data$n - 1)
+
+  # Default prior grid (matching mr.ash defaults)
+  if (is.null(model$ash_s0)) {
+    sa2 <- (2^((0:24) / 25) - 1)^2
+    model$ash_s0 <- sa2 / median(XtXdiag) * data$n
+  }
+  K <- length(model$ash_s0)
+  if (is.null(model$ash_pi)) model$ash_pi <- rep(1 / K, K)
+
+  fit <- mr.ash.rss(
+    bhat = bhat, shat = shat, R = R_mat,
+    var_y = var_r, n = data$n,
+    sigma2_e = model$sigma2, s0 = model$ash_s0, w0 = model$ash_pi,
+    mu1_init = model$theta,
+    tol = convtol, max_iter = 1000,
+    update_w0 = TRUE,
+    update_sigma = params$estimate_residual_variance
+  )
+
+  list(
+    beta = fit$beta,
+    sigma2 = fit$sigma2,
+    pi = fit$pi,
+    sa2 = model$ash_s0,
+    tau2 = sum(model$ash_s0 * fit$pi) * fit$sigma2
+  )
+}
+
+# Run final Mr.ASH pass after SuSiE convergence
+#
+# After SuSiE converges, run one final Mr.ASH pass with ALL SuSiE effects
+# removed (unmasked) to get the final unmappable effects estimate.
+# Individual-level data uses mr.ash directly; SS data uses mr.ash.rss.
+#
+# @param data Data object
+# @param params Parameters object
+# @param model Converged SuSiE model
+#
+# @return Model with updated theta, tau2, ash_pi, and fitted theta values
+#
+# @keywords internal
+run_final_ash_pass <- function(data, params, model) {
+  b_susie <- colSums(model$alpha * model$mu)
+  is_individual <- inherits(data, "individual")
+
+  # Dispatch to individual (mr.ash) or SS (mr.ash.rss) backend
+  if (is_individual) {
+    mrash_output <- compute_ash_from_individual_data(
+      data$X, data$y, b_susie, model, params
+    )
+  } else {
+    mrash_output <- compute_ash_from_summary_stats(data, b_susie, model, params)
+  }
+
+  # Update model (shared across both paths)
+  model$theta  <- mrash_output$beta
+  model$tau2   <- mrash_output$tau2
+  model$ash_pi <- mrash_output$pi
+
+  # Compute fitted theta (data-representation-specific)
+  if (is_individual) {
+    model$X_theta <- as.vector(data$X %*% model$theta)
+  } else {
+    model$XtX_theta <- compute_Rv(data, model$theta)
+  }
 
   return(model)
 }

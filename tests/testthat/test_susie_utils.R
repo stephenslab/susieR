@@ -1010,14 +1010,13 @@ test_that("add_eigen_decomposition adds eigen components to data object", {
   result_none <- add_eigen_decomposition(data, params_none)
   expect_true(!is.null(result_none$eigen_vectors))
 
-  # Test with unmappable_effects = "ash" (requires individual data)
+  # Test with unmappable_effects = "ash" (no raw data storage needed)
   params_ash <- list(unmappable_effects = "ash", verbose = FALSE)
-  individual_data <- list(X = base_data$X, y = base_data$y)
 
-  result_ash <- add_eigen_decomposition(data, params_ash, individual_data)
-  expect_true(!is.null(result_ash$X))
-  expect_true(!is.null(result_ash$y))
-  expect_true(!is.null(result_ash$VtXt))
+  result_ash <- add_eigen_decomposition(data, params_ash)
+  expect_true(!is.null(result_ash$eigen_vectors))
+  expect_true(!is.null(result_ash$eigen_values))
+  expect_true(!is.null(result_ash$VtXty))
 })
 
 test_that("compute_omega_quantities computes omega-weighted quantities", {
