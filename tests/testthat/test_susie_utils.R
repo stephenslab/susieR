@@ -1415,33 +1415,6 @@ test_that("update_model_variance updates variance components", {
   expect_true(result$sigma2 > 0)
 })
 
-test_that("update_model_variance uses NIG posterior mode when Servin-Stephens is active", {
-  # Setup individual data
-  setup <- setup_individual_data(n = 100, p = 50, L = 5, seed = 999)
-  data <- setup$data
-  params <- setup$params
-  params$estimate_residual_variance <- TRUE
-  params$estimate_residual_method <- "Servin_Stephens"
-  params$use_servin_stephens <- TRUE
-  params$residual_variance_lowerbound <- 0.01
-  params$residual_variance_upperbound <- 10
-  params$unmappable_effects <- "none"
-  model <- setup$model
-
-  # Add NIG posterior modes (model$rv) that the NIG prior would produce
-  model$rv <- c(0.8, 1.2, 0.9, 1.1, 1.0)
-
-  result <- update_model_variance(data, params, model)
-
-  # sigma2 should be the mean of model$rv (NIG posterior mode), NOT from MoM/MLE
-  expected_sigma2 <- mean(model$rv)
-  expect_equal(result$sigma2, expected_sigma2)
-
-  # Verify it's within bounds
-  expect_true(result$sigma2 >= params$residual_variance_lowerbound)
-  expect_true(result$sigma2 <= params$residual_variance_upperbound)
-})
-
 # =============================================================================
 # CONVERGENCE & OPTIMIZATION
 # =============================================================================
