@@ -757,14 +757,14 @@ test_that("susie_init_coef creates valid initialization object", {
   expect_type(init, "list")
 
   # Should have required fields
-  expect_true(all(c("alpha", "mu", "mu2", "V") %in% names(init)))
+  expect_true(all(c("alpha", "mu", "mu2") %in% names(init)))
+  expect_null(init$V)
 
   # Check dimensions
   L <- length(coef_index)
   expect_equal(dim(init$alpha), c(L, p))
   expect_equal(dim(init$mu), c(L, p))
   expect_equal(dim(init$mu2), c(L, p))
-  expect_length(init$V, L)
 })
 
 test_that("susie_init_coef sets alpha correctly", {

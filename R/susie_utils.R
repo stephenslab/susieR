@@ -609,7 +609,9 @@ prune_single_effects <- function(model_init, L = 0, V = NULL) {
     }
     if (!is.null(V)) {
       if (length(V) > 1) {
-        V[1:num_effects] <- model_init$V[effects_rank]
+        if (!is.null(model_init$V)) {
+          V[1:num_effects] <- model_init$V[effects_rank]
+        }
       } else {
         V <- rep(V, L)
       }
