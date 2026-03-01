@@ -4,7 +4,8 @@
 \alias{safe_cor}
 \title{Computes correlation matrix from data matrix
 Handles constant columns without warnings - returns 0 correlation for constant cols
-Uses crossprod for speed (faster than base cor)}
+Uses Rfast::cora when available (much faster for large matrices), falls back
+to crossprod-based computation otherwise.}
 \usage{
 safe_cor(X)
 }
@@ -17,6 +18,7 @@ Correlation matrix (p x p)
 \description{
 Computes correlation matrix from data matrix
 Handles constant columns without warnings - returns 0 correlation for constant cols
-Uses crossprod for speed (faster than base cor)
+Uses Rfast::cora when available (much faster for large matrices), falls back
+to crossprod-based computation otherwise.
 }
 \keyword{internal}

@@ -39,7 +39,7 @@ susie_get_cs(
   squared = FALSE,
   check_symmetric = TRUE,
   n_purity = 100,
-  use_rfast,
+  use_rfast = NULL,
   ld_extend_threshold = 0.99
 )
 
