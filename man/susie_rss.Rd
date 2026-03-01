@@ -28,7 +28,7 @@ susie_rss(
   estimate_residual_method = c("MoM", "MLE", "Servin_Stephens"),
   estimate_prior_variance = TRUE,
   estimate_prior_method = c("optim", "EM", "simple"),
-  unmappable_effects = c("none", "inf"),
+  unmappable_effects = c("none", "inf", "ash"),
   check_null_threshold = 0,
   prior_tol = 1e-09,
   residual_variance_lowerbound = 0,
@@ -196,10 +196,6 @@ residual variance. It is only relevant when
 \code{estimate_residual_variance = TRUE}.}
 
 \item{model_init}{A previous susie fit with which to initialize.}
-
-\item{s_init}{Deprecated; please use \code{model_init} instead. If
-both \code{s_init} and \code{model_init} are provided, an error
-is thrown.}
 
 \item{coverage}{A number between 0 and 1 specifying the
 \dQuote{coverage} of the estimated confidence sets.}

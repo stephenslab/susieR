@@ -29,7 +29,7 @@ susie_ss(
   residual_variance_upperbound = Inf,
   estimate_prior_variance = TRUE,
   estimate_prior_method = c("optim", "EM", "simple"),
-  unmappable_effects = c("none", "inf"),
+  unmappable_effects = c("none", "inf", "ash"),
   check_null_threshold = 0,
   prior_tol = 1e-09,
   max_iter = 100,
@@ -112,10 +112,6 @@ nonzero effect on the outcome, y.}
 and cannot be exactly 1).}
 
 \item{model_init}{A previous susie fit with which to initialize.}
-
-\item{s_init}{Deprecated; please use \code{model_init} instead. If
-both \code{s_init} and \code{model_init} are provided, an error
-is thrown.}
 
 \item{estimate_residual_variance}{If
 \code{estimate_residual_variance = TRUE}, the residual variance is

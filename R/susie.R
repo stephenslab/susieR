@@ -170,10 +170,6 @@
 #'
 #' @param model_init A previous susie fit with which to initialize.
 #'
-#' @param s_init Deprecated; please use \code{model_init} instead. If
-#'   both \code{s_init} and \code{model_init} are provided, an error
-#'   is thrown.
-#'
 #' @param coverage A number between 0 and 1 specifying the
 #'   \dQuote{coverage} of the estimated confidence sets.
 #'
