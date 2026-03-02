@@ -1,0 +1,78 @@
+context:
+  version: VERSION_PLACEHOLDER
+
+package:
+  name: r-susier
+  version: ${{ version }}
+
+source:
+  path: susieR-${{ version }}.tar.gz
+  sha256: SHA256SUM_PLACEHOLDER
+
+build:
+  number: BUILD_PLACEHOLDER
+  dynamic_linking:
+    rpaths:
+      - lib/R/lib/
+      - lib/
+  script: R CMD INSTALL --build .
+
+requirements:
+  build:
+    - ${{ compiler('c') }}
+    - ${{ stdlib('c') }}
+    - ${{ compiler('cxx') }}
+  host:
+    - r-base
+    - r-cowplot
+    - r-crayon
+    - r-curl
+    - r-ggplot2
+    - r-glmnet
+    - r-knitr
+    - r-l0learn
+    - r-matrix
+    - r-matrixstats
+    - r-microbenchmark
+    - r-mixsqp
+    - r-rcpp
+    - r-rcpparmadillo
+    - r-reshape
+    - r-rfast
+    - r-rmarkdown
+    - r-survival
+    - r-testthat
+  run:
+    - r-base
+    - r-cowplot
+    - r-crayon
+    - r-curl
+    - r-ggplot2
+    - r-glmnet
+    - r-knitr
+    - r-l0learn
+    - r-matrix
+    - r-matrixstats
+    - r-microbenchmark
+    - r-mixsqp
+    - r-rcpp
+    - r-rcpparmadillo
+    - r-reshape
+    - r-rfast
+    - r-rmarkdown
+    - r-survival
+    - r-testthat
+
+tests:
+  - script:
+      - R -e "library('susieR')"
+
+about:
+  license: BSD-3-Clause
+  license_file: LICENSE
+  summary: Implements methods for variable selection in linear regression based on the Sum of Single Effects (SuSiE) model.
+  homepage: https://github.com/stephenslab/susieR
+
+extra:
+  recipe-maintainers:
+    - danielnachun

@@ -1,0 +1,10 @@
+FROM ghcr.io/prefix-dev/pixi:latest
+
+SHELL ["/bin/bash", "-c"]
+RUN apt-get update
+RUN apt-get install -y libgl1 ca-certificates
+RUN groupadd -g 118 github
+RUN useradd -m -u 1001 -g 118 -s /bin/bash runner
+USER runner
+RUN pixi global install rattler-build git patch
+ENV PATH=/home/runner/.pixi/bin:${PATH}

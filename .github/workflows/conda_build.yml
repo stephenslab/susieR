@@ -1,0 +1,193 @@
+name: Build conda package
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to package
+        required: true
+        default: 'latest'
+      build:
+        description: "Build revision of package (default: 0)"
+        required: false
+        default: '0'
+
+jobs:
+  build_package_linux-64:
+    name: Build conda package for linux-64
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: ["r44", "r45"]
+
+    env:
+      ANACONDA_API_KEY: ${{ secrets.ANACONDA_API_TOKEN }}
+      ANACONDA_OWNER: ${{ vars.ANACONDA_OWNER }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Get latest version
+        id: latest-version
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.version == 'latest'
+        uses: pozetroninc/github-action-get-latest-release@v0.8.0
+        with:
+          repository: ${{ github.repository }}
+          token: ${{ secrets.CI_TOKEN }}
+
+      - name: Set version
+        id: set-version
+        run: |
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            version="${{ github.event.release.tag_name }}"
+          elif [[ "${{ github.event.inputs.version }}" != "latest" ]]; then
+            version="${{ github.event.inputs.version }}"
+          else
+            version="${{ steps.latest-version.outputs.release }}"
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+      - name: Set build number
+        id: set-build
+        run: |
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            echo "build=0" >> "$GITHUB_OUTPUT"
+          else
+            echo "build=${{ github.event.inputs.build }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download release
+        uses: robinraju/release-downloader@v1
+        with:
+          tag: ${{ steps.set-version.outputs.version }}
+          token: ${{ secrets.CI_TOKEN }}
+          out-file-path: /tmp/recipe
+          tarBall: true
+
+      - name: Setup pixi
+        uses: prefix-dev/setup-pixi@v0.9.4
+        with:
+          run-install: false
+
+      - name: Create recipe from template
+        shell: pixi exec --spec sed --spec coreutils --spec wget -- bash -e {0}
+        run: |
+          cp .github/recipe/recipe.yaml /tmp/recipe/recipe.yaml
+          cp .github/recipe/variant_${{ matrix.variant }}.yaml /tmp/recipe/variants.yaml
+          repository=${{ github.repository }}
+          build=${{ steps.set-build.outputs.build }}
+          version=${{ steps.set-version.outputs.version }}
+          sha256sum=$(sha256sum /tmp/recipe/${repository//*\//}-${version}.tar.gz | cut -d ' ' -f 1)
+          sed -i "s/VERSION_PLACEHOLDER/${version}/g" /tmp/recipe/recipe.yaml
+          sed -i "s/SHA256SUM_PLACEHOLDER/${sha256sum}/g" /tmp/recipe/recipe.yaml
+          sed -i "s/BUILD_PLACEHOLDER/${build}/g" /tmp/recipe/recipe.yaml
+
+      - name: Setup up docker buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and export docker containers
+        uses: docker/build-push-action@v6
+        with:
+          load: true
+          file: .github/rattler-build_container.df
+          tags: rattler-build:latest
+
+      - name: Build conda packages
+        run: |
+          docker run --rm --volume /tmp:/tmp  \
+            --volume /etc/passwd:/etc/passwd:ro \
+            --volume /etc/group:/etc/group:ro \
+            --volume $(pwd) --workdir $(pwd) \
+            --user $(id -u) rattler-build \
+            rattler-build build -c dnachun -c conda-forge -c bioconda \
+            --output-dir /tmp/rattler-build --recipe-dir /tmp/recipe
+
+      - name: Upload package
+        shell: pixi exec --spec rattler-build -- bash -e {0}
+        run: rattler-build upload anaconda --force /tmp/rattler-build/linux-64/*.conda
+
+  build_package_osx-arm64:
+    name: Build conda package for osx-arm64
+    runs-on: macos-14
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: ["r44", "r45"]
+    env:
+      ANACONDA_API_KEY: ${{ secrets.ANACONDA_API_TOKEN }}
+      ANACONDA_OWNER: ${{ vars.ANACONDA_OWNER }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Get latest version
+        id: latest-version
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.version == 'latest'
+        uses: pozetroninc/github-action-get-latest-release@v0.8.0
+        with:
+          repository: ${{ github.repository }}
+          token: ${{ secrets.CI_TOKEN }}
+
+      - name: Set version
+        id: set-version
+        run: |
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            version="${{ github.event.release.tag_name }}"
+          elif [[ "${{ github.event.inputs.version }}" != "latest" ]]; then
+            version="${{ github.event.inputs.version }}"
+          else
+            version="${{ steps.latest-version.outputs.release }}"
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+      - name: Set build number
+        id: set-build
+        run: |
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            echo "build=0" >> "$GITHUB_OUTPUT"
+          else
+            echo "build=${{ github.event.inputs.build }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download release
+        uses: robinraju/release-downloader@v1
+        with:
+          tag: ${{ steps.set-version.outputs.version }}
+          token: ${{ secrets.CI_TOKEN }}
+          out-file-path: /tmp/recipe
+          tarBall: true
+
+      - name: Setup pixi
+        uses: prefix-dev/setup-pixi@v0.9.4
+        with:
+          run-install: false
+
+      - name: Create recipe from template
+        shell: pixi exec --spec sed --spec coreutils --spec wget -- bash -e {0}
+        run: |
+          cp .github/recipe/recipe.yaml /tmp/recipe/recipe.yaml
+          cp .github/recipe/variant_${{ matrix.variant }}.yaml /tmp/recipe/variants.yaml
+          repository=${{ github.repository }}
+          build=${{ steps.set-build.outputs.build }}
+          version=${{ steps.set-version.outputs.version }}
+          sha256sum=$(sha256sum /tmp/recipe/${repository//*\//}-${version}.tar.gz | cut -d ' ' -f 1)
+          sed -i "s/VERSION_PLACEHOLDER/${version}/g" /tmp/recipe/recipe.yaml
+          sed -i "s/SHA256SUM_PLACEHOLDER/${sha256sum}/g" /tmp/recipe/recipe.yaml
+          sed -i "s/BUILD_PLACEHOLDER/${build}/g" /tmp/recipe/recipe.yaml
+
+      - name: Build conda package
+        shell: pixi exec --spec rattler-build -- bash -e {0}
+        run: rattler-build build -c dnachun -c conda-forge -c bioconda --output-dir /tmp/rattler-build --recipe-dir /tmp/recipe
+
+      - name: Upload package
+        shell: pixi exec --spec rattler-build -- bash -e {0}
+        run: rattler-build upload anaconda --force /tmp/rattler-build/osx-arm64/*.conda
