@@ -17,7 +17,7 @@
 single_effect_regression <- function(data, params, model, l) {
 
     # Store Prior Variance Value for the lth Effect
-    V <- model$V[l]
+    V <- get_prior_variance_l(model, l)
 
     # Compute SER statistics (betahat, shat2, initial value for prior variance optimization)
     ser_stats <- compute_ser_statistics(data, params, model, l)
@@ -39,13 +39,14 @@ single_effect_regression <- function(data, params, model, l) {
 
     # Expectation-maximization prior variance update using posterior moments
     if (params$estimate_prior_method == "EM") {
-      V <- optimize_prior_variance(data, params, model, ser_stats, model$alpha[l, ],
-                                    list(post_mean = model$mu[l, ], post_mean2 = model$mu2[l, ]),
+      V <- optimize_prior_variance(data, params, model, ser_stats,
+                                    get_alpha_l(model, l),
+                                    get_posterior_moments_l(model, l),
                                     V_init = V)
     }
 
     # Store prior variance
-    model$V[l] <- V
+    model <- set_prior_variance_l(model, l, V)
 
     return(model)
   }
@@ -97,17 +98,7 @@ optimize_prior_variance <- function(data, params, model, ser_stats,
       }
       V <- V_new
     } else if (params$estimate_prior_method == "EM") {
-      if (params$use_servin_stephens) {
-        # Compute EM update analytically
-        nig_ss <- get_nig_sufficient_stats(data, model)
-        V <- update_prior_variance_NIG_EM(data$n, model$predictor_weights,
-                                           model$residuals, nig_ss$yy, nig_ss$sxy,
-                                           alpha, V_init, params$alpha0, params$beta0,
-                                           nig_ss$tau)
-      } else {
-        # Standard EM update
-        V <- sum(alpha * moments$post_mean2)
-      }
+      V <- em_update_prior_variance(data, params, model, alpha, moments, V_init)
     } else {
       stop("Invalid option for estimate_prior_method: ", params$estimate_prior_method)
     }

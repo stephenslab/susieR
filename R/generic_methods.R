@@ -206,6 +206,24 @@ neg_loglik.default <- function(data, params, model, V_param, ser_stats, ...) {
   stop("neg_loglik: no method for class '", class(data)[1], "'")
 }
 
+# EM update for prior variance
+#' @keywords internal
+em_update_prior_variance <- function(data, params, model, alpha, moments, V_init) {
+  UseMethod("em_update_prior_variance")
+}
+#' @keywords internal
+em_update_prior_variance.default <- function(data, params, model, alpha, moments, V_init) {
+  if (!is.null(params$use_servin_stephens) && params$use_servin_stephens) {
+    nig_ss <- get_nig_sufficient_stats(data, model)
+    return(update_prior_variance_NIG_EM(data$n, model$predictor_weights,
+                                         model$residuals, nig_ss$yy, nig_ss$sxy,
+                                         alpha, V_init, params$alpha0, params$beta0,
+                                         nig_ss$tau))
+  }
+  # Standard EM update
+  sum(alpha * moments$post_mean2)
+}
+
 # =============================================================================
 # MODEL UPDATES & FITTING
 #
