@@ -121,7 +121,8 @@ optimize_prior_variance <- function(data, params, model, ser_stats,
   # that can decrease the ELBO. Null effects are handled by
   # trim_null_effects() after convergence instead.
   # see https://github.com/stephenslab/mvsusieR/issues/26
-  if (params$estimate_prior_method != "EM") {
+  if (params$estimate_prior_method != "EM" &&
+      params$estimate_prior_method != "none") {
     if (loglik(data, params, model, 0, ser_stats) +
       params$check_null_threshold >= loglik(data, params, model, V, ser_stats)) {
       V <- 0
