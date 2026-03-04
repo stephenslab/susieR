@@ -54,6 +54,9 @@ susie_workhorse <- function(data, params) {
   # Set ELBO from iterations
   model$elbo <- elbo[2:(iter + 1)]
 
+  # Zero out effects with negligible prior variance
+  model <- trim_null_effects(data, params, model)
+
   model <- ibss_finalize(data, params, model, elbo, iter, tracking)
 
   # Run refinement if requested

@@ -254,3 +254,30 @@ get_objective.default <- function(data, params, model) {
   }
   return(objective)
 }
+
+# =============================================================================
+# EFFECT TRIMMING
+#
+# Zero out effects with negligible prior variance after convergence.
+# =============================================================================
+
+#' @keywords internal
+trim_null_effects <- function(data, params, model) {
+  UseMethod("trim_null_effects")
+}
+
+#' @keywords internal
+trim_null_effects.default <- function(data, params, model) {
+  null_idx <- which(model$V < params$prior_tol)
+  if (length(null_idx) == 0) return(model)
+
+  model$V[null_idx] <- 0
+  model$alpha[null_idx, ] <- 1 / ncol(model$alpha)
+  model$mu[null_idx, ] <- 0
+  model$mu2[null_idx, ] <- 0
+  model$lbf_variable[null_idx, ] <- 0
+  model$lbf[null_idx] <- 0
+  model$KL[null_idx] <- 0
+
+  return(model)
+}

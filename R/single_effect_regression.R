@@ -115,9 +115,17 @@ optimize_prior_variance <- function(data, params, model, ser_stats,
   # non-zeros estimates unless they are indeed small enough to be
   # neglible. See more intuition at
   # https://stephens999.github.io/fiveMinuteStats/LR_and_BF.html
-  if (loglik(data, params, model, 0, ser_stats) +
-    params$check_null_threshold >= loglik(data, params, model, V, ser_stats)) {
-    V <- 0
+  #
+  # For EM, skip this check: the null check would zero V without
+  # recomputing the posterior, creating an inconsistent (q, V) pair
+  # that can decrease the ELBO. Null effects are handled by
+  # trim_null_effects() after convergence instead.
+  # see https://github.com/stephenslab/mvsusieR/issues/26
+  if (params$estimate_prior_method != "EM") {
+    if (loglik(data, params, model, 0, ser_stats) +
+      params$check_null_threshold >= loglik(data, params, model, V, ser_stats)) {
+      V <- 0
+    }
   }
 
   return(V)
