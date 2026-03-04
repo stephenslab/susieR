@@ -1,7 +1,7 @@
 # =============================================================================
 # DATA INITIALIZATION & CONFIGURATION
 #
-# Functions for data object setup, configuration, and preprocessing.
+# S3 generics dispatched on data objects setup, configuration, and preprocessing.
 # These prepare data objects for model fitting and handle data-specific
 # configurations like unmappable effects.
 #

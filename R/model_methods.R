@@ -1,19 +1,8 @@
 # =============================================================================
 # MODEL-LEVEL S3 METHODS
-#
-# S3 generics and default methods for model-level operations: field access,
-# initialization, variance updates, convergence checking, and objective
-# computation.
-#
-# The .default methods implement standard univariate SuSiE behavior.
-# Extensions can provide their own methods for custom model/data classes.
-# =============================================================================
 
-# =============================================================================
-# MODEL FIELD ACCESSORS
-#
-# Abstraction layer for accessing model fields. The default implementations
-# assume V[l] is scalar, mu[l,] is a p-vector, and sigma2 is scalar.
+# S3 generics dispatched on model class (model field access, initialization, 
+# convergence, ELBO)
 # =============================================================================
 
 #' Get prior variance for effect l
