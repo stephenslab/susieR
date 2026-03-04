@@ -27,15 +27,18 @@ ibss_initialize <- function(data, params) {
   if (is.null(params$residual_variance)) {
     params$residual_variance <- var_y
   }
-  if (!is.numeric(params$residual_variance)) {
-    stop("Input residual variance sigma2 must be numeric.")
-  }
-  params$residual_variance <- as.numeric(params$residual_variance)
-  if (length(params$residual_variance) != 1) {
-    stop("Input residual variance sigma2 must be a scalar.")
-  }
-  if (params$residual_variance <= 0) {
-    stop("Residual variance sigma2 must be positive (is your var(Y) zero?).")
+  # For multivariate models, residual_variance can be a matrix
+  if (!is.matrix(params$residual_variance)) {
+    if (!is.numeric(params$residual_variance)) {
+      stop("Input residual variance sigma2 must be numeric.")
+    }
+    params$residual_variance <- as.numeric(params$residual_variance)
+    if (length(params$residual_variance) != 1) {
+      stop("Input residual variance sigma2 must be a scalar.")
+    }
+    if (params$residual_variance <= 0) {
+      stop("Residual variance sigma2 must be positive (is your var(Y) zero?).")
+    }
   }
 
   # Handle model initialization
@@ -68,12 +71,21 @@ ibss_initialize <- function(data, params) {
   fitted     <- initialize_fitted(data, mat_init)
   null_index <- initialize_null_index(data, mat_init)
 
+  # Preserve model class set by initialize_susie_model (e.g., "mvsusie")
+  model_class <- class(mat_init)
+
   # Return assembled SuSiE object
   model <- c(mat_init,
              list(null_index = null_index),
              fitted)
 
-  class(model) <- "susie"
+  # Use the class from initialize_susie_model if it inherits from "susie",
+  # otherwise default to "susie"
+  if (inherits(mat_init, "susie")) {
+    class(model) <- model_class
+  } else {
+    class(model) <- "susie"
+  }
   model$converged <- FALSE
 
   return(model)

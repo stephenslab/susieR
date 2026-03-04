@@ -68,7 +68,11 @@ safe_cor <- function(X) {
   R
 }
 
-# Check for symmetric matrix.
+#' Check for symmetric matrix
+#'
+#' @param x A matrix to check
+#' @return Logical indicating if x is symmetric
+#' @export
 #' @keywords internal
 is_symmetric_matrix <- function(x) {
   if (is.matrix(x) && is.numeric(x) && !isS4(x) &&

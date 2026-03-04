@@ -1,9 +1,7 @@
-# =============================================================================
-# SUSIE WORKHORSE
-#
-# Main orchestration function for the IBSS algorithm. Coordinates the complete
-# fitting pipeline from initialization through iteration to finalization.
-# =============================================================================
+#' SuSiE workhorse function
+#'
+#' Main orchestration function for the IBSS algorithm. Coordinates the complete
+#' fitting pipeline from initialization through iteration to finalization.
 #'
 #' @param data Data object (individual, ss, or rss_lambda)
 #' @param params Validated params object
@@ -11,8 +9,8 @@
 #' @return Complete fitted SuSiE model object with credible sets, PIPs, and
 #'   other results.
 #'
+#' @export
 #' @keywords internal
-#' @noRd
 susie_workhorse <- function(data, params) {
 
   # Initialize model object
