@@ -14,6 +14,11 @@
 #' @importFrom utils modifyList
 #' @noRd
 ibss_initialize <- function(data, params) {
+  UseMethod("ibss_initialize")
+}
+
+#' @keywords internal
+ibss_initialize.default <- function(data, params) {
 
   # Set var(y)
   var_y <- get_var_y(data)
