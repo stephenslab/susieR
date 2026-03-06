@@ -7,7 +7,6 @@
 #include <string>
 #include <algorithm>
 #include <unordered_map>
-#include <omp.h>
 
 using namespace arma;
 using namespace std;
@@ -119,10 +118,6 @@ unordered_map<string, mat> mr_ash_sufficient(const vec& XTy, const mat& XTX, dou
                                              const vec& sigma2_0, vec& w0, const vec& mu1_init, double tol = 1e-8,
                                              int max_iter = 1e5, bool update_w0 = true, bool update_sigma = true,
                                              bool compute_ELBO = true, bool verbose = false, int ncpus = 1) {
-	// Set the number of threads for OpenMP
-	int nProcessors = omp_get_max_threads();
-	if (ncpus < nProcessors) nProcessors = ncpus;
-	omp_set_num_threads(nProcessors);
 
 	// Initialize parameters
 	int p = XTX.n_cols;
