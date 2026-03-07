@@ -128,18 +128,22 @@ track_ibss_fit.ss <- function(data, params, model, tracking, iter, elbo, ...) {
 # Compute residuals for single effect regression
 #' @keywords internal
 compute_residuals.ss <- function(data, params, model, l, ...) {
+  # b_minus_l is common to all paths (sparse effects excluding l)
+  b_minus_l <- colSums(model$alpha * model$mu) - model$alpha[l, ] * model$mu[l, ]
+
   if (params$unmappable_effects == "inf") {
     # SuSiE-inf: Omega-weighted residuals
-    b <- colSums(model$mu * model$alpha) - model$mu[l, ] * model$alpha[l, ]
-
     omega_res <- compute_omega_quantities(data, model$tau2, model$sigma2)
     XtOmegay <- data$eigen_vectors %*% (data$VtXty / omega_res$omega_var)
-    XtOmegaXb <- data$eigen_vectors %*% ((t(data$eigen_vectors) %*% b) * data$eigen_values / omega_res$omega_var)
+    XtOmegaXb <- data$eigen_vectors %*% ((t(data$eigen_vectors) %*% b_minus_l) * data$eigen_values / omega_res$omega_var)
 
     model$residuals         <- XtOmegay - XtOmegaXb
     model$predictor_weights <- omega_res$diagXtOmegaX
-    model$residual_variance <- 1
-    model$shat2_inflation   <- NULL
+    model$residual_variance <- 1   # Already incorporated in Omega
+
+    # Stochastic LD inflation uses standard (non-Omega) quantities
+    XtXr_without_l <- compute_Rv(data, b_minus_l)
+    model$shat2_inflation <- compute_shat2_inflation(data, model, XtXr_without_l, b_minus_l)
     return(model)
   }
 
@@ -147,7 +151,6 @@ compute_residuals.ss <- function(data, params, model, l, ...) {
 
   # Remove lth effect from fitted values
   XtXr_without_l <- model$XtXr - compute_Rv(data, model$alpha[l, ] * model$mu[l, ])
-  b_minus_l <- colSums(model$alpha * model$mu) - model$alpha[l, ] * model$mu[l, ]
 
   # Compute residuals (ash subtracts unmappable effect X'X*theta)
   if (params$unmappable_effects == "ash") {
