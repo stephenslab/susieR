@@ -132,56 +132,60 @@ compute_residuals.ss <- function(data, params, model, l, ...) {
     # SuSiE-inf: Omega-weighted residuals
     b <- colSums(model$mu * model$alpha) - model$mu[l, ] * model$alpha[l, ]
 
-    # Compute Residuals
     omega_res <- compute_omega_quantities(data, model$tau2, model$sigma2)
     XtOmegay <- data$eigen_vectors %*% (data$VtXty / omega_res$omega_var)
     XtOmegaXb <- data$eigen_vectors %*% ((t(data$eigen_vectors) %*% b) * data$eigen_values / omega_res$omega_var)
-    XtOmegar <- XtOmegay - XtOmegaXb
 
-    # Store residuals and parameters (unmappable case)
-    model$residuals         <- XtOmegar
-    model$predictor_weights <- omega_res$diagXtOmegaX  # Update for this iteration
-    model$residual_variance <- 1                       # Already incorporated in Omega
-
-    return(model)
-
-  } else if (params$unmappable_effects == "ash") {
-    # SuSiE-ash: explicit residualization
-    XtXr_without_l <- model$XtXr - compute_Rv(data, model$alpha[l, ] * model$mu[l, ])
-
-    # Subtract X'X*theta from residuals
-    XtR <- data$Xty - model$XtX_theta - XtXr_without_l
-
-    # Store residuals and parameters
-    model$residuals         <- XtR
-    model$fitted_without_l  <- XtXr_without_l
-    model$residual_variance <- model$sigma2
-    
-
-    return(model)
-
-  } else {
-    # Remove lth effect from fitted values
-    XtXr_without_l <- model$XtXr - compute_Rv(data, model$alpha[l, ] * model$mu[l, ])
-
-    # Compute Residuals
-    XtR <- data$Xty - XtXr_without_l
-
-    # Store residuals and parameters (standard case)
-    model$residuals         <- XtR
-    model$fitted_without_l  <- XtXr_without_l # For fitted update
-    model$residual_variance <- model$sigma2  # Standard residual variance
-
-    # Compute r'r for Servin-Stephens (NIG) prior
-    if (params$use_servin_stephens) {
-      b_minus_l <- colSums(model$alpha * model$mu) - model$alpha[l, ] * model$mu[l, ]
-      model$yy_residual <- as.numeric(
-        data$yty - 2 * sum(b_minus_l * data$Xty) + sum(b_minus_l * XtXr_without_l))
-      model$yy_residual <- max(model$yy_residual, .Machine$double.eps)
-    }
-
+    model$residuals         <- XtOmegay - XtOmegaXb
+    model$predictor_weights <- omega_res$diagXtOmegaX
+    model$residual_variance <- 1
+    model$shat2_inflation   <- NULL
     return(model)
   }
+
+  # --- Standard and ash paths share common structure ---
+
+  # Remove lth effect from fitted values
+  XtXr_without_l <- model$XtXr - compute_Rv(data, model$alpha[l, ] * model$mu[l, ])
+  b_minus_l <- colSums(model$alpha * model$mu) - model$alpha[l, ] * model$mu[l, ]
+
+  # Compute residuals (ash subtracts unmappable effect X'X*theta)
+  if (params$unmappable_effects == "ash") {
+    model$residuals <- data$Xty - model$XtX_theta - XtXr_without_l
+  } else {
+    model$residuals <- data$Xty - XtXr_without_l
+  }
+
+  model$fitted_without_l  <- XtXr_without_l
+  model$residual_variance <- model$sigma2
+
+  # Servin-Stephens (NIG) prior: compute residual sum of squares
+  if (params$use_servin_stephens) {
+    model$yy_residual <- as.numeric(
+      data$yty - 2 * sum(b_minus_l * data$Xty) + sum(b_minus_l * XtXr_without_l))
+    model$yy_residual <- max(model$yy_residual, .Machine$double.eps)
+  }
+
+  # Dynamic stochastic LD variance inflation
+  model$shat2_inflation <- compute_shat2_inflation(data, model, XtXr_without_l, b_minus_l)
+
+  return(model)
+}
+
+# Compute stochastic LD variance inflation factor for each variable.
+# tau2_j = sigma2 + (eta2_j + v_g) / B, returned as tau2_j / sigma2.
+#   eta2_j = XtXr_without_l^2 / (n-1)  [z-score scale predicted effect squared]
+#   v_g    = sum(b * XtXr)              [z-score scale genetic variance]
+#' @keywords internal
+compute_shat2_inflation <- function(data, model, XtXr_without_l, b_minus_l) {
+  if (is.null(data$stochastic_ld_B) ||
+      model$sigma2 <= .Machine$double.eps) {
+    return(NULL)
+  }
+  B_stoch <- data$stochastic_ld_B
+  v_g     <- max(sum(b_minus_l * XtXr_without_l), 0)
+  eta2    <- XtXr_without_l^2 / (data$n - 1)
+  1 + (eta2 + v_g) / (B_stoch * model$sigma2)
 }
 
 # Compute SER statistics
@@ -190,9 +194,9 @@ compute_ser_statistics.ss <- function(data, params, model, l, ...) {
   betahat <- (1 / model$predictor_weights) * model$residuals
   shat2   <- model$residual_variance / model$predictor_weights
 
-  # Inflate shat2 for stochastic LD correction (tau_j^2 / sigma_{j,0}^2)
-  if (!is.null(data$shat2_inflation))
-    shat2 <- shat2 * data$shat2_inflation
+  # Inflate shat2 for stochastic LD variance tracking (tau_j^2 / sigma^2)
+  if (!is.null(model$shat2_inflation))
+    shat2 <- shat2 * model$shat2_inflation
 
   # Optimization parameters
   if (params$unmappable_effects == "inf") {
@@ -252,8 +256,8 @@ calculate_posterior_moments.ss <- function(data, params, model, V, l, ...) {
   } else {
     # Standard Gaussian posterior calculations
     shat2 <- model$residual_variance / model$predictor_weights
-    if (!is.null(data$shat2_inflation))
-      shat2 <- shat2 * data$shat2_inflation
+    if (!is.null(model$shat2_inflation))
+      shat2 <- shat2 * model$shat2_inflation
 
     post_var   <- V * shat2 / (V + shat2)
     post_mean  <- V * (model$residuals / model$predictor_weights) / (V + shat2)
@@ -355,7 +359,7 @@ neg_loglik.ss <- function(data, params, model, V_param, ser_stats, ...) {
     # SuSiE-inf: Omega-weighted objective with logSumExp trick
     # Apply stochastic LD inflation: effective pw = pw / inflation
     pw   <- model$predictor_weights
-    infl <- if (!is.null(data$shat2_inflation)) data$shat2_inflation else 1
+    infl <- if (!is.null(model$shat2_inflation)) model$shat2_inflation else 1
     return(-matrixStats::logSumExp(
       -0.5 * log(1 + V * pw / infl) +
         V * model$residuals^2 / (2 * infl * (1 + V * pw / infl)) +

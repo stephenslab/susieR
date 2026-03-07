@@ -983,7 +983,7 @@ get_nig_sufficient_stats <- function(data, model) {
     # Cauchy-Schwarz may be violated numerically, giving |sxy| > 1.
     # This would make rss = yy*(1 - r0*sxy^2) negative, producing NaN in log BF.
     sxy <- pmin(pmax(sxy, -1), 1)
-    tau <- if (!is.null(data$shat2_inflation)) data$shat2_inflation else 1
+    tau <- if (!is.null(model$shat2_inflation)) model$shat2_inflation else 1
   }
   list(yy = yy, sxy = sxy, tau = tau)
 }
