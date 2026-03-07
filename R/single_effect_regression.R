@@ -97,6 +97,34 @@ optimize_prior_variance <- function(data, params, model, ser_stats,
         V_new <- V
       }
       V <- V_new
+    } else if (params$estimate_prior_method == "uniroot") {
+      # Root-finding on the gradient of neg_loglik (on the optimization scale)
+      neg_loglik_fn <- function(V_param) neg_loglik(data, params, model, V_param, ser_stats)
+      neg_loglik_grad <- function(V_param) {
+        h <- max(abs(V_param) * 1e-4, 1e-8)
+        (neg_loglik_fn(V_param + h) - neg_loglik_fn(V_param - h)) / (2 * h)
+      }
+
+      V_root <- tryCatch(
+        uniroot(neg_loglik_grad,
+                interval = c(ser_stats$optim_bounds[1], ser_stats$optim_bounds[2]),
+                extendInt = "yes",
+                tol = .Machine$double.eps^0.25)$root,
+        error = function(e) {
+          # Fallback: if uniroot fails (no sign change), use initial value
+          if (ser_stats$optim_scale == "linear") V else log(V)
+        }
+      )
+
+      V_new <- if (ser_stats$optim_scale == "linear") V_root else exp(V_root)
+
+      # Check if new estimate improves likelihood
+      V_param_init <- if (ser_stats$optim_scale == "linear") V else log(V)
+      if (neg_loglik(data, params, model, V_root, ser_stats) >
+          neg_loglik(data, params, model, V_param_init, ser_stats)) {
+        V_new <- V
+      }
+      V <- V_new
     } else if (params$estimate_prior_method == "EM") {
       V <- em_update_prior_variance(data, params, model, alpha, moments, V_init)
     } else {
