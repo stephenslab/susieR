@@ -147,7 +147,7 @@ compute_residuals.ss <- function(data, params, model, l, ...) {
     return(model)
   }
 
-  # --- Standard and ash paths share common structure ---
+  # Below are SuSiE, SuSiE-ASH and SuSiE-SS
 
   # Remove lth effect from fitted values
   XtXr_without_l <- model$XtXr - compute_Rv(data, model$alpha[l, ] * model$mu[l, ])
