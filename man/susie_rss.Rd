@@ -251,13 +251,14 @@ to check and escape from local optima (see details).}
 \item{stochastic_ld_sample}{When the LD matrix \code{R} is
 estimated from a stochastic sketch (or an internal subsample) with
 \code{B} random projections, set this to the value of \code{B}.
-This inflates the null variance of each SNP's score statistic to
-account for LD estimation uncertainty in the Single Effect
-Regression (SER), attenuating Bayes factors and
-posterior means for SNPs where LD uncertainty is large. Must be at
+This dynamically inflates the null variance of each variable's
+score statistic at every IBSS iteration to account for LD
+estimation uncertainty in the Single Effect Regression (SER),
+attenuating Bayes factors and posterior means for variables where
+LD uncertainty is large relative to active signals. Must be at
 least 1000. Not supported with \code{lambda != 0}. When provided,
 the output includes a \code{stochastic_ld_diagnostics} element
-with per-region and per-SNP quality metrics.}
+with per-region and per-variable quality metrics.}
 
 \item{alpha0}{Numerical parameter for the NIG prior when using
 \code{estimate_residual_method = "Servin_Stephens"}.}
@@ -272,16 +273,18 @@ In addition to the standard \code{"susie"} output (see
 \item{stochastic_ld_diagnostics}{A list of diagnostics for the
   stochastic LD correction (only present when
   \code{stochastic_ld_sample} is provided), containing:
-  \code{B} (the sketch sample size);
-  \code{p} (number of SNPs);
-  \code{effective_rank} (\eqn{\hat{r} = p^2 / \|R\|_F^2});
-  \code{r_over_B} (\eqn{\hat{r}/B}, one number per region; values
-    \eqn{\le 0.2} indicate the sketch is adequate for all high-LD
-    SNPs);
-  \code{per_snp_inflation} (\eqn{v_j / \sigma_{j,0}^2 = \tau_j^2 /
-    \sigma_{j,0}^2 - 1}, one number per SNP; values \eqn{\le 0.2}
-    indicate minimal power loss at that SNP, values \eqn{\gg 1}
-    flag SNPs where the correction is doing heavy lifting).}
+  \code{B} (the sketch dimension);
+  \code{p} (number of variables);
+  \code{effective_rank} (debiased \eqn{\tilde{r} = p^2 / \|R\|_F^2});
+  \code{r_over_B} (\eqn{\tilde{r}/B}, one number per region; values
+    \eqn{\le 0.2} indicate the sketch is adequate);
+  \code{Rhat_diag_deviation} (\eqn{|\hat{R}_{jj} - 1|}, one number
+    per variable; flags variables with poor random projections);
+  \code{per_variable_penalty} (final-iteration
+    \eqn{v_j / \sigma^2 = \tau_j^2 / \sigma^2 - 1}, one number per
+    variable; values \eqn{\le 0.2} indicate minimal power loss,
+    values \eqn{\gg 1} flag variables where the correction is doing
+    heavy lifting).}
 }
 \description{
 Performs SuSiE regression using z-scores and correlation matrix.
