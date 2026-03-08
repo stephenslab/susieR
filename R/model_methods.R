@@ -112,6 +112,7 @@ update_model_variance <- function(data, params, model) {
 
 #' @keywords internal
 update_model_variance.default <- function(data, params, model) {
+  if (!isTRUE(params$estimate_residual_variance)) return(model)
   # Update variance components
   variance_result <- update_variance_components(data, params, model)
   model           <- modifyList(model, variance_result)

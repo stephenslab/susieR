@@ -37,10 +37,10 @@ susie_workhorse <- function(data, params) {
       break
     }
 
-    # Update variance components if not converged and estimation is requested
-    if (params$estimate_residual_variance) {
-      model <- update_model_variance(data, params, model)
-    }
+    # Update variance components if not converged.
+    # The method itself checks params to decide what to update,
+    # allowing S3 overrides to update additional model parameters
+    model <- update_model_variance(data, params, model)
 
   }
 
