@@ -116,8 +116,31 @@ jobs:
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Check if major or minor version changed
+        id: check-version-change
+        run: |
+          new_version="${{ steps.set-tag.outputs.tag }}"
+          new_major_minor=$(echo "$new_version" | cut -d. -f1,2)
+
+          # Get the latest existing tag (by version sort)
+          latest_tag=$(git tag --sort=-v:refname | head -n1 || echo "")
+
+          if [[ -z "$latest_tag" ]]; then
+            echo "No existing tags found — treating as new release"
+            echo "is_major_minor=true" >> "$GITHUB_OUTPUT"
+          else
+            latest_major_minor=$(echo "$latest_tag" | cut -d. -f1,2)
+            if [[ "$new_major_minor" != "$latest_major_minor" ]]; then
+              echo "Major/minor version changed: $latest_major_minor -> $new_major_minor"
+              echo "is_major_minor=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "::notice::Only patch version changed ($latest_tag -> $new_version) — skipping release"
+              echo "is_major_minor=false" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
       - name: Create new tag
-        if: steps.check-tag.outputs.exists == 'false'
+        if: steps.check-tag.outputs.exists == 'false' && steps.check-version-change.outputs.is_major_minor == 'true'
         id: tag-version
         uses: mathieudutour/github-tag-action@v6.2
         with:
@@ -129,7 +152,7 @@ jobs:
           tag_prefix: ""
 
       - name: Create a GitHub release
-        if: steps.check-tag.outputs.exists == 'false'
+        if: steps.check-tag.outputs.exists == 'false' && steps.check-version-change.outputs.is_major_minor == 'true'
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ steps.set-tag.outputs.tag }}
