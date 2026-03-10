@@ -273,7 +273,7 @@ trim_null_effects.default <- function(data, params, model) {
   if (length(null_idx) == 0) return(model)
 
   model$V[null_idx] <- 0
-  model$alpha[null_idx, ] <- 1 / ncol(model$alpha)
+  model$alpha[null_idx, ] <- rep(model$pi, each = length(null_idx))
   model$mu[null_idx, ] <- 0
   model$mu2[null_idx, ] <- 0
   model$lbf_variable[null_idx, ] <- 0
