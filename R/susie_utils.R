@@ -9,6 +9,24 @@
 # apply_nonzeros, compute_colSds, compute_colstats
 # =============================================================================
 
+# Report R process memory usage (GB). Uses gc() which is cheap.
+#' @keywords internal
+mem_used_gb <- function() {
+  gc_info <- gc(verbose = FALSE, reset = FALSE)
+  sum(gc_info[, "(Mb)"]) / 1024
+}
+
+# Format prior variance vector: show non-zero values, summarize zeros.
+# E.g., "[1.23e-01, 5.34e-02, 0 x 3]"
+#' @keywords internal
+format_V_summary <- function(V) {
+  n_zero <- sum(V == 0)
+  nz <- V[V != 0]
+  parts <- sprintf("%.2e", nz)
+  if (n_zero > 0) parts <- c(parts, sprintf("0 x %d", n_zero))
+  paste0("[", paste(parts, collapse = ", "), "]")
+}
+
 # Utility function to display warning messages as they occur
 #' @importFrom crayon combine_styles
 #' @keywords internal

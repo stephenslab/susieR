@@ -138,9 +138,22 @@ check_convergence <- function(data, params, model, elbo, iter, tracking) {
 
 #' @keywords internal
 check_convergence.default <- function(data, params, model, elbo, iter, tracking) {
+  verbose <- isTRUE(params$verbose)
+  V_str <- format_V_summary(model$V)
+
   # Skip convergence check on first iteration
-  if(iter == 1) {
+  if (iter == 1) {
     model$converged <- FALSE
+    if (verbose) {
+      elbo_val <- elbo[iter + 1]
+      if (!is.na(elbo_val) && is.finite(elbo_val)) {
+        message(sprintf("iter %3d: ELBO=%.4f, V=%s [mem: %.2f GB]",
+                        iter, elbo_val, V_str, mem_used_gb()))
+      } else {
+        message(sprintf("iter %3d: V=%s [mem: %.2f GB]",
+                        iter, V_str, mem_used_gb()))
+      }
+    }
     return(model)
   }
 
@@ -151,8 +164,8 @@ check_convergence.default <- function(data, params, model, elbo, iter, tracking)
   if (params$convergence_method == "pip" || ELBO_failed) {
     # Fallback to PIP-based convergence if ELBO calculation fails
     if (ELBO_failed && params$convergence_method == "elbo") {
-      warning_message(paste0("Iteration ", iter, " produced an NA/infinite ELBO
-                             value. Using pip-based convergence this iteration."))
+      warning_message(paste0("Iteration ", iter, " produced an NA/infinite ELBO",
+                             " value. Using pip-based convergence this iteration."))
     }
 
     # For Servin-Stephens prior, require at least 3 iterations and average convergence
@@ -160,6 +173,9 @@ check_convergence.default <- function(data, params, model, elbo, iter, tracking)
     if (!is.null(params$use_servin_stephens) && params$use_servin_stephens) {
       if (iter <= 2) {
         model$converged <- FALSE
+        if (verbose)
+          message(sprintf("iter %3d: V=%s [mem: %.2f GB]",
+                          iter, V_str, mem_used_gb()))
         return(model)  # Require at least 3 iterations
       }
 
@@ -176,11 +192,13 @@ check_convergence.default <- function(data, params, model, elbo, iter, tracking)
       # Store current diff for next iteration
       tracking$convergence$prev_pip_diff <- current_diff
 
-      if (params$verbose) {
-        message("max |change in PIP| (avg): ", format(avg_diff, digits = 6))
-      }
-
       model$converged <- (avg_diff < params$tol)
+      if (verbose)
+        message(sprintf("iter %3d: max|dPIP|(avg)=%.2e, V=%s%s [mem: %.2f GB]",
+                        iter, avg_diff, V_str,
+                        if (model$converged) " -- converged" else "",
+                        mem_used_gb()))
+
       if (model$converged && !is.null(params$unmappable_effects) &&
           params$unmappable_effects == "ash") {
         model <- run_final_ash_pass(data, params, model)
@@ -190,21 +208,19 @@ check_convergence.default <- function(data, params, model, elbo, iter, tracking)
       # Standard PIP convergence
       PIP_diff <- max(abs(tracking$convergence$prev_alpha - model$alpha))
 
-      if (params$verbose) {
-        message("max |change in PIP|: ", format(PIP_diff, digits = 6))
-      }
-
       model$converged <- (PIP_diff < params$tol)
+      if (verbose)
+        message(sprintf("iter %3d: max|dPIP|=%.2e, V=%s%s [mem: %.2f GB]",
+                        iter, PIP_diff, V_str,
+                        if (model$converged) " -- converged" else "",
+                        mem_used_gb()))
+
       if (model$converged && !is.null(params$unmappable_effects) &&
           params$unmappable_effects == "ash") {
         model <- run_final_ash_pass(data, params, model)
       }
       return(model)
     }
-  }
-
-  if (params$verbose) {
-    message("ELBO: ", format(elbo[iter + 1], digits = 6))
   }
 
   # Converge when ELBO stabilizes: small non-negative change.
@@ -214,6 +230,13 @@ check_convergence.default <- function(data, params, model, elbo, iter, tracking)
                             -ELBO_diff, iter))
   }
   model$converged <- (ELBO_diff >= 0 && ELBO_diff < params$tol)
+
+  if (verbose)
+    message(sprintf("iter %3d: ELBO=%.4f, delta=%.2e, V=%s%s [mem: %.2f GB]",
+                    iter, elbo[iter + 1], ELBO_diff, V_str,
+                    if (model$converged) " -- converged" else "",
+                    mem_used_gb()))
+
   if (model$converged && !is.null(params$unmappable_effects) &&
       params$unmappable_effects == "ash") {
     model <- run_final_ash_pass(data, params, model)
