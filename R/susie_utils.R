@@ -20,10 +20,13 @@ mem_used_gb <- function() {
 # E.g., "[1.23e-01, 5.34e-02, 0 x 3]"
 #' @keywords internal
 format_V_summary <- function(V) {
-  n_zero <- sum(V == 0)
-  nz <- V[V != 0]
+  n_na   <- sum(is.na(V))
+  V_nona <- V[!is.na(V)]
+  n_zero <- sum(V_nona == 0)
+  nz <- V_nona[V_nona != 0]
   parts <- sprintf("%.2e", nz)
   if (n_zero > 0) parts <- c(parts, sprintf("0 x %d", n_zero))
+  if (n_na > 0)   parts <- c(parts, sprintf("NA x %d", n_na))
   paste0("[", paste(parts, collapse = ", "), "]")
 }
 
