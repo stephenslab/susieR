@@ -162,7 +162,7 @@ get_ER2.rss_lambda <- function(data, model) {
   postb2 <- model$diag_postb2
 
   # z^T S^{-1} z
-  zSinvz <- sum((Dinv * Vtz) * Vtz)
+  zSinvz <- sum((Dinv * Vtz) * Vtz) + data$z_null_norm2 / data$lambda
 
   # -2 zbar^T S^{-1} z
   tmp <- V %*% (Dinv * (D * Vtz))
