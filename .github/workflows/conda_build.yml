@@ -92,7 +92,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
 
       - name: Build and export docker containers
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           load: true
           file: .github/rattler-build_container.df
