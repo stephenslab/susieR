@@ -207,7 +207,13 @@ check_convergence.default <- function(data, params, model, elbo, iter, tracking)
     message("ELBO: ", format(elbo[iter + 1], digits = 6))
   }
 
-  model$converged <- (ELBO_diff < params$tol)
+  # Converge when ELBO stabilizes: small non-negative change.
+  # A large negative ELBO_diff means the objective dropped, not convergence.
+  if (ELBO_diff < -params$tol) {
+    warning_message(sprintf("ELBO decreased by %.2e at iteration %d",
+                            -ELBO_diff, iter))
+  }
+  model$converged <- (ELBO_diff >= 0 && ELBO_diff < params$tol)
   if (model$converged && !is.null(params$unmappable_effects) &&
       params$unmappable_effects == "ash") {
     model <- run_final_ash_pass(data, params, model)
