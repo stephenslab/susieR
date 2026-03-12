@@ -1025,6 +1025,9 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
     # Sort descending
     idx <- order(eigen_values, decreasing = TRUE)
     eigen_R <- list(values = eigen_values[idx], vectors = eigen_vectors[, idx])
+    # Rescale X so that X'X = R (not n*R). This ensures compute_Rv(data, v)
+    # returns R*v, consistent with the eigenvalues d^2/B_x.
+    X <- X / sqrt(B_x)
   } else {
     eigen_R <- eigen(R, symmetric = TRUE)
   }
@@ -1058,6 +1061,9 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
 
   # Precompute V'z
   Vtz <- crossprod(eigen_R$vectors, z)
+
+  # Compute Null-space z-score norm: ||z||^2 - ||V'z||^2.
+  z_null_norm2 <- max(sum(z^2) - sum(Vtz^2), 0)
 
   # Handle lambda estimation
   if (identical(lambda, "estimate")) {
@@ -1127,7 +1133,8 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
       r_tol = r_tol,
       prior_variance = prior_variance,
       eigen_R = eigen_R,
-      Vtz = Vtz
+      Vtz = Vtz,
+      z_null_norm2 = z_null_norm2
     ),
     class = "rss_lambda"
   )
