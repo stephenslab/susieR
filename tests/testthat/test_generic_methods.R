@@ -123,20 +123,27 @@ test_that("default methods have sensible fallback behavior", {
   expect_null(get_zscore.default(data, params, model))
 })
 
-test_that("track_ibss_fit.default maintains convergence tracking", {
+test_that("track_ibss_fit.default stores iteration snapshots", {
   data <- structure(list(), class = "test_class")
-  params <- list(track_fit = FALSE)
+  params <- list(track_fit = TRUE)
   model <- list(alpha = matrix(1/10, 3, 10), V = c(0.1, 0.2, 0.3), sigma2 = 1)
   tracking <- list()
 
-  # Should initialize convergence tracking
+  # Should store snapshot at iteration 1
   result <- track_ibss_fit.default(data, params, model, tracking, iter = 1, elbo = c(-Inf))
-  expect_true("convergence" %in% names(result))
-  expect_true(is.matrix(result$convergence$prev_alpha))
+  expect_true(is.list(result[[1]]))
+  expect_true(is.matrix(result[[1]]$alpha))
+  expect_equal(result[[1]]$sigma2, 1)
 
-  # Should update convergence tracking
+  # Should store snapshot at iteration 2
   result2 <- track_ibss_fit.default(data, params, model, result, iter = 2, elbo = c(-Inf, 100))
-  expect_equal(result2$convergence$prev_elbo, 100)
+  expect_equal(length(result2), 2)
+  expect_equal(result2[[2]]$niter, 2)
+
+  # With track_fit = FALSE, tracking stays empty
+  params_no_track <- list(track_fit = FALSE)
+  result3 <- track_ibss_fit.default(data, params_no_track, model, list(), iter = 1, elbo = c(-Inf))
+  expect_equal(length(result3), 0)
 })
 
 test_that("cleanup_model.default removes temporary fields", {
@@ -151,7 +158,8 @@ test_that("cleanup_model.default removes temporary fields", {
     null_weight = 0,
     predictor_weights = rep(1/10, 10),
     residuals = rnorm(50),
-    fitted_without_l = rnorm(50)
+    fitted_without_l = rnorm(50),
+    runtime = list(prev_elbo = -100, prev_alpha = matrix(1/10, 3, 10), prev_pip_diff = 0.01)
   )
 
   result <- cleanup_model.default(data, params, model)
@@ -167,6 +175,7 @@ test_that("cleanup_model.default removes temporary fields", {
   expect_false("predictor_weights" %in% names(result))
   expect_false("residuals" %in% names(result))
   expect_false("fitted_without_l" %in% names(result))
+  expect_false("runtime" %in% names(result))
 })
 
 # =============================================================================

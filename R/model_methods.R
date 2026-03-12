@@ -132,12 +132,12 @@ update_model_variance.default <- function(data, params, model) {
 # =============================================================================
 
 #' @keywords internal
-check_convergence <- function(data, params, model, elbo, iter, tracking) {
+check_convergence <- function(data, params, model, elbo, iter) {
   UseMethod("check_convergence")
 }
 
 #' @keywords internal
-check_convergence.default <- function(data, params, model, elbo, iter, tracking) {
+check_convergence.default <- function(data, params, model, elbo, iter) {
   verbose <- isTRUE(params$verbose)
   V_str <- format_V_summary(model$V)
 
@@ -158,7 +158,7 @@ check_convergence.default <- function(data, params, model, elbo, iter, tracking)
   }
 
   # Calculate difference in ELBO values
-  ELBO_diff   <- elbo[iter + 1] - tracking$convergence$prev_elbo
+  ELBO_diff   <- elbo[iter + 1] - model$runtime$prev_elbo
   ELBO_failed <- is.na(ELBO_diff) || is.infinite(ELBO_diff)
 
   if (params$convergence_method == "pip" || ELBO_failed) {
@@ -180,17 +180,17 @@ check_convergence.default <- function(data, params, model, elbo, iter, tracking)
       }
 
       # Current iteration PIP difference
-      current_diff <- max(abs(tracking$convergence$prev_alpha - model$alpha))
+      current_diff <- max(abs(model$runtime$prev_alpha - model$alpha))
 
       # Average with previous iteration's difference if available
-      if (!is.null(tracking$convergence$prev_pip_diff)) {
-        avg_diff <- (current_diff + tracking$convergence$prev_pip_diff) / 2
+      if (!is.null(model$runtime$prev_pip_diff)) {
+        avg_diff <- (current_diff + model$runtime$prev_pip_diff) / 2
       } else {
         avg_diff <- current_diff
       }
 
       # Store current diff for next iteration
-      tracking$convergence$prev_pip_diff <- current_diff
+      model$runtime$prev_pip_diff <- current_diff
 
       model$converged <- (avg_diff < params$tol)
       if (verbose)
@@ -206,7 +206,7 @@ check_convergence.default <- function(data, params, model, elbo, iter, tracking)
       return(model)
     } else {
       # Standard PIP convergence
-      PIP_diff <- max(abs(tracking$convergence$prev_alpha - model$alpha))
+      PIP_diff <- max(abs(model$runtime$prev_alpha - model$alpha))
 
       model$converged <- (PIP_diff < params$tol)
       if (verbose)

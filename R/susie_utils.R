@@ -1804,7 +1804,7 @@ compute_elbo_inf <- function(alpha, mu, omega, lbf, sigma2, tau2, n, p,
 # inclusion probabilities, and summary statistics. These process the fitted
 # model into interpretable results.
 #
-# Functions: n_in_CS_x, in_CS_x, n_in_CS, in_CS, get_purity, get_tracking
+# Functions: n_in_CS_x, in_CS_x, n_in_CS, in_CS, get_purity
 # =============================================================================
 
 # Find how many variables in the CS.
@@ -1886,10 +1886,3 @@ get_purity <- function(pos, X, Xcorr, squared = FALSE, n = 100,
   }
 }
 
-# Clean tracking object for output by removing convergence data
-#' @keywords internal
-get_tracking <- function(tracking) {
-  clean_tracking <- tracking
-  clean_tracking$convergence <- NULL
-  return(clean_tracking)
-}

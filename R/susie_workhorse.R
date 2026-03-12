@@ -21,9 +21,16 @@ susie_workhorse <- function(data, params) {
   elbo[1]  <- -Inf
   tracking <- list()
 
+  # Initialize runtime state (convergence tracking, cleaned up at finalization)
+  model$runtime <- list(
+    prev_elbo     = -Inf,
+    prev_alpha    = model$alpha,
+    prev_pip_diff = NULL
+  )
+
   # Main IBSS iteration loop
   for (iter in seq_len(params$max_iter)) {
-    # Track iteration progress and store previous values for convergence checking
+    # Store iteration snapshot for track_fit
     tracking <- track_ibss_fit(data, params, model, tracking, iter, elbo)
 
     # Update all L effects
@@ -31,7 +38,11 @@ susie_workhorse <- function(data, params) {
 
     # Calculate objective and check convergence
     elbo[iter + 1] <- get_objective(data, params, model)
-    model <- check_convergence(data, params, model, elbo, iter, tracking)
+    model <- check_convergence(data, params, model, elbo, iter)
+
+    # Update convergence state for next iteration
+    model$runtime$prev_elbo  <- elbo[iter + 1]
+    model$runtime$prev_alpha <- model$alpha
 
     if (model$converged) {
       break

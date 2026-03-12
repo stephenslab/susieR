@@ -75,24 +75,8 @@ track_ibss_fit <- function(data, params, model, tracking, iter, ...) {
 }
 #' @keywords internal
 track_ibss_fit.default <- function(data, params, model, tracking, iter, elbo, ...) {
-  # Initialize tracking structure on first iteration
-  if (iter == 1) {
-    tracking$convergence <- list(
-      prev_elbo  = -Inf,
-      prev_alpha = model$alpha,
-      prev_pip_diff = NULL
-    )
-  } else {
-    # Compute PIP difference for this iteration
-    pip_diff <- max(abs(tracking$convergence$prev_alpha - model$alpha))
-
-    # Update previous values for convergence checking
-    tracking$convergence$prev_elbo  <- elbo[iter]
-    tracking$convergence$prev_alpha <- model$alpha
-    tracking$convergence$prev_pip_diff <- pip_diff
-  }
-
-  # Store additional tracking information if requested
+  # Store iteration snapshot if tracking is enabled.
+  # tracking is a purely numeric list: tracking[[1]], [[2]], etc.
   if (isTRUE(params$track_fit)) {
     tracking[[iter]] <- list(
       alpha  = model$alpha,
@@ -344,7 +328,7 @@ cleanup_model <- function(data, params, model, ...) {
 #' @keywords internal
 cleanup_model.default <- function(data, params, model, ...) {
   # Remove temporary fields common to all data types
-  temp_fields <- c("null_weight", "predictor_weights", "prev_elbo", "prev_alpha",
+  temp_fields <- c("null_weight", "predictor_weights", "runtime",
                    "residuals", "fitted_without_l", "residual_variance",
                    "shat2_inflation")
 

@@ -1430,32 +1430,30 @@ test_that("check_convergence detects convergence correctly", {
   )
 
   model <- list(
-    alpha = matrix(1/p, L, p)
-  )
-
-  tracking <- list(
-    convergence = list(
+    alpha = matrix(1/p, L, p),
+    runtime = list(
       prev_elbo = -1000,
-      prev_alpha = matrix(1/p, L, p)
+      prev_alpha = matrix(1/p, L, p),
+      prev_pip_diff = NULL
     )
   )
 
   # Test: first iteration (should not converge)
   result_iter1 <- check_convergence(NULL, params, model, elbo = c(-1000, -999),
-                                   iter = 1, tracking = tracking)
+                                   iter = 1)
   expect_false(result_iter1$converged)
 
   # Test: ELBO converged
   elbo_converged <- c(-1000, -999.99)
   result_elbo_conv <- check_convergence(NULL, params, model, elbo = elbo_converged,
-                                       iter = 2, tracking = tracking)
+                                       iter = 2)
   expect_true(result_elbo_conv$converged)
 
   # Test: ELBO not converged
-  tracking$convergence$prev_elbo <- -1000
+  model$runtime$prev_elbo <- -1000
   elbo_not_conv <- c(NA, NA, -990)
   result_elbo_not <- check_convergence(NULL, params, model, elbo = elbo_not_conv,
-                                      iter = 2, tracking = tracking)
+                                      iter = 2)
   expect_false(result_elbo_not$converged)
 
   # Test: PIP convergence
@@ -1467,7 +1465,7 @@ test_that("check_convergence detects convergence correctly", {
 
   # PIP converged (alpha unchanged)
   result_pip_conv <- check_convergence(NULL, params_pip, model, elbo = c(-1000, -999),
-                                      iter = 2, tracking = tracking)
+                                      iter = 2)
   expect_true(result_pip_conv$converged)
 
   # PIP not converged (alpha changed)
@@ -1475,13 +1473,13 @@ test_that("check_convergence detects convergence correctly", {
   model_changed$alpha[1, 1] <- 0.5
   result_pip_not <- check_convergence(NULL, params_pip, model_changed,
                                      elbo = c(-1000, -999),
-                                     iter = 2, tracking = tracking)
+                                     iter = 2)
   expect_false(result_pip_not$converged)
 
   # Test: ELBO is NA/Inf (fallback to PIP)
   expect_message(
     result_na <- check_convergence(NULL, params, model, elbo = c(-1000, NA),
-                                  iter = 2, tracking = tracking),
+                                  iter = 2),
     "NA/infinite ELBO"
   )
   expect_true(result_na$converged)  # Alpha unchanged, so converged by PIP
@@ -1699,36 +1697,6 @@ test_that("get_purity computes correlation purity statistics", {
   expect_true(all(result_squared <= 1))
 })
 
-test_that("get_tracking cleans tracking object", {
-  # Create tracking object with convergence data
-  tracking <- list(
-    elbo = c(-1000, -999, -998.5),
-    sigma2 = c(1, 0.9, 0.85),
-    convergence = list(
-      prev_elbo = -998.5,
-      prev_alpha = matrix(1/100, 5, 100)
-    )
-  )
-
-  result <- get_tracking(tracking)
-
-  # Check convergence removed
-  expect_null(result$convergence)
-
-  # Check other components preserved
-  expect_equal(result$elbo, tracking$elbo)
-  expect_equal(result$sigma2, tracking$sigma2)
-
-  # Test with minimal tracking
-  tracking_minimal <- list(
-    elbo = c(-1000),
-    convergence = NULL
-  )
-
-  result_minimal <- get_tracking(tracking_minimal)
-  expect_null(result_minimal$convergence)
-  expect_equal(result_minimal$elbo, tracking_minimal$elbo)
-})
 
 # =============================================================================
 # END OF TESTS
