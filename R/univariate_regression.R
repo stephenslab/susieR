@@ -144,8 +144,8 @@ univariate_regression = function (X, y, Z = NULL, center = TRUE,
     return(list(betahat = output[,1],sebetahat = output[,2]))
 }
 
-# Computes the z-scores (t-statistics) for association between Y and
-# each column of X.
+#' @rdname univariate_regression
+#' @export
 calc_z = function (X, Y, center = FALSE, scale = FALSE) {
   univariate_z = function(X,Y,center,scale) {
     out = univariate_regression(X,Y,center = center,scale = scale)

@@ -2,6 +2,7 @@
 % Please edit documentation in R/univariate_regression.R
 \name{univariate_regression}
 \alias{univariate_regression}
+\alias{calc_z}
 \title{Perform Univariate Linear Regression Separately for Columns of X}
 \usage{
 univariate_regression(
@@ -13,6 +14,8 @@ univariate_regression(
   return_residuals = FALSE,
   method = c("lmfit", "sumstats")
 )
+
+calc_z(X, Y, center = FALSE, scale = FALSE)
 }
 \arguments{
 \item{X}{n by p matrix of regressors.}
