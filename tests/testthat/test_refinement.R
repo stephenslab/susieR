@@ -291,7 +291,7 @@ test_that("run_refine respects verbose parameter", {
 
   expect_message(
     run_refine(setup$model, setup$data, params_verbose),
-    "Starting refinement"
+    "Block ascent iter"
   )
 })
 
