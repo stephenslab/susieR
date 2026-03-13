@@ -45,8 +45,9 @@
 block_coordinate_ascent <- function(model, data, step_fn,
                                      max_iter = 100, tol = 1e-3,
                                      verbose = FALSE) {
-  prev_elbo <- susie_get_objective(model)
-  converged <- FALSE
+  prev_elbo  <- susie_get_objective(model)
+  prev_model <- model
+  converged  <- FALSE
 
   for (iter in seq_len(max_iter)) {
     result <- step_fn(model, data, iter)
@@ -56,11 +57,18 @@ block_coordinate_ascent <- function(model, data, step_fn,
     current_elbo <- susie_get_objective(model)
     elbo_change <- current_elbo - prev_elbo
 
-    # Warn if ELBO dropped
-    if (elbo_change < -tol)
-      warning_message(sprintf(
-        "ELBO decreased by %.4g in block ascent iteration %d",
-        -elbo_change, iter))
+    # If ELBO decreased, the step did not improve the objective.
+    # Revert to the previous model and treat as converged.
+    if (elbo_change < 0) {
+      if (verbose)
+        message(sprintf(
+          "Block ascent iter %d: update did not improve ELBO (change=%.4g); ",
+          iter, elbo_change),
+          "rejecting update and stopping.")
+      model <- prev_model
+      converged <- TRUE
+      break
+    }
 
     if (verbose) {
       msg <- sprintf("Block ascent iter %d: ELBO=%.4f, change=%.4g",
@@ -81,7 +89,8 @@ block_coordinate_ascent <- function(model, data, step_fn,
       break
     }
 
-    prev_elbo <- current_elbo
+    prev_elbo  <- current_elbo
+    prev_model <- model
   }
 
   model$converged <- converged
