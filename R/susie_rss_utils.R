@@ -213,6 +213,16 @@ precompute_rss_lambda_terms <- function(data, model) {
   return(model)
 }
 
+# Dynamic stochastic LD variance inflation for rss_lambda path (z-score scale)
+#' @keywords internal
+compute_shat2_inflation_rss <- function(data, model, Rz_without_l, b_minus_l) {
+  B_eff <- data$stochastic_ld_B
+  if (is.null(B_eff) || model$sigma2 <= .Machine$double.eps) return(NULL)
+  v_g  <- max(sum(b_minus_l * Rz_without_l), 0)
+  eta2 <- Rz_without_l^2   # z-score scale: no (n-1) division needed
+  1 + (eta2 + v_g) / (B_eff * model$sigma2)
+}
+
 # =============================================================================
 # DIAGNOSTIC & QUALITY CONTROL
 #

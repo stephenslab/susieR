@@ -329,6 +329,7 @@ cleanup_model <- function(data, params, model, ...) {
 cleanup_model.default <- function(data, params, model, ...) {
   # Remove temporary fields common to all data types
   temp_fields <- c("null_weight", "predictor_weights", "runtime",
+                   "prev_elbo", "prev_alpha",
                    "residuals", "fitted_without_l", "residual_variance",
                    "shat2_inflation")
 

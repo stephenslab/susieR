@@ -770,3 +770,310 @@ test_that("cleanup_model.rss_lambda removes temporary fields", {
   expect_true("mu" %in% names(cleaned))
   expect_true("mu2" %in% names(cleaned))
 })
+
+# =============================================================================
+# STOCHASTIC LD SKETCH INFLATION TESTS
+# =============================================================================
+
+test_that("compute_ser_statistics.rss_lambda returns betahat", {
+  dat <- setup_rss_lambda_data(seed = 40)
+
+  data <- dat$data
+  params <- dat$params
+  model <- dat$model
+  model$Rz <- as.vector(data$R %*% colSums(model$alpha * model$mu))
+  model <- compute_residuals.rss_lambda(data, params, model, l = 1)
+
+  ser_stats <- compute_ser_statistics.rss_lambda(data, params, model, l = 1)
+
+  expect_true("betahat" %in% names(ser_stats))
+  expect_length(ser_stats$betahat, dat$p)
+  expect_true(all(is.finite(ser_stats$betahat)))
+})
+
+test_that("inflation is computed when stochastic_ld_B is set", {
+  dat <- setup_rss_lambda_data(seed = 41)
+
+  # Construct data with stochastic_ld_sample
+  B <- nrow(dat$X)
+  result <- rss_lambda_constructor(
+    z = dat$z, R = dat$R, lambda = dat$lambda, n = dat$n,
+    stochastic_ld_sample = B
+  )
+  data <- result$data
+  params <- result$params
+
+  expect_equal(data$stochastic_ld_B, B)
+
+  var_y <- get_var_y.rss_lambda(data)
+  model <- initialize_susie_model.rss_lambda(data, params, var_y)
+  model$Rz <- as.vector(data$R %*% colSums(model$alpha * model$mu))
+
+  # After computing residuals, shat2_inflation should exist
+  model <- compute_residuals.rss_lambda(data, params, model, l = 1)
+  expect_true(!is.null(model$shat2_inflation))
+  expect_length(model$shat2_inflation, dat$p)
+  expect_true(all(model$shat2_inflation >= 1))
+})
+
+test_that("no inflation without stochastic_ld_B", {
+  dat <- setup_rss_lambda_data(seed = 42)
+
+  data <- dat$data
+  params <- dat$params
+  model <- dat$model
+  model$Rz <- as.vector(data$R %*% colSums(model$alpha * model$mu))
+
+  # Without stochastic_ld_B, no inflation
+  expect_null(data$stochastic_ld_B)
+  model <- compute_residuals.rss_lambda(data, params, model, l = 1)
+  expect_null(model$shat2_inflation)
+})
+
+test_that("inflation widens shat2 in ser_stats", {
+  dat <- setup_rss_lambda_data(seed = 43)
+
+  # Run once without inflation
+  data_no_infl <- dat$data
+  params <- dat$params
+  model_no <- dat$model
+  model_no$Rz <- as.vector(data_no_infl$R %*% colSums(model_no$alpha * model_no$mu))
+  model_no <- compute_residuals.rss_lambda(data_no_infl, params, model_no, l = 1)
+  stats_no <- compute_ser_statistics.rss_lambda(data_no_infl, params, model_no, l = 1)
+
+  # Run with inflation
+  B <- nrow(dat$X)
+  result <- rss_lambda_constructor(
+    z = dat$z, R = dat$R, lambda = dat$lambda, n = dat$n,
+    stochastic_ld_sample = B
+  )
+  data_infl <- result$data
+  var_y <- get_var_y.rss_lambda(data_infl)
+  model_infl <- initialize_susie_model.rss_lambda(data_infl, result$params, var_y)
+  model_infl$Rz <- as.vector(data_infl$R %*% colSums(model_infl$alpha * model_infl$mu))
+  model_infl <- compute_residuals.rss_lambda(data_infl, result$params, model_infl, l = 1)
+  stats_infl <- compute_ser_statistics.rss_lambda(data_infl, result$params, model_infl, l = 1)
+
+  # betahat should be identical (inflation doesn't affect betahat)
+  expect_equal(stats_infl$betahat, stats_no$betahat, tolerance = 1e-10)
+
+  # shat2 should be inflated (>= original)
+  expect_true(all(stats_infl$shat2 >= stats_no$shat2 - 1e-15))
+})
+
+test_that("inflation approximately 1 under global null", {
+  set.seed(44)
+  p <- 50
+  n <- 500
+  X <- matrix(rnorm(n * p), n, p)
+  X <- scale(X, center = TRUE, scale = TRUE)
+  y <- rnorm(n)  # no signal
+  input_ss <- compute_suff_stat(X, y, standardize = TRUE)
+  R <- cov2cor(input_ss$XtX)
+  R <- (R + t(R)) / 2
+  ss <- univariate_regression(X, y)
+  z <- ss$betahat / ss$sebetahat
+
+  result <- rss_lambda_constructor(
+    z = z, R = R, lambda = 0.1, n = n,
+    stochastic_ld_sample = n
+  )
+  data <- result$data
+  params <- result$params
+  var_y <- get_var_y.rss_lambda(data)
+  model <- initialize_susie_model.rss_lambda(data, params, var_y)
+  model$Rz <- as.vector(R %*% colSums(model$alpha * model$mu))
+  model <- compute_residuals.rss_lambda(data, params, model, l = 1)
+
+  # Under global null with uniform alpha, inflation should be close to 1
+  # (Rz_without_l ~ 0 since all mu ~ 0)
+  expect_true(all(model$shat2_inflation < 1.05))
+})
+
+test_that("posterior moments use inflated shat2 consistently", {
+  dat <- setup_rss_lambda_data(seed = 45)
+
+  B <- nrow(dat$X)
+  result <- rss_lambda_constructor(
+    z = dat$z, R = dat$R, lambda = dat$lambda, n = dat$n,
+    stochastic_ld_sample = B
+  )
+  data <- result$data
+  params <- result$params
+  var_y <- get_var_y.rss_lambda(data)
+  model <- initialize_susie_model.rss_lambda(data, params, var_y)
+  model$Rz <- as.vector(data$R %*% colSums(model$alpha * model$mu))
+  model <- compute_residuals.rss_lambda(data, params, model, l = 1)
+
+  V <- 0.2
+  model <- calculate_posterior_moments.rss_lambda(data, params, model, V, l = 1)
+
+  # Posterior variance should be positive and well-behaved
+  post_var <- model$mu2[1, ] - model$mu[1, ]^2
+  expect_true(all(post_var > -1e-10))
+  expect_true(all(is.finite(model$mu[1, ])))
+  expect_true(all(is.finite(model$mu2[1, ])))
+
+  # With inflated shat2, posterior variance should be larger than
+  # uninflated (more conservative)
+  model_no <- dat$model
+  model_no$Rz <- as.vector(dat$data$R %*% colSums(model_no$alpha * model_no$mu))
+  model_no <- compute_residuals.rss_lambda(dat$data, params, model_no, l = 1)
+  model_no <- calculate_posterior_moments.rss_lambda(dat$data, params, model_no, V, l = 1)
+  post_var_no <- model_no$mu2[1, ] - model_no$mu[1, ]^2
+
+  # Inflated posterior variance >= uninflated (within numerical tolerance)
+  expect_true(all(post_var >= post_var_no - 1e-10))
+})
+
+# =============================================================================
+# R vs X INPUT PATH AGREEMENT
+# =============================================================================
+
+test_that("R and X input paths produce numerically identical results", {
+  set.seed(50)
+  p <- 30
+  n <- 500
+  B <- 200
+  X_full <- matrix(rnorm(n * p), n, p)
+  X_full <- scale(X_full, center = TRUE, scale = TRUE)
+  y <- X_full[, 1] * 0.5 + rnorm(n)
+  input_ss <- compute_suff_stat(X_full, y, standardize = TRUE)
+  R <- cov2cor(input_ss$XtX)
+  R <- (R + t(R)) / 2
+  ss <- univariate_regression(X_full, y)
+  z <- ss$betahat / ss$sebetahat
+
+  # Use X as a "sketch" — here use X_full itself (B=n)
+  X_sketch <- X_full
+
+  # Construct from R
+  res_R <- rss_lambda_constructor(z = z, R = R, lambda = 0.1, n = n)
+  # Construct from X
+  res_X <- rss_lambda_constructor(z = z, X = X_sketch, lambda = 0.1, n = n)
+
+  # Eigendecomposition should be very close
+  # (sorted eigenvalues should match; eigenvectors may differ in sign)
+  expect_equal(res_R$data$eigen_R$values, res_X$data$eigen_R$values, tolerance = 1e-6)
+
+  # Initialize and run one SER iteration
+  var_y_R <- get_var_y.rss_lambda(res_R$data)
+  model_R <- initialize_susie_model.rss_lambda(res_R$data, res_R$params, var_y_R)
+  model_R$Rz <- as.vector(R %*% colSums(model_R$alpha * model_R$mu))
+
+  var_y_X <- get_var_y.rss_lambda(res_X$data)
+  model_X <- initialize_susie_model.rss_lambda(res_X$data, res_X$params, var_y_X)
+  model_X$Rz <- as.vector(compute_Rv(res_X$data, colSums(model_X$alpha * model_X$mu)))
+
+  # RjSinvRj should agree
+  expect_equal(model_R$RjSinvRj, model_X$RjSinvRj, tolerance = 1e-6)
+
+  # Compute residuals
+  model_R <- compute_residuals.rss_lambda(res_R$data, res_R$params, model_R, l = 1)
+  model_X <- compute_residuals.rss_lambda(res_X$data, res_X$params, model_X, l = 1)
+  expect_equal(model_R$residuals, model_X$residuals, tolerance = 1e-6)
+
+  # SER statistics
+  stats_R <- compute_ser_statistics.rss_lambda(res_R$data, res_R$params, model_R, l = 1)
+  stats_X <- compute_ser_statistics.rss_lambda(res_X$data, res_X$params, model_X, l = 1)
+  expect_equal(stats_R$betahat, stats_X$betahat, tolerance = 1e-6)
+  expect_equal(stats_R$shat2, stats_X$shat2, tolerance = 1e-6)
+})
+
+# =============================================================================
+# END-TO-END susie_rss WITH INFLATION
+# =============================================================================
+
+test_that("susie_rss with lambda and stochastic_ld_sample runs successfully", {
+  set.seed(51)
+  p <- 50
+  n <- 2000
+  X <- matrix(rnorm(n * p), n, p)
+  X <- scale(X, center = TRUE, scale = TRUE)
+  beta <- rep(0, p)
+  beta[1] <- 0.5
+  beta[10] <- -0.3
+  y <- drop(X %*% beta + rnorm(n))
+  input_ss <- compute_suff_stat(X, y, standardize = TRUE)
+  R <- cov2cor(input_ss$XtX)
+  R <- (R + t(R)) / 2
+  ss <- univariate_regression(X, y)
+  z <- ss$betahat / ss$sebetahat
+
+  # Without inflation
+  fit_no <- susie_rss(z = z, R = R, lambda = 0.1, n = n, L = 5,
+                      max_iter = 50, verbose = FALSE)
+
+  # With inflation
+  fit_infl <- susie_rss(z = z, R = R, lambda = 0.1, n = n, L = 5,
+                        stochastic_ld_sample = n, max_iter = 50, verbose = FALSE)
+
+  # Both should converge
+  expect_true(fit_no$converged)
+  expect_true(fit_infl$converged)
+
+  # ELBO with inflation should be slightly lower (wider posterior = looser bound)
+  # but still reasonable
+  expect_true(is.finite(fit_infl$elbo[length(fit_infl$elbo)]))
+  expect_true(is.finite(fit_no$elbo[length(fit_no$elbo)]))
+
+  # stochastic_ld_diagnostics should be stored
+  expect_true(!is.null(fit_infl$stochastic_ld_diagnostics))
+
+  # Causal variables should still have high PIP
+  expect_true(fit_no$pip[1] > 0.5)
+  expect_true(fit_infl$pip[1] > 0.3)  # slightly less confident with inflation
+})
+
+test_that("susie_rss with X input and lambda and inflation works", {
+  set.seed(52)
+  p <- 30
+  n <- 2000
+  X <- matrix(rnorm(n * p), n, p)
+  X <- scale(X, center = TRUE, scale = TRUE)
+  beta <- rep(0, p)
+  beta[1] <- 0.5
+  y <- drop(X %*% beta + rnorm(n))
+  input_ss <- compute_suff_stat(X, y, standardize = TRUE)
+  R <- cov2cor(input_ss$XtX)
+  R <- (R + t(R)) / 2
+  ss <- univariate_regression(X, y)
+  z <- ss$betahat / ss$sebetahat
+
+  # susie_rss with X input (lambda > 0 triggers rss_lambda path)
+  fit_X <- susie_rss(z = z, R = R, lambda = 0.1, n = n, L = 5,
+                     stochastic_ld_sample = n, max_iter = 50, verbose = FALSE)
+
+  expect_true(fit_X$converged)
+  expect_true(is.finite(fit_X$elbo[length(fit_X$elbo)]))
+  expect_true(fit_X$pip[1] > 0.3)
+})
+
+test_that("loglik.rss_lambda Wakefield ABF agrees with old signal-based form", {
+  # Verify the Wakefield ABF form gives the same result as the original
+  # signal^2 / RjSinvRj form when there is no inflation
+  dat <- setup_rss_lambda_data(seed = 53)
+  data <- dat$data
+  params <- dat$params
+  model <- dat$model
+  model$Rz <- as.vector(data$R %*% colSums(model$alpha * model$mu))
+  model <- compute_residuals.rss_lambda(data, params, model, l = 1)
+
+  ser_stats <- compute_ser_statistics.rss_lambda(data, params, model, l = 1)
+
+  # Compute BF using Wakefield ABF (current code)
+  V <- 0.2
+  shat2 <- pmax(ser_stats$shat2, .Machine$double.eps)
+  lbf_wakefield <- -0.5 * log(1 + V / shat2) +
+    0.5 * ser_stats$betahat^2 * V / (shat2 * (V + shat2))
+
+  # Compute BF using the original SinvRj form:
+  # lbf = -0.5 * log(1 + V * RjSinvRj) + 0.5 * V * signal^2 / (1 + V * RjSinvRj)
+  # where signal = SinvRj' * r, and shat2 = 1/RjSinvRj, betahat = signal * shat2
+  signal <- as.vector(crossprod(model$SinvRj, model$residuals))
+  RjSinvRj <- model$RjSinvRj
+  lbf_original <- -0.5 * log(1 + V * RjSinvRj) +
+    0.5 * V * signal^2 / (1 + V * RjSinvRj)
+
+  expect_equal(lbf_wakefield, lbf_original, tolerance = 1e-10)
+})

@@ -643,8 +643,6 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
       stop("stochastic_ld_sample must be a numeric scalar.")
     if (stochastic_ld_sample < 1000)
       stop("stochastic_ld_sample must be >= 1000.")
-    if (lambda != 0)
-      stop("stochastic_ld_sample is not supported with lambda != 0.")
   }
 
   # Stochastic LD consistency checks for low-rank X input

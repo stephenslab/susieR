@@ -643,7 +643,8 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
       max_iter = max_iter, tol = tol, convergence_method = convergence_method,
       verbose = verbose, track_fit = track_fit, check_input = check_input,
       check_prior = check_prior, check_R = check_R, check_z = check_z,
-      n_purity = n_purity, r_tol = r_tol, refine = refine
+      n_purity = n_purity, r_tol = r_tol, refine = refine,
+      stochastic_ld_sample = stochastic_ld_sample
     ))
   }
 
@@ -914,7 +915,8 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
                                    check_z = FALSE,
                                    n_purity = 100,
                                    r_tol = 1e-8,
-                                   refine = FALSE) {
+                                   refine = FALSE,
+                                   stochastic_ld_sample = NULL) {
 
   # Handle MoM fallback for RSS with lambda != 0
   if (estimate_residual_method == "MoM") {
@@ -1012,10 +1014,18 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
 
   # Eigen decomposition: from R or SVD of X
   if (!is.null(X)) {
-    # SVD of X: eigenvalues of R = X'X/B_x are d^2/B_x
     B_x <- nrow(X)
+
+    # Standardize X so that X'X = R (correlation matrix):
+    # 1. Normalize columns so diag(X'X/B) = 1
+    # 2. Scale by 1/sqrt(B) so X'X = R instead of B*R
+    col_norms <- sqrt(colSums(X^2) / B_x)
+    col_norms[col_norms < .Machine$double.eps] <- 1
+    X <- sweep(X, 2, col_norms, "/") / sqrt(B_x)
+
+    # SVD of X: eigenvalues of R = X'X are sv$d^2 (X already scaled)
     sv <- svd(X, nu = 0)
-    eigen_values <- pmax(sv$d^2 / B_x, 0)
+    eigen_values <- pmax(sv$d^2, 0)
     eigen_vectors <- sv$v
     # Pad with zeros for null-space eigenvectors
     if (ncol(eigen_vectors) < p) {
@@ -1120,6 +1130,45 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
   # Validate params
   params_object <- validate_and_override_params(params_object)
 
+  # Stochastic LD sketch diagnostics
+  stochastic_ld_diagnostics <- NULL
+  stochastic_ld_B <- NULL
+  if (!is.null(stochastic_ld_sample)) {
+    stochastic_ld_B <- stochastic_ld_sample
+    B_stoch <- stochastic_ld_sample
+    p_stoch <- length(z)
+
+    # Debiased Frobenius norm for effective rank diagnostic
+    if (!is.null(X)) {
+      A <- tcrossprod(X)
+      R_frob_sq <- sum(A * A) / nrow(X)^2
+    } else if (!is.null(R)) {
+      R_frob_sq <- sum(R * R)
+    } else {
+      R_frob_sq <- p_stoch  # identity fallback
+    }
+    R_frob_sq_db <- (B_stoch * R_frob_sq - p_stoch^2) / (B_stoch + 1)
+    eff_rank <- p_stoch^2 / max(R_frob_sq_db, 1)
+
+    # Per-variant diagonal quality
+    if (!is.null(X)) {
+      Rhat_diag <- colSums(X^2) / nrow(X)
+    } else if (!is.null(R)) {
+      Rhat_diag <- diag(R)
+    } else {
+      Rhat_diag <- rep(1, p_stoch)
+    }
+
+    stochastic_ld_diagnostics <- list(
+      B = B_stoch,
+      p = p_stoch,
+      R_frob_sq_debiased = R_frob_sq_db,
+      effective_rank = eff_rank,
+      r_over_B = eff_rank / B_stoch,
+      Rhat_diag_deviation = abs(Rhat_diag - 1)
+    )
+  }
+
   # Create data object with RSS-lambda specific fields
   data_object <- structure(
     list(
@@ -1134,7 +1183,9 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
       prior_variance = prior_variance,
       eigen_R = eigen_R,
       Vtz = Vtz,
-      z_null_norm2 = z_null_norm2
+      z_null_norm2 = z_null_norm2,
+      stochastic_ld_B = stochastic_ld_B,
+      stochastic_ld_diagnostics = stochastic_ld_diagnostics
     ),
     class = "rss_lambda"
   )

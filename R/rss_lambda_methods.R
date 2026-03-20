@@ -90,21 +90,34 @@ compute_residuals.rss_lambda <- function(data, params, model, l, ...) {
   model$fitted_without_l  <- Rz_without_l
   model$residual_variance <- 1  # RSS lambda uses normalized residual variance
 
+  # Dynamic stochastic LD variance inflation (z-score scale)
+  if (!is.null(data$stochastic_ld_B)) {
+    b_minus_l <- colSums(model$alpha * model$mu) - model$alpha[l, ] * model$mu[l, ]
+    model$shat2_inflation <- compute_shat2_inflation_rss(
+      data, model, Rz_without_l, b_minus_l)
+  }
+
   return(model)
 }
 
 # Compute SER statistics
 #' @keywords internal
 compute_ser_statistics.rss_lambda <- function(data, params, model, l, ...) {
-  shat2 <- 1 / model$RjSinvRj
+  signal  <- as.vector(crossprod(model$SinvRj, model$residuals))
+  shat2   <- 1 / model$RjSinvRj
+  betahat <- signal * shat2
+
+  # Apply stochastic LD inflation to shat2
+  if (!is.null(model$shat2_inflation))
+    shat2 <- shat2 * model$shat2_inflation
 
   # Optimization parameters
-  init_vals    <- sapply(1:data$p, function(j) sum(model$SinvRj[, j] * model$residuals)^2) - (1 / model$RjSinvRj)
-  optim_init   <- log(max(c(init_vals, 1e-6), na.rm = TRUE))
+  optim_init   <- log(max(c(betahat^2 - shat2, 1e-6), na.rm = TRUE))
   optim_bounds <- c(-30, 15)
   optim_scale  <- "log"
 
   return(list(
+    betahat      = betahat,
     shat2        = shat2,
     optim_init   = optim_init,
     optim_bounds = optim_bounds,
@@ -128,10 +141,14 @@ SER_posterior_e_loglik.rss_lambda <- function(data, params, model, l) {
 # Calculate posterior moments for single effect regression
 #' @keywords internal
 calculate_posterior_moments.rss_lambda <- function(data, params, model, V, l, ...) {
-  post_var   <- (model$RjSinvRj + 1 / V)^(-1)
-  post_mean  <- sapply(1:data$p, function(j) {
-    post_var[j] * sum(model$SinvRj[, j] * model$residuals)
-  })
+  shat2 <- 1 / model$RjSinvRj
+  if (!is.null(model$shat2_inflation))
+    shat2 <- shat2 * model$shat2_inflation
+
+  post_var  <- V * shat2 / (V + shat2)
+  signal    <- as.vector(crossprod(model$SinvRj, model$residuals))
+  betahat   <- signal * (1 / model$RjSinvRj)
+  post_mean <- post_var / shat2 * betahat
   post_mean2 <- post_var + post_mean^2
 
   # Store posterior moments in model
@@ -195,9 +212,10 @@ Eloglik.rss_lambda <- function(data, model) {
 # Log-likelihood for RSS
 #' @keywords internal
 loglik.rss_lambda <- function(data, params, model, V, ser_stats, l = NULL, ...) {
-  # Compute log Bayes factors
-  lbf <- -0.5 * log(1 + V / ser_stats$shat2) +
-    0.5 * (V / (1 + V / ser_stats$shat2)) * (crossprod(model$SinvRj, model$residuals)^2)
+  # Wakefield ABF using betahat/shat2 from ser_stats (supports inflation)
+  shat2 <- pmax(ser_stats$shat2, .Machine$double.eps)
+  lbf   <- -0.5 * log(1 + V / shat2) +
+    0.5 * ser_stats$betahat^2 * V / (shat2 * (V + shat2))
 
   # Stabilize logged Bayes Factor
   stable_res <- lbf_stabilization(lbf, model$pi, ser_stats$shat2)
