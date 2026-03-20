@@ -1041,15 +1041,14 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
   panel_R <- NULL
   omega_cache <- NULL
   if (is_multi_panel) {
-    # Precompute per-panel R matrices for eigendecomposition recovery
-    panel_R <- lapply(X_list, crossprod)
-
-    # Precompute reduced-basis quantities for O(r^3) omega optimization.
-    # When sum(B_k) >= p, the reduced basis has rank r = p (no speedup),
-    # so we skip precomputation and fall back to direct O(p^3) approach.
     B_total <- sum(vapply(X_list, nrow, integer(1)))
+
+    # When sum(B_k) < p, use reduced-basis for O(r^3) omega optimization.
+    # Otherwise fall back to direct O(p^3) via explicit panel_R matrices.
     if (B_total < length(z)) {
       omega_cache <- precompute_omega_cache(X_list, z)
+    } else {
+      panel_R <- lapply(X_list, crossprod)
     }
 
     # Initialize omega uniformly. The first IBSS M-step evaluates the
@@ -1170,13 +1169,12 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
   # Validate params
   params_object <- validate_and_override_params(params_object)
 
-  # Stochastic LD sketch diagnostics
+  # Stochastic LD sketch diagnostics.
+  # Inflation is opt-in: only applied when stochastic_ld_sample is explicitly
+  # provided. For multi-panel with no stochastic_ld_sample, we assume panels
+  # provide sufficiently accurate LD and no variance inflation is needed.
   stochastic_ld_diagnostics <- NULL
   stochastic_ld_B <- NULL
-  if (is_multi_panel && is.null(stochastic_ld_sample)) {
-    # Multi-panel: effective B from panel sizes and uniform omega
-    stochastic_ld_B <- 1 / sum(omega_init^2 / B_list)
-  }
   if (!is.null(stochastic_ld_sample)) {
     stochastic_ld_B <- stochastic_ld_sample
     B_stoch <- stochastic_ld_sample

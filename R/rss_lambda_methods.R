@@ -6,12 +6,10 @@
 # =============================================================================
 
 .omega_tol <- list(
-  convergence   = 1e-3,   # max|delta omega| to skip future updates
-  grid_spacing  = 0.25,   # K=2 initial grid resolution
-  refine_window = 0.15,   # K=2 half-width of Brent interval
-  brent_tol     = 0.02,   # K=2 Brent tolerance
-  fw_stop       = 1e-6,   # Frank-Wolfe gap stopping criterion
-  fw_max_iter   = 5L      # Frank-Wolfe max iterations
+  convergence  = 1e-3,   # max|delta omega| to skip future updates
+  grid_spacing = 0.25,   # K=2 warm-start grid resolution
+  fw_stop      = 1e-6,   # Frank-Wolfe improvement stopping criterion
+  fw_max_iter  = 5L      # Frank-Wolfe max iterations
 )
 
 # =============================================================================
@@ -388,8 +386,10 @@ update_derived_quantities.rss_lambda <- function(data, params, model) {
     }
     model$Vtz          <- crossprod(model$eigen_R$vectors, data$z)
     model$z_null_norm2 <- max(sum(data$z^2) - sum(model$Vtz^2), 0)
-    model$stochastic_ld_B <- 1 / sum(model$omega^2 / data$B_list)
     model$X_meta <- form_X_meta(data$X_list, model$omega)
+    # Update effective B only when variance inflation is active (opt-in)
+    if (!is.null(data$stochastic_ld_B))
+      model$stochastic_ld_B <- 1 / sum(model$omega^2 / data$B_list)
   }
 
   # Recalculate Dinv with updated sigma2 (and potentially updated eigen_R)

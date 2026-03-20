@@ -466,46 +466,44 @@ eval_omega_eloglik_R <- function(panel_R, omega, z, zbar, diag_postb2, Z,
 }
 
 # Optimize omega on the K-simplex by maximizing eval_fn.
-#   K=2: 5-point grid + Brent refinement (5-8 evals total)
-#   K>2: Frank-Wolfe (conditional gradient) with early stopping
+# Uses the Frank-Wolfe conditional gradient algorithm: each iteration
+# evaluates the objective at all K simplex vertices to find the steepest
+# ascent direction, then performs a line search (Brent's method) toward
+# that vertex.  For K=2 a coarse grid warm-start is prepended since the
+# simplex is 1D and the grid cost is negligible.
 # Returns list(omega, converged) where converged indicates max|delta| < tol.
 #' @keywords internal
 #' @importFrom stats optimize
 optimize_omega <- function(eval_fn, omega_cur, K,
                            tol = .omega_tol) {
+  omega   <- omega_cur
+  cur_val <- eval_fn(omega)
+
+  # K=2 warm-start: coarse grid over the 1D simplex
   if (K == 2) {
-    # Grid search then Brent refinement
     grid <- seq(0, 1, tol$grid_spacing)
     vals <- vapply(grid, function(w1) eval_fn(c(w1, 1 - w1)), numeric(1))
-    best_idx <- which.max(vals)
-    lo <- max(0, grid[best_idx] - tol$refine_window)
-    hi <- min(1, grid[best_idx] + tol$refine_window)
-    opt <- optimize(function(w1) eval_fn(c(w1, 1 - w1)),
-                    interval = c(lo, hi), maximum = TRUE,
-                    tol = tol$brent_tol)
-    omega_new <- c(opt$maximum, 1 - opt$maximum)
-  } else {
-    # Frank-Wolfe on simplex
-    omega <- omega_cur
-    cur_val <- eval_fn(omega)
-    for (fw_iter in seq_len(tol$fw_max_iter)) {
-      vertex_vals <- vapply(seq_len(K), function(k) {
-        e_k <- rep(0, K); e_k[k] <- 1; eval_fn(e_k)
-      }, numeric(1))
-      k_star <- which.max(vertex_vals)
-      s <- rep(0, K); s[k_star] <- 1
-      opt_gamma <- optimize(
-        function(gamma) eval_fn((1 - gamma) * omega + gamma * s),
-        interval = c(0, 1), maximum = TRUE)
-      if (opt_gamma$objective - cur_val < tol$fw_stop) break
-      omega <- (1 - opt_gamma$maximum) * omega + opt_gamma$maximum * s
-      cur_val <- opt_gamma$objective
-    }
-    omega_new <- omega
+    best_w1 <- grid[which.max(vals)]
+    omega   <- c(best_w1, 1 - best_w1)
+    cur_val <- max(vals)
   }
 
-  converged <- max(abs(omega_new - omega_cur)) < tol$convergence
-  list(omega = omega_new, converged = converged)
+  # Frank-Wolfe: conditional gradient on simplex with Brent line search
+  for (fw_iter in seq_len(tol$fw_max_iter)) {
+    vertex_vals <- vapply(seq_len(K), function(k) {
+      e_k <- rep(0, K); e_k[k] <- 1; eval_fn(e_k)
+    }, numeric(1))
+    k_star <- which.max(vertex_vals)
+    s <- rep(0, K); s[k_star] <- 1
+    opt <- optimize(function(gamma) eval_fn((1 - gamma) * omega + gamma * s),
+                    interval = c(0, 1), maximum = TRUE)
+    if (opt$objective - cur_val < tol$fw_stop) break
+    omega   <- (1 - opt$maximum) * omega + opt$maximum * s
+    cur_val <- opt$objective
+  }
+
+  converged <- max(abs(omega - omega_cur)) < tol$convergence
+  list(omega = omega, converged = converged)
 }
 
 # =============================================================================
