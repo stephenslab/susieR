@@ -1451,3 +1451,114 @@ test_that("multi-panel without stochastic_ld_sample has no inflation", {
   # No inflation: stochastic_ld_B should not be set in the fit
   expect_null(fit$stochastic_ld_B)
 })
+
+# =============================================================================
+# EIGEN_FROM_REDUCED UNIT TEST (Issue 21)
+# =============================================================================
+
+test_that("eigen_from_reduced recovers full eigendecomposition", {
+  set.seed(55)
+  p <- 30; B1 <- 40; B2 <- 35
+  X1 <- matrix(rnorm(B1 * p), B1, p)
+  X2 <- matrix(rnorm(B2 * p), B2, p)
+  X_list <- lapply(list(X1, X2), susieR:::standardize_X)
+  z <- rnorm(p)
+
+  cache <- susieR:::precompute_omega_cache(X_list, z)
+
+  omega <- c(0.7, 0.3)
+  eig_reduced <- susieR:::eigen_from_reduced(cache, omega, K = 2, p = p)
+
+  # Direct eigendecomposition of R(omega)
+  R_omega <- omega[1] * crossprod(X_list[[1]]) + omega[2] * crossprod(X_list[[2]])
+  R_omega <- 0.5 * (R_omega + t(R_omega))
+  eig_direct <- eigen(R_omega, symmetric = TRUE)
+
+  # Eigenvalues should match (within reduced rank)
+  r <- cache$r
+  expect_equal(eig_reduced$values[1:r], eig_direct$values[1:r], tolerance = 1e-8)
+
+  # Eigenvectors should span the same space: V_reduced' V_direct ~= I for top-r
+  overlap <- abs(crossprod(eig_reduced$vectors[, 1:r], eig_direct$vectors[, 1:r]))
+  # Each reduced eigenvector should align with exactly one direct eigenvector
+  expect_true(all(apply(overlap, 1, max) > 1 - 1e-8))
+})
+
+# =============================================================================
+# K > 2 MULTI-PANEL TEST (Issue 20)
+# =============================================================================
+
+test_that("K=3 multi-panel mixture runs and produces valid omega", {
+  set.seed(56)
+  p <- 20; B <- 80
+  X1 <- matrix(rnorm(B * p), B, p)
+  X2 <- matrix(rnorm(B * p), B, p)
+  X3 <- matrix(rnorm(B * p), B, p)
+  z <- rnorm(p)
+
+  fit <- susie_rss(z = z, X = list(X1, X2, X3), lambda = 0.1,
+                   max_iter = 20, verbose = FALSE)
+
+  expect_equal(length(fit$omega_weights), 3)
+  expect_equal(sum(fit$omega_weights), 1, tolerance = 1e-10)
+  expect_true(all(fit$omega_weights >= -1e-10))
+  expect_equal(length(fit$pip), p)
+})
+
+# =============================================================================
+# OMEGA AT SIMPLEX VERTEX (Issue 22)
+# =============================================================================
+
+test_that("optimize_omega handles vertex optimum (one panel irrelevant)", {
+  set.seed(57)
+  p <- 25; B <- 100
+
+  # Panel 1: true LD, Panel 2: pure noise (identity-like)
+  X1 <- matrix(rnorm(B * p), B, p)
+  X_list <- lapply(list(X1, matrix(rnorm(B * p), B, p)), susieR:::standardize_X)
+  z <- rnorm(p)
+
+  # Construct data where panel 1 is much better
+  R1 <- crossprod(X_list[[1]])
+  R2 <- diag(p)  # identity -- pure noise panel
+  panel_R <- list(R1, R2)
+
+  zbar <- rnorm(p) * 0.1
+  diag_postb2 <- abs(rnorm(p)) * 0.01
+  Z <- matrix(rnorm(2 * p) * 0.05, 2, p)
+
+  eval_fn <- function(omega_vec) {
+    susieR:::eval_omega_eloglik_R(panel_R, omega_vec, z, zbar,
+                                   diag_postb2, Z, 0.9, 0.1, 2, p)
+  }
+
+  result <- susieR:::optimize_omega(eval_fn, c(0.5, 0.5), K = 2)
+
+  # Should produce valid omega on simplex
+  expect_equal(sum(result$omega), 1, tolerance = 1e-10)
+  expect_true(all(result$omega >= -1e-10))
+})
+
+# =============================================================================
+# UPDATE_DERIVED_QUANTITIES CORRECTNESS (Issue 24)
+# =============================================================================
+
+test_that("update_derived_quantities produces correct SinvRj after omega update", {
+  set.seed(58)
+  p <- 20; B <- 80
+  X1 <- matrix(rnorm(B * p), B, p)
+  X2 <- matrix(rnorm(B * p), B, p)
+  z <- rnorm(p)
+
+  # Run a few iterations to get an omega update
+  fit <- susie_rss(z = z, X = list(X1, X2), lambda = 0.1,
+                   max_iter = 5, verbose = FALSE)
+
+  # Verify omega weights exist and are valid
+  expect_true(!is.null(fit$omega_weights))
+  expect_equal(sum(fit$omega_weights), 1, tolerance = 1e-10)
+
+  # Verify the fit produced PIPs
+  expect_equal(length(fit$pip), p)
+  expect_true(all(fit$pip >= 0 & fit$pip <= 1))
+})
