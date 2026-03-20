@@ -667,7 +667,9 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
     if (!is.numeric(stochastic_ld_sample) || length(stochastic_ld_sample) != 1)
       stop("stochastic_ld_sample must be a numeric scalar.")
     if (stochastic_ld_sample < 1000)
-      stop("stochastic_ld_sample must be >= 1000.")
+      warning_message("stochastic_ld_sample = ", stochastic_ld_sample,
+              " is below 1000. Variance inflation correction will still help ",
+              "but it is highly recommended to use a larger stochastic genotype reference.")
     # Auto-switch to PIP convergence for stochastic LD inflation.
     # The inflation uses per-variant tau_j^2 in the SER, which modifies
     # the per-variant likelihood but does not correspond to a single
