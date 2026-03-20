@@ -1410,7 +1410,7 @@ test_that("stochastic_ld_sample auto-switches to PIP convergence with message", 
 
   expect_message(
     susie_rss(z = z, X = X, lambda = 0.1,
-              stochastic_ld_sample = B,
+              stochastic_ld_sample = TRUE,
               convergence_method = "elbo", max_iter = 10, verbose = FALSE),
     "Switching to PIP-based convergence because sketch LD inflation"
   )

@@ -249,17 +249,28 @@ matrix \code{XtX}.}
 iterative refinement procedure is used, after the IBSS algorithm,
 to check and escape from local optima (see details).}
 
-\item{stochastic_ld_sample}{When the LD matrix \code{R} is
-estimated from a stochastic sketch (or an internal subsample) with
-\code{B} random projections, set this to the value of \code{B}.
-This dynamically inflates the null variance of each variable's
-score statistic at every IBSS iteration to account for LD
-estimation uncertainty in the Single Effect Regression (SER),
-attenuating Bayes factors and posterior means for variables where
-LD uncertainty is large relative to active signals. Must be at
-least 1000. Not supported with \code{lambda != 0}. When provided,
-the output includes a \code{stochastic_ld_diagnostics} element
-with per-region and per-variable quality metrics.}
+\item{stochastic_ld_sample}{Controls variance inflation to account
+  for LD estimation noise from stochastic sketches. Accepts three
+  types of input:
+  \describe{
+    \item{\code{NULL} (default)}{Input X is correct genotype not 
+stochastic samples, and no variance inflation applied.}
+    \item{\code{TRUE}}{Infer the sketch size B from the input
+      \code{X}. Sets \code{B = nrow(X)} for single-panel input,
+      or \code{B = min(nrow(X_k))} across panels for multi-panel
+      input. Requires \code{X} to be provided (errors if only
+      \code{R} is given, since B cannot be inferred).}
+    \item{Integer}{Explicit sketch size B. Only valid when
+      the input is a precomputed correlation matrix \code{R}
+      (errors if \code{X} is provided, since B should be
+      inferred via \code{TRUE}).}
+  }
+  When active, this dynamically inflates the null variance of each
+  variable's score statistic at every IBSS iteration to account for
+  LD estimation uncertainty in the Single Effect Regression (SER).
+  When provided, the output includes a
+  \code{stochastic_ld_diagnostics} element with per-region and
+  per-variable quality metrics.}
 
 \item{alpha0}{Numerical parameter for the NIG prior when using
 \code{estimate_residual_method = "Servin_Stephens"}.}
