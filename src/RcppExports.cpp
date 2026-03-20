@@ -125,6 +125,26 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// eval_omega_eloglik
+double eval_omega_eloglik(const Rcpp::List& panel_R_list, const arma::vec& omega, const arma::vec& z, const arma::vec& zbar, const arma::vec& diag_postb2, const arma::mat& Z, double sigma2, double lambda, int K, int p);
+RcppExport SEXP _susieR_eval_omega_eloglik(SEXP panel_R_listSEXP, SEXP omegaSEXP, SEXP zSEXP, SEXP zbarSEXP, SEXP diag_postb2SEXP, SEXP ZSEXP, SEXP sigma2SEXP, SEXP lambdaSEXP, SEXP KSEXP, SEXP pSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type panel_R_list(panel_R_listSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type omega(omegaSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type z(zSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type zbar(zbarSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type diag_postb2(diag_postb2SEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type Z(ZSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma2(sigma2SEXP);
+    Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< int >::type K(KSEXP);
+    Rcpp::traits::input_parameter< int >::type p(pSEXP);
+    rcpp_result_gen = Rcpp::wrap(eval_omega_eloglik(panel_R_list, omega, z, zbar, diag_postb2, Z, sigma2, lambda, K, p));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_susieR_caisa_rcpp", (DL_FUNC) &_susieR_caisa_rcpp, 17},
@@ -133,6 +153,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_susieR_compute_eloglik_from_eigen", (DL_FUNC) &_susieR_compute_eloglik_from_eigen, 9},
     {"_susieR_compute_null_loglik", (DL_FUNC) &_susieR_compute_null_loglik, 5},
     {"_susieR_eigen_R_omega", (DL_FUNC) &_susieR_eigen_R_omega, 4},
+    {"_susieR_eval_omega_eloglik", (DL_FUNC) &_susieR_eval_omega_eloglik, 10},
     {NULL, NULL, 0}
 };
 

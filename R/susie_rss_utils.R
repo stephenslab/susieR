@@ -243,7 +243,7 @@ compute_shat2_inflation_rss <- function(data, model, Rz_without_l, b_minus_l) {
 # Functions for combining K reference LD panels with learnable convex weights.
 # R(omega) = sum_k omega_k R_hat_k, with X_meta = [sqrt(omega_1) X_1; ...].
 #
-# Functions: form_X_meta, eigen_from_X, solve_omega_qp
+# Functions: form_X_meta, eigen_from_X, eval_omega_eloglik_R
 # =============================================================================
 
 # Form composite X from K panels with weights omega
@@ -278,40 +278,46 @@ eigen_from_X <- function(X, p) {
   list(values = eigen_values[idx], vectors = eigen_vectors[, idx])
 }
 
-# Solve omega QP: min ||z - sum_k omega_k eta_k||^2 s.t. simplex
+# Pure R fallback for eval_omega_eloglik (used when Rcpp is unavailable).
+# Forms R(omega), eigendecomposes, and evaluates Eloglik in pure R.
 #' @keywords internal
-#' @importFrom stats optimize
-solve_omega_qp <- function(z, eta_list, K) {
-  if (K == 1) return(1)
+eval_omega_eloglik_R <- function(panel_R, omega, z, zbar, diag_postb2, Z,
+                                  sigma2, lambda, K, p) {
+  # Form R(omega) = sum_k omega_k R_k
+  R_omega <- omega[1] * panel_R[[1]]
+  for (k in seq_len(K)[-1]) R_omega <- R_omega + omega[k] * panel_R[[k]]
+  R_omega <- 0.5 * (R_omega + t(R_omega))
 
-  if (K == 2) {
-    obj <- function(w1) {
-      sum((z - w1 * eta_list[[1]] - (1 - w1) * eta_list[[2]])^2)
-    }
-    w1 <- optimize(obj, interval = c(0, 1))$minimum
-    return(c(w1, 1 - w1))
-  }
+  # Eigendecompose
+  eig <- eigen(R_omega, symmetric = TRUE)
+  D <- pmax(eig$values, 0)
+  V <- eig$vectors
 
-  # K > 2: use quadprog
-  if (!requireNamespace("quadprog", quietly = TRUE))
-    stop("Package 'quadprog' required for multi-panel LD with K > 2.")
+  # Eloglik computation
+  Vtz <- crossprod(V, z)
+  z_null_norm2 <- max(sum(z^2) - sum(Vtz^2), 0)
+  S_diag <- sigma2 * D + lambda
+  Dinv <- ifelse(S_diag > 0, 1 / S_diag, 0)
+  DinvD2 <- Dinv * D^2
 
-  H <- matrix(0, K, K)
-  f <- numeric(K)
-  for (i in seq_len(K)) {
-    f[i] <- sum(eta_list[[i]] * z)
-    for (j in i:K) {
-      H[i, j] <- sum(eta_list[[i]] * eta_list[[j]])
-      H[j, i] <- H[i, j]
-    }
-  }
+  logdet_term <- -0.5 * sum(log(S_diag))
+  zSinvz <- sum(Dinv * Vtz^2)
+  if (lambda > 0) zSinvz <- zSinvz + z_null_norm2 / lambda
 
-  Amat <- cbind(rep(1, K), diag(K))
-  bvec <- c(1, rep(0, K))
-  meq <- 1
-  H_reg <- H + diag(1e-10, K)
-  sol <- quadprog::solve.QP(H_reg, f, Amat, bvec, meq)
-  pmax(sol$solution, 0)
+  RSinvz <- V %*% (Dinv * D * Vtz)
+  term2 <- -2 * sum(zbar * RSinvz)
+
+  Vtzbar <- crossprod(V, zbar)
+  term3 <- sum(Vtzbar^2 * DinvD2)
+
+  ZV <- Z %*% V
+  term4 <- -sum(ZV^2 %*% DinvD2)
+
+  diag_RSinvR <- colSums(t(V)^2 * DinvD2)
+  term5 <- sum(diag_RSinvR * diag_postb2)
+
+  ER2 <- zSinvz + term2 + term3 + term4 + term5
+  -p / 2 * log(2 * pi) + logdet_term - 0.5 * ER2
 }
 
 # =============================================================================

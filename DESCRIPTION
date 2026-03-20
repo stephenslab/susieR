@@ -54,8 +54,7 @@ Suggests:
     rmarkdown,
     Rfast,
     cowplot,
-    L0Learn,
-    quadprog
+    L0Learn
 LazyData: yes
 LazyDataCompression: xz
 NeedsCompilation: yes

@@ -1181,36 +1181,62 @@ test_that("eigen_from_X recovers eigendecomposition of X'X", {
   }
 })
 
-test_that("solve_omega_qp returns correct weights for K=1", {
-  omega <- solve_omega_qp(rnorm(10), list(rnorm(10)), K = 1)
-  expect_equal(omega, 1)
-})
-
-test_that("solve_omega_qp returns simplex weights for K=2", {
+test_that("eval_omega_eloglik_R matches Rcpp version", {
   set.seed(44)
-  z <- rnorm(50)
-  eta1 <- rnorm(50)
-  eta2 <- rnorm(50)
+  p <- 30
+  K <- 2
 
-  omega <- solve_omega_qp(z, list(eta1, eta2), K = 2)
+  # Create two random PD matrices as panel_R
+  X1 <- matrix(rnorm(100 * p), 100, p)
+  X2 <- matrix(rnorm(80 * p), 80, p)
+  panel_R <- list(crossprod(X1) / 100, crossprod(X2) / 80)
 
-  expect_equal(length(omega), 2)
-  expect_equal(sum(omega), 1)
-  expect_true(all(omega >= -1e-10))  # numerical tolerance
+  z <- rnorm(p)
+  zbar <- rnorm(p) * 0.1
+  diag_postb2 <- abs(rnorm(p)) * 0.01
+  L <- 3
+  Z <- matrix(rnorm(L * p) * 0.05, L, p)
+  sigma2 <- 0.9
+  lambda <- 0.01
+  omega <- c(0.7, 0.3)
+
+  # Pure R version
+  val_R <- susieR:::eval_omega_eloglik_R(panel_R, omega, z, zbar, diag_postb2,
+                                          Z, sigma2, lambda, K, p)
+
+  # Rcpp version
+  val_cpp <- eval_omega_eloglik(panel_R, omega, z, zbar, diag_postb2,
+                                 Z, sigma2, lambda, K, p)
+
+  expect_equal(val_R, val_cpp, tolerance = 1e-8)
 })
 
-test_that("solve_omega_qp finds correct minimum for K=2", {
+test_that("eval_omega_eloglik is concave in omega", {
   set.seed(45)
-  p <- 50
-  # z is closer to eta1 than eta2
-  eta1 <- rnorm(p)
-  eta2 <- rnorm(p)
-  z <- 0.8 * eta1 + 0.2 * eta2
+  p <- 20
+  K <- 2
 
-  omega <- solve_omega_qp(z, list(eta1, eta2), K = 2)
+  X1 <- matrix(rnorm(60 * p), 60, p)
+  X2 <- matrix(rnorm(50 * p), 50, p)
+  panel_R <- list(crossprod(X1) / 60, crossprod(X2) / 50)
 
-  expect_equal(omega[1], 0.8, tolerance = 1e-4)
-  expect_equal(omega[2], 0.2, tolerance = 1e-4)
+  z <- rnorm(p)
+  zbar <- rnorm(p) * 0.1
+  diag_postb2 <- abs(rnorm(p)) * 0.01
+  Z <- matrix(rnorm(2 * p) * 0.05, 2, p)
+
+  eloglik <- function(w1) {
+    susieR:::eval_omega_eloglik_R(panel_R, c(w1, 1 - w1), z, zbar,
+                                   diag_postb2, Z, 0.9, 0.01, K, p)
+  }
+
+  # Concavity: midpoint should be >= average of endpoints
+  vals <- sapply(seq(0, 1, 0.1), eloglik)
+  for (i in 1:(length(vals) - 2)) {
+    midval <- vals[i + 1]
+    avg_endpoints <- (vals[i] + vals[i + 2]) / 2
+    expect_gte(midval, avg_endpoints - 1e-10)
+  }
 })
 
 test_that("rss_lambda_constructor accepts list X", {

@@ -25,3 +25,7 @@ eigen_R_omega <- function(panel_R_list, omega, K, p) {
     .Call('_susieR_eigen_R_omega', PACKAGE = 'susieR', panel_R_list, omega, K, p)
 }
 
+eval_omega_eloglik <- function(panel_R_list, omega, z, zbar, diag_postb2, Z, sigma2, lambda, K, p) {
+    .Call('_susieR_eval_omega_eloglik', PACKAGE = 'susieR', panel_R_list, omega, z, zbar, diag_postb2, Z, sigma2, lambda, K, p)
+}
+
