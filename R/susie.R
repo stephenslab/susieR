@@ -609,6 +609,11 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
       }
       if (lambda == 0)
         stop("Multi-panel X requires lambda != 0 (RSS-lambda path).")
+      # Multi-panel: auto-switch to PIP convergence since omega updates
+      # change R(omega) which can cause ELBO non-monotonicity
+      if (convergence_method[1] == "elbo") {
+        convergence_method <- "pip"
+      }
       # Center each panel
       X <- lapply(X, function(Xk) {
         cm <- colMeans(Xk)

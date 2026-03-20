@@ -182,8 +182,9 @@ get_ER2.rss_lambda <- function(data, model) {
   zbar  <- model$zbar
   postb2 <- model$diag_postb2
 
-  # z^T S^{-1} z
-  zSinvz <- sum((Dinv * Vtz) * Vtz) + data$z_null_norm2 / data$lambda
+  # z^T S^{-1} z (use model z_null_norm2 if omega changed, else data)
+  z_null_norm2 <- if (!is.null(model$z_null_norm2)) model$z_null_norm2 else data$z_null_norm2
+  zSinvz <- sum((Dinv * Vtz) * Vtz) + z_null_norm2 / data$lambda
 
   # -2 zbar^T S^{-1} z
   tmp <- V %*% (Dinv * (D * Vtz))
@@ -305,14 +306,62 @@ update_variance_components.rss_lambda <- function(data, params, model, ...) {
     result$sigma2 <- est_sigma2
   }
 
-  # Multi-panel omega update
-  if (!is.null(data$K) && data$K > 1) {
-    b_hat <- colSums(model$alpha * model$mu)
-    eta_list <- lapply(seq_len(data$K), function(k) {
-      Xk <- data$X_list[[k]]
-      as.vector(crossprod(Xk, Xk %*% b_hat))
-    })
-    result$omega <- solve_omega_qp(data$z, eta_list, data$K)
+  # Multi-panel omega update via profile Eloglik (M-step of variational EM)
+  # Maximizing Eloglik over omega on the simplex is guaranteed to not decrease
+  # the ELBO, since KL doesn't depend on omega. The log-likelihood is concave
+  # in omega, so this is a convex optimization problem with a unique global optimum.
+  #
+  # K=2: Brent's method (optimize) on omega_1 in [0,1]
+  # K>2: Frank-Wolfe (conditional gradient) on simplex — naturally sparse
+  if (!is.null(data$K) && data$K > 1 && !is.null(data$panel_R)) {
+    sigma2_cur <- if (!is.null(result$sigma2)) result$sigma2 else model$sigma2
+    omega_cur  <- if (!is.null(model$omega)) model$omega else rep(1 / data$K, data$K)
+
+    # Helper: evaluate Eloglik at a given omega vector (Rcpp-accelerated)
+    eval_omega <- function(omega_vec) {
+      eig <- eigen_R_omega(data$panel_R, omega_vec, data$K, data$p)
+      Vtz_cand <- crossprod(eig$vectors, data$z)
+      z_null_cand <- max(sum(data$z^2) - sum(Vtz_cand^2), 0)
+      compute_eloglik_from_eigen(
+        eig$values, eig$vectors, data$z, model$zbar, model$diag_postb2,
+        model$Z, sigma2_cur, data$lambda, z_null_cand)
+    }
+
+    if (data$K == 2) {
+      # Brent's method on omega_1 in [0, 1]
+      opt <- optimize(function(w1) eval_omega(c(w1, 1 - w1)),
+                      interval = c(0, 1), maximum = TRUE)
+      result$omega <- c(opt$maximum, 1 - opt$maximum)
+    } else {
+      # Frank-Wolfe (conditional gradient) on simplex
+      # Each iteration: find best vertex, line-search toward it
+      omega <- omega_cur
+      cur_val <- eval_omega(omega)
+
+      for (fw_iter in seq_len(10)) {
+        # Evaluate Eloglik at each pure vertex e_k
+        vertex_vals <- vapply(seq_len(data$K), function(k) {
+          e_k <- rep(0, data$K); e_k[k] <- 1; eval_omega(e_k)
+        }, numeric(1))
+
+        # Best vertex direction
+        k_star <- which.max(vertex_vals)
+        s <- rep(0, data$K); s[k_star] <- 1  # descent direction
+
+        # Line search: optimize gamma in [0, 1] along omega -> (1-gamma)*omega + gamma*s
+        opt_gamma <- optimize(
+          function(gamma) eval_omega((1 - gamma) * omega + gamma * s),
+          interval = c(0, 1), maximum = TRUE)
+
+        omega_new <- (1 - opt_gamma$maximum) * omega + opt_gamma$maximum * s
+        new_val <- opt_gamma$objective
+
+        if (new_val - cur_val < 1e-6) break  # converged
+        omega <- omega_new
+        cur_val <- new_val
+      }
+      result$omega <- omega
+    }
   }
 
   result
@@ -321,12 +370,19 @@ update_variance_components.rss_lambda <- function(data, params, model, ...) {
 # Update derived quantities
 #' @keywords internal
 update_derived_quantities.rss_lambda <- function(data, params, model) {
-  # Multi-panel omega update: re-form X_meta, re-eigendecompose
+  # Multi-panel omega update: re-eigendecompose R(omega) from cached panel R matrices
   if (!is.null(data$K) && data$K > 1 && !is.null(model$omega)) {
-    X_meta <- form_X_meta(data$X_list, model$omega)
-    model$X_meta  <- X_meta
-    model$eigen_R <- eigen_from_X(X_meta, data$p)
-    model$Vtz     <- crossprod(model$eigen_R$vectors, data$z)
+    if (!is.null(data$panel_R)) {
+      # Fast path: eigendecompose R(omega) = sum_k omega_k R_k via Rcpp
+      model$eigen_R <- eigen_R_omega(data$panel_R, model$omega, data$K, data$p)
+    } else {
+      # Fallback: form X_meta and SVD
+      X_meta <- form_X_meta(data$X_list, model$omega)
+      model$X_meta  <- X_meta
+      model$eigen_R <- eigen_from_X(X_meta, data$p)
+    }
+    model$Vtz          <- crossprod(model$eigen_R$vectors, data$z)
+    model$z_null_norm2 <- max(sum(data$z^2) - sum(model$Vtz^2), 0)
     model$stochastic_ld_B <- 1 / sum(model$omega^2 / data$B_list)
   }
 
