@@ -1157,7 +1157,6 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
   stochastic_ld_B <- NULL
   if (is_multi_panel && is.null(stochastic_ld_sample)) {
     # Multi-panel: effective B from panel sizes and uniform omega
-    omega_init <- rep(1 / K_panels, K_panels)
     stochastic_ld_B <- 1 / sum(omega_init^2 / B_list)
   }
   if (!is.null(stochastic_ld_sample)) {

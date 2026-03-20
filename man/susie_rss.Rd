@@ -12,7 +12,8 @@ susie_rss(
   bhat = NULL,
   shat = NULL,
   var_y = NULL,
-  L = min(10, if (!is.null(R)) ncol(R) else ncol(X)),
+  L = min(10, if (!is.null(R)) ncol(R) else if (is.list(X) && !is.matrix(X)) ncol(X[[1]])
+    else ncol(X)),
   lambda = 0,
   maf = NULL,
   maf_thresh = 0,

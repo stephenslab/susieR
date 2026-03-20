@@ -229,7 +229,8 @@ precompute_rss_lambda_terms <- function(data, model) {
 # Dynamic stochastic LD variance inflation for rss_lambda path (z-score scale)
 #' @keywords internal
 compute_shat2_inflation_rss <- function(data, model, Rz_without_l, b_minus_l) {
-  B_eff <- data$stochastic_ld_B
+  # Use model-level B_eff (updated by omega) if available, else data-level
+  B_eff <- if (!is.null(model$stochastic_ld_B)) model$stochastic_ld_B else data$stochastic_ld_B
   if (is.null(B_eff) || model$sigma2 <= .Machine$double.eps) return(NULL)
   v_g  <- max(sum(b_minus_l * Rz_without_l), 0)
   eta2 <- Rz_without_l^2   # z-score scale: no (n-1) division needed
@@ -242,15 +243,24 @@ compute_shat2_inflation_rss <- function(data, model, Rz_without_l, b_minus_l) {
 # Functions for combining K reference LD panels with learnable convex weights.
 # R(omega) = sum_k omega_k R_hat_k, with X_meta = [sqrt(omega_1) X_1; ...].
 #
-# Functions: form_X_meta, eigen_from_X, compute_Rv_rss, solve_omega_qp
+# Functions: form_X_meta, eigen_from_X, solve_omega_qp
 # =============================================================================
 
 # Form composite X from K panels with weights omega
+# Pre-allocates output to avoid K intermediate copies
 #' @keywords internal
 form_X_meta <- function(X_list, omega) {
-  K <- length(X_list)
-  parts <- lapply(seq_len(K), function(k) sqrt(omega[k]) * X_list[[k]])
-  do.call(rbind, parts)
+  K   <- length(X_list)
+  p   <- ncol(X_list[[1]])
+  nrs <- vapply(X_list, nrow, integer(1))
+  X_meta <- matrix(0, sum(nrs), p)
+  offset <- 0L
+  for (k in seq_len(K)) {
+    rows <- offset + seq_len(nrs[k])
+    X_meta[rows, ] <- sqrt(omega[k]) * X_list[[k]]
+    offset <- offset + nrs[k]
+  }
+  X_meta
 }
 
 # SVD-based eigendecomposition from X matrix (X'X = R)
@@ -266,15 +276,6 @@ eigen_from_X <- function(X, p) {
   }
   idx <- order(eigen_values, decreasing = TRUE)
   list(values = eigen_values[idx], vectors = eigen_vectors[, idx])
-}
-
-# Compute R*v for rss_lambda, checking model$X_meta first (multi-panel)
-#' @keywords internal
-compute_Rv_rss <- function(data, model, v) {
-  X <- if (!is.null(model$X_meta)) model$X_meta else data$X
-  if (!is.null(X)) return(as.vector(crossprod(X, X %*% v)))
-  if (!is.null(data$R)) return(as.vector(data$R %*% v))
-  stop("No predictor matrix available.")
 }
 
 # Solve omega QP: min ||z - sum_k omega_k eta_k||^2 s.t. simplex

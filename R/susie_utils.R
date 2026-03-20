@@ -667,10 +667,12 @@ add_null_effect <- function(model_init, V) {
 # =============================================================================
 
 # Compute predictor-matrix times vector: XtX %*% v, R %*% v, or X'(Xv)
+# For rss_lambda multi-panel, pass model to use model$X_meta (current R(omega))
 #' @keywords internal
-compute_Rv <- function(data, v) {
-  if (!is.null(data$X)) {
-    return(as.vector(crossprod(data$X, data$X %*% v)))
+compute_Rv <- function(data, v, model = NULL) {
+  X <- if (!is.null(model) && !is.null(model$X_meta)) model$X_meta else data$X
+  if (!is.null(X)) {
+    return(as.vector(crossprod(X, X %*% v)))
   } else if (!is.null(data$XtX)) {
     return(as.vector(data$XtX %*% v))
   } else if (!is.null(data$R)) {

@@ -40,10 +40,11 @@ initialize_susie_model.rss_lambda <- function(data, params, var_y, ...) {
   eigen_R <- get_eigen_R(data, model)
   D    <- eigen_R$values
   V    <- eigen_R$vectors
+  tV   <- t(V)
   Dinv <- compute_Dinv(model, data)
 
-  model$SinvRj   <- V %*% (Dinv * D * t(V))
-  model$RjSinvRj <- colSums(t(V) * (Dinv * D^2 * t(V)))
+  model$SinvRj   <- V %*% (Dinv * D * tV)
+  model$RjSinvRj <- colSums(tV * (Dinv * D^2 * tV))
 
   return(model)
 }
@@ -81,7 +82,7 @@ track_ibss_fit.rss_lambda <- function(data, params, model, tracking, iter, elbo,
 #' @keywords internal
 compute_residuals.rss_lambda <- function(data, params, model, l, ...) {
   # Remove lth effect from fitted values
-  Rz_without_l <- model$Rz - compute_Rv_rss(data, model, model$alpha[l, ] * model$mu[l, ])
+  Rz_without_l <- model$Rz - compute_Rv(data, model$alpha[l, ] * model$mu[l, ], model)
 
   # Compute residuals
   r <- data$z - Rz_without_l
@@ -134,7 +135,7 @@ SER_posterior_e_loglik.rss_lambda <- function(data, params, model, l) {
   eigen_R <- get_eigen_R(data, model)
   V      <- eigen_R$vectors
   Dinv   <- compute_Dinv(model, data)
-  rR     <- compute_Rv_rss(data, model, model$residuals)
+  rR     <- compute_Rv(data, model$residuals, model)
   SinvEb <- V %*% (Dinv * crossprod(V, Eb))
 
   return(-0.5 * (-2 * sum(rR * SinvEb) + sum(model$RjSinvRj * Eb2)))
@@ -258,7 +259,7 @@ neg_loglik.rss_lambda <- function(data, params, model, V_param, ser_stats, ...) 
 # Update fitted values
 #' @keywords internal
 update_fitted_values.rss_lambda <- function(data, params, model, l, ...) {
-  model$Rz <- model$fitted_without_l + as.vector(compute_Rv_rss(data, model, model$alpha[l, ] * model$mu[l, ]))
+  model$Rz <- model$fitted_without_l + as.vector(compute_Rv(data, model$alpha[l, ] * model$mu[l, ], model))
   model    <- precompute_rss_lambda_terms(data, model)
 
   return(model)
@@ -272,15 +273,13 @@ update_model_variance.rss_lambda <- function(data, params, model) {
 
   if (!need_sigma2 && !need_omega) return(model)
 
-  if (need_sigma2 || need_omega) {
-    variance_result <- update_variance_components(data, params, model)
-    model <- modifyList(model, variance_result)
-    if (need_sigma2) {
-      model$sigma2 <- min(max(model$sigma2, params$residual_variance_lowerbound),
-                          params$residual_variance_upperbound)
-    }
-    model <- update_derived_quantities(data, params, model)
+  variance_result <- update_variance_components(data, params, model)
+  model <- modifyList(model, variance_result)
+  if (need_sigma2) {
+    model$sigma2 <- min(max(model$sigma2, params$residual_variance_lowerbound),
+                        params$residual_variance_upperbound)
   }
+  model <- update_derived_quantities(data, params, model)
 
   return(model)
 }
@@ -336,10 +335,11 @@ update_derived_quantities.rss_lambda <- function(data, params, model) {
   Dinv <- compute_Dinv(model, data)
   V    <- eigen_R$vectors
   D    <- eigen_R$values
+  tV   <- t(V)
 
   # Update SinvRj and RjSinvRj
-  model$SinvRj   <- V %*% (Dinv * D * t(V))
-  model$RjSinvRj <- colSums(t(V) * (Dinv * (D^2) * t(V)))
+  model$SinvRj   <- V %*% (Dinv * D * tV)
+  model$RjSinvRj <- colSums(tV * (Dinv * (D^2) * tV))
 
   return(model)
 }
@@ -380,10 +380,11 @@ get_cs.rss_lambda <- function(data, params, model, ...) {
     return(NULL)
   }
 
-  if (!is.null(data$X)) {
-    # Low-rank X path: data$X is B x p, columns are variables
+  # Use current X_meta (multi-panel) or data$X (single-panel)
+  X <- if (!is.null(model$X_meta)) model$X_meta else data$X
+  if (!is.null(X)) {
     return(susie_get_cs(model,
-                        X               = data$X,
+                        X               = X,
                         coverage        = params$coverage,
                         min_abs_corr    = params$min_abs_corr,
                         n_purity        = params$n_purity))
@@ -417,7 +418,7 @@ cleanup_model.rss_lambda <- function(data, params, model, ...) {
 
   # Remove RSS-lambda-specific temporary fields
   rss_fields <- c("SinvRj", "RjSinvRj", "Rz", "Z", "zbar", "diag_postb2",
-                   "X_meta", "eigen_R", "Vtz")
+                   "X_meta", "eigen_R", "Vtz", "omega", "stochastic_ld_B")
 
   for (field in rss_fields) {
     if (field %in% names(model)) {
