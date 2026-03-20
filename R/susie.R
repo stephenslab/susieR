@@ -619,7 +619,7 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
              "When using a precomputed R matrix, provide an integer ",
              "specifying the sketch size B instead.")
       if (is_multi_panel) {
-        stochastic_ld_sample <- min(sapply(X, nrow))
+        stochastic_ld_sample <- min(vapply(X, nrow, integer(1)))
       } else {
         stochastic_ld_sample <- nrow(X)
       }

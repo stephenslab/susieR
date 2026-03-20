@@ -1037,7 +1037,7 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
   }
 
   # For multi-panel: precompute reduced basis for fast omega optimization,
-  # initialize omega uniformly
+  # initialize omega via softmax of null marginal log-likelihoods
   panel_R <- NULL
   omega_cache <- NULL
   if (is_multi_panel) {

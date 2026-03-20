@@ -944,7 +944,7 @@ test_that("R and X input paths produce numerically identical results", {
   ss <- univariate_regression(X_full, y)
   z <- ss$betahat / ss$sebetahat
 
-  # Use X as a "sketch" — here use X_full itself (B=n)
+  # Use X as a "sketch" -- here use X_full itself (B=n)
   X_sketch <- X_full
 
   # Construct from R
@@ -1099,7 +1099,7 @@ test_that("SS and RSS-lambda paths agree with small lambda (no inflation)", {
   # SS path (lambda = 0)
   fit_ss <- susie_rss(z = z, R = R, n = n, L = 5, lambda = 0,
                       max_iter = 100, verbose = FALSE)
-  # RSS-lambda path (tiny lambda ≈ 0)
+  # RSS-lambda path (tiny lambda ~= 0)
   fit_rss <- susie_rss(z = z, R = R, n = n, L = 5, lambda = 1e-6,
                        max_iter = 100, verbose = FALSE)
 

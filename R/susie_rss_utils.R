@@ -296,7 +296,6 @@ eigen_from_X <- function(X, p) {
 # Returns a list to be stored in data$omega_cache.
 #' @keywords internal
 precompute_omega_cache <- function(X_list, z, r_tol = 1e-8) {
-  K <- length(X_list)
   X_stack <- do.call(rbind, X_list)
   sv <- svd(X_stack, nu = 0)
   keep <- sv$d > r_tol
@@ -322,27 +321,11 @@ precompute_omega_cache <- function(X_list, z, r_tol = 1e-8) {
 # Called once per IBSS iteration (not per Brent eval).
 #' @keywords internal
 precompute_omega_iteration <- function(cache, zbar, diag_postb2, Z) {
-  r <- cache$r
-  K <- length(cache$A_list)
   Vsz_bar <- as.vector(crossprod(cache$V_s, zbar))
   ZVs <- Z %*% cache$V_s   # L x r
   M_postb2 <- crossprod(cache$V_s * diag_postb2, cache$V_s)  # r x r
 
-  # Precompute A_k * key vectors for each panel
-  A_Vsz_bar <- lapply(cache$A_list, function(Ak) Ak %*% Vsz_bar)
-  A_ZVs_t <- lapply(cache$A_list, function(Ak) Ak %*% t(ZVs))
-
-  # Precompute A_k M_postb2 A_j for all k,j pairs (for term5)
-  AMA <- list()
-  for (k in seq_len(K)) {
-    AMA[[k]] <- list()
-    for (j in seq_len(K)) {
-      AMA[[k]][[j]] <- cache$A_list[[k]] %*% M_postb2 %*% cache$A_list[[j]]
-    }
-  }
-
-  list(Vsz_bar = Vsz_bar, ZVs = ZVs,
-       A_Vsz_bar = A_Vsz_bar, A_ZVs_t = A_ZVs_t, AMA = AMA)
+  list(Vsz_bar = Vsz_bar, ZVs = ZVs, M_postb2 = M_postb2)
 }
 
 # Evaluate Eloglik at a candidate omega using reduced basis + Cholesky.
@@ -354,10 +337,13 @@ eval_omega_eloglik_reduced <- function(cache, omega, iter_cache,
                                         sigma2, lambda, K, p) {
   r <- cache$r
 
+  # Form A(omega) = sum_k omega_k A_k once; reused for all terms
+  A_omega <- omega[1] * cache$A_list[[1]]
+  for (k in seq_len(K)[-1])
+    A_omega <- A_omega + omega[k] * cache$A_list[[k]]
+
   # S_r = sigma2 * A(omega) + lambda * I_r
-  S_r <- lambda * diag(r)
-  for (k in seq_len(K))
-    S_r <- S_r + (sigma2 * omega[k]) * cache$A_list[[k]]
+  S_r <- sigma2 * A_omega + lambda * diag(r)
 
   # Cholesky factorization: O(r^3/6)
   L <- chol(S_r)
@@ -370,32 +356,22 @@ eval_omega_eloglik_reduced <- function(cache, omega, iter_cache,
   z_null_norm2 <- max(cache$z_norm2 - sum(cache$Vsz^2), 0)
   zSinvz <- sum(cache$Vsz * Sinv_Vsz) + z_null_norm2 / lambda
 
-  # R(omega) S^{-1} Vsz = sum_k omega_k A_k Sinv_Vsz
-  RSinvz_r <- numeric(r)
-  for (k in seq_len(K))
-    RSinvz_r <- RSinvz_r + omega[k] * (cache$A_list[[k]] %*% Sinv_Vsz)
-
+  # term2: -2 * zbar' R(omega) S^{-1} z
+  RSinvz_r <- A_omega %*% Sinv_Vsz
   term2 <- -2 * sum(iter_cache$Vsz_bar * RSinvz_r)
 
   # term3: zbar' R(omega) S^{-1} R(omega) zbar
-  A_Vsz_bar <- numeric(r)
-  for (k in seq_len(K))
-    A_Vsz_bar <- A_Vsz_bar + omega[k] * iter_cache$A_Vsz_bar[[k]]
+  A_Vsz_bar <- A_omega %*% iter_cache$Vsz_bar
   Sinv_A_Vsz_bar <- backsolve(L, backsolve(L, A_Vsz_bar, transpose = TRUE))
   term3 <- sum(A_Vsz_bar * Sinv_A_Vsz_bar)
 
-  # term4: -tr(Z' R S^{-1} R Z) via backsolve
-  A_ZVs_t <- matrix(0, r, nrow(iter_cache$ZVs))
-  for (k in seq_len(K))
-    A_ZVs_t <- A_ZVs_t + omega[k] * iter_cache$A_ZVs_t[[k]]
+  # term4: -tr(Z' R(omega) S^{-1} R(omega) Z) via backsolve
+  A_ZVs_t <- A_omega %*% t(iter_cache$ZVs)
   Sinv_A_ZVs_t <- backsolve(L, backsolve(L, A_ZVs_t, transpose = TRUE))
   term4 <- -sum(A_ZVs_t * Sinv_A_ZVs_t)
 
-  # term5: tr(S^{-1} AMA(omega)) via backsolve (avoids chol2inv)
-  AMA_omega <- matrix(0, r, r)
-  for (k in seq_len(K))
-    for (j in seq_len(K))
-      AMA_omega <- AMA_omega + omega[k] * omega[j] * iter_cache$AMA[[k]][[j]]
+  # term5: tr(diag(postb2) R(omega) S^{-1} R(omega)) via A_omega M A_omega
+  AMA_omega <- A_omega %*% iter_cache$M_postb2 %*% A_omega
   Sinv_AMA <- backsolve(L, backsolve(L, AMA_omega, transpose = TRUE))
   term5 <- sum(diag(Sinv_AMA))
 

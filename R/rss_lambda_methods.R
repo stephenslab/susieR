@@ -480,7 +480,9 @@ cleanup_model.rss_lambda <- function(data, params, model, ...) {
 
   # Remove RSS-lambda-specific temporary fields
   rss_fields <- c("SinvRj", "RjSinvRj", "Rz", "Z", "zbar", "diag_postb2",
-                   "X_meta", "eigen_R", "Vtz", "omega", "stochastic_ld_B")
+                   "X_meta", "eigen_R", "Vtz", "omega", "stochastic_ld_B",
+                   "z_null_norm2", "omega_converged", "shat2_inflation",
+                   "residuals", "fitted_without_l", "residual_variance")
 
   for (field in rss_fields) {
     if (field %in% names(model)) {
