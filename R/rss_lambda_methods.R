@@ -37,8 +37,9 @@ initialize_susie_model.rss_lambda <- function(data, params, var_y, ...) {
   model <- initialize_matrices(data, params, var_y)
 
   # Initialize SinvRj and RjSinvRj
-  D    <- data$eigen_R$values
-  V    <- data$eigen_R$vectors
+  eigen_R <- get_eigen_R(data, model)
+  D    <- eigen_R$values
+  V    <- eigen_R$vectors
   Dinv <- compute_Dinv(model, data)
 
   model$SinvRj   <- V %*% (Dinv * D * t(V))
@@ -80,7 +81,7 @@ track_ibss_fit.rss_lambda <- function(data, params, model, tracking, iter, elbo,
 #' @keywords internal
 compute_residuals.rss_lambda <- function(data, params, model, l, ...) {
   # Remove lth effect from fitted values
-  Rz_without_l <- model$Rz - compute_Rv(data, model$alpha[l, ] * model$mu[l, ])
+  Rz_without_l <- model$Rz - compute_Rv_rss(data, model, model$alpha[l, ] * model$mu[l, ])
 
   # Compute residuals
   r <- data$z - Rz_without_l
@@ -130,9 +131,10 @@ compute_ser_statistics.rss_lambda <- function(data, params, model, l, ...) {
 SER_posterior_e_loglik.rss_lambda <- function(data, params, model, l) {
   Eb     <- model$alpha[l, ] * model$mu[l, ]
   Eb2    <- model$alpha[l, ] * model$mu2[l, ]
-  V      <- data$eigen_R$vectors
+  eigen_R <- get_eigen_R(data, model)
+  V      <- eigen_R$vectors
   Dinv   <- compute_Dinv(model, data)
-  rR     <- compute_Rv(data, model$residuals)
+  rR     <- compute_Rv_rss(data, model, model$residuals)
   SinvEb <- V %*% (Dinv * crossprod(V, Eb))
 
   return(-0.5 * (-2 * sum(rR * SinvEb) + sum(model$RjSinvRj * Eb2)))
@@ -169,12 +171,13 @@ compute_kl.rss_lambda <- function(data, params, model, l) {
 #' @keywords internal
 get_ER2.rss_lambda <- function(data, model) {
   # Eigen decomposition components
-  D     <- data$eigen_R$values
-  V     <- data$eigen_R$vectors
+  eigen_R <- get_eigen_R(data, model)
+  D     <- eigen_R$values
+  V     <- eigen_R$vectors
   Dinv  <- compute_Dinv(model, data)
 
   # Cached quantities
-  Vtz   <- data$Vtz
+  Vtz   <- get_Vtz(data, model)
   zbar  <- model$zbar
   postb2 <- model$diag_postb2
 
@@ -203,7 +206,7 @@ get_ER2.rss_lambda <- function(data, model) {
 # Expected log-likelihood
 #' @keywords internal
 Eloglik.rss_lambda <- function(data, model) {
-  D <- data$eigen_R$values
+  D <- get_eigen_R(data, model)$values
   d <- model$sigma2 * D + data$lambda
   return(-(length(data$z) / 2) * log(2 * pi) - 0.5 *
            sum(log(d)) - 0.5 * get_ER2.rss_lambda(data, model))
@@ -255,8 +258,29 @@ neg_loglik.rss_lambda <- function(data, params, model, V_param, ser_stats, ...) 
 # Update fitted values
 #' @keywords internal
 update_fitted_values.rss_lambda <- function(data, params, model, l, ...) {
-  model$Rz <- model$fitted_without_l + as.vector(compute_Rv(data, model$alpha[l, ] * model$mu[l, ]))
+  model$Rz <- model$fitted_without_l + as.vector(compute_Rv_rss(data, model, model$alpha[l, ] * model$mu[l, ]))
   model    <- precompute_rss_lambda_terms(data, model)
+
+  return(model)
+}
+
+# Update model variance (override to always run omega update for multi-panel)
+#' @keywords internal
+update_model_variance.rss_lambda <- function(data, params, model) {
+  need_sigma2 <- isTRUE(params$estimate_residual_variance)
+  need_omega  <- !is.null(data$K) && data$K > 1
+
+  if (!need_sigma2 && !need_omega) return(model)
+
+  if (need_sigma2 || need_omega) {
+    variance_result <- update_variance_components(data, params, model)
+    model <- modifyList(model, variance_result)
+    if (need_sigma2) {
+      model$sigma2 <- min(max(model$sigma2, params$residual_variance_lowerbound),
+                          params$residual_variance_upperbound)
+    }
+    model <- update_derived_quantities(data, params, model)
+  }
 
   return(model)
 }
@@ -265,30 +289,53 @@ update_fitted_values.rss_lambda <- function(data, params, model, l, ...) {
 #' @keywords internal
 #' @importFrom stats optimize
 update_variance_components.rss_lambda <- function(data, params, model, ...) {
-  upper_bound <- 1 - data$lambda
+  result <- list()
 
-  objective <- function(sigma2) {
-    temp_model        <- model
-    temp_model$sigma2 <- sigma2
-    Eloglik.rss_lambda(data, temp_model)
+  # Sigma2 estimation (only if requested)
+  if (isTRUE(params$estimate_residual_variance)) {
+    upper_bound <- 1 - data$lambda
+    objective <- function(sigma2) {
+      temp_model        <- model
+      temp_model$sigma2 <- sigma2
+      Eloglik.rss_lambda(data, temp_model)
+    }
+    est_sigma2 <- optimize(objective, interval = c(1e-4, upper_bound),
+                           maximum = TRUE)$maximum
+    if (objective(est_sigma2) < objective(upper_bound))
+      est_sigma2 <- upper_bound
+    result$sigma2 <- est_sigma2
   }
 
-  est_sigma2 <- optimize(objective, interval = c(1e-4, upper_bound), maximum = TRUE)$maximum
-
-  if (objective(est_sigma2) < objective(upper_bound)) {
-    est_sigma2 <- upper_bound
+  # Multi-panel omega update
+  if (!is.null(data$K) && data$K > 1) {
+    b_hat <- colSums(model$alpha * model$mu)
+    eta_list <- lapply(seq_len(data$K), function(k) {
+      Xk <- data$X_list[[k]]
+      as.vector(crossprod(Xk, Xk %*% b_hat))
+    })
+    result$omega <- solve_omega_qp(data$z, eta_list, data$K)
   }
 
-  list(sigma2 = est_sigma2)
+  result
 }
 
 # Update derived quantities
 #' @keywords internal
 update_derived_quantities.rss_lambda <- function(data, params, model) {
-  # Recalculate Dinv with updated sigma2
+  # Multi-panel omega update: re-form X_meta, re-eigendecompose
+  if (!is.null(data$K) && data$K > 1 && !is.null(model$omega)) {
+    X_meta <- form_X_meta(data$X_list, model$omega)
+    model$X_meta  <- X_meta
+    model$eigen_R <- eigen_from_X(X_meta, data$p)
+    model$Vtz     <- crossprod(model$eigen_R$vectors, data$z)
+    model$stochastic_ld_B <- 1 / sum(model$omega^2 / data$B_list)
+  }
+
+  # Recalculate Dinv with updated sigma2 (and potentially updated eigen_R)
+  eigen_R <- get_eigen_R(data, model)
   Dinv <- compute_Dinv(model, data)
-  V    <- data$eigen_R$vectors
-  D    <- data$eigen_R$values
+  V    <- eigen_R$vectors
+  D    <- eigen_R$values
 
   # Update SinvRj and RjSinvRj
   model$SinvRj   <- V %*% (Dinv * D * t(V))
@@ -369,7 +416,8 @@ cleanup_model.rss_lambda <- function(data, params, model, ...) {
   model <- cleanup_model.default(data, params, model, ...)
 
   # Remove RSS-lambda-specific temporary fields
-  rss_fields <- c("SinvRj", "RjSinvRj", "Rz", "Z", "zbar", "diag_postb2")
+  rss_fields <- c("SinvRj", "RjSinvRj", "Rz", "Z", "zbar", "diag_postb2",
+                   "X_meta", "eigen_R", "Vtz")
 
   for (field in rss_fields) {
     if (field %in% names(model)) {

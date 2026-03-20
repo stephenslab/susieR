@@ -62,9 +62,22 @@ compute_suff_stat <- function(X, y, standardize = FALSE) {
 # Compute inverse eigenvalues for RSS-lambda methods
 #' @keywords internal
 compute_Dinv <- function(model, data) {
-  Dinv <- 1 / (model$sigma2 * data$eigen_R$values + data$lambda)
+  eigen_R <- get_eigen_R(data, model)
+  Dinv <- 1 / (model$sigma2 * eigen_R$values + data$lambda)
   Dinv[is.infinite(Dinv)] <- 0
   return(Dinv)
+}
+
+# Accessor for eigen_R: check model first (multi-panel), fall through to data
+#' @keywords internal
+get_eigen_R <- function(data, model) {
+  if (!is.null(model$eigen_R)) model$eigen_R else data$eigen_R
+}
+
+# Accessor for Vtz: check model first (multi-panel), fall through to data
+#' @keywords internal
+get_Vtz <- function(data, model) {
+  if (!is.null(model$Vtz)) model$Vtz else data$Vtz
 }
 
 # =============================================================================
@@ -221,6 +234,83 @@ compute_shat2_inflation_rss <- function(data, model, Rz_without_l, b_minus_l) {
   v_g  <- max(sum(b_minus_l * Rz_without_l), 0)
   eta2 <- Rz_without_l^2   # z-score scale: no (n-1) division needed
   1 + (eta2 + v_g) / (B_eff * model$sigma2)
+}
+
+# =============================================================================
+# MULTI-PANEL LD MIXTURE
+#
+# Functions for combining K reference LD panels with learnable convex weights.
+# R(omega) = sum_k omega_k R_hat_k, with X_meta = [sqrt(omega_1) X_1; ...].
+#
+# Functions: form_X_meta, eigen_from_X, compute_Rv_rss, solve_omega_qp
+# =============================================================================
+
+# Form composite X from K panels with weights omega
+#' @keywords internal
+form_X_meta <- function(X_list, omega) {
+  K <- length(X_list)
+  parts <- lapply(seq_len(K), function(k) sqrt(omega[k]) * X_list[[k]])
+  do.call(rbind, parts)
+}
+
+# SVD-based eigendecomposition from X matrix (X'X = R)
+#' @keywords internal
+eigen_from_X <- function(X, p) {
+  sv <- svd(X, nu = 0)
+  eigen_values <- pmax(sv$d^2, 0)
+  eigen_vectors <- sv$v
+  if (ncol(eigen_vectors) < p) {
+    eigen_vectors <- cbind(eigen_vectors,
+                           matrix(0, p, p - ncol(eigen_vectors)))
+    eigen_values <- c(eigen_values, rep(0, p - length(eigen_values)))
+  }
+  idx <- order(eigen_values, decreasing = TRUE)
+  list(values = eigen_values[idx], vectors = eigen_vectors[, idx])
+}
+
+# Compute R*v for rss_lambda, checking model$X_meta first (multi-panel)
+#' @keywords internal
+compute_Rv_rss <- function(data, model, v) {
+  X <- if (!is.null(model$X_meta)) model$X_meta else data$X
+  if (!is.null(X)) return(as.vector(crossprod(X, X %*% v)))
+  if (!is.null(data$R)) return(as.vector(data$R %*% v))
+  stop("No predictor matrix available.")
+}
+
+# Solve omega QP: min ||z - sum_k omega_k eta_k||^2 s.t. simplex
+#' @keywords internal
+#' @importFrom stats optimize
+solve_omega_qp <- function(z, eta_list, K) {
+  if (K == 1) return(1)
+
+  if (K == 2) {
+    obj <- function(w1) {
+      sum((z - w1 * eta_list[[1]] - (1 - w1) * eta_list[[2]])^2)
+    }
+    w1 <- optimize(obj, interval = c(0, 1))$minimum
+    return(c(w1, 1 - w1))
+  }
+
+  # K > 2: use quadprog
+  if (!requireNamespace("quadprog", quietly = TRUE))
+    stop("Package 'quadprog' required for multi-panel LD with K > 2.")
+
+  H <- matrix(0, K, K)
+  f <- numeric(K)
+  for (i in seq_len(K)) {
+    f[i] <- sum(eta_list[[i]] * z)
+    for (j in i:K) {
+      H[i, j] <- sum(eta_list[[i]] * eta_list[[j]])
+      H[j, i] <- H[i, j]
+    }
+  }
+
+  Amat <- cbind(rep(1, K), diag(K))
+  bvec <- c(1, rep(0, K))
+  meq <- 1
+  H_reg <- H + diag(1e-10, K)
+  sol <- quadprog::solve.QP(H_reg, f, Amat, bvec, meq)
+  pmax(sol$solution, 0)
 }
 
 # =============================================================================

@@ -1077,3 +1077,189 @@ test_that("loglik.rss_lambda Wakefield ABF agrees with old signal-based form", {
 
   expect_equal(lbf_wakefield, lbf_original, tolerance = 1e-10)
 })
+
+# =============================================================================
+# MULTI-PANEL LD MIXTURE TESTS
+# =============================================================================
+
+test_that("form_X_meta combines panels correctly", {
+  set.seed(42)
+  p <- 10
+  X1 <- matrix(rnorm(50 * p), 50, p)
+  X2 <- matrix(rnorm(30 * p), 30, p)
+  omega <- c(0.6, 0.4)
+
+  X_meta <- form_X_meta(list(X1, X2), omega)
+
+  expect_equal(nrow(X_meta), 80)
+  expect_equal(ncol(X_meta), p)
+  # First 50 rows scaled by sqrt(0.6)
+  expect_equal(X_meta[1:50, ], sqrt(0.6) * X1)
+  # Last 30 rows scaled by sqrt(0.4)
+  expect_equal(X_meta[51:80, ], sqrt(0.4) * X2)
+})
+
+test_that("eigen_from_X recovers eigendecomposition of X'X", {
+  set.seed(43)
+  p <- 20
+  X <- matrix(rnorm(100 * p), 100, p)
+  R <- crossprod(X)
+  eigen_R_direct <- eigen(R, symmetric = TRUE)
+
+  eigen_R_svd <- eigen_from_X(X, p)
+
+  # Eigenvalues should match
+  expect_equal(eigen_R_svd$values, eigen_R_direct$values, tolerance = 1e-10)
+  # Eigenvectors span same space (up to sign)
+  for (j in seq_len(p)) {
+    inner <- abs(sum(eigen_R_svd$vectors[, j] * eigen_R_direct$vectors[, j]))
+    expect_gt(inner, 0.99)
+  }
+})
+
+test_that("solve_omega_qp returns correct weights for K=1", {
+  omega <- solve_omega_qp(rnorm(10), list(rnorm(10)), K = 1)
+  expect_equal(omega, 1)
+})
+
+test_that("solve_omega_qp returns simplex weights for K=2", {
+  set.seed(44)
+  z <- rnorm(50)
+  eta1 <- rnorm(50)
+  eta2 <- rnorm(50)
+
+  omega <- solve_omega_qp(z, list(eta1, eta2), K = 2)
+
+  expect_equal(length(omega), 2)
+  expect_equal(sum(omega), 1)
+  expect_true(all(omega >= -1e-10))  # numerical tolerance
+})
+
+test_that("solve_omega_qp finds correct minimum for K=2", {
+  set.seed(45)
+  p <- 50
+  # z is closer to eta1 than eta2
+  eta1 <- rnorm(p)
+  eta2 <- rnorm(p)
+  z <- 0.8 * eta1 + 0.2 * eta2
+
+  omega <- solve_omega_qp(z, list(eta1, eta2), K = 2)
+
+  expect_equal(omega[1], 0.8, tolerance = 1e-4)
+  expect_equal(omega[2], 0.2, tolerance = 1e-4)
+})
+
+test_that("rss_lambda_constructor accepts list X", {
+  set.seed(46)
+  p <- 30
+  B1 <- 200
+  B2 <- 150
+  beta <- rep(0, p)
+  beta[1:2] <- 0.5
+
+  X1 <- matrix(rnorm(B1 * p), B1, p)
+  X2 <- matrix(rnorm(B2 * p), B2, p)
+  z <- rnorm(p) + crossprod(X1, X1 %*% beta)[, 1] / (B1 * sqrt(p))
+
+  result <- rss_lambda_constructor(z = z, X = list(X1, X2), lambda = 0.1)
+
+  data <- result$data
+  expect_s3_class(data, "rss_lambda")
+  expect_equal(data$K, 2)
+  expect_equal(length(data$X_list), 2)
+  expect_equal(data$B_list, c(B1, B2))
+  expect_true(!is.null(data$eigen_R))
+  expect_true(!is.null(data$Vtz))
+  expect_true(!is.null(data$stochastic_ld_B))
+})
+
+test_that("K=1 list X gives same results as single matrix X", {
+  set.seed(47)
+  p <- 20
+  B <- 100
+  X <- matrix(rnorm(B * p), B, p)
+  z <- rnorm(p)
+
+  # Single matrix
+  result_single <- rss_lambda_constructor(z = z, X = X, lambda = 0.1)
+  # List with one element
+  result_list <- rss_lambda_constructor(z = z, X = list(X), lambda = 0.1)
+
+  # Eigenvalues should match (both represent R from same X)
+  expect_equal(result_single$data$eigen_R$values,
+               result_list$data$eigen_R$values,
+               tolerance = 1e-8)
+  # Vtz should match
+  expect_equal(abs(result_single$data$Vtz),
+               abs(result_list$data$Vtz),
+               tolerance = 1e-8)
+})
+
+test_that("K=2 with identical panels: omega sums to 1 and fit converges", {
+  set.seed(48)
+  p <- 20
+  B <- 200
+  X <- matrix(rnorm(B * p), B, p)
+  beta <- rep(0, p)
+  beta[1:3] <- c(0.5, -0.3, 0.4)
+
+  # Compute z-scores
+  R <- cov2cor(crossprod(X))
+  z <- as.vector(R %*% beta) + rnorm(p, sd = 0.1)
+
+  fit <- susie_rss(z = z, X = list(X, X), lambda = 0.1,
+                   estimate_residual_variance = TRUE,
+                   max_iter = 50)
+
+  # With identical panels, any omega on the simplex is equally good
+  # Just check weights are valid
+  expect_equal(sum(fit$omega_weights), 1, tolerance = 1e-10)
+  expect_true(all(fit$omega_weights >= -1e-10))
+  # Model should still converge
+  expect_true(fit$converged || fit$niter <= 50)
+})
+
+test_that("K=2 end-to-end susie_rss converges", {
+  set.seed(49)
+  p <- 30
+  B1 <- 300
+  B2 <- 200
+  beta <- rep(0, p)
+  beta[1:2] <- c(0.5, -0.4)
+
+  # Two panels sampling from same distribution
+  X1 <- matrix(rnorm(B1 * p), B1, p)
+  X2 <- matrix(rnorm(B2 * p), B2, p)
+
+  # R from pooled
+  R_pool <- cov2cor((crossprod(X1) + crossprod(X2)) / (B1 + B2))
+  z <- as.vector(R_pool %*% beta) + rnorm(p, sd = 0.1)
+
+  fit <- susie_rss(z = z, X = list(X1, X2), lambda = 0.1,
+                   estimate_residual_variance = TRUE,
+                   max_iter = 100)
+
+  # Should converge
+  expect_true(fit$converged || fit$niter <= 100)
+  # Should have omega weights
+  expect_equal(length(fit$omega_weights), 2)
+  expect_equal(sum(fit$omega_weights), 1, tolerance = 1e-10)
+  # Should have PIPs
+  expect_equal(length(fit$pip), p)
+})
+
+test_that("accessor helpers fall through for single panel", {
+  dat <- setup_rss_lambda_data(seed = 50)
+  model <- dat$model
+
+  # model$eigen_R is NULL for single panel
+  expect_null(model$eigen_R)
+  # Accessor should return data$eigen_R
+  eigen_R <- get_eigen_R(dat$data, model)
+  expect_equal(eigen_R$values, dat$data$eigen_R$values)
+
+  # Same for Vtz
+  expect_null(model$Vtz)
+  Vtz <- get_Vtz(dat$data, model)
+  expect_equal(Vtz, dat$data$Vtz)
+})

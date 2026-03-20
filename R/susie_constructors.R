@@ -930,7 +930,38 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
          "Please use estimate_residual_method = 'MLE' instead.")
   }
 
-  if (is.null(X)) {
+  # Detect multi-panel input (list of X matrices)
+  is_multi_panel <- is.list(X) && !is.matrix(X)
+  X_list <- NULL
+  B_list <- NULL
+  K_panels <- NULL
+
+  if (is_multi_panel) {
+    K_panels <- length(X)
+    if (K_panels < 1) stop("X list must contain at least one matrix.")
+    for (k in seq_len(K_panels)) {
+      if (!is.matrix(X[[k]]) || !is.numeric(X[[k]]))
+        stop("Each element of X list must be a numeric matrix.")
+      if (ncol(X[[k]]) != length(z))
+        stop(paste0("Panel ", k, " of X has ", ncol(X[[k]]),
+                    " columns but expected ", length(z), "."))
+    }
+    B_list <- vapply(X, nrow, integer(1))
+
+    # Standardize each panel so X_k'X_k = R_k (correlation matrix)
+    X_list <- lapply(seq_len(K_panels), function(k) {
+      Xk <- X[[k]]
+      B_k <- nrow(Xk)
+      col_norms <- sqrt(colSums(Xk^2) / B_k)
+      col_norms[col_norms < .Machine$double.eps] <- 1
+      sweep(Xk, 2, col_norms, "/") / sqrt(B_k)
+    })
+
+    # Clear X; will be set to X_meta after MAF/null_weight processing
+    X <- NULL
+  }
+
+  if (is.null(X) && !is_multi_panel) {
     # R path: validate R
     if (is.null(R))
       stop("Please provide either R or X for rss_lambda_constructor.")
@@ -947,8 +978,8 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
     if (!(is.double(R) & is.matrix(R)) & !inherits(R, "sparseMatrix")) {
       stop("Input R must be a double-precision matrix or a sparse matrix.")
     }
-  } else {
-    # X path: validate X
+  } else if (!is.null(X)) {
+    # Single-panel X path: validate X
     if (ncol(X) != length(z)) {
       stop(paste0(
         "The number of columns of X (", ncol(X),
@@ -965,6 +996,8 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
     id <- which(maf > maf_thresh)
     if (!is.null(R)) R <- R[id, id]
     if (!is.null(X)) X <- X[, id, drop = FALSE]
+    if (!is.null(X_list))
+      X_list <- lapply(X_list, function(Xk) Xk[, id, drop = FALSE])
     z <- z[id]
   }
 
@@ -994,7 +1027,9 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
     if (null_weight < 0 || null_weight >= 1) {
       stop("Null weight must be between 0 and 1.")
     }
-    p_cur <- if (!is.null(R)) ncol(R) else ncol(X)
+    p_cur <- if (!is.null(R)) ncol(R)
+             else if (!is.null(X)) ncol(X)
+             else ncol(X_list[[1]])
     if (is.null(prior_weights)) {
       prior_weights <- c(rep(1 / p_cur * (1 - null_weight), p_cur), null_weight)
     } else {
@@ -1002,7 +1037,15 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
     }
     if (!is.null(R)) R <- cbind(rbind(R, 0), 0)
     if (!is.null(X)) X <- cbind(X, 0)
+    if (!is.null(X_list))
+      X_list <- lapply(X_list, function(Xk) cbind(Xk, 0))
     z <- c(z, 0)
+  }
+
+  # For multi-panel: form initial X_meta with uniform omega
+  if (is_multi_panel) {
+    omega_init <- rep(1 / K_panels, K_panels)
+    X <- form_X_meta(X_list, omega_init)
   }
 
   # Determine p and set prior weights
@@ -1014,30 +1057,28 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
 
   # Eigen decomposition: from R or SVD of X
   if (!is.null(X)) {
-    B_x <- nrow(X)
+    if (is_multi_panel) {
+      # Multi-panel: X is already X_meta (standardized panels combined with omega)
+      # X_meta'X_meta = R(omega) = sum_k omega_k R_k
+      eigen_R <- eigen_from_X(X, p)
+    } else {
+      # Single-panel: standardize and SVD
+      B_x <- nrow(X)
+      col_norms <- sqrt(colSums(X^2) / B_x)
+      col_norms[col_norms < .Machine$double.eps] <- 1
+      X <- sweep(X, 2, col_norms, "/") / sqrt(B_x)
 
-    # Standardize X so that X'X = R (correlation matrix):
-    # 1. Normalize columns so diag(X'X/B) = 1
-    # 2. Scale by 1/sqrt(B) so X'X = R instead of B*R
-    col_norms <- sqrt(colSums(X^2) / B_x)
-    col_norms[col_norms < .Machine$double.eps] <- 1
-    X <- sweep(X, 2, col_norms, "/") / sqrt(B_x)
-
-    # SVD of X: eigenvalues of R = X'X are sv$d^2 (X already scaled)
-    sv <- svd(X, nu = 0)
-    eigen_values <- pmax(sv$d^2, 0)
-    eigen_vectors <- sv$v
-    # Pad with zeros for null-space eigenvectors
-    if (ncol(eigen_vectors) < p) {
-      eigen_vectors <- cbind(eigen_vectors, matrix(0, p, p - ncol(eigen_vectors)))
-      eigen_values <- c(eigen_values, rep(0, p - length(eigen_values)))
+      sv <- svd(X, nu = 0)
+      eigen_values <- pmax(sv$d^2, 0)
+      eigen_vectors <- sv$v
+      if (ncol(eigen_vectors) < p) {
+        eigen_vectors <- cbind(eigen_vectors, matrix(0, p, p - ncol(eigen_vectors)))
+        eigen_values <- c(eigen_values, rep(0, p - length(eigen_values)))
+      }
+      idx <- order(eigen_values, decreasing = TRUE)
+      eigen_R <- list(values = eigen_values[idx], vectors = eigen_vectors[, idx])
+      X <- X / sqrt(B_x)
     }
-    # Sort descending
-    idx <- order(eigen_values, decreasing = TRUE)
-    eigen_R <- list(values = eigen_values[idx], vectors = eigen_vectors[, idx])
-    # Rescale X so that X'X = R (not n*R). This ensures compute_Rv(data, v)
-    # returns R*v, consistent with the eigenvalues d^2/B_x.
-    X <- X / sqrt(B_x)
   } else {
     eigen_R <- eigen(R, symmetric = TRUE)
   }
@@ -1133,6 +1174,11 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
   # Stochastic LD sketch diagnostics
   stochastic_ld_diagnostics <- NULL
   stochastic_ld_B <- NULL
+  if (is_multi_panel && is.null(stochastic_ld_sample)) {
+    # Multi-panel: effective B from panel sizes and uniform omega
+    omega_init <- rep(1 / K_panels, K_panels)
+    stochastic_ld_B <- 1 / sum(omega_init^2 / B_list)
+  }
   if (!is.null(stochastic_ld_sample)) {
     stochastic_ld_B <- stochastic_ld_sample
     B_stoch <- stochastic_ld_sample
@@ -1185,7 +1231,10 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
       Vtz = Vtz,
       z_null_norm2 = z_null_norm2,
       stochastic_ld_B = stochastic_ld_B,
-      stochastic_ld_diagnostics = stochastic_ld_diagnostics
+      stochastic_ld_diagnostics = stochastic_ld_diagnostics,
+      X_list = X_list,
+      B_list = B_list,
+      K = K_panels
     ),
     class = "rss_lambda"
   )

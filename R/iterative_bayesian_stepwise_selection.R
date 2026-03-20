@@ -174,6 +174,10 @@ ibss_finalize <- function(data, params, model, elbo = NULL, iter = NA_integer_,
       model$stochastic_ld_diagnostics$per_variable_penalty <- model$shat2_inflation - 1
   }
 
+  # Multi-panel omega weights
+  if (!is.null(model$omega))
+    model$omega_weights <- model$omega
+
   # Clean up temporary computational fields
   model <- cleanup_model(data, params, model)
 

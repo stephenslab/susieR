@@ -549,7 +549,9 @@ susie_ss <- function(XtX, Xty, yty, n,
 susie_rss <- function(z = NULL, R = NULL, n = NULL,
                       X = NULL,
                       bhat = NULL, shat = NULL, var_y = NULL,
-                      L = min(10, if (!is.null(R)) ncol(R) else ncol(X)),
+                      L = min(10, if (!is.null(R)) ncol(R)
+                               else if (is.list(X) && !is.matrix(X)) ncol(X[[1]])
+                               else ncol(X)),
                       lambda = 0,
                       maf = NULL,
                       maf_thresh = 0,
@@ -595,39 +597,54 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
     stop("Please provide either R (correlation matrix) or X (factor matrix).")
   if (!is.null(R) && !is.null(X))
     stop("Please provide either R or X, but not both.")
+  is_multi_panel <- is.list(X) && !is.matrix(X)
 
   # Handle X input
   if (!is.null(X)) {
-    if (!is.matrix(X) || !is.numeric(X))
-      stop("X must be a numeric matrix.")
-
-    # Center columns of X so that crossprod gives covariance-like quantities.
-    # This ensures users can provide raw, centered, or standardized X and
-    # get correct results. (The full-rank path centers via safe_cor(); the
-    # low-rank path needs explicit centering here.)
-    # Use a relative threshold to avoid perturbing already-centered matrices
-    # with near-zero means, which can cause SVD instability.
-    cm <- colMeans(X)
-    if (max(abs(cm)) > 1e-10 * max(abs(X)))
-      X <- t(t(X) - cm)
-
-    # Features incompatible with the low-rank path: fall back to forming R
-    needs_R <- z_ld_weight > 0 || (!is.null(var_y) && !is.null(shat))
-    if (needs_R && nrow(X) < ncol(X)) {
-      warning_message(
-        "X is provided as a low-rank factor matrix, but z_ld_weight or ",
-        "var_y/shat require the full correlation matrix R. Forming ",
-        "R = cov2cor(crossprod(X)/nrow(X)) and using the standard path.")
-    }
-
-    # If nrow(X) >= ncol(X) or features require R, form R and use standard path
-    if (nrow(X) >= ncol(X) || needs_R) {
-      R <- safe_cor(X)
-      X <- NULL
-    } else {
-      # Low-rank path: skip R checks
+    if (is_multi_panel) {
+      # Multi-panel: validate each matrix, require lambda > 0
+      for (k in seq_along(X)) {
+        if (!is.matrix(X[[k]]) || !is.numeric(X[[k]]))
+          stop("Each element of X list must be a numeric matrix.")
+      }
+      if (lambda == 0)
+        stop("Multi-panel X requires lambda != 0 (RSS-lambda path).")
+      # Center each panel
+      X <- lapply(X, function(Xk) {
+        cm <- colMeans(Xk)
+        if (max(abs(cm)) > 1e-10 * max(abs(Xk)))
+          Xk <- t(t(Xk) - cm)
+        Xk
+      })
       check_R <- FALSE
       check_z <- FALSE
+    } else {
+      if (!is.matrix(X) || !is.numeric(X))
+        stop("X must be a numeric matrix.")
+
+      # Center columns of X so that crossprod gives covariance-like quantities.
+      cm <- colMeans(X)
+      if (max(abs(cm)) > 1e-10 * max(abs(X)))
+        X <- t(t(X) - cm)
+
+      # Features incompatible with the low-rank path: fall back to forming R
+      needs_R <- z_ld_weight > 0 || (!is.null(var_y) && !is.null(shat))
+      if (needs_R && nrow(X) < ncol(X)) {
+        warning_message(
+          "X is provided as a low-rank factor matrix, but z_ld_weight or ",
+          "var_y/shat require the full correlation matrix R. Forming ",
+          "R = cov2cor(crossprod(X)/nrow(X)) and using the standard path.")
+      }
+
+      # If nrow(X) >= ncol(X) or features require R, form R and use standard path
+      if (nrow(X) >= ncol(X) || needs_R) {
+        R <- safe_cor(X)
+        X <- NULL
+      } else {
+        # Low-rank path: skip R checks
+        check_R <- FALSE
+        check_z <- FALSE
+      }
     }
   }
 
@@ -646,7 +663,7 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
   }
 
   # Stochastic LD consistency checks for low-rank X input
-  if (!is.null(X)) {
+  if (!is.null(X) && !is_multi_panel) {
     if (!is.null(stochastic_ld_sample)) {
       if (nrow(X) != stochastic_ld_sample)
         stop("When X is provided with stochastic_ld_sample, nrow(X) must equal ",
