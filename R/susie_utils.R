@@ -89,6 +89,22 @@ safe_cor <- function(X) {
   R
 }
 
+# Standardize X so that X'X equals the correlation matrix R.
+# Centers columns, divides by column sd, then scales by 1/sqrt(n)
+# so that crossprod(X_out) = cor(X_in). Constant columns are zeroed.
+# This is the in-place analog of safe_cor: safe_cor(X) == crossprod(standardize_X(X)).
+#' @keywords internal
+standardize_X <- function(X) {
+  n <- nrow(X)
+  cm <- colMeans(X)
+  X <- X - rep(cm, each = n)
+  css <- colSums(X^2)
+  sds <- sqrt(css / n)
+  sds[sds < .Machine$double.eps] <- 1  # constant columns: avoid 0/0
+  X <- X * rep(1 / (sds * sqrt(n)), each = n)
+  X
+}
+
 #' Check for symmetric matrix
 #'
 #' @param x A matrix to check

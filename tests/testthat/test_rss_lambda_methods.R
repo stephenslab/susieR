@@ -1079,6 +1079,70 @@ test_that("loglik.rss_lambda Wakefield ABF agrees with old signal-based form", {
 })
 
 # =============================================================================
+# SS vs RSS-LAMBDA CROSS-PATH AGREEMENT TESTS
+# =============================================================================
+
+test_that("SS and RSS-lambda paths agree with small lambda (no inflation)", {
+  set.seed(200)
+  p <- 50; n <- 2000
+  X <- matrix(rnorm(n * p), n, p)
+  X <- scale(X, center = TRUE, scale = TRUE)
+  beta <- rep(0, p)
+  beta[1] <- 0.5; beta[10] <- -0.3
+  y <- drop(X %*% beta + rnorm(n))
+
+  input_ss <- compute_suff_stat(X, y, standardize = TRUE)
+  R <- cov2cor(input_ss$XtX); R <- (R + t(R)) / 2
+  ss <- univariate_regression(X, y)
+  z <- ss$betahat / ss$sebetahat
+
+  # SS path (lambda = 0)
+  fit_ss <- susie_rss(z = z, R = R, n = n, L = 5, lambda = 0,
+                      max_iter = 100, verbose = FALSE)
+  # RSS-lambda path (tiny lambda ≈ 0)
+  fit_rss <- susie_rss(z = z, R = R, n = n, L = 5, lambda = 1e-6,
+                       max_iter = 100, verbose = FALSE)
+
+  expect_true(fit_ss$converged)
+  expect_true(fit_rss$converged)
+  # Alpha matrices should be essentially identical
+  expect_equal(fit_ss$alpha, fit_rss$alpha, tolerance = 1e-4)
+  # PIPs should match
+  expect_equal(fit_ss$pip, fit_rss$pip, tolerance = 1e-4)
+})
+
+test_that("SS and RSS-lambda paths agree with inflation", {
+  set.seed(201)
+  p <- 50; n <- 5000
+  X <- matrix(rnorm(n * p), n, p)
+  X <- scale(X, center = TRUE, scale = TRUE)
+  beta <- rep(0, p)
+  beta[1] <- 0.5; beta[10] <- -0.3
+  y <- drop(X %*% beta + rnorm(n))
+
+  input_ss <- compute_suff_stat(X, y, standardize = TRUE)
+  R <- cov2cor(input_ss$XtX); R <- (R + t(R)) / 2
+  ss <- univariate_regression(X, y)
+  z <- ss$betahat / ss$sebetahat
+
+  B_sketch <- 2000
+  # SS path with inflation
+  fit_ss <- susie_rss(z = z, R = R, n = n, L = 5, lambda = 0,
+                      stochastic_ld_sample = B_sketch,
+                      max_iter = 100, verbose = FALSE)
+  # RSS-lambda path with inflation
+  fit_rss <- susie_rss(z = z, R = R, n = n, L = 5, lambda = 1e-6,
+                       stochastic_ld_sample = B_sketch,
+                       max_iter = 100, verbose = FALSE)
+
+  expect_true(fit_ss$converged)
+  expect_true(fit_rss$converged)
+  # Alpha and PIPs should match closely despite different inflation formulas
+  expect_equal(fit_ss$alpha, fit_rss$alpha, tolerance = 1e-4)
+  expect_equal(fit_ss$pip, fit_rss$pip, tolerance = 1e-4)
+})
+
+# =============================================================================
 # MULTI-PANEL LD MIXTURE TESTS
 # =============================================================================
 

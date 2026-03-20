@@ -949,13 +949,7 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
     B_list <- vapply(X, nrow, integer(1))
 
     # Standardize each panel so X_k'X_k = R_k (correlation matrix)
-    X_list <- lapply(seq_len(K_panels), function(k) {
-      Xk <- X[[k]]
-      B_k <- nrow(Xk)
-      col_norms <- sqrt(colSums(Xk^2) / B_k)
-      col_norms[col_norms < .Machine$double.eps] <- 1
-      sweep(Xk, 2, col_norms, "/") / sqrt(B_k)
-    })
+    X_list <- lapply(X, standardize_X)
 
     # Clear X; will be set to X_meta after MAF/null_weight processing
     X <- NULL
@@ -1062,22 +1056,9 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
       # X_meta'X_meta = R(omega) = sum_k omega_k R_k
       eigen_R <- eigen_from_X(X, p)
     } else {
-      # Single-panel: standardize and SVD
-      B_x <- nrow(X)
-      col_norms <- sqrt(colSums(X^2) / B_x)
-      col_norms[col_norms < .Machine$double.eps] <- 1
-      X <- sweep(X, 2, col_norms, "/") / sqrt(B_x)
-
-      sv <- svd(X, nu = 0)
-      eigen_values <- pmax(sv$d^2, 0)
-      eigen_vectors <- sv$v
-      if (ncol(eigen_vectors) < p) {
-        eigen_vectors <- cbind(eigen_vectors, matrix(0, p, p - ncol(eigen_vectors)))
-        eigen_values <- c(eigen_values, rep(0, p - length(eigen_values)))
-      }
-      idx <- order(eigen_values, decreasing = TRUE)
-      eigen_R <- list(values = eigen_values[idx], vectors = eigen_vectors[, idx])
-      X <- X / sqrt(B_x)
+      # Single-panel: standardize so X'X = R, then SVD
+      X <- standardize_X(X)
+      eigen_R <- eigen_from_X(X, p)
     }
   } else {
     eigen_R <- eigen(R, symmetric = TRUE)
