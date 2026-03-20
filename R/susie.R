@@ -609,10 +609,13 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
       }
       if (lambda == 0)
         stop("Multi-panel X requires lambda != 0 (RSS-lambda path).")
-      # Multi-panel: auto-switch to PIP convergence since omega updates
-      # change R(omega) which can cause ELBO non-monotonicity
+      # Multi-panel: auto-switch to PIP convergence. Omega updates change
+      # R(omega) each iteration, breaking ELBO monotonicity guarantees.
       if (convergence_method[1] == "elbo") {
         convergence_method <- "pip"
+        warning_message("Switching to PIP-based convergence for multi-panel mixture ",
+                "as mixture weights updates change R(omega) each iteration, which prevents ",
+                "ELBO monotonicity.")
       }
       # Center each panel
       X <- lapply(X, function(Xk) {
@@ -665,6 +668,15 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
       stop("stochastic_ld_sample must be a numeric scalar.")
     if (stochastic_ld_sample < 1000)
       stop("stochastic_ld_sample must be >= 1000.")
+    # Auto-switch to PIP convergence for stochastic LD inflation.
+    # The inflation uses per-variant tau_j^2 in the SER, which modifies
+    # the per-variant likelihood but does not correspond to a single
+    # model-level covariance S, so ELBO monotonicity is not guaranteed.
+    if (convergence_method[1] == "elbo") {
+      convergence_method <- "pip"
+      warning_message("Switching to PIP-based convergence because sketch LD inflation ",
+              "modifies per-variant SER likelihoods which prevents a consistent model-level ELBO.")
+    }
   }
 
   # Stochastic LD consistency checks for low-rank X input

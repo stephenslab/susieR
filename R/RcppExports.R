@@ -13,19 +13,3 @@ rcpp_mr_ash_rss <- function(bhat, shat, z, R, var_y, n, sigma2_e, s0, w0, mu1_in
     .Call('_susieR_rcpp_mr_ash_rss', PACKAGE = 'susieR', bhat, shat, z, R, var_y, n, sigma2_e, s0, w0, mu1_init, tol, max_iter, update_w0, update_sigma, compute_ELBO, standardize, ncpus)
 }
 
-compute_eloglik_from_eigen <- function(eigenvalues, eigenvectors, z, zbar, diag_postb2, Z, sigma2, lambda, z_null_norm2) {
-    .Call('_susieR_compute_eloglik_from_eigen', PACKAGE = 'susieR', eigenvalues, eigenvectors, z, zbar, diag_postb2, Z, sigma2, lambda, z_null_norm2)
-}
-
-compute_null_loglik <- function(eigenvalues, Vtz, sigma2, lambda, z_null_norm2) {
-    .Call('_susieR_compute_null_loglik', PACKAGE = 'susieR', eigenvalues, Vtz, sigma2, lambda, z_null_norm2)
-}
-
-eigen_R_omega <- function(panel_R_list, omega, K, p) {
-    .Call('_susieR_eigen_R_omega', PACKAGE = 'susieR', panel_R_list, omega, K, p)
-}
-
-eval_omega_eloglik <- function(panel_R_list, omega, z, zbar, diag_postb2, Z, sigma2, lambda, K, p) {
-    .Call('_susieR_eval_omega_eloglik', PACKAGE = 'susieR', panel_R_list, omega, z, zbar, diag_postb2, Z, sigma2, lambda, K, p)
-}
-

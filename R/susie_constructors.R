@@ -1036,30 +1036,26 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
     z <- c(z, 0)
   }
 
-  # For multi-panel: initialize omega via null marginal likelihood,
-  # precompute per-panel eigendecompositions and R matrices for caching
+  # For multi-panel: precompute reduced basis for fast omega optimization,
+  # initialize omega uniformly
   panel_R <- NULL
+  omega_cache <- NULL
   if (is_multi_panel) {
-    p_mp <- ncol(X_list[[1]])
-
-    # Precompute per-panel R matrices: R_k = X_k'X_k (already standardized)
+    # Precompute per-panel R matrices for eigendecomposition recovery
     panel_R <- lapply(X_list, crossprod)
 
-    # Compute null marginal log-likelihood for each panel to initialize omega.
-    # Under the null (b = 0): z ~ N(0, sigma2 * R_k + lambda * I)
-    # This avoids the chicken-and-egg problem of uniform initialization.
-    sigma2_init <- if (!is.null(residual_variance)) residual_variance else 1 - lambda
-    null_loglik <- vapply(seq_len(K_panels), function(k) {
-      eig_k <- eigen(panel_R[[k]], symmetric = TRUE)
-      eig_k$values <- pmax(eig_k$values, 0)
-      Vtz_k <- crossprod(eig_k$vectors, z)
-      z_null_k <- max(sum(z^2) - sum(Vtz_k^2), 0)
-      compute_null_loglik(eig_k$values, Vtz_k, sigma2_init, lambda, z_null_k)
-    }, numeric(1))
+    # Precompute reduced-basis quantities for O(r^3) omega optimization.
+    # When sum(B_k) >= p, the reduced basis has rank r = p (no speedup),
+    # so we skip precomputation and fall back to direct O(p^3) approach.
+    B_total <- sum(vapply(X_list, nrow, integer(1)))
+    if (B_total < length(z)) {
+      omega_cache <- precompute_omega_cache(X_list, z)
+    }
 
-    # Softmax to get initial omega (robust to large differences)
-    null_loglik_shifted <- null_loglik - max(null_loglik)
-    omega_init <- exp(null_loglik_shifted) / sum(exp(null_loglik_shifted))
+    # Initialize omega uniformly. The first IBSS M-step evaluates the
+    # profile Eloglik at multiple omega values and picks the best one,
+    # so the initialization only affects the first IBSS iteration.
+    omega_init <- rep(1 / K_panels, K_panels)
 
     X <- form_X_meta(X_list, omega_init)
   }
@@ -1237,7 +1233,8 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
       X_list = X_list,
       B_list = B_list,
       K = K_panels,
-      panel_R = panel_R
+      panel_R = panel_R,
+      omega_cache = omega_cache
     ),
     class = "rss_lambda"
   )

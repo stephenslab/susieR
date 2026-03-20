@@ -243,7 +243,15 @@ compute_shat2_inflation_rss <- function(data, model, Rz_without_l, b_minus_l) {
 # Functions for combining K reference LD panels with learnable convex weights.
 # R(omega) = sum_k omega_k R_hat_k, with X_meta = [sqrt(omega_1) X_1; ...].
 #
-# Functions: form_X_meta, eigen_from_X, eval_omega_eloglik_R
+# Key functions:
+#   form_X_meta             -- form composite X from K panels with weights
+#   eigen_from_X            -- SVD-based eigendecomposition from X matrix
+#   precompute_omega_cache  -- joint SVD for reduced-basis optimization
+#   precompute_omega_iteration -- per-IBSS-iter bilinear forms
+#   eval_omega_eloglik_reduced -- O(r^3) Eloglik evaluator (Cholesky)
+#   eigen_from_reduced      -- recover full p-dim eigen from reduced basis
+#   eval_omega_eloglik_R    -- O(p^3) reference implementation (testing)
+#   optimize_omega          -- simplex optimizer (Grid+Brent or Frank-Wolfe)
 # =============================================================================
 
 # Form composite X from K panels with weights omega
@@ -278,8 +286,145 @@ eigen_from_X <- function(X, p) {
   list(values = eigen_values[idx], vectors = eigen_vectors[, idx])
 }
 
-# Pure R fallback for eval_omega_eloglik (used when Rcpp is unavailable).
-# Forms R(omega), eigendecomposes, and evaluates Eloglik in pure R.
+# Precompute reduced-basis quantities for fast omega optimization.
+#
+# For K panels with sketch matrices X_k (B_k x p), projects all panel
+# correlations into a joint reduced basis V_s (p x r) where r = rank of
+# [X_1; ...; X_K]. Each Brent evaluation then works on r x r matrices
+# (Cholesky + backsolves) instead of p x p eigendecompositions.
+#
+# Returns a list to be stored in data$omega_cache.
+#' @keywords internal
+precompute_omega_cache <- function(X_list, z, r_tol = 1e-8) {
+  K <- length(X_list)
+  X_stack <- do.call(rbind, X_list)
+  sv <- svd(X_stack, nu = 0)
+  keep <- sv$d > r_tol
+  V_s <- sv$v[, keep, drop = FALSE]
+  r <- ncol(V_s)
+
+  # Project each panel into reduced basis: A_k = V_s' R_k V_s (r x r)
+  A_list <- lapply(X_list, function(Xk) {
+    Zk <- Xk %*% V_s
+    crossprod(Zk)
+  })
+
+  list(
+    V_s = V_s,
+    r = r,
+    A_list = A_list,
+    Vsz = as.vector(crossprod(V_s, z)),
+    z_norm2 = sum(z^2)
+  )
+}
+
+# Precompute per-IBSS-iteration quantities for the omega Brent evaluator.
+# Called once per IBSS iteration (not per Brent eval).
+#' @keywords internal
+precompute_omega_iteration <- function(cache, zbar, diag_postb2, Z) {
+  r <- cache$r
+  K <- length(cache$A_list)
+  Vsz_bar <- as.vector(crossprod(cache$V_s, zbar))
+  ZVs <- Z %*% cache$V_s   # L x r
+  M_postb2 <- crossprod(cache$V_s * diag_postb2, cache$V_s)  # r x r
+
+  # Precompute A_k * key vectors for each panel
+  A_Vsz_bar <- lapply(cache$A_list, function(Ak) Ak %*% Vsz_bar)
+  A_ZVs_t <- lapply(cache$A_list, function(Ak) Ak %*% t(ZVs))
+
+  # Precompute A_k M_postb2 A_j for all k,j pairs (for term5)
+  AMA <- list()
+  for (k in seq_len(K)) {
+    AMA[[k]] <- list()
+    for (j in seq_len(K)) {
+      AMA[[k]][[j]] <- cache$A_list[[k]] %*% M_postb2 %*% cache$A_list[[j]]
+    }
+  }
+
+  list(Vsz_bar = Vsz_bar, ZVs = ZVs,
+       A_Vsz_bar = A_Vsz_bar, A_ZVs_t = A_ZVs_t, AMA = AMA)
+}
+
+# Evaluate Eloglik at a candidate omega using reduced basis + Cholesky.
+#
+# Uses precomputed A_k*vector products from precompute_omega_iteration,
+# so per-eval work is dominated by the r x r Cholesky + backsolves.
+#' @keywords internal
+eval_omega_eloglik_reduced <- function(cache, omega, iter_cache,
+                                        sigma2, lambda, K, p) {
+  r <- cache$r
+
+  # S_r = sigma2 * A(omega) + lambda * I_r
+  S_r <- lambda * diag(r)
+  for (k in seq_len(K))
+    S_r <- S_r + (sigma2 * omega[k]) * cache$A_list[[k]]
+
+  # Cholesky factorization: O(r^3/6)
+  L <- chol(S_r)
+
+  # log|S| = 2*sum(log(diag(L))) + (p - r)*log(lambda)
+  logdet_term <- -0.5 * (2 * sum(log(diag(L))) + (p - r) * log(lambda))
+
+  # S_r^{-1} Vsz via backsolve: O(r^2)
+  Sinv_Vsz <- backsolve(L, backsolve(L, cache$Vsz, transpose = TRUE))
+  z_null_norm2 <- max(cache$z_norm2 - sum(cache$Vsz^2), 0)
+  zSinvz <- sum(cache$Vsz * Sinv_Vsz) + z_null_norm2 / lambda
+
+  # R(omega) S^{-1} Vsz = sum_k omega_k A_k Sinv_Vsz
+  RSinvz_r <- numeric(r)
+  for (k in seq_len(K))
+    RSinvz_r <- RSinvz_r + omega[k] * (cache$A_list[[k]] %*% Sinv_Vsz)
+
+  term2 <- -2 * sum(iter_cache$Vsz_bar * RSinvz_r)
+
+  # term3: zbar' R(omega) S^{-1} R(omega) zbar
+  A_Vsz_bar <- numeric(r)
+  for (k in seq_len(K))
+    A_Vsz_bar <- A_Vsz_bar + omega[k] * iter_cache$A_Vsz_bar[[k]]
+  Sinv_A_Vsz_bar <- backsolve(L, backsolve(L, A_Vsz_bar, transpose = TRUE))
+  term3 <- sum(A_Vsz_bar * Sinv_A_Vsz_bar)
+
+  # term4: -tr(Z' R S^{-1} R Z) via backsolve
+  A_ZVs_t <- matrix(0, r, nrow(iter_cache$ZVs))
+  for (k in seq_len(K))
+    A_ZVs_t <- A_ZVs_t + omega[k] * iter_cache$A_ZVs_t[[k]]
+  Sinv_A_ZVs_t <- backsolve(L, backsolve(L, A_ZVs_t, transpose = TRUE))
+  term4 <- -sum(A_ZVs_t * Sinv_A_ZVs_t)
+
+  # term5: tr(S^{-1} AMA(omega)) via backsolve (avoids chol2inv)
+  AMA_omega <- matrix(0, r, r)
+  for (k in seq_len(K))
+    for (j in seq_len(K))
+      AMA_omega <- AMA_omega + omega[k] * omega[j] * iter_cache$AMA[[k]][[j]]
+  Sinv_AMA <- backsolve(L, backsolve(L, AMA_omega, transpose = TRUE))
+  term5 <- sum(diag(Sinv_AMA))
+
+  ER2 <- zSinvz + term2 + term3 + term4 + term5
+  -p / 2 * log(2 * pi) + logdet_term - 0.5 * ER2
+}
+
+# Recover full eigendecomposition from reduced basis after omega is chosen.
+# Called once per IBSS iteration (after Brent converges), not per eval.
+#' @keywords internal
+eigen_from_reduced <- function(cache, omega, K, p) {
+  A_omega <- omega[1] * cache$A_list[[1]]
+  for (k in seq_len(K)[-1])
+    A_omega <- A_omega + omega[k] * cache$A_list[[k]]
+
+  eig <- eigen(0.5 * (A_omega + t(A_omega)), symmetric = TRUE)
+  d <- pmax(eig$values, 0)
+  V_full <- cache$V_s %*% eig$vectors
+
+  if (cache$r < p) {
+    V_full <- cbind(V_full, matrix(0, p, p - cache$r))
+    d <- c(d, rep(0, p - cache$r))
+  }
+
+  list(values = d, vectors = V_full)
+}
+
+# Naive O(p^3) Eloglik evaluator (used for testing and as reference).
+# Forms R(omega), eigendecomposes the p x p matrix, evaluates Eloglik.
 #' @keywords internal
 eval_omega_eloglik_R <- function(panel_R, omega, z, zbar, diag_postb2, Z,
                                   sigma2, lambda, K, p) {
@@ -318,6 +463,49 @@ eval_omega_eloglik_R <- function(panel_R, omega, z, zbar, diag_postb2, Z,
 
   ER2 <- zSinvz + term2 + term3 + term4 + term5
   -p / 2 * log(2 * pi) + logdet_term - 0.5 * ER2
+}
+
+# Optimize omega on the K-simplex by maximizing eval_fn.
+#   K=2: 5-point grid + Brent refinement (5-8 evals total)
+#   K>2: Frank-Wolfe (conditional gradient) with early stopping
+# Returns list(omega, converged) where converged indicates max|delta| < tol.
+#' @keywords internal
+#' @importFrom stats optimize
+optimize_omega <- function(eval_fn, omega_cur, K,
+                           tol = .omega_tol) {
+  if (K == 2) {
+    # Grid search then Brent refinement
+    grid <- seq(0, 1, tol$grid_spacing)
+    vals <- vapply(grid, function(w1) eval_fn(c(w1, 1 - w1)), numeric(1))
+    best_idx <- which.max(vals)
+    lo <- max(0, grid[best_idx] - tol$refine_window)
+    hi <- min(1, grid[best_idx] + tol$refine_window)
+    opt <- optimize(function(w1) eval_fn(c(w1, 1 - w1)),
+                    interval = c(lo, hi), maximum = TRUE,
+                    tol = tol$brent_tol)
+    omega_new <- c(opt$maximum, 1 - opt$maximum)
+  } else {
+    # Frank-Wolfe on simplex
+    omega <- omega_cur
+    cur_val <- eval_fn(omega)
+    for (fw_iter in seq_len(tol$fw_max_iter)) {
+      vertex_vals <- vapply(seq_len(K), function(k) {
+        e_k <- rep(0, K); e_k[k] <- 1; eval_fn(e_k)
+      }, numeric(1))
+      k_star <- which.max(vertex_vals)
+      s <- rep(0, K); s[k_star] <- 1
+      opt_gamma <- optimize(
+        function(gamma) eval_fn((1 - gamma) * omega + gamma * s),
+        interval = c(0, 1), maximum = TRUE)
+      if (opt_gamma$objective - cur_val < tol$fw_stop) break
+      omega <- (1 - opt_gamma$maximum) * omega + opt_gamma$maximum * s
+      cur_val <- opt_gamma$objective
+    }
+    omega_new <- omega
+  }
+
+  converged <- max(abs(omega_new - omega_cur)) < tol$convergence
+  list(omega = omega_new, converged = converged)
 }
 
 # =============================================================================

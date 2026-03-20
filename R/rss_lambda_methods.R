@@ -1,4 +1,20 @@
 # =============================================================================
+# OMEGA OPTIMIZATION TOLERANCES
+#
+# Named constants for multi-panel mixture weight optimization.
+# Collected here to avoid scattered magic numbers.
+# =============================================================================
+
+.omega_tol <- list(
+  convergence   = 1e-3,   # max|delta omega| to skip future updates
+  grid_spacing  = 0.25,   # K=2 initial grid resolution
+  refine_window = 0.15,   # K=2 half-width of Brent interval
+  brent_tol     = 0.02,   # K=2 Brent tolerance
+  fw_stop       = 1e-6,   # Frank-Wolfe gap stopping criterion
+  fw_max_iter   = 5L      # Frank-Wolfe max iterations
+)
+
+# =============================================================================
 # DATA INITIALIZATION & CONFIGURATION
 #
 # Functions for data object setup, configuration, and preprocessing.
@@ -306,65 +322,46 @@ update_variance_components.rss_lambda <- function(data, params, model, ...) {
     result$sigma2 <- est_sigma2
   }
 
-  # Multi-panel omega update via profile Eloglik (M-step of variational EM)
-  # Maximizing Eloglik over omega on the simplex is guaranteed to not decrease
-  # the ELBO, since KL doesn't depend on omega. The log-likelihood is concave
-  # in omega, so this is a convex optimization problem with a unique global optimum.
-  #
-  # K=2: Brent's method (optimize) on omega_1 in [0,1]
-  # K>2: Frank-Wolfe (conditional gradient) on simplex
-  #
-  # Uses eval_omega_eloglik (Rcpp) which combines eigendecomposition + Eloglik
-  # evaluation in a single C++ call, avoiding costly R/C++ boundary crossing
-  # for the p x p eigenvector matrix. Falls back to pure R if Rcpp unavailable.
-  if (!is.null(data$K) && data$K > 1 && !is.null(data$panel_R)) {
+  # Multi-panel omega update via profile Eloglik (M-step of variational EM).
+  # Uses reduced-basis evaluator when omega_cache is available: each eval is
+  # O(r^3) where r = rank of joint sketch space. Falls back to O(p^3) when
+  # omega_cache is NULL (e.g., when sum(B_k) >= p).
+  #   K=2: 5-point grid + Brent refinement (5-8 evals total)
+  #   K>2: Frank-Wolfe with early stopping
+  if (!is.null(data$K) && data$K > 1) {
     sigma2_cur <- if (!is.null(result$sigma2)) result$sigma2 else model$sigma2
     omega_cur  <- if (!is.null(model$omega)) model$omega else rep(1 / data$K, data$K)
 
-    # Combined eigen(R(omega)) + Eloglik evaluator
-    # Prefers Rcpp (avoids p x p matrix marshaling); falls back to pure R
-    has_rcpp <- exists("eval_omega_eloglik", mode = "function")
-    eval_omega <- function(omega_vec) {
-      if (has_rcpp) {
-        eval_omega_eloglik(data$panel_R, omega_vec, data$z, model$zbar,
-                           model$diag_postb2, model$Z, sigma2_cur, data$lambda,
-                           data$K, data$p)
+    # Skip omega update if already converged
+    if (!isTRUE(model$omega_converged)) {
+
+      # Build evaluator: reduced-basis (fast) or direct (fallback)
+      if (!is.null(data$omega_cache)) {
+        cache <- data$omega_cache
+        iter_cache <- precompute_omega_iteration(cache, model$zbar,
+                                                  model$diag_postb2, model$Z)
+        eval_omega <- function(omega_vec) {
+          eval_omega_eloglik_reduced(cache, omega_vec, iter_cache,
+                                      sigma2_cur, data$lambda, data$K, data$p)
+        }
+      } else if (!is.null(data$panel_R)) {
+        eval_omega <- function(omega_vec) {
+          eval_omega_eloglik_R(data$panel_R, omega_vec, data$z, model$zbar,
+                                model$diag_postb2, model$Z, sigma2_cur,
+                                data$lambda, data$K, data$p)
+        }
       } else {
-        eval_omega_eloglik_R(data$panel_R, omega_vec, data$z, model$zbar,
-                              model$diag_postb2, model$Z, sigma2_cur, data$lambda,
-                              data$K, data$p)
+        eval_omega <- NULL
       }
-    }
 
-    if (data$K == 2) {
-      opt <- optimize(function(w1) eval_omega(c(w1, 1 - w1)),
-                      interval = c(0, 1), maximum = TRUE)
-      result$omega <- c(opt$maximum, 1 - opt$maximum)
+      if (!is.null(eval_omega)) {
+        opt <- optimize_omega(eval_omega, omega_cur, data$K)
+        result$omega <- opt$omega
+        if (opt$converged) result$omega_converged <- TRUE
+      }
     } else {
-      # Frank-Wolfe on simplex: each iteration picks best vertex, line-searches
-      omega <- omega_cur
-      cur_val <- eval_omega(omega)
-
-      for (fw_iter in seq_len(10)) {
-        vertex_vals <- vapply(seq_len(data$K), function(k) {
-          e_k <- rep(0, data$K); e_k[k] <- 1; eval_omega(e_k)
-        }, numeric(1))
-
-        k_star <- which.max(vertex_vals)
-        s <- rep(0, data$K); s[k_star] <- 1
-
-        opt_gamma <- optimize(
-          function(gamma) eval_omega((1 - gamma) * omega + gamma * s),
-          interval = c(0, 1), maximum = TRUE)
-
-        omega_new <- (1 - opt_gamma$maximum) * omega + opt_gamma$maximum * s
-        new_val <- opt_gamma$objective
-
-        if (new_val - cur_val < 1e-6) break
-        omega <- omega_new
-        cur_val <- new_val
-      }
-      result$omega <- omega
+      result$omega <- omega_cur
+      result$omega_converged <- TRUE
     }
   }
 
@@ -374,20 +371,25 @@ update_variance_components.rss_lambda <- function(data, params, model, ...) {
 # Update derived quantities
 #' @keywords internal
 update_derived_quantities.rss_lambda <- function(data, params, model) {
-  # Multi-panel omega update: re-eigendecompose R(omega) from cached panel R matrices
+  # Multi-panel: recover eigendecomposition of R(omega) after omega update
   if (!is.null(data$K) && data$K > 1 && !is.null(model$omega)) {
-    if (!is.null(data$panel_R)) {
-      # Fast path: eigendecompose R(omega) = sum_k omega_k R_k via Rcpp
-      model$eigen_R <- eigen_R_omega(data$panel_R, model$omega, data$K, data$p)
-    } else {
-      # Fallback: form X_meta and SVD
-      X_meta <- form_X_meta(data$X_list, model$omega)
-      model$X_meta  <- X_meta
-      model$eigen_R <- eigen_from_X(X_meta, data$p)
+    if (!is.null(data$omega_cache)) {
+      # Reduced-basis path: recover full eigen from r x r reduced system
+      model$eigen_R <- eigen_from_reduced(
+        data$omega_cache, model$omega, data$K, data$p
+      )
+    } else if (!is.null(data$panel_R)) {
+      # Rank bound fallback: direct O(p^3) eigendecomposition
+      R_omega <- Reduce("+", Map("*", model$omega, data$panel_R))
+      R_omega <- 0.5 * (R_omega + t(R_omega))
+      eig <- eigen(R_omega, symmetric = TRUE)
+      eig$values <- pmax(eig$values, 0)
+      model$eigen_R <- eig
     }
     model$Vtz          <- crossprod(model$eigen_R$vectors, data$z)
     model$z_null_norm2 <- max(sum(data$z^2) - sum(model$Vtz^2), 0)
     model$stochastic_ld_B <- 1 / sum(model$omega^2 / data$B_list)
+    model$X_meta <- form_X_meta(data$X_list, model$omega)
   }
 
   # Recalculate Dinv with updated sigma2 (and potentially updated eigen_R)

@@ -1181,15 +1181,17 @@ test_that("eigen_from_X recovers eigendecomposition of X'X", {
   }
 })
 
-test_that("eval_omega_eloglik_R matches Rcpp version", {
+test_that("eval_omega_eloglik_reduced matches pure R reference", {
   set.seed(44)
-  p <- 30
+  p <- 50
   K <- 2
 
-  # Create two random PD matrices as panel_R
-  X1 <- matrix(rnorm(100 * p), 100, p)
-  X2 <- matrix(rnorm(80 * p), 80, p)
-  panel_R <- list(crossprod(X1) / 100, crossprod(X2) / 80)
+  # Create two panels with B_total < p so reduced-basis applies
+  X1 <- matrix(rnorm(15 * p), 15, p)
+  X2 <- matrix(rnorm(10 * p), 10, p)
+  X_list <- list(X1, X2)
+  # Use raw cross-products (matching constructor: lapply(X_list, crossprod))
+  panel_R <- list(crossprod(X1), crossprod(X2))
 
   z <- rnorm(p)
   zbar <- rnorm(p) * 0.1
@@ -1200,15 +1202,17 @@ test_that("eval_omega_eloglik_R matches Rcpp version", {
   lambda <- 0.01
   omega <- c(0.7, 0.3)
 
-  # Pure R version
+  # Pure R reference (O(p^3) eigendecomposition using panel_R)
   val_R <- susieR:::eval_omega_eloglik_R(panel_R, omega, z, zbar, diag_postb2,
                                           Z, sigma2, lambda, K, p)
 
-  # Rcpp version
-  val_cpp <- eval_omega_eloglik(panel_R, omega, z, zbar, diag_postb2,
-                                 Z, sigma2, lambda, K, p)
+  # Reduced-basis (O(r^3) Cholesky using X_list)
+  cache <- susieR:::precompute_omega_cache(X_list, z)
+  iter_cache <- susieR:::precompute_omega_iteration(cache, zbar, diag_postb2, Z)
+  val_reduced <- susieR:::eval_omega_eloglik_reduced(cache, omega, iter_cache,
+                                                      sigma2, lambda, K, p)
 
-  expect_equal(val_R, val_cpp, tolerance = 1e-8)
+  expect_equal(val_R, val_reduced, tolerance = 1e-6)
 })
 
 test_that("eval_omega_eloglik is concave in omega", {
