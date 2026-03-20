@@ -1264,7 +1264,8 @@ test_that("rss_lambda_constructor accepts list X", {
   expect_equal(data$B_list, c(B1, B2))
   expect_true(!is.null(data$eigen_R))
   expect_true(!is.null(data$Vtz))
-  expect_true(!is.null(data$stochastic_ld_B))
+  # Inflation is opt-in: without stochastic_ld_sample, B is not set
+  expect_null(data$stochastic_ld_B)
 })
 
 test_that("K=1 list X gives same results as single matrix X", {
