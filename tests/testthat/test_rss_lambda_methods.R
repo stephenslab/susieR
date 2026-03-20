@@ -1358,3 +1358,96 @@ test_that("accessor helpers fall through for single panel", {
   Vtz <- get_Vtz(dat$data, model)
   expect_equal(Vtz, dat$data$Vtz)
 })
+
+# =============================================================================
+# RANK BOUND FALLBACK
+# =============================================================================
+
+test_that("K=2 works when sum(B_k) > p (rank bound fallback)", {
+  set.seed(51)
+  p <- 20
+  B1 <- 15; B2 <- 15  # sum = 30 > p = 20
+  X1 <- matrix(rnorm(B1 * p), B1, p)
+  X2 <- matrix(rnorm(B2 * p), B2, p)
+  beta <- rep(0, p)
+  beta[1:2] <- c(0.5, -0.3)
+  R_pool <- cov2cor((crossprod(X1) + crossprod(X2)) / (B1 + B2))
+  z <- as.vector(R_pool %*% beta) + rnorm(p, sd = 0.1)
+
+  # Should not error: falls back to direct panel_R path
+  fit <- susie_rss(z = z, X = list(X1, X2), lambda = 0.1,
+                   max_iter = 50, verbose = FALSE)
+
+  expect_equal(length(fit$pip), p)
+  expect_equal(length(fit$omega_weights), 2)
+  expect_equal(sum(fit$omega_weights), 1, tolerance = 1e-10)
+  expect_true(all(fit$omega_weights >= -1e-10))
+})
+
+# =============================================================================
+# AUTO-PIP CONVERGENCE
+# =============================================================================
+
+test_that("multi-panel auto-switches to PIP convergence with message", {
+  set.seed(52)
+  p <- 20; B <- 100
+  X1 <- matrix(rnorm(B * p), B, p)
+  X2 <- matrix(rnorm(B * p), B, p)
+  z <- rnorm(p)
+
+  expect_message(
+    susie_rss(z = z, X = list(X1, X2), lambda = 0.1,
+              convergence_method = "elbo", max_iter = 10, verbose = FALSE),
+    "Switching to PIP-based convergence for multi-panel"
+  )
+})
+
+test_that("stochastic_ld_sample auto-switches to PIP convergence with message", {
+  set.seed(53)
+  p <- 20; B <- 1000
+  X <- matrix(rnorm(B * p), B, p)
+  z <- rnorm(p)
+
+  expect_message(
+    susie_rss(z = z, X = X, lambda = 0.1,
+              stochastic_ld_sample = B,
+              convergence_method = "elbo", max_iter = 10, verbose = FALSE),
+    "Switching to PIP-based convergence because sketch LD inflation"
+  )
+})
+
+# =============================================================================
+# TOLERANCE CONSTANTS
+# =============================================================================
+
+test_that(".omega_tol has expected fields", {
+  tol <- susieR:::.omega_tol
+  expect_true(is.list(tol))
+  expect_true("convergence" %in% names(tol))
+  expect_true("grid_spacing" %in% names(tol))
+  expect_true("fw_stop" %in% names(tol))
+  expect_true("fw_max_iter" %in% names(tol))
+  # Sanity: values are positive
+  expect_true(tol$convergence > 0)
+  expect_true(tol$grid_spacing > 0 && tol$grid_spacing < 1)
+  expect_true(tol$fw_stop > 0)
+  expect_true(tol$fw_max_iter >= 1L)
+})
+
+# =============================================================================
+# INFLATION OPT-IN
+# =============================================================================
+
+test_that("multi-panel without stochastic_ld_sample has no inflation", {
+  set.seed(54)
+  p <- 20; B <- 100
+  X1 <- matrix(rnorm(B * p), B, p)
+  X2 <- matrix(rnorm(B * p), B, p)
+  z <- rnorm(p)
+
+  fit <- susie_rss(z = z, X = list(X1, X2), lambda = 0.1,
+                   max_iter = 10, verbose = FALSE)
+
+  # No inflation: stochastic_ld_B should not be set in the fit
+  expect_null(fit$stochastic_ld_B)
+})
