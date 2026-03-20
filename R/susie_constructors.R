@@ -1062,7 +1062,7 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
       R_k <- crossprod(X_list[[k]])  # already standardized
       S_k <- R_k + lambda * diag(length(z))
       eig_k <- eigen(S_k, symmetric = TRUE)
-      eig_k$values <- pmax(eig_k$values, 1e-300)
+      eig_k$values <- pmax(eig_k$values, .Machine$double.xmin)
       Vtz_k <- crossprod(eig_k$vectors, z)
       -0.5 * (sum(log(eig_k$values)) + sum(Vtz_k^2 / eig_k$values))
     }, numeric(1))
@@ -1193,10 +1193,11 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
     B_stoch <- stochastic_ld_sample
     p_stoch <- length(z)
 
-    # Debiased Frobenius norm for effective rank diagnostic
+    # Debiased Frobenius norm for effective rank diagnostic.
+    # After standardize_X, X'X = R_hat so ||XX'||_F^2 = ||R_hat||_F^2 directly.
     if (!is.null(X)) {
       A <- tcrossprod(X)
-      R_frob_sq <- sum(A * A) / nrow(X)^2
+      R_frob_sq <- sum(A * A)
     } else if (!is.null(R)) {
       R_frob_sq <- sum(R * R)
     } else {
@@ -1205,9 +1206,9 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
     R_frob_sq_db <- (B_stoch * R_frob_sq - p_stoch^2) / (B_stoch + 1)
     eff_rank <- p_stoch^2 / max(R_frob_sq_db, 1)
 
-    # Per-variant diagonal quality
+    # Per-variant diagonal quality: diag(X'X) = diag(R_hat) after standardization
     if (!is.null(X)) {
-      Rhat_diag <- colSums(X^2) / nrow(X)
+      Rhat_diag <- colSums(X^2)
     } else if (!is.null(R)) {
       Rhat_diag <- diag(R)
     } else {

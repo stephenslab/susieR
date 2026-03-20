@@ -54,16 +54,18 @@ initialize_susie_model.rss_lambda <- function(data, params, var_y, ...) {
   eigen_R <- get_eigen_R(data, model)
   D    <- eigen_R$values
   V    <- eigen_R$vectors
-  tV   <- t(V)
+  Vt   <- t(V)
   Dinv <- compute_Dinv(model, data)
 
-  model$SinvRj   <- V %*% (Dinv * D * tV)
-  model$RjSinvRj <- colSums(tV * (Dinv * D^2 * tV))
+  model$SinvRj   <- V %*% (Dinv * D * Vt)
+  model$RjSinvRj <- colSums(Vt * (Dinv * D^2 * Vt))
 
   return(model)
 }
 
-# Initialize fitted values
+# Initialize fitted values.
+# Note: uses data$X (initial X_meta at construction time) without model,
+# which is correct because this runs once before any omega update.
 #' @keywords internal
 initialize_fitted.rss_lambda <- function(data, mat_init) {
   return(list(Rz = as.vector(compute_Rv(data, colSums(mat_init$alpha * mat_init$mu)))))
@@ -268,6 +270,12 @@ neg_loglik.rss_lambda <- function(data, params, model, V_param, ser_stats, ...) 
 # These handle the dynamic aspects of model fitting including fitted value
 # updates and variance component estimation.
 #
+# Multi-panel caching hierarchy:
+#   data$omega_cache: immutable joint SVD + projected A_k (set once at construction)
+#   iter_cache (local): per-IBSS-iteration bilinear forms for Brent evaluator
+#   model$eigen_R, $Vtz, $omega, $X_meta: omega-dependent quantities (updated per iter)
+# When omega_cache is NULL (sum(B_k) >= p), falls back to direct O(p^3) via panel_R.
+#
 # Functions: update_fitted_values, update_variance_components, update_derived_quantities
 # =============================================================================
 
@@ -328,6 +336,9 @@ update_variance_components.rss_lambda <- function(data, params, model, ...) {
   #   K>2: Frank-Wolfe with early stopping
   if (!is.null(data$K) && data$K > 1) {
     sigma2_cur <- if (!is.null(result$sigma2)) result$sigma2 else model$sigma2
+    # First M-step starts from uniform intentionally: the softmax init in the
+    # constructor sets data-level eigen_R for the first E-step, but the optimizer
+    # explores the full simplex from an unbiased starting point.
     omega_cur  <- if (!is.null(model$omega)) model$omega else rep(1 / data$K, data$K)
 
     # Skip omega update if already converged
@@ -358,8 +369,8 @@ update_variance_components.rss_lambda <- function(data, params, model, ...) {
         if (opt$converged) result$omega_converged <- TRUE
       }
     } else {
+      # Already converged: carry forward omega, no need to re-set flag
       result$omega <- omega_cur
-      result$omega_converged <- TRUE
     }
   }
 
@@ -387,7 +398,9 @@ update_derived_quantities.rss_lambda <- function(data, params, model) {
     model$Vtz          <- crossprod(model$eigen_R$vectors, data$z)
     model$z_null_norm2 <- max(sum(data$z^2) - sum(model$Vtz^2), 0)
     model$X_meta <- form_X_meta(data$X_list, model$omega)
-    # Update effective B only when variance inflation is active (opt-in)
+    # Update effective B only when variance inflation is active (opt-in).
+    # B_eff = 1/sum(omega_k^2/B_k): effective sample size for a weighted
+    # average of independent LD estimators, each from B_k samples.
     if (!is.null(data$stochastic_ld_B))
       model$stochastic_ld_B <- 1 / sum(model$omega^2 / data$B_list)
   }
@@ -397,11 +410,11 @@ update_derived_quantities.rss_lambda <- function(data, params, model) {
   Dinv <- compute_Dinv(model, data)
   V    <- eigen_R$vectors
   D    <- eigen_R$values
-  tV   <- t(V)
+  Vt   <- t(V)
 
   # Update SinvRj and RjSinvRj
-  model$SinvRj   <- V %*% (Dinv * D * tV)
-  model$RjSinvRj <- colSums(tV * (Dinv * (D^2) * tV))
+  model$SinvRj   <- V %*% (Dinv * D * Vt)
+  model$RjSinvRj <- colSums(Vt * (Dinv * (D^2) * Vt))
 
   return(model)
 }

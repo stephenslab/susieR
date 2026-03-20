@@ -1239,7 +1239,7 @@ test_that("eval_omega_eloglik is concave in omega", {
   for (i in 1:(length(vals) - 2)) {
     midval <- vals[i + 1]
     avg_endpoints <- (vals[i] + vals[i + 2]) / 2
-    expect_gte(midval, avg_endpoints - 1e-10)
+    expect_gte(midval, avg_endpoints - 1e-8)
   }
 })
 

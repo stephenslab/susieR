@@ -226,7 +226,11 @@ precompute_rss_lambda_terms <- function(data, model) {
   return(model)
 }
 
-# Dynamic stochastic LD variance inflation for rss_lambda path (z-score scale)
+# Dynamic stochastic LD variance inflation for rss_lambda path (z-score scale).
+# Returns a per-variant inflation factor (p-vector):
+#   tau_j^2 = 1 + (eta_j^2 + v_g) / (B_eff * sigma^2)
+# where eta_j^2 = Rz_without_l[j]^2 (per-variant fitted value squared) and
+# v_g = max(b' R b, 0) is a global signal strength scalar (shared across variants).
 #' @keywords internal
 compute_shat2_inflation_rss <- function(data, model, Rz_without_l, b_minus_l) {
   # Use model-level B_eff (updated by omega) if available, else data-level
@@ -265,7 +269,8 @@ form_X_meta <- function(X_list, omega) {
   offset <- 0L
   for (k in seq_len(K)) {
     rows <- offset + seq_len(nrs[k])
-    X_meta[rows, ] <- sqrt(omega[k]) * X_list[[k]]
+    if (omega[k] > 0)
+      X_meta[rows, ] <- sqrt(omega[k]) * X_list[[k]]
     offset <- offset + nrs[k]
   }
   X_meta
@@ -464,15 +469,23 @@ optimize_omega <- function(eval_fn, omega_cur, K,
     cur_val <- max(vals)
   }
 
-  # Frank-Wolfe: conditional gradient on simplex with Brent line search
+  # Frank-Wolfe: conditional gradient on simplex with Brent line search.
+  # For K=2 the grid already evaluated the vertices; cache them.
+  vertex_cache <- if (K == 2) c(vals[1], vals[length(vals)]) else NULL
   for (fw_iter in seq_len(tol$fw_max_iter)) {
-    vertex_vals <- vapply(seq_len(K), function(k) {
-      e_k <- rep(0, K); e_k[k] <- 1; eval_fn(e_k)
-    }, numeric(1))
+    vertex_vals <- if (!is.null(vertex_cache)) {
+      vertex_cache
+    } else {
+      vapply(seq_len(K), function(k) {
+        e_k <- rep(0, K); e_k[k] <- 1; eval_fn(e_k)
+      }, numeric(1))
+    }
+    vertex_cache <- NULL  # only reuse on first iteration
     k_star <- which.max(vertex_vals)
     s <- rep(0, K); s[k_star] <- 1
     opt <- optimize(function(gamma) eval_fn((1 - gamma) * omega + gamma * s),
                     interval = c(0, 1), maximum = TRUE)
+    # Absolute improvement check: conservative for large negative Eloglik values
     if (opt$objective - cur_val < tol$fw_stop) break
     omega   <- (1 - opt$maximum) * omega + opt$maximum * s
     cur_val <- opt$objective
