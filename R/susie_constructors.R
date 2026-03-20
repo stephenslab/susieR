@@ -1051,10 +1051,23 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
       panel_R <- lapply(X_list, crossprod)
     }
 
-    # Initialize omega uniformly. The first IBSS M-step evaluates the
-    # profile Eloglik at multiple omega values and picks the best one,
-    # so the initialization only affects the first IBSS iteration.
-    omega_init <- rep(1 / K_panels, K_panels)
+    # Initialize omega via softmax of null marginal log-likelihoods.
+    # l_null_k = -0.5 * [log|S_k| + z' S_k^{-1} z], S_k = R_k + lambda*I
+    # This is the Bayesian posterior over panels under a uniform prior and
+    # the null model (beta=0). It concentrates weight on the panel whose
+    # LD structure best explains the observed z-scores, avoiding the
+    # contamination from uniform mixing that can create false signals in
+    # the first E-step which then persist through subsequent EM iterations.
+    null_lls <- vapply(seq_len(K_panels), function(k) {
+      R_k <- crossprod(X_list[[k]])  # already standardized
+      S_k <- R_k + lambda * diag(length(z))
+      eig_k <- eigen(S_k, symmetric = TRUE)
+      eig_k$values <- pmax(eig_k$values, 1e-300)
+      Vtz_k <- crossprod(eig_k$vectors, z)
+      -0.5 * (sum(log(eig_k$values)) + sum(Vtz_k^2 / eig_k$values))
+    }, numeric(1))
+    log_weights <- null_lls - max(null_lls)
+    omega_init <- exp(log_weights) / sum(exp(log_weights))
 
     X <- form_X_meta(X_list, omega_init)
   }
