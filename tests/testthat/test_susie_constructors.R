@@ -1773,7 +1773,7 @@ test_that("summary_stats_constructor warns about n when lambda != 0", {
 
   expect_message(
     result <- summary_stats_constructor(z = z, R = R, n = 100, lambda = 0.5),
-    "Parameter 'n' is ignored when lambda != 0"
+    "Parameter 'n' is not used in the RSS-lambda model"
   )
 })
 

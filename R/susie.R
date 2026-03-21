@@ -644,8 +644,35 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
         if (!is.matrix(X[[k]]) || !is.numeric(X[[k]]))
           stop("Each element of X list must be a numeric matrix.")
       }
-      if (lambda == 0)
-        stop("Multi-panel X requires lambda != 0 (RSS-lambda path).")
+      # Multi-panel requires lambda > 0. Auto-set from n or panel sizes if needed.
+      lambda_was_auto <- FALSE
+      if (lambda == 0) {
+        lambda_was_auto <- TRUE
+        B_panels <- vapply(X, nrow, integer(1))
+        if (!is.null(n) && is.numeric(n) && n > 1) {
+          lambda <- 1 / (n - 1)
+          warning_message(
+            "Multi-panel requires lambda > 0 for LD regularization. ",
+            "Setting lambda = 1/(n-1) = ", signif(lambda, 4),
+            " based on association study sample size n = ", n, ". ",
+            "Please override with an explicit lambda value if desired.")
+        } else {
+          B_min <- min(B_panels)
+          lambda <- 1 / B_min
+          warning_message(
+            "Multi-panel requires lambda > 0 for LD regularization. ",
+            "Setting lambda = 1/min(B_k) = ", signif(lambda, 4),
+            " based on smallest panel size B = ", B_min, ". ",
+            "For better calibration, provide n (association study sample size). ",
+            "Please override with an explicit lambda value if desired.")
+        }
+      }
+      # Warn about n not being used in the RSS-lambda model, but only if the
+      # user explicitly set lambda (not when it was auto-set from n).
+      if (!is.null(n) && !lambda_was_auto) {
+        warning_message("Parameter 'n' is not used in the RSS-lambda model. ",
+                "Model results are independent of n once lambda is set.")
+      }
       # Multi-panel: auto-switch to PIP convergence. Omega updates change
       # R(omega) each iteration, breaking ELBO monotonicity guarantees.
       if (convergence_method[1] == "elbo") {

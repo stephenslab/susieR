@@ -666,13 +666,16 @@ add_null_effect <- function(model_init, V) {
 # Functions: compute_Rv, compute_BR
 # =============================================================================
 
-# Compute predictor-matrix times vector: XtX %*% v, R %*% v, or X'(Xv)
-# For rss_lambda multi-panel, pass model to use model$X_meta (current R(omega))
+# Compute R*v product: X'(Xv), XtX*v, or R*v.
+# For multi-panel rss_lambda, pass Rv_matrix = model$X_meta to use the
+# current R(omega) sketch instead of data$X.
 #' @keywords internal
-compute_Rv <- function(data, v, model = NULL) {
-  X <- if (!is.null(model) && !is.null(model$X_meta)) model$X_meta else data$X
-  if (!is.null(X)) {
-    return(as.vector(crossprod(X, X %*% v)))
+compute_Rv <- function(data, v, Rv_matrix = NULL) {
+  if (!is.null(Rv_matrix)) {
+    return(as.vector(crossprod(Rv_matrix, Rv_matrix %*% v)))
+  }
+  if (!is.null(data$X)) {
+    return(as.vector(crossprod(data$X, data$X %*% v)))
   } else if (!is.null(data$XtX)) {
     return(as.vector(data$XtX %*% v))
   } else if (!is.null(data$R)) {
@@ -691,6 +694,52 @@ compute_BR <- function(data, B_mat) {
     return(B_mat %*% data$XtX)
   }
   stop("No predictor matrix available for compute_BR.")
+}
+
+# Compute stochastic LD sketch diagnostics (debiased Frobenius norm,
+# effective rank, r/B ratio, per-variant diagonal deviation from 1).
+# Used by both summary_stats_constructor and rss_lambda_constructor.
+#
+# @param X Factor matrix (B x p), or NULL.
+# @param R Precomputed LD matrix (p x p), or NULL.
+# @param B Sketch size (number of reference panel samples).
+# @param p Number of variants.
+# @param x_is_standardized If TRUE, X has been standardized so X'X = R_hat
+#   directly (no normalization). If FALSE, R_hat = X'X/B so the Frobenius
+#   norm needs a /B^2 correction.
+# @return List with B, p, R_frob_sq_debiased, effective_rank, r_over_B,
+#   Rhat_diag_deviation.
+#' @keywords internal
+compute_stochastic_ld_diagnostics <- function(X = NULL, R = NULL, B, p,
+                                               x_is_standardized = FALSE) {
+  if (!is.null(X)) {
+    A <- tcrossprod(X)           # B x B Gram matrix
+    R_frob_sq <- sum(A * A)      # ||XX'||_F^2 = ||X'X||_F^2
+    if (!x_is_standardized)
+      R_frob_sq <- R_frob_sq / nrow(X)^2
+    Rhat_diag <- colSums(X^2)
+    if (!x_is_standardized)
+      Rhat_diag <- Rhat_diag / nrow(X)
+  } else if (!is.null(R)) {
+    R_frob_sq <- sum(R * R)
+    Rhat_diag <- diag(R)
+  } else {
+    R_frob_sq <- p               # identity fallback
+    Rhat_diag <- rep(1, p)
+  }
+
+  # Debiased Frobenius norm (Ledoit-Wolf unbiased estimator)
+  R_frob_sq_db <- (B * R_frob_sq - p^2) / (B + 1)
+  eff_rank <- p^2 / max(R_frob_sq_db, 1)
+
+  list(
+    B = B,
+    p = p,
+    R_frob_sq_debiased = R_frob_sq_db,
+    effective_rank = eff_rank,
+    r_over_B = eff_rank / B,
+    Rhat_diag_deviation = abs(Rhat_diag - 1)
+  )
 }
 
 # =============================================================================

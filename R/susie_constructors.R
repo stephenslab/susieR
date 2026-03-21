@@ -618,8 +618,11 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
       stop("Parameter 'z_ld_weight' is not supported when lambda != 0.")
     }
 
-    if (!is.null(n)) {
-      warning_message("Parameter 'n' is ignored when lambda != 0.")
+    # For multi-panel, the n-warning is handled in susie_rss() where we know
+    # whether lambda was auto-set from n. For single-panel lambda != 0, warn here.
+    if (!is.null(n) && !(is.list(X) && !is.matrix(X))) {
+      warning_message("Parameter 'n' is not used in the RSS-lambda model. ",
+              "Model results are independent of n once lambda is set.")
     }
 
     # Delegate to rss_lambda_constructor with ALL parameters
@@ -760,37 +763,13 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
     p <- length(z)
   }
 
-  # Stochastic LD sketch diagnostics (static, computed once at initialization)
+  # Stochastic LD sketch diagnostics (static, computed once at initialization).
+  # X is NOT standardized here (raw centered matrix), so x_is_standardized = FALSE.
   stochastic_ld_diagnostics <- NULL
   if (!is.null(stochastic_ld_sample)) {
-    B_stoch <- stochastic_ld_sample
-    p_stoch <- length(z)
-
-    # Debiased Frobenius norm for effective rank diagnostic
-    if (!is.null(X)) {
-      A <- tcrossprod(X)                              # B x B Gram matrix
-      R_frob_sq <- sum(A * A) / nrow(X)^2             # ||R̂||²_F
-    } else {
-      R_frob_sq <- sum(R * R)                          # ||R̂||²_F
-    }
-    R_frob_sq_db <- (B_stoch * R_frob_sq - p_stoch^2) / (B_stoch + 1)
-    eff_rank <- p_stoch^2 / max(R_frob_sq_db, 1)
-
-    # Per-variant diagonal quality: |R̂_{jj} - 1|
-    if (!is.null(X)) {
-      Rhat_diag <- colSums(X^2) / nrow(X)
-    } else {
-      Rhat_diag <- diag(R)
-    }
-
-    stochastic_ld_diagnostics <- list(
-      B = B_stoch,
-      p = p_stoch,
-      R_frob_sq_debiased = R_frob_sq_db,
-      effective_rank = eff_rank,
-      r_over_B = eff_rank / B_stoch,
-      Rhat_diag_deviation = abs(Rhat_diag - 1)
-    )
+    stochastic_ld_diagnostics <- compute_stochastic_ld_diagnostics(
+      X = X, R = R, B = stochastic_ld_sample, p = length(z),
+      x_is_standardized = FALSE)
   }
 
   # Convert to sufficient statistics format
@@ -1186,43 +1165,14 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
   # Inflation is opt-in: only applied when stochastic_ld_sample is explicitly
   # provided. For multi-panel with no stochastic_ld_sample, we assume panels
   # provide sufficiently accurate LD and no variance inflation is needed.
+  # X IS standardized here (standardize_X already called), so x_is_standardized = TRUE.
   stochastic_ld_diagnostics <- NULL
   stochastic_ld_B <- NULL
   if (!is.null(stochastic_ld_sample)) {
     stochastic_ld_B <- stochastic_ld_sample
-    B_stoch <- stochastic_ld_sample
-    p_stoch <- length(z)
-
-    # Debiased Frobenius norm for effective rank diagnostic.
-    # After standardize_X, X'X = R_hat so ||XX'||_F^2 = ||R_hat||_F^2 directly.
-    if (!is.null(X)) {
-      A <- tcrossprod(X)
-      R_frob_sq <- sum(A * A)
-    } else if (!is.null(R)) {
-      R_frob_sq <- sum(R * R)
-    } else {
-      R_frob_sq <- p_stoch  # identity fallback
-    }
-    R_frob_sq_db <- (B_stoch * R_frob_sq - p_stoch^2) / (B_stoch + 1)
-    eff_rank <- p_stoch^2 / max(R_frob_sq_db, 1)
-
-    # Per-variant diagonal quality: diag(X'X) = diag(R_hat) after standardization
-    if (!is.null(X)) {
-      Rhat_diag <- colSums(X^2)
-    } else if (!is.null(R)) {
-      Rhat_diag <- diag(R)
-    } else {
-      Rhat_diag <- rep(1, p_stoch)
-    }
-
-    stochastic_ld_diagnostics <- list(
-      B = B_stoch,
-      p = p_stoch,
-      R_frob_sq_debiased = R_frob_sq_db,
-      effective_rank = eff_rank,
-      r_over_B = eff_rank / B_stoch,
-      Rhat_diag_deviation = abs(Rhat_diag - 1)
-    )
+    stochastic_ld_diagnostics <- compute_stochastic_ld_diagnostics(
+      X = X, R = R, B = stochastic_ld_sample, p = length(z),
+      x_is_standardized = TRUE)
   }
 
   # Create data object with RSS-lambda specific fields

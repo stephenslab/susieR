@@ -707,7 +707,7 @@ test_that("susie_rss with lambda > 0 ignores n parameter", {
   expect_message(
     susie_rss(z = setup$z, R = setup$R, n = 100, L = 5,
               lambda = 1e-5, verbose = FALSE),
-    "Parameter 'n' is ignored when lambda != 0"
+    "Parameter 'n' is not used in the RSS-lambda model"
   )
 })
 

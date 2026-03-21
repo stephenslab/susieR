@@ -98,7 +98,7 @@ track_ibss_fit.rss_lambda <- function(data, params, model, tracking, iter, elbo,
 #' @keywords internal
 compute_residuals.rss_lambda <- function(data, params, model, l, ...) {
   # Remove lth effect from fitted values
-  Rz_without_l <- model$Rz - compute_Rv(data, model$alpha[l, ] * model$mu[l, ], model)
+  Rz_without_l <- model$Rz - compute_Rv(data, model$alpha[l, ] * model$mu[l, ], model$X_meta)
 
   # Compute residuals
   r <- data$z - Rz_without_l
@@ -151,7 +151,7 @@ SER_posterior_e_loglik.rss_lambda <- function(data, params, model, l) {
   eigen_R <- get_eigen_R(data, model)
   V      <- eigen_R$vectors
   Dinv   <- compute_Dinv(model, data)
-  rR     <- compute_Rv(data, model$residuals, model)
+  rR     <- compute_Rv(data, model$residuals, model$X_meta)
   SinvEb <- V %*% (Dinv * crossprod(V, Eb))
 
   return(-0.5 * (-2 * sum(rR * SinvEb) + sum(model$RjSinvRj * Eb2)))
@@ -282,7 +282,7 @@ neg_loglik.rss_lambda <- function(data, params, model, V_param, ser_stats, ...) 
 # Update fitted values
 #' @keywords internal
 update_fitted_values.rss_lambda <- function(data, params, model, l, ...) {
-  model$Rz <- model$fitted_without_l + as.vector(compute_Rv(data, model$alpha[l, ] * model$mu[l, ], model))
+  model$Rz <- model$fitted_without_l + as.vector(compute_Rv(data, model$alpha[l, ] * model$mu[l, ], model$X_meta))
   model    <- precompute_rss_lambda_terms(data, model)
 
   return(model)
