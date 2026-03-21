@@ -763,13 +763,20 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
     p <- length(z)
   }
 
+  # Standardize X so X'X = R (correlation matrix). The model assumes
+  # column-standardized X; without this, X'X/B gives sample covariance
+  # which != correlation when columns have different variances.
+  if (!is.null(X)) {
+    X <- standardize_X(X)
+  }
+
   # Stochastic LD sketch diagnostics (static, computed once at initialization).
-  # X is NOT standardized here (raw centered matrix), so x_is_standardized = FALSE.
+  # X is standardized (X'X = R) at this point.
   stochastic_ld_diagnostics <- NULL
   if (!is.null(stochastic_ld_sample)) {
     stochastic_ld_diagnostics <- compute_stochastic_ld_diagnostics(
       X = X, R = R, B = stochastic_ld_sample, p = length(z),
-      x_is_standardized = FALSE)
+      x_is_standardized = TRUE)
   }
 
   # Convert to sufficient statistics format
@@ -781,10 +788,8 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
             "n is large (Inf) and the effect sizes are small (close to zero).")
     if (!is.null(R)) {
       XtX <- R
-    } else {
-      # X path: scale so X'X = R (i.e., X'X/B_x = R, we want X'X = R)
-      X <- X / sqrt(nrow(X))
     }
+    # X path: X'X = R already after standardize_X, no further scaling needed.
     Xty <- z
     yty <- 1
     n <- 2
@@ -803,8 +808,8 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
       if (!is.null(R)) {
         XtX <- (n - 1) * R
       } else {
-        # X path: scale so X'X = (n-1)*R
-        X <- X * sqrt((n - 1) / nrow(X))
+        # X path: X'X = R after standardize_X, scale to X'X = (n-1)*R
+        X <- X * sqrt(n - 1)
       }
       Xty <- sqrt(n - 1) * z
       yty <- (n - 1) * (if (!is.null(var_y)) var_y else 1)
