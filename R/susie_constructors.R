@@ -951,7 +951,8 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
       ))
     }
     if (!is_symmetric_matrix(R)) {
-      stop("R is not a symmetric matrix.")
+      warning_message("R not symmetric; using (R + t(R))/2.")
+      R <- (R + t(R)) / 2
     }
     if (!(is.double(R) & is.matrix(R)) & !inherits(R, "sparseMatrix")) {
       stop("Input R must be a double-precision matrix or a sparse matrix.")
