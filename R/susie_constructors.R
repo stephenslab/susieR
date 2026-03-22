@@ -950,7 +950,7 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
         length(z), ")."
       ))
     }
-    if (!isSymmetric(R)) {
+    if (!is_symmetric_matrix(R)) {
       stop("R is not a symmetric matrix.")
     }
     if (!(is.double(R) & is.matrix(R)) & !inherits(R, "sparseMatrix")) {

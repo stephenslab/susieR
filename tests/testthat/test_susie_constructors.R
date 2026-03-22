@@ -1137,6 +1137,41 @@ test_that("rss_lambda_constructor rejects non-symmetric R", {
   )
 })
 
+test_that("rss_lambda_constructor accepts R with mismatched rownames and colnames", {
+  p <- 10
+  z <- rnorm(p)
+  R <- diag(p)
+  rownames(R) <- paste0("row_", 1:p)
+  colnames(R) <- paste0("col_", 1:p)
+
+  # Should succeed despite mismatched dimnames (values are symmetric)
+  result <- rss_lambda_constructor(z, R, lambda = 0.5)
+  expect_equal(result$data$p, p)
+  expect_s3_class(result$data, "rss_lambda")
+})
+
+test_that("rss_lambda_constructor accepts R with matching rownames and colnames", {
+  p <- 10
+  z <- rnorm(p)
+  R <- diag(p)
+  rownames(R) <- paste0("SNP", 1:p)
+  colnames(R) <- paste0("SNP", 1:p)
+
+  result <- rss_lambda_constructor(z, R, lambda = 0.5)
+  expect_equal(result$data$p, p)
+  expect_s3_class(result$data, "rss_lambda")
+})
+
+test_that("rss_lambda_constructor accepts R with no dimnames", {
+  p <- 10
+  z <- rnorm(p)
+  R <- diag(p)
+
+  result <- rss_lambda_constructor(z, R, lambda = 0.5)
+  expect_equal(result$data$p, p)
+  expect_s3_class(result$data, "rss_lambda")
+})
+
 test_that("rss_lambda_constructor rejects integer matrix R", {
   R <- matrix(1:25, 5, 5)
   R <- R + t(R)  # Make it symmetric
