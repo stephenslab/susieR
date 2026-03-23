@@ -116,7 +116,7 @@ is_symmetric_matrix <- function(x) {
       requireNamespace("Rfast", quietly = TRUE)) {
     return(Rfast::is.symmetric(x))
   } else {
-    return(Matrix::isSymmetric(x))
+    return(Matrix::isSymmetric(x, check.attributes = FALSE))
   }
 }
 
