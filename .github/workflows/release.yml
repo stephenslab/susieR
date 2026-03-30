@@ -65,7 +65,7 @@ jobs:
 
       - name: Commit changes to version
         id: commit-changes
-        uses: EndBug/add-and-commit@v9
+        uses: EndBug/add-and-commit@v10
         with:
           push: true
           message: Update version
