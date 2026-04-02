@@ -700,10 +700,18 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
                       prior_weights = prior_weights,
                       null_weight = null_weight,
                       estimate_residual_variance = estimate_residual_variance,
+                      estimate_residual_method = estimate_residual_method,
                       estimate_prior_variance = estimate_prior_variance,
                       estimate_prior_method = estimate_prior_method,
+                      unmappable_effects = unmappable_effects,
+                      check_null_threshold = check_null_threshold,
+                      prior_tol = prior_tol,
+                      residual_variance_lowerbound = residual_variance_lowerbound,
+                      residual_variance_upperbound = residual_variance_upperbound,
+                      coverage = coverage, min_abs_corr = min_abs_corr,
                       max_iter = max_iter, tol = tol,
-                      verbose = FALSE, refine = refine)
+                      n_purity = n_purity, refine = refine,
+                      verbose = FALSE)
       sp_fits <- lapply(X, function(Xk) {
         tryCatch(do.call(susie_rss, c(list(X = Xk), sp_args)),
                  error = function(e) NULL)
