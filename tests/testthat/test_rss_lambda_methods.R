@@ -1616,3 +1616,44 @@ test_that("multi-panel ELBO >= best single-panel ELBO", {
               info = sprintf("mixture ELBO %.2f < best single %.2f",
                              mix_elbo, best_single_elbo))
 })
+
+test_that("multi-panel first-iter ELBO >= best single-panel first-iter ELBO", {
+  # With vertex initialization, the first E-step uses a single panel's R,
+  # so the mixture first-iter ELBO should match the best single panel.
+  # (Softmax init caused rank inflation when B < p, making it much worse.)
+  set.seed(72)
+  p <- 100; B <- 80
+  X_true <- matrix(rnorm(2000 * p), 2000, p)
+  for (b in 1:(p %/% 5)) {
+    idx <- ((b-1)*5+1):(b*5)
+    X_true[, idx] <- 0.4*X_true[, idx] + 0.6*rnorm(2000)
+  }
+  X_true <- scale(X_true)
+  R_true <- cov2cor(crossprod(X_true))
+
+  # Two noisy panels (both wrong)
+  X1 <- matrix(rnorm(B * p), B, p)
+  X2 <- matrix(rnorm(B * p), B, p)
+  for (b in 1:(p %/% 5)) {
+    idx <- ((b-1)*5+1):(b*5)
+    X1[, idx] <- 0.4*X1[, idx] + 0.6*rnorm(B)
+    X2[, idx] <- 0.4*X2[, idx] + 0.6*rnorm(B)
+  }
+  X1 <- scale(X1); X2 <- scale(X2)
+
+  beta <- rep(0, p); beta[c(3, 15, 28)] <- c(1.0, -0.8, 0.7)
+  z <- as.vector(R_true %*% beta) + rnorm(p, sd = 0.1)
+
+  f1 <- susie_rss(z = z, X = X1, lambda = 0.1, max_iter = 1, verbose = FALSE)
+  f2 <- susie_rss(z = z, X = X2, lambda = 0.1, max_iter = 1, verbose = FALSE)
+  fm <- susie_rss(z = z, X = list(X1, X2), lambda = 0.1, max_iter = 1,
+                  verbose = FALSE)
+
+  best_sp_first <- max(f1$elbo[1], f2$elbo[1])
+  mix_first <- fm$elbo[1]
+
+  # With vertex init, mixture first-iter should be within 1 unit of best SP
+  expect_true(mix_first >= best_sp_first - 1,
+              info = sprintf("mix first=%.2f, best_sp first=%.2f, diff=%.2f",
+                             mix_first, best_sp_first, mix_first - best_sp_first))
+})

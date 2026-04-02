@@ -1051,8 +1051,16 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
       Vtz_k <- crossprod(eig_k$vectors, z)
       -0.5 * (sum(log(eig_k$values)) + sum(Vtz_k^2 / eig_k$values))
     }, numeric(1))
-    log_weights <- null_lls - max(null_lls)
-    omega_init <- exp(log_weights) / sum(exp(log_weights))
+    # Initialize omega at the best single-panel vertex (argmax of null
+    # marginal log-likelihoods). When B_k < p, mixing rank-deficient panels
+    # inflates the effective rank of R(omega), causing a large log|S(omega)|
+    # penalty that dominates the first-iteration ELBO. Starting at a vertex
+    # avoids this rank inflation and guarantees first-iter ELBO matches the
+    # best single panel. The M-step optimizer explores the full simplex and
+    # will move to interior mixtures when beneficial.
+    k_best <- which.max(null_lls)
+    omega_init <- rep(0, K_panels)
+    omega_init[k_best] <- 1
 
     X <- form_X_meta(X_list, omega_init)
   }
