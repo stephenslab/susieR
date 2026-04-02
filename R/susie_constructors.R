@@ -916,6 +916,7 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
 
   # Detect multi-panel input (list of X matrices)
   is_multi_panel <- is.list(X) && !is.matrix(X)
+  init_panel <- if (is_multi_panel) attr(X, ".init_panel") else NULL
   X_list <- NULL
   B_list <- NULL
   K_panels <- NULL
@@ -1036,29 +1037,16 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
       panel_R <- lapply(X_list, crossprod)
     }
 
-    # Initialize omega via softmax of null marginal log-likelihoods.
-    # l_null_k = -0.5 * [log|S_k| + z' S_k^{-1} z], S_k = R_k + lambda*I
-    # This is the Bayesian posterior over panels under a uniform prior and
-    # the null model (beta=0). It concentrates weight on the panel whose
-    # LD structure best explains the observed z-scores, avoiding the
-    # contamination from uniform mixing that can create false signals in
-    # the first E-step which then persist through subsequent EM iterations.
-    null_lls <- vapply(seq_len(K_panels), function(k) {
-      R_k <- crossprod(X_list[[k]])  # already standardized
-      S_k <- R_k + lambda * diag(length(z))
-      eig_k <- eigen(S_k, symmetric = TRUE)
-      eig_k$values <- pmax(eig_k$values, .Machine$double.xmin)
-      Vtz_k <- crossprod(eig_k$vectors, z)
-      -0.5 * (sum(log(eig_k$values)) + sum(Vtz_k^2 / eig_k$values))
-    }, numeric(1))
-    # Initialize omega at the best single-panel vertex (argmax of null
-    # marginal log-likelihoods). When B_k < p, mixing rank-deficient panels
-    # inflates the effective rank of R(omega), causing a large log|S(omega)|
-    # penalty that dominates the first-iteration ELBO. Starting at a vertex
-    # avoids this rank inflation and guarantees first-iter ELBO matches the
-    # best single panel. The M-step optimizer explores the full simplex and
-    # will move to interior mixtures when beneficial.
-    k_best <- which.max(null_lls)
+    # Initialize omega at the best single-panel vertex. We use 1-iteration
+    # trial ELBO (computed in susie_rss) rather than null marginal log-
+    # likelihoods, which are biased toward low-rank panels due to the
+    # log|S_k| term being smaller when rank(R_k) < p. Starting at a vertex
+    # avoids rank inflation from mixing rank-deficient panels (which would
+    # penalize the first-iteration ELBO via a larger log|S(omega)|), and
+    # guarantees first-iter ELBO matches the best single panel. The M-step
+    # optimizer explores the full simplex via Frank-Wolfe/Brent and moves
+    # to interior mixtures when beneficial.
+    k_best <- if (!is.null(init_panel)) init_panel else 1L
     omega_init <- rep(0, K_panels)
     omega_init[k_best] <- 1
 

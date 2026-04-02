@@ -688,6 +688,18 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
           Xk <- t(t(Xk) - cm)
         Xk
       })
+      # Select initial panel via 1-iteration trial fits. Null marginal
+      # log-likelihoods are biased toward low-rank panels (smaller log|S|),
+      # so we run one E-step per vertex and pick the panel with the best
+      # ELBO. This avoids local optima from starting at a wrong vertex.
+      trial_elbos <- vapply(X, function(Xk) {
+        tryCatch({
+          fit_k <- susie_rss(z = z, X = Xk, lambda = lambda, L = L,
+                             max_iter = 1, verbose = FALSE)
+          fit_k$elbo[1]
+        }, error = function(e) -Inf)
+      }, numeric(1))
+      attr(X, ".init_panel") <- which.max(trial_elbos)
       check_R <- FALSE
       check_z <- FALSE
     } else {
