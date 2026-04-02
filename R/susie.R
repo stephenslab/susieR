@@ -693,28 +693,14 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
       #     bias in null marginal log-likelihoods when B_k < p), and
       # (2) provide a fallback if the mixture optimizer converges to a
       #     local optimum where mixing hurts (standard EM multi-restart).
-      sp_args <- list(z = z, lambda = lambda, L = L,
-                      prior_variance = prior_variance,
-                      scaled_prior_variance = scaled_prior_variance,
-                      residual_variance = residual_variance,
-                      prior_weights = prior_weights,
-                      null_weight = null_weight,
-                      estimate_residual_variance = estimate_residual_variance,
-                      estimate_residual_method = estimate_residual_method,
-                      estimate_prior_variance = estimate_prior_variance,
-                      estimate_prior_method = estimate_prior_method,
-                      unmappable_effects = unmappable_effects,
-                      check_null_threshold = check_null_threshold,
-                      prior_tol = prior_tol,
-                      residual_variance_lowerbound = residual_variance_lowerbound,
-                      residual_variance_upperbound = residual_variance_upperbound,
-                      coverage = coverage, min_abs_corr = min_abs_corr,
-                      max_iter = max_iter, tol = tol,
-                      n_purity = n_purity, refine = refine,
-                      verbose = FALSE)
+      sp_call <- match.call()
+      sp_call[[1]] <- quote(susie_rss)
+      sp_call$verbose <- FALSE
+      sp_call$s_init <- NULL
+      sp_call$model_init <- NULL
       sp_fits <- lapply(X, function(Xk) {
-        tryCatch(do.call(susie_rss, c(list(X = Xk), sp_args)),
-                 error = function(e) NULL)
+        sp_call$X <- Xk
+        tryCatch(eval(sp_call, parent.frame(2)), error = function(e) NULL)
       })
       sp_elbos <- vapply(sp_fits, function(f)
         if (!is.null(f)) tail(f$elbo, 1) else -Inf, numeric(1))
