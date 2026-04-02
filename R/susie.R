@@ -688,18 +688,33 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
           Xk <- t(t(Xk) - cm)
         Xk
       })
-      # Select initial panel via 1-iteration trial fits. Null marginal
-      # log-likelihoods are biased toward low-rank panels (smaller log|S|),
-      # so we run one E-step per vertex and pick the panel with the best
-      # ELBO. This avoids local optima from starting at a wrong vertex.
-      trial_elbos <- vapply(X, function(Xk) {
-        tryCatch({
-          fit_k <- susie_rss(z = z, X = Xk, lambda = lambda, L = L,
-                             max_iter = 1, verbose = FALSE)
-          fit_k$elbo[1]
-        }, error = function(e) -Inf)
-      }, numeric(1))
-      attr(X, ".init_panel") <- which.max(trial_elbos)
+      # Select initial panel via short trial fits (2 iterations each).
+      # Null marginal log-likelihoods are biased toward low-rank panels
+      # (log|S_k| is smaller when rank(R_k) < p). A single E-step has the
+      # same bias. Two iterations let sigma2 estimation kick in, which
+      # rescales the ELBO and reveals the true panel quality ranking.
+      # Run each single panel to convergence for two purposes:
+      # (1) pick the best vertex for mixture initialization, and
+      # (2) provide a fallback if the mixture converges to a local optimum.
+      # Cost: K single-panel fits (no omega optimization, typically fast).
+      sp_fits <- lapply(X, function(Xk) {
+        tryCatch(
+          susie_rss(z = z, X = Xk, lambda = lambda, L = L,
+                    prior_variance = prior_variance,
+                    scaled_prior_variance = scaled_prior_variance,
+                    residual_variance = residual_variance,
+                    prior_weights = prior_weights,
+                    null_weight = null_weight,
+                    estimate_residual_variance = estimate_residual_variance,
+                    estimate_prior_variance = estimate_prior_variance,
+                    estimate_prior_method = estimate_prior_method,
+                    max_iter = max_iter, tol = tol,
+                    verbose = FALSE, refine = refine),
+          error = function(e) NULL)
+      })
+      sp_elbos <- vapply(sp_fits, function(f)
+        if (!is.null(f)) tail(f$elbo, 1) else -Inf, numeric(1))
+      attr(X, ".init_panel") <- which.max(sp_elbos)
       check_R <- FALSE
       check_z <- FALSE
     } else {
@@ -776,6 +791,19 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
 
   # Run main SuSiE algorithm
   model <- susie_workhorse(susie_objects$data, susie_objects$params)
+
+  # Multi-panel safeguard: the omega optimizer can converge to local optima
+  # where mixing hurts (especially with asymmetric panel ranks). Compare
+  # with the converged single-panel fits and return whichever is best.
+  if (exists("sp_fits") && !is.null(sp_fits)) {
+    mix_elbo <- tail(model$elbo, 1)
+    best_k <- which.max(sp_elbos)
+    if (sp_elbos[best_k] > mix_elbo) {
+      sp_fits[[best_k]]$omega_weights <- rep(0, length(sp_fits))
+      sp_fits[[best_k]]$omega_weights[best_k] <- 1
+      model <- sp_fits[[best_k]]
+    }
+  }
 
   return(model)
 }
