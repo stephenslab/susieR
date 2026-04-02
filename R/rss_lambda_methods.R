@@ -398,6 +398,9 @@ update_derived_quantities.rss_lambda <- function(data, params, model) {
     model$Vtz          <- crossprod(model$eigen_R$vectors, data$z)
     model$z_null_norm2 <- max(sum(data$z^2) - sum(model$Vtz^2), 0)
     model$X_meta <- form_X_meta(data$X_list, model$omega)
+    # Recompute fitted values with updated R(omega) to keep residuals
+    # consistent for the next E-step.
+    model$Rz <- as.vector(compute_Rv(data, model$zbar, model$X_meta))
     # Update effective B only when variance inflation is active (opt-in).
     # B_eff = 1/sum(omega_k^2/B_k): effective sample size for a weighted
     # average of independent LD estimators, each from B_k samples.

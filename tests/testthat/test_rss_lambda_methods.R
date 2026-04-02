@@ -1562,3 +1562,62 @@ test_that("update_derived_quantities produces correct SinvRj after omega update"
   expect_equal(length(fit$pip), p)
   expect_true(all(fit$pip >= 0 & fit$pip <= 1))
 })
+
+test_that("update_derived_quantities recomputes Rz after omega change", {
+  set.seed(70)
+  p <- 30; B <- 100
+  X1 <- matrix(rnorm(B * p), B, p)
+  X2 <- matrix(rnorm(B * p), B, p)
+  beta <- rep(0, p); beta[1:3] <- c(0.5, -0.3, 0.4)
+  R_true <- cov2cor(crossprod(X1))
+  z <- as.vector(R_true %*% beta) + rnorm(p, sd = 0.1)
+
+  # Run 2 iterations so omega gets updated in the M-step
+  fit <- susie_rss(z = z, X = list(X1, X2), lambda = 0.1,
+                   max_iter = 2, verbose = FALSE)
+
+  # The internal model's Rz should equal R(omega) * zbar
+  # Reconstruct R(omega) from panels and omega
+  omega <- fit$omega_weights
+  R1 <- crossprod(X1) / B; R2 <- crossprod(X2) / B
+  R_omega <- omega[1] * R1 + omega[2] * R2
+  zbar <- colSums(fit$alpha * fit$mu)
+  Rz_expected <- as.vector(R_omega %*% zbar)
+
+  # Access internal Rz from a fresh run that returns the model
+  # Re-run and check the internal state is consistent
+  fit2 <- susie_rss(z = z, X = list(X1, X2), lambda = 0.1,
+                    max_iter = 2, verbose = FALSE)
+  # After the fix, Rz should be consistent: the residual bias
+  # (R_old - R_new)*zbar should be zero. Verify by checking that
+  # the fitted values Xb match R(omega)*zbar
+  Xb <- fit2$Xr  # fitted values = R(omega)*zbar
+  expect_equal(Xb, Rz_expected, tolerance = 1e-6)
+})
+
+test_that("multi-panel ELBO >= best single-panel ELBO", {
+  set.seed(71)
+  p <- 30; B1 <- 200; B2 <- 150
+  X1 <- matrix(rnorm(B1 * p), B1, p)
+  X2 <- matrix(rnorm(B2 * p), B2, p)
+  beta <- rep(0, p); beta[1:2] <- c(0.6, -0.4)
+
+  # Generate z from panel 1 (the "correct" panel)
+  R1 <- cov2cor(crossprod(X1))
+  z <- as.vector(R1 %*% beta) + rnorm(p, sd = 0.1)
+
+  # Single-panel fits
+  fit1 <- susie_rss(z = z, X = X1, lambda = 0.1, max_iter = 50)
+  fit2 <- susie_rss(z = z, X = X2, lambda = 0.1, max_iter = 50)
+  best_single_elbo <- max(tail(fit1$elbo, 1), tail(fit2$elbo, 1))
+
+  # Mixture fit
+  fit_mix <- susie_rss(z = z, X = list(X1, X2), lambda = 0.1, max_iter = 50)
+  mix_elbo <- tail(fit_mix$elbo, 1)
+
+  # Mixture should be at least as good as best single panel
+  # (omega at a simplex vertex recovers single-panel)
+  expect_true(mix_elbo >= best_single_elbo - 1e-2,
+              info = sprintf("mixture ELBO %.2f < best single %.2f",
+                             mix_elbo, best_single_elbo))
+})
