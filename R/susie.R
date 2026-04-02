@@ -688,29 +688,25 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
           Xk <- t(t(Xk) - cm)
         Xk
       })
-      # Select initial panel via short trial fits (2 iterations each).
-      # Null marginal log-likelihoods are biased toward low-rank panels
-      # (log|S_k| is smaller when rank(R_k) < p). A single E-step has the
-      # same bias. Two iterations let sigma2 estimation kick in, which
-      # rescales the ELBO and reveals the true panel quality ranking.
-      # Run each single panel to convergence for two purposes:
-      # (1) pick the best vertex for mixture initialization, and
-      # (2) provide a fallback if the mixture converges to a local optimum.
-      # Cost: K single-panel fits (no omega optimization, typically fast).
+      # Run each single panel to convergence. This serves two purposes:
+      # (1) select the best vertex for mixture initialization (avoids rank
+      #     bias in null marginal log-likelihoods when B_k < p), and
+      # (2) provide a fallback if the mixture optimizer converges to a
+      #     local optimum where mixing hurts (standard EM multi-restart).
+      sp_args <- list(z = z, lambda = lambda, L = L,
+                      prior_variance = prior_variance,
+                      scaled_prior_variance = scaled_prior_variance,
+                      residual_variance = residual_variance,
+                      prior_weights = prior_weights,
+                      null_weight = null_weight,
+                      estimate_residual_variance = estimate_residual_variance,
+                      estimate_prior_variance = estimate_prior_variance,
+                      estimate_prior_method = estimate_prior_method,
+                      max_iter = max_iter, tol = tol,
+                      verbose = FALSE, refine = refine)
       sp_fits <- lapply(X, function(Xk) {
-        tryCatch(
-          susie_rss(z = z, X = Xk, lambda = lambda, L = L,
-                    prior_variance = prior_variance,
-                    scaled_prior_variance = scaled_prior_variance,
-                    residual_variance = residual_variance,
-                    prior_weights = prior_weights,
-                    null_weight = null_weight,
-                    estimate_residual_variance = estimate_residual_variance,
-                    estimate_prior_variance = estimate_prior_variance,
-                    estimate_prior_method = estimate_prior_method,
-                    max_iter = max_iter, tol = tol,
-                    verbose = FALSE, refine = refine),
-          error = function(e) NULL)
+        tryCatch(do.call(susie_rss, c(list(X = Xk), sp_args)),
+                 error = function(e) NULL)
       })
       sp_elbos <- vapply(sp_fits, function(f)
         if (!is.null(f)) tail(f$elbo, 1) else -Inf, numeric(1))
@@ -798,7 +794,15 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
   if (exists("sp_fits") && !is.null(sp_fits)) {
     mix_elbo <- tail(model$elbo, 1)
     best_k <- which.max(sp_elbos)
+    if (verbose) {
+      omega_str <- paste(round(model$omega_weights, 3), collapse = ", ")
+      message(sprintf(
+        "Multi-panel: mixture ELBO = %.2f (omega = %s), best single-panel ELBO = %.2f (panel %d).",
+        mix_elbo, omega_str, sp_elbos[best_k], best_k))
+    }
     if (sp_elbos[best_k] > mix_elbo) {
+      if (verbose)
+        message(sprintf("Falling back to panel %d (single-panel ELBO is higher).", best_k))
       sp_fits[[best_k]]$omega_weights <- rep(0, length(sp_fits))
       sp_fits[[best_k]]$omega_weights[best_k] <- 1
       model <- sp_fits[[best_k]]
