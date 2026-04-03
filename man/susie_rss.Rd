@@ -51,6 +51,7 @@ susie_rss(
   r_tol = 1e-08,
   refine = FALSE,
   stochastic_ld_sample = NULL,
+  multipanel_safeguard = TRUE,
   alpha0 = 0.1,
   beta0 = 0.1
 )
@@ -271,6 +272,14 @@ stochastic samples, and no variance inflation applied.}
   When provided, the output includes a
   \code{stochastic_ld_diagnostics} element with per-region and
   per-variable quality metrics.}
+
+\item{multipanel_safeguard}{When \code{TRUE} (default), multi-panel
+fits are compared against single-panel fits at convergence. If the
+best single-panel ELBO exceeds the mixture ELBO, the single-panel
+result is returned instead (with omega at the corresponding vertex).
+This guards against EM local optima where mixing panels hurts. Set
+to \code{FALSE} to always return the mixture result, which is useful
+for benchmarking and diagnostics of the mixture model.}
 
 \item{alpha0}{Numerical parameter for the NIG prior when using
 \code{estimate_residual_method = "Servin_Stephens"}.}

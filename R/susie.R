@@ -536,6 +536,14 @@ susie_ss <- function(XtX, Xty, yty, n,
 #'   \code{stochastic_ld_diagnostics} element with per-region and
 #'   per-variable quality metrics.
 #'
+#' @param multipanel_safeguard When \code{TRUE} (default), multi-panel
+#'   fits are compared against single-panel fits at convergence. If the
+#'   best single-panel ELBO exceeds the mixture ELBO, the single-panel
+#'   result is returned instead (with omega at the corresponding vertex).
+#'   This guards against EM local optima where mixing panels hurts. Set
+#'   to \code{FALSE} to always return the mixture result, which is useful
+#'   for benchmarking and diagnostics of the mixture model.
+#'
 #' @return In addition to the standard \code{"susie"} output (see
 #'   \code{\link{susie}}), the returned object may contain:
 #'
@@ -600,6 +608,7 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
                       r_tol = 1e-8,
                       refine = FALSE,
                       stochastic_ld_sample = NULL,
+                      multipanel_safeguard = TRUE,
                       alpha0 = 0.1,
                       beta0 = 0.1) {
 
@@ -794,7 +803,7 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
         "Multi-panel: mixture ELBO = %.2f (omega = %s), best single-panel ELBO = %.2f (panel %d).",
         mix_elbo, omega_str, sp_elbos[best_k], best_k))
     }
-    if (sp_elbos[best_k] > mix_elbo) {
+    if (multipanel_safeguard && sp_elbos[best_k] > mix_elbo) {
       if (verbose)
         message(sprintf("Falling back to panel %d (single-panel ELBO is higher).", best_k))
       sp_fits[[best_k]]$omega_weights <- rep(0, length(sp_fits))
