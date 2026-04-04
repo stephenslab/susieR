@@ -9,6 +9,45 @@
 # produced by the type-specific compute_ser_statistics().
 # =============================================================================
 
+#' Resolve fixed mixture prior parameters
+#'
+#' Called from susie, susie_ss, and susie_rss to handle the
+#' prior_variance_grid / mixture_weights parameters. When
+#' prior_variance_grid is non-NULL, overrides estimate_prior_method
+#' to "fixed_mixture" and validates inputs. Returns a list with
+#' the resolved estimate_prior_method, estimate_prior_variance,
+#' prior_variance_grid, and mixture_weights.
+#'
+#' @keywords internal
+resolve_mixture_prior <- function(estimate_prior_method,
+                                  estimate_prior_variance,
+                                  prior_variance_grid,
+                                  mixture_weights) {
+  if (!is.null(prior_variance_grid)) {
+    K <- length(prior_variance_grid)
+    if (is.null(mixture_weights))
+      mixture_weights <- rep(1 / K, K)
+    stopifnot(
+      length(mixture_weights) == K,
+      all(prior_variance_grid > 0),
+      all(mixture_weights >= 0),
+      abs(sum(mixture_weights) - 1) < 1e-8
+    )
+    estimate_prior_method   <- "fixed_mixture"
+    estimate_prior_variance <- FALSE
+  } else {
+    estimate_prior_method <- match.arg(
+      estimate_prior_method, c("optim", "EM", "simple")
+    )
+  }
+  list(
+    estimate_prior_method   = estimate_prior_method,
+    estimate_prior_variance = estimate_prior_variance,
+    prior_variance_grid     = prior_variance_grid,
+    mixture_weights         = mixture_weights
+  )
+}
+
 #' Compute mixture log-Bayes factors and posterior inclusion probabilities
 #'
 #' For each grid point k and variant j, computes the Wakefield approximate
@@ -31,32 +70,32 @@ loglik_mixture_common <- function(params, model, ser_stats, l) {
   K    <- length(grid)
 
   betahat <- ser_stats$betahat         # p-vector
-  shat2   <- pmax(ser_stats$shat2, .Machine$double.eps)  # p-vector
+  shat2   <- ser_stats$shat2             # p-vector (may contain Inf)
   p       <- length(betahat)
 
   # Compute p x K matrix of log-BFs (Wakefield ABF at each grid point)
-  # lbf[j,k] = -0.5 * log(1 + V_k/shat2_j) + 0.5 * betahat_j^2 * V_k / (shat2_j * (V_k + shat2_j))
+  # Uses pmax only for the ABF computation to avoid log(0), matching the
+  # scalar path which applies pmax inside loglik.rss_lambda
+  shat2_safe <- pmax(shat2, .Machine$double.eps)
   lbf_grid <- matrix(0, nrow = p, ncol = K)
   for (k in seq_len(K)) {
     V_k <- grid[k]
-    lbf_grid[, k] <- -0.5 * log(1 + V_k / shat2) +
-      0.5 * betahat^2 * V_k / (shat2 * (V_k + shat2))
-  }
-
-  # Handle infinite shat2 (no information)
-  inf_idx <- is.infinite(shat2)
-  if (any(inf_idx)) {
-    lbf_grid[inf_idx, ] <- 0
+    lbf_grid[, k] <- -0.5 * log(1 + V_k / shat2_safe) +
+      0.5 * betahat^2 * V_k / (shat2_safe * (V_k + shat2_safe))
   }
 
   # Mixture log-BF per variant: log(sum_k w_k * exp(lbf_jk))
-  # Use log-sum-exp for numerical stability
-  log_w <- log(w + .Machine$double.eps)
-  lbf_mix <- apply(lbf_grid, 1, function(row) {
-    shifted <- row + log_w
-    max_val <- max(shifted)
-    max_val + log(sum(exp(shifted - max_val)))
-  })
+  # For K=1 this reduces to lbf_grid[,1] exactly (no numerical error)
+  if (K == 1L) {
+    lbf_mix <- lbf_grid[, 1]
+  } else {
+    log_w <- log(w)
+    lbf_mix <- apply(lbf_grid, 1, function(row) {
+      shifted <- row + log_w
+      max_val <- max(shifted)
+      max_val + log(sum(exp(shifted - max_val)))
+    })
+  }
 
   # Store per-grid BF matrix for M-step (e.g., mixsqp in susieAnn)
   if (is.null(model$lbf_grid)) {
@@ -67,7 +106,8 @@ loglik_mixture_common <- function(params, model, ser_stats, l) {
   # Cache ser_stats for calculate_posterior_moments_mixture_common
   model$.ser_stats <- ser_stats
 
-  # Compute posterior inclusion probabilities using existing machinery
+  # Compute posterior inclusion probabilities using existing machinery.
+  # Pass raw shat2 (not pmax'd) to lbf_stabilization, matching the scalar path.
   stable_res  <- lbf_stabilization(lbf_mix, model$pi, shat2)
   weights_res <- compute_posterior_weights(stable_res$lpo)
 
@@ -103,7 +143,8 @@ calculate_posterior_moments_mixture_common <- function(params, model, l) {
 
   lbf_grid <- model$lbf_grid[[l]]      # p x K
   betahat  <- model$.ser_stats$betahat  # cached by loglik_mixture_common
-  shat2    <- pmax(model$.ser_stats$shat2, .Machine$double.eps)
+  shat2    <- model$.ser_stats$shat2
+  shat2_safe <- pmax(shat2, .Machine$double.eps)
   p        <- length(betahat)
 
   # Responsibility weights: r_jk = w_k * BF_jk / sum_k' w_k' * BF_jk'
@@ -119,8 +160,8 @@ calculate_posterior_moments_mixture_common <- function(params, model, l) {
   post_mean2 <- matrix(0, p, K)
   for (k in seq_len(K)) {
     V_k <- grid[k]
-    pv_k <- V_k * shat2 / (V_k + shat2)    # posterior variance
-    pm_k <- pv_k / shat2 * betahat          # posterior mean
+    pv_k <- V_k * shat2_safe / (V_k + shat2_safe)  # posterior variance
+    pm_k <- pv_k / shat2_safe * betahat            # posterior mean
     post_mean[, k]  <- pm_k
     post_mean2[, k] <- pv_k + pm_k^2        # E[beta^2]
   }

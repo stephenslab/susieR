@@ -476,8 +476,11 @@ validate_and_override_params <- function(params) {
          "which is not well-defined for these models. Please set refine = FALSE.")
   }
 
-  # Override prior estimation method when estimation is disabled
-  if (!params$estimate_prior_variance) {
+  # Override prior estimation method when estimation is disabled,
+  # unless using a fixed mixture prior (which does not estimate V but
+  # still needs the mixture BF computation path)
+  if (!params$estimate_prior_variance &&
+      params$estimate_prior_method != "fixed_mixture") {
     params$estimate_prior_method <- "none"
   }
 

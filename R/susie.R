@@ -281,6 +281,8 @@ susie <- function(X, y, L = min(10, ncol(X)),
                   estimate_residual_method = c("MoM", "MLE", "Servin_Stephens"),
                   estimate_prior_variance = TRUE,
                   estimate_prior_method = c("optim", "EM", "simple"),
+                  prior_variance_grid = NULL,
+                  mixture_weights = NULL,
                   unmappable_effects = c("none", "inf", "ash"),
                   check_null_threshold = 0,
                   prior_tol = 1e-9,
@@ -304,9 +306,14 @@ susie <- function(X, y, L = min(10, ncol(X)),
 
   # Validate method arguments
   unmappable_effects       <- match.arg(unmappable_effects)
-  estimate_prior_method    <- match.arg(estimate_prior_method)
   estimate_residual_method <- match.arg(estimate_residual_method)
   convergence_method       <- match.arg(convergence_method)
+  mp <- resolve_mixture_prior(estimate_prior_method, estimate_prior_variance,
+                              prior_variance_grid, mixture_weights)
+  estimate_prior_method   <- mp$estimate_prior_method
+  estimate_prior_variance <- mp$estimate_prior_variance
+  prior_variance_grid     <- mp$prior_variance_grid
+  mixture_weights         <- mp$mixture_weights
 
   # Construct data and params objects
   susie_objects <- individual_data_constructor(
@@ -314,6 +321,7 @@ susie <- function(X, y, L = min(10, ncol(X)),
     prior_weights, null_weight, standardize, intercept,
     estimate_residual_variance, estimate_residual_method,
     estimate_prior_variance, estimate_prior_method,
+    prior_variance_grid, mixture_weights,
     unmappable_effects, check_null_threshold, prior_tol,
     residual_variance_upperbound, model_init, s_init, coverage,
     min_abs_corr, compute_univariate_zscore, na.rm,
@@ -393,6 +401,8 @@ susie_ss <- function(XtX, Xty, yty, n,
                      residual_variance_upperbound = Inf,
                      estimate_prior_variance = TRUE,
                      estimate_prior_method = c("optim", "EM", "simple"),
+                     prior_variance_grid = NULL,
+                     mixture_weights = NULL,
                      unmappable_effects = c("none", "inf", "ash"),
                      check_null_threshold = 0,
                      prior_tol = 1e-9,
@@ -411,9 +421,14 @@ susie_ss <- function(XtX, Xty, yty, n,
 
   # Validate method arguments
   unmappable_effects       <- match.arg(unmappable_effects)
-  estimate_prior_method    <- match.arg(estimate_prior_method)
   estimate_residual_method <- match.arg(estimate_residual_method)
   convergence_method       <- match.arg(convergence_method)
+  mp <- resolve_mixture_prior(estimate_prior_method, estimate_prior_variance,
+                              prior_variance_grid, mixture_weights)
+  estimate_prior_method   <- mp$estimate_prior_method
+  estimate_prior_variance <- mp$estimate_prior_variance
+  prior_variance_grid     <- mp$prior_variance_grid
+  mixture_weights         <- mp$mixture_weights
 
   # Construct data and params objects
   susie_objects <- sufficient_stats_constructor(
@@ -431,6 +446,8 @@ susie_ss <- function(XtX, Xty, yty, n,
     residual_variance_upperbound = residual_variance_upperbound,
     estimate_prior_variance = estimate_prior_variance,
     estimate_prior_method = estimate_prior_method,
+    prior_variance_grid = prior_variance_grid,
+    mixture_weights = mixture_weights,
     unmappable_effects = unmappable_effects,
     check_null_threshold = check_null_threshold, prior_tol = prior_tol,
     max_iter = max_iter, tol = tol, convergence_method = convergence_method,
@@ -750,9 +767,14 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
 
   # Validate method arguments
   unmappable_effects       <- match.arg(unmappable_effects)
-  estimate_prior_method    <- match.arg(estimate_prior_method)
   estimate_residual_method <- match.arg(estimate_residual_method)
   convergence_method       <- match.arg(convergence_method)
+  mp <- resolve_mixture_prior(estimate_prior_method, estimate_prior_variance,
+                              prior_variance_grid, mixture_weights)
+  estimate_prior_method   <- mp$estimate_prior_method
+  estimate_prior_variance <- mp$estimate_prior_variance
+  prior_variance_grid     <- mp$prior_variance_grid
+  mixture_weights         <- mp$mixture_weights
 
   # Auto-switch to PIP convergence for stochastic LD inflation.
   # (stochastic_ld_sample was already resolved to an integer above)
@@ -776,6 +798,8 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
     estimate_residual_method = estimate_residual_method,
     estimate_prior_variance = estimate_prior_variance,
     estimate_prior_method = estimate_prior_method,
+    prior_variance_grid = prior_variance_grid,
+    mixture_weights = mixture_weights,
     unmappable_effects = unmappable_effects,
     check_null_threshold = check_null_threshold, prior_tol = prior_tol,
     residual_variance_lowerbound = residual_variance_lowerbound,
