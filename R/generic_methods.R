@@ -99,6 +99,28 @@ track_ibss_fit.default <- function(data, params, model, tracking, iter, elbo, ..
 # calculate_posterior_moments, compute_kl, get_ER2, Eloglik, loglik, neg_loglik
 # =============================================================================
 
+#' Get the slot weight for effect l
+#'
+#' Returns the weight by which effect l's contribution to the fitted
+#' values is scaled. When \code{model$slot_weights} is NULL (the default),
+#' all effects have weight 1 and standard SuSiE behavior is recovered.
+#'
+#' Slot weights enable a natural mechanism for adaptively estimating the
+#' number of effects: each slot l can have a weight in [0,1] reflecting
+#' the posterior probability that the slot is active. With a suitable
+#' prior on the number of active effects, this generalizes SuSiE's fixed
+#' L to a data-driven estimate.
+#'
+#' @param model SuSiE model object.
+#' @param l Effect index.
+#'
+#' @return Scalar weight (default 1).
+#'
+#' @keywords internal
+get_slot_weight <- function(model, l) {
+  if (is.null(model$slot_weights)) 1 else model$slot_weights[l]
+}
+
 # Compute residuals for single effect regression
 #' @keywords internal
 compute_residuals <- function(data, params, model, l, ...) {

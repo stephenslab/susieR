@@ -128,8 +128,10 @@ track_ibss_fit.ss <- function(data, params, model, tracking, iter, elbo, ...) {
 # Compute residuals for single effect regression
 #' @keywords internal
 compute_residuals.ss <- function(data, params, model, l, ...) {
-  # b_minus_l is common to all paths (sparse effects excluding l)
-  b_minus_l <- colSums(model$alpha * model$mu) - model$alpha[l, ] * model$mu[l, ]
+  # Weighted sum of effects excluding l (slot_weights scale each effect's contribution)
+  sw_l <- get_slot_weight(model, l)
+  sw <- if (!is.null(model$slot_weights)) model$slot_weights else rep(1, nrow(model$alpha))
+  b_minus_l <- colSums(sw * model$alpha * model$mu) - sw_l * model$alpha[l, ] * model$mu[l, ]
 
   if (params$unmappable_effects == "inf") {
     # SuSiE-inf: Omega-weighted residuals
@@ -149,8 +151,8 @@ compute_residuals.ss <- function(data, params, model, l, ...) {
 
   # Below are SuSiE, SuSiE-ASH and SuSiE-SS
 
-  # Remove lth effect from fitted values
-  XtXr_without_l <- model$XtXr - compute_Rv(data, model$alpha[l, ] * model$mu[l, ])
+  # Remove lth effect from fitted values (scaled by slot weight)
+  XtXr_without_l <- model$XtXr - sw_l * compute_Rv(data, model$alpha[l, ] * model$mu[l, ])
 
   # Compute residuals (ash subtracts unmappable effect X'X*theta)
   if (params$unmappable_effects == "ash") {
@@ -388,12 +390,14 @@ neg_loglik.ss <- function(data, params, model, V_param, ser_stats, ...) {
 # Update fitted values
 #' @keywords internal
 update_fitted_values.ss <- function(data, params, model, l, ...) {
+  sw_l <- get_slot_weight(model, l)
   if (params$unmappable_effects == "inf") {
     # SuSiE-inf: include theta in fitted values
-    model$XtXr <- as.vector(compute_Rv(data, colSums(model$alpha * model$mu) + model$theta))
+    sw <- if (!is.null(model$slot_weights)) model$slot_weights else rep(1, nrow(model$alpha))
+    model$XtXr <- as.vector(compute_Rv(data, colSums(sw * model$alpha * model$mu) + model$theta))
   } else {
     # Standard SuSiE and SuSiE-ash: sparse component only
-    model$XtXr <- model$fitted_without_l + as.vector(compute_Rv(data, model$alpha[l, ] * model$mu[l, ]))
+    model$XtXr <- model$fitted_without_l + sw_l * as.vector(compute_Rv(data, model$alpha[l, ] * model$mu[l, ]))
   }
   return(model)
 }

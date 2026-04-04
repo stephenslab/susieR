@@ -97,8 +97,9 @@ track_ibss_fit.rss_lambda <- function(data, params, model, tracking, iter, elbo,
 # Compute residuals for single effect regression
 #' @keywords internal
 compute_residuals.rss_lambda <- function(data, params, model, l, ...) {
-  # Remove lth effect from fitted values
-  Rz_without_l <- model$Rz - compute_Rv(data, model$alpha[l, ] * model$mu[l, ], model$X_meta)
+  # Remove lth effect from fitted values (scaled by slot weight)
+  sw_l <- get_slot_weight(model, l)
+  Rz_without_l <- model$Rz - sw_l * compute_Rv(data, model$alpha[l, ] * model$mu[l, ], model$X_meta)
 
   # Compute residuals
   r <- data$z - Rz_without_l
@@ -110,7 +111,9 @@ compute_residuals.rss_lambda <- function(data, params, model, l, ...) {
 
   # Dynamic stochastic LD variance inflation (z-score scale)
   if (!is.null(data$stochastic_ld_B)) {
-    b_minus_l <- colSums(model$alpha * model$mu) - model$alpha[l, ] * model$mu[l, ]
+    # Weighted sum of effects excluding l
+    sw <- if (!is.null(model$slot_weights)) model$slot_weights else rep(1, nrow(model$alpha))
+    b_minus_l <- colSums(sw * model$alpha * model$mu) - sw_l * model$alpha[l, ] * model$mu[l, ]
     model$shat2_inflation <- compute_shat2_inflation_rss(
       data, model, Rz_without_l, b_minus_l)
   }
@@ -282,7 +285,9 @@ neg_loglik.rss_lambda <- function(data, params, model, V_param, ser_stats, ...) 
 # Update fitted values
 #' @keywords internal
 update_fitted_values.rss_lambda <- function(data, params, model, l, ...) {
-  model$Rz <- model$fitted_without_l + as.vector(compute_Rv(data, model$alpha[l, ] * model$mu[l, ], model$X_meta))
+  # Add back lth effect (scaled by slot weight)
+  sw_l <- get_slot_weight(model, l)
+  model$Rz <- model$fitted_without_l + sw_l * as.vector(compute_Rv(data, model$alpha[l, ] * model$mu[l, ], model$X_meta))
   model    <- precompute_rss_lambda_terms(data, model)
 
   return(model)

@@ -100,8 +100,9 @@ track_ibss_fit.individual <- function(data, params, model, tracking, iter, elbo,
 # Compute residuals for single effect regression
 #' @keywords internal
 compute_residuals.individual <- function(data, params, model, l, ...) {
-  # Remove lth effect from fitted values
-  Xr_without_l <- model$Xr - compute_Xb(data$X, model$alpha[l, ] * model$mu[l, ])
+  # Remove lth effect from fitted values (scaled by slot weight)
+  sw_l <- get_slot_weight(model, l)
+  Xr_without_l <- model$Xr - sw_l * compute_Xb(data$X, model$alpha[l, ] * model$mu[l, ])
 
   # Compute residuals
   if (params$unmappable_effects == "ash") {
@@ -291,7 +292,8 @@ neg_loglik.individual <- function(data, params, model, V_param, ser_stats, ...) 
 # Update fitted values
 #' @keywords internal
 update_fitted_values.individual <- function(data, params, model, l, ...) {
-  model$Xr <- model$fitted_without_l + compute_Xb(data$X, model$alpha[l, ] * model$mu[l, ])
+  sw_l <- get_slot_weight(model, l)
+  model$Xr <- model$fitted_without_l + sw_l * compute_Xb(data$X, model$alpha[l, ] * model$mu[l, ])
 
   return(model)
 }
