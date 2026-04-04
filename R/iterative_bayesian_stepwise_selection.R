@@ -31,6 +31,7 @@ ibss_initialize <- function(data, params) {
   UseMethod("ibss_initialize")
 }
 
+#' @export
 #' @keywords internal
 ibss_initialize.default <- function(data, params) {
 

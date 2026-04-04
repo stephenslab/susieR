@@ -2,6 +2,7 @@
 
 S3method(coef,mr.ash)
 S3method(coef,susie)
+S3method(ibss_initialize,default)
 S3method(predict,mr.ash)
 S3method(predict,susie)
 S3method(print,summary.susie)
