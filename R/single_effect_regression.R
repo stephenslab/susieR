@@ -16,6 +16,23 @@
 #' @noRd
 single_effect_regression <- function(data, params, model, l) {
 
+    # Fixed mixture prior path: evaluate BFs on a pre-specified variance grid
+    # with given mixture weights, bypassing scalar V optimization entirely.
+    # Activated by estimate_prior_method = "fixed_mixture" with non-NULL
+    # prior_variance_grid and mixture_weights in params.
+    if (params$estimate_prior_method == "fixed_mixture") {
+      ser_stats <- compute_ser_statistics(data, params, model, l)
+      model <- loglik_mixture(data, params, model, ser_stats, l)
+      model <- calculate_posterior_moments_mixture(data, params, model, l)
+      model <- compute_kl(data, params, model, l)
+      # Store effective V as posterior-weighted grid mean (for diagnostics)
+      V_eff <- sum(params$mixture_weights * params$prior_variance_grid)
+      model <- set_prior_variance_l(model, l, V_eff)
+      return(model)
+    }
+
+    # Standard scalar V path (unchanged)
+
     # Store Prior Variance Value for the lth Effect
     V <- get_prior_variance_l(model, l)
 

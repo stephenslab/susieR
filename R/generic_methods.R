@@ -170,6 +170,32 @@ Eloglik.default <- function(data, model) {
   stop("Eloglik: no method for class '", class(data)[1], "'")
 }
 
+# Log-likelihood and posterior moments for fixed mixture prior
+# (estimate_prior_method = "fixed_mixture"). Evaluates BFs on a
+# pre-specified variance grid with given mixture weights.
+#' @keywords internal
+loglik_mixture <- function(data, params, model, ser_stats, l, ...) {
+  UseMethod("loglik_mixture")
+}
+#' @keywords internal
+loglik_mixture.default <- function(data, params, model, ser_stats, l, ...) {
+  # Shared implementation for all data types.
+  # compute_ser_statistics() (type-specific) has already produced betahat and shat2.
+  model <- loglik_mixture_common(params, model, ser_stats, l)
+  return(model)
+}
+
+#' @keywords internal
+calculate_posterior_moments_mixture <- function(data, params, model, l, ...) {
+  UseMethod("calculate_posterior_moments_mixture")
+}
+#' @keywords internal
+calculate_posterior_moments_mixture.default <- function(data, params, model, l, ...) {
+  # Shared implementation: mixture posterior from stored lbf_grid and ser_stats
+  model <- calculate_posterior_moments_mixture_common(params, model, l)
+  return(model)
+}
+
 # Log-likelihood for prior variance optimization
 #' @keywords internal
 loglik <- function(data, params, model, V, ser_stats, l = NULL, ...) {
