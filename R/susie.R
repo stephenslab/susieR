@@ -143,7 +143,19 @@
 #'   variance. When \code{estimate_prior_method = "simple"} is used, the
 #'   likelihood at the specified prior variance is compared to the
 #'   likelihood at a variance of zero, and the setting with the larger
-#'   likelihood is retained.
+#'   likelihood is retained. When \code{prior_variance_grid} is provided,
+#'   this is automatically set to \code{"fixed_mixture"}.
+#'
+#' @param prior_variance_grid Numeric vector of K prior variances defining
+#'   a mixture-of-normals prior on effect sizes. When provided, the SER
+#'   evaluates Bayes factors at each grid point and forms a mixture BF
+#'   weighted by \code{mixture_weights}. This bypasses the scalar prior
+#'   variance optimization. Default is \code{NULL} (standard scalar V path).
+#'
+#' @param mixture_weights Numeric vector of K non-negative weights summing
+#'   to 1, giving the mixture proportions for the variance grid. Default is
+#'   \code{NULL}, which uses uniform weights when \code{prior_variance_grid}
+#'   is provided.
 #'
 #' @param unmappable_effects The method for modeling unmappable effects:
 #'   "none", "inf", "ash".
@@ -220,6 +232,11 @@
 #'
 #' @param beta0 Numerical parameter for the NIG prior when using
 #' \code{estimate_residual_method = "Servin_Stephens"}.
+#'
+#' @param init_only Logical. If \code{TRUE}, return a list with
+#'   \code{data} and \code{params} objects without running the IBSS
+#'   algorithm. Used by packages like susieAnn that implement their own
+#'   outer loop around SuSiE's building blocks. Default is \code{FALSE}.
 #'
 #' @return A \code{"susie"} object with some or all of the following elements:
 #'
@@ -629,7 +646,8 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
                       stochastic_ld_sample = NULL,
                       multipanel_safeguard = TRUE,
                       alpha0 = 0.1,
-                      beta0 = 0.1) {
+                      beta0 = 0.1,
+                      init_only = FALSE) {
 
   # Validate: exactly one of R or X must be provided
   if (is.null(R) && is.null(X))
@@ -813,6 +831,13 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
     stochastic_ld_sample = stochastic_ld_sample,
     alpha0 = alpha0, beta0 = beta0
   )
+
+  # Return constructed data and params without running IBSS (for susieAnn
+  # and other packages that implement their own outer loop). The caller
+  # is responsible for calling ibss_initialize() on the returned objects.
+  if (init_only) {
+    return(susie_objects)
+  }
 
   # Run main SuSiE algorithm
   model <- susie_workhorse(susie_objects$data, susie_objects$params)

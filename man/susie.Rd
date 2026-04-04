@@ -18,6 +18,8 @@ susie(
   estimate_residual_method = c("MoM", "MLE", "Servin_Stephens"),
   estimate_prior_variance = TRUE,
   estimate_prior_method = c("optim", "EM", "simple"),
+  prior_variance_grid = NULL,
+  mixture_weights = NULL,
   unmappable_effects = c("none", "inf", "ash"),
   check_null_threshold = 0,
   prior_tol = 1e-09,
@@ -109,7 +111,19 @@ value supplied to \code{scaled_prior_variance}.}
 variance. When \code{estimate_prior_method = "simple"} is used, the
 likelihood at the specified prior variance is compared to the
 likelihood at a variance of zero, and the setting with the larger
-likelihood is retained.}
+likelihood is retained. When \code{prior_variance_grid} is provided,
+this is automatically set to \code{"fixed_mixture"}.}
+
+\item{prior_variance_grid}{Numeric vector of K prior variances defining
+a mixture-of-normals prior on effect sizes. When provided, the SER
+evaluates Bayes factors at each grid point and forms a mixture BF
+weighted by \code{mixture_weights}. This bypasses the scalar prior
+variance optimization. Default is \code{NULL} (standard scalar V path).}
+
+\item{mixture_weights}{Numeric vector of K non-negative weights summing
+to 1, giving the mixture proportions for the variance grid. Default is
+\code{NULL}, which uses uniform weights when \code{prior_variance_grid}
+is provided.}
 
 \item{unmappable_effects}{The method for modeling unmappable effects:
 "none", "inf", "ash".}
@@ -186,6 +200,11 @@ to check and escape from local optima (see details).}
 
 \item{beta0}{Numerical parameter for the NIG prior when using
 \code{estimate_residual_method = "Servin_Stephens"}.}
+
+\item{init_only}{Logical. If \code{TRUE}, return a list with
+\code{data} and \code{params} objects without running the IBSS
+algorithm. Used by packages like susieAnn that implement their own
+outer loop around SuSiE's building blocks. Default is \code{FALSE}.}
 }
 \value{
 A \code{"susie"} object with some or all of the following elements:
