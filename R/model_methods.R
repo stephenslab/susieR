@@ -248,11 +248,24 @@ check_convergence.default <- function(data, params, model, elbo, iter) {
 # OBJECTIVE FUNCTION (ELBO)
 # =============================================================================
 
+#' Compute the SuSiE ELBO (evidence lower bound)
+#'
+#' Building-block function used by downstream packages implementing
+#' custom IBSS loops.
+#'
+#' @param data Data object.
+#' @param params Params object.
+#' @param model Model object.
+#'
+#' @return Scalar ELBO value.
+#'
+#' @export
 #' @keywords internal
 get_objective <- function(data, params, model) {
   UseMethod("get_objective")
 }
 
+#' @export
 #' @keywords internal
 get_objective.default <- function(data, params, model) {
   if (!is.null(params$unmappable_effects) && params$unmappable_effects == "inf") {
