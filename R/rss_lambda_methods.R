@@ -128,11 +128,6 @@ compute_ser_statistics.rss_lambda <- function(data, params, model, l, ...) {
   shat2   <- 1 / model$RjSinvRj
   betahat <- signal * shat2
 
-  # Scale to ss-model BF: betahat = z/sqrt(n-1), shat2 = sigma2/(n-1)
-  # When n_scale=1 (lambda>0 or no n), this is a no-op.
-  betahat <- betahat / sqrt(data$n_scale)
-  shat2   <- shat2 / data$n_scale
-
   # Apply stochastic LD inflation to shat2
   if (!is.null(model$shat2_inflation))
     shat2 <- shat2 * model$shat2_inflation
@@ -172,17 +167,11 @@ calculate_posterior_moments.rss_lambda <- function(data, params, model, V, l, ..
   if (!is.null(model$shat2_inflation))
     shat2 <- shat2 * model$shat2_inflation
 
-  # Scale to match ss model (no-op when n_scale=1)
-  shat2   <- shat2 / data$n_scale
-  signal  <- as.vector(crossprod(model$SinvRj, model$residuals))
-  betahat <- signal * (1 / model$RjSinvRj) / sqrt(data$n_scale)
-
   post_var  <- V * shat2 / (V + shat2)
+  signal    <- as.vector(crossprod(model$SinvRj, model$residuals))
+  betahat   <- signal * (1 / model$RjSinvRj)
   post_mean <- post_var / shat2 * betahat
-
-  # Unscale post_mean back to z-score scale for residual computation
-  post_mean  <- post_mean * sqrt(data$n_scale)
-  post_mean2 <- data$n_scale * post_var + post_mean^2
+  post_mean2 <- post_var + post_mean^2
 
   # Store posterior moments in model
   model$mu[l, ] <- post_mean
@@ -240,13 +229,6 @@ get_ER2.rss_lambda <- function(data, model) {
 # Expected log-likelihood
 #' @keywords internal
 Eloglik.rss_lambda <- function(data, model) {
-  if (data$n_scale > 1) {
-    # SS model: y ~ N(Xb, sigma2*I) with XtX = (n-1)*R
-    # No log-determinant of R
-    return(-data$sample_size / 2 * log(2 * pi * model$sigma2) -
-           0.5 / model$sigma2 * get_ER2.rss_lambda(data, model))
-  }
-  # Lambda > 0 model: z ~ N(Rb, sigma2*R + lambda*I)
   D <- get_eigen_R(data, model)$values
   d <- model$sigma2 * D + data$lambda
   # When lambda=0, zero eigenvalues give d=0; project out null-space.
