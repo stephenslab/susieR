@@ -49,8 +49,13 @@ initialize_susie_model.individual <- function(data, params, var_y, ...) {
 
   # Initialize Servin-Stephens parameters
   if (params$use_servin_stephens) {
-    model$rv <- rep(1, params$L)
+    model$rv            <- rep(1, params$L)
     model$marginal_loglik <- rep(as.numeric(NA), params$L)
+    # Per-effect NIG hyperparameter storage for EB warm-starting.
+    # Initialised to the global values; updated each IBSS iteration
+    # when estimate_prior_method = "optim".
+    model$alpha0_l <- rep(params$alpha0, params$L)
+    model$beta0_l  <- rep(params$beta0,  params$L)
   }
 
   # Initialize ash (Mr.ASH) tracking fields
@@ -129,9 +134,19 @@ compute_ser_statistics.individual <- function(data, params, model, l, ...) {
   shat2   <- model$residual_variance / model$predictor_weights
 
   # Optimization parameters
-  optim_init   <- log(max(c(betahat^2 - shat2, 1), na.rm = TRUE))
-  optim_bounds <- c(-30, 15)
-  optim_scale  <- "log"
+  if (params$use_servin_stephens) {
+    # For NIG prior the marginal log-likelihood is well-behaved on
+    # [exp(-14), exp(7)] ≈ [1e-6, 1e3].  The Gaussian-based init
+    # (betahat^2 - shat2) is not meaningful for NIG so we start at the
+    # current V value instead.
+    optim_init   <- log(max(model$V[1], exp(-14)))
+    optim_bounds <- c(-14, 7)
+    optim_scale  <- "log"
+  } else {
+    optim_init   <- log(max(c(betahat^2 - shat2, 1), na.rm = TRUE))
+    optim_bounds <- c(-30, 15)
+    optim_scale  <- "log"
+  }
 
   return(list(
     betahat      = betahat,
@@ -276,6 +291,14 @@ neg_loglik.individual <- function(data, params, model, V_param, ser_stats, ...) 
   # Convert parameter to V based on optimization scale (always log for individual)
   V <- exp(V_param)
   lbf_model <- loglik.individual(data, params, model, V, ser_stats)
+  # For SS+optim, add Zellner-Siow log-prior on V (= s0) to regularise:
+  #   log p(s0) = -3/2 * log(s0) - n/(2*s0)   [IG(1/2, n/2) on s0]
+  # This gives a Cauchy marginal on beta, prevents s0 -> inf on noise residuals,
+  # and makes the null check fire correctly (MAP obj < 0 on pure noise).
+  if (isTRUE(params$use_servin_stephens) && params$estimate_prior_method == "optim") {
+    log_prior <- -1.5 * log(V) - data$n / (2 * V)
+    return(-(lbf_model + log_prior))
+  }
   return(-lbf_model)
 }
 
@@ -426,6 +449,8 @@ cleanup_model.individual <- function(data, params, model, ...) {
   # Remove Servin-stephens specific temporary fields
   if (params$use_servin_stephens) {
     model$marginal_loglik <- NULL
+    model$alpha0_l        <- NULL
+    model$beta0_l         <- NULL
     if (nrow(model$alpha) > 1) model$elbo <- NULL
   }
 

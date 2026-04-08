@@ -13,7 +13,7 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 
 // caisa_rcpp
 Rcpp::List caisa_rcpp(const arma::mat& X, const arma::vec& y, const arma::vec& w, const arma::vec& sa2, arma::vec& pi, arma::vec& beta, arma::vec& r, double sigma2, const arma::uvec& o, int maxiter, int miniter, double convtol, double epstol, std::string method_q, bool updatepi, bool updatesigma, bool verbose);
-RcppExport SEXP _susieR_caisa_rcpp(SEXP XSEXP, SEXP ySEXP, SEXP wSEXP, SEXP sa2SEXP, SEXP piSEXP, SEXP betaSEXP, SEXP rSEXP, SEXP sigma2SEXP, SEXP oSEXP, SEXP maxiterSEXP, SEXP miniterSEXP, SEXP convtolSEXP, SEXP epstolSEXP, SEXP method_qSEXP, SEXP updatepiSEXP, SEXP updatesigmaSEXP, SEXP verboseSEXP) {
+RcppExport SEXP _susieR0_caisa_rcpp(SEXP XSEXP, SEXP ySEXP, SEXP wSEXP, SEXP sa2SEXP, SEXP piSEXP, SEXP betaSEXP, SEXP rSEXP, SEXP sigma2SEXP, SEXP oSEXP, SEXP maxiterSEXP, SEXP miniterSEXP, SEXP convtolSEXP, SEXP epstolSEXP, SEXP method_qSEXP, SEXP updatepiSEXP, SEXP updatesigmaSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -40,7 +40,7 @@ END_RCPP
 }
 // random_order
 arma::uvec random_order(int p, int numiter);
-RcppExport SEXP _susieR_random_order(SEXP pSEXP, SEXP numiterSEXP) {
+RcppExport SEXP _susieR0_random_order(SEXP pSEXP, SEXP numiterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -52,7 +52,7 @@ END_RCPP
 }
 // rcpp_mr_ash_rss
 List rcpp_mr_ash_rss(const NumericVector& bhat, const NumericVector& shat, const NumericVector& z, const NumericMatrix& R, double var_y, int n, double sigma2_e, const NumericVector& s0, const NumericVector& w0, const NumericVector& mu1_init, double tol, int max_iter, bool update_w0, bool update_sigma, bool compute_ELBO, bool standardize, int ncpus);
-RcppExport SEXP _susieR_rcpp_mr_ash_rss(SEXP bhatSEXP, SEXP shatSEXP, SEXP zSEXP, SEXP RSEXP, SEXP var_ySEXP, SEXP nSEXP, SEXP sigma2_eSEXP, SEXP s0SEXP, SEXP w0SEXP, SEXP mu1_initSEXP, SEXP tolSEXP, SEXP max_iterSEXP, SEXP update_w0SEXP, SEXP update_sigmaSEXP, SEXP compute_ELBOSEXP, SEXP standardizeSEXP, SEXP ncpusSEXP) {
+RcppExport SEXP _susieR0_rcpp_mr_ash_rss(SEXP bhatSEXP, SEXP shatSEXP, SEXP zSEXP, SEXP RSEXP, SEXP var_ySEXP, SEXP nSEXP, SEXP sigma2_eSEXP, SEXP s0SEXP, SEXP w0SEXP, SEXP mu1_initSEXP, SEXP tolSEXP, SEXP max_iterSEXP, SEXP update_w0SEXP, SEXP update_sigmaSEXP, SEXP compute_ELBOSEXP, SEXP standardizeSEXP, SEXP ncpusSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -79,13 +79,13 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_susieR_caisa_rcpp", (DL_FUNC) &_susieR_caisa_rcpp, 17},
-    {"_susieR_random_order", (DL_FUNC) &_susieR_random_order, 2},
-    {"_susieR_rcpp_mr_ash_rss", (DL_FUNC) &_susieR_rcpp_mr_ash_rss, 17},
+    {"_susieR0_caisa_rcpp", (DL_FUNC) &_susieR0_caisa_rcpp, 17},
+    {"_susieR0_random_order", (DL_FUNC) &_susieR0_random_order, 2},
+    {"_susieR0_rcpp_mr_ash_rss", (DL_FUNC) &_susieR0_rcpp_mr_ash_rss, 17},
     {NULL, NULL, 0}
 };
 
-RcppExport void R_init_susieR(DllInfo *dll) {
+RcppExport void R_init_susieR0(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }

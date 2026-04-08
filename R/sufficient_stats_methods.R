@@ -63,8 +63,10 @@ initialize_susie_model.ss <- function(data, params, var_y, ...) {
 
     # Initialize Servin-Stephens (NIG) parameters
     if (params$use_servin_stephens) {
-      model$rv <- rep(1, params$L)
+      model$rv            <- rep(1, params$L)
       model$marginal_loglik <- rep(as.numeric(NA), params$L)
+      model$alpha0_l <- rep(params$alpha0, params$L)
+      model$beta0_l  <- rep(params$beta0,  params$L)
     }
   }
 
@@ -209,6 +211,11 @@ compute_ser_statistics.ss <- function(data, params, model, l, ...) {
     optim_init   <- model$V[l]
     optim_bounds <- c(0, 1)
     optim_scale  <- "linear"
+  } else if (params$use_servin_stephens) {
+    # NIG prior: use tighter log-scale bounds; init from current V
+    optim_init   <- log(max(model$V[l], exp(-14)))
+    optim_bounds <- c(-14, 7)
+    optim_scale  <- "log"
   } else {
     # Standard SuSiE and SuSiE-ash: optimize on log scale
     optim_init   <- log(max(c(betahat^2 - shat2, 1), na.rm = TRUE))
@@ -371,8 +378,13 @@ neg_loglik.ss <- function(data, params, model, V_param, ser_stats, ...) {
         log(model$pi + sqrt(.Machine$double.eps))
     ))
   } else {
-    # Standard SuSiE and SuSiE-ash: standard objective
     lbf_model <- loglik.ss(data, params, model, V, ser_stats)
+    # For SS+optim, add Zellner-Siow log-prior on V (= s0):
+    #   log p(s0) = -3/2 * log(s0) - n/(2*s0)   [IG(1/2, n/2) on s0]
+    if (isTRUE(params$use_servin_stephens) && params$estimate_prior_method == "optim") {
+      log_prior <- -1.5 * log(V) - data$n / (2 * V)
+      return(-(lbf_model + log_prior))
+    }
     return(-lbf_model)
   }
 }
@@ -551,6 +563,8 @@ cleanup_model.ss <- function(data, params, model, ...) {
   # Remove Servin-stephens specific temporary fields
   if (params$use_servin_stephens) {
     model$marginal_loglik <- NULL
+    model$alpha0_l        <- NULL
+    model$beta0_l         <- NULL
     if (nrow(model$alpha) > 1) model$elbo <- NULL
   }
   

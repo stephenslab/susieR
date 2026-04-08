@@ -1,6 +1,6 @@
 Encoding: UTF-8
 Type: Package
-Package: susieR
+Package: susieR0
 Title: Sum of Single Effects Linear Regression
 Description: Implements methods for variable selection in linear
     regression based on the "Sum of Single Effects" (SuSiE) model, as
