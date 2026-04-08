@@ -521,8 +521,12 @@ susie_ss <- function(XtX, Xty, yty, n,
 #'   (returned from \code{coef}) are computed on the
 #'   \dQuote{standardized} X, y scale.
 #' 
-#' @param lambda Regularization parameter for LD matrix. When
-#' \code{lambda} > 0, you cannot use \code{unmappable_effects} methods.
+#' @param lambda Regularization parameter for LD matrix (default 0).
+#'   When \code{lambda} > 0, eigenvalues of R are regularized as
+#'   \code{sigma2 * D + lambda}, which can shrink credible sets.
+#'   For multi-panel mixture (\code{R} is a list), lambda = 0 is
+#'   recommended (no regularization). When \code{lambda} > 0, you
+#'   cannot use \code{unmappable_effects} methods.
 #'
 #' @param z_ld_weight This parameter is included for backwards
 #'   compatibility with previous versions of the function, but it is no
@@ -685,37 +689,13 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
   # Handle X input
   if (!is.null(X)) {
     if (is_multi_panel) {
-      # Multi-panel: validate each matrix, require lambda > 0
+      # Multi-panel: validate each matrix
       for (k in seq_along(X)) {
         if (!is.matrix(X[[k]]) || !is.numeric(X[[k]]))
           stop("Each element of X list must be a numeric matrix.")
       }
-      # Multi-panel requires lambda > 0. Auto-set from n or panel sizes if needed.
-      lambda_was_auto <- FALSE
-      if (lambda == 0) {
-        lambda_was_auto <- TRUE
-        B_panels <- vapply(X, nrow, integer(1))
-        if (!is.null(n) && is.numeric(n) && n > 1) {
-          lambda <- 1 / (n - 1)
-          warning_message(
-            "Multi-panel requires lambda > 0 for LD regularization. ",
-            "Setting lambda = 1/(n-1) = ", signif(lambda, 4),
-            " based on association study sample size n = ", n, ". ",
-            "Please override with an explicit lambda value if desired.")
-        } else {
-          B_min <- min(B_panels)
-          lambda <- 1 / B_min
-          warning_message(
-            "Multi-panel requires lambda > 0 for LD regularization. ",
-            "Setting lambda = 1/min(B_k) = ", signif(lambda, 4),
-            " based on smallest panel size B = ", B_min, ". ",
-            "For better calibration, provide n (association study sample size). ",
-            "Please override with an explicit lambda value if desired.")
-        }
-      }
-      # Warn about n not being used in the RSS-lambda model, but only if the
-      # user explicitly set lambda (not when it was auto-set from n).
-      if (!is.null(n) && !lambda_was_auto) {
+      # Warn about n not being used in the RSS-lambda model when lambda > 0.
+      if (!is.null(n) && lambda > 0) {
         warning_message("Parameter 'n' is not used in the RSS-lambda model. ",
                 "Model results are independent of n once lambda is set.")
       }

@@ -1133,7 +1133,7 @@ test_that("rss_lambda_constructor rejects non-symmetric R", {
 
   expect_error(
     rss_lambda_constructor(z, R, lambda = 0.5),
-    "R is not a symmetric matrix"
+    "not a positive semidefinite matrix|R is not a symmetric matrix"
   )
 })
 
@@ -1778,7 +1778,7 @@ test_that("summary_stats_constructor rejects bhat/shat when lambda != 0", {
 
   expect_error(
     summary_stats_constructor(z = z, R = R, bhat = bhat, shat = shat, lambda = 0.5),
-    "Parameters 'bhat' and 'shat' are not supported when lambda != 0"
+    "bhat.*shat.*not supported"
   )
 })
 
@@ -1788,7 +1788,7 @@ test_that("summary_stats_constructor rejects var_y when lambda != 0", {
 
   expect_error(
     summary_stats_constructor(z = z, R = R, var_y = 1.5, lambda = 0.5),
-    "Parameter 'var_y' is not supported when lambda != 0"
+    "var_y.*not supported"
   )
 })
 
@@ -1798,7 +1798,7 @@ test_that("summary_stats_constructor rejects z_ld_weight when lambda != 0", {
 
   expect_error(
     summary_stats_constructor(z = z, R = R, z_ld_weight = 0.5, lambda = 0.5),
-    "Parameter 'z_ld_weight' is not supported when lambda != 0"
+    "z_ld_weight.*not supported"
   )
 })
 
@@ -1822,7 +1822,7 @@ test_that("summary_stats_constructor rejects intercept_value when lambda = 0", {
 
   expect_error(
     summary_stats_constructor(z = z, R = R, n = 100, lambda = 0, intercept_value = 0.5),
-    "Parameter 'intercept_value' is only supported when lambda != 0"
+    "intercept_value.*only supported"
   )
 })
 

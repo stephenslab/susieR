@@ -202,8 +202,10 @@ get_ER2.rss_lambda <- function(data, model) {
   postb2 <- model$diag_postb2
 
   # z^T S^{-1} z (use model z_null_norm2 if omega changed, else data)
+  # When lambda=0, null-space components are projected out (ignored).
   z_null_norm2 <- if (!is.null(model$z_null_norm2)) model$z_null_norm2 else data$z_null_norm2
-  zSinvz <- sum((Dinv * Vtz) * Vtz) + z_null_norm2 / data$lambda
+  zSinvz <- sum((Dinv * Vtz) * Vtz)
+  if (data$lambda > 0) zSinvz <- zSinvz + z_null_norm2 / data$lambda
 
   # -2 zbar^T S^{-1} z
   tmp <- V %*% (Dinv * (D * Vtz))
@@ -229,8 +231,11 @@ get_ER2.rss_lambda <- function(data, model) {
 Eloglik.rss_lambda <- function(data, model) {
   D <- get_eigen_R(data, model)$values
   d <- model$sigma2 * D + data$lambda
-  return(-(length(data$z) / 2) * log(2 * pi) - 0.5 *
-           sum(log(d)) - 0.5 * get_ER2.rss_lambda(data, model))
+  # When lambda=0, zero eigenvalues give d=0; project out null-space.
+  d_pos <- d[d > 0]
+  r_eff <- length(d_pos)
+  return(-(r_eff / 2) * log(2 * pi) - 0.5 *
+           sum(log(d_pos)) - 0.5 * get_ER2.rss_lambda(data, model))
 }
 
 # Log-likelihood for RSS

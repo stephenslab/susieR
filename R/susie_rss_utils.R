@@ -5,8 +5,52 @@
 # handle fundamental operations like sufficient statistics computation and
 # eigenvalue inverse calculations.
 #
-# Functions: compute_suff_stat, compute_Dinv
+# Functions: compute_suff_stat, compute_Dinv, safe_pd_decomp
 # =============================================================================
+
+# Decompose a symmetric PSD matrix for efficient log-determinant and solve.
+# Uses Cholesky when the matrix is PD (fast, O(r^3/6)). Falls back to
+# eigendecomposition when the matrix is singular (e.g. lambda=0 at simplex
+# vertices in omega optimization), projecting out the null-space.
+#
+# Returns a list with:
+#   logdet  - log-determinant (only over positive eigenvalues)
+#   r_eff   - effective rank (number of positive eigenvalues)
+#   solve   - function(v) that computes S^{-1} v (or pseudoinverse for singular S)
+#   solve_z - S^{-1} applied to a specific vector z (precomputed for speed)
+#
+#' @keywords internal
+safe_pd_decomp <- function(S, z = NULL) {
+  r <- nrow(S)
+  # Try Cholesky first (fast path)
+  L <- tryCatch(chol(S), error = function(e) NULL)
+
+  if (!is.null(L)) {
+    # Cholesky succeeded: S is PD
+    logdet <- 2 * sum(log(diag(L)))
+    solve_fn <- function(v) backsolve(L, backsolve(L, v, transpose = TRUE))
+    solve_z <- if (!is.null(z)) solve_fn(z) else NULL
+    return(list(logdet = logdet, r_eff = r, solve = solve_fn, solve_z = solve_z))
+  }
+
+  # Cholesky failed: use eigendecomposition (handles singular matrices)
+  eig <- eigen(S, symmetric = TRUE)
+  d <- pmax(eig$values, 0)
+  Q <- eig$vectors
+  pos <- d > .Machine$double.eps * max(d)
+  d_pos <- d[pos]
+  Q_pos <- Q[, pos, drop = FALSE]
+
+  logdet <- sum(log(d_pos))
+  solve_fn <- function(v) Q_pos %*% (crossprod(Q_pos, v) / d_pos)
+  solve_z <- if (!is.null(z)) {
+    Qt_z <- crossprod(Q_pos, z)
+    Q_pos %*% (Qt_z / d_pos)
+  } else NULL
+
+  list(logdet = logdet, r_eff = sum(pos), solve = solve_fn, solve_z = solve_z)
+}
+
 
 #' @title Compute sufficient statistics for input to \code{susie_ss}
 #'
@@ -348,18 +392,25 @@ eval_omega_eloglik_reduced <- function(cache, omega, iter_cache,
     A_omega <- A_omega + omega[k] * cache$A_list[[k]]
 
   # S_r = sigma2 * A(omega) + lambda * I_r
+  # Uses safe_pd_decomp: Cholesky when PD, eigen fallback when singular
+  # (lambda=0 at simplex vertices where one panel's weight = 0).
   S_r <- sigma2 * A_omega + lambda * diag(r)
+  decomp <- safe_pd_decomp(S_r, z = cache$Vsz)
+  Sinv_Vsz <- decomp$solve_z
+  solve_S  <- decomp$solve
 
-  # Cholesky factorization: O(r^3/6)
-  L <- chol(S_r)
+  # log|S|: column-space from decomp, null-space from lambda (if > 0)
+  logdet_null <- if (lambda > 0) (p - r) * log(lambda) else 0
+  logdet_term <- -0.5 * (decomp$logdet + logdet_null)
 
-  # log|S| = 2*sum(log(diag(L))) + (p - r)*log(lambda)
-  logdet_term <- -0.5 * (2 * sum(log(diag(L))) + (p - r) * log(lambda))
-
-  # S_r^{-1} Vsz via backsolve: O(r^2)
-  Sinv_Vsz <- backsolve(L, backsolve(L, cache$Vsz, transpose = TRUE))
+  # z^T S^{-1} z: null-space term only when lambda > 0
   z_null_norm2 <- max(cache$z_norm2 - sum(cache$Vsz^2), 0)
-  zSinvz <- sum(cache$Vsz * Sinv_Vsz) + z_null_norm2 / lambda
+  zSinvz <- sum(cache$Vsz * Sinv_Vsz)
+  if (lambda > 0) zSinvz <- zSinvz + z_null_norm2 / lambda
+
+  # Effective dimension: full p when lambda > 0 (null-space contributes),
+  # only the effective rank of S_r when lambda = 0.
+  p_eff <- if (lambda > 0) p else decomp$r_eff
 
   # term2: -2 * zbar' R(omega) S^{-1} z
   RSinvz_r <- A_omega %*% Sinv_Vsz
@@ -367,21 +418,21 @@ eval_omega_eloglik_reduced <- function(cache, omega, iter_cache,
 
   # term3: zbar' R(omega) S^{-1} R(omega) zbar
   A_Vsz_bar <- A_omega %*% iter_cache$Vsz_bar
-  Sinv_A_Vsz_bar <- backsolve(L, backsolve(L, A_Vsz_bar, transpose = TRUE))
+  Sinv_A_Vsz_bar <- solve_S(A_Vsz_bar)
   term3 <- sum(A_Vsz_bar * Sinv_A_Vsz_bar)
 
-  # term4: -tr(Z' R(omega) S^{-1} R(omega) Z) via backsolve
+  # term4: -tr(Z' R(omega) S^{-1} R(omega) Z)
   A_ZVs_t <- A_omega %*% t(iter_cache$ZVs)
-  Sinv_A_ZVs_t <- backsolve(L, backsolve(L, A_ZVs_t, transpose = TRUE))
+  Sinv_A_ZVs_t <- solve_S(A_ZVs_t)
   term4 <- -sum(A_ZVs_t * Sinv_A_ZVs_t)
 
-  # term5: tr(diag(postb2) R(omega) S^{-1} R(omega)) via A_omega M A_omega
+  # term5: tr(diag(postb2) R(omega) S^{-1} R(omega))
   AMA_omega <- A_omega %*% iter_cache$M_postb2 %*% A_omega
-  Sinv_AMA <- backsolve(L, backsolve(L, AMA_omega, transpose = TRUE))
+  Sinv_AMA <- solve_S(AMA_omega)
   term5 <- sum(diag(Sinv_AMA))
 
   ER2 <- zSinvz + term2 + term3 + term4 + term5
-  -p / 2 * log(2 * pi) + logdet_term - 0.5 * ER2
+  -p_eff / 2 * log(2 * pi) + logdet_term - 0.5 * ER2
 }
 
 # Recover full eigendecomposition from reduced basis after omega is chosen.
@@ -426,7 +477,9 @@ eval_omega_eloglik_R <- function(panel_R, omega, z, zbar, diag_postb2, Z,
   Dinv <- ifelse(S_diag > 0, 1 / S_diag, 0)
   DinvD2 <- Dinv * D^2
 
-  logdet_term <- -0.5 * sum(log(S_diag))
+  # When lambda=0, skip zero entries in log-det and null-space terms
+  S_pos <- S_diag[S_diag > 0]
+  logdet_term <- -0.5 * sum(log(S_pos))
   zSinvz <- sum(Dinv * Vtz^2)
   if (lambda > 0) zSinvz <- zSinvz + z_null_norm2 / lambda
 
@@ -443,7 +496,8 @@ eval_omega_eloglik_R <- function(panel_R, omega, z, zbar, diag_postb2, Z,
   term5 <- sum(diag_RSinvR * diag_postb2)
 
   ER2 <- zSinvz + term2 + term3 + term4 + term5
-  -p / 2 * log(2 * pi) + logdet_term - 0.5 * ER2
+  p_eff <- length(S_pos)
+  -p_eff / 2 * log(2 * pi) + logdet_term - 0.5 * ER2
 }
 
 # Optimize omega on the K-simplex by maximizing eval_fn.

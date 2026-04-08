@@ -719,7 +719,7 @@ test_that("susie_rss with lambda > 0 rejects bhat/shat", {
     susie_rss(z = setup$z, R = setup$R, L = 5,
               bhat = rnorm(50), shat = runif(50, 0.5, 1),
               lambda = 1e-5, verbose = FALSE),
-    "Parameters 'bhat' and 'shat' are not supported when lambda != 0"
+    "bhat.*shat.*not supported"
   )
 })
 
@@ -730,7 +730,7 @@ test_that("susie_rss with lambda > 0 rejects var_y", {
   expect_error(
     susie_rss(z = setup$z, R = setup$R, L = 5,
               var_y = 1.5, lambda = 1e-5, verbose = FALSE),
-    "Parameter 'var_y' is not supported when lambda != 0"
+    "var_y.*not supported"
   )
 })
 
@@ -744,7 +744,7 @@ test_that("susie_rss with lambda = 0 rejects intercept_value", {
   expect_error(
     susie_rss(z = z_scores, R = R, n = 100, L = 5,
               lambda = 0, intercept_value = 0.5, verbose = FALSE),
-    "Parameter 'intercept_value' is only supported when lambda != 0"
+    "intercept_value.*only supported"
   )
 })
 

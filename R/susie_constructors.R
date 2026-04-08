@@ -612,25 +612,30 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
     model_init <- s_init
   }
 
-  # Check if this should use RSS-lambda path
-  if (lambda != 0) {
-    # Parameter validation for RSS-lambda
+  # Check if this should use RSS-lambda (eigendecomposition) path.
+  # Route here when lambda > 0 OR multi-panel (list of X/R matrices).
+  is_multipanel <- is.list(X) && !is.matrix(X)
+  if (lambda != 0 || is_multipanel) {
+    # Parameter validation for RSS-lambda / multi-panel path
     if (!is.null(bhat) || !is.null(shat)) {
-      stop("Parameters 'bhat' and 'shat' are not supported when lambda != 0. ",
+      stop("Parameters 'bhat' and 'shat' are not supported in the ",
+           "eigendecomposition path (lambda != 0 or multi-panel). ",
            "Please provide z-scores directly.")
     }
 
     if (!is.null(var_y)) {
-      stop("Parameter 'var_y' is not supported when lambda != 0.")
+      stop("Parameter 'var_y' is not supported in the ",
+           "eigendecomposition path (lambda != 0 or multi-panel).")
     }
 
     if (z_ld_weight != 0) {
-      stop("Parameter 'z_ld_weight' is not supported when lambda != 0.")
+      stop("Parameter 'z_ld_weight' is not supported in the ",
+           "eigendecomposition path (lambda != 0 or multi-panel).")
     }
 
-    # For multi-panel, the n-warning is handled in susie_rss() where we know
-    # whether lambda was auto-set from n. For single-panel lambda != 0, warn here.
-    if (!is.null(n) && !(is.list(X) && !is.matrix(X))) {
+    # Warn that n is not used when lambda > 0 (single-panel only;
+    # multi-panel n-warning is handled in susie_rss).
+    if (!is.null(n) && lambda > 0 && !is_multipanel) {
       warning_message("Parameter 'n' is not used in the RSS-lambda model. ",
               "Model results are independent of n once lambda is set.")
     }
@@ -665,7 +670,8 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
 
   # Parameter validation for standard RSS (lambda = 0)
   if (intercept_value != 0) {
-    stop("Parameter 'intercept_value' is only supported when lambda != 0.")
+    stop("Parameter 'intercept_value' is only supported in the ",
+         "eigendecomposition path (lambda != 0 or multi-panel).")
   }
 
   # Issue warning for estimate_residual_variance if TRUE
@@ -865,7 +871,8 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
 # =============================================================================
 # RSS LAMBDA DATA CONSTRUCTOR
 #
-# Constructs data and params objects for SuSiE from RSS data with regularized LD matrix (lambda > 0).
+# Constructs data and params objects for SuSiE from RSS data using eigendecomposition
+# (lambda >= 0, including multi-panel mixture with lambda = 0).
 # Handles eigen decomposition, MAF filtering, and specialized RSS-lambda preprocessing.
 # =============================================================================
 #'
@@ -918,9 +925,10 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
                                    refine = FALSE,
                                    stochastic_ld_sample = NULL) {
 
-  # Handle MoM fallback for RSS with lambda != 0
+  # Handle MoM fallback for RSS eigendecomposition path
   if (estimate_residual_method == "MoM") {
-    warning_message("Method of Moments (MoM) variance estimation is not implemented for RSS with lambda > 0. ",
+    warning_message("Method of Moments (MoM) variance estimation is not implemented ",
+            "for the eigendecomposition path (RSS-lambda / multi-panel). ",
             "Automatically switching to estimate_residual_method = 'MLE'.")
     estimate_residual_method <- "MLE"
   }
