@@ -115,7 +115,7 @@ run_scenario <- function(scenario, n_reps = 50) {
     fit_mix <- susie_rss(z = z, X = list(X1, X2), lambda = lambda, L = L,
                          max_iter = max_iter,
                          estimate_residual_variance = TRUE, verbose = FALSE,
-                         multipanel_safeguard = TRUE)
+                         check_prior = FALSE)
     mix_elbo <- tail(fit_mix$elbo, 1)
 
     # ELBO tracking
@@ -124,7 +124,7 @@ run_scenario <- function(scenario, n_reps = 50) {
 
     if (mix_elbo >= best_sp_elbo - 1e-6) mix_ge_sp <- mix_ge_sp + 1
     if (mix_elbo > best_sp_elbo + 0.1)   mix_better <- mix_better + 1
-    if (any(fit_mix$omega_weights > 0.999)) safeguard_ct <- safeguard_ct + 1
+    if (any(fit_mix$omega_weights > 0.999)) safeguard_ct <- safeguard_ct + 1  # omega collapsed to single panel
 
     # Check for ELBO decreases within the mixture fit
     elbo_traj <- fit_mix$elbo
@@ -156,7 +156,7 @@ run_scenario <- function(scenario, n_reps = 50) {
   }
 
   # Per-scenario summary
-  cat(sprintf("  ELBO:  Mix>=SP %d/%d | Better %d/%d | Safeguard %d/%d | ELBO-decrease %d/%d\n",
+  cat(sprintf("  ELBO:  Mix>=SP %d/%d | Better %d/%d | Collapsed %d/%d | ELBO-decrease %d/%d\n",
               mix_ge_sp, n_reps, mix_better, n_reps,
               safeguard_ct, n_reps, elbo_decrease_ct, n_reps))
   cat(sprintf("         diff: mean=%.2f min=%.2f max=%.2f\n",

@@ -574,13 +574,9 @@ susie_ss <- function(XtX, Xty, yty, n,
 #'   \code{stochastic_ld_diagnostics} element with per-region and
 #'   per-variable quality metrics.
 #'
-#' @param multipanel_safeguard When \code{TRUE} (default), multi-panel
-#'   fits are compared against single-panel fits at convergence. If the
-#'   best single-panel ELBO exceeds the mixture ELBO, the single-panel
-#'   result is returned instead (with omega at the corresponding vertex).
-#'   This guards against EM local optima where mixing panels hurts. Set
-#'   to \code{FALSE} to always return the mixture result, which is useful
-#'   for benchmarking and diagnostics of the mixture model.
+#' @param multipanel_safeguard Deprecated. Ignored. Single-panel fits
+#'   are always stored in the returned object as \code{$single_panel_fits}
+#'   so users can compare mixture vs single-panel results themselves.
 #'
 #' @return In addition to the standard \code{"susie"} output (see
 #'   \code{\link{susie}}), the returned object may contain:
@@ -717,8 +713,8 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
       # Run each single panel to convergence. This serves two purposes:
       # (1) select the best vertex for mixture initialization (avoids rank
       #     bias in null marginal log-likelihoods when B_k < p), and
-      # (2) provide a fallback if the mixture optimizer converges to a
-      #     local optimum where mixing hurts (standard EM multi-restart).
+      # (2) provide users with single-panel fits for comparison (stored
+      #     in the returned object as $single_panel_fits).
       sp_call <- match.call()
       sp_call[[1]] <- quote(susie_rss)
       sp_call$verbose <- FALSE
@@ -822,25 +818,19 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
   # Run main SuSiE algorithm
   model <- susie_workhorse(susie_objects$data, susie_objects$params)
 
-  # Multi-panel safeguard: the omega optimizer can converge to local optima
-  # where mixing hurts (especially with asymmetric panel ranks). Compare
-  # with the converged single-panel fits and return whichever is best.
+  # Store single-panel fits inside the mixture result so users can compare.
+  # Always return the mixture result; users can choose a single-panel fit
+  # from model$single_panel_fits if they prefer.
   if (exists("sp_fits") && !is.null(sp_fits)) {
-    mix_elbo <- tail(model$elbo, 1)
-    best_k <- which.max(sp_elbos)
     if (verbose) {
+      mix_elbo <- tail(model$elbo, 1)
+      best_k <- which.max(sp_elbos)
       omega_str <- paste(round(model$omega_weights, 3), collapse = ", ")
       message(sprintf(
         "Multi-panel: mixture ELBO = %.2f (omega = %s), best single-panel ELBO = %.2f (panel %d).",
         mix_elbo, omega_str, sp_elbos[best_k], best_k))
     }
-    if (multipanel_safeguard && sp_elbos[best_k] > mix_elbo) {
-      if (verbose)
-        message(sprintf("Falling back to panel %d (single-panel ELBO is higher).", best_k))
-      sp_fits[[best_k]]$omega_weights <- rep(0, length(sp_fits))
-      sp_fits[[best_k]]$omega_weights[best_k] <- 1
-      model <- sp_fits[[best_k]]
-    }
+    model$single_panel_fits <- sp_fits
   }
 
   return(model)

@@ -94,8 +94,12 @@ When the sample variance is not provided, the coefficients
 \item{L}{Maximum number of non-zero effects in the model. If L is larger than
 the number of covariates, p, L is set to p.}
 
-\item{lambda}{Regularization parameter for LD matrix. When
-\code{lambda} > 0, you cannot use \code{unmappable_effects} methods.}
+\item{lambda}{Regularization parameter for LD matrix (default 0).
+When \code{lambda} > 0, eigenvalues of R are regularized as
+\code{sigma2 * D + lambda}, which can shrink credible sets.
+For multi-panel mixture (\code{R} is a list), lambda = 0 is
+recommended (no regularization). When \code{lambda} > 0, you
+cannot use \code{unmappable_effects} methods.}
 
 \item{maf}{A p-vector of minor allele frequencies; to be used along with
 \code{maf_thresh} to filter input summary statistics.}
@@ -288,13 +292,9 @@ stochastic samples, and no variance inflation applied.}
   \code{stochastic_ld_diagnostics} element with per-region and
   per-variable quality metrics.}
 
-\item{multipanel_safeguard}{When \code{TRUE} (default), multi-panel
-fits are compared against single-panel fits at convergence. If the
-best single-panel ELBO exceeds the mixture ELBO, the single-panel
-result is returned instead (with omega at the corresponding vertex).
-This guards against EM local optima where mixing panels hurts. Set
-to \code{FALSE} to always return the mixture result, which is useful
-for benchmarking and diagnostics of the mixture model.}
+\item{multipanel_safeguard}{Deprecated. Ignored. Single-panel fits
+are always stored in the returned object as \code{$single_panel_fits}
+so users can compare mixture vs single-panel results themselves.}
 
 \item{alpha0}{Numerical parameter for the NIG prior when using
 \code{estimate_residual_method = "Servin_Stephens"}.}
