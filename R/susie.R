@@ -690,6 +690,10 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
         if (!is.matrix(X[[k]]) || !is.numeric(X[[k]]))
           stop("Each element of X list must be a numeric matrix.")
       }
+      # Multi-panel lambda=0 uses the ss model which requires n.
+      if (lambda == 0 && is.null(n)) {
+        stop("Sample size 'n' is required for multi-panel mode with lambda=0.")
+      }
       # Warn about n not being used in the RSS-lambda model when lambda > 0.
       if (!is.null(n) && lambda > 0) {
         warning_message("Parameter 'n' is not used in the RSS-lambda model. ",

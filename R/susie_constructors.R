@@ -1203,6 +1203,11 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
       x_is_standardized = TRUE)
   }
 
+  # Compute n_scale: when lambda=0 and sample size n is available,
+  # scale SER statistics to match the ss model y ~ N(Xb, sigma2*I)
+  # with XtX = (n-1)*R. When n_scale=1 (lambda>0 or no n), no scaling.
+  n_scale <- if (lambda == 0 && !is.null(n) && n > 1) (n - 1) else 1
+
   # Create data object with RSS-lambda specific fields
   data_object <- structure(
     list(
@@ -1211,6 +1216,8 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
       X = X,
       n = length(z),
       p = length(z),
+      sample_size = n,
+      n_scale = n_scale,
       lambda = lambda,
       intercept_value = intercept_value,
       r_tol = r_tol,
