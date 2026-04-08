@@ -49,8 +49,13 @@ initialize_susie_model.individual <- function(data, params, var_y, ...) {
 
   # Initialize Servin-Stephens parameters
   if (params$use_servin_stephens) {
-    model$rv <- rep(1, params$L)
+    model$rv            <- rep(1, params$L)
     model$marginal_loglik <- rep(as.numeric(NA), params$L)
+    # Per-effect NIG hyperparameter storage for EB warm-starting.
+    # Initialised to the global values; updated each IBSS iteration
+    # when estimate_prior_method = "optim".
+    model$alpha0_l <- rep(params$alpha0, params$L)
+    model$beta0_l  <- rep(params$beta0,  params$L)
   }
 
   # Initialize ash (Mr.ASH) tracking fields
@@ -129,9 +134,19 @@ compute_ser_statistics.individual <- function(data, params, model, l, ...) {
   shat2   <- model$residual_variance / model$predictor_weights
 
   # Optimization parameters
-  optim_init   <- log(max(c(betahat^2 - shat2, 1), na.rm = TRUE))
-  optim_bounds <- c(-30, 15)
-  optim_scale  <- "log"
+  if (params$use_servin_stephens) {
+    # For NIG prior the marginal log-likelihood is well-behaved on
+    # [exp(-14), exp(7)] ≈ [1e-6, 1e3].  The Gaussian-based init
+    # (betahat^2 - shat2) is not meaningful for NIG so we start at the
+    # current V value instead.
+    optim_init   <- log(max(model$V[1], exp(-14)))
+    optim_bounds <- c(-14, 7)
+    optim_scale  <- "log"
+  } else {
+    optim_init   <- log(max(c(betahat^2 - shat2, 1), na.rm = TRUE))
+    optim_bounds <- c(-30, 15)
+    optim_scale  <- "log"
+  }
 
   return(list(
     betahat      = betahat,
@@ -426,6 +441,8 @@ cleanup_model.individual <- function(data, params, model, ...) {
   # Remove Servin-stephens specific temporary fields
   if (params$use_servin_stephens) {
     model$marginal_loglik <- NULL
+    model$alpha0_l        <- NULL
+    model$beta0_l         <- NULL
     if (nrow(model$alpha) > 1) model$elbo <- NULL
   }
 

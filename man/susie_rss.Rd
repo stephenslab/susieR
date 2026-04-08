@@ -172,7 +172,11 @@ variance. When \code{estimate_prior_method = "simple"} is used, the
 likelihood at the specified prior variance is compared to the
 likelihood at a variance of zero, and the setting with the larger
 likelihood is retained. When \code{prior_variance_grid} is provided,
-this is automatically set to \code{"fixed_mixture"}.}
+this is automatically set to \code{"fixed_mixture"}. When
+\code{estimate_residual_method = "Servin_Stephens"}, both \code{"EM"}
+(default, closed-form one-step update) and \code{"optim"} (empirical
+Bayes via 1-D marginal-likelihood maximisation) are supported; other
+methods are overridden to \code{"EM"}.}
 
 \item{prior_variance_grid}{Numeric vector of K prior variances defining
 a mixture-of-normals prior on effect sizes. When provided, the SER

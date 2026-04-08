@@ -144,7 +144,11 @@
 #'   likelihood at the specified prior variance is compared to the
 #'   likelihood at a variance of zero, and the setting with the larger
 #'   likelihood is retained. When \code{prior_variance_grid} is provided,
-#'   this is automatically set to \code{"fixed_mixture"}.
+#'   this is automatically set to \code{"fixed_mixture"}. When
+#'   \code{estimate_residual_method = "Servin_Stephens"}, both \code{"EM"}
+#'   (default, closed-form one-step update) and \code{"optim"} (empirical
+#'   Bayes via 1-D marginal-likelihood maximisation) are supported; other
+#'   methods are overridden to \code{"EM"}.
 #'
 #' @param prior_variance_grid Numeric vector of K prior variances defining
 #'   a mixture-of-normals prior on effect sizes. When provided, the SER
@@ -319,7 +323,8 @@ susie <- function(X, y, L = min(10, ncol(X)),
                   refine = FALSE,
                   n_purity = 100,
                   alpha0 = 0.1,
-                  beta0 = 0.1) {
+                  beta0 = 0.1,
+                  estimate_nig_hyperparams = FALSE) {
 
   # Validate method arguments
   unmappable_effects       <- match.arg(unmappable_effects)
@@ -344,7 +349,7 @@ susie <- function(X, y, L = min(10, ncol(X)),
     min_abs_corr, compute_univariate_zscore, na.rm,
     max_iter, tol, convergence_method, verbose, track_fit,
     residual_variance_lowerbound, refine, n_purity,
-    alpha0, beta0
+    alpha0, beta0, estimate_nig_hyperparams
   )
 
   # Run main SuSiE algorithm

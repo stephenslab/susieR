@@ -507,10 +507,30 @@ validate_and_override_params <- function(params) {
       params$convergence_method <- "pip"
     }
 
-    # Override prior variance estimation method (only when estimation is enabled)
-    if (params$estimate_prior_variance && params$estimate_prior_method != "EM") {
-      warning_message("Servin_Stephens method works better with EM. Setting estimate_prior_method='EM'.")
-      params$estimate_prior_method <- "EM"
+    # Prior variance estimation for Servin-Stephens:
+    #   "EM"    – default; one closed-form step per IBSS iteration, stable
+    #   "optim" – used automatically when estimate_nig_hyperparams = TRUE;
+    #             jointly optimises (s0, alpha0, beta0) via Nelder-Mead.
+    #             Do NOT activate via the global estimate_prior_method default
+    #             ("optim" is the first element of that vector) without the
+    #             explicit flag — with a0=b0=0 this can produce +Inf BFs and
+    #             NaN alpha values at convergence.
+    #   other   – "simple" and "uniroot" are not compatible with NIG
+    if (params$estimate_prior_variance) {
+      if (isTRUE(params$estimate_nig_hyperparams)) {
+        # Explicit joint EB: override prior method to "optim"
+        params$estimate_prior_method <- "optim"
+      } else if (params$estimate_prior_method != "EM") {
+        # All other methods (including the default "optim") fall back to EM
+        if (params$estimate_prior_method != "none" &&
+            params$estimate_prior_method != "fixed_mixture") {
+          warning_message("Servin_Stephens method uses EM for prior variance estimation. ",
+                          "Setting estimate_prior_method = 'EM'. ",
+                          "To jointly estimate NIG hyperparameters (alpha0, beta0) via ",
+                          "empirical Bayes, set estimate_nig_hyperparams = TRUE.")
+        }
+        params$estimate_prior_method <- "EM"
+      }
     }
   } else {
     params$use_servin_stephens <- FALSE
@@ -1222,6 +1242,89 @@ update_prior_variance_NIG_EM <- function(n, xx, xy, yy, sxy, pip, s0, a0, b0, ta
   vb <- post_var + post_mean^2 * 2 / b1 * (1 / beta(a1/2, 1) - u^2)
 
   return(sum(pip * (vb + mb^2)))
+}
+
+# =============================================================================
+# JOINT EB OPTIMIZATION OF NIG HYPERPARAMETERS
+#
+# Jointly optimises (s0, alpha0, beta0) by maximising the SER marginal
+# log-likelihood via Nelder-Mead.  Called from single_effect_regression
+# when estimate_residual_method = "Servin_Stephens" and
+# estimate_prior_method = "optim".
+#
+# Search space (all unconstrained via log-shift parameterisation):
+#   s0     = exp(u)              in [exp(-14), exp(7)]  ~ [1e-6, 1e3]
+#   alpha0 = exp(v) - eps        >= 0   (eps = 1e-6)
+#   beta0  = exp(w) - eps        >= 0
+#
+# The Jeffreys limit (alpha0=0, beta0=0) is recovered when v = w = log(eps).
+# Initialisation warm-starts from the per-effect estimates stored in
+# model$alpha0_l[l] and model$beta0_l[l] (updated each IBSS iteration).
+# =============================================================================
+#' @keywords internal
+#' @importFrom stats optim
+optimize_nig_hyperparams_joint <- function(data, params, model, l) {
+  nig_ss <- get_nig_sufficient_stats(data, model)
+  pw     <- model$pi
+  n      <- data$n
+  eps    <- 1e-6   # lower bound offset so log is always defined
+
+  # Negative SER log-likelihood as function of (u, v, w)
+  neg_ll <- function(par) {
+    s0 <- exp(par[1])
+    a0 <- max(exp(par[2]) - eps, 0)
+    b0 <- max(exp(par[3]) - eps, 0)
+
+    lbf <- compute_lbf_NIG(n, model$predictor_weights,
+                            model$residuals, nig_ss$yy, nig_ss$sxy,
+                            s0, a0, b0, nig_ss$tau)
+
+    # Guard: NaN/Inf lbf can arise when rss <= 0 (floating point) with b0=0.
+    # Cap at a large finite value so the log-sum-exp is well-defined.
+    lbf[!is.finite(lbf)] <- 0
+    lbf <- pmin(lbf, 500)
+
+    lpo    <- lbf + log(pw + sqrt(.Machine$double.eps))
+    lpo[!is.finite(lpo)] <- -Inf
+    maxlpo <- max(lpo)
+    if (!is.finite(maxlpo)) return(1e10)
+    w <- exp(lpo - maxlpo)
+    if (any(is.nan(w))) return(1e10)   # NaN from exp(+Inf - +Inf): bail out
+    -(log(sum(w)) + maxlpo)
+  }
+
+  # Warm-start: use per-effect estimates from previous iteration if available,
+  # otherwise fall back to global params
+  V_curr  <- get_prior_variance_l(model, l)
+  a0_curr <- if (!is.null(model$alpha0_l)) model$alpha0_l[l] else params$alpha0
+  b0_curr <- if (!is.null(model$beta0_l))  model$beta0_l[l]  else params$beta0
+
+  par_init <- c(
+    log(max(V_curr,  eps)),
+    log(max(a0_curr + eps, eps)),   # log(a0 + eps); init at Jeffreys if a0=0
+    log(max(b0_curr + eps, eps))
+  )
+
+  opt <- tryCatch(
+    optim(par     = par_init,
+          fn      = neg_ll,
+          method  = "Nelder-Mead",
+          control = list(maxit = 500, reltol = 1e-7)),
+    error = function(e) list(par = par_init, convergence = 1)
+  )
+
+  s0_hat <- exp(opt$par[1])
+  a0_hat <- max(exp(opt$par[2]) - eps, 0)
+  b0_hat <- max(exp(opt$par[3]) - eps, 0)
+
+  # Safety: if optimum is worse than init, keep init values
+  if (neg_ll(opt$par) > neg_ll(par_init)) {
+    s0_hat <- V_curr
+    a0_hat <- a0_curr
+    b0_hat <- b0_curr
+  }
+
+  list(V = s0_hat, a0 = a0_hat, b0 = b0_hat)
 }
 
 # Compute KL divergence for Normal-Inverse-Gamma (NIG) prior

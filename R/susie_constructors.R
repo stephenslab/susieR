@@ -45,7 +45,8 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
                                         refine = FALSE,
                                         n_purity = 100,
                                         alpha0 = 0,
-                                        beta0 = 0) {
+                                        beta0 = 0,
+                                        estimate_nig_hyperparams = FALSE) {
 
   # Handle deprecated s_init argument
   if (!is.null(s_init)) {
@@ -215,6 +216,7 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
     n_purity = n_purity,
     alpha0 = alpha0,
     beta0 = beta0,
+    estimate_nig_hyperparams = estimate_nig_hyperparams,
     use_servin_stephens = FALSE,  # Will be set by validation function
     intercept = intercept,
     standardize = standardize

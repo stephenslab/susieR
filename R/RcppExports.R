@@ -2,14 +2,14 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 caisa_rcpp <- function(X, y, w, sa2, pi, beta, r, sigma2, o, maxiter, miniter, convtol, epstol, method_q, updatepi, updatesigma, verbose) {
-    .Call('_susieR_caisa_rcpp', PACKAGE = 'susieR', X, y, w, sa2, pi, beta, r, sigma2, o, maxiter, miniter, convtol, epstol, method_q, updatepi, updatesigma, verbose)
+    .Call('_susieR0_caisa_rcpp', PACKAGE = 'susieR0', X, y, w, sa2, pi, beta, r, sigma2, o, maxiter, miniter, convtol, epstol, method_q, updatepi, updatesigma, verbose)
 }
 
 random_order <- function(p, numiter) {
-    .Call('_susieR_random_order', PACKAGE = 'susieR', p, numiter)
+    .Call('_susieR0_random_order', PACKAGE = 'susieR0', p, numiter)
 }
 
 rcpp_mr_ash_rss <- function(bhat, shat, z, R, var_y, n, sigma2_e, s0, w0, mu1_init, tol = 1e-8, max_iter = 1e5L, update_w0 = TRUE, update_sigma = TRUE, compute_ELBO = TRUE, standardize = FALSE, ncpus = 1L) {
-    .Call('_susieR_rcpp_mr_ash_rss', PACKAGE = 'susieR', bhat, shat, z, R, var_y, n, sigma2_e, s0, w0, mu1_init, tol, max_iter, update_w0, update_sigma, compute_ELBO, standardize, ncpus)
+    .Call('_susieR0_rcpp_mr_ash_rss', PACKAGE = 'susieR0', bhat, shat, z, R, var_y, n, sigma2_e, s0, w0, mu1_init, tol, max_iter, update_w0, update_sigma, compute_ELBO, standardize, ncpus)
 }
 

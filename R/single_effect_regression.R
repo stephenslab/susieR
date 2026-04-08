@@ -32,7 +32,7 @@ single_effect_regression <- function(data, params, model, l) {
     }
 
     # Standard scalar V path (unchanged)
-
+browser()
     # Store Prior Variance Value for the lth Effect
     V <- get_prior_variance_l(model, l)
 
@@ -41,8 +41,26 @@ single_effect_regression <- function(data, params, model, l) {
 
     # Optimize Prior Variance of lth effect
     if (params$estimate_prior_method != "EM" && params$estimate_prior_method != "none") {
-      V <- optimize_prior_variance(data, params, model, ser_stats,
-        V_init = V)
+
+      if (isTRUE(params$use_servin_stephens) &&
+          isTRUE(params$estimate_nig_hyperparams)) {
+        # Joint EB: simultaneously optimise s0, alpha0, beta0 via
+        # Nelder-Mead on the NIG SER marginal log-likelihood.
+        nig_eb   <- optimize_nig_hyperparams_joint(data, params, model, l)
+        V        <- nig_eb$V
+        # Store per-effect estimates for warm-starting next IBSS iteration
+        if (!is.null(model$alpha0_l)) model$alpha0_l[l] <- nig_eb$a0
+        if (!is.null(model$beta0_l))  model$beta0_l[l]  <- nig_eb$b0
+        # Local params copy with EB-estimated hyperparameters so that
+        # loglik(), calculate_posterior_moments(), and compute_kl()
+        # below all use the estimated values.
+        params        <- params
+        params$alpha0 <- nig_eb$a0
+        params$beta0  <- nig_eb$b0
+      } else {
+        V <- optimize_prior_variance(data, params, model, ser_stats,
+          V_init = V)
+      }
     }
 
     # Compute logged Bayes factors and posterior inclusion probabilities
@@ -166,8 +184,19 @@ optimize_prior_variance <- function(data, params, model, ser_stats,
   # that can decrease the ELBO. Null effects are handled by
   # trim_null_effects() after convergence instead.
   # see https://github.com/stephenslab/mvsusieR/issues/26
+  #
+  # For Servin-Stephens + optim, also skip: the NIG marginal
+  # log-likelihood evaluated at V -> 0 equals log(1) = 0 when all
+  # variables are given equal prior weight, so the null formally wins
+  # whenever the SER explains < 1/p of the variance after averaging
+  # across all p variables.  This is a scale artifact, not genuine
+  # evidence of no effect; trim_null_effects() after convergence
+  # handles the parsimony concern.
+  ss_optim <- isTRUE(params$use_servin_stephens) &&
+              params$estimate_prior_method == "optim"
   if (params$estimate_prior_method != "EM" &&
-      params$estimate_prior_method != "none") {
+      params$estimate_prior_method != "none" &&
+      !ss_optim) {
     if (loglik(data, params, model, 0, ser_stats) +
       params$check_null_threshold >= loglik(data, params, model, V, ser_stats)) {
       V <- 0
