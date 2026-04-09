@@ -319,7 +319,8 @@ susie <- function(X, y, L = min(10, ncol(X)),
                   refine = FALSE,
                   n_purity = 100,
                   alpha0 = 0.1,
-                  beta0 = 0.1) {
+                  beta0 = 0.1,
+                  init_only = FALSE) {
 
   # Validate method arguments
   unmappable_effects       <- match.arg(unmappable_effects)
@@ -346,6 +347,12 @@ susie <- function(X, y, L = min(10, ncol(X)),
     residual_variance_lowerbound, refine, n_purity,
     alpha0, beta0
   )
+
+  # Return data and params without fitting if init_only is TRUE.
+  # The caller is responsible for calling ibss_initialize() on these.
+  if (init_only) {
+    return(susie_objects)
+  }
 
   # Run main SuSiE algorithm
   model <- susie_workhorse(susie_objects$data, susie_objects$params)
