@@ -482,21 +482,6 @@ validate_and_override_params <- function(params) {
                     "with the Gamma-Poisson slot activity model.")
   }
 
-  # When c_hat is active, the standard ELBO and prior variance optimization
-  # are invalid because SER sufficient statistics are computed from
-  # slot-weighted residuals. Fix: (1) use PIP convergence, (2) disable
-  # ELBO-based V optimization (use the default scaled_prior_variance).
-  # susieAnn handles this the same way — prior variance comes from a shared
-  # grid, not per-slot optimization.
-  if (!is.null(params$C) && params$estimate_prior_variance &&
-      params$estimate_prior_method == "optim") {
-    warning_message("Prior variance optimization (method='optim') is not ",
-            "compatible with Gamma-Poisson slot activity (C != NULL). ",
-            "Switching to estimate_prior_method='EM'.",
-            " For best results, provide a prior_variance_grid.")
-    params$estimate_prior_method <- "EM"
-  }
-
   # Override convergence method for unmappable effects or c_hat.
   # The ELBO is not well-defined when slot_weights != 1 (c_hat active)
   # or when unmappable effects modify the residual structure.
