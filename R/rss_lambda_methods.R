@@ -109,8 +109,8 @@ compute_residuals.rss_lambda <- function(data, params, model, l, ...) {
   model$fitted_without_l  <- Rz_without_l
   model$residual_variance <- 1  # RSS lambda uses normalized residual variance
 
-  # Dynamic stochastic LD variance inflation (z-score scale)
-  if (!is.null(data$stochastic_ld_B)) {
+  # Dynamic sketch LD variance inflation (z-score scale)
+  if (!is.null(data$sketch_B)) {
     # Weighted sum of effects excluding l
     sw <- if (!is.null(model$slot_weights)) model$slot_weights else rep(1, nrow(model$alpha))
     b_minus_l <- colSums(sw * model$alpha * model$mu) - sw_l * model$alpha[l, ] * model$mu[l, ]
@@ -128,7 +128,7 @@ compute_ser_statistics.rss_lambda <- function(data, params, model, l, ...) {
   shat2   <- 1 / model$RjSinvRj
   betahat <- signal * shat2
 
-  # Apply stochastic LD inflation to shat2
+  # Apply sketch LD inflation to shat2
   if (!is.null(model$shat2_inflation))
     shat2 <- shat2 * model$shat2_inflation
 
@@ -414,8 +414,8 @@ update_derived_quantities.rss_lambda <- function(data, params, model) {
     # Update effective B only when variance inflation is active (opt-in).
     # B_eff = 1/sum(omega_k^2/B_k): effective sample size for a weighted
     # average of independent LD estimators, each from B_k samples.
-    if (!is.null(data$stochastic_ld_B))
-      model$stochastic_ld_B <- 1 / sum(model$omega^2 / data$B_list)
+    if (!is.null(data$sketch_B))
+      model$sketch_B <- 1 / sum(model$omega^2 / data$B_list)
   }
 
   # Recalculate Dinv with updated sigma2 (and potentially updated eigen_R)
@@ -506,7 +506,7 @@ cleanup_model.rss_lambda <- function(data, params, model, ...) {
 
   # Remove RSS-lambda-specific temporary fields
   rss_fields <- c("SinvRj", "RjSinvRj", "Rz", "Z", "zbar", "diag_postb2",
-                   "X_meta", "eigen_R", "Vtz", "omega", "stochastic_ld_B",
+                   "X_meta", "eigen_R", "Vtz", "omega", "sketch_B",
                    "z_null_norm2", "omega_converged", "shat2_inflation",
                    "residuals", "fitted_without_l", "residual_variance")
 

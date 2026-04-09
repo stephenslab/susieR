@@ -599,7 +599,7 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
                                       n_purity = 100,
                                       r_tol = 1e-8,
                                       refine = FALSE,
-                                      stochastic_ld_sample = NULL,
+                                      sketch_samples = NULL,
                                       alpha0 = 0.1,
                                       beta0 = 0.1) {
 
@@ -667,7 +667,7 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
       verbose = verbose, track_fit = track_fit, check_input = check_input,
       check_prior = check_prior, check_R = check_R, check_z = check_z,
       n_purity = n_purity, r_tol = r_tol, refine = refine,
-      stochastic_ld_sample = stochastic_ld_sample
+      sketch_samples = sketch_samples
     ))
   }
 
@@ -792,12 +792,12 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
     X <- standardize_X(X)
   }
 
-  # Stochastic LD sketch diagnostics (static, computed once at initialization).
+  # Sketch sketch diagnostics (static, computed once at initialization).
   # X is standardized (X'X = R) at this point.
-  stochastic_ld_diagnostics <- NULL
-  if (!is.null(stochastic_ld_sample)) {
-    stochastic_ld_diagnostics <- compute_stochastic_ld_diagnostics(
-      X = X, R = R, B = stochastic_ld_sample, p = length(z),
+  sketch_diagnostics <- NULL
+  if (!is.null(sketch_samples)) {
+    sketch_diagnostics <- compute_sketch_diagnostics(
+      X = X, R = R, B = sketch_samples, p = length(z),
       x_is_standardized = TRUE)
   }
 
@@ -863,10 +863,10 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
     refine = refine, alpha0 = alpha0, beta0 = beta0
   )
 
-  # Attach stochastic LD sketch metadata to data object
-  if (!is.null(stochastic_ld_sample)) {
-    result$data$stochastic_ld_B <- stochastic_ld_sample
-    result$data$stochastic_ld_diagnostics <- stochastic_ld_diagnostics
+  # Attach sketch LD sketch metadata to data object
+  if (!is.null(sketch_samples)) {
+    result$data$sketch_B <- sketch_samples
+    result$data$sketch_diagnostics <- sketch_diagnostics
   }
 
   return(result)
@@ -927,7 +927,7 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
                                    n_purity = 100,
                                    r_tol = 1e-8,
                                    refine = FALSE,
-                                   stochastic_ld_sample = NULL) {
+                                   sketch_samples = NULL) {
 
   # Handle MoM fallback for RSS eigendecomposition path
   if (estimate_residual_method == "MoM") {
@@ -1194,17 +1194,17 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
   # Validate params
   params_object <- validate_and_override_params(params_object)
 
-  # Stochastic LD sketch diagnostics.
-  # Inflation is opt-in: only applied when stochastic_ld_sample is explicitly
-  # provided. For multi-panel with no stochastic_ld_sample, we assume panels
+  # Sketch sketch diagnostics.
+  # Inflation is opt-in: only applied when sketch_samples is explicitly
+  # provided. For multi-panel with no sketch_samples, we assume panels
   # provide sufficiently accurate LD and no variance inflation is needed.
   # X IS standardized here (standardize_X already called), so x_is_standardized = TRUE.
-  stochastic_ld_diagnostics <- NULL
-  stochastic_ld_B <- NULL
-  if (!is.null(stochastic_ld_sample)) {
-    stochastic_ld_B <- stochastic_ld_sample
-    stochastic_ld_diagnostics <- compute_stochastic_ld_diagnostics(
-      X = X, R = R, B = stochastic_ld_sample, p = length(z),
+  sketch_diagnostics <- NULL
+  sketch_B <- NULL
+  if (!is.null(sketch_samples)) {
+    sketch_B <- sketch_samples
+    sketch_diagnostics <- compute_sketch_diagnostics(
+      X = X, R = R, B = sketch_samples, p = length(z),
       x_is_standardized = TRUE)
   }
 
@@ -1223,8 +1223,8 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
         n = n, p = length(z),
         X_colmeans = rep(0, length(z)), y_mean = 0,
         nm1 = nm1, z = z, lambda = 0,
-        stochastic_ld_B = stochastic_ld_B,
-        stochastic_ld_diagnostics = stochastic_ld_diagnostics,
+        sketch_B = sketch_B,
+        sketch_diagnostics = sketch_diagnostics,
         X_list_std = X_list, B_list = B_list,
         K = K_panels, panel_R = panel_R, omega_cache = omega_cache
       ),
@@ -1252,8 +1252,8 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
       eigen_R = eigen_R,
       Vtz = Vtz,
       z_null_norm2 = z_null_norm2,
-      stochastic_ld_B = stochastic_ld_B,
-      stochastic_ld_diagnostics = stochastic_ld_diagnostics,
+      sketch_B = sketch_B,
+      sketch_diagnostics = sketch_diagnostics,
       X_list = X_list,
       B_list = B_list,
       K = K_panels,

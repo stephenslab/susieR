@@ -52,7 +52,7 @@ susie_rss(
   n_purity = 100,
   r_tol = 1e-08,
   refine = FALSE,
-  stochastic_ld_sample = NULL,
+  sketch_samples = NULL,
   multipanel_safeguard = TRUE,
   alpha0 = 0.1,
   beta0 = 0.1,
@@ -269,7 +269,7 @@ matrix \code{XtX}.}
 iterative refinement procedure is used, after the IBSS algorithm,
 to check and escape from local optima (see details).}
 
-\item{stochastic_ld_sample}{Controls variance inflation to account
+\item{sketch_samples}{Controls variance inflation to account
   for LD estimation noise from stochastic sketches. Accepts three
   types of input:
   \describe{
@@ -289,7 +289,7 @@ stochastic samples, and no variance inflation applied.}
   variable's score statistic at every IBSS iteration to account for
   LD estimation uncertainty in the Single Effect Regression (SER).
   When provided, the output includes a
-  \code{stochastic_ld_diagnostics} element with per-region and
+  \code{sketch_diagnostics} element with per-region and
   per-variable quality metrics.}
 
 \item{multipanel_safeguard}{Deprecated. Ignored. Single-panel fits
@@ -306,9 +306,9 @@ so users can compare mixture vs single-panel results themselves.}
 In addition to the standard \code{"susie"} output (see
   \code{\link{susie}}), the returned object may contain:
 
-\item{stochastic_ld_diagnostics}{A list of diagnostics for the
-  stochastic LD correction (only present when
-  \code{stochastic_ld_sample} is provided), containing:
+\item{sketch_diagnostics}{A list of diagnostics for the
+  sketch LD correction (only present when
+  \code{sketch_samples} is provided), containing:
   \code{B} (the sketch dimension);
   \code{p} (number of variables);
   \code{effective_rank} (debiased \eqn{\tilde{r} = p^2 / \|R\|_F^2});

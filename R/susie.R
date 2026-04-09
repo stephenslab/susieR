@@ -551,7 +551,7 @@ susie_ss <- function(XtX, Xty, yty, n,
 #'
 #' @param check_z If TRUE, check that z lies in column space of R.
 #'
-#' @param stochastic_ld_sample Controls variance inflation to account
+#' @param sketch_samples Controls variance inflation to account
 #'   for LD estimation noise from stochastic sketches. Accepts three
 #'   types of input:
 #'   \describe{
@@ -571,7 +571,7 @@ susie_ss <- function(XtX, Xty, yty, n,
 #'   variable's score statistic at every IBSS iteration to account for
 #'   LD estimation uncertainty in the Single Effect Regression (SER).
 #'   When provided, the output includes a
-#'   \code{stochastic_ld_diagnostics} element with per-region and
+#'   \code{sketch_diagnostics} element with per-region and
 #'   per-variable quality metrics.
 #'
 #' @param multipanel_safeguard Deprecated. Ignored. Single-panel fits
@@ -581,9 +581,9 @@ susie_ss <- function(XtX, Xty, yty, n,
 #' @return In addition to the standard \code{"susie"} output (see
 #'   \code{\link{susie}}), the returned object may contain:
 #'
-#' \item{stochastic_ld_diagnostics}{A list of diagnostics for the
-#'   stochastic LD correction (only present when
-#'   \code{stochastic_ld_sample} is provided), containing:
+#' \item{sketch_diagnostics}{A list of diagnostics for the
+#'   sketch LD correction (only present when
+#'   \code{sketch_samples} is provided), containing:
 #'   \code{B} (the sketch dimension);
 #'   \code{p} (number of variables);
 #'   \code{effective_rank} (debiased \eqn{\tilde{r} = p^2 / \|R\|_F^2});
@@ -643,7 +643,7 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
                       n_purity = 100,
                       r_tol = 1e-8,
                       refine = FALSE,
-                      stochastic_ld_sample = NULL,
+                      sketch_samples = NULL,
                       multipanel_safeguard = TRUE,
                       alpha0 = 0.1,
                       beta0 = 0.1,
@@ -656,28 +656,28 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
     stop("Please provide either R or X, but not both.")
   is_multi_panel <- is.list(X) && !is.matrix(X)
 
-  # Resolve stochastic_ld_sample BEFORE any X -> R conversion.
+  # Resolve sketch_samples BEFORE any X -> R conversion.
   # NULL = no inflation; TRUE = infer B from nrow(X); integer = explicit B (R only)
-  if (!is.null(stochastic_ld_sample)) {
-    if (isTRUE(stochastic_ld_sample)) {
+  if (!is.null(sketch_samples)) {
+    if (isTRUE(sketch_samples)) {
       if (is.null(X))
-        stop("stochastic_ld_sample = TRUE requires X input. ",
+        stop("sketch_samples = TRUE requires X input. ",
              "When using a precomputed R matrix, provide an integer ",
              "specifying the sketch size B instead.")
       if (is_multi_panel) {
-        stochastic_ld_sample <- min(vapply(X, nrow, integer(1)))
+        sketch_samples <- min(vapply(X, nrow, integer(1)))
       } else {
-        stochastic_ld_sample <- nrow(X)
+        sketch_samples <- nrow(X)
       }
-    } else if (is.numeric(stochastic_ld_sample) && length(stochastic_ld_sample) == 1) {
+    } else if (is.numeric(sketch_samples) && length(sketch_samples) == 1) {
       if (!is.null(X))
-        stop("stochastic_ld_sample must be TRUE (not an integer) when X is ",
+        stop("sketch_samples must be TRUE (not an integer) when X is ",
              "provided, because the sketch size is inferred from nrow(X).")
     } else {
-      stop("stochastic_ld_sample must be NULL, TRUE, or a single integer.")
+      stop("sketch_samples must be NULL, TRUE, or a single integer.")
     }
-    if (stochastic_ld_sample < 1000)
-      warning_message("stochastic_ld_sample = ", stochastic_ld_sample,
+    if (sketch_samples < 1000)
+      warning_message("sketch_samples = ", sketch_samples,
               " is below 1000. Variance inflation may be imprecise at small ",
               "sketch sizes.")
   }
@@ -767,9 +767,9 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
   prior_variance_grid     <- mp$prior_variance_grid
   mixture_weights         <- mp$mixture_weights
 
-  # Auto-switch to PIP convergence for stochastic LD inflation.
-  # (stochastic_ld_sample was already resolved to an integer above)
-  if (!is.null(stochastic_ld_sample) && convergence_method[1] == "elbo") {
+  # Auto-switch to PIP convergence for sketch LD inflation.
+  # (sketch_samples was already resolved to an integer above)
+  if (!is.null(sketch_samples) && convergence_method[1] == "elbo") {
     convergence_method <- "pip"
     warning_message("Switching to PIP-based convergence because sketch LD inflation ",
             "modifies per-variant SER likelihoods which prevents a consistent model-level ELBO.")
@@ -801,7 +801,7 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
     verbose = verbose, track_fit = track_fit, check_input = check_input,
     check_prior = check_prior, check_R = check_R, check_z = check_z,
     n_purity = n_purity, r_tol = r_tol, refine = refine,
-    stochastic_ld_sample = stochastic_ld_sample,
+    sketch_samples = sketch_samples,
     alpha0 = alpha0, beta0 = beta0
   )
 

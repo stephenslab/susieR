@@ -7,7 +7,7 @@
 scale_design_matrix(X, center = NULL, scale = NULL)
 }
 \arguments{
-\item{X}{Matrix to scale (n × p)}
+\item{X}{Matrix to scale (n x p)}
 
 \item{center}{Vector of column means to subtract (length p), or NULL}
 

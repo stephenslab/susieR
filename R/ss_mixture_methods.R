@@ -38,7 +38,7 @@ compute_residuals.ss_mixture <- function(data, params, model, l, ...) {
   model$residual_variance <- model$sigma2
   model$predictor_weights <- rep(data$nm1, data$p)
 
-  if (!is.null(data$stochastic_ld_B)) {
+  if (!is.null(data$sketch_B)) {
     # Convert to z-score scale for inflation computation
     sqnm1 <- sqrt(data$nm1)
     sw <- if (!is.null(model$slot_weights)) model$slot_weights else rep(1, nrow(model$alpha))

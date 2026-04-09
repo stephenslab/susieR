@@ -229,20 +229,20 @@ test_that("K=1 mixture matches scalar V with lambda regularization", {
 })
 
 # =============================================================================
-# Test 10: Mixture prior with stochastic LD inflation (inflated shat2)
+# Test 10: Mixture prior with sketch LD inflation (inflated shat2)
 # =============================================================================
-test_that("Mixture prior works with stochastic LD inflation", {
+test_that("Mixture prior works with sketch LD inflation", {
   skip_if_not_installed("Matrix")
   L <- 3
   grid <- c(1, 10, 50)
   w <- c(0.3, 0.5, 0.2)
 
-  # Run with stochastic_ld_sample to trigger shat2 inflation
+  # Run with sketch_samples to trigger shat2 inflation
   fit <- susie_rss(z = z, R = R, n = n, L = L,
                    prior_variance_grid = grid,
                    mixture_weights = w,
                    estimate_residual_variance = FALSE,
-                   stochastic_ld_sample = 30,
+                   sketch_samples = 30,
                    max_iter = 5)
 
   # Basic validity

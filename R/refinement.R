@@ -163,7 +163,7 @@ run_refine <- function(model, data, params) {
       # Accept best candidate
       list(model = candidates[[which.max(elbos)]])
     } else {
-      # No improvement beyond tolerance — converged
+      # No improvement beyond tolerance -- converged
       list(model = model, converged = TRUE)
     }
   }

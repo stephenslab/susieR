@@ -791,19 +791,19 @@ test_that("compute_ser_statistics.rss_lambda returns betahat", {
   expect_true(all(is.finite(ser_stats$betahat)))
 })
 
-test_that("inflation is computed when stochastic_ld_B is set", {
+test_that("inflation is computed when sketch_B is set", {
   dat <- setup_rss_lambda_data(seed = 41)
 
-  # Construct data with stochastic_ld_sample
+  # Construct data with sketch_samples
   B <- nrow(dat$X)
   result <- rss_lambda_constructor(
     z = dat$z, R = dat$R, lambda = dat$lambda, n = dat$n,
-    stochastic_ld_sample = B
+    sketch_samples = B
   )
   data <- result$data
   params <- result$params
 
-  expect_equal(data$stochastic_ld_B, B)
+  expect_equal(data$sketch_B, B)
 
   var_y <- get_var_y.rss_lambda(data)
   model <- initialize_susie_model.rss_lambda(data, params, var_y)
@@ -816,7 +816,7 @@ test_that("inflation is computed when stochastic_ld_B is set", {
   expect_true(all(model$shat2_inflation >= 1))
 })
 
-test_that("no inflation without stochastic_ld_B", {
+test_that("no inflation without sketch_B", {
   dat <- setup_rss_lambda_data(seed = 42)
 
   data <- dat$data
@@ -824,8 +824,8 @@ test_that("no inflation without stochastic_ld_B", {
   model <- dat$model
   model$Rz <- as.vector(data$R %*% colSums(model$alpha * model$mu))
 
-  # Without stochastic_ld_B, no inflation
-  expect_null(data$stochastic_ld_B)
+  # Without sketch_B, no inflation
+  expect_null(data$sketch_B)
   model <- compute_residuals.rss_lambda(data, params, model, l = 1)
   expect_null(model$shat2_inflation)
 })
@@ -845,7 +845,7 @@ test_that("inflation widens shat2 in ser_stats", {
   B <- nrow(dat$X)
   result <- rss_lambda_constructor(
     z = dat$z, R = dat$R, lambda = dat$lambda, n = dat$n,
-    stochastic_ld_sample = B
+    sketch_samples = B
   )
   data_infl <- result$data
   var_y <- get_var_y.rss_lambda(data_infl)
@@ -876,7 +876,7 @@ test_that("inflation approximately 1 under global null", {
 
   result <- rss_lambda_constructor(
     z = z, R = R, lambda = 0.1, n = n,
-    stochastic_ld_sample = n
+    sketch_samples = n
   )
   data <- result$data
   params <- result$params
@@ -896,7 +896,7 @@ test_that("posterior moments use inflated shat2 consistently", {
   B <- nrow(dat$X)
   result <- rss_lambda_constructor(
     z = dat$z, R = dat$R, lambda = dat$lambda, n = dat$n,
-    stochastic_ld_sample = B
+    sketch_samples = B
   )
   data <- result$data
   params <- result$params
@@ -984,7 +984,7 @@ test_that("R and X input paths produce numerically identical results", {
 # END-TO-END susie_rss WITH INFLATION
 # =============================================================================
 
-test_that("susie_rss with lambda and stochastic_ld_sample runs successfully", {
+test_that("susie_rss with lambda and sketch_samples runs successfully", {
   set.seed(51)
   p <- 50
   n <- 2000
@@ -1006,7 +1006,7 @@ test_that("susie_rss with lambda and stochastic_ld_sample runs successfully", {
 
   # With inflation
   fit_infl <- susie_rss(z = z, R = R, lambda = 0.1, n = n, L = 5,
-                        stochastic_ld_sample = n, max_iter = 50, verbose = FALSE)
+                        sketch_samples = n, max_iter = 50, verbose = FALSE)
 
   # Both should converge
   expect_true(fit_no$converged)
@@ -1017,8 +1017,8 @@ test_that("susie_rss with lambda and stochastic_ld_sample runs successfully", {
   expect_true(is.finite(fit_infl$elbo[length(fit_infl$elbo)]))
   expect_true(is.finite(fit_no$elbo[length(fit_no$elbo)]))
 
-  # stochastic_ld_diagnostics should be stored
-  expect_true(!is.null(fit_infl$stochastic_ld_diagnostics))
+  # sketch_diagnostics should be stored
+  expect_true(!is.null(fit_infl$sketch_diagnostics))
 
   # Causal variables should still have high PIP
   expect_true(fit_no$pip[1] > 0.5)
@@ -1042,7 +1042,7 @@ test_that("susie_rss with X input and lambda and inflation works", {
 
   # susie_rss with X input (lambda > 0 triggers rss_lambda path)
   fit_X <- susie_rss(z = z, R = R, lambda = 0.1, n = n, L = 5,
-                     stochastic_ld_sample = n, max_iter = 50, verbose = FALSE)
+                     sketch_samples = n, max_iter = 50, verbose = FALSE)
 
   expect_true(fit_X$converged)
   expect_true(is.finite(fit_X$elbo[length(fit_X$elbo)]))
@@ -1128,11 +1128,11 @@ test_that("SS and RSS-lambda paths agree with inflation", {
   B_sketch <- 2000
   # SS path with inflation
   fit_ss <- susie_rss(z = z, R = R, n = n, L = 5, lambda = 0,
-                      stochastic_ld_sample = B_sketch,
+                      sketch_samples = B_sketch,
                       max_iter = 100, verbose = FALSE)
   # RSS-lambda path with inflation
   fit_rss <- susie_rss(z = z, R = R, n = n, L = 5, lambda = 1e-6,
-                       stochastic_ld_sample = B_sketch,
+                       sketch_samples = B_sketch,
                        max_iter = 100, verbose = FALSE)
 
   expect_true(fit_ss$converged)
@@ -1264,8 +1264,8 @@ test_that("rss_lambda_constructor accepts list X", {
   expect_equal(data$B_list, c(B1, B2))
   expect_true(!is.null(data$eigen_R))
   expect_true(!is.null(data$Vtz))
-  # Inflation is opt-in: without stochastic_ld_sample, B is not set
-  expect_null(data$stochastic_ld_B)
+  # Inflation is opt-in: without sketch_samples, B is not set
+  expect_null(data$sketch_B)
 })
 
 test_that("K=1 list X gives same results as single matrix X", {
@@ -1402,7 +1402,7 @@ test_that("multi-panel auto-switches to PIP convergence with message", {
   )
 })
 
-test_that("stochastic_ld_sample auto-switches to PIP convergence with message", {
+test_that("sketch_samples auto-switches to PIP convergence with message", {
   set.seed(53)
   p <- 20; B <- 1000
   X <- matrix(rnorm(B * p), B, p)
@@ -1410,7 +1410,7 @@ test_that("stochastic_ld_sample auto-switches to PIP convergence with message", 
 
   expect_message(
     susie_rss(z = z, X = X, lambda = 0.1,
-              stochastic_ld_sample = TRUE,
+              sketch_samples = TRUE,
               convergence_method = "elbo", max_iter = 10, verbose = FALSE),
     "Switching to PIP-based convergence because sketch LD inflation"
   )
@@ -1438,7 +1438,7 @@ test_that(".omega_tol has expected fields", {
 # INFLATION OPT-IN
 # =============================================================================
 
-test_that("multi-panel without stochastic_ld_sample has no inflation", {
+test_that("multi-panel without sketch_samples has no inflation", {
   set.seed(54)
   p <- 20; B <- 100
   X1 <- matrix(rnorm(B * p), B, p)
@@ -1448,8 +1448,8 @@ test_that("multi-panel without stochastic_ld_sample has no inflation", {
   fit <- susie_rss(z = z, X = list(X1, X2), lambda = 0.1,
                    max_iter = 10, verbose = FALSE)
 
-  # No inflation: stochastic_ld_B should not be set in the fit
-  expect_null(fit$stochastic_ld_B)
+  # No inflation: sketch_B should not be set in the fit
+  expect_null(fit$sketch_B)
 })
 
 # =============================================================================

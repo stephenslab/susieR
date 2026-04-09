@@ -489,7 +489,7 @@ validate_and_override_params <- function(params) {
     params$use_servin_stephens <- TRUE
 
     # The NIG prior inherently estimates residual variance (integrates out sigma^2).
-    # If estimate_residual_variance is FALSE, override it — the user chose a method
+    # If estimate_residual_variance is FALSE, override it -- the user chose a method
     # that estimates sigma^2 by design. To suppress this warning, explicitly set
     # estimate_residual_variance = TRUE in the function call.
     if (!isTRUE(params$estimate_residual_variance)) {
@@ -663,8 +663,8 @@ add_null_effect <- function(model_init, V) {
 # Unified helpers for predictor-matrix-times-vector operations across
 # SS (XtX) and RSS-lambda (R) data types. These dispatch on what's available
 # on the data object: data$X (low-rank factor), data$XtX, or data$R.
-# When data$X is stored (B×p, B < p), the two-step product X'(Xv) avoids
-# forming the p×p matrix, reducing cost from O(p²) to O(Bp).
+# When data$X is stored (Bxp, B < p), the two-step product X'(Xv) avoids
+# forming the pxp matrix, reducing cost from O(p^2) to O(Bp).
 #
 # Functions: compute_Rv, compute_BR
 # =============================================================================
@@ -687,7 +687,7 @@ compute_Rv <- function(data, v, Rv_matrix = NULL) {
   stop("No predictor matrix available on data object.")
 }
 
-# Compute B_mat %*% predictor-matrix: (L×p) times (p×p) → (L×p)
+# Compute B_mat %*% predictor-matrix: (Lxp) times (pxp) -> (Lxp)
 # Used in get_ER2.ss for the quadratic form B %*% XtX
 #' @keywords internal
 compute_BR <- function(data, B_mat) {
@@ -699,7 +699,7 @@ compute_BR <- function(data, B_mat) {
   stop("No predictor matrix available for compute_BR.")
 }
 
-# Compute stochastic LD sketch diagnostics (debiased Frobenius norm,
+# Compute sketch LD sketch diagnostics (debiased Frobenius norm,
 # effective rank, r/B ratio, per-variant diagonal deviation from 1).
 # Used by both summary_stats_constructor and rss_lambda_constructor.
 #
@@ -713,7 +713,7 @@ compute_BR <- function(data, B_mat) {
 # @return List with B, p, R_frob_sq_debiased, effective_rank, r_over_B,
 #   Rhat_diag_deviation.
 #' @keywords internal
-compute_stochastic_ld_diagnostics <- function(X = NULL, R = NULL, B, p,
+compute_sketch_diagnostics <- function(X = NULL, R = NULL, B, p,
                                                x_is_standardized = FALSE) {
   if (!is.null(X)) {
     A <- tcrossprod(X)           # B x B Gram matrix
@@ -758,15 +758,15 @@ compute_stochastic_ld_diagnostics <- function(X = NULL, R = NULL, B, p,
 # =============================================================================
 
 # Compute eigenvalue decomposition for unmappable methods
-# When X (low-rank factor) is available, uses thin SVD (O(pB²)) instead
-# of eigen decomposition of XtX (O(p³)).
+# When X (low-rank factor) is available, uses thin SVD (O(pB^2)) instead
+# of eigen decomposition of XtX (O(p^3)).
 #' @keywords internal
 compute_eigen_decomposition <- function(XtX, n, X = NULL) {
   if (!is.null(X)) {
-    # Thin SVD: O(p·B²) instead of O(p³)
+    # Thin SVD: O(p*B^2) instead of O(p^3)
     p <- ncol(X)
     sv <- svd(X, nu = 0)
-    V <- sv$v                        # p × min(B,p) right singular vectors
+    V <- sv$v                        # p x min(B,p) right singular vectors
     Dsq <- pmax(sv$d^2, 0)           # eigenvalues of X'X
     # Pad to length p with zeros (null-space eigenvectors)
     if (ncol(V) < p) {
@@ -807,7 +807,7 @@ add_eigen_decomposition <- function(data, params, individual_data = NULL) {
 #' Applies column-wise centering and scaling to match the space used by
 #' compute_XtX() and compute_Xty() for unmappable effects methods.
 #'
-#' @param X Matrix to scale (n × p)
+#' @param X Matrix to scale (n x p)
 #' @param center Vector of column means to subtract (length p), or NULL
 #' @param scale Vector of column SDs to divide by (length p), or NULL
 #'

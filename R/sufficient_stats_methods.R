@@ -143,7 +143,7 @@ compute_residuals.ss <- function(data, params, model, l, ...) {
     model$predictor_weights <- omega_res$diagXtOmegaX
     model$residual_variance <- 1   # Already incorporated in Omega
 
-    # Stochastic LD inflation uses standard (non-Omega) quantities
+    # Sketch inflation uses standard (non-Omega) quantities
     XtXr_without_l <- compute_Rv(data, b_minus_l)
     model$shat2_inflation <- compute_shat2_inflation(data, model, XtXr_without_l, b_minus_l)
     return(model)
@@ -171,23 +171,23 @@ compute_residuals.ss <- function(data, params, model, l, ...) {
     model$yy_residual <- max(model$yy_residual, .Machine$double.eps)
   }
 
-  # Dynamic stochastic LD variance inflation
+  # Dynamic sketch LD variance inflation
   model$shat2_inflation <- compute_shat2_inflation(data, model, XtXr_without_l, b_minus_l)
 
   return(model)
 }
 
-# Compute stochastic LD variance inflation factor for each variable.
+# Compute sketch LD variance inflation factor for each variable.
 # tau2_j = sigma2 + (eta2_j + v_g) / B, returned as tau2_j / sigma2.
 #   eta2_j = XtXr_without_l^2 / (n-1)  [z-score scale predicted effect squared]
 #   v_g    = sum(b * XtXr)              [z-score scale genetic variance]
 #' @keywords internal
 compute_shat2_inflation <- function(data, model, XtXr_without_l, b_minus_l) {
-  if (is.null(data$stochastic_ld_B) ||
+  if (is.null(data$sketch_B) ||
       model$sigma2 <= .Machine$double.eps) {
     return(NULL)
   }
-  B_stoch <- data$stochastic_ld_B
+  B_stoch <- data$sketch_B
   v_g     <- max(sum(b_minus_l * XtXr_without_l), 0)
   eta2    <- XtXr_without_l^2 / (data$n - 1)
   1 + (eta2 + v_g) / (B_stoch * model$sigma2)
@@ -199,7 +199,7 @@ compute_ser_statistics.ss <- function(data, params, model, l, ...) {
   betahat <- (1 / model$predictor_weights) * model$residuals
   shat2   <- model$residual_variance / model$predictor_weights
 
-  # Inflate shat2 for stochastic LD variance tracking (tau_j^2 / sigma^2)
+  # Inflate shat2 for sketch LD variance tracking (tau_j^2 / sigma^2)
   if (!is.null(model$shat2_inflation))
     shat2 <- shat2 * model$shat2_inflation
 
@@ -362,7 +362,7 @@ neg_loglik.ss <- function(data, params, model, V_param, ser_stats, ...) {
 
   if (params$unmappable_effects == "inf") {
     # SuSiE-inf: Omega-weighted objective with logSumExp trick
-    # Apply stochastic LD inflation: effective pw = pw / inflation
+    # Apply sketch LD inflation: effective pw = pw / inflation
     pw   <- model$predictor_weights
     infl <- if (!is.null(model$shat2_inflation)) model$shat2_inflation else 1
     return(-matrixStats::logSumExp(

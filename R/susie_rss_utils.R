@@ -270,7 +270,7 @@ precompute_rss_lambda_terms <- function(data, model) {
   return(model)
 }
 
-# Dynamic stochastic LD variance inflation for rss_lambda path (z-score scale).
+# Dynamic sketch LD variance inflation for rss_lambda path (z-score scale).
 # Returns a per-variant inflation factor (p-vector):
 #   tau_j^2 = 1 + (eta_j^2 + v_g) / (B_eff * sigma^2)
 # where eta_j^2 = Rz_without_l[j]^2 (per-variant fitted value squared) and
@@ -278,7 +278,7 @@ precompute_rss_lambda_terms <- function(data, model) {
 #' @keywords internal
 compute_shat2_inflation_rss <- function(data, model, Rz_without_l, b_minus_l) {
   # Use model-level B_eff (updated by omega) if available, else data-level
-  B_eff <- if (!is.null(model$stochastic_ld_B)) model$stochastic_ld_B else data$stochastic_ld_B
+  B_eff <- if (!is.null(model$sketch_B)) model$sketch_B else data$sketch_B
   if (is.null(B_eff) || model$sigma2 <= .Machine$double.eps) return(NULL)
   v_g  <- max(sum(b_minus_l * Rz_without_l), 0)
   eta2 <- Rz_without_l^2   # z-score scale: no (n-1) division needed

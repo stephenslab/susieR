@@ -175,12 +175,12 @@ ibss_finalize <- function(data, params, model, elbo = NULL, iter = NA_integer_,
   # Assign Variable Names
   model <- get_variable_names(data, model)
 
-  # Stochastic LD diagnostics (from data → model, following sets/pip/z pattern)
-  if (!is.null(data$stochastic_ld_diagnostics)) {
-    model$stochastic_ld_diagnostics <- data$stochastic_ld_diagnostics
+  # Sketch diagnostics (from data -> model, following sets/pip/z pattern)
+  if (!is.null(data$sketch_diagnostics)) {
+    model$sketch_diagnostics <- data$sketch_diagnostics
     # Store final-iteration per-variable penalty: v_j/sigma^2 = inflation - 1
     if (!is.null(model$shat2_inflation))
-      model$stochastic_ld_diagnostics$per_variable_penalty <- model$shat2_inflation - 1
+      model$sketch_diagnostics$per_variable_penalty <- model$shat2_inflation - 1
   }
 
   # Multi-panel omega weights
