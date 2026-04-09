@@ -1802,14 +1802,13 @@ test_that("summary_stats_constructor rejects z_ld_weight when lambda != 0", {
   )
 })
 
-test_that("summary_stats_constructor warns about n when lambda != 0", {
+test_that("summary_stats_constructor accepts n when lambda != 0 for PVE adjustment", {
   z <- rnorm(50)
   R <- diag(50)
 
-  expect_message(
-    result <- summary_stats_constructor(z = z, R = R, n = 100, lambda = 0.5),
-    "Parameter 'n' is not used in the RSS-lambda model"
-  )
+  # n is now used for PVE adjustment in all paths; no "n is not used" warning
+  result <- summary_stats_constructor(z = z, R = R, n = 100, lambda = 0.5)
+  expect_true(!is.null(result))
 })
 
 # =============================================================================

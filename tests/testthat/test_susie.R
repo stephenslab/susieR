@@ -700,15 +700,14 @@ test_that("susie_rss switches data type based on lambda", {
   expect_s3_class(fit_lambda_pos, "susie")
 })
 
-test_that("susie_rss with lambda > 0 ignores n parameter", {
+test_that("susie_rss with lambda > 0 accepts n parameter for PVE adjustment", {
   set.seed(51)
   setup <- setup_rss_lambda_data(n = 500, p = 50, k = 3, lambda = 1e-5, seed = NULL)
 
-  expect_message(
-    susie_rss(z = setup$z, R = setup$R, n = 100, L = 5,
-              lambda = 1e-5, verbose = FALSE),
-    "Parameter 'n' is not used in the RSS-lambda model"
-  )
+  # n is now used for PVE adjustment in all paths; no "n is not used" warning
+  fit <- susie_rss(z = setup$z, R = setup$R, n = 100, L = 5,
+                   lambda = 1e-5, verbose = FALSE)
+  expect_s3_class(fit, "susie")
 })
 
 test_that("susie_rss with lambda > 0 rejects bhat/shat", {

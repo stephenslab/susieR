@@ -690,11 +690,8 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
         if (!is.matrix(X[[k]]) || !is.numeric(X[[k]]))
           stop("Each element of X list must be a numeric matrix.")
       }
-      # Warn about n not being used in the RSS-lambda model when lambda > 0.
-      if (!is.null(n) && lambda > 0) {
-        warning_message("Parameter 'n' is not used in the RSS-lambda model. ",
-                "Model results are independent of n once lambda is set.")
-      }
+      if (lambda == 0 && is.null(n))
+        stop("Sample size 'n' is required for multi-panel mode with lambda=0.")
       # Multi-panel: auto-switch to PIP convergence. Omega updates change
       # R(omega) each iteration, breaking ELBO monotonicity guarantees.
       if (convergence_method[1] == "elbo") {

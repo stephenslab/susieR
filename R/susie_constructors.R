@@ -612,6 +612,16 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
     model_init <- s_init
   }
 
+  # PVE-adjusted z-scores: shrink large z toward zero to account for
+  # winner's curse. Applied to ALL paths when sample size is available.
+  # Guard: z may be NULL when bhat/shat are provided (converted later).
+  pve_adjusted <- FALSE
+  if (!is.null(z) && !is.null(n) && n > 1) {
+    adj <- (n - 1) / (z^2 + n - 2)
+    z <- sqrt(adj) * z
+    pve_adjusted <- TRUE
+  }
+
   # Check if this should use RSS-lambda (eigendecomposition) path.
   # Route here when lambda > 0 OR multi-panel (list of X/R matrices).
   is_multipanel <- is.list(X) && !is.matrix(X)
@@ -631,13 +641,6 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
     if (z_ld_weight != 0) {
       stop("Parameter 'z_ld_weight' is not supported in the ",
            "eigendecomposition path (lambda != 0 or multi-panel).")
-    }
-
-    # Warn that n is not used when lambda > 0 (single-panel only;
-    # multi-panel n-warning is handled in susie_rss).
-    if (!is.null(n) && lambda > 0 && !is_multipanel) {
-      warning_message("Parameter 'n' is not used in the RSS-lambda model. ",
-              "Model results are independent of n once lambda is set.")
     }
 
     # Delegate to rss_lambda_constructor with ALL parameters
@@ -754,10 +757,11 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
   }
   z[is.na(z)] <- 0
 
-  # When n is provided, compute the PVE-adjusted z-scores
-  if (!is.null(n)) {
+  # Apply PVE adjustment if not already done (when z was computed from bhat/shat)
+  if (!pve_adjusted && !is.null(n) && n > 1) {
     adj <- (n - 1) / (z^2 + n - 2)
     z <- sqrt(adj) * z
+    pve_adjusted <- TRUE
   }
 
   # Modify R by z_ld_weight (deprecated but maintained for compatibility)
@@ -1057,9 +1061,10 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
     # Otherwise fall back to direct O(p^3) via explicit panel_R matrices.
     if (B_total < length(z)) {
       omega_cache <- precompute_omega_cache(X_list, z)
-    } else {
-      panel_R <- lapply(X_list, crossprod)
     }
+    # Compute panel_R: cov2cor for accurate R*v products.
+    # Used by ss_mixture for SER and by rss_lambda as omega eval fallback.
+    panel_R <- lapply(X_list, function(Xk) cov2cor(crossprod(Xk)))
 
     # Initialize omega at the best single-panel vertex. We use 1-iteration
     # trial ELBO (computed in susie_rss) rather than null marginal log-
@@ -1201,6 +1206,35 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
     stochastic_ld_diagnostics <- compute_stochastic_ld_diagnostics(
       X = X, R = R, B = stochastic_ld_sample, p = length(z),
       x_is_standardized = TRUE)
+  }
+
+  # Multi-panel with lambda=0 and sample size: use ss_mixture (ss model + omega)
+  if (is_multi_panel && lambda == 0 && !is.null(n) && n > 1) {
+    nm1 <- n - 1
+    # z is already PVE-adjusted (done at top of summary_stats_constructor)
+    X_ss <- X * sqrt(nm1)
+    attr(X_ss, "d") <- rep(nm1, length(z))
+    attr(X_ss, "scaled:scale") <- rep(1, length(z))
+
+    data_object <- structure(
+      list(
+        X = X_ss, XtX = NULL,
+        Xty = sqrt(nm1) * z, yty = nm1,
+        n = n, p = length(z),
+        X_colmeans = rep(0, length(z)), y_mean = 0,
+        nm1 = nm1, z = z, lambda = 0,
+        stochastic_ld_B = stochastic_ld_B,
+        stochastic_ld_diagnostics = stochastic_ld_diagnostics,
+        X_list_std = X_list, B_list = B_list,
+        K = K_panels, panel_R = panel_R, omega_cache = omega_cache
+      ),
+      class = c("ss_mixture", "ss")
+    )
+
+    # Use ss-scale prior variance
+    params_object$scaled_prior_variance <- scaled_prior_variance
+
+    return(list(data = data_object, params = params_object))
   }
 
   # Create data object with RSS-lambda specific fields

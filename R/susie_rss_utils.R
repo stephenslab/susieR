@@ -432,7 +432,8 @@ eval_omega_eloglik_reduced <- function(cache, omega, iter_cache,
   term5 <- sum(diag(Sinv_AMA))
 
   ER2 <- zSinvz + term2 + term3 + term4 + term5
-  -p_eff / 2 * log(2 * pi) + logdet_term - 0.5 * ER2
+  logdet_use <- if (lambda > 0) logdet_term else 0
+  -p_eff / 2 * log(2 * pi) + logdet_use - 0.5 * ER2
 }
 
 # Recover full eigendecomposition from reduced basis after omega is chosen.
@@ -497,7 +498,8 @@ eval_omega_eloglik_R <- function(panel_R, omega, z, zbar, diag_postb2, Z,
 
   ER2 <- zSinvz + term2 + term3 + term4 + term5
   p_eff <- length(S_pos)
-  -p_eff / 2 * log(2 * pi) + logdet_term - 0.5 * ER2
+  logdet_use <- if (lambda > 0) logdet_term else 0
+  -p_eff / 2 * log(2 * pi) + logdet_use - 0.5 * ER2
 }
 
 # Optimize omega on the K-simplex by maximizing eval_fn.
