@@ -1402,6 +1402,18 @@ init_ash_fields <- function(model, n, p, L, is_individual = FALSE) {
 #
 # @keywords internal
 update_ash_variance_components <- function(data, model, params) {
+
+  # ---- Thresholds ----
+  # Named parameters for all LD-interference cutoffs, matching the
+  # convention in the archived filter version and the SuSiE 2.0 paper.
+  # These are fixed defaults; not exposed to user interface.
+  purity_threshold    <- 0.35  # within-SER: CS purity below this = diffuse
+  collision_threshold <- 0.9   # across-SER: sentinel |r| above this = collision
+  masking_threshold   <- 0.5   # coordination: mask theta within |r| of sentinel
+  cs_coverage         <- 0.9   # coverage for tentative CS construction
+  purity_floor        <- 0.1   # minimum purity for weight ramp (avoids zero)
+  c_hat_active        <- 0.25  # c_hat above prior baseline = slot participates
+
   is_individual <- inherits(data, "individual")
   p <- ncol(model$alpha)
   L <- nrow(model$alpha)
@@ -1413,63 +1425,59 @@ update_ash_variance_components <- function(data, model, params) {
 
   # Step 2: LD-interference heuristics on active slots
   c_hat <- if (!is.null(model$slot_weights)) model$slot_weights else rep(1, L)
-  active_slots <- which(c_hat > 0.5)
+  active_slots <- which(c_hat > c_hat_active)
   purity_weight <- rep(1, L)
-  sentinel_collision <- rep(FALSE, L)
 
   sentinels <- integer(L)
   for (l in active_slots) {
     sentinels[l] <- which.max(model$alpha[l, ])
   }
 
-  # Across-SER check: sentinel collision (|r| > 0.9)
-  # Two effects on the same signal -> reduce subtraction for both
+  # Across-SER check: sentinel collision
+  # Two effects whose sentinels are in tight LD (|r| > collision_threshold)
+  # are both flagged — they may be splitting one signal or interfering.
+  sentinel_collision <- rep(FALSE, L)
   if (length(active_slots) > 1) {
-    for (i in seq_along(active_slots)) {
-      li <- active_slots[i]
-      for (j in seq_along(active_slots)) {
-        lj <- active_slots[j]
-        if (li < lj &&
-            abs(Xcorr[sentinels[li], sentinels[lj]]) > 0.9) {
-          sentinel_collision[li] <- TRUE
-          sentinel_collision[lj] <- TRUE
-        }
-      }
-    }
+    s_active <- sentinels[active_slots]
+    R_sentinels <- abs(Xcorr[s_active, s_active])
+    diag(R_sentinels) <- 0
+    has_collision <- apply(R_sentinels > collision_threshold, 1, any)
+    sentinel_collision[active_slots] <- has_collision
   }
 
-  # Within-SER check: CS purity for each active slot
+  # Within-SER check: CS purity via get_purity()
+  # Low purity = CS spans weakly-correlated variants = LD interference
   for (l in active_slots) {
+    # Compute tentative CS indices (smallest set with sum(alpha) >= coverage)
     alpha_l <- model$alpha[l, ]
     cs_order <- order(alpha_l, decreasing = TRUE)
-    cumsum_alpha <- cumsum(alpha_l[cs_order])
-    cs_size <- min(which(cumsum_alpha >= 0.9))
+    cs_size <- min(which(cumsum(alpha_l[cs_order]) >= cs_coverage))
     cs_idx <- cs_order[1:cs_size]
 
-    if (length(cs_idx) > 1) {
-      R_cs <- Xcorr[cs_idx, cs_idx, drop = FALSE]
-      purity <- min(abs(R_cs))
-    } else {
-      purity <- 1
-    }
+    # get_purity returns c(min, mean, median) of |r| among CS members
+    purity <- get_purity(cs_idx, X = NULL, Xcorr = Xcorr,
+                         use_rfast = FALSE)[1]
 
-    # Purity < 0.4 or collision: LD interference detected.
-    # Reduce subtraction weight so Mr.ASH absorbs spillover.
-    if (sentinel_collision[l] || purity < 0.4) {
-      purity_weight[l] <- max(purity, 0.1) / 0.4
+    # Purity below threshold or collision: reduce subtraction weight
+    # so Mr.ASH absorbs the spillover signal.
+    # Weight ramps linearly: purity_floor -> 0.25, purity_threshold -> 1.0
+    if (sentinel_collision[l] || purity < purity_threshold) {
+      purity_weight[l] <- max(purity, purity_floor) / purity_threshold
     }
   }
 
   # Step 3: Compute Mr.ASH residuals with effective weights
+  # eff_weight combines "is this slot active?" (c_hat) with
+  # "is this slot's signal trustworthy?" (purity_weight)
   eff_weights <- c_hat * purity_weight
   b_weighted <- colSums(eff_weights * model$alpha * model$mu)
 
-  # Determine convergence tolerance (looser early, tighter late)
+  # Determine Mr.ASH convergence tolerance (looser early, tighter late)
   iter <- if (!is.null(model$ash_iter)) model$ash_iter else 0
   convtol <- if (iter < 3) 1e-3 else 1e-4
   model$ash_iter <- iter + 1
 
-  # Step 4: Fit Mr.ASH
+  # Step 4: Fit Mr.ASH on residuals after removing weighted sparse effects
   if (is_individual) {
     ash_result <- compute_ash_from_individual_data(
       data$X, data$y, b_weighted, model, params, convtol)
@@ -1478,17 +1486,19 @@ update_ash_variance_components <- function(data, model, params) {
       data, b_weighted, model, params, convtol)
   }
 
-  # Step 5: Coordination — mask theta near confident sentinels (|r| > 0.5)
-  # Prevents Mr.ASH from competing for well-localized SuSiE signals
+  # Step 5: Coordination — mask theta near confident sentinels
+  # For well-localized effects (high purity, no collision), zero out
+  # Mr.ASH theta at positions in moderate LD with the sentinel.
+  # Prevents Mr.ASH from competing for signals SuSiE has resolved.
   theta_new <- ash_result$beta
   for (l in active_slots) {
     if (purity_weight[l] >= 1.0) {
-      neighbors <- which(abs(Xcorr[sentinels[l], ]) > 0.5)
+      neighbors <- which(abs(Xcorr[sentinels[l], ]) > masking_threshold)
       theta_new[neighbors] <- 0
     }
   }
 
-  # Step 6: Build result list (same format as old update_ash_variance_components)
+  # Step 6: Build result list
   # modifyList(model, result) in the caller merges these into the model.
   result <- list(
     sigma2   = ash_result$sigma2,
@@ -1504,7 +1514,8 @@ update_ash_variance_components <- function(data, model, params) {
     result$XtX_theta <- as.vector(compute_Rv(data, theta_new))
   }
 
-  # Recompute Xr with full c_hat weights (SuSiE sees its own effects)
+  # Recompute fitted values with full c_hat weights
+  # (SuSiE sees its own slot-weighted effects, not the purity-reduced ones)
   b_susie <- colSums(c_hat * model$alpha * model$mu)
   if (is_individual) {
     result$Xr <- as.vector(compute_Xb(data$X, b_susie))
