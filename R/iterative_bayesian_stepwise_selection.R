@@ -4,26 +4,14 @@
 # Initializes the SuSiE model object for Iterative Bayesian Stepwise Selection.
 # Sets up model matrices, handles model_init, and prepares for IBSS.
 # =============================================================================
+#' Initialize IBSS model
+#'
+#' Creates and initializes the model object for the IBSS algorithm.
 #'
 #' @param data Data object (individual, ss, or rss_lambda)
 #' @param params Validated params object
 #'
-#' @return Initialized SuSiE model object with alpha, mu, mu2, V, sigma2, and fitted values
-#'
-#' @keywords internal
-#' Initialize the IBSS model object
-#'
-#' Creates and initializes the model object for the IBSS algorithm,
-#' including allocation of matrices for posterior quantities (alpha, mu, mu2),
-#' prior variances, and fitted values. This is a building-block function
-#' used by \code{\link{susie_workhorse}} and by downstream packages
-#' that implement custom IBSS loops.
-#'
-#' @param data Data object (individual, ss, or rss_lambda).
-#' @param params Validated params object.
-#'
 #' @return Initialized model object ready for the IBSS iteration loop.
-#'
 #' @importFrom utils modifyList
 #' @export
 #' @keywords internal
@@ -31,6 +19,7 @@ ibss_initialize <- function(data, params) {
   UseMethod("ibss_initialize")
 }
 
+#' @rdname ibss_initialize
 #' @export
 #' @keywords internal
 ibss_initialize.default <- function(data, params) {
@@ -149,29 +138,19 @@ ibss_fit <- function(data, params, model) {
 # Finalizes the SuSiE model after convergence or maximum number of iterations
 # reached. Computes credible sets, PIPs, intercept, fitted values, and z-scores.
 # =============================================================================
+#' Finalize IBSS model
+#'
+#' Computes credible sets, PIPs, z-scores, and cleans up temporary
+#' fields from the model object.
 #'
 #' @param data Data object (individual, ss, or rss_lambda)
 #' @param params Validated params object
-#' @param model Final SuSiE model object from iterations
-#' @param ... Additional finalization parameters
-#'
-#' @return Complete SuSiE model object with credible sets, PIPs, and summary statistics
-#'
-#' Finalize the IBSS model after convergence
-#'
-#' Computes credible sets, PIPs, z-scores, and cleans up temporary
-#' fields from the model object. Building-block function for downstream
-#' packages implementing custom IBSS loops.
-#'
-#' @param data Data object.
-#' @param params Params object.
-#' @param model Converged model object.
-#' @param elbo ELBO values (optional).
-#' @param iter Number of iterations completed.
-#' @param tracking Tracking data (optional).
+#' @param model Converged model object
+#' @param elbo ELBO values (optional)
+#' @param iter Number of iterations completed
+#' @param tracking Tracking data (optional)
 #'
 #' @return Finalized model object with credible sets and PIPs.
-#'
 #' @export
 #' @keywords internal
 ibss_finalize <- function(data, params, model, elbo = NULL, iter = NA_integer_,
