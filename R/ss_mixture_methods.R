@@ -65,15 +65,15 @@ update_fitted_values.ss_mixture <- function(data, params, model, l, ...) {
   return(model)
 }
 
-# 4. Update variance: sigma2 (MLE) + omega M-step
+# 4. Update variance: sigma2 (via default ss chain) + omega M-step
 #' @keywords internal
 update_model_variance.ss_mixture <- function(data, params, model) {
+  # Sigma2: reuse default chain (est_residual_variance + bounds)
   if (isTRUE(params$estimate_residual_variance)) {
-    ER2 <- get_ER2(data, model)
-    model$sigma2 <- min(max(ER2 / data$n, params$residual_variance_lowerbound),
-                        params$residual_variance_upperbound)
+    model <- update_model_variance.default(data, params, model)
   }
 
+  # Omega M-step
   if (!is.null(data$K) && data$K > 1 && !isTRUE(model$omega_converged)) {
     omega_cur <- if (!is.null(model$omega)) model$omega else rep(1 / data$K, data$K)
 
@@ -121,5 +121,5 @@ get_ER2.ss_mixture <- function(data, model) {
   }
 
   data$yty - 2 * sum(betabar * data$Xty) + sum(betabar * XtX_betabar) -
-    XB2 + sum(rep(data$nm1, data$p) * t(postb2))
+    XB2 + data$nm1 * sum(postb2)
 }
