@@ -499,14 +499,29 @@ susie_get_pip <- function(res, prune_by_cs = FALSE, prior_tol = 1e-9) {
       include_idx <- numeric(0)
     }
 
+    # Extract slot weights (c_hat) if available for Gamma-Poisson weighting.
+    # PIP_j = 1 - prod_l(1 - c_hat[l] * alpha[l,j])
+    # (Faithfully ported from susieAnn posterior.R:195-200)
+    slot_wt <- res$slot_weights
+
     # now extract relevant rows from alpha matrix
     if (length(include_idx) > 0) {
-      res <- res$alpha[include_idx, , drop = FALSE]
+      res_alpha <- res$alpha[include_idx, , drop = FALSE]
+      if (!is.null(slot_wt)) {
+        slot_wt <- slot_wt[include_idx]
+      }
     } else {
-      res <- matrix(0, 1, ncol(res$alpha))
+      res_alpha <- matrix(0, 1, ncol(res$alpha))
+      slot_wt <- NULL
     }
+    res <- res_alpha
   }
 
+  # c_hat-weighted PIPs when slot_weights are available
+  if (exists("slot_wt", inherits = FALSE) && !is.null(slot_wt)) {
+    weighted_alpha <- sweep(res, 1, slot_wt, `*`)
+    return(as.vector(1 - apply(1 - weighted_alpha, 2, prod)))
+  }
   return(as.vector(1 - apply(1 - res, 2, prod)))
 }
 

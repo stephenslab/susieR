@@ -45,7 +45,11 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
                                         refine = FALSE,
                                         n_purity = 100,
                                         alpha0 = 0,
-                                        beta0 = 0) {
+                                        beta0 = 0,
+                                        C = NULL,
+                                        nu = 8,
+                                        c_hat_init = NULL,
+                                        skip_threshold_multiplier = 0) {
 
   # Handle deprecated s_init argument
   if (!is.null(s_init)) {
@@ -117,7 +121,7 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
   }
 
   # Check for incompatible parameter combination
-  if (unmappable_effects == "ash" && estimate_prior_method == "EM") {
+  if (unmappable_effects %in% c("ash", "ash_filter_archived") && estimate_prior_method == "EM") {
     stop("The combination of unmappable_effects = 'ash' with ",
          "estimate_prior_method = 'EM' is not supported. ",
          "Please use estimate_prior_method = 'optim' instead.")
@@ -217,7 +221,11 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
     beta0 = beta0,
     use_servin_stephens = FALSE,  # Will be set by validation function
     intercept = intercept,
-    standardize = standardize
+    standardize = standardize,
+    C = C,
+    nu = nu,
+    c_hat_init = c_hat_init,
+    skip_threshold_multiplier = skip_threshold_multiplier
   )
 
   # Validate and apply parameter overrides
@@ -289,7 +297,11 @@ sufficient_stats_constructor <- function(Xty, yty, n,
                                          check_prior = FALSE,
                                          refine = FALSE,
                                          alpha0 = 0.1,
-                                         beta0 = 0.1) {
+                                         beta0 = 0.1,
+                                         C = NULL,
+                                         nu = 8,
+                                         c_hat_init = NULL,
+                                         skip_threshold_multiplier = 0) {
 
   # Handle deprecated s_init argument
   if (!is.null(s_init)) {
@@ -516,7 +528,11 @@ sufficient_stats_constructor <- function(Xty, yty, n,
     use_servin_stephens = FALSE,
     intercept = FALSE,  # SS always uses intercept = FALSE
     standardize = standardize,
-    check_prior = check_prior
+    check_prior = check_prior,
+    C = C,
+    nu = nu,
+    c_hat_init = c_hat_init,
+    skip_threshold_multiplier = skip_threshold_multiplier
   )
 
   # Validate and apply parameter overrides
@@ -601,7 +617,11 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
                                       refine = FALSE,
                                       sketch_samples = NULL,
                                       alpha0 = 0.1,
-                                      beta0 = 0.1) {
+                                      beta0 = 0.1,
+                                      C = NULL,
+                                      nu = 8,
+                                      c_hat_init = NULL,
+                                      skip_threshold_multiplier = 0) {
 
   # Handle deprecated s_init argument
   if (!is.null(s_init)) {
@@ -667,7 +687,9 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
       verbose = verbose, track_fit = track_fit, check_input = check_input,
       check_prior = check_prior, check_R = check_R, check_z = check_z,
       n_purity = n_purity, r_tol = r_tol, refine = refine,
-      sketch_samples = sketch_samples
+      sketch_samples = sketch_samples,
+      C = C, nu = nu, c_hat_init = c_hat_init,
+      skip_threshold_multiplier = skip_threshold_multiplier
     ))
   }
 
@@ -693,7 +715,7 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
   # For SuSiE-ash with summary statistics, recommend providing bhat/shat/var_y
   # for best agreement with individual-level analysis. The z+R-only path
   # operates on a standardized scale (var_y=1) and may give different results.
-  if (unmappable_effects == "ash" && is.null(bhat) && is.null(var_y)) {
+  if (unmappable_effects %in% c("ash", "ash_filter_archived") && is.null(bhat) && is.null(var_y)) {
     warning_message("SuSiE-ash with z-scores and R only operates on a ",
             "standardized scale. For best agreement with ",
             "individual-level analysis, provide bhat, shat, and ",
@@ -860,7 +882,9 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
     max_iter = max_iter, tol = tol, convergence_method = convergence_method,
     coverage = coverage, min_abs_corr = min_abs_corr, n_purity = n_purity,
     verbose = verbose, track_fit = track_fit, check_prior = check_prior,
-    refine = refine, alpha0 = alpha0, beta0 = beta0
+    refine = refine, alpha0 = alpha0, beta0 = beta0,
+    C = C, nu = nu, c_hat_init = c_hat_init,
+    skip_threshold_multiplier = skip_threshold_multiplier
   )
 
   # Attach sketch LD sketch metadata to data object
@@ -927,7 +951,11 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
                                    n_purity = 100,
                                    r_tol = 1e-8,
                                    refine = FALSE,
-                                   sketch_samples = NULL) {
+                                   sketch_samples = NULL,
+                                   C = NULL,
+                                   nu = 8,
+                                   c_hat_init = NULL,
+                                   skip_threshold_multiplier = 0) {
 
   # Handle MoM fallback for RSS eigendecomposition path
   if (estimate_residual_method == "MoM") {
@@ -1188,7 +1216,11 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
     use_servin_stephens = FALSE,
     intercept = FALSE,  # RSS always uses intercept = FALSE
     standardize = FALSE, # Never standardize RSS-lambda
-    check_prior = check_prior
+    check_prior = check_prior,
+    C = C,
+    nu = nu,
+    c_hat_init = c_hat_init,
+    skip_threshold_multiplier = skip_threshold_multiplier
   )
 
   # Validate params

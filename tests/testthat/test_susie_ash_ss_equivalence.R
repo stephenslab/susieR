@@ -1,12 +1,10 @@
 # =============================================================================
-# Test: SuSiE-ash Individual vs Summary Statistics Equivalence
+# Test: SuSiE-ash (filter-archived) Individual vs Summary Statistics Equivalence
 # =============================================================================
 #
-# Verifies that susie() with unmappable_effects="ash" and susie_ss()/susie_rss()
-# with unmappable_effects="ash" produce equivalent results.
-#
-# Individual-level path uses mr.ash directly.
-# Summary stats path uses mr.ash.rss.
+# Verifies that the archived filter-based masking path
+# (unmappable_effects="ash_filter_archived") produces equivalent results
+# between individual-level (mr.ash) and summary stats (mr.ash.rss) paths.
 # Both share the masking logic via compute_ash_masking().
 # =============================================================================
 
@@ -32,7 +30,7 @@ setup_susie_ash_test <- function(n = 200, p = 50, k = 5, seed = 42) {
     resid <- y - X[, j] * bhat[j]
     sqrt(sum(resid^2) / ((n - 2) * sum(X[, j]^2)))
   })
-  R_mat <- safe_cor(X)
+  R_mat <- susieR:::safe_cor(X)
 
   list(X = X, y = y, n = n, p = p,
        XtX = XtX, Xty = Xty, yty = yty,
@@ -45,7 +43,7 @@ test_that("susie_ss ash agrees with susie individual-level ash", {
 
   # Individual-level: uses mr.ash directly
   fit_ind <- susie(d$X, d$y, L = 5,
-    unmappable_effects = "ash",
+    unmappable_effects = "ash_filter_archived",
     estimate_residual_variance = TRUE,
     estimate_prior_method = "optim",
     intercept = FALSE, standardize = FALSE,
@@ -55,7 +53,7 @@ test_that("susie_ss ash agrees with susie individual-level ash", {
   # SS path: uses mr.ash.rss
   fit_ss <- susie_ss(
     XtX = d$XtX, Xty = d$Xty, yty = d$yty, n = d$n, L = 5,
-    unmappable_effects = "ash",
+    unmappable_effects = "ash_filter_archived",
     estimate_residual_variance = TRUE,
     estimate_prior_method = "optim",
     max_iter = 20, verbose = FALSE
@@ -84,7 +82,7 @@ test_that("susie_ss ash works with different data sizes", {
     )
 
     fit_ind <- susie(d$X, d$y, L = 5,
-      unmappable_effects = "ash",
+      unmappable_effects = "ash_filter_archived",
       estimate_residual_variance = TRUE,
       estimate_prior_method = "optim",
       intercept = FALSE, standardize = FALSE,
@@ -93,7 +91,7 @@ test_that("susie_ss ash works with different data sizes", {
 
     fit_ss <- susie_ss(
       XtX = d$XtX, Xty = d$Xty, yty = d$yty, n = d$n, L = 5,
-      unmappable_effects = "ash",
+      unmappable_effects = "ash_filter_archived",
       estimate_residual_variance = TRUE,
       estimate_prior_method = "optim",
       max_iter = 15, verbose = FALSE
@@ -113,7 +111,7 @@ test_that("susie individual-level ash output has expected fields", {
   d <- setup_susie_ash_test(n = 100, p = 30, k = 3, seed = 123)
 
   fit_ind <- susie(d$X, d$y, L = 5,
-    unmappable_effects = "ash",
+    unmappable_effects = "ash_filter_archived",
     estimate_residual_variance = TRUE,
     estimate_prior_method = "optim",
     intercept = FALSE, standardize = FALSE,
@@ -140,7 +138,7 @@ test_that("susie_ss ash output has expected fields", {
 
   fit_ss <- susie_ss(
     XtX = d$XtX, Xty = d$Xty, yty = d$yty, n = d$n, L = 5,
-    unmappable_effects = "ash",
+    unmappable_effects = "ash_filter_archived",
     estimate_residual_variance = TRUE,
     estimate_prior_method = "optim",
     max_iter = 10, verbose = FALSE
@@ -163,7 +161,7 @@ test_that("susie_rss ash works with correlation matrix input", {
 
   fit_rss <- susie_rss(
     bhat = d$bhat, shat = d$shat, R = d$R_mat, n = d$n, L = 5,
-    unmappable_effects = "ash",
+    unmappable_effects = "ash_filter_archived",
     estimate_residual_variance = TRUE,
     estimate_prior_method = "optim",
     max_iter = 20, verbose = FALSE

@@ -53,7 +53,7 @@ initialize_susie_model.ss <- function(data, params, var_y, ...) {
     model$tau2  <- 0
     model$theta <- rep(0, data$p)
 
-  } else if (params$unmappable_effects == "ash") {
+  } else if (params$unmappable_effects %in% c("ash", "ash_filter_archived")) {
     pm <- if (!is.null(data$XtX)) data$XtX else data$X
     model$predictor_weights <- attr(pm, "d")
     model <- init_ash_fields(model, data$n, data$p, params$L, is_individual = FALSE)
@@ -101,7 +101,7 @@ validate_prior.ss <- function(data, params, model, ...) {
 # Track core parameters across iterations
 #' @keywords internal
 track_ibss_fit.ss <- function(data, params, model, tracking, iter, elbo, ...) {
-  if (params$unmappable_effects %in% c("inf", "ash")) {
+  if (params$unmappable_effects %in% c("inf", "ash", "ash_filter_archived")) {
     # Append non-sparse variance component to tracking
     tracking <- track_ibss_fit.default(data, params, model, tracking, iter, elbo, ...)
     if (isTRUE(params$track_fit)) {
@@ -155,7 +155,7 @@ compute_residuals.ss <- function(data, params, model, l, ...) {
   XtXr_without_l <- model$XtXr - sw_l * compute_Rv(data, model$alpha[l, ] * model$mu[l, ])
 
   # Compute residuals (ash subtracts unmappable effect X'X*theta)
-  if (params$unmappable_effects == "ash") {
+  if (params$unmappable_effects %in% c("ash", "ash_filter_archived")) {
     model$residuals <- data$Xty - model$XtX_theta - XtXr_without_l
   } else {
     model$residuals <- data$Xty - XtXr_without_l
@@ -427,8 +427,11 @@ update_variance_components.ss <- function(data, params, model, ...) {
                   tau2   = mom_result$tau2,
                   theta  = theta))
     }
+  } else if (params$unmappable_effects == "ash_filter_archived") {
+    # Original filter-based masking (archived for internal diagnostics)
+    return(update_ash_variance_components_filter_archived(data, model, params))
   } else if (params$unmappable_effects == "ash") {
-    # SuSiE-ash: shared update dispatches to mr.ash.rss for SS data
+    # c_hat + 3 LD-interference heuristics
     return(update_ash_variance_components(data, model, params))
   } else {
     # Use default method for standard SuSiE
@@ -544,7 +547,7 @@ cleanup_model.ss <- function(data, params, model, ...) {
         model[[field]] <- NULL
       }
     }
-  } else if (!is.null(params$unmappable_effects) && params$unmappable_effects == "ash") {
+  } else if (!is.null(params$unmappable_effects) && params$unmappable_effects %in% c("ash", "ash_filter_archived")) {
     model <- cleanup_ash_fields(model)
   }
   

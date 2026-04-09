@@ -457,17 +457,61 @@ validate_and_override_params <- function(params) {
   }
 
   # Validate unmappable_effects
-  if (!params$unmappable_effects %in% c("none", "inf", "ash")) {
+  # "ash_filter_archived" is a hidden option for internal diagnostics/archiving
+  # of the original SuSiE-ASH filter-based masking heuristic.
+  valid_unmappable <- c("none", "inf", "ash", "ash_filter_archived")
+  if (!params$unmappable_effects %in% valid_unmappable) {
     stop("unmappable_effects must be one of 'none', 'inf', or 'ash'.")
   }
 
-  # Override convergence method for unmappable effects
-  if (params$unmappable_effects != "none") {
-    if (params$convergence_method != "pip") {
-      warning_message("Unmappable effects models (inf/ash) do not have a well defined ELBO and require PIP convergence. ",
+  # Auto-set C (expected causal count) for the new ash path.
+  # The Gamma-Poisson slot activity model (c_hat) requires C for
+  # identifiability between sparse (beta) and dense (theta) effects.
+  # Note: ash_filter_archived does NOT use c_hat (it has its own V->0
+  # mechanism), so we skip auto-C for it.
+  if (params$unmappable_effects == "ash" && is.null(params$C)) {
+    params$C <- ceiling(params$L / 3)
+    warning_message("C (expected causal count) not specified for ash model. ",
+                    "Using default C = ceiling(L/3) = ", params$C, ".")
+  }
+
+  # Suggest larger L for the new ash path
+  if (params$unmappable_effects == "ash" && params$L < 15) {
+    warning_message("L = ", params$L, " may be too small for ash model. ",
+                    "Consider using L = 15 or L = 20 for better results ",
+                    "with the Gamma-Poisson slot activity model.")
+  }
+
+  # When c_hat is active, the standard ELBO and prior variance optimization
+  # are invalid because SER sufficient statistics are computed from
+  # slot-weighted residuals. Fix: (1) use PIP convergence, (2) disable
+  # ELBO-based V optimization (use the default scaled_prior_variance).
+  # susieAnn handles this the same way — prior variance comes from a shared
+  # grid, not per-slot optimization.
+  if (!is.null(params$C) && params$estimate_prior_variance &&
+      params$estimate_prior_method == "optim") {
+    warning_message("Prior variance optimization (method='optim') is not ",
+            "compatible with Gamma-Poisson slot activity (C != NULL). ",
+            "Switching to estimate_prior_method='EM'.",
+            " For best results, provide a prior_variance_grid.")
+    params$estimate_prior_method <- "EM"
+  }
+
+  # Override convergence method for unmappable effects or c_hat.
+  # The ELBO is not well-defined when slot_weights != 1 (c_hat active)
+  # or when unmappable effects modify the residual structure.
+  needs_pip <- params$unmappable_effects != "none" || !is.null(params$C)
+  if (needs_pip && params$convergence_method != "pip") {
+    if (params$unmappable_effects != "none") {
+      warning_message("Unmappable effects models (inf/ash) do not have a well ",
+              "defined ELBO and require PIP convergence. ",
               "Setting convergence_method='pip'.")
-      params$convergence_method <- "pip"
+    } else {
+      warning_message("Gamma-Poisson slot activity (C != NULL) modifies fitted ",
+              "values by slot weights, making the standard ELBO invalid. ",
+              "Setting convergence_method='pip'.")
     }
+    params$convergence_method <- "pip"
   }
 
   # Check for incompatible parameter combinations
@@ -1355,11 +1399,148 @@ init_ash_fields <- function(model, n, p, L, is_individual = FALSE) {
   return(model)
 }
 
-# Shared ash variance component update
+# New ash variance component update: c_hat + 3 LD-interference heuristics
 #
-# Performs the full ash update cycle: get correlation matrix, compute masking,
-# fit mr.ash (individual or SS), mask theta, compute fitted theta.
-# Called by both update_variance_components.individual() and .ss().
+# Replaces the original Diffusion-Aware masking with:
+#   1. Within-SER: purity < 0.4 -> reduce subtraction weight (diffuse CS)
+#   2. Across-SER: sentinel collision |r| > 0.9 -> reduce subtraction weight
+#   3. Coordination: mask theta at |r| > 0.5 from confident sentinels
+#
+# c_hat (Gamma-Poisson slot activity) handles adaptive L and the
+# "how much to subtract" question continuously.
+#
+# @param data Data object (individual or SS)
+# @param model Current SuSiE model
+# @param params Parameters object
+#
+# @return List with sigma2, tau2, theta, fitted theta fields
+#
+# @keywords internal
+update_ash_variance_components <- function(data, model, params) {
+  is_individual <- inherits(data, "individual")
+  p <- ncol(model$alpha)
+  L <- nrow(model$alpha)
+
+  # Step 1: Get correlation matrix (cached after first call)
+  xcorr_result <- get_xcorr(data)
+  Xcorr <- xcorr_result$Xcorr
+  data <- xcorr_result$data
+
+  # Step 2: LD-interference heuristics on active slots
+  c_hat <- if (!is.null(model$slot_weights)) model$slot_weights else rep(1, L)
+  active_slots <- which(c_hat > 0.5)
+  purity_weight <- rep(1, L)
+  sentinel_collision <- rep(FALSE, L)
+
+  sentinels <- integer(L)
+  for (l in active_slots) {
+    sentinels[l] <- which.max(model$alpha[l, ])
+  }
+
+  # Across-SER check: sentinel collision (|r| > 0.9)
+  # Two effects on the same signal -> reduce subtraction for both
+  if (length(active_slots) > 1) {
+    for (i in seq_along(active_slots)) {
+      li <- active_slots[i]
+      for (j in seq_along(active_slots)) {
+        lj <- active_slots[j]
+        if (li < lj &&
+            abs(Xcorr[sentinels[li], sentinels[lj]]) > 0.9) {
+          sentinel_collision[li] <- TRUE
+          sentinel_collision[lj] <- TRUE
+        }
+      }
+    }
+  }
+
+  # Within-SER check: CS purity for each active slot
+  for (l in active_slots) {
+    alpha_l <- model$alpha[l, ]
+    cs_order <- order(alpha_l, decreasing = TRUE)
+    cumsum_alpha <- cumsum(alpha_l[cs_order])
+    cs_size <- min(which(cumsum_alpha >= 0.9))
+    cs_idx <- cs_order[1:cs_size]
+
+    if (length(cs_idx) > 1) {
+      R_cs <- Xcorr[cs_idx, cs_idx, drop = FALSE]
+      purity <- min(abs(R_cs))
+    } else {
+      purity <- 1
+    }
+
+    # Purity < 0.4 or collision: LD interference detected.
+    # Reduce subtraction weight so Mr.ASH absorbs spillover.
+    if (sentinel_collision[l] || purity < 0.4) {
+      purity_weight[l] <- max(purity, 0.1) / 0.4
+    }
+  }
+
+  # Step 3: Compute Mr.ASH residuals with effective weights
+  eff_weights <- c_hat * purity_weight
+  b_weighted <- colSums(eff_weights * model$alpha * model$mu)
+
+  # Determine convergence tolerance (looser early, tighter late)
+  iter <- if (!is.null(model$ash_iter)) model$ash_iter else 0
+  convtol <- if (iter < 3) 1e-3 else 1e-4
+  model$ash_iter <- iter + 1
+
+  # Step 4: Fit Mr.ASH
+  if (is_individual) {
+    ash_result <- compute_ash_from_individual_data(
+      data$X, data$y, b_weighted, model, params, convtol)
+  } else {
+    ash_result <- compute_ash_from_summary_stats(
+      data, b_weighted, model, params, convtol)
+  }
+
+  # Step 5: Coordination — mask theta near confident sentinels (|r| > 0.5)
+  # Prevents Mr.ASH from competing for well-localized SuSiE signals
+  theta_new <- ash_result$beta
+  for (l in active_slots) {
+    if (purity_weight[l] >= 1.0) {
+      neighbors <- which(abs(Xcorr[sentinels[l], ]) > 0.5)
+      theta_new[neighbors] <- 0
+    }
+  }
+
+  # Step 6: Build result list (same format as old update_ash_variance_components)
+  # modifyList(model, result) in the caller merges these into the model.
+  result <- list(
+    sigma2   = ash_result$sigma2,
+    tau2     = ash_result$tau2,
+    theta    = theta_new,
+    ash_pi   = ash_result$pi,
+    ash_iter = model$ash_iter
+  )
+
+  if (is_individual) {
+    result$X_theta <- as.vector(data$X %*% theta_new)
+  } else {
+    result$XtX_theta <- as.vector(compute_Rv(data, theta_new))
+  }
+
+  # Recompute Xr with full c_hat weights (SuSiE sees its own effects)
+  b_susie <- colSums(c_hat * model$alpha * model$mu)
+  if (is_individual) {
+    result$Xr <- as.vector(compute_Xb(data$X, b_susie))
+  } else {
+    fitted_field <- detect_fitted_field(model)
+    result[[fitted_field]] <- as.vector(compute_Rv(data, b_susie, model$X_meta))
+  }
+
+  return(result)
+}
+
+# Archived: Original filter-based ash variance component update
+#
+# Performs the full ash update cycle with the Diffusion-Aware masking
+# heuristic: get correlation matrix, compute masking (3-case classification,
+# WaitThenExpose, collision detection, nPIP masking), fit mr.ash, mask theta.
+# This is the original SuSiE-ASH implementation with 9+ tuning parameters
+# and per-effect/per-variant tracking arrays.
+#
+# Kept for internal diagnostics/archiving via unmappable_effects="ash_filter_archived".
+# The default "ash" path now uses update_ash_variance_components() (c_hat + 3 LD rules).
 #
 # @param data Data object (individual or SS)
 # @param model Current SuSiE model
@@ -1368,7 +1549,7 @@ init_ash_fields <- function(model, n, p, L, is_individual = FALSE) {
 # @return List with sigma2, tau2, theta, fitted theta, and all tracking fields
 #
 # @keywords internal
-update_ash_variance_components <- function(data, model, params) {
+update_ash_variance_components_filter_archived <- function(data, model, params) {
   is_individual <- inherits(data, "individual")
 
   # Step 1: Get correlation matrix (cached after first call)

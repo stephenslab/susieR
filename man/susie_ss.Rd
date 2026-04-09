@@ -31,7 +31,7 @@ susie_ss(
   estimate_prior_method = c("optim", "EM", "simple"),
   prior_variance_grid = NULL,
   mixture_weights = NULL,
-  unmappable_effects = c("none", "inf", "ash"),
+  unmappable_effects = c("none", "inf", "ash", "ash_filter_archived"),
   check_null_threshold = 0,
   prior_tol = 1e-09,
   max_iter = 100,
@@ -45,7 +45,11 @@ susie_ss(
   check_prior = FALSE,
   refine = FALSE,
   alpha0 = 0.1,
-  beta0 = 0.1
+  beta0 = 0.1,
+  C = NULL,
+  nu = 8,
+  c_hat_init = NULL,
+  skip_threshold_multiplier = 0
 )
 }
 \arguments{

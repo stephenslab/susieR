@@ -97,6 +97,48 @@ ibss_initialize.default <- function(data, params) {
   }
   model$converged <- FALSE
 
+  # Initialize Gamma-Poisson slot activity (c_hat) if C is specified.
+  # Faithfully ported from susieAnn ibss_ann.R:79-124.
+  # c_hat[l] = posterior probability that slot l is active.
+  # The Gamma-Poisson prior: mu_g ~ Gamma(nu, nu/C), c_l | mu_g ~ Bern(mu_g/L).
+  # Posterior update: c_hat[l] = sigmoid(digamma(a_g) - log(b_g) - log(L) + lbf[l]).
+  if (!is.null(params$C)) {
+    C_val <- params$C
+    L <- nrow(model$alpha)
+    nu <- params$nu
+
+    # c_hat init: warm start from c_hat_init or uniform at C/L
+    # (susieAnn ibss_ann.R:82-89)
+    if (!is.null(params$c_hat_init) && length(params$c_hat_init) == L) {
+      c_hat <- params$c_hat_init
+      a_g <- nu + sum(c_hat)
+    } else {
+      c_hat <- rep(min(C_val / L, 1 - 1e-10), L)
+      a_g <- nu + C_val
+    }
+    b_g <- nu / max(C_val, 1e-6) + 1  # constant within block
+
+    model$slot_weights <- c_hat
+    model$c_hat_state <- list(C = C_val, nu = nu, a_g = a_g, b_g = b_g)
+
+    # Adaptive skip threshold: skip slots with c_hat below
+    # multiplier * baseline, where baseline = sigmoid of prior log-odds
+    # with zero signal (lbf=0). (susieAnn ibss_ann.R:91-99)
+    if (params$skip_threshold_multiplier > 0) {
+      baseline_logodds <- digamma(a_g) - log(b_g) - log(L)
+      c_hat_baseline <- 1 / (1 + exp(-baseline_logodds))
+      model$c_hat_state$skip_threshold <-
+        params$skip_threshold_multiplier * c_hat_baseline
+    } else {
+      model$c_hat_state$skip_threshold <- 0
+    }
+
+    # Recompute fitted values with slot weights.
+    # ibss_initialize builds Xr/XtXr/Rz assuming weight=1 for all slots;
+    # with c_hat < 1 we need to correct. (susieAnn ibss_ann.R:117-124)
+    model <- recompute_fitted_weighted(data, model)
+  }
+
   return(model)
 }
 
@@ -118,17 +160,162 @@ ibss_initialize.default <- function(data, params) {
 #' @noRd
 ibss_fit <- function(data, params, model) {
 
-  # Repeat for each effect to update
   L <- nrow(model$alpha)
+  use_c_hat <- !is.null(model$c_hat_state)
+
   if (L > 0) {
     for (l in seq_len(L)) {
+      # Skip inactive slots when c_hat is below the adaptive threshold.
+      # (Faithfully ported from susieAnn ibss_ann.R:137-139)
+      if (use_c_hat &&
+          model$slot_weights[l] < model$c_hat_state$skip_threshold) {
+        next
+      }
+
+      # Standard SER step (susieAnn ibss_ann.R:145).
+      # compute_residuals and update_fitted_values use
+      # model$slot_weights[l] to scale effect l's contribution.
       model <- single_effect_update(data, params, model, l)
+
+      # Gamma-Poisson slot activity update (susieAnn ibss_ann.R:148-163)
+      if (use_c_hat) {
+        model <- update_c_hat(data, model, l)
+      }
     }
   }
 
   # Validate prior variance is reasonable
   validate_prior(data, params, model)
 
+  return(model)
+}
+
+# =============================================================================
+# GAMMA-POISSON SLOT ACTIVITY (c_hat) HELPERS
+#
+# These functions implement the Gamma-Poisson slot activity model from
+# susieAnn's Algorithm 1. Each slot l has a posterior activity probability
+# c_hat[l] = sigmoid(E_q[log mu] - log L + lbf[l]), where mu is the
+# per-block causal rate with Gamma(nu, nu/C) prior.
+#
+# Ported faithfully from susieAnn/R/ibss_ann.R:109-163.
+# =============================================================================
+
+#' Update c_hat for one slot after its SER step
+#'
+#' Computes the Gamma-Poisson posterior slot activity, adjusts the
+#' fitted-values field for the weight change, and updates the Gamma
+#' shape parameter eagerly.
+#'
+#' @param data Data object.
+#' @param model Current SuSiE model with c_hat_state.
+#' @param l Slot index.
+#' @return Updated model.
+#' @keywords internal
+#' @noRd
+update_c_hat <- function(data, model, l) {
+  st <- model$c_hat_state
+  old_c <- model$slot_weights[l]
+  L <- nrow(model$alpha)
+
+  # Algorithm 1, line 6: slot activity update
+  # (susieAnn ibss_ann.R:149-151)
+  lbf_l <- model$lbf[l]
+  if (is.na(lbf_l) || !is.finite(lbf_l)) lbf_l <- 0
+  log_odds <- digamma(st$a_g) - log(st$b_g) - log(L) + lbf_l
+  log_odds <- max(min(log_odds, 20), -20)  # numerical guard
+  new_c <- 1 / (1 + exp(-log_odds))
+  model$slot_weights[l] <- new_c
+
+  # Correct fitted field for the change in slot weight.
+  # After update_fitted_values, the field contains effect l at old_c.
+  # Adjust by (new_c - old_c) * Rv(b_bar_l).
+  # (susieAnn ibss_ann.R:156-160)
+  if (abs(new_c - old_c) > 1e-15) {
+    b_bar_l <- model$alpha[l, ] * model$mu[l, ]
+    model <- adjust_fitted_for_c_hat(data, model, b_bar_l, new_c - old_c)
+  }
+
+  # Algorithm 1, line 8: eager Gamma shape update
+  # (susieAnn ibss_ann.R:163)
+  model$c_hat_state$a_g <- st$nu + sum(model$slot_weights)
+
+  return(model)
+}
+
+#' Adjust fitted-values field for a c_hat weight change
+#'
+#' Adds delta_weight * Rv(b_bar_l) to the appropriate fitted-values field
+#' (Xr, XtXr, or Rz depending on data backend).
+#'
+#' @param data Data object.
+#' @param model Current model.
+#' @param b_bar_l Posterior mean vector alpha[l,] * mu[l,].
+#' @param delta_weight Change in slot weight (new_c - old_c).
+#' @return Updated model.
+#' @keywords internal
+#' @noRd
+adjust_fitted_for_c_hat <- function(data, model, b_bar_l, delta_weight) {
+  fitted_field <- detect_fitted_field(model)
+  if (fitted_field == "Xr") {
+    # Individual data: Xr += delta_weight * X %*% b_bar_l
+    model$Xr <- model$Xr +
+      delta_weight * as.vector(compute_Xb(data$X, b_bar_l))
+  } else {
+    # SS or RSS: fitted += delta_weight * R %*% b_bar_l
+    Rv_delta <- as.vector(compute_Rv(data, b_bar_l, model$X_meta))
+    model[[fitted_field]] <- model[[fitted_field]] + delta_weight * Rv_delta
+  }
+  return(model)
+}
+
+#' Detect which fitted-values field the model uses
+#'
+#' Returns "Rz" (rss_lambda path), "XtXr" (sufficient stats path),
+#' or "Xr" (individual data path).
+#'
+#' @param model SuSiE model object.
+#' @return Character string: fitted field name.
+#' @keywords internal
+#' @noRd
+detect_fitted_field <- function(model) {
+  # (susieAnn ibss_ann.R:109-112)
+  if ("Rz" %in% names(model)) "Rz"
+  else if ("XtXr" %in% names(model)) "XtXr"
+  else if ("Xr" %in% names(model)) "Xr"
+  else stop("Cannot detect fitted-values field on model object.")
+}
+
+#' Recompute fitted values with slot weights
+#'
+#' After ibss_initialize builds Xr/XtXr/Rz assuming weight=1 for all
+#' slots, this function recomputes the field as the slot-weighted sum
+#' sum_l(c_hat[l] * alpha[l,] * mu[l,]).
+#'
+#' @param data Data object.
+#' @param model Model with slot_weights set.
+#' @return Updated model.
+#' @keywords internal
+#' @noRd
+recompute_fitted_weighted <- function(data, model) {
+  # (susieAnn ibss_ann.R:120-124)
+  # Recompute the fitted-values field as the slot-weighted sum.
+  # For individual data: Xr = X %*% b_weighted (length n)
+  # For SS/RSS: XtXr/Rz = R %*% b_weighted (length p)
+  fitted_field <- detect_fitted_field(model)
+  L <- nrow(model$alpha)
+  c_hat <- model$slot_weights
+  b_weighted <- rep(0, ncol(model$alpha))
+  for (ll in seq_len(L)) {
+    b_weighted <- b_weighted + c_hat[ll] * model$alpha[ll, ] * model$mu[ll, ]
+  }
+  if (fitted_field == "Xr") {
+    # Individual data: compute X %*% b_weighted (length n)
+    model$Xr <- as.vector(compute_Xb(data$X, b_weighted))
+  } else {
+    # SS or RSS: compute R %*% b_weighted or X'X %*% b_weighted (length p)
+    model[[fitted_field]] <- as.vector(compute_Rv(data, b_weighted, model$X_meta))
+  }
   return(model)
 }
 
@@ -186,6 +373,16 @@ ibss_finalize <- function(data, params, model, elbo = NULL, iter = NA_integer_,
   # Multi-panel omega weights
   if (!is.null(model$omega))
     model$omega_weights <- model$omega
+
+  # Store Gamma-Poisson c_hat results on output for user access
+  # and for susieAnn to extract (a_g, b_g needed for genome-wide nu update).
+  if (!is.null(model$c_hat_state)) {
+    model$c_hat <- model$slot_weights
+    model$C_hat <- sum(model$slot_weights)
+    model$a_g   <- model$c_hat_state$a_g
+    model$b_g   <- model$c_hat_state$b_g
+    model$c_hat_state <- NULL  # cleanup internal state
+  }
 
   # Clean up temporary computational fields
   model <- cleanup_model(data, params, model)

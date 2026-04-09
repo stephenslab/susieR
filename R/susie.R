@@ -300,7 +300,7 @@ susie <- function(X, y, L = min(10, ncol(X)),
                   estimate_prior_method = c("optim", "EM", "simple"),
                   prior_variance_grid = NULL,
                   mixture_weights = NULL,
-                  unmappable_effects = c("none", "inf", "ash"),
+                  unmappable_effects = c("none", "inf", "ash", "ash_filter_archived"),
                   check_null_threshold = 0,
                   prior_tol = 1e-9,
                   residual_variance_upperbound = Inf,
@@ -320,7 +320,11 @@ susie <- function(X, y, L = min(10, ncol(X)),
                   n_purity = 100,
                   alpha0 = 0.1,
                   beta0 = 0.1,
-                  init_only = FALSE) {
+                  init_only = FALSE,
+                  C = NULL,
+                  nu = 8,
+                  c_hat_init = NULL,
+                  skip_threshold_multiplier = 0) {
 
   # Validate method arguments
   unmappable_effects       <- match.arg(unmappable_effects)
@@ -345,7 +349,7 @@ susie <- function(X, y, L = min(10, ncol(X)),
     min_abs_corr, compute_univariate_zscore, na.rm,
     max_iter, tol, convergence_method, verbose, track_fit,
     residual_variance_lowerbound, refine, n_purity,
-    alpha0, beta0
+    alpha0, beta0, C, nu, c_hat_init, skip_threshold_multiplier
   )
 
   # Return data and params without fitting if init_only is TRUE.
@@ -427,7 +431,7 @@ susie_ss <- function(XtX, Xty, yty, n,
                      estimate_prior_method = c("optim", "EM", "simple"),
                      prior_variance_grid = NULL,
                      mixture_weights = NULL,
-                     unmappable_effects = c("none", "inf", "ash"),
+                     unmappable_effects = c("none", "inf", "ash", "ash_filter_archived"),
                      check_null_threshold = 0,
                      prior_tol = 1e-9,
                      max_iter = 100,
@@ -441,7 +445,11 @@ susie_ss <- function(XtX, Xty, yty, n,
                      check_prior = FALSE,
                      refine = FALSE,
                      alpha0 = 0.1,
-                     beta0 = 0.1) {
+                     beta0 = 0.1,
+                     C = NULL,
+                     nu = 8,
+                     c_hat_init = NULL,
+                     skip_threshold_multiplier = 0) {
 
   # Validate method arguments
   unmappable_effects       <- match.arg(unmappable_effects)
@@ -477,7 +485,9 @@ susie_ss <- function(XtX, Xty, yty, n,
     max_iter = max_iter, tol = tol, convergence_method = convergence_method,
     coverage = coverage, min_abs_corr = min_abs_corr, n_purity = n_purity,
     verbose = verbose, track_fit = track_fit, check_prior = check_prior,
-    refine = refine, alpha0 = alpha0, beta0 = beta0
+    refine = refine, alpha0 = alpha0, beta0 = beta0,
+    C = C, nu = nu, c_hat_init = c_hat_init,
+    skip_threshold_multiplier = skip_threshold_multiplier
   )
 
   # Run main SuSiE algorithm
@@ -629,7 +639,7 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
                       estimate_prior_method = c("optim", "EM", "simple"),
                       prior_variance_grid = NULL,
                       mixture_weights = NULL,
-                      unmappable_effects = c("none", "inf", "ash"),
+                      unmappable_effects = c("none", "inf", "ash", "ash_filter_archived"),
                       check_null_threshold = 0,
                       prior_tol = 1e-9,
                       residual_variance_lowerbound = 0,
@@ -654,7 +664,11 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
                       multipanel_safeguard = TRUE,
                       alpha0 = 0.1,
                       beta0 = 0.1,
-                      init_only = FALSE) {
+                      init_only = FALSE,
+                      C = NULL,
+                      nu = 8,
+                      c_hat_init = NULL,
+                      skip_threshold_multiplier = 0) {
 
   # Validate: exactly one of R or X must be provided
   if (is.null(R) && is.null(X))
@@ -809,7 +823,9 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
     check_prior = check_prior, check_R = check_R, check_z = check_z,
     n_purity = n_purity, r_tol = r_tol, refine = refine,
     sketch_samples = sketch_samples,
-    alpha0 = alpha0, beta0 = beta0
+    alpha0 = alpha0, beta0 = beta0,
+    C = C, nu = nu, c_hat_init = c_hat_init,
+    skip_threshold_multiplier = skip_threshold_multiplier
   )
 
   # Return constructed data and params without running IBSS (for susieAnn

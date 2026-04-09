@@ -11,7 +11,7 @@
 # Configure individual data for specified method
 #' @keywords internal
 configure_data.individual <- function(data, params) {
-  if (params$unmappable_effects == "none" || params$unmappable_effects == "ash") {
+  if (params$unmappable_effects == "none" || params$unmappable_effects %in% c("ash", "ash_filter_archived")) {
     return(configure_data.default(data, params))
   } else {
     # "inf" mode still requires sufficient statistics conversion
@@ -54,7 +54,7 @@ initialize_susie_model.individual <- function(data, params, var_y, ...) {
   }
 
   # Initialize ash (Mr.ASH) tracking fields
-  if (params$unmappable_effects == "ash") {
+  if (params$unmappable_effects %in% c("ash", "ash_filter_archived")) {
     model <- init_ash_fields(model, data$n, data$p, params$L, is_individual = TRUE)
   }
 
@@ -76,7 +76,7 @@ validate_prior.individual <- function(data, params, model, ...) {
 # Track core parameters across iterations
 #' @keywords internal
 track_ibss_fit.individual <- function(data, params, model, tracking, iter, elbo, ...) {
-  if (params$unmappable_effects == "ash") {
+  if (params$unmappable_effects %in% c("ash", "ash_filter_archived")) {
     tracking <- track_ibss_fit.default(data, params, model, tracking, iter, elbo, ...)
     if (isTRUE(params$track_fit)) {
       tracking[[iter]]$tau2 <- model$tau2
@@ -105,7 +105,7 @@ compute_residuals.individual <- function(data, params, model, l, ...) {
   Xr_without_l <- model$Xr - sw_l * compute_Xb(data$X, model$alpha[l, ] * model$mu[l, ])
 
   # Compute residuals
-  if (params$unmappable_effects == "ash") {
+  if (params$unmappable_effects %in% c("ash", "ash_filter_archived")) {
     # Subtract both sparse effects (without l) and ash theta
     R <- data$y - Xr_without_l - model$X_theta
   } else {
@@ -301,8 +301,11 @@ update_fitted_values.individual <- function(data, params, model, l, ...) {
 # Update variance components for individual data
 #' @keywords internal
 update_variance_components.individual <- function(data, params, model, ...) {
-  if (params$unmappable_effects == "ash") {
-    # SuSiE-ash: shared update dispatches to mr.ash for individual data
+  if (params$unmappable_effects == "ash_filter_archived") {
+    # Original filter-based masking (archived for internal diagnostics)
+    return(update_ash_variance_components_filter_archived(data, model, params))
+  } else if (params$unmappable_effects == "ash") {
+    # c_hat + 3 LD-interference heuristics
     return(update_ash_variance_components(data, model, params))
   }
   return(update_variance_components.default(data, params, model, ...))
@@ -311,7 +314,7 @@ update_variance_components.individual <- function(data, params, model, ...) {
 # Update derived quantities for individual data
 #' @keywords internal
 update_derived_quantities.individual <- function(data, params, model) {
-  if (params$unmappable_effects == "ash") {
+  if (params$unmappable_effects %in% c("ash", "ash_filter_archived")) {
     # For ash, recompute full Xr including sparse effects only
     # (theta is tracked separately via X_theta)
     b <- colSums(model$alpha * model$mu)
@@ -430,7 +433,7 @@ cleanup_model.individual <- function(data, params, model, ...) {
   }
 
   # Remove ash-specific runtime fields
-  if (!is.null(params$unmappable_effects) && params$unmappable_effects == "ash") {
+  if (!is.null(params$unmappable_effects) && params$unmappable_effects %in% c("ash", "ash_filter_archived")) {
     model <- cleanup_ash_fields(model)
   }
 

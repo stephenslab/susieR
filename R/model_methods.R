@@ -200,7 +200,7 @@ check_convergence.default <- function(data, params, model, elbo, iter) {
                         mem_used_gb()))
 
       if (model$converged && !is.null(params$unmappable_effects) &&
-          params$unmappable_effects == "ash") {
+          params$unmappable_effects %in% c("ash", "ash_filter_archived")) {
         model <- run_final_ash_pass(data, params, model)
       }
       return(model)
@@ -216,7 +216,7 @@ check_convergence.default <- function(data, params, model, elbo, iter) {
                         mem_used_gb()))
 
       if (model$converged && !is.null(params$unmappable_effects) &&
-          params$unmappable_effects == "ash") {
+          params$unmappable_effects %in% c("ash", "ash_filter_archived")) {
         model <- run_final_ash_pass(data, params, model)
       }
       return(model)
@@ -238,7 +238,7 @@ check_convergence.default <- function(data, params, model, elbo, iter) {
                     mem_used_gb()))
 
   if (model$converged && !is.null(params$unmappable_effects) &&
-      params$unmappable_effects == "ash") {
+      params$unmappable_effects %in% c("ash", "ash_filter_archived")) {
     model <- run_final_ash_pass(data, params, model)
   }
   return(model)

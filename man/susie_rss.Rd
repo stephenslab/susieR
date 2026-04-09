@@ -31,7 +31,7 @@ susie_rss(
   estimate_prior_method = c("optim", "EM", "simple"),
   prior_variance_grid = NULL,
   mixture_weights = NULL,
-  unmappable_effects = c("none", "inf", "ash"),
+  unmappable_effects = c("none", "inf", "ash", "ash_filter_archived"),
   check_null_threshold = 0,
   prior_tol = 1e-09,
   residual_variance_lowerbound = 0,
@@ -56,7 +56,11 @@ susie_rss(
   multipanel_safeguard = TRUE,
   alpha0 = 0.1,
   beta0 = 0.1,
-  init_only = FALSE
+  init_only = FALSE,
+  C = NULL,
+  nu = 8,
+  c_hat_init = NULL,
+  skip_threshold_multiplier = 0
 )
 }
 \arguments{
