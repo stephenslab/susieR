@@ -479,6 +479,19 @@ validate_and_override_params <- function(params) {
       default_C, ". In practice, set both L (maximum) and C (expected) ",
       "e.g., L = 15, slot_prior = slot_prior_poisson(C = 5).")
   }
+  # Report nu default after the C message so the user sees C first.
+  if (!is.null(params$slot_prior) && isTRUE(params$slot_prior$nu_was_default)) {
+    sp <- params$slot_prior
+    sd_mu <- sp$C / sqrt(sp$nu)
+    warning_message(
+      "Overdispersion parameter nu not specified, using default nu = ",
+      sp$nu, ". With C = ", sp$C,
+      " this implies sd(mu) = ", round(sd_mu, 2),
+      ", so the number of active effects ranges roughly from ",
+      round(max(0, sp$C - 2 * sd_mu), 1), " to ",
+      round(sp$C + 2 * sd_mu, 1),
+      " around the prior mean. Set nu explicitly to change this behavior.")
+  }
 
   # Override convergence method for unmappable effects or slot_prior.
   # The ELBO is not well-defined when slot_weights != 1 (c_hat active)

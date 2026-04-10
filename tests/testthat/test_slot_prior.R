@@ -26,11 +26,13 @@ test_that("slot_prior validates inputs", {
   expect_error(slot_prior_poisson(C = 5, nu = -1))
 })
 
-test_that("slot_prior warns when nu is NULL", {
-  expect_message(slot_prior_poisson(C = 4), "nu not specified")
-  expect_message(slot_prior_binomial(C = 4), "nu not specified")
-  # No message when nu is explicit
-  expect_no_message(slot_prior_poisson(C = 4, nu = 8))
+test_that("slot_prior tracks nu_was_default", {
+  sp_default <- slot_prior_poisson(C = 4)
+  expect_true(sp_default$nu_was_default)
+  expect_equal(sp_default$nu, 8)
+  sp_explicit <- slot_prior_poisson(C = 4, nu = 8)
+  expect_false(sp_explicit$nu_was_default)
+  expect_equal(sp_explicit$nu, 8)
 })
 
 test_that("slot_prior_binomial default for update_schedule is batch", {
