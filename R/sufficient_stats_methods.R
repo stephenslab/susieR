@@ -53,10 +53,14 @@ initialize_susie_model.ss <- function(data, params, var_y, ...) {
     model$tau2  <- 0
     model$theta <- rep(0, data$p)
 
-  } else if (params$unmappable_effects %in% c("ash", "ash_filter_archived")) {
+  } else if (params$unmappable_effects == "ash") {
     pm <- if (!is.null(data$XtX)) data$XtX else data$X
     model$predictor_weights <- attr(pm, "d")
     model <- init_ash_fields(model, data$n, data$p, params$L, is_individual = FALSE)
+  } else if (params$unmappable_effects == "ash_filter_archived") {
+    pm <- if (!is.null(data$XtX)) data$XtX else data$X
+    model$predictor_weights <- attr(pm, "d")
+    model <- init_ash_fields_filter_archived(model, data$n, data$p, params$L, is_individual = FALSE)
   } else {
     pm <- if (!is.null(data$XtX)) data$XtX else data$X
     model$predictor_weights <- attr(pm, "d")
@@ -547,8 +551,10 @@ cleanup_model.ss <- function(data, params, model, ...) {
         model[[field]] <- NULL
       }
     }
-  } else if (!is.null(params$unmappable_effects) && params$unmappable_effects %in% c("ash", "ash_filter_archived")) {
+  } else if (!is.null(params$unmappable_effects) && params$unmappable_effects == "ash") {
     model <- cleanup_ash_fields(model)
+  } else if (!is.null(params$unmappable_effects) && params$unmappable_effects == "ash_filter_archived") {
+    model <- cleanup_ash_fields_filter_archived(model)
   }
   
   # Remove Servin-stephens specific temporary fields

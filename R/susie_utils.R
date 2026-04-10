@@ -1359,28 +1359,34 @@ est_residual_variance <- function(data, model) {
 #
 # @keywords internal
 init_ash_fields <- function(model, n, p, L, is_individual = FALSE) {
-  model$tau2              <- 0
-  model$theta             <- rep(0, p)
-  model$masked            <- rep(FALSE, p)
-  model$ash_mask          <- rep(FALSE, p)  # sticky mask for new ash path
-  model$ash_iter          <- 0
-  model$ash_pi            <- NULL
-  model$ash_s0            <- NULL
-  model$diffuse_iter_count <- rep(0, L)
-  model$prev_sentinel     <- rep(0, L)
-  model$unmask_candidate_iters <- rep(0, p)
-  model$ever_unmasked     <- rep(FALSE, p)
-  model$force_exposed_iter <- rep(0, p)
-  model$ever_diffuse      <- rep(0, L)
-  model$second_chance_used <- rep(FALSE, p)
-  model$prev_case         <- rep(0, L)
+  model$tau2     <- 0
+  model$theta    <- rep(0, p)
+  model$ash_iter <- 0
+  model$ash_pi   <- NULL
+  model$ash_s0   <- NULL
 
-  # Data-representation-specific fitted theta
   if (is_individual) {
     model$X_theta <- rep(0, n)
   } else {
     model$XtX_theta <- rep(0, p)
   }
+
+  return(model)
+}
+
+init_ash_fields_filter_archived <- function(model, n, p, L, is_individual = FALSE) {
+  model <- init_ash_fields(model, n, p, L, is_individual)
+
+  # Additional tracking fields for the archived filter-based masking
+  model$masked                 <- rep(FALSE, p)
+  model$diffuse_iter_count     <- rep(0, L)
+  model$prev_sentinel          <- rep(0, L)
+  model$unmask_candidate_iters <- rep(0, p)
+  model$ever_unmasked          <- rep(FALSE, p)
+  model$force_exposed_iter     <- rep(0, p)
+  model$ever_diffuse           <- rep(0, L)
+  model$second_chance_used     <- rep(FALSE, p)
+  model$prev_case              <- rep(0, L)
 
   return(model)
 }
@@ -1431,7 +1437,7 @@ update_ash_variance_components <- function(data, model, params) {
   confident_wait       <- 3     # iterations of stable confidence before trusting
   unmask_delay         <- 2     # iterations flagged before targeted unmasking
   masking_threshold    <- 0.5   # mask LD neighborhood |r| > this
-  nPIP_threshold       <- 0.2   # mask if neighborhood PIP > this
+  nPIP_threshold       <- 0.05  # mask if neighborhood PIP > this
   direct_pip_threshold <- 0.1   # mask if direct PIP > this
   expose_threshold     <- 0.5   # unmask old sentinel neighborhood |r| > this
 
@@ -1673,7 +1679,23 @@ update_ash_variance_components_filter_archived <- function(data, model, params) 
 #
 # @keywords internal
 cleanup_ash_fields <- function(model) {
-  for (field in c("X_theta", "XtX_theta", "masked", "ash_iter")) {
+  # Remove internal tracking fields from the new ash path.
+  # Keep: tau2, theta, ash_pi (user-visible results)
+  for (field in c("X_theta", "XtX_theta", "ash_iter", "ash_s0",
+                   "ever_uncertain", "prev_sentinel",
+                   "flagged_count", "flagged_sentinel")) {
+    model[[field]] <- NULL
+  }
+  return(model)
+}
+
+cleanup_ash_fields_filter_archived <- function(model) {
+  # Remove internal tracking fields from the archived filter path.
+  for (field in c("X_theta", "XtX_theta", "ash_iter", "ash_s0",
+                   "masked", "diffuse_iter_count", "prev_sentinel",
+                   "unmask_candidate_iters", "ever_unmasked",
+                   "force_exposed_iter", "ever_diffuse",
+                   "second_chance_used", "prev_case")) {
     model[[field]] <- NULL
   }
   return(model)

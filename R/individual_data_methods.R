@@ -54,8 +54,10 @@ initialize_susie_model.individual <- function(data, params, var_y, ...) {
   }
 
   # Initialize ash (Mr.ASH) tracking fields
-  if (params$unmappable_effects %in% c("ash", "ash_filter_archived")) {
+  if (params$unmappable_effects == "ash") {
     model <- init_ash_fields(model, data$n, data$p, params$L, is_individual = TRUE)
+  } else if (params$unmappable_effects == "ash_filter_archived") {
+    model <- init_ash_fields_filter_archived(model, data$n, data$p, params$L, is_individual = TRUE)
   }
 
   return(model)
@@ -436,8 +438,10 @@ cleanup_model.individual <- function(data, params, model, ...) {
   }
 
   # Remove ash-specific runtime fields
-  if (!is.null(params$unmappable_effects) && params$unmappable_effects %in% c("ash", "ash_filter_archived")) {
+  if (!is.null(params$unmappable_effects) && params$unmappable_effects == "ash") {
     model <- cleanup_ash_fields(model)
+  } else if (!is.null(params$unmappable_effects) && params$unmappable_effects == "ash_filter_archived") {
+    model <- cleanup_ash_fields_filter_archived(model)
   }
 
   return(model)
