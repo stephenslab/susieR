@@ -317,7 +317,10 @@ update_derived_quantities.individual <- function(data, params, model) {
   if (params$unmappable_effects %in% c("ash", "ash_filter_archived")) {
     # For ash, recompute full Xr including sparse effects only
     # (theta is tracked separately via X_theta)
-    b <- colSums(model$alpha * model$mu)
+    # Use slot_weights (c_hat) if available to maintain consistency
+    # with the c_hat-weighted Xr from ibss_fit + update_c_hat.
+    sw <- if (!is.null(model$slot_weights)) model$slot_weights else rep(1, nrow(model$alpha))
+    b <- colSums(sw * model$alpha * model$mu)
     model$Xr <- as.vector(compute_Xb(data$X, b))
     return(model)
   }

@@ -1362,6 +1362,7 @@ init_ash_fields <- function(model, n, p, L, is_individual = FALSE) {
   model$tau2              <- 0
   model$theta             <- rep(0, p)
   model$masked            <- rep(FALSE, p)
+  model$ash_mask          <- rep(FALSE, p)  # sticky mask for new ash path
   model$ash_iter          <- 0
   model$ash_pi            <- NULL
   model$ash_s0            <- NULL
@@ -1384,15 +1385,16 @@ init_ash_fields <- function(model, n, p, L, is_individual = FALSE) {
   return(model)
 }
 
-# New ash variance component update: c_hat + 3 LD-interference heuristics
+# New ash variance component update: c_hat + simplified LD-aware masking
 #
-# Replaces the original Diffusion-Aware masking with:
-#   1. Within-SER: purity < 0.4 -> reduce subtraction weight (diffuse CS)
-#   2. Across-SER: sentinel collision |r| > 0.9 -> reduce subtraction weight
-#   3. Coordination: mask theta at |r| > 0.5 from confident sentinels
-#
-# c_hat (Gamma-Poisson slot activity) handles adaptive L and the
-# "how much to subtract" question continuously.
+# Replaces the original Diffusion-Aware masking (9 params, 6+3 tracking
+# arrays, WaitThenExpose state machine) with:
+#   - b_confident (RESTRICTIVE): only confident effects (purity >= 0.5,
+#     no collision) are subtracted from Mr.ASH residuals.
+#   - Sticky mask (PERMISSIVE): sentinel LD neighborhoods + high-alpha
+#     positions are protected from Mr.ASH. Mask grows over iterations
+#     (never shrinks), preventing death spiral.
+#   - c_hat (Gamma-Poisson) handles adaptive L principally.
 #
 # @param data Data object (individual or SS)
 # @param model Current SuSiE model
@@ -1404,108 +1406,123 @@ init_ash_fields <- function(model, n, p, L, is_individual = FALSE) {
 update_ash_variance_components <- function(data, model, params) {
 
   # ---- Thresholds ----
-  # Named parameters for all LD-interference cutoffs, matching the
-  # convention in the archived filter version and the SuSiE 2.0 paper.
-  # These are fixed defaults; not exposed to user interface.
-  purity_threshold    <- 0.35  # within-SER: CS purity below this = diffuse
-  collision_threshold <- 0.9   # across-SER: sentinel |r| above this = collision
-  masking_threshold   <- 0.5   # coordination: mask theta within |r| of sentinel
-  cs_coverage         <- 0.9   # coverage for tentative CS construction
-  purity_floor        <- 0.1   # minimum purity for weight ramp (avoids zero)
-  c_hat_active        <- 0.25  # c_hat above prior baseline = slot participates
+  collision_threshold  <- 0.9   # across-SER: sentinel collision if |r| > this
+  confident_wait       <- 2     # consecutive stable-confident iters to trust
 
   is_individual <- inherits(data, "individual")
   p <- ncol(model$alpha)
   L <- nrow(model$alpha)
+  iter <- if (!is.null(model$ash_iter)) model$ash_iter else 0
+  model$ash_iter <- iter + 1
 
   # Step 1: Get correlation matrix (cached after first call)
   xcorr_result <- get_xcorr(data)
   Xcorr <- xcorr_result$Xcorr
   data <- xcorr_result$data
 
-  # Step 2: LD-interference heuristics on active slots
+  # Step 2: Identify active slots and detect spillover
   c_hat <- if (!is.null(model$slot_weights)) model$slot_weights else rep(1, L)
-  active_slots <- which(c_hat > c_hat_active)
-  purity_weight <- rep(1, L)
+  active_slots <- which(c_hat > 0.5 & model$V > 0)
 
   sentinels <- integer(L)
-  for (l in active_slots) {
-    sentinels[l] <- which.max(model$alpha[l, ])
-  }
+  for (l in active_slots) sentinels[l] <- which.max(model$alpha[l, ])
 
-  # Across-SER check: sentinel collision
-  # Two effects whose sentinels are in tight LD (|r| > collision_threshold)
-  # are both flagged — they may be splitting one signal or interfering.
+  # Across-SER spillover: sentinel collision (two effects on same signal)
   sentinel_collision <- rep(FALSE, L)
   if (length(active_slots) > 1) {
     s_active <- sentinels[active_slots]
     R_sentinels <- abs(Xcorr[s_active, s_active])
     diag(R_sentinels) <- 0
-    has_collision <- apply(R_sentinels > collision_threshold, 1, any)
-    sentinel_collision[active_slots] <- has_collision
+    sentinel_collision[active_slots] <- apply(R_sentinels > collision_threshold, 1, any)
   }
 
-  # Within-SER check: CS purity via get_purity()
-  # Low purity = CS spans weakly-correlated variants = LD interference
+  # Within-SER spillover: not-confident = colliding or not active
+  # (We drop purity check — c_hat handles diffuse effects naturally.
+  #  An effect with c_hat > 0.5 that isn't colliding is confident.)
+  is_confident_now <- rep(FALSE, L)
+  is_confident_now[active_slots] <- !sentinel_collision[active_slots]
+
+  # Step 3: Track spillover — permanent "ever uncertain" flag
+  # Once a slot shows spillover signs (collision or sentinel jump to
+  # a distant position with |r| < 0.7), it is permanently flagged.
+  # Flagged slots are never subtracted — Mr.ASH can absorb their signal.
+  # Real effects have stable sentinels; spillover effects jump or collide.
+  if (is.null(model$ever_uncertain)) model$ever_uncertain <- rep(FALSE, L)
+  if (is.null(model$prev_sentinel)) model$prev_sentinel <- rep(0L, L)
+
   for (l in active_slots) {
-    # Compute tentative CS indices (smallest set with sum(alpha) >= coverage)
-    alpha_l <- model$alpha[l, ]
-    cs_order <- order(alpha_l, decreasing = TRUE)
-    cs_size <- min(which(cumsum(alpha_l[cs_order]) >= cs_coverage))
-    cs_idx <- cs_order[1:cs_size]
-
-    # get_purity returns c(min, mean, median) of |r| among CS members
-    purity <- get_purity(cs_idx, X = NULL, Xcorr = Xcorr,
-                         use_rfast = FALSE)[1]
-
-    # Purity below threshold or collision: reduce subtraction weight
-    # so Mr.ASH absorbs the spillover signal.
-    # Weight ramps linearly: purity_floor -> 0.25, purity_threshold -> 1.0
-    if (sentinel_collision[l] || purity < purity_threshold) {
-      purity_weight[l] <- max(purity, purity_floor) / purity_threshold
+    # Sentinel instability: jumped to distant position
+    if (model$prev_sentinel[l] > 0 && sentinels[l] != model$prev_sentinel[l]) {
+      if (abs(Xcorr[sentinels[l], model$prev_sentinel[l]]) < 0.7) {
+        model$ever_uncertain[l] <- TRUE
+      }
     }
+    # Collision
+    if (sentinel_collision[l]) {
+      model$ever_uncertain[l] <- TRUE
+    }
+    if (sentinels[l] > 0) model$prev_sentinel[l] <- sentinels[l]
   }
 
-  # Step 3: Compute Mr.ASH residuals with effective weights
-  # eff_weight combines "is this slot active?" (c_hat) with
-  # "is this slot's signal trustworthy?" (purity_weight)
-  eff_weights <- c_hat * purity_weight
-  b_weighted <- colSums(eff_weights * model$alpha * model$mu)
+  is_trusted <- is_confident_now & !model$ever_uncertain
 
-  # Determine Mr.ASH convergence tolerance (looser early, tighter late)
-  iter <- if (!is.null(model$ash_iter)) model$ash_iter else 0
+  # Step 4: Build b_confident (SUBTRACT) and mask (PROTECT)
+  #
+  # b_confident: trusted effects fully subtracted from Mr.ASH residuals.
+  # mask: positions where theta=0 forced. Built from nPIP of ALL active
+  #   slots (not just trusted). Protects anything SuSiE is exploring.
+  #
+  # Subtraction and masking serve different purposes:
+  # - Subtraction removes confirmed signal so Mr.ASH doesn't double-count
+  # - Mask protects SuSiE's territory from Mr.ASH absorption
+
+  # b_confident
+  b_confident <- rep(0, p)
+  for (l in which(is_trusted)) {
+    b_confident <- b_confident + model$alpha[l, ] * model$mu[l, ]
+  }
+
+  # Step 5: Three zones
+  #   SUBTRACT: trusted (count >= wait) — removed from residuals
+  #   MASK: emerging (0 < count < wait) — protected from Mr.ASH
+  #   EXPOSE: disrupted (count == 0) + inactive — Mr.ASH absorbs freely
+  masking_threshold    <- 0.5
+  nPIP_threshold       <- 0.25
+  direct_pip_threshold <- 0.1
+
+  emerging_slots <- setdiff(active_slots, c(which(is_trusted), which(model$ever_uncertain)))
+  if (length(emerging_slots) > 0) {
+    pip_emerging <- 1 - apply(1 - model$alpha[emerging_slots, , drop = FALSE], 2, prod)
+    LD_adj <- abs(Xcorr) > masking_threshold
+    nPIP <- as.vector(LD_adj %*% pip_emerging)
+    mask <- (nPIP > nPIP_threshold) | (pip_emerging > direct_pip_threshold)
+  } else {
+    mask <- rep(FALSE, p)
+  }
+
+  # Step 6: Mr.ASH — runs every iteration
+  model$theta[mask] <- 0
+
   convtol <- if (iter < 3) 1e-3 else 1e-4
-  model$ash_iter <- iter + 1
-
-  # Step 4: Fit Mr.ASH on residuals after removing weighted sparse effects
   if (is_individual) {
     ash_result <- compute_ash_from_individual_data(
-      data$X, data$y, b_weighted, model, params, convtol)
+      data$X, data$y, b_confident, model, params, convtol)
   } else {
     ash_result <- compute_ash_from_summary_stats(
-      data, b_weighted, model, params, convtol)
+      data, b_confident, model, params, convtol)
   }
-
-  # Step 5: Coordination — mask theta near confident sentinels
-  # For well-localized effects (high purity, no collision), zero out
-  # Mr.ASH theta at positions in moderate LD with the sentinel.
-  # Prevents Mr.ASH from competing for signals SuSiE has resolved.
   theta_new <- ash_result$beta
-  for (l in active_slots) {
-    if (purity_weight[l] >= 1.0) {
-      neighbors <- which(abs(Xcorr[sentinels[l], ]) > masking_threshold)
-      theta_new[neighbors] <- 0
-    }
-  }
+  theta_new[mask] <- 0
 
-  # Step 6: Build result list
-  # modifyList(model, result) in the caller merges these into the model.
+  # Step 6: Build result
   result <- list(
     sigma2   = ash_result$sigma2,
     tau2     = ash_result$tau2,
     theta    = theta_new,
     ash_pi   = ash_result$pi,
-    ash_iter = model$ash_iter
+    ash_iter = model$ash_iter,
+    ever_uncertain = model$ever_uncertain,
+    prev_sentinel = model$prev_sentinel
   )
 
   if (is_individual) {
@@ -1514,16 +1531,8 @@ update_ash_variance_components <- function(data, model, params) {
     result$XtX_theta <- as.vector(compute_Rv(data, theta_new))
   }
 
-  # Recompute fitted values with full c_hat weights
-  # (SuSiE sees its own slot-weighted effects, not the purity-reduced ones)
-  b_susie <- colSums(c_hat * model$alpha * model$mu)
-  if (is_individual) {
-    result$Xr <- as.vector(compute_Xb(data$X, b_susie))
-  } else {
-    fitted_field <- detect_fitted_field(model)
-    result[[fitted_field]] <- as.vector(compute_Rv(data, b_susie, model$X_meta))
-  }
-
+  # No Xr recompute needed — theta=0 doesn't change fitted values
+  # SuSiE's Xr is maintained by ibss_fit + c_hat updates
   return(result)
 }
 
