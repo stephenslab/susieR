@@ -97,20 +97,21 @@ ibss_initialize.default <- function(data, params) {
   }
   model$converged <- FALSE
 
-  # Initialize Gamma-Poisson slot activity (c_hat) if C is specified.
-  # Faithfully ported from susieAnn ibss_ann.R:79-124.
-  # c_hat[l] = posterior probability that slot l is active.
-  # The Gamma-Poisson prior: mu_g ~ Gamma(nu, nu/C), c_l | mu_g ~ Bern(mu_g/L).
-  # Posterior update: c_hat[l] = sigmoid(digamma(a_g) - log(b_g) - log(L) + lbf[l]).
-  if (!is.null(params$C)) {
-    C_val <- params$C
+  # Initialize Gamma-Poisson slot activity (c_hat) if a slot_prior
+  # is specified. c_hat[l] = posterior probability that slot l is active.
+  # Prior: mu ~ Gamma(nu, nu/C), c_l | mu ~ Bern(mu/L).
+  sp <- params$slot_prior
+  if (!is.null(sp)) {
+    if (!is.slot_prior(sp))
+      stop("slot_prior must be created by slot_prior_binomial() or ",
+           "slot_prior_poisson(). Got class: ", paste(class(sp), collapse=", "))
+    C_val <- sp$C
     L <- nrow(model$alpha)
-    nu <- params$nu
+    nu <- sp$nu
 
-    # c_hat init: warm start from c_hat_init or uniform at C/L
-    # (susieAnn ibss_ann.R:82-89)
-    if (!is.null(params$c_hat_init) && length(params$c_hat_init) == L) {
-      c_hat <- params$c_hat_init
+    # Warm start from c_hat_init or uniform at C/L
+    if (!is.null(sp$c_hat_init) && length(sp$c_hat_init) == L) {
+      c_hat <- sp$c_hat_init
       a_g <- nu + sum(c_hat)
     } else {
       c_hat <- rep(min(C_val / L, 1 - 1e-10), L)
@@ -118,24 +119,29 @@ ibss_initialize.default <- function(data, params) {
     }
     b_g <- nu / max(C_val, 1e-6) + 1  # constant within block
 
-    model$slot_weights <- c_hat
-    model$c_hat_state <- list(C = C_val, nu = nu, a_g = a_g, b_g = b_g)
+    prior_type <- if (inherits(sp, "slot_prior_binomial")) "binomial"
+                  else "poisson"
 
-    # Adaptive skip threshold: skip slots with c_hat below
-    # multiplier * baseline, where baseline = sigmoid of prior log-odds
-    # with zero signal (lbf=0). (susieAnn ibss_ann.R:91-99)
-    if (params$skip_threshold_multiplier > 0) {
+    model$slot_weights <- c_hat
+    model$c_hat_state <- list(
+      C = C_val, nu = nu, a_g = a_g, b_g = b_g,
+      update_schedule = sp$update_schedule,
+      prior_type = prior_type
+    )
+
+    # Adaptive skip threshold
+    if (sp$skip_threshold_multiplier > 0) {
       baseline_logodds <- digamma(a_g) - log(b_g) - log(L)
       c_hat_baseline <- 1 / (1 + exp(-baseline_logodds))
       model$c_hat_state$skip_threshold <-
-        params$skip_threshold_multiplier * c_hat_baseline
+        sp$skip_threshold_multiplier * c_hat_baseline
     } else {
       model$c_hat_state$skip_threshold <- 0
     }
 
     # Recompute fitted values with slot weights.
     # ibss_initialize builds Xr/XtXr/Rz assuming weight=1 for all slots;
-    # with c_hat < 1 we need to correct. (susieAnn ibss_ann.R:117-124)
+    # with c_hat < 1 we need to correct.
     model <- recompute_fitted_weighted(data, model)
   }
 
@@ -184,6 +190,11 @@ ibss_fit <- function(data, params, model) {
     }
   }
 
+  # Batch Gamma shape update: once per sweep (standard CAVI schedule).
+  if (use_c_hat && model$c_hat_state$update_schedule == "batch") {
+    model$c_hat_state$a_g <- model$c_hat_state$nu + sum(model$slot_weights)
+  }
+
   # Validate prior variance is reasonable
   validate_prior(data, params, model)
 
@@ -218,11 +229,15 @@ update_c_hat <- function(data, model, l) {
   old_c <- model$slot_weights[l]
   L <- nrow(model$alpha)
 
-  # Algorithm 1, line 6: slot activity update
-  # (susieAnn ibss_ann.R:149-151)
+  # Slot activity update: c_hat = sigmoid(E[log mu] - log L + lbf)
+  # Binomial type adds exact correction: - log(1 - E[mu]/L)
   lbf_l <- model$lbf[l]
   if (is.na(lbf_l) || !is.finite(lbf_l)) lbf_l <- 0
   log_odds <- digamma(st$a_g) - log(st$b_g) - log(L) + lbf_l
+  if (st$prior_type == "binomial") {
+    mu_over_L <- st$a_g / (st$b_g * L)
+    if (mu_over_L < 1) log_odds <- log_odds - log(1 - mu_over_L)
+  }
   log_odds <- max(min(log_odds, 20), -20)  # numerical guard
   new_c <- 1 / (1 + exp(-log_odds))
   model$slot_weights[l] <- new_c
@@ -236,9 +251,12 @@ update_c_hat <- function(data, model, l) {
     model <- adjust_fitted_for_c_hat(data, model, b_bar_l, new_c - old_c)
   }
 
-  # Algorithm 1, line 8: eager Gamma shape update
-  # (susieAnn ibss_ann.R:163)
-  model$c_hat_state$a_g <- st$nu + sum(model$slot_weights)
+  # Gamma shape update: sequential (per-slot) or deferred to batch (per-sweep).
+  # Sequential converges faster per iteration but batch has stricter
+  # ELBO monotonicity guarantee (standard CAVI).
+  if (st$update_schedule == "sequential") {
+    model$c_hat_state$a_g <- st$nu + sum(model$slot_weights)
+  }
 
   return(model)
 }

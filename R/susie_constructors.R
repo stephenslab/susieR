@@ -46,10 +46,7 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
                                         n_purity = 100,
                                         alpha0 = 0,
                                         beta0 = 0,
-                                        C = NULL,
-                                        nu = 8,
-                                        c_hat_init = NULL,
-                                        skip_threshold_multiplier = 0) {
+                                        slot_prior = NULL) {
 
   # Handle deprecated s_init argument
   if (!is.null(s_init)) {
@@ -222,10 +219,7 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
     use_servin_stephens = FALSE,  # Will be set by validation function
     intercept = intercept,
     standardize = standardize,
-    C = C,
-    nu = nu,
-    c_hat_init = c_hat_init,
-    skip_threshold_multiplier = skip_threshold_multiplier
+    slot_prior = slot_prior
   )
 
   # Validate and apply parameter overrides
@@ -298,10 +292,7 @@ sufficient_stats_constructor <- function(Xty, yty, n,
                                          refine = FALSE,
                                          alpha0 = 0.1,
                                          beta0 = 0.1,
-                                         C = NULL,
-                                         nu = 8,
-                                         c_hat_init = NULL,
-                                         skip_threshold_multiplier = 0) {
+                                         slot_prior = NULL) {
 
   # Handle deprecated s_init argument
   if (!is.null(s_init)) {
@@ -529,10 +520,7 @@ sufficient_stats_constructor <- function(Xty, yty, n,
     intercept = FALSE,  # SS always uses intercept = FALSE
     standardize = standardize,
     check_prior = check_prior,
-    C = C,
-    nu = nu,
-    c_hat_init = c_hat_init,
-    skip_threshold_multiplier = skip_threshold_multiplier
+    slot_prior = slot_prior
   )
 
   # Validate and apply parameter overrides
@@ -618,10 +606,7 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
                                       sketch_samples = NULL,
                                       alpha0 = 0.1,
                                       beta0 = 0.1,
-                                      C = NULL,
-                                      nu = 8,
-                                      c_hat_init = NULL,
-                                      skip_threshold_multiplier = 0) {
+                                      slot_prior = NULL) {
 
   # Handle deprecated s_init argument
   if (!is.null(s_init)) {
@@ -688,8 +673,7 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
       check_prior = check_prior, check_R = check_R, check_z = check_z,
       n_purity = n_purity, r_tol = r_tol, refine = refine,
       sketch_samples = sketch_samples,
-      C = C, nu = nu, c_hat_init = c_hat_init,
-      skip_threshold_multiplier = skip_threshold_multiplier
+      slot_prior = slot_prior
     ))
   }
 
@@ -883,8 +867,7 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
     coverage = coverage, min_abs_corr = min_abs_corr, n_purity = n_purity,
     verbose = verbose, track_fit = track_fit, check_prior = check_prior,
     refine = refine, alpha0 = alpha0, beta0 = beta0,
-    C = C, nu = nu, c_hat_init = c_hat_init,
-    skip_threshold_multiplier = skip_threshold_multiplier
+    slot_prior = slot_prior
   )
 
   # Attach sketch LD sketch metadata to data object
@@ -952,10 +935,7 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
                                    r_tol = 1e-8,
                                    refine = FALSE,
                                    sketch_samples = NULL,
-                                   C = NULL,
-                                   nu = 8,
-                                   c_hat_init = NULL,
-                                   skip_threshold_multiplier = 0) {
+                                   slot_prior = NULL) {
 
   # Handle MoM fallback for RSS eigendecomposition path
   if (estimate_residual_method == "MoM") {
@@ -1217,10 +1197,7 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
     intercept = FALSE,  # RSS always uses intercept = FALSE
     standardize = FALSE, # Never standardize RSS-lambda
     check_prior = check_prior,
-    C = C,
-    nu = nu,
-    c_hat_init = c_hat_init,
-    skip_threshold_multiplier = skip_threshold_multiplier
+    slot_prior = slot_prior
   )
 
   # Validate params

@@ -41,10 +41,7 @@ susie(
   alpha0 = 0.1,
   beta0 = 0.1,
   init_only = FALSE,
-  C = NULL,
-  nu = 8,
-  c_hat_init = NULL,
-  skip_threshold_multiplier = 0
+  slot_prior = NULL
 )
 }
 \arguments{

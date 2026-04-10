@@ -321,10 +321,7 @@ susie <- function(X, y, L = min(10, ncol(X)),
                   alpha0 = 0.1,
                   beta0 = 0.1,
                   init_only = FALSE,
-                  C = NULL,
-                  nu = 8,
-                  c_hat_init = NULL,
-                  skip_threshold_multiplier = 0) {
+                  slot_prior = NULL) {
 
   # Validate method arguments
   unmappable_effects       <- match.arg(unmappable_effects)
@@ -349,7 +346,7 @@ susie <- function(X, y, L = min(10, ncol(X)),
     min_abs_corr, compute_univariate_zscore, na.rm,
     max_iter, tol, convergence_method, verbose, track_fit,
     residual_variance_lowerbound, refine, n_purity,
-    alpha0, beta0, C, nu, c_hat_init, skip_threshold_multiplier
+    alpha0, beta0, slot_prior
   )
 
   # Return data and params without fitting if init_only is TRUE.
@@ -446,10 +443,7 @@ susie_ss <- function(XtX, Xty, yty, n,
                      refine = FALSE,
                      alpha0 = 0.1,
                      beta0 = 0.1,
-                     C = NULL,
-                     nu = 8,
-                     c_hat_init = NULL,
-                     skip_threshold_multiplier = 0) {
+                     slot_prior = NULL) {
 
   # Validate method arguments
   unmappable_effects       <- match.arg(unmappable_effects)
@@ -486,8 +480,7 @@ susie_ss <- function(XtX, Xty, yty, n,
     coverage = coverage, min_abs_corr = min_abs_corr, n_purity = n_purity,
     verbose = verbose, track_fit = track_fit, check_prior = check_prior,
     refine = refine, alpha0 = alpha0, beta0 = beta0,
-    C = C, nu = nu, c_hat_init = c_hat_init,
-    skip_threshold_multiplier = skip_threshold_multiplier
+    slot_prior = slot_prior
   )
 
   # Run main SuSiE algorithm
@@ -665,10 +658,7 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
                       alpha0 = 0.1,
                       beta0 = 0.1,
                       init_only = FALSE,
-                      C = NULL,
-                      nu = 8,
-                      c_hat_init = NULL,
-                      skip_threshold_multiplier = 0) {
+                      slot_prior = NULL) {
 
   # Validate: exactly one of R or X must be provided
   if (is.null(R) && is.null(X))
@@ -824,8 +814,7 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
     n_purity = n_purity, r_tol = r_tol, refine = refine,
     sketch_samples = sketch_samples,
     alpha0 = alpha0, beta0 = beta0,
-    C = C, nu = nu, c_hat_init = c_hat_init,
-    skip_threshold_multiplier = skip_threshold_multiplier
+    slot_prior = slot_prior
   )
 
   # Return constructed data and params without running IBSS (for susieAnn

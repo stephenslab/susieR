@@ -46,10 +46,7 @@ susie_ss(
   refine = FALSE,
   alpha0 = 0.1,
   beta0 = 0.1,
-  C = NULL,
-  nu = 8,
-  c_hat_init = NULL,
-  skip_threshold_multiplier = 0
+  slot_prior = NULL
 )
 }
 \arguments{

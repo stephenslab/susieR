@@ -464,36 +464,34 @@ validate_and_override_params <- function(params) {
     stop("unmappable_effects must be one of 'none', 'inf', or 'ash'.")
   }
 
-  # Auto-set C (expected causal count) for the new ash path.
-  # The Gamma-Poisson slot activity model (c_hat) requires C for
-  # identifiability between sparse (beta) and dense (theta) effects.
-  # Note: ash_filter_archived does NOT use c_hat (it has its own V->0
-  # mechanism), so we skip auto-C for it.
-  if (params$unmappable_effects == "ash" && is.null(params$C)) {
-    params$C <- ceiling(params$L / 3)
-    warning_message("C (expected causal count) not specified for ash model. ",
-                    "Using default C = ceiling(L/3) = ", params$C, ".")
+  # Auto-create slot_prior for the ash path if not provided.
+  # The Gamma-Poisson slot activity model is needed for identifiability
+  # between sparse (beta) and dense (theta) effects.
+  # Note: ash_filter_archived does NOT use slot activity (it has its own
+  # V->0 mechanism), so we skip auto-creation for it.
+  if (params$unmappable_effects == "ash" && is.null(params$slot_prior)) {
+    default_C <- ceiling(params$L / 3)
+    params$slot_prior <- slot_prior_poisson(C = default_C)
+    warning_message(
+      "For SuSiE-ash it is strongly advised to set slot_prior with C ",
+      "equal to the average number of causal effects expected in the data ",
+      "(not the maximum). Currently defaulting to C = ceiling(L/3) = ",
+      default_C, ". In practice, set both L (maximum) and C (expected) ",
+      "e.g., L = 15, slot_prior = slot_prior_poisson(C = 5).")
   }
 
-  # Suggest larger L for the new ash path
-  if (params$unmappable_effects == "ash" && params$L < 15) {
-    warning_message("L = ", params$L, " may be too small for ash model. ",
-                    "Consider using L = 15 or L = 20 for better results ",
-                    "with the Gamma-Poisson slot activity model.")
-  }
-
-  # Override convergence method for unmappable effects or c_hat.
+  # Override convergence method for unmappable effects or slot_prior.
   # The ELBO is not well-defined when slot_weights != 1 (c_hat active)
   # or when unmappable effects modify the residual structure.
-  needs_pip <- params$unmappable_effects != "none" || !is.null(params$C)
+  needs_pip <- params$unmappable_effects != "none" || !is.null(params$slot_prior)
   if (needs_pip && params$convergence_method != "pip") {
     if (params$unmappable_effects != "none") {
       warning_message("Unmappable effects models (inf/ash) do not have a well ",
               "defined ELBO and require PIP convergence. ",
               "Setting convergence_method='pip'.")
     } else {
-      warning_message("Gamma-Poisson slot activity (C != NULL) modifies fitted ",
-              "values by slot weights, making the standard ELBO invalid. ",
+      warning_message("Gamma-Poisson slot activity modifies fitted values ",
+              "by slot weights, making the standard ELBO invalid. ",
               "Setting convergence_method='pip'.")
     }
     params$convergence_method <- "pip"
