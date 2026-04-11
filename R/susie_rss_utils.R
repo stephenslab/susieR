@@ -262,10 +262,15 @@ estimate_s_rss <- function(z, R, n, r_tol = 1e-08, method = "null-mle") {
 # Precompute RSS lambda terms that change per IBSS iteration
 #' @keywords internal
 precompute_rss_lambda_terms <- function(data, model) {
-  # Precompute quantities that change per IBSS iteration
-  model$Z           <- model$alpha * model$mu
+  # Precompute quantities that change per IBSS iteration.
+  # When slot_weights (c_hat) are active, Z and zbar are weighted by sw_l
+  # so that get_ER2.rss_lambda and the omega evaluator see c_hat-weighted
+  # posterior means. diag_postb2 is weighted by sw_l (not sw_l^2) because
+  # E[c_l^2] = c_hat_l for Bernoulli.
+  sw <- if (!is.null(model$slot_weights)) model$slot_weights else rep(1, nrow(model$alpha))
+  model$Z           <- sw * model$alpha * model$mu
   model$zbar        <- colSums(model$Z)
-  model$diag_postb2 <- colSums(model$alpha * model$mu2)
+  model$diag_postb2 <- colSums(sw * model$alpha * model$mu2)
 
   return(model)
 }

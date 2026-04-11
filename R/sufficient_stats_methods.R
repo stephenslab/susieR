@@ -303,12 +303,18 @@ compute_kl.ss <- function(data, params, model, l) {
 #' @keywords internal
 get_ER2.ss <- function(data, model) {
   B       <- model$alpha * model$mu
-  XB2     <- sum(compute_BR(data, B) * B)
-  betabar <- colSums(B)
   postb2  <- model$alpha * model$mu2 # Posterior second moment.
+  # Slot-weight correction: E[||y - sum_l c_l X beta^(l)||^2] under Bern(chat_l)
+  # = y'y - 2 betabar_w' X'y + betabar_w' X'X betabar_w
+  #   + sum_l chat_l * E[b^(l)' X'X b^(l)] - chat_l^2 * bbar_l' X'X bbar_l
+  # When slot_weights is NULL (all weights = 1), reduces to the standard formula.
+  sw <- if (!is.null(model$slot_weights)) model$slot_weights else rep(1, nrow(B))
+  betabar <- colSums(sw * B)                                      # c_hat-weighted mean
+  per_slot_XB2 <- rowSums(compute_BR(data, B) * B)                # bbar_l' R bbar_l
+  per_slot_Eb2 <- as.vector(postb2 %*% model$predictor_weights)   # diag(X'X)' (alpha*mu2)_l
 
   return(data$yty - 2 * sum(betabar * data$Xty) + sum(betabar * compute_Rv(data, betabar)) -
-           XB2 + sum(model$predictor_weights * t(postb2)))
+           sum(sw^2 * per_slot_XB2) + sum(sw * per_slot_Eb2))
 }
 
 # Expected log-likelihood

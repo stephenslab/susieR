@@ -292,6 +292,13 @@ get_objective.default <- function(data, params, model) {
     objective <- Eloglik(data, model) - sum(model$KL)
   }
 
+  # Add slot prior ELBO terms when c_hat is active.
+  # Without these, the ELBO is missing the prior and entropy contributions
+  # from the slot activity model.
+  if (!is.null(model$c_hat_state)) {
+    objective <- objective + slot_prior_elbo(model)
+  }
+
   if (is.infinite(objective)) {
     stop("get_objective() produced an infinite ELBO value")
   }

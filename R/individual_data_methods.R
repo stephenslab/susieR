@@ -220,7 +220,13 @@ get_ER2.individual <- function(data, model) {
   postb2 <- model$alpha * model$mu2
   # For ash, subtract theta contribution from residuals
   y_adj <- if (!is.null(model$X_theta)) data$y - model$X_theta else data$y
-  return(sum((y_adj - model$Xr)^2) - sum(Xr_L^2) + sum(model$predictor_weights * t(postb2)))
+  # Slot-weight correction: E[||y - sum_l c_l X beta^(l)||^2] under Bern(chat_l)
+  # = ||y - Xr||^2 + sum_l chat_l * E[||X b^(l)||^2] - chat_l^2 * ||X bbar_l||^2
+  # When slot_weights is NULL (all weights = 1), reduces to the standard formula.
+  sw <- if (!is.null(model$slot_weights)) model$slot_weights else rep(1, nrow(model$alpha))
+  per_slot_Eb2 <- as.vector(postb2 %*% model$predictor_weights)  # L-vector
+  per_slot_Xb2 <- rowSums(Xr_L^2)                                # L-vector
+  return(sum((y_adj - model$Xr)^2) + sum(sw * per_slot_Eb2 - sw^2 * per_slot_Xb2))
 }
 
 # Expected log-likelihood

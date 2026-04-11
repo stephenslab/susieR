@@ -57,11 +57,13 @@ update_fitted_values.ss_mixture <- function(data, params, model, l, ...) {
   bl <- model$alpha[l, ] * model$mu[l, ]
   model$XtXr <- model$fitted_without_l + sw_l * compute_XtXv_mixture(data, model, bl)
 
-  # Convert betahat-scale mu to z-score scale for omega evaluators
+  # Convert betahat-scale mu to z-score scale for omega evaluators.
+  # Weight by slot_weights (c_hat) when active.
   sqnm1 <- sqrt(data$nm1)
-  model$Z           <- model$alpha * model$mu * sqnm1
+  sw <- if (!is.null(model$slot_weights)) model$slot_weights else rep(1, nrow(model$alpha))
+  model$Z           <- sw * model$alpha * model$mu * sqnm1
   model$zbar        <- colSums(model$Z)
-  model$diag_postb2 <- colSums(model$alpha * model$mu2 * data$nm1)
+  model$diag_postb2 <- colSums(sw * model$alpha * model$mu2 * data$nm1)
   return(model)
 }
 

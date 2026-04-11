@@ -223,10 +223,19 @@ ibss_fit <- function(data, params, model) {
     st <- model$c_hat_state
     L_val <- nrow(model$alpha)
     if (st$prior_type == "betabinom") {
-      # Beta-Binomial baseline: log-odds with lbf=0 and current k
+      # Beta-Binomial baseline: log-odds with lbf=0 for a slot at baseline.
+      # Use k_{-l} = k_total - c_hat_baseline (self-consistent: if this slot
+      # is at baseline, the others sum to k_total minus one baseline value).
       k_total <- sum(model$slot_weights)
-      baseline_logodds <- log(st$a_beta + k_total) -
-                          log(st$b_beta + L_val - 1 - k_total)
+      # Solve self-consistently: baseline = sigmoid(log(a + k_total - baseline) -
+      #   log(b + L - 1 - k_total + baseline)). One Newton step from baseline=0:
+      baseline_logodds_approx <- log(st$a_beta + k_total) -
+                                  log(st$b_beta + L_val - 1 - k_total)
+      c_hat_approx <- 1 / (1 + exp(-baseline_logodds_approx))
+      # Refine: use k_{-l} = k_total - c_hat_approx
+      k_others <- k_total - c_hat_approx
+      baseline_logodds <- log(st$a_beta + k_others) -
+                          log(st$b_beta + L_val - 1 - k_others)
     } else {
       # Gamma-Poisson baseline
       baseline_logodds <- digamma(st$a_g) - log(st$b_g) - log(L_val)
