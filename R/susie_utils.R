@@ -1486,8 +1486,10 @@ update_ash_variance_components <- function(data, model, params) {
   data <- xcorr_result$data
 
   # ---- Step 2: Identify active effects and sentinels ----
+  # c_hat is used as a continuous weight throughout (subtraction, masking),
+  # not as a binary gate. V > 0 determines whether a slot is alive.
   c_hat <- if (!is.null(model$slot_weights)) model$slot_weights else rep(1, L)
-  active_slots <- which(c_hat > 0.5 & model$V > 0)
+  active_slots <- which(model$V > 0)
 
   sentinels <- integer(L)
   for (l in active_slots) sentinels[l] <- which.max(model$alpha[l, ])
@@ -1550,17 +1552,21 @@ update_ash_variance_components <- function(data, model, params) {
 
   # ---- Step 5: Build subtraction and mask ----
 
-  # Subtraction: only trusted effects (confirmed, stable, never flagged)
+  # Subtraction: trusted effects, weighted by c_hat for consistency with
+  # SuSiE's internal residual computation (fitted = sum c_hat[l] * bbar[l]).
+  # Partial subtraction lets mr.ash see the residual uncertainty from c_hat.
   b_confident <- rep(0, p)
   for (l in which(is_trusted)) {
-    b_confident <- b_confident + model$alpha[l, ] * model$mu[l, ]
+    b_confident <- b_confident + c_hat[l] * model$alpha[l, ] * model$mu[l, ]
   }
 
-  # Mask: all active non-trusted effects (emerging + flagged)
+  # Mask: all active non-trusted effects (emerging + flagged).
+  # Weight alpha by c_hat so low-activity slots mask less aggressively,
+  # reducing over-masking that causes power loss.
   emerging_slots <- setdiff(active_slots, which(is_trusted))
   if (length(emerging_slots) > 0) {
-    pip_emerging <- 1 - apply(
-      1 - model$alpha[emerging_slots, , drop = FALSE], 2, prod)
+    weighted_alpha <- c_hat[emerging_slots] * model$alpha[emerging_slots, , drop = FALSE]
+    pip_emerging <- 1 - apply(1 - weighted_alpha, 2, prod)
     LD_adj <- abs(Xcorr) > masking_threshold
     nPIP <- as.vector(LD_adj %*% pip_emerging)
     mask <- (nPIP > nPIP_threshold) | (pip_emerging > direct_pip_threshold)
