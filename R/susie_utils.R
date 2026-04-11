@@ -467,19 +467,22 @@ validate_and_override_params <- function(params) {
   # Auto-create Beta-Binomial slot prior for ash mode (identifiability).
   if (params$unmappable_effects == "ash" && is.null(params$slot_prior)) {
     params$slot_prior <- slot_prior_betabinom()
+    warning_message(
+      "For SuSiE-ash it is strongly advised to set slot_prior with ",
+      "a beta-binomial prior based on your expected sparsity of data. ",
+      "Set slot_prior = slot_prior_betabinom(a_beta, b_beta) explicitly.")
   }
-  # Warn about default Beta parameters if user didn't set them.
+  # Report BB default parameters (separate from the warning above).
   if (!is.null(params$slot_prior) && inherits(params$slot_prior, "slot_prior_betabinom") &&
       isTRUE(params$slot_prior$ab_was_default)) {
     sp <- params$slot_prior
     n_active <- round(sp$a_beta / (sp$a_beta + sp$b_beta) * params$L)
     warning_message(
-      "For SuSiE-ash it is strongly advised to set slot_prior with ",
-      "a beta-binomial prior based on your expected sparsity of data. ",
-      "Currently defaulting to Beta(a=", sp$a_beta, ", b=", sp$b_beta,
-      ") which roughly expects ~", n_active, " of ", params$L,
-      " slots to be active. Set slot_prior = slot_prior_betabinom(",
-      "a_beta, b_beta) to change this behavior.")
+      "Beta-Binomial prior parameters not specified, using default ",
+      "Beta(a=", sp$a_beta, ", b=", sp$b_beta, "), ",
+      "roughly expecting ~", n_active, " of ", params$L,
+      " slots to be active. Set a_beta and b_beta explicitly ",
+      "to change this behavior.")
   }
   # Report nu default after the C message so the user sees C first.
   if (!is.null(params$slot_prior) && !inherits(params$slot_prior, "slot_prior_betabinom") &&
