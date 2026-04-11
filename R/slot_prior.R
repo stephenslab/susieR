@@ -60,7 +60,7 @@
 #' \emph{Annals of Statistics}, 38(5), 2587--2619.
 #'
 #' @examples
-#' # Default: Beta-Binomial with Beta(1, 1.5) prior on inclusion probability
+#' # Default: Beta-Binomial with Beta(1, 1.2) prior on inclusion probability
 #' slot_prior_betabinom()
 #'
 #' # Gamma-Poisson for susieAnn
@@ -80,9 +80,8 @@
 #   multiplicity adjustment in the variable-selection problem.
 #   Annals of Statistics, 38(5), 2587-2619.
 #
-# Default: Beta(1, 1.5) gives E[rho] = 0.4, expecting ~40% of slots
-# active. The mild sparsity (b > 1) reduces residual contamination
-# from partially-weighted inactive effects.
+# Default: Beta(1, 1.2) gives mild sparsity (b > 1) compared to assuming
+# as many as > 50% slots active (uniform). 
 #' @export
 slot_prior_betabinom <- function(a_beta = NULL, b_beta = NULL,
                                  update_schedule = c("sequential", "batch"),
@@ -93,12 +92,12 @@ slot_prior_betabinom <- function(a_beta = NULL, b_beta = NULL,
   # Default a_beta = 1 (standard reference prior for Bernoulli).
   ab_was_default <- is.null(a_beta) && is.null(b_beta)
   if (is.null(a_beta)) a_beta <- 1
-  # Default b_beta = 1.5: gives E[rho] = 1/(1+1.5) = 0.4, i.e. ~40% of
-  # slots expected active. With L=10 this means ~4 active effects.
+  # Default b_beta = 1.2: gives E[rho] = 1/(1+1.2) = 0.45, i.e. ~45% of
+  # slots expected active. With L=10 this means ~4 to 5 active effects.
   # The density p(rho) ~ (1-rho)^0.5 is a mild sparsity preference.
   # In the collapsed Beta-Binomial update, b > 1 penalizes inactive slots
   # more, reducing residual contamination from partially-weighted effects.
-  if (is.null(b_beta)) b_beta <- 1.5
+  if (is.null(b_beta)) b_beta <- 1.2
 
   stopifnot(is.numeric(a_beta), length(a_beta) == 1, a_beta > 0)
   stopifnot(is.numeric(b_beta), length(b_beta) == 1, b_beta > 0)
