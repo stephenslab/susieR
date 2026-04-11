@@ -1,12 +1,12 @@
 context("slot_prior class")
 
-test_that("slot_prior_binomial constructs correctly", {
-  sp <- suppressMessages(slot_prior_binomial(C = 5, nu = 8))
-  expect_s3_class(sp, "slot_prior_binomial")
+test_that("slot_prior_poisson constructs correctly", {
+  sp <- suppressMessages(slot_prior_poisson(C = 5, nu = 8))
+  expect_s3_class(sp, "slot_prior_poisson")
   expect_s3_class(sp, "slot_prior")
   expect_equal(sp$C, 5)
   expect_equal(sp$nu, 8)  # default when NULL
-  expect_equal(sp$update_schedule, "batch")  # binomial default
+  expect_equal(sp$update_schedule, "sequential")  # binomial default
   expect_null(sp$c_hat_init)
   expect_equal(sp$skip_threshold_multiplier, 0)
 })
@@ -21,8 +21,8 @@ test_that("slot_prior_poisson constructs correctly", {
 })
 
 test_that("slot_prior validates inputs", {
-  expect_error(slot_prior_binomial(C = -1, nu = 8))
-  expect_error(slot_prior_binomial(C = "abc", nu = 8))
+  expect_error(slot_prior_poisson(C = -1, nu = 8))
+  expect_error(slot_prior_poisson(C = "abc", nu = 8))
   expect_error(slot_prior_poisson(C = 5, nu = -1))
 })
 
@@ -35,9 +35,9 @@ test_that("slot_prior tracks nu_was_default", {
   expect_equal(sp_explicit$nu, 8)
 })
 
-test_that("slot_prior_binomial default for update_schedule is batch", {
-  sp <- slot_prior_binomial(C = 5, nu = 8)
-  expect_equal(sp$update_schedule, "batch")
+test_that("slot_prior_poisson default for update_schedule is sequential", {
+  sp <- slot_prior_poisson(C = 5, nu = 8)
+  expect_equal(sp$update_schedule, "sequential")
 })
 
 test_that("slot_prior_poisson default for update_schedule is sequential", {
@@ -46,14 +46,14 @@ test_that("slot_prior_poisson default for update_schedule is sequential", {
 })
 
 test_that("is.slot_prior works", {
-  expect_true(is.slot_prior(slot_prior_binomial(C = 5, nu = 8)))
+  expect_true(is.slot_prior(slot_prior_poisson(C = 5, nu = 8)))
   expect_true(is.slot_prior(slot_prior_poisson(C = 5, nu = 8)))
   expect_false(is.slot_prior(list(C = 5)))
   expect_false(is.slot_prior(NULL))
 })
 
 test_that("print.slot_prior produces output", {
-  expect_output(print(slot_prior_binomial(C = 5, nu = 8)), "binomial")
+  expect_output(print(slot_prior_poisson(C = 5, nu = 8)), "poisson")
   expect_output(print(slot_prior_poisson(C = 3, nu = 8)), "poisson")
 })
 
@@ -63,7 +63,7 @@ test_that("susie with slot_prior produces c_hat output", {
   X <- matrix(rnorm(n * p), n, p)
   b <- rep(0, p); b[1:3] <- 1
   y <- X %*% b + rnorm(n)
-  fit <- susie(X, y, L = 10, slot_prior = slot_prior_binomial(C = 3, nu = 8),
+  fit <- susie(X, y, L = 10, slot_prior = slot_prior_poisson(C = 3, nu = 8),
                verbose = FALSE)
   expect_true(!is.null(fit$c_hat))
   expect_equal(length(fit$c_hat), 10)
@@ -78,7 +78,7 @@ test_that("susie with binomial and poisson give similar results", {
   X <- matrix(rnorm(n * p), n, p)
   b <- rep(0, p); b[1:3] <- 1
   y <- X %*% b + rnorm(n)
-  fit_b <- susie(X, y, L = 10, slot_prior = slot_prior_binomial(C = 3, nu = 8),
+  fit_b <- susie(X, y, L = 10, slot_prior = slot_prior_poisson(C = 3, nu = 8),
                  verbose = FALSE)
   fit_p <- susie(X, y, L = 10, slot_prior = slot_prior_poisson(C = 3, nu = 8),
                  verbose = FALSE)
@@ -119,7 +119,7 @@ test_that("ash model with explicit slot_prior does not warn about C", {
   # (may still produce convergence method warning, which is expected)
   fit <- withCallingHandlers(
     susie(X, y, L = 10, unmappable_effects = "ash",
-          slot_prior = slot_prior_binomial(C = 3, nu = 8),
+          slot_prior = slot_prior_poisson(C = 3, nu = 8),
           verbose = FALSE, max_iter = 5),
     warning = function(w) {
       if (grepl("strongly advised", conditionMessage(w)))
@@ -138,11 +138,11 @@ test_that("c_hat warm start works", {
   y <- X %*% b + rnorm(n)
 
   # First fit
-  fit1 <- susie(X, y, L = 10, slot_prior = slot_prior_binomial(C = 3, nu = 8),
+  fit1 <- susie(X, y, L = 10, slot_prior = slot_prior_poisson(C = 3, nu = 8),
                 verbose = FALSE)
 
   # Warm start with previous c_hat
-  sp_warm <- slot_prior_binomial(C = 3, nu = 8, c_hat_init = fit1$c_hat)
+  sp_warm <- slot_prior_poisson(C = 3, nu = 8, c_hat_init = fit1$c_hat)
   fit2 <- susie(X, y, L = 10, slot_prior = sp_warm,
                 model_init = fit1, verbose = FALSE)
 
@@ -157,10 +157,10 @@ test_that("batch and sequential schedules both converge", {
   b <- rep(0, p); b[1:3] <- 1
   y <- X %*% b + rnorm(n)
   fit_batch <- susie(X, y, L = 10,
-                     slot_prior = slot_prior_binomial(C = 3, update_schedule = "batch"),
+                     slot_prior = slot_prior_poisson(C = 3, update_schedule = "batch"),
                      verbose = FALSE)
   fit_seq <- susie(X, y, L = 10,
-                   slot_prior = slot_prior_binomial(C = 3, update_schedule = "sequential"),
+                   slot_prior = slot_prior_poisson(C = 3, update_schedule = "sequential"),
                    verbose = FALSE)
   expect_true(fit_batch$converged)
   expect_true(fit_seq$converged)

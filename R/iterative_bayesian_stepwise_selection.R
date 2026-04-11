@@ -97,39 +97,65 @@ ibss_initialize.default <- function(data, params) {
   }
   model$converged <- FALSE
 
-  # Initialize Gamma-Poisson slot activity (c_hat) if a slot_prior
-  # is specified. c_hat[l] = posterior probability that slot l is active.
-  # Prior: mu ~ Gamma(nu, nu/C), c_l | mu ~ Bern(mu/L).
+  # Initialize slot activity (c_hat) if a slot_prior is specified.
+  # c_hat[l] = posterior probability that slot l is active.
+  # Two prior families supported:
+  #   - Beta-Binomial: rho ~ Beta(a, b), c_l | rho ~ Bern(rho)
+  #   - Gamma-Poisson: mu ~ Gamma(nu, nu/C), c_l | mu ~ Bern(mu/L)
   sp <- params$slot_prior
   if (!is.null(sp)) {
     if (!is.slot_prior(sp))
-      stop("slot_prior must be created by slot_prior_binomial() or ",
-           "slot_prior_poisson(). Got class: ", paste(class(sp), collapse=", "))
-    C_val <- sp$C
+      stop("slot_prior must be created by slot_prior_betabinom() or ",
+           "slot_prior_poisson(). ",
+           "Got class: ", paste(class(sp), collapse=", "))
     L <- nrow(model$alpha)
-    nu <- sp$nu
 
-    # Warm start from c_hat_init or uniform at C/L
-    if (!is.null(sp$c_hat_init) && length(sp$c_hat_init) == L) {
-      c_hat <- sp$c_hat_init
-      a_g <- nu + sum(c_hat)
+    if (inherits(sp, "slot_prior_betabinom")) {
+      # Beta-Binomial: collapsed conjugate model
+      a_beta <- sp$a_beta
+      b_beta <- sp$b_beta
+      prior_mean <- a_beta / (a_beta + b_beta)
+
+      if (!is.null(sp$c_hat_init) && length(sp$c_hat_init) == L) {
+        c_hat <- sp$c_hat_init
+      } else {
+        c_hat <- rep(min(prior_mean, 1 - 1e-10), L)
+      }
+
+      model$slot_weights <- c_hat
+      model$c_hat_state <- list(
+        prior_type = "betabinom",
+        a_beta = a_beta,
+        b_beta = b_beta,
+        update_schedule = sp$update_schedule,
+        skip_threshold_multiplier = sp$skip_threshold_multiplier,
+        skip_threshold = 0  # don't skip on first sweep
+      )
     } else {
-      c_hat <- rep(min(C_val / L, 1 - 1e-10), L)
-      a_g <- nu + C_val
+      # Gamma-Poisson
+      C_val <- sp$C
+      nu <- sp$nu
+
+      if (!is.null(sp$c_hat_init) && length(sp$c_hat_init) == L) {
+        c_hat <- sp$c_hat_init
+        a_g <- nu + sum(c_hat)
+      } else {
+        c_hat <- rep(min(C_val / L, 1 - 1e-10), L)
+        a_g <- nu + C_val
+      }
+      b_g <- nu / max(C_val, 1e-6) + 1  # constant within block
+
+      prior_type <- "poisson"
+
+      model$slot_weights <- c_hat
+      model$c_hat_state <- list(
+        C = C_val, nu = nu, a_g = a_g, b_g = b_g,
+        update_schedule = sp$update_schedule,
+        prior_type = prior_type,
+        skip_threshold_multiplier = sp$skip_threshold_multiplier,
+        skip_threshold = 0  # don't skip on first sweep
+      )
     }
-    b_g <- nu / max(C_val, 1e-6) + 1  # constant within block
-
-    prior_type <- if (inherits(sp, "slot_prior_binomial")) "binomial"
-                  else "poisson"
-
-    model$slot_weights <- c_hat
-    model$c_hat_state <- list(
-      C = C_val, nu = nu, a_g = a_g, b_g = b_g,
-      update_schedule = sp$update_schedule,
-      prior_type = prior_type,
-      skip_threshold_multiplier = sp$skip_threshold_multiplier,
-      skip_threshold = 0  # start at 0: don't skip on first sweep
-    )
 
     # Recompute fitted values with slot weights.
     # ibss_initialize builds Xr/XtXr/Rz assuming weight=1 for all slots;
@@ -182,18 +208,29 @@ ibss_fit <- function(data, params, model) {
     }
   }
 
-  # Batch Gamma shape update: once per sweep (standard CAVI schedule).
-  if (use_c_hat && model$c_hat_state$update_schedule == "batch") {
+  # Batch update: once per sweep (standard CAVI schedule).
+  # For Gamma-Poisson: update Gamma shape parameter.
+  # For Beta-Binomial: no batch update needed (uses k_others directly).
+  if (use_c_hat && model$c_hat_state$update_schedule == "batch" &&
+      model$c_hat_state$prior_type != "betabinom") {
     model$c_hat_state$a_g <- model$c_hat_state$nu + sum(model$slot_weights)
   }
 
-  # Recompute skip threshold from current a_g after each sweep.
+  # Recompute skip threshold after each sweep.
   # Starts at 0 (no skip on first sweep), then updates to
   # multiplier * baseline for subsequent sweeps.
   if (use_c_hat && model$c_hat_state$skip_threshold_multiplier > 0) {
     st <- model$c_hat_state
     L_val <- nrow(model$alpha)
-    baseline_logodds <- digamma(st$a_g) - log(st$b_g) - log(L_val)
+    if (st$prior_type == "betabinom") {
+      # Beta-Binomial baseline: log-odds with lbf=0 and current k
+      k_total <- sum(model$slot_weights)
+      baseline_logodds <- log(st$a_beta + k_total) -
+                          log(st$b_beta + L_val - 1 - k_total)
+    } else {
+      # Gamma-Poisson baseline
+      baseline_logodds <- digamma(st$a_g) - log(st$b_g) - log(L_val)
+    }
     c_hat_baseline <- 1 / (1 + exp(-baseline_logodds))
     model$c_hat_state$skip_threshold <-
       st$skip_threshold_multiplier * c_hat_baseline
@@ -206,21 +243,30 @@ ibss_fit <- function(data, params, model) {
 }
 
 # =============================================================================
-# GAMMA-POISSON SLOT ACTIVITY (c_hat) HELPERS
+# SLOT ACTIVITY (c_hat) HELPERS
 #
-# These functions implement the Gamma-Poisson slot activity model from
-# susieAnn's Algorithm 1. Each slot l has a posterior activity probability
-# c_hat[l] = sigmoid(E_q[log mu] - log L + lbf[l]), where mu is the
-# per-block causal rate with Gamma(nu, nu/C) prior.
+# These functions implement the slot activity model for SuSiE.
+# Two prior families are supported:
 #
-# Ported faithfully from susieAnn/R/ibss_ann.R:109-163.
+#   - Beta-Binomial: rho ~ Beta(a, b), c_l | rho ~ Bern(rho), rho collapsed.
+#     The collapsed posterior update is:
+#       log(c_l/(1-c_l)) = log(a + k_{-l}) - log(b + L-1 - k_{-l}) + lbf_l
+#     where k_{-l} = sum of other slots' c_hat. This provides adaptive
+#     multiplicity correction (Scott & Berger, Ann. Statist. 2010).
+#
+#   - Gamma-Poisson: mu ~ Gamma(nu, nu/C), c_l | mu ~ Bern(mu/L).
+#     Used by susieAnn for genome-wide applications where C and nu
+#     are estimated across loci.
+#
+# Each slot l has a posterior activity probability c_hat[l] that weights
+# its contribution to the fitted values and final PIP.
 # =============================================================================
 
 #' Update c_hat for one slot after its SER step
 #'
-#' Computes the Gamma-Poisson posterior slot activity, adjusts the
-#' fitted-values field for the weight change, and updates the Gamma
-#' shape parameter eagerly.
+#' Computes the posterior slot activity under the specified prior,
+#' adjusts the fitted-values field for the weight change, and updates
+#' the sufficient statistics.
 #'
 #' @param data Data object.
 #' @param model Current SuSiE model with c_hat_state.
@@ -233,32 +279,33 @@ update_c_hat <- function(data, model, l) {
   old_c <- model$slot_weights[l]
   L <- nrow(model$alpha)
 
-  # Slot activity update: c_hat = sigmoid(E[log mu] - log L + lbf)
-  # Binomial type adds exact correction: - log(1 - E[mu]/L)
   lbf_l <- model$lbf[l]
   if (is.na(lbf_l) || !is.finite(lbf_l)) lbf_l <- 0
-  log_odds <- digamma(st$a_g) - log(st$b_g) - log(L) + lbf_l
-  if (st$prior_type == "binomial") {
-    mu_over_L <- st$a_g / (st$b_g * L)
-    if (mu_over_L < 1) log_odds <- log_odds - log(1 - mu_over_L)
+
+  if (st$prior_type == "betabinom") {
+    # Beta-Binomial (collapsed): log-odds = log(a + k_{-l}) - log(b + L - 1 - k_{-l}) + lbf
+    # where k_{-l} = sum of other slots' c_hat (soft count)
+    k_others <- sum(model$slot_weights[-l])
+    log_odds <- log(st$a_beta + k_others) -
+                log(st$b_beta + L - 1 - k_others) + lbf_l
+  } else {
+    # Gamma-Poisson: log-odds = psi(a_g) - log(b_g) - log(L) + lbf
+    log_odds <- digamma(st$a_g) - log(st$b_g) - log(L) + lbf_l
   }
+
   log_odds <- max(min(log_odds, 20), -20)  # numerical guard
   new_c <- 1 / (1 + exp(-log_odds))
   model$slot_weights[l] <- new_c
 
   # Correct fitted field for the change in slot weight.
-  # After update_fitted_values, the field contains effect l at old_c.
-  # Adjust by (new_c - old_c) * Rv(b_bar_l).
-  # (susieAnn ibss_ann.R:156-160)
   if (abs(new_c - old_c) > 1e-15) {
     b_bar_l <- model$alpha[l, ] * model$mu[l, ]
     model <- adjust_fitted_for_c_hat(data, model, b_bar_l, new_c - old_c)
   }
 
-  # Gamma shape update: sequential (per-slot) or deferred to batch (per-sweep).
-  # Sequential converges faster per iteration but batch has stricter
-  # ELBO monotonicity guarantee (standard CAVI).
-  if (st$update_schedule == "sequential") {
+  # Gamma shape update (sequential mode). Not needed for Beta-Binomial
+  # since it uses the collapsed sufficient statistic k_others directly.
+  if (st$prior_type != "betabinom" && st$update_schedule == "sequential") {
     model$c_hat_state$a_g <- st$nu + sum(model$slot_weights)
   }
 
@@ -401,8 +448,13 @@ ibss_finalize <- function(data, params, model, elbo = NULL, iter = NA_integer_,
   if (!is.null(model$c_hat_state)) {
     model$c_hat <- model$slot_weights
     model$C_hat <- sum(model$slot_weights)
-    model$a_g   <- model$c_hat_state$a_g
-    model$b_g   <- model$c_hat_state$b_g
+    if (model$c_hat_state$prior_type == "betabinom") {
+      model$a_beta <- model$c_hat_state$a_beta
+      model$b_beta <- model$c_hat_state$b_beta
+    } else {
+      model$a_g <- model$c_hat_state$a_g
+      model$b_g <- model$c_hat_state$b_g
+    }
     model$c_hat_state <- NULL  # cleanup internal state
   }
 

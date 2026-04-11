@@ -471,7 +471,7 @@ validate_and_override_params <- function(params) {
   # V->0 mechanism), so we skip auto-creation for it.
   if (params$unmappable_effects == "ash" && is.null(params$slot_prior)) {
     default_C <- ceiling(params$L / 3)
-    params$slot_prior <- slot_prior_poisson(C = default_C)
+    params$slot_prior <- slot_prior_betabinom()
     warning_message(
       "For SuSiE-ash it is strongly advised to set slot_prior with C ",
       "equal to the average number of causal effects expected in the data ",
@@ -480,7 +480,8 @@ validate_and_override_params <- function(params) {
       "e.g., L = 15, slot_prior = slot_prior_poisson(C = 5).")
   }
   # Report nu default after the C message so the user sees C first.
-  if (!is.null(params$slot_prior) && isTRUE(params$slot_prior$nu_was_default)) {
+  if (!is.null(params$slot_prior) && !inherits(params$slot_prior, "slot_prior_betabinom") &&
+      isTRUE(params$slot_prior$nu_was_default)) {
     sp <- params$slot_prior
     sd_mu <- sp$C / sqrt(sp$nu)
     warning_message(
@@ -503,7 +504,7 @@ validate_and_override_params <- function(params) {
               "defined ELBO and require PIP convergence. ",
               "Setting convergence_method='pip'.")
     } else {
-      warning_message("Gamma-Poisson slot activity modifies fitted values ",
+      warning_message("Slot activity model modifies fitted values ",
               "by slot weights, making the standard ELBO invalid. ",
               "Setting convergence_method='pip'.")
     }
