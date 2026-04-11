@@ -126,18 +126,10 @@ ibss_initialize.default <- function(data, params) {
     model$c_hat_state <- list(
       C = C_val, nu = nu, a_g = a_g, b_g = b_g,
       update_schedule = sp$update_schedule,
-      prior_type = prior_type
+      prior_type = prior_type,
+      skip_threshold_multiplier = sp$skip_threshold_multiplier,
+      skip_threshold = 0  # start at 0: don't skip on first sweep
     )
-
-    # Adaptive skip threshold
-    if (sp$skip_threshold_multiplier > 0) {
-      baseline_logodds <- digamma(a_g) - log(b_g) - log(L)
-      c_hat_baseline <- 1 / (1 + exp(-baseline_logodds))
-      model$c_hat_state$skip_threshold <-
-        sp$skip_threshold_multiplier * c_hat_baseline
-    } else {
-      model$c_hat_state$skip_threshold <- 0
-    }
 
     # Recompute fitted values with slot weights.
     # ibss_initialize builds Xr/XtXr/Rz assuming weight=1 for all slots;
@@ -193,6 +185,18 @@ ibss_fit <- function(data, params, model) {
   # Batch Gamma shape update: once per sweep (standard CAVI schedule).
   if (use_c_hat && model$c_hat_state$update_schedule == "batch") {
     model$c_hat_state$a_g <- model$c_hat_state$nu + sum(model$slot_weights)
+  }
+
+  # Recompute skip threshold from current a_g after each sweep.
+  # Starts at 0 (no skip on first sweep), then updates to
+  # multiplier * baseline for subsequent sweeps.
+  if (use_c_hat && model$c_hat_state$skip_threshold_multiplier > 0) {
+    st <- model$c_hat_state
+    L_val <- nrow(model$alpha)
+    baseline_logodds <- digamma(st$a_g) - log(st$b_g) - log(L_val)
+    c_hat_baseline <- 1 / (1 + exp(-baseline_logodds))
+    model$c_hat_state$skip_threshold <-
+      st$skip_threshold_multiplier * c_hat_baseline
   }
 
   # Validate prior variance is reasonable
