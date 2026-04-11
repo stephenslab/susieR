@@ -30,6 +30,22 @@ format_V_summary <- function(V) {
   paste0("[", paste(parts, collapse = ", "), "]")
 }
 
+# Format slot activity (c_hat) summary for verbose output.
+# Shows per-slot c_hat values and lbf when active, empty string when not.
+# E.g., ", c_hat=[0.99,0.87,0.12,0.45], lbf=[12.3,8.1,0.0,-0.2], C_hat=2.4"
+#' @keywords internal
+format_chat_summary <- function(model) {
+  if (is.null(model$slot_weights)) return("")
+  sw <- model$slot_weights
+  lbf <- model$lbf
+  lbf[is.na(lbf)] <- 0
+  chat_vals <- paste(sprintf("%.2f", sw), collapse = ",")
+  lbf_vals <- paste(sprintf("%.1f", lbf), collapse = ",")
+  n_active <- sum(sw > 0.5)
+  sprintf(", c_hat=[%s], lbf=[%s], C_hat=%.1f(%d>0.5)",
+          chat_vals, lbf_vals, sum(sw), n_active)
+}
+
 # Utility function to display warning messages as they occur
 #' @importFrom crayon combine_styles
 #' @keywords internal

@@ -140,6 +140,7 @@ check_convergence <- function(data, params, model, elbo, iter) {
 check_convergence.default <- function(data, params, model, elbo, iter) {
   verbose <- isTRUE(params$verbose)
   V_str <- format_V_summary(model$V)
+  chat_str <- format_chat_summary(model)
 
   # Skip convergence check on first iteration
   if (iter == 1) {
@@ -147,11 +148,11 @@ check_convergence.default <- function(data, params, model, elbo, iter) {
     if (verbose) {
       elbo_val <- elbo[iter + 1]
       if (!is.na(elbo_val) && is.finite(elbo_val)) {
-        message(sprintf("iter %3d: ELBO=%.4f, V=%s [mem: %.2f GB]",
-                        iter, elbo_val, V_str, mem_used_gb()))
+        message(sprintf("iter %3d: ELBO=%.4f, V=%s%s [mem: %.2f GB]",
+                        iter, elbo_val, V_str, chat_str, mem_used_gb()))
       } else {
-        message(sprintf("iter %3d: V=%s [mem: %.2f GB]",
-                        iter, V_str, mem_used_gb()))
+        message(sprintf("iter %3d: V=%s%s [mem: %.2f GB]",
+                        iter, V_str, chat_str, mem_used_gb()))
       }
     }
     return(model)
@@ -174,8 +175,8 @@ check_convergence.default <- function(data, params, model, elbo, iter) {
       if (iter <= 2) {
         model$converged <- FALSE
         if (verbose)
-          message(sprintf("iter %3d: V=%s [mem: %.2f GB]",
-                          iter, V_str, mem_used_gb()))
+          message(sprintf("iter %3d: V=%s%s [mem: %.2f GB]",
+                          iter, V_str, chat_str, mem_used_gb()))
         return(model)  # Require at least 3 iterations
       }
 
@@ -194,8 +195,8 @@ check_convergence.default <- function(data, params, model, elbo, iter) {
 
       model$converged <- (avg_diff < params$tol)
       if (verbose)
-        message(sprintf("iter %3d: max|dPIP|(avg)=%.2e, V=%s%s [mem: %.2f GB]",
-                        iter, avg_diff, V_str,
+        message(sprintf("iter %3d: max|dPIP|(avg)=%.2e, V=%s%s%s [mem: %.2f GB]",
+                        iter, avg_diff, V_str, chat_str,
                         if (model$converged) " -- converged" else "",
                         mem_used_gb()))
 
@@ -210,8 +211,8 @@ check_convergence.default <- function(data, params, model, elbo, iter) {
 
       model$converged <- (PIP_diff < params$tol)
       if (verbose)
-        message(sprintf("iter %3d: max|dPIP|=%.2e, V=%s%s [mem: %.2f GB]",
-                        iter, PIP_diff, V_str,
+        message(sprintf("iter %3d: max|dPIP|=%.2e, V=%s%s%s [mem: %.2f GB]",
+                        iter, PIP_diff, V_str, chat_str,
                         if (model$converged) " -- converged" else "",
                         mem_used_gb()))
 
@@ -232,8 +233,8 @@ check_convergence.default <- function(data, params, model, elbo, iter) {
   model$converged <- (ELBO_diff >= 0 && ELBO_diff < params$tol)
 
   if (verbose)
-    message(sprintf("iter %3d: ELBO=%.4f, delta=%.2e, V=%s%s [mem: %.2f GB]",
-                    iter, elbo[iter + 1], ELBO_diff, V_str,
+    message(sprintf("iter %3d: ELBO=%.4f, delta=%.2e, V=%s%s%s [mem: %.2f GB]",
+                    iter, elbo[iter + 1], ELBO_diff, V_str, chat_str,
                     if (model$converged) " -- converged" else "",
                     mem_used_gb()))
 

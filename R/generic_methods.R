@@ -84,6 +84,11 @@ track_ibss_fit.default <- function(data, params, model, tracking, iter, elbo, ..
       V      = model$V,
       sigma2 = model$sigma2
     )
+    # Track slot activity per iteration when active
+    if (!is.null(model$slot_weights)) {
+      tracking[[iter]]$slot_weights <- model$slot_weights
+      tracking[[iter]]$lbf <- model$lbf
+    }
   }
   return(tracking)
 }
