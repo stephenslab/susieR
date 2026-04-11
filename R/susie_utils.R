@@ -464,20 +464,22 @@ validate_and_override_params <- function(params) {
     stop("unmappable_effects must be one of 'none', 'inf', or 'ash'.")
   }
 
-  # Auto-create slot_prior for the ash path if not provided.
-  # The Gamma-Poisson slot activity model is needed for identifiability
-  # between sparse (beta) and dense (theta) effects.
-  # Note: ash_filter_archived does NOT use slot activity (it has its own
-  # V->0 mechanism), so we skip auto-creation for it.
+  # Auto-create Beta-Binomial slot prior for ash mode (identifiability).
   if (params$unmappable_effects == "ash" && is.null(params$slot_prior)) {
-    default_C <- ceiling(params$L / 3)
     params$slot_prior <- slot_prior_betabinom()
+  }
+  # Warn about default Beta parameters if user didn't set them.
+  if (!is.null(params$slot_prior) && inherits(params$slot_prior, "slot_prior_betabinom") &&
+      isTRUE(params$slot_prior$ab_was_default)) {
+    sp <- params$slot_prior
+    n_active <- round(sp$a_beta / (sp$a_beta + sp$b_beta) * params$L)
     warning_message(
-      "For SuSiE-ash it is strongly advised to set slot_prior with C ",
-      "equal to the average number of causal effects expected in the data ",
-      "(not the maximum). Currently defaulting to C = ceiling(L/3) = ",
-      default_C, ". In practice, set both L (maximum) and C (expected) ",
-      "e.g., L = 15, slot_prior = slot_prior_poisson(C = 5).")
+      "For SuSiE-ash it is strongly advised to set slot_prior with ",
+      "a beta-binomial prior based on your expected sparsity of data. ",
+      "Currently defaulting to Beta(a=", sp$a_beta, ", b=", sp$b_beta,
+      ") which roughly expects ~", n_active, " of ", params$L,
+      " slots to be active. Set slot_prior = slot_prior_betabinom(",
+      "a_beta, b_beta) to change this behavior.")
   }
   # Report nu default after the C message so the user sees C first.
   if (!is.null(params$slot_prior) && !inherits(params$slot_prior, "slot_prior_betabinom") &&

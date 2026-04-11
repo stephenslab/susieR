@@ -60,7 +60,7 @@
 #' \emph{Annals of Statistics}, 38(5), 2587--2619.
 #'
 #' @examples
-#' # Default: Beta-Binomial with uniform prior on inclusion probability
+#' # Default: Beta-Binomial with Beta(1, 1.5) prior on inclusion probability
 #' slot_prior_betabinom()
 #'
 #' # Gamma-Poisson for susieAnn
@@ -79,18 +79,34 @@
 #   Scott, J.G. and Berger, J.O. (2010). Bayes and empirical-Bayes
 #   multiplicity adjustment in the variable-selection problem.
 #   Annals of Statistics, 38(5), 2587-2619.
+#
+# Default: Beta(1, 1.5) gives E[rho] = 0.4, expecting ~40% of slots
+# active. The mild sparsity (b > 1) reduces residual contamination
+# from partially-weighted inactive effects.
 #' @export
-slot_prior_betabinom <- function(a_beta = 1, b_beta = 1,
+slot_prior_betabinom <- function(a_beta = NULL, b_beta = NULL,
                                  update_schedule = c("sequential", "batch"),
                                  c_hat_init = NULL,
                                  skip_threshold_multiplier = 0) {
   update_schedule <- match.arg(update_schedule)
+
+  # Default a_beta = 1 (standard reference prior for Bernoulli).
+  ab_was_default <- is.null(a_beta) && is.null(b_beta)
+  if (is.null(a_beta)) a_beta <- 1
+  # Default b_beta = 1.5: gives E[rho] = 1/(1+1.5) = 0.4, i.e. ~40% of
+  # slots expected active. With L=10 this means ~4 active effects.
+  # The density p(rho) ~ (1-rho)^0.5 is a mild sparsity preference.
+  # In the collapsed Beta-Binomial update, b > 1 penalizes inactive slots
+  # more, reducing residual contamination from partially-weighted effects.
+  if (is.null(b_beta)) b_beta <- 1.5
+
   stopifnot(is.numeric(a_beta), length(a_beta) == 1, a_beta > 0)
   stopifnot(is.numeric(b_beta), length(b_beta) == 1, b_beta > 0)
   structure(
     list(
       a_beta = a_beta,
       b_beta = b_beta,
+      ab_was_default = ab_was_default,
       update_schedule = update_schedule,
       c_hat_init = c_hat_init,
       skip_threshold_multiplier = skip_threshold_multiplier
