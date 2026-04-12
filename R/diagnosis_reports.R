@@ -48,9 +48,9 @@ diagnose_bb_ash_iter <- function(model, Xcorr, mask, b_confident,
                                  purity_threshold = 0.5,
                                  masking_threshold = 0.5,
                                  nPIP_threshold = 0.05,
-                                 c_hat_mask_threshold = 0.9,
-                                 c_hat_expose = 0.95,
-                                 alpha_entropy_threshold = log(5)) {
+                                 c_hat_excess_threshold = 0.2,
+                                 alpha_entropy_threshold = log(5),
+                                 slot_prior = NULL) {
   L <- nrow(model$alpha)
   theta_raw <- ash_result$beta
   theta_masked <- theta_raw
@@ -125,10 +125,27 @@ diagnose_bb_ash_iter <- function(model, Xcorr, mask, b_confident,
     mu_at_sent <- if (sent > 0) mu_l[sent] else 0
     max_abs_mu <- max(abs(mu_l))
 
+    # c_hat relative to prior: how much evidence beyond the prior expectation
+    # For BB: prior_log_odds = log(a + k_others) - log(b + L-1 - k_others)
+    # c_hat_null = sigmoid(prior_log_odds), c_hat_excess = c_hat - c_hat_null
+    # Prior params read from model$slot_prior (set during susie init)
+    c_hat_null_l <- NA
+    c_hat_excess_l <- NA
+    if (!is.null(model$slot_weights) && !is.null(slot_prior) &&
+        !is.null(slot_prior$a_beta)) {
+      sw <- model$slot_weights
+      k_others <- sum(sw[-l])
+      prior_lo <- log(slot_prior$a_beta + k_others) -
+                  log(slot_prior$b_beta + L - 1 - k_others)
+      c_hat_null_l <- 1 / (1 + exp(-prior_lo))
+      c_hat_excess_l <- c_hat[l] - c_hat_null_l
+    }
+
     rows[[l]] <- data.frame(
       method = "bb_ash", iter = iter, slot = l,
       sentinel = sent, purity = pur, V = model$V[l],
-      c_hat = c_hat[l], lbf = if (!is.null(model$lbf)) model$lbf[l] else NA,
+      c_hat = c_hat[l], c_hat_null = c_hat_null_l, c_hat_excess = c_hat_excess_l,
+      lbf = if (!is.null(model$lbf)) model$lbf[l] else NA,
       max_alpha = max_a, cs_size = cs_size,
       alpha_entropy = alpha_entropy,
       is_confident = is_confident_now[l],
@@ -175,8 +192,7 @@ diagnose_bb_ash_iter <- function(model, Xcorr, mask, b_confident,
       param_purity_threshold = purity_threshold,
       param_masking_threshold = masking_threshold,
       param_nPIP_threshold = nPIP_threshold,
-      param_c_hat_mask_threshold = c_hat_mask_threshold,
-      param_c_hat_expose = c_hat_expose,
+      param_c_hat_excess_threshold = c_hat_excess_threshold,
       param_alpha_entropy_threshold = alpha_entropy_threshold,
       stringsAsFactors = FALSE
     )

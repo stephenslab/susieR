@@ -1460,26 +1460,23 @@ init_ash_fields_filter_archived <- function(model, n, p, L, is_individual = FALS
 # @keywords internal
 update_ash_variance_components <- function(data, model, params) {
 
-  # ---- Parameters ----
-  # Trust and spillover detection
-  purity_threshold     <- 0.5   # CS purity required for trust (subtraction)
-  cs_coverage          <- 0.9   # CS coverage for purity check
-  collision_threshold  <- 0.9   # flag if sentinel |r| > this across SERs
-  jump_threshold       <- 0.5   # flag if sentinel jumps to |r| < this
-  # Masking thresholds
-  masking_threshold    <- 0.5   # LD radius for masking (|r| > this)
-  nPIP_threshold       <- 0.05  # mask if neighborhood PIP > this
-  direct_pip_threshold <- 0.1   # mask if direct PIP > this
-  # c_hat thresholds (3 tiers for slot classification):
-  #   c_hat <= active_threshold: inactive, ignored entirely
-  #   active_threshold < c_hat <= mask_threshold: low_chat, sentinel mask only
-  #   c_hat > mask_threshold: high_chat, contributes to PIP mask
-  # Exposure rule for low_chat slots that gain confidence:
-  #   c_hat > expose_threshold AND entropy > entropy_threshold: expose to mr.ash
-  active_c_hat         <- 0.5   # slot must exceed this to be active
-  c_hat_mask_threshold <- 0.9   # above: PIP mask (high_chat); below: sentinel mask (low_chat)
-  c_hat_expose         <- 0.95  # low_chat slot exposed if c_hat rises above this
-  alpha_entropy_threshold <- log(5) # and alpha spread across >5 effective variants
+  # ---- Parameters (all tunable thresholds) ----
+  purity_threshold        <- 0.5    # CS purity required for trust (subtraction)
+  cs_coverage             <- 0.9    # alpha coverage for working CS used in trust purity check
+  collision_threshold     <- 0.9    # flag if sentinel |r| > this across SERs
+  jump_threshold          <- 0.5    # flag if sentinel jumps to |r| < this
+  masking_threshold       <- 0.5    # LD radius for masking (|r| > this)
+  nPIP_threshold          <- 0.05   # mask if neighborhood PIP > this
+  direct_pip_threshold    <- 0.1    # mask if direct PIP > this
+  active_c_hat            <- 0.5    # slot must exceed this to be active
+  c_hat_excess_threshold  <- 0.2    # c_hat must exceed prior null by this much
+  alpha_entropy_threshold <- log(5) # expose if spread across >5 effective variants
+  #
+  # Derived quantities (from parameters above):
+  #   c_hat_excess = c_hat - c_hat_null, where c_hat_null = sigmoid(BB prior log-odds)
+  #   c_hat_excess < threshold: low_chat tier (sentinel mask, born weak)
+  #   c_hat_excess >= threshold: high_chat tier (PIP mask, real signal)
+  #   low_chat + c_hat_excess rises above threshold + entropy > log(5): expose to mr.ash
 
   is_individual <- inherits(data, "individual")
   p <- ncol(model$alpha)
@@ -1551,13 +1548,21 @@ update_ash_variance_components <- function(data, model, params) {
     b_confident <- b_confident + c_hat[l] * model$alpha[l, ] * model$mu[l, ]
   }
 
-  # c_hat-based two-tier masking with sticky low tier:
-  # Once a slot has c_hat <= threshold, it stays in low_chat permanently.
-  # This prevents noise slots from graduating to PIP mask when c_hat
-  # temporarily rises (replaces V0's ever_diffuse with one c_hat threshold).
+  # c_hat_excess masking: compare c_hat to prior null expectation.
+  # Sticky: once flagged as low_chat, stays permanently.
   if (is.null(model$was_low_chat)) model$was_low_chat <- rep(FALSE, L)
+  sp <- params$slot_prior
   for (l in active_slots) {
-    if (c_hat[l] <= c_hat_mask_threshold) model$was_low_chat[l] <- TRUE
+    # Compute c_hat_excess = c_hat - c_hat_null
+    k_others <- sum(c_hat[-l])
+    if (!is.null(sp) && !is.null(sp$a_beta)) {
+      prior_lo <- log(sp$a_beta + k_others) - log(sp$b_beta + L - 1 - k_others)
+    } else {
+      prior_lo <- 0  # no prior info, fall back to c_hat alone
+    }
+    c_hat_null <- 1 / (1 + exp(-prior_lo))
+    c_hat_excess <- c_hat[l] - c_hat_null
+    if (c_hat_excess < c_hat_excess_threshold) model$was_low_chat[l] <- TRUE
   }
   high_chat <- active_slots[!model$was_low_chat[active_slots]]
   low_chat  <- active_slots[model$was_low_chat[active_slots]]
@@ -1571,12 +1576,20 @@ update_ash_variance_components <- function(data, model, params) {
     mask <- (nPIP > nPIP_threshold) | (pip_high > direct_pip_threshold)
   }
   # low_chat slots: protect if still weak, expose if gained confidence.
-  # Sticky exposure: expose if gained confidence but NOT localized.
-  # c_hat > 0.95 = gained confidence. entropy > log(3) = spread across >3 variants.
-  # A localized signal (entropy < log(3)) is protected even if born weak.
+  # Sticky: once c_hat_excess crosses the threshold (slot gained real evidence)
+  # AND alpha is spread (entropy > log(5)), expose to mr.ash permanently.
+  # A localized signal (low entropy) is protected even if born weak.
   if (is.null(model$was_exposed)) model$was_exposed <- rep(FALSE, L)
   for (l in low_chat) {
-    if (c_hat[l] > c_hat_expose) {
+    k_others <- sum(c_hat[-l])
+    if (!is.null(sp) && !is.null(sp$a_beta)) {
+      prior_lo <- log(sp$a_beta + k_others) - log(sp$b_beta + L - 1 - k_others)
+    } else {
+      prior_lo <- 0
+    }
+    c_hat_null <- 1 / (1 + exp(-prior_lo))
+    excess_now <- c_hat[l] - c_hat_null
+    if (excess_now >= c_hat_excess_threshold) {
       alpha_l <- model$alpha[l, ]
       alpha_nz <- alpha_l[alpha_l > 1e-10]
       ent <- -sum(alpha_nz * log(alpha_nz))
@@ -1633,9 +1646,9 @@ update_ash_variance_components <- function(data, model, params) {
       purity_threshold = purity_threshold,
       masking_threshold = masking_threshold,
       nPIP_threshold = nPIP_threshold,
-      c_hat_mask_threshold = c_hat_mask_threshold,
-      c_hat_expose = c_hat_expose,
-      alpha_entropy_threshold = alpha_entropy_threshold)
+      c_hat_excess_threshold = c_hat_excess_threshold,
+      alpha_entropy_threshold = alpha_entropy_threshold,
+      slot_prior = params$slot_prior)
     # Use environment for accumulation (survives modifyList)
     if (is.null(model$.diag_env)) model$.diag_env <- new.env(parent = emptyenv())
     if (is.null(model$.diag_env$history)) model$.diag_env$history <- list()

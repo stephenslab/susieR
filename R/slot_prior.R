@@ -16,8 +16,8 @@
 #' @param a_beta Shape parameter for the Beta prior on inclusion
 #'   probability rho. Default 1.
 #' @param b_beta Shape parameter for the Beta prior on inclusion
-#'   probability rho. Default 1.2, giving a mild sparsity preference
-#'   with \code{E[rho] = 1/2.2 ~ 0.45}. Setting \code{a_beta = 1}
+#'   probability rho. Default 2, giving a moderate sparsity preference
+#'   with \code{E[rho] = 1/3 ~ 0.33}. Setting \code{a_beta = 1}
 #'   and \code{b_beta = 1} gives a uniform prior on [0,1], providing
 #'   automatic multiplicity correction following Scott and Berger (2010).
 #' @param update_schedule How the Gamma shape parameter is updated
@@ -61,7 +61,7 @@
 #' \emph{Annals of Statistics}, 38(5), 2587--2619.
 #'
 #' @examples
-#' # Default: Beta-Binomial with Beta(1, 1.2) prior on inclusion probability
+#' # Default: Beta-Binomial with Beta(1, 2) prior on inclusion probability
 #' slot_prior_betabinom()
 #'
 #' # Gamma-Poisson for susieAnn
@@ -79,7 +79,10 @@ slot_prior_betabinom <- function(a_beta = NULL, b_beta = NULL,
                                  skip_threshold_multiplier = 0) {
   ab_was_default <- is.null(a_beta) && is.null(b_beta)
   if (is.null(a_beta)) a_beta <- 1
-  if (is.null(b_beta)) b_beta <- 1.2  # E[rho] = 1/2.2 ~ 0.45
+  # Beta(1, 2) gives approximately linear decline in the number of active
+  # slots: P(K=1) > P(K=2) > P(K=3) > ..., favoring sparse architectures
+  # while still allowing multiple effects. E[rho] = 1/3, expecting ~3 of 10.
+  if (is.null(b_beta)) b_beta <- 2
 
   stopifnot(is.numeric(a_beta), length(a_beta) == 1, a_beta > 0)
   stopifnot(is.numeric(b_beta), length(b_beta) == 1, b_beta > 0)
