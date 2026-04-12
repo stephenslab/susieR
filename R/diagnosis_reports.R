@@ -48,7 +48,9 @@ diagnose_bb_ash_iter <- function(model, Xcorr, mask, b_confident,
                                  purity_threshold = 0.5,
                                  masking_threshold = 0.5,
                                  nPIP_threshold = 0.05,
-                                 c_hat_mask_threshold = 0.9) {
+                                 c_hat_mask_threshold = 0.9,
+                                 c_hat_expose = 0.95,
+                                 alpha_entropy_threshold = log(5)) {
   L <- nrow(model$alpha)
   theta_raw <- ash_result$beta
   theta_masked <- theta_raw
@@ -174,6 +176,8 @@ diagnose_bb_ash_iter <- function(model, Xcorr, mask, b_confident,
       param_masking_threshold = masking_threshold,
       param_nPIP_threshold = nPIP_threshold,
       param_c_hat_mask_threshold = c_hat_mask_threshold,
+      param_c_hat_expose = c_hat_expose,
+      param_alpha_entropy_threshold = alpha_entropy_threshold,
       stringsAsFactors = FALSE
     )
   }

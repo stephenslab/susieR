@@ -1461,15 +1461,25 @@ init_ash_fields_filter_archived <- function(model, n, p, L, is_individual = FALS
 update_ash_variance_components <- function(data, model, params) {
 
   # ---- Parameters ----
-  collision_threshold  <- 0.9   # flag if sentinel |r| > this across SERs
-  jump_threshold       <- 0.5   # flag if sentinel jumps to |r| < this
+  # Trust and spillover detection
   purity_threshold     <- 0.5   # CS purity required for trust (subtraction)
   cs_coverage          <- 0.9   # CS coverage for purity check
-  masking_threshold    <- 0.5   # LD radius for masking
+  collision_threshold  <- 0.9   # flag if sentinel |r| > this across SERs
+  jump_threshold       <- 0.5   # flag if sentinel jumps to |r| < this
+  # Masking thresholds
+  masking_threshold    <- 0.5   # LD radius for masking (|r| > this)
   nPIP_threshold       <- 0.05  # mask if neighborhood PIP > this
   direct_pip_threshold <- 0.1   # mask if direct PIP > this
-  c_hat_mask_threshold <- 0.9   # c_hat above: PIP mask; below: sentinel mask
-  alpha_entropy_threshold <- log(5) # expose low_chat if spread across >5 effective variants
+  # c_hat thresholds (3 tiers for slot classification):
+  #   c_hat <= active_threshold: inactive, ignored entirely
+  #   active_threshold < c_hat <= mask_threshold: low_chat, sentinel mask only
+  #   c_hat > mask_threshold: high_chat, contributes to PIP mask
+  # Exposure rule for low_chat slots that gain confidence:
+  #   c_hat > expose_threshold AND entropy > entropy_threshold: expose to mr.ash
+  active_c_hat         <- 0.5   # slot must exceed this to be active
+  c_hat_mask_threshold <- 0.9   # above: PIP mask (high_chat); below: sentinel mask (low_chat)
+  c_hat_expose         <- 0.95  # low_chat slot exposed if c_hat rises above this
+  alpha_entropy_threshold <- log(5) # and alpha spread across >5 effective variants
 
   is_individual <- inherits(data, "individual")
   p <- ncol(model$alpha)
@@ -1484,7 +1494,7 @@ update_ash_variance_components <- function(data, model, params) {
 
   # ---- Step 2: Identify active effects and sentinels ----
   c_hat <- if (!is.null(model$slot_weights)) model$slot_weights else rep(1, L)
-  active_slots <- which(c_hat > 0.5 & model$V > 0)
+  active_slots <- which(c_hat > active_c_hat & model$V > 0)
 
   sentinels <- integer(L)
   for (l in active_slots) sentinels[l] <- which.max(model$alpha[l, ])
@@ -1566,7 +1576,7 @@ update_ash_variance_components <- function(data, model, params) {
   # A localized signal (entropy < log(3)) is protected even if born weak.
   if (is.null(model$was_exposed)) model$was_exposed <- rep(FALSE, L)
   for (l in low_chat) {
-    if (c_hat[l] > 0.95) {
+    if (c_hat[l] > c_hat_expose) {
       alpha_l <- model$alpha[l, ]
       alpha_nz <- alpha_l[alpha_l > 1e-10]
       ent <- -sum(alpha_nz * log(alpha_nz))
@@ -1594,6 +1604,7 @@ update_ash_variance_components <- function(data, model, params) {
       tau2 = if (!is.null(model$tau2)) model$tau2 else 0
     )
   } else {
+    # Looser tolerance for first few mr.ash calls (residuals still changing fast)
     convtol <- if (iter < 3) 1e-3 else 1e-4
     if (is_individual) {
       ash_result <- compute_ash_from_individual_data(
@@ -1622,7 +1633,9 @@ update_ash_variance_components <- function(data, model, params) {
       purity_threshold = purity_threshold,
       masking_threshold = masking_threshold,
       nPIP_threshold = nPIP_threshold,
-      c_hat_mask_threshold = c_hat_mask_threshold)
+      c_hat_mask_threshold = c_hat_mask_threshold,
+      c_hat_expose = c_hat_expose,
+      alpha_entropy_threshold = alpha_entropy_threshold)
     # Use environment for accumulation (survives modifyList)
     if (is.null(model$.diag_env)) model$.diag_env <- new.env(parent = emptyenv())
     if (is.null(model$.diag_env$history)) model$.diag_env$history <- list()
