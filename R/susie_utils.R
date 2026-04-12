@@ -1424,55 +1424,22 @@ init_ash_fields_filter_archived <- function(model, n, p, L, is_individual = FALS
   return(model)
 }
 
-# Update ash variance components: coordinate SuSiE and Mr.ASH
+# Coordinate SuSiE sparse effects and Mr.ASH dense effects.
 #
-# Manages the interaction between SuSiE's sparse effects (beta) and
-# Mr.ASH's dense effects (theta). Uses three zones to prevent Mr.ASH
-# from absorbing signals SuSiE is fine-mapping:
-#
-#   SUBTRACT: Trusted effects are fully removed from Mr.ASH residuals.
-#     Mr.ASH cannot see or absorb these confirmed signals.
-#   MASK: Emerging effects have theta forced to 0 in their LD
-#     neighborhoods. Mr.ASH cannot absorb signal here, giving SuSiE
-#     time to resolve these effects.
-#   EXPOSE: Positions not covered by subtraction or masking. Mr.ASH
-#     absorbs signal freely. LD spillover and false positives that
-#     get flagged and unmasked end up here.
-#
-# Spillover is detected in two ways:
-#   Across-SER: Two effects whose sentinels are in tight LD (|r| > 0.9)
-#     are colliding on the same signal. Both get flagged.
-#   Within-SER: A sentinel that jumps to a distant variant (|r| < 0.5)
-#     indicates the effect is not well-localized. Gets flagged.
-#
-# Flagged effects are initially masked (protected). After unmask_delay
-# iterations, the OLD sentinel's LD neighborhood is selectively exposed
-# to Mr.ASH, allowing absorption of spillover at the confusion point
-# while the effect's current position stays protected.
-#
-# @param data Data object (individual or SS).
-# @param model Current SuSiE model.
-# @param params Parameters object.
-#
-# @return List of updated model fields (sigma2, tau2, theta, etc.)
-#   to be merged into model via modifyList.
+# Three zones: SUBTRACT (trusted, removed from ash residuals),
+# MASK (emerging, theta=0 in LD neighborhood), EXPOSE (ash absorbs freely).
+# Spillover detected by sentinel collision (|r|>0.9) or jump (|r|<0.5).
+# Flagged effects are masked, then selectively unmasked after unmask_delay.
 #
 # @keywords internal
 update_ash_variance_components <- function(data, model, params) {
 
   # ---- Parameters ----
-  # Spillover detection
-  collision_threshold  <- 0.9   # across-SER: flag if sentinel |r| > this
-  jump_threshold       <- 0.5   # within-SER: flag if sentinel jumps to |r| < this
-  purity_threshold     <- 0.5   # within-SER: confident only if CS purity >= this
-  cs_coverage          <- 0.9   # coverage for tentative CS construction
-  # Trust and masking
-  confident_wait       <- 3     # iterations of stable confidence before trusting
-  unmask_delay         <- 2     # iterations flagged before targeted unmasking
-  masking_threshold    <- 0.5   # mask LD neighborhood |r| > this
+  purity_threshold     <- 0.5   # CS purity required for trust
+  cs_coverage          <- 0.9   # CS coverage for purity check
+  masking_threshold    <- 0.5   # LD radius for masking
   nPIP_threshold       <- 0.05  # mask if neighborhood PIP > this
   direct_pip_threshold <- 0.1   # mask if direct PIP > this
-  expose_threshold     <- 0.5   # unmask old sentinel neighborhood |r| > this
 
   is_individual <- inherits(data, "individual")
   p <- ncol(model$alpha)
@@ -1480,123 +1447,55 @@ update_ash_variance_components <- function(data, model, params) {
   iter <- if (!is.null(model$ash_iter)) model$ash_iter else 0
   model$ash_iter <- iter + 1
 
-  # ---- Step 1: Correlation matrix (cached) ----
   xcorr_result <- get_xcorr(data)
   Xcorr <- xcorr_result$Xcorr
   data <- xcorr_result$data
 
-  # ---- Step 2: Identify active effects and sentinels ----
-  # c_hat is used as a continuous weight throughout (subtraction, masking),
-  # not as a binary gate. V > 0 determines whether a slot is alive.
+  # Active effects and sentinels
   c_hat <- if (!is.null(model$slot_weights)) model$slot_weights else rep(1, L)
-  active_slots <- which(model$V > 0)
-
+  active_slots <- which(c_hat > 0.5 & model$V > 0)
   sentinels <- integer(L)
   for (l in active_slots) sentinels[l] <- which.max(model$alpha[l, ])
 
-  # ---- Step 3: Detect spillover ----
-
-  # Across-SER: sentinel collision
-  sentinel_collision <- rep(FALSE, L)
-  if (length(active_slots) > 1) {
-    s_active <- sentinels[active_slots]
-    R_sentinels <- abs(Xcorr[s_active, s_active])
-    diag(R_sentinels) <- 0
-    sentinel_collision[active_slots] <- apply(
-      R_sentinels > collision_threshold, 1, any)
-  }
-
-  # Confident = active, not colliding, and CS purity >= threshold
-  # Low purity means the effect spans weakly-correlated variants
-  # (within-SER spillover) and should not be trusted yet.
-  is_confident_now <- rep(FALSE, L)
+  # Compute purity and trust decision for each active slot
+  effect_purity <- rep(0, L)
+  is_trusted <- rep(FALSE, L)
   for (l in active_slots) {
-    if (sentinel_collision[l]) next
     alpha_l <- model$alpha[l, ]
     cs_order <- order(alpha_l, decreasing = TRUE)
     cs_size <- min(which(cumsum(alpha_l[cs_order]) >= cs_coverage))
-    purity <- get_purity(cs_order[1:cs_size], X = NULL, Xcorr = Xcorr,
-                         use_rfast = FALSE)[1]
-    is_confident_now[l] <- (purity >= purity_threshold)
+    effect_purity[l] <- get_purity(cs_order[1:cs_size], X = NULL, Xcorr = Xcorr,
+                                   use_rfast = FALSE)[1]
+    is_trusted[l] <- (effect_purity[l] >= purity_threshold)
   }
 
-  # ---- Step 4: Track flagged effects ----
-  # A slot is permanently flagged if it ever collides or its sentinel
-  # jumps to a distant position. The flagged_sentinel records where
-  # the confusion occurred (used for targeted unmasking later).
-  if (is.null(model$ever_uncertain)) model$ever_uncertain <- rep(FALSE, L)
-  if (is.null(model$prev_sentinel)) model$prev_sentinel <- rep(0L, L)
-  if (is.null(model$flagged_sentinel)) model$flagged_sentinel <- rep(0L, L)
-
-  for (l in active_slots) {
-    # Within-SER: sentinel jumped to distant position
-    if (model$prev_sentinel[l] > 0 && sentinels[l] != model$prev_sentinel[l]) {
-      if (abs(Xcorr[sentinels[l], model$prev_sentinel[l]]) < jump_threshold) {
-        if (!model$ever_uncertain[l]) {
-          model$flagged_sentinel[l] <- model$prev_sentinel[l]
-        }
-        model$ever_uncertain[l] <- TRUE
-      }
-    }
-    # Across-SER: collision detected
-    if (sentinel_collision[l]) {
-      if (!model$ever_uncertain[l]) {
-        model$flagged_sentinel[l] <- sentinels[l]
-      }
-      model$ever_uncertain[l] <- TRUE
-    }
-    if (sentinels[l] > 0) model$prev_sentinel[l] <- sentinels[l]
-  }
-
-  is_trusted <- is_confident_now & !model$ever_uncertain
-
-  # ---- Step 5: Build subtraction and mask ----
-
-  # Subtraction: trusted effects, weighted by c_hat for consistency with
-  # SuSiE's internal residual computation (fitted = sum c_hat[l] * bbar[l]).
-  # Partial subtraction lets mr.ash see the residual uncertainty from c_hat.
+  # Subtraction: trusted effects removed from mr.ash residual (c_hat-weighted)
   b_confident <- rep(0, p)
   for (l in which(is_trusted)) {
     b_confident <- b_confident + c_hat[l] * model$alpha[l, ] * model$mu[l, ]
   }
 
-  # Mask: all active non-trusted effects (emerging + flagged).
-  # Weight alpha by c_hat so low-activity slots mask less aggressively,
-  # reducing over-masking that causes power loss.
+  # Two-tier masking:
+  # - Localized slots (purity >= 0.1): PIP-based mask from alpha
+  # - Diffuse slots (purity < 0.1): sentinel LD + concentrated alpha only
+  # This prevents diffuse slots from over-broadening the mask.
+  localized <- active_slots[effect_purity[active_slots] >= 0.1]
   emerging_slots <- setdiff(active_slots, which(is_trusted))
-  if (length(emerging_slots) > 0) {
-    weighted_alpha <- c_hat[emerging_slots] * model$alpha[emerging_slots, , drop = FALSE]
-    pip_emerging <- 1 - apply(1 - weighted_alpha, 2, prod)
+  diffuse <- emerging_slots[effect_purity[emerging_slots] < 0.1]
+  mask <- rep(FALSE, p)
+  if (length(localized) > 0) {
+    pip_localized <- 1 - apply(
+      1 - model$alpha[localized, , drop = FALSE], 2, prod)
     LD_adj <- abs(Xcorr) > masking_threshold
-    nPIP <- as.vector(LD_adj %*% pip_emerging)
-    mask <- (nPIP > nPIP_threshold) | (pip_emerging > direct_pip_threshold)
-  } else {
-    mask <- rep(FALSE, p)
+    nPIP <- as.vector(LD_adj %*% pip_localized)
+    mask <- (nPIP > nPIP_threshold) | (pip_localized > direct_pip_threshold)
+  }
+  for (l in diffuse) {
+    mask <- mask | (abs(Xcorr[sentinels[l], ]) > masking_threshold)
+    mask <- mask | (model$alpha[l, ] > 0.01)
   }
 
-  # Targeted unmasking: flagged effects that have been flagged for
-  # unmask_delay iterations get their OLD sentinel neighborhood
-  # exposed. This lets Mr.ASH absorb spillover at the confusion
-  # point while keeping the effect's current position protected.
-  if (is.null(model$flagged_count)) model$flagged_count <- rep(0L, L)
-  for (l in seq_len(L)) {
-    if (model$ever_uncertain[l] && (l %in% active_slots)) {
-      model$flagged_count[l] <- model$flagged_count[l] + 1L
-    } else {
-      model$flagged_count[l] <- 0L
-    }
-  }
-  ready_to_unmask <- model$flagged_count >= unmask_delay
-  for (l in which(ready_to_unmask)) {
-    old_sent <- model$flagged_sentinel[l]
-    if (old_sent > 0) {
-      mask[abs(Xcorr[old_sent, ]) > expose_threshold] <- FALSE
-    }
-  }
-
-  # ---- Step 6: Fit Mr.ASH ----
-  # Zero theta at masked positions before and after Mr.ASH.
-  # Mr.ASH sees residuals = y - X*b_confident at unmasked positions.
+  # Fit Mr.ASH on residuals = y - X*b_confident, with theta=0 at masked positions
   model$theta[mask] <- 0
 
   convtol <- if (iter < 3) 1e-3 else 1e-4
@@ -1610,17 +1509,12 @@ update_ash_variance_components <- function(data, model, params) {
   theta_new <- ash_result$beta
   theta_new[mask] <- 0
 
-  # ---- Step 7: Return updated fields ----
   result <- list(
     sigma2           = ash_result$sigma2,
     tau2             = ash_result$tau2,
     theta            = theta_new,
     ash_pi           = ash_result$pi,
-    ash_iter         = model$ash_iter,
-    ever_uncertain   = model$ever_uncertain,
-    prev_sentinel    = model$prev_sentinel,
-    flagged_count    = model$flagged_count,
-    flagged_sentinel = model$flagged_sentinel
+    ash_iter         = model$ash_iter
   )
 
   if (is_individual) {
@@ -1720,9 +1614,7 @@ update_ash_variance_components_filter_archived <- function(data, model, params) 
 cleanup_ash_fields <- function(model) {
   # Remove internal tracking fields from the new ash path.
   # Keep: tau2, theta, ash_pi (user-visible results)
-  for (field in c("X_theta", "XtX_theta", "ash_iter", "ash_s0",
-                   "ever_uncertain", "prev_sentinel",
-                   "flagged_count", "flagged_sentinel")) {
+  for (field in c("X_theta", "XtX_theta", "ash_iter", "ash_s0")) {
     model[[field]] <- NULL
   }
   return(model)

@@ -70,32 +70,16 @@
 #' # Pass to susie
 #' # fit <- susie(X, y, slot_prior = slot_prior_betabinom())
 #'
-# Beta-Binomial slot activity model.
-# rho ~ Beta(a_beta, b_beta), c_l | rho ~ Bernoulli(rho).
-# Marginalizing rho gives the collapsed posterior update:
-#   log(c_l/(1-c_l)) = log(a + k_{-l}) - log(b + L-1 - k_{-l}) + lbf_l
-# where k_{-l} is the soft count of other active slots.
-# This provides automatic multiplicity correction that adapts to the
-# current number of active effects, following:
-#   Scott, J.G. and Berger, J.O. (2010). Bayes and empirical-Bayes
-#   multiplicity adjustment in the variable-selection problem.
-#   Annals of Statistics, 38(5), 2587-2619.
-#
-# Default: Beta(1, 1.2) gives mild sparsity (b > 1) compared to assuming
-# as many as > 50% slots active (uniform). 
+# Beta-Binomial: rho ~ Beta(a, b), c_l | rho ~ Bern(rho), rho collapsed.
+# Collapsed update: logit(c_l) = log(a + k_{-l}) - log(b + L-1 - k_{-l}) + lbf_l
+# Scott & Berger (2010), Ann. Statist. 38(5):2587-2619.
 #' @export
 slot_prior_betabinom <- function(a_beta = NULL, b_beta = NULL,
                                  c_hat_init = NULL,
                                  skip_threshold_multiplier = 0) {
-  # Default a_beta = 1 (standard reference prior for Bernoulli).
   ab_was_default <- is.null(a_beta) && is.null(b_beta)
   if (is.null(a_beta)) a_beta <- 1
-  # Default b_beta = 1.2: gives E[rho] = 1/(1+1.2) = 0.45, i.e. ~45% of
-  # slots expected active. With L=10 this means ~4 to 5 active effects.
-  # The density p(rho) ~ (1-rho)^0.2 is a mild sparsity preference.
-  # In the collapsed Beta-Binomial update, b > 1 penalizes inactive slots
-  # more, reducing residual contamination from partially-weighted effects.
-  if (is.null(b_beta)) b_beta <- 1.2
+  if (is.null(b_beta)) b_beta <- 1.2  # E[rho] = 1/2.2 ~ 0.45
 
   stopifnot(is.numeric(a_beta), length(a_beta) == 1, a_beta > 0)
   stopifnot(is.numeric(b_beta), length(b_beta) == 1, b_beta > 0)
@@ -104,10 +88,7 @@ slot_prior_betabinom <- function(a_beta = NULL, b_beta = NULL,
       a_beta = a_beta,
       b_beta = b_beta,
       ab_was_default = ab_was_default,
-      # Beta-Binomial is inherently sequential: the collapsed update uses
-      # k_{-l} = sum(c_hat[-l]) which always reflects the current state.
-      # No batch alternative exists (no global parameter to defer).
-      update_schedule = "sequential",
+      update_schedule = "sequential",  # inherently sequential (uses k_{-l})
       c_hat_init = c_hat_init,
       skip_threshold_multiplier = skip_threshold_multiplier
     ),
@@ -137,9 +118,6 @@ slot_prior_poisson <- function(C, nu = NULL, update_schedule = c("sequential", "
   )
 }
 
-# slot_prior_binomial removed (merged into slot_prior_poisson).
-# Use slot_prior_betabinom (single-locus) or slot_prior_poisson (genome-wide).
-
 #' @export
 print.slot_prior <- function(x, ...) {
   type <- if (inherits(x, "slot_prior_betabinom")) "beta-binomial"
@@ -166,20 +144,9 @@ print.slot_prior <- function(x, ...) {
 #' @noRd
 is.slot_prior <- function(x) inherits(x, "slot_prior")
 
-#' Compute ELBO contribution from slot activity prior
-#'
-#' Returns the sum of prior and entropy terms that the standard SuSiE ELBO
-#' is missing when a slot activity model is active.
-#'
-#' For Gamma-Poisson (from susie_gwfm_model.tex eqs. 96-100):
-#'   E[log p(mu)] - E[log q(mu)] + E[log p(c|mu)] - E[log q(c)]
-#'
-#' For Beta-Binomial (collapsed, rho integrated out):
-#'   log p(c) - E[log q(c)]
-#' where log p(c) = log Beta(a + k, b + L - k) - log Beta(a, b).
-#'
-#' @param model Model object with c_hat_state and slot_weights.
-#' @return Scalar ELBO contribution.
+#' ELBO contribution from the slot activity prior.
+#' Beta-Binomial: log Beta(a+k, b+L-k) - log Beta(a,b) + Bernoulli entropy.
+#' Gamma-Poisson: Gamma prior/entropy + Poisson slot prior + Bernoulli entropy.
 #' @keywords internal
 #' @noRd
 slot_prior_elbo <- function(model) {
@@ -187,40 +154,29 @@ slot_prior_elbo <- function(model) {
   chat <- model$slot_weights
   L <- length(chat)
 
-  # Bernoulli entropy: -sum(chat * log(chat) + (1-chat) * log(1-chat))
-  # Use safe version to handle chat near 0 or 1
+  # Bernoulli entropy: -sum(c log c + (1-c) log(1-c))
   eps <- .Machine$double.eps
   ch <- pmax(pmin(chat, 1 - eps), eps)
   bern_entropy <- -sum(ch * log(ch) + (1 - ch) * log(1 - ch))
 
   if (st$prior_type == "betabinom") {
-    # Beta-Binomial (collapsed): log p(c_1,...,c_L) = log Beta(a+k, b+L-k) - log Beta(a,b)
-    # Under mean-field q(c), use soft count k = sum(chat).
     k <- sum(chat)
-    log_prior <- lbeta(st$a_beta + k, st$b_beta + L - k) - lbeta(st$a_beta, st$b_beta)
+    log_prior <- lbeta(st$a_beta + k, st$b_beta + L - k) -
+      lbeta(st$a_beta, st$b_beta)
     return(log_prior + bern_entropy)
   }
 
-  # Gamma-Poisson
-  a_g <- st$a_g
-  b_g <- st$b_g
-  nu  <- st$nu
-  C   <- st$C
-  Lhat <- sum(chat)
-
-  # E_q[log mu] and E_q[mu] under q(mu) = Gamma(a_g, b_g)
+  # Gamma-Poisson: E_q[log mu] = psi(a_g) - log(b_g), E_q[mu] = a_g/b_g
+  a_g <- st$a_g; b_g <- st$b_g; nu <- st$nu; C <- st$C
   Eq_log_mu <- digamma(a_g) - log(b_g)
   Eq_mu     <- a_g / b_g
+  Lhat      <- sum(chat)
 
-  # Gamma prior: E[log p(mu)] = (nu-1)*E[log mu] - (nu/C)*E[mu] + nu*log(nu/C) - lgamma(nu)
-  gamma_prior <- (nu - 1) * Eq_log_mu - (nu / max(C, 1e-10)) * Eq_mu +
+  # E[log p(mu)] + H[q(mu)] + E[log p(c|mu)]
+  gamma_prior   <- (nu - 1) * Eq_log_mu - (nu / max(C, 1e-10)) * Eq_mu +
     nu * log(nu / max(C, 1e-10)) - lgamma(nu)
-
-  # Gamma entropy: -E[log q(mu)] = a_g - log(b_g) + lgamma(a_g) + (1-a_g)*digamma(a_g)
   gamma_entropy <- a_g - log(b_g) + lgamma(a_g) + (1 - a_g) * digamma(a_g)
-
-  # Slot prior (Poisson approx): E[log p(c|mu)] ~ Lhat * (E[log mu] - log L)
-  slot_prior <- Lhat * (Eq_log_mu - log(L))
+  slot_prior    <- Lhat * (Eq_log_mu - log(L))
 
   return(gamma_prior + gamma_entropy + slot_prior + bern_entropy)
 }
