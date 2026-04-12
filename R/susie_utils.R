@@ -1471,6 +1471,12 @@ update_ash_variance_components <- function(data, model, params) {
   active_c_hat            <- 0.5    # slot must exceed this to be active
   c_hat_excess_threshold  <- 0.2    # c_hat must exceed prior null by this much
   alpha_entropy_threshold <- log(5) # expose if spread across >5 effective variants
+  diffuse_pip_neff        <- 50    # max effective variants for PIP mask contribution;
+                                   # high_chat slots with N_eff > max(N_ld, this) are
+                                   # too diffuse to warrant PIP protection and are
+                                   # excluded from the mask so mr.ash can compete.
+                                   # Based on SparsePro (Zhang et al.) reasoning that
+                                   # a legitimate CS has at most ~50 variants in LD.
   #
   # Derived quantities (from parameters above):
   #   c_hat_excess = c_hat - c_hat_null, where c_hat_null = sigmoid(BB prior log-odds)
@@ -1568,9 +1574,25 @@ update_ash_variance_components <- function(data, model, params) {
   low_chat  <- active_slots[model$was_low_chat[active_slots]]
 
   mask <- rep(FALSE, p)
-  if (length(high_chat) > 0) {
+  # High_chat PIP mask: exclude slots whose alpha spread beyond their LD block.
+  # A real signal concentrates within the sentinel's LD neighborhood.
+  # N_eff = exp(entropy) = effective number of variants alpha is spread across.
+  # N_ld = number of positions with |r| > 0.5 with sentinel (LD block size).
+  # If N_eff > max(N_ld, 50), the slot is too diffuse to be a real signal —
+  # don't protect it with PIP mask, let mr.ash compete for the signal.
+  high_chat_mask <- high_chat
+  for (l in high_chat) {
+    N_ld <- sum(abs(Xcorr[sentinels[l], ]) > masking_threshold)
+    alpha_l <- model$alpha[l, ]
+    alpha_nz <- alpha_l[alpha_l > 1e-10]
+    N_eff <- exp(-sum(alpha_nz * log(alpha_nz)))
+    if (N_eff > max(N_ld, diffuse_pip_neff)) {
+      high_chat_mask <- high_chat_mask[high_chat_mask != l]
+    }
+  }
+  if (length(high_chat_mask) > 0) {
     pip_high <- 1 - apply(
-      1 - model$alpha[high_chat, , drop = FALSE], 2, prod)
+      1 - model$alpha[high_chat_mask, , drop = FALSE], 2, prod)
     LD_adj <- abs(Xcorr) > masking_threshold
     nPIP <- as.vector(LD_adj %*% pip_high)
     mask <- (nPIP > nPIP_threshold) | (pip_high > direct_pip_threshold)
