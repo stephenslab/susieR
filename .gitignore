@@ -1,6 +1,8 @@
 **/.Rhistory
 **/.DS_Store
 **/.Rapp.history
+**/.ipynb_checkpoints
+**/.virtual_documents
 susieR.Rproj
 .Rproj.user
 .RData

@@ -97,11 +97,7 @@ ibss_initialize.default <- function(data, params) {
   }
   model$converged <- FALSE
 
-  # Initialize slot activity (c_hat) if a slot_prior is specified.
-  # c_hat[l] = posterior probability that slot l is active.
-  # Two prior families supported:
-  #   - Beta-Binomial: rho ~ Beta(a, b), c_l | rho ~ Bern(rho)
-  #   - Gamma-Poisson: mu ~ Gamma(nu, nu/C), c_l | mu ~ Bern(mu/L)
+  # Initialize slot activity (c_hat) if specified
   sp <- params$slot_prior
   if (!is.null(sp)) {
     if (!is.slot_prior(sp))
@@ -111,7 +107,6 @@ ibss_initialize.default <- function(data, params) {
     L <- nrow(model$alpha)
 
     if (inherits(sp, "slot_prior_betabinom")) {
-      # Beta-Binomial: collapsed conjugate model
       a_beta <- sp$a_beta
       b_beta <- sp$b_beta
       prior_mean <- a_beta / (a_beta + b_beta)
@@ -124,15 +119,12 @@ ibss_initialize.default <- function(data, params) {
 
       model$slot_weights <- c_hat
       model$c_hat_state <- list(
-        prior_type = "betabinom",
-        a_beta = a_beta,
-        b_beta = b_beta,
+        prior_type = "betabinom", a_beta = a_beta, b_beta = b_beta,
         update_schedule = sp$update_schedule,
         skip_threshold_multiplier = sp$skip_threshold_multiplier,
-        skip_threshold = 0  # don't skip on first sweep
+        skip_threshold = 0
       )
     } else {
-      # Gamma-Poisson
       C_val <- sp$C
       nu <- sp$nu
 
@@ -143,23 +135,17 @@ ibss_initialize.default <- function(data, params) {
         c_hat <- rep(min(C_val / L, 1 - 1e-10), L)
         a_g <- nu + C_val
       }
-      b_g <- nu / max(C_val, 1e-6) + 1  # constant within block
-
-      prior_type <- "poisson"
+      b_g <- nu / max(C_val, 1e-6) + 1
 
       model$slot_weights <- c_hat
       model$c_hat_state <- list(
-        C = C_val, nu = nu, a_g = a_g, b_g = b_g,
+        prior_type = "poisson", C = C_val, nu = nu, a_g = a_g, b_g = b_g,
         update_schedule = sp$update_schedule,
-        prior_type = prior_type,
         skip_threshold_multiplier = sp$skip_threshold_multiplier,
-        skip_threshold = 0  # don't skip on first sweep
+        skip_threshold = 0
       )
     }
 
-    # Recompute fitted values with slot weights.
-    # ibss_initialize builds Xr/XtXr/Rz assuming weight=1 for all slots;
-    # with c_hat < 1 we need to correct.
     model <- recompute_fitted_weighted(data, model)
   }
 
@@ -189,55 +175,37 @@ ibss_fit <- function(data, params, model) {
 
   if (L > 0) {
     for (l in seq_len(L)) {
-      # Skip inactive slots when c_hat is below the adaptive threshold.
-      # (Faithfully ported from susieAnn ibss_ann.R:137-139)
       if (use_c_hat &&
           model$slot_weights[l] < model$c_hat_state$skip_threshold) {
         next
       }
 
-      # Standard SER step (susieAnn ibss_ann.R:145).
-      # compute_residuals and update_fitted_values use
-      # model$slot_weights[l] to scale effect l's contribution.
       model <- single_effect_update(data, params, model, l)
 
-      # Gamma-Poisson slot activity update (susieAnn ibss_ann.R:148-163)
       if (use_c_hat) {
         model <- update_c_hat(data, model, l)
       }
     }
   }
 
-  # Batch update: once per sweep (standard CAVI schedule).
-  # For Gamma-Poisson: update Gamma shape parameter.
-  # For Beta-Binomial: no batch update needed (uses k_others directly).
+  # Gamma-Poisson batch shape update (once per sweep)
   if (use_c_hat && model$c_hat_state$update_schedule == "batch" &&
       model$c_hat_state$prior_type != "betabinom") {
     model$c_hat_state$a_g <- model$c_hat_state$nu + sum(model$slot_weights)
   }
 
-  # Recompute skip threshold after each sweep.
-  # Starts at 0 (no skip on first sweep), then updates to
-  # multiplier * baseline for subsequent sweeps.
+  # Adaptive skip threshold: baseline c_hat with lbf=0, scaled by multiplier
   if (use_c_hat && model$c_hat_state$skip_threshold_multiplier > 0) {
     st <- model$c_hat_state
     L_val <- nrow(model$alpha)
     if (st$prior_type == "betabinom") {
-      # Beta-Binomial baseline: log-odds with lbf=0 for a slot at baseline.
-      # Use k_{-l} = k_total - c_hat_baseline (self-consistent: if this slot
-      # is at baseline, the others sum to k_total minus one baseline value).
+      # Self-consistent baseline: one Newton step for k_{-l} = k_total - baseline
       k_total <- sum(model$slot_weights)
-      # Solve self-consistently: baseline = sigmoid(log(a + k_total - baseline) -
-      #   log(b + L - 1 - k_total + baseline)). One Newton step from baseline=0:
-      baseline_logodds_approx <- log(st$a_beta + k_total) -
-                                  log(st$b_beta + L_val - 1 - k_total)
-      c_hat_approx <- 1 / (1 + exp(-baseline_logodds_approx))
-      # Refine: use k_{-l} = k_total - c_hat_approx
-      k_others <- k_total - c_hat_approx
+      approx <- log(st$a_beta + k_total) - log(st$b_beta + L_val - 1 - k_total)
+      k_others <- k_total - 1 / (1 + exp(-approx))
       baseline_logodds <- log(st$a_beta + k_others) -
                           log(st$b_beta + L_val - 1 - k_others)
     } else {
-      # Gamma-Poisson baseline
       baseline_logodds <- digamma(st$a_g) - log(st$b_g) - log(L_val)
     }
     c_hat_baseline <- 1 / (1 + exp(-baseline_logodds))
@@ -254,33 +222,12 @@ ibss_fit <- function(data, params, model) {
 # =============================================================================
 # SLOT ACTIVITY (c_hat) HELPERS
 #
-# These functions implement the slot activity model for SuSiE.
-# Two prior families are supported:
-#
-#   - Beta-Binomial: rho ~ Beta(a, b), c_l | rho ~ Bern(rho), rho collapsed.
-#     The collapsed posterior update is:
-#       log(c_l/(1-c_l)) = log(a + k_{-l}) - log(b + L-1 - k_{-l}) + lbf_l
-#     where k_{-l} = sum of other slots' c_hat. This provides adaptive
-#     multiplicity correction (Scott & Berger, Ann. Statist. 2010).
-#
-#   - Gamma-Poisson: mu ~ Gamma(nu, nu/C), c_l | mu ~ Bern(mu/L).
-#     Used by susieAnn for genome-wide applications where C and nu
-#     are estimated across loci.
-#
-# Each slot l has a posterior activity probability c_hat[l] that weights
-# its contribution to the fitted values and final PIP.
+# c_hat[l] = posterior probability that slot l is active.
+# Beta-Binomial: logit(c_l) = log(a + k_{-l}) - log(b + L-1 - k_{-l}) + lbf_l
+# Gamma-Poisson: logit(c_l) = psi(a_g) - log(b_g) - log(L) + lbf_l
 # =============================================================================
 
-#' Update c_hat for one slot after its SER step
-#'
-#' Computes the posterior slot activity under the specified prior,
-#' adjusts the fitted-values field for the weight change, and updates
-#' the sufficient statistics.
-#'
-#' @param data Data object.
-#' @param model Current SuSiE model with c_hat_state.
-#' @param l Slot index.
-#' @return Updated model.
+#' Update c_hat for slot l after its SER step.
 #' @keywords internal
 #' @noRd
 update_c_hat <- function(data, model, l) {
@@ -292,28 +239,22 @@ update_c_hat <- function(data, model, l) {
   if (is.na(lbf_l) || !is.finite(lbf_l)) lbf_l <- 0
 
   if (st$prior_type == "betabinom") {
-    # Beta-Binomial (collapsed): log-odds = log(a + k_{-l}) - log(b + L - 1 - k_{-l}) + lbf
-    # where k_{-l} = sum of other slots' c_hat (soft count)
     k_others <- sum(model$slot_weights[-l])
     log_odds <- log(st$a_beta + k_others) -
                 log(st$b_beta + L - 1 - k_others) + lbf_l
   } else {
-    # Gamma-Poisson: log-odds = psi(a_g) - log(b_g) - log(L) + lbf
     log_odds <- digamma(st$a_g) - log(st$b_g) - log(L) + lbf_l
   }
-
-  log_odds <- max(min(log_odds, 20), -20)  # numerical guard
+  log_odds <- max(min(log_odds, 20), -20)
   new_c <- 1 / (1 + exp(-log_odds))
   model$slot_weights[l] <- new_c
 
-  # Correct fitted field for the change in slot weight.
   if (abs(new_c - old_c) > 1e-15) {
     b_bar_l <- model$alpha[l, ] * model$mu[l, ]
     model <- adjust_fitted_for_c_hat(data, model, b_bar_l, new_c - old_c)
   }
 
-  # Gamma shape update (sequential mode). Not needed for Beta-Binomial
-  # since it uses the collapsed sufficient statistic k_others directly.
+  # Gamma shape update (sequential mode; Beta-Binomial uses k_others directly)
   if (st$prior_type != "betabinom" && st$update_schedule == "sequential") {
     model$c_hat_state$a_g <- st$nu + sum(model$slot_weights)
   }
@@ -321,65 +262,34 @@ update_c_hat <- function(data, model, l) {
   return(model)
 }
 
-#' Adjust fitted-values field for a c_hat weight change
-#'
-#' Adds delta_weight * Rv(b_bar_l) to the appropriate fitted-values field
-#' (Xr, XtXr, or Rz depending on data backend).
-#'
-#' @param data Data object.
-#' @param model Current model.
-#' @param b_bar_l Posterior mean vector alpha[l,] * mu[l,].
-#' @param delta_weight Change in slot weight (new_c - old_c).
-#' @return Updated model.
+#' Add delta_weight * R*b_bar_l to the fitted-values field (Xr/XtXr/Rz).
 #' @keywords internal
 #' @noRd
 adjust_fitted_for_c_hat <- function(data, model, b_bar_l, delta_weight) {
   fitted_field <- detect_fitted_field(model)
   if (fitted_field == "Xr") {
-    # Individual data: Xr += delta_weight * X %*% b_bar_l
     model$Xr <- model$Xr +
       delta_weight * as.vector(compute_Xb(data$X, b_bar_l))
   } else {
-    # SS or RSS: fitted += delta_weight * R %*% b_bar_l
-    Rv_delta <- as.vector(compute_Rv(data, b_bar_l, model$X_meta))
-    model[[fitted_field]] <- model[[fitted_field]] + delta_weight * Rv_delta
+    model[[fitted_field]] <- model[[fitted_field]] +
+      delta_weight * as.vector(compute_Rv(data, b_bar_l, model$X_meta))
   }
   return(model)
 }
 
-#' Detect which fitted-values field the model uses
-#'
-#' Returns "Rz" (rss_lambda path), "XtXr" (sufficient stats path),
-#' or "Xr" (individual data path).
-#'
-#' @param model SuSiE model object.
-#' @return Character string: fitted field name.
 #' @keywords internal
 #' @noRd
 detect_fitted_field <- function(model) {
-  # (susieAnn ibss_ann.R:109-112)
   if ("Rz" %in% names(model)) "Rz"
   else if ("XtXr" %in% names(model)) "XtXr"
   else if ("Xr" %in% names(model)) "Xr"
   else stop("Cannot detect fitted-values field on model object.")
 }
 
-#' Recompute fitted values with slot weights
-#'
-#' After ibss_initialize builds Xr/XtXr/Rz assuming weight=1 for all
-#' slots, this function recomputes the field as the slot-weighted sum
-#' sum_l(c_hat[l] * alpha[l,] * mu[l,]).
-#'
-#' @param data Data object.
-#' @param model Model with slot_weights set.
-#' @return Updated model.
+#' Recompute fitted = sum_l c_hat[l] * R * bbar[l] from scratch.
 #' @keywords internal
 #' @noRd
 recompute_fitted_weighted <- function(data, model) {
-  # (susieAnn ibss_ann.R:120-124)
-  # Recompute the fitted-values field as the slot-weighted sum.
-  # For individual data: Xr = X %*% b_weighted (length n)
-  # For SS/RSS: XtXr/Rz = R %*% b_weighted (length p)
   fitted_field <- detect_fitted_field(model)
   L <- nrow(model$alpha)
   c_hat <- model$slot_weights
@@ -388,10 +298,8 @@ recompute_fitted_weighted <- function(data, model) {
     b_weighted <- b_weighted + c_hat[ll] * model$alpha[ll, ] * model$mu[ll, ]
   }
   if (fitted_field == "Xr") {
-    # Individual data: compute X %*% b_weighted (length n)
     model$Xr <- as.vector(compute_Xb(data$X, b_weighted))
   } else {
-    # SS or RSS: compute R %*% b_weighted or X'X %*% b_weighted (length p)
     model[[fitted_field]] <- as.vector(compute_Rv(data, b_weighted, model$X_meta))
   }
   return(model)

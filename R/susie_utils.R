@@ -1461,18 +1461,15 @@ init_ash_fields_filter_archived <- function(model, n, p, L, is_individual = FALS
 update_ash_variance_components <- function(data, model, params) {
 
   # ---- Parameters ----
-  # Spillover detection
-  collision_threshold  <- 0.9   # across-SER: flag if sentinel |r| > this
-  jump_threshold       <- 0.5   # within-SER: flag if sentinel jumps to |r| < this
-  purity_threshold     <- 0.5   # within-SER: confident only if CS purity >= this
-  cs_coverage          <- 0.9   # coverage for tentative CS construction
-  # Trust and masking
-  confident_wait       <- 3     # iterations of stable confidence before trusting
-  unmask_delay         <- 2     # iterations flagged before targeted unmasking
-  masking_threshold    <- 0.5   # mask LD neighborhood |r| > this
+  collision_threshold  <- 0.9   # flag if sentinel |r| > this across SERs
+  jump_threshold       <- 0.5   # flag if sentinel jumps to |r| < this
+  purity_threshold     <- 0.5   # CS purity required for trust (subtraction)
+  cs_coverage          <- 0.9   # CS coverage for purity check
+  masking_threshold    <- 0.5   # LD radius for masking
   nPIP_threshold       <- 0.05  # mask if neighborhood PIP > this
   direct_pip_threshold <- 0.1   # mask if direct PIP > this
-  expose_threshold     <- 0.5   # unmask old sentinel neighborhood |r| > this
+  c_hat_mask_threshold <- 0.9   # c_hat above: PIP mask; below: sentinel mask
+  alpha_entropy_threshold <- log(5) # expose low_chat if spread across >5 effective variants
 
   is_individual <- inherits(data, "individual")
   p <- ncol(model$alpha)
@@ -1486,10 +1483,8 @@ update_ash_variance_components <- function(data, model, params) {
   data <- xcorr_result$data
 
   # ---- Step 2: Identify active effects and sentinels ----
-  # c_hat is used as a continuous weight throughout (subtraction, masking),
-  # not as a binary gate. V > 0 determines whether a slot is alive.
   c_hat <- if (!is.null(model$slot_weights)) model$slot_weights else rep(1, L)
-  active_slots <- which(model$V > 0)
+  active_slots <- which(c_hat > 0.5 & model$V > 0)
 
   sentinels <- integer(L)
   for (l in active_slots) sentinels[l] <- which.max(model$alpha[l, ])
@@ -1510,41 +1505,28 @@ update_ash_variance_components <- function(data, model, params) {
   # Low purity means the effect spans weakly-correlated variants
   # (within-SER spillover) and should not be trusted yet.
   is_confident_now <- rep(FALSE, L)
+  effect_purity <- rep(0, L)
   for (l in active_slots) {
     if (sentinel_collision[l]) next
     alpha_l <- model$alpha[l, ]
     cs_order <- order(alpha_l, decreasing = TRUE)
     cs_size <- min(which(cumsum(alpha_l[cs_order]) >= cs_coverage))
-    purity <- get_purity(cs_order[1:cs_size], X = NULL, Xcorr = Xcorr,
-                         use_rfast = FALSE)[1]
-    is_confident_now[l] <- (purity >= purity_threshold)
+    effect_purity[l] <- get_purity(cs_order[1:cs_size], X = NULL, Xcorr = Xcorr,
+                                   use_rfast = FALSE)[1]
+    is_confident_now[l] <- (effect_purity[l] >= purity_threshold)
   }
 
-  # ---- Step 4: Track flagged effects ----
-  # A slot is permanently flagged if it ever collides or its sentinel
-  # jumps to a distant position. The flagged_sentinel records where
-  # the confusion occurred (used for targeted unmasking later).
+  # Track collision and sentinel jumps for trust decision
   if (is.null(model$ever_uncertain)) model$ever_uncertain <- rep(FALSE, L)
   if (is.null(model$prev_sentinel)) model$prev_sentinel <- rep(0L, L)
-  if (is.null(model$flagged_sentinel)) model$flagged_sentinel <- rep(0L, L)
 
   for (l in active_slots) {
-    # Within-SER: sentinel jumped to distant position
     if (model$prev_sentinel[l] > 0 && sentinels[l] != model$prev_sentinel[l]) {
-      if (abs(Xcorr[sentinels[l], model$prev_sentinel[l]]) < jump_threshold) {
-        if (!model$ever_uncertain[l]) {
-          model$flagged_sentinel[l] <- model$prev_sentinel[l]
-        }
+      if (abs(Xcorr[sentinels[l], model$prev_sentinel[l]]) < jump_threshold)
         model$ever_uncertain[l] <- TRUE
-      }
     }
-    # Across-SER: collision detected
-    if (sentinel_collision[l]) {
-      if (!model$ever_uncertain[l]) {
-        model$flagged_sentinel[l] <- sentinels[l]
-      }
+    if (sentinel_collision[l])
       model$ever_uncertain[l] <- TRUE
-    }
     if (sentinels[l] > 0) model$prev_sentinel[l] <- sentinels[l]
   }
 
@@ -1552,65 +1534,101 @@ update_ash_variance_components <- function(data, model, params) {
 
   # ---- Step 5: Build subtraction and mask ----
 
-  # Subtraction: trusted effects, weighted by c_hat for consistency with
-  # SuSiE's internal residual computation (fitted = sum c_hat[l] * bbar[l]).
-  # Partial subtraction lets mr.ash see the residual uncertainty from c_hat.
+  # Subtraction: trusted effects, c_hat-weighted for consistency with
+  # SuSiE's fitted values (Xr = sum_l c_hat[l] * bbar[l])
   b_confident <- rep(0, p)
   for (l in which(is_trusted)) {
     b_confident <- b_confident + c_hat[l] * model$alpha[l, ] * model$mu[l, ]
   }
 
-  # Mask: all active non-trusted effects (emerging + flagged).
-  # Weight alpha by c_hat so low-activity slots mask less aggressively,
-  # reducing over-masking that causes power loss.
-  emerging_slots <- setdiff(active_slots, which(is_trusted))
-  if (length(emerging_slots) > 0) {
-    weighted_alpha <- c_hat[emerging_slots] * model$alpha[emerging_slots, , drop = FALSE]
-    pip_emerging <- 1 - apply(1 - weighted_alpha, 2, prod)
+  # c_hat-based two-tier masking with sticky low tier:
+  # Once a slot has c_hat <= threshold, it stays in low_chat permanently.
+  # This prevents noise slots from graduating to PIP mask when c_hat
+  # temporarily rises (replaces V0's ever_diffuse with one c_hat threshold).
+  if (is.null(model$was_low_chat)) model$was_low_chat <- rep(FALSE, L)
+  for (l in active_slots) {
+    if (c_hat[l] <= c_hat_mask_threshold) model$was_low_chat[l] <- TRUE
+  }
+  high_chat <- active_slots[!model$was_low_chat[active_slots]]
+  low_chat  <- active_slots[model$was_low_chat[active_slots]]
+
+  mask <- rep(FALSE, p)
+  if (length(high_chat) > 0) {
+    pip_high <- 1 - apply(
+      1 - model$alpha[high_chat, , drop = FALSE], 2, prod)
     LD_adj <- abs(Xcorr) > masking_threshold
-    nPIP <- as.vector(LD_adj %*% pip_emerging)
-    mask <- (nPIP > nPIP_threshold) | (pip_emerging > direct_pip_threshold)
-  } else {
-    mask <- rep(FALSE, p)
+    nPIP <- as.vector(LD_adj %*% pip_high)
+    mask <- (nPIP > nPIP_threshold) | (pip_high > direct_pip_threshold)
   }
-
-  # Targeted unmasking: flagged effects that have been flagged for
-  # unmask_delay iterations get their OLD sentinel neighborhood
-  # exposed. This lets Mr.ASH absorb spillover at the confusion
-  # point while keeping the effect's current position protected.
-  if (is.null(model$flagged_count)) model$flagged_count <- rep(0L, L)
-  for (l in seq_len(L)) {
-    if (model$ever_uncertain[l] && (l %in% active_slots)) {
-      model$flagged_count[l] <- model$flagged_count[l] + 1L
-    } else {
-      model$flagged_count[l] <- 0L
+  # low_chat slots: protect if still weak, expose if gained confidence.
+  # Sticky exposure: expose if gained confidence but NOT localized.
+  # c_hat > 0.95 = gained confidence. entropy > log(3) = spread across >3 variants.
+  # A localized signal (entropy < log(3)) is protected even if born weak.
+  if (is.null(model$was_exposed)) model$was_exposed <- rep(FALSE, L)
+  for (l in low_chat) {
+    if (c_hat[l] > 0.95) {
+      alpha_l <- model$alpha[l, ]
+      alpha_nz <- alpha_l[alpha_l > 1e-10]
+      ent <- -sum(alpha_nz * log(alpha_nz))
+      if (ent > alpha_entropy_threshold) model$was_exposed[l] <- TRUE
     }
-  }
-  ready_to_unmask <- model$flagged_count >= unmask_delay
-  for (l in which(ready_to_unmask)) {
-    old_sent <- model$flagged_sentinel[l]
-    if (old_sent > 0) {
-      mask[abs(Xcorr[old_sent, ]) > expose_threshold] <- FALSE
+    if (!model$was_exposed[l]) {
+      mask <- mask | (abs(Xcorr[sentinels[l], ]) > masking_threshold)
     }
   }
 
-  # ---- Step 6: Fit Mr.ASH ----
+  # ---- Fit Mr.ASH ----
   # Zero theta at masked positions before and after Mr.ASH.
   # Mr.ASH sees residuals = y - X*b_confident at unmasked positions.
+  # Set options(susie.skip_mrash = TRUE) to diagnose without mr.ash.
+  .skip_mrash <- getOption("susie.skip_mrash", FALSE)
   model$theta[mask] <- 0
 
-  convtol <- if (iter < 3) 1e-3 else 1e-4
-  if (is_individual) {
-    ash_result <- compute_ash_from_individual_data(
-      data$X, data$y, b_confident, model, params, convtol)
+  if (.skip_mrash) {
+    theta_new <- model$theta
+    theta_new[mask] <- 0
+    ash_result <- list(
+      beta = theta_new,
+      sigma2 = if (!is.null(model$sigma2)) model$sigma2 else 1,
+      pi = model$ash_pi,
+      tau2 = if (!is.null(model$tau2)) model$tau2 else 0
+    )
   } else {
-    ash_result <- compute_ash_from_summary_stats(
-      data, b_confident, model, params, convtol)
+    convtol <- if (iter < 3) 1e-3 else 1e-4
+    if (is_individual) {
+      ash_result <- compute_ash_from_individual_data(
+        data$X, data$y, b_confident, model, params, convtol)
+    } else {
+      ash_result <- compute_ash_from_summary_stats(
+        data, b_confident, model, params, convtol)
+    }
+    theta_new <- ash_result$beta
+    theta_new[mask] <- 0
   }
-  theta_new <- ash_result$beta
-  theta_new[mask] <- 0
 
-  # ---- Step 7: Return updated fields ----
+  # BB+ash diagnostic: capture data.frame and accumulate on model
+  .ash_debug <- TRUE
+  if (.ash_debug) {
+    diag_df <- diagnose_bb_ash_iter(
+      model, Xcorr, mask, b_confident,
+      sentinels, sentinel_collision,
+      is_confident_now, is_trusted,
+      setdiff(active_slots, which(is_trusted)),
+      active_slots, c_hat,
+      list(beta = theta_new, sigma2 = ash_result$sigma2,
+           pi = ash_result$pi), p,
+      high_chat = high_chat, low_chat = low_chat,
+      collision_threshold = collision_threshold,
+      purity_threshold = purity_threshold,
+      masking_threshold = masking_threshold,
+      nPIP_threshold = nPIP_threshold,
+      c_hat_mask_threshold = c_hat_mask_threshold)
+    # Use environment for accumulation (survives modifyList)
+    if (is.null(model$.diag_env)) model$.diag_env <- new.env(parent = emptyenv())
+    if (is.null(model$.diag_env$history)) model$.diag_env$history <- list()
+    model$.diag_env$history[[length(model$.diag_env$history) + 1]] <- diag_df
+  }
+
   result <- list(
     sigma2           = ash_result$sigma2,
     tau2             = ash_result$tau2,
@@ -1619,8 +1637,9 @@ update_ash_variance_components <- function(data, model, params) {
     ash_iter         = model$ash_iter,
     ever_uncertain   = model$ever_uncertain,
     prev_sentinel    = model$prev_sentinel,
-    flagged_count    = model$flagged_count,
-    flagged_sentinel = model$flagged_sentinel
+    was_low_chat     = model$was_low_chat,
+    was_exposed      = model$was_exposed,
+    .diag_env        = model$.diag_env
   )
 
   if (is_individual) {
@@ -1665,20 +1684,44 @@ update_ash_variance_components_filter_archived <- function(data, model, params) 
   model <- mask_result$model
 
   # Step 3: Fit Mr.ASH (dispatch to individual or SS backend)
-  convtol <- if (model$ash_iter < 2) 1e-3 else 1e-4
-  if (is_individual) {
-    mrash_output <- compute_ash_from_individual_data(
-      data$X, data$y, b_confident, model, params, convtol
-    )
+  # Set options(susie.skip_mrash = TRUE) to diagnose without mr.ash.
+  .skip_mrash <- getOption("susie.skip_mrash", FALSE)
+  if (.skip_mrash) {
+    p_v0 <- ncol(model$alpha)
+    mrash_output <- list(
+      beta = model$theta, sigma2 = if (!is.null(model$sigma2)) model$sigma2 else 1,
+      pi = model$ash_pi, tau2 = if (!is.null(model$tau2)) model$tau2 else 0,
+      sa2 = if (!is.null(model$ash_s0)) model$ash_s0 else 0)
+    mrash_output$beta[masked] <- 0
   } else {
-    mrash_output <- compute_ash_from_summary_stats(
-      data, b_confident, model, params, convtol
-    )
+    convtol <- if (model$ash_iter < 2) 1e-3 else 1e-4
+    if (is_individual) {
+      mrash_output <- compute_ash_from_individual_data(
+        data$X, data$y, b_confident, model, params, convtol
+      )
+    } else {
+      mrash_output <- compute_ash_from_summary_stats(
+        data, b_confident, model, params, convtol
+      )
+    }
   }
 
   # Step 4: Zero out theta for masked variants
   theta_new <- mrash_output$beta
   theta_new[masked] <- 0
+
+  # V0 diagnostic: capture data.frame and accumulate on model
+  .ash_debug <- TRUE
+  if (.ash_debug) {
+    diag_df <- diagnose_ash_filter_archived_iter(
+      model, Xcorr, masked, b_confident,
+      mask_result$sentinels, mask_result$effect_purity,
+      mask_result$current_case, mask_result$current_collision,
+      mrash_output)
+    if (is.null(model$.diag_env)) model$.diag_env <- new.env(parent = emptyenv())
+    if (is.null(model$.diag_env$history)) model$.diag_env$history <- list()
+    model$.diag_env$history[[length(model$.diag_env$history) + 1]] <- diag_df
+  }
 
   # Step 5: Compute fitted theta (data-representation-specific)
   result <- list(
@@ -1696,7 +1739,8 @@ update_ash_variance_components_filter_archived <- function(data, model, params) 
     force_exposed_iter  = model$force_exposed_iter,
     second_chance_used  = model$second_chance_used,
     ever_diffuse        = model$ever_diffuse,
-    prev_case           = model$prev_case
+    prev_case           = model$prev_case,
+    .diag_env           = model$.diag_env
   )
 
   if (is_individual) {
@@ -1719,10 +1763,9 @@ update_ash_variance_components_filter_archived <- function(data, model, params) 
 # @keywords internal
 cleanup_ash_fields <- function(model) {
   # Remove internal tracking fields from the new ash path.
-  # Keep: tau2, theta, ash_pi (user-visible results)
+  # Keep: tau2, theta, ash_pi, was_low_chat (user-visible results)
   for (field in c("X_theta", "XtX_theta", "ash_iter", "ash_s0",
-                   "ever_uncertain", "prev_sentinel",
-                   "flagged_count", "flagged_sentinel")) {
+                   "ever_uncertain", "prev_sentinel")) {
     model[[field]] <- NULL
   }
   return(model)
@@ -1988,7 +2031,11 @@ compute_ash_masking <- function(Xcorr, model, params) {
   list(
     b_confident = b_confident,
     masked = masked,
-    model = model
+    model = model,
+    sentinels = sentinels,
+    effect_purity = effect_purity,
+    current_case = current_case,
+    current_collision = current_collision
   )
 }
 
