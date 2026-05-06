@@ -882,3 +882,152 @@ test_that("susie_init_coef works with susie", {
   expect_true(!is.null(fit$mu))
   expect_true(!is.null(fit$elbo))
 })
+
+# =============================================================================
+# Get Credible Sets with Attainable Coverage
+# =============================================================================
+
+# Build a small synthetic susie fit object directly. This lets us exercise the
+# attainable-coverage filter on alpha matrices with known structure without
+# depending on IBSS dynamics.
+make_alpha_fit <- function(alpha, V = NULL) {
+  if (is.null(V)) V <- rep(1, nrow(alpha))
+  fit <- list(alpha = alpha, V = V)
+  class(fit) <- c("susie", "list")
+  fit
+}
+
+test_that("susie_get_cs_attainable returns expected list shape", {
+  set.seed(50)
+  dat <- simulate_regression(n = 200, p = 100, k = 3, signal_sd = 2)
+  fit <- susie(dat$X, dat$y, L = 10, verbose = FALSE)
+
+  cs <- suppressMessages(
+    susie_get_cs_attainable(fit, coverage = 0.95)
+  )
+
+  expect_type(cs, "list")
+  expect_true(all(c("cs", "coverage", "requested_coverage") %in% names(cs)))
+  expect_equal(cs$requested_coverage, 0.95)
+})
+
+test_that("susie_get_cs_attainable default ethres is max(100, 0.1 * p)", {
+  # Confidently localized effect: peak at variable 1 with mass 0.99,
+  # nothing else competes. ethres = max(100, 0.1*1000) = 100, log(100) ~ 4.6.
+  alpha <- matrix(0, nrow = 2, ncol = 1000)
+  alpha[1, 1] <- 0.99; alpha[1, 2] <- 0.01
+  alpha[2, 3] <- 0.99; alpha[2, 4] <- 0.01
+  fit <- make_alpha_fit(alpha)
+
+  cs_default <- suppressMessages(susie_get_cs_attainable(fit, coverage = 0.95))
+  cs_explicit <- suppressMessages(
+    susie_get_cs_attainable(fit, coverage = 0.95, ethres = max(100, 0.1 * 1000))
+  )
+
+  expect_identical(cs_default$cs, cs_explicit$cs)
+  expect_identical(cs_default$coverage, cs_explicit$coverage)
+})
+
+test_that("susie_get_cs_attainable drops diffuse effects via entropy filter", {
+  # Effect 1: tightly localized (entropy near 0).
+  # Effect 2: uniform over 600 variables (entropy = log(600) > log(100)).
+  p <- 1000
+  alpha <- matrix(0, nrow = 2, ncol = p)
+  alpha[1, 1] <- 0.99; alpha[1, 2] <- 0.01
+  alpha[2, 1:600] <- 1 / 600
+  fit <- make_alpha_fit(alpha)
+
+  cs <- suppressMessages(susie_get_cs_attainable(fit, coverage = 0.5))
+
+  expect_false(is.null(cs$cs))
+  expect_length(cs$cs, 1)
+  expect_equal(names(cs$cs), "L1")
+})
+
+test_that("susie_get_cs_attainable drops effects with low attainable coverage", {
+  # Two effects competing for the same variables: per-column-max projection
+  # awards each variable to whichever effect has the larger alpha there, so
+  # neither effect can claim the full mass on its own.
+  p <- 100
+  alpha <- matrix(0, nrow = 2, ncol = p)
+  alpha[1, 1:5] <- c(0.50, 0.10, 0.10, 0.10, 0.10)
+  alpha[2, 1:5] <- c(0.10, 0.50, 0.10, 0.10, 0.10)
+  fit <- make_alpha_fit(alpha)
+
+  # With coverage = 0.95, neither effect's attainable coverage exceeds 0.95.
+  cs <- suppressMessages(susie_get_cs_attainable(fit, coverage = 0.95))
+  expect_null(cs$cs)
+  expect_null(cs$coverage)
+  expect_equal(cs$requested_coverage, 0.95)
+})
+
+test_that("susie_get_cs_attainable returns NULL cs when nothing passes", {
+  # All effects diffuse: nothing should pass the entropy filter.
+  p <- 1000
+  alpha <- matrix(1 / p, nrow = 3, ncol = p)
+  fit <- make_alpha_fit(alpha)
+
+  cs <- suppressMessages(susie_get_cs_attainable(fit, coverage = 0.95))
+  expect_null(cs$cs)
+  expect_null(cs$coverage)
+  expect_equal(cs$requested_coverage, 0.95)
+})
+
+test_that("susie_get_cs_attainable remaps cs names to original effect indices", {
+  # Three effects: only L2 should survive. Result must be labelled "L2".
+  p <- 200
+  alpha <- matrix(0, nrow = 3, ncol = p)
+  alpha[1, 1:150] <- 1 / 150         # diffuse, entropy filter drops
+  alpha[2, 10] <- 0.99; alpha[2, 11] <- 0.01
+  alpha[3, 1:150] <- 1 / 150         # diffuse, entropy filter drops
+  fit <- make_alpha_fit(alpha)
+
+  cs <- suppressMessages(susie_get_cs_attainable(fit, coverage = 0.5))
+
+  expect_length(cs$cs, 1)
+  expect_equal(names(cs$cs), "L2")
+})
+
+test_that("susie_get_cs_attainable handles scalar res$V without error", {
+  p <- 100
+  alpha <- matrix(0, nrow = 2, ncol = p)
+  alpha[1, 1] <- 0.99; alpha[1, 2] <- 0.01
+  alpha[2, 3] <- 0.99; alpha[2, 4] <- 0.01
+  fit <- make_alpha_fit(alpha, V = 1)  # length-1 scalar, not length-L
+
+  expect_no_error(
+    suppressMessages(susie_get_cs_attainable(fit, coverage = 0.5))
+  )
+})
+
+test_that("susie_get_cs_attainable strips X and Xcorr from ...", {
+  # Passing X or Xcorr should not cause susie_get_cs to raise the
+  # "Only one of X or Xcorr" error or to apply purity filtering.
+  set.seed(51)
+  dat <- simulate_regression(n = 200, p = 100, k = 3, signal_sd = 2)
+  fit <- susie(dat$X, dat$y, L = 10, verbose = FALSE)
+
+  expect_no_error(
+    suppressMessages(
+      susie_get_cs_attainable(fit, X = dat$X, Xcorr = cor(dat$X))
+    )
+  )
+})
+
+test_that("susie_get_cs_attainable matches susie_get_cs on confidently localized fits", {
+  # When every effect is confidently localized, the attainable filter
+  # keeps every effect and the result should equal susie_get_cs (no LD).
+  p <- 200
+  alpha <- matrix(0, nrow = 3, ncol = p)
+  alpha[1, 1] <- 0.99; alpha[1, 2] <- 0.01
+  alpha[2, 50] <- 0.99; alpha[2, 51] <- 0.01
+  alpha[3, 100] <- 0.99; alpha[3, 101] <- 0.01
+  fit <- make_alpha_fit(alpha)
+
+  cs_a <- suppressMessages(susie_get_cs_attainable(fit, coverage = 0.95))
+  cs_b <- suppressMessages(susie_get_cs(fit, coverage = 0.95))
+
+  expect_equal(cs_a$cs, cs_b$cs)
+  expect_equal(cs_a$coverage, cs_b$coverage)
+  expect_equal(cs_a$requested_coverage, cs_b$requested_coverage)
+})

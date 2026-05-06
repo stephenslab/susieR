@@ -1,0 +1,91 @@
+---
+title: "Post-hoc credible-set filtering without an LD reference"
+author: "Alex McCreight"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Post-hoc credible-set filtering without an LD reference}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#", fig.width = 5,
+                      fig.height = 3, fig.align = "center", dpi = 120)
+```
+
+`susie_get_cs_attainable()` is a post-hoc credible-set filter for the
+case when neither a genotype matrix nor an LD reference is available,
+so the usual `min_abs_corr` purity filter in `susie_get_cs()` cannot
+be used. It uses only the fitted `alpha` matrix. For each effect, it
+computes an *attainable coverage*, an idea introduced by
+[SparsePro (Zhang et al. 2023)](https://doi.org/10.1371/journal.pgen.1011104),
+by zeroing every entry of `alpha` that is not the column maximum and
+then summing the rows, which gives the coverage that effect could
+attain if it did not have to share probability mass with other
+effects. A second filter caps the entropy
+of each effect's attainable mass, dropping effects whose mass is
+spread too thinly across many variables.
+
+## Example
+
+```{r}
+library(susieR)
+set.seed(1)
+data(N3finemapping)
+X <- N3finemapping$X
+y <- N3finemapping$Y[, 1]
+```
+
+Fit SuSiE with a fixed prior so noise effects are not shrunken away:
+
+```{r}
+fitted <- susie(X, y, L = 20,
+                estimate_prior_variance = FALSE,
+                scaled_prior_variance = 0.05,
+                verbose = FALSE)
+```
+
+With the genotype matrix available, `susie_get_cs()` filters by
+purity:
+
+```{r}
+sets_purity <- susie_get_cs(fitted, X = X, coverage = 0.95)
+length(sets_purity$cs)
+```
+
+Without `X` or `Xcorr`, several poorly localized effects slip through:
+
+```{r}
+sets_noLD <- suppressMessages(susie_get_cs(fitted, coverage = 0.95))
+length(sets_noLD$cs)
+sapply(sets_noLD$cs, length)
+```
+
+`susie_get_cs_attainable()` recovers the purity-filtered result
+without using `X`:
+
+```{r}
+sets_attain <- susie_get_cs_attainable(fitted, coverage = 0.95)
+length(sets_attain$cs)
+```
+
+The two filters select the same effects:
+
+```{r}
+sets_purity$cs
+sets_attain$cs
+```
+
+## References
+
+Zhang, W., Najafabadi, H., Li, Y. (2023). SparsePro: An efficient
+fine-mapping method integrating summary statistics and functional
+annotations. *PLOS Genetics* **19**, e1011104.
+doi:10.1371/journal.pgen.1011104.
+
+## Session information
+
+```{r}
+sessionInfo()
+```

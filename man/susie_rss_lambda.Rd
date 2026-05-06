@@ -183,9 +183,10 @@ than \code{tol}.}
 a summary of the optimization settings, and refinement progress (if
 \code{refine = TRUE}) are printed to the console.}
 
-\item{track_fit}{If \code{track_fit = TRUE}, \code{trace}
-is also returned containing detailed information about the
-estimates at each iteration of the IBSS fitting procedure.}
+\item{track_fit}{If \code{track_fit = TRUE}, a compact
+\code{susie_track} object is returned in \code{trace}, containing
+alpha history, effect summaries and available diagnostics at each
+iteration of the IBSS fitting procedure.}
 
 \item{check_prior}{If \code{check_prior = TRUE}, it checks if the
 estimated prior variance becomes unreasonably large (comparing with

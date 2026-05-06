@@ -406,6 +406,82 @@ susie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
   }
 }
 
+#' @rdname susie_get_methods
+#'
+#' @description \code{susie_get_cs_attainable} returns credible sets after
+#'   a post-hoc filter based on \emph{attainable coverage} and per-effect
+#'   entropy. Use this as a fallback when no LD reference is available
+#'   for the standard purity filter in \code{susie_get_cs}.
+#'
+#' @param ethres Entropy threshold expressed as an effective number of
+#'   variables: an effect is dropped when its attainable-projection
+#'   entropy is at least \code{log(ethres)}. Defaults to
+#'   \code{max(100, 0.1 * p)} where \code{p} is the number of variables.
+#'
+#' @details For each effect \eqn{l}, the \emph{attainable coverage} is
+#'   computed by zeroing every entry of \code{res$alpha} that is not the
+#'   column maximum, then summing across variables. Intuitively, it is
+#'   the coverage effect \eqn{l} could attain if it did not have to
+#'   share probability mass with other effects. Effects with attainable
+#'   coverage at most \code{coverage}, or with attainable-projection
+#'   entropy at least \code{log(ethres)}, are dropped before delegating
+#'   to \code{susie_get_cs}. Any \code{X} or \code{Xcorr} passed through
+#'   \code{...} is ignored, since the procedure is intended for the
+#'   no-LD setting.
+#'
+#' @export
+#'
+susie_get_cs_attainable <- function(res, coverage = 0.95, ethres = NULL,
+                                    ...) {
+  p <- ncol(res$alpha)
+  if (is.null(ethres))
+    ethres <- max(100, 0.1 * p)
+
+  cs_entropy <- function(y) {
+    if (!any(y > 0)) return(Inf)
+    y <- y / sum(y)
+    -sum(y[y > 0] * log(y[y > 0]))
+  }
+
+  col_max <- apply(res$alpha, 2, max)
+  alpha_attainable <- res$alpha *
+    (res$alpha == matrix(col_max, nrow(res$alpha), p, byrow = TRUE))
+
+  coverage_attained <- rowSums(alpha_attainable)
+  entropy_vals <- apply(alpha_attainable, 1, cs_entropy)
+  keep_effects <- which(coverage_attained > coverage &
+                          entropy_vals < log(ethres))
+
+  if (length(keep_effects) == 0)
+    return(list(cs = NULL, coverage = NULL, requested_coverage = coverage))
+
+  res_filtered <- res
+  res_filtered$alpha <- res$alpha[keep_effects, , drop = FALSE]
+  if (is.numeric(res$V) && length(res$V) == nrow(res$alpha))
+    res_filtered$V <- res$V[keep_effects]
+
+  dot_args <- list(...)
+  dot_args$X <- NULL
+  dot_args$Xcorr <- NULL
+
+  out <- do.call(susie_get_cs,
+                 c(list(res_filtered, coverage = coverage), dot_args))
+
+  # Remap effect indices: susie_get_cs returned indices into res_filtered;
+  # translate them back to the original L positions.
+  if (!is.null(out$cs)) {
+    filtered_idx <- as.integer(sub("^L", "", names(out$cs)))
+    original_idx <- keep_effects[filtered_idx]
+    names(out$cs) <- paste0("L", original_idx)
+    if (!is.null(out$cs_index))
+      out$cs_index <- original_idx
+    if (!is.null(out$purity))
+      rownames(out$purity) <- paste0("L", original_idx)
+  }
+
+  out
+}
+
 #' @title Get Correlations Between CSs, using Variable with Maximum PIP From Each CS
 #'
 #' @description This function evaluates the correlation between single effect
