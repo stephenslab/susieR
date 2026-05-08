@@ -1135,7 +1135,8 @@ ss_mixture_constructor <- function(z, R = NULL, X = NULL, n,
       R_finite_diagnostics = R_finite_diagnostics,
       R_mismatch = R_mismatch,
       X_list_std = X_list, B_list = B_list,
-      K = K, panel_R = panel_R, omega_cache = omega_cache
+      K = K, panel_R = panel_R, omega_cache = omega_cache,
+      omega_init = omega_init
     ),
     class = c("ss_mixture", "ss")
   )

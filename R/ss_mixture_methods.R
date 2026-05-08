@@ -12,8 +12,9 @@
 #' @keywords internal
 compute_XtXv_mixture <- function(data, model, v) {
   # Use panel_R for accurate R*v (cov2cor-based, not standardize_X)
-  if (!is.null(model$omega) && !is.null(data$panel_R)) {
-    Rv <- Reduce("+", Map(function(w, R) w * (R %*% v), model$omega, data$panel_R))
+  if (!is.null(data$panel_R)) {
+    omega <- get_mixture_omega(data, model)
+    Rv <- Reduce("+", Map(function(w, R) w * (R %*% v), omega, data$panel_R))
     return(data$nm1 * as.vector(Rv))
   }
   # Fallback: data$X = sqrt(n-1)*X_meta_init
@@ -49,7 +50,7 @@ compute_residuals.ss_mixture <- function(data, params, model, l, ...) {
     v_g  <- max(sum(b_minus_l * XtXr_without_l), 0)
     xi_l <- XtXr_without_l^2 / nm1 + v_g
     lambda_bias <- if (is.null(model$lambda_bias)) 0 else model$lambda_bias
-    R_finite_B <- if (!is.null(model$R_finite_B)) model$R_finite_B else data$R_finite_B
+    R_finite_B <- get_current_R_finite_B(data, model)
     model$shat2_inflation <- 1 + (1 / R_finite_B + lambda_bias) *
                                   xi_l / model$sigma2
   }
@@ -83,7 +84,7 @@ update_model_variance.ss_mixture <- function(data, params, model) {
 
   # Omega M-step
   if (!is.null(data$K) && data$K > 1 && !isTRUE(model$omega_converged)) {
-    omega_cur <- if (!is.null(model$omega)) model$omega else rep(1 / data$K, data$K)
+    omega_cur <- get_mixture_omega(data, model)
 
     # Omega-objective ridge: small floor used ONLY inside the Eloglik
     # evaluator to stabilize log|sigma2*A(omega)| near rank-deficient
@@ -115,7 +116,7 @@ update_model_variance.ss_mixture <- function(data, params, model) {
       opt <- optimize_omega(eval_omega, omega_cur, data$K)
       model$omega <- opt$omega
       if (!is.null(data$R_finite_B) && !is.null(data$B_list))
-        model$R_finite_B <- 1 / sum(model$omega^2 / data$B_list)
+        model$R_finite_B <- get_current_R_finite_B(data, model)
       # Recompute XtXr with updated R(omega)
       b_bar <- colSums(model$alpha * model$mu)
       model$XtXr <- compute_XtXv_mixture(data, model, b_bar)

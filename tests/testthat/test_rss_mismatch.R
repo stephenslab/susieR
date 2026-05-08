@@ -431,3 +431,23 @@ test_that("eb works on lambda=0 multi-panel SS path", {
   expect_true(d$Q_art >= 0 && d$Q_art <= 1)
   expect_length(d$lambda_bias, 1)
 })
+
+test_that("eb_adaptive_init handles multi-panel X input", {
+  set.seed(21)
+  n <- 80
+  p <- 12
+  X1 <- matrix(rnorm(n * p), n, p)
+  X2 <- matrix(rnorm(n * p), n, p)
+  z <- rnorm(p)
+
+  fit <- susie_rss(z = z, X = list(X1, X2), n = 1000, L = 3,
+                   R_finite = TRUE, R_mismatch = "eb_adaptive_init",
+                   max_iter = 3, verbose = FALSE)
+  d <- fit$R_finite_diagnostics
+  expect_true(!is.null(d$R_mismatch_init))
+  expect_true(is.finite(d$R_mismatch_init$ld_coherence))
+  expect_true(d$R_mismatch_init$ld_coherence >= 0)
+  expect_true(d$R_mismatch_init$ld_coherence <= 1)
+  expect_length(d$lambda_bias, 1)
+  expect_length(d$B_corrected, 1)
+})
