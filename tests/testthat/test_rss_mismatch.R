@@ -157,6 +157,29 @@ test_that("R_mismatch = 'eb_force_init' initializes even with finite R_finite", 
   expect_equal(d$R_mismatch_trace[[1]]$phase, "init_ser")
 })
 
+test_that("R_mismatch = 'eb_adaptive_init' tempers SER initialization", {
+  set.seed(19)
+  p <- 20
+  n <- 1000
+  X <- matrix(rnorm(n * p), n, p)
+  R <- cor(X)
+  z <- rnorm(p)
+
+  fit <- susie_rss(z = z, R = R, n = n, L = 3,
+                   R_finite = 5000, R_mismatch = "eb_adaptive_init",
+                   max_iter = 2, track_fit = TRUE, verbose = FALSE)
+  d <- fit$R_finite_diagnostics
+  init <- d$R_mismatch_init
+  expect_true(!is.null(init))
+  expect_true(!is.null(d$Q_art))
+  expect_equal(d$R_mismatch_trace[[1]]$phase, "init_ser")
+  expect_true(is.finite(init$ld_coherence))
+  expect_true(init$ld_coherence >= 0 && init$ld_coherence <= 1)
+  expect_true(is.finite(init$lambda_bias))
+  expect_false("lambda_bias_raw" %in% names(init))
+  expect_false("B_corrected" %in% names(init))
+})
+
 test_that("R_mismatch = 'eb_no_init' skips SER-protected initialization", {
   set.seed(18)
   p <- 20
