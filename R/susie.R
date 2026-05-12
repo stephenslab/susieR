@@ -378,8 +378,7 @@ susie <- function(X, y, L = min(10, ncol(X)),
   prior_variance_grid     <- mp$prior_variance_grid
   mixture_weights         <- mp$mixture_weights
 
-  # Construct data and params objects (the constructor owns the
-  # n >= 2 * p hint pointing at compute_suff_stat() / susie_ss()).
+  # Construct data and params objects
   susie_objects <- individual_data_constructor(
     X, y, L, scaled_prior_variance, residual_variance,
     prior_weights, null_weight, standardize, intercept,
@@ -746,9 +745,6 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
   prior_variance_grid     <- mp$prior_variance_grid
   mixture_weights         <- mp$mixture_weights
 
-  # All input validation, max_iter default + hint, multi-panel dispatch,
-  # X->R conversion, and auto-switch convergence are owned by
-  # summary_stats_constructor.
   susie_objects <- summary_stats_constructor(
     z = z, R = R, X = X, n = n,
     bhat = bhat, shat = shat, var_y = var_y,
