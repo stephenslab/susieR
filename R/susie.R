@@ -743,158 +743,12 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
                       init_only = FALSE,
                       slot_prior = NULL) {
 
-  # Validate: exactly one of R or X must be provided
-  if (is.null(R) && is.null(X))
-    stop("Please provide either R (correlation matrix) or X (factor matrix).")
-  if (!is.null(R) && !is.null(X))
-    stop("Please provide either R or X, but not both.")
-  is_multi_panel <- (is.list(X) && !is.matrix(X)) ||
-                    (is.list(R) && !is.matrix(R))
-
-  R_mismatch <- match.arg(R_mismatch)
-  R_mismatch_method <- match.arg(R_mismatch_method)
-  if (is.null(max_iter)) {
-    max_iter <- 50
-    warning_message("Setting max_iter = 50 for the SuSiE RSS model because ",
-                    "slow convergence is often a sign of unstable summary-statistics ",
-                    "fitting. To disable this message, explicitly set max_iter = 50 ",
-                    "or another value in the susie_rss() call.",
-                    style = "hint")
-  }
-
-  if (!is.numeric(eig_delta_rel) || length(eig_delta_rel) != 1L ||
-      eig_delta_rel < 0)
-    stop("eig_delta_rel must be a single nonnegative numeric.")
-  if (!is.numeric(eig_delta_abs) || length(eig_delta_abs) != 1L ||
-      eig_delta_abs < 0)
-    stop("eig_delta_abs must be a single nonnegative numeric.")
-  if (!is.numeric(artifact_threshold) || length(artifact_threshold) != 1L ||
-      artifact_threshold < 0 || artifact_threshold > 1)
-    stop("artifact_threshold must be a single numeric in [0, 1].")
-  if (!is.numeric(R_sensitivity_threshold) ||
-      length(R_sensitivity_threshold) != 1L ||
-      !is.finite(R_sensitivity_threshold) ||
-      R_sensitivity_threshold < 0)
-    stop("R_sensitivity_threshold must be a single nonnegative finite numeric.")
-
-  # Resolve R_finite BEFORE any X -> R conversion.
-  R_finite_explicit_false <- identical(R_finite, FALSE)
-  if (isTRUE(R_finite) && is.null(X))
-    stop("R_finite = TRUE requires X input. When using precomputed R, ",
-         "provide the reference sample size explicitly.")
-  R_finite <- resolve_R_finite(R_finite, if (!is.null(X)) X else R,
-                               is_multi_panel)
-  # sigma^2 and lambda_bias both inflate the residual variance and are
-  # only weakly jointly identified, so sigma^2 is fixed when R_mismatch is
-  # active.
-  if (R_mismatch != "none" && isTRUE(estimate_residual_variance)) {
-    warning_message(
-      "R_mismatch = '", R_mismatch, "' is incompatible with ",
-      "estimate_residual_variance = TRUE; disabling sigma^2 estimation.",
-      style = "hint"
-    )
-    estimate_residual_variance <- FALSE
-  }
-
-  # Multi-panel: shared validation, PIP-switch, and per-panel sub-fit
-  # machinery. The R-input and X-input branches differ only in (i) what
-  # "valid" means for an element and (ii) whether the panels need
-  # centering. They share everything else: the n requirement, the
-  # PIP-convergence switch, and the per-panel single-panel sub-fits used
-  # to pick the best mixture init via attr(., ".init_panel").
-  if (is_multi_panel) {
-    if (is.null(n))
-      stop("Sample size 'n' is required for multi-panel mode.")
-    if (convergence_method[1] == "elbo") {
-      convergence_method <- force_pip(
-        "multi-panel mixture weight updates change R(omega) each ",
-        "iteration, which prevents ELBO monotonicity")
-    }
-
-    # Capture the user's call frame here so the per-panel recursive call
-    # can resolve any unevaluated arguments in the original caller env.
-    user_env <- parent.frame()
-    sp_call <- match.call()
-    sp_call[[1]] <- quote(susie_rss)
-    sp_call$verbose <- FALSE
-    sp_call$s_init <- NULL
-    sp_call$model_init <- NULL
-
-    # Run K single-panel sub-fits and return them along with the index of
-    # the highest-ELBO panel. `panel_arg` selects which call slot to
-    # substitute (`"R"` or `"X"`).
-    pick_init_panel <- function(panels, panel_arg) {
-      fits <- lapply(seq_along(panels), function(k) {
-        sp_call[[panel_arg]] <- panels[[k]]
-        sp_call$R_finite <- if (is.null(R_finite)) NULL else R_finite[k]
-        tryCatch(eval(sp_call, user_env), error = function(e) NULL)
-      })
-      elbos <- vapply(fits, function(f)
-        if (!is.null(f)) tail(f$elbo, 1) else -Inf, numeric(1))
-      list(idx = which.max(elbos), fits = fits, elbos = elbos)
-    }
-
-    if (!is.null(R)) {
-      for (k in seq_along(R)) {
-        if (!is.matrix(R[[k]]) || !is.numeric(R[[k]]))
-          stop("Each element of R list must be a numeric matrix.")
-        if (nrow(R[[k]]) != ncol(R[[k]]))
-          stop("Each element of R list must be square.")
-      }
-      sp <- pick_init_panel(R, "R")
-      attr(R, ".init_panel") <- sp$idx
-    } else {
-      for (k in seq_along(X)) {
-        if (!is.matrix(X[[k]]) || !is.numeric(X[[k]]))
-          stop("Each element of X list must be a numeric matrix.")
-      }
-      # Center each panel before sub-fits so that crossprod(Xk) gives a
-      # covariance-like quantity, matching the ss_mixture_constructor's
-      # downstream expectation.
-      X <- lapply(X, function(Xk) {
-        cm <- colMeans(Xk)
-        if (max(abs(cm)) > 1e-10 * max(abs(Xk)))
-          Xk <- t(t(Xk) - cm)
-        Xk
-      })
-      sp <- pick_init_panel(X, "X")
-      attr(X, ".init_panel") <- sp$idx
-    }
-    sp_fits <- sp$fits
-    sp_elbos <- sp$elbos
-  }
-
-  # Handle single-panel X input.
-  if (!is.null(X) && !is_multi_panel) {
-    if (!is.matrix(X) || !is.numeric(X))
-      stop("X must be a numeric matrix.")
-
-    # Center columns of X so that crossprod gives covariance-like quantities.
-    cm <- colMeans(X)
-    if (max(abs(cm)) > 1e-10 * max(abs(X)))
-      X <- t(t(X) - cm)
-
-    # Features incompatible with the low-rank path: fall back to forming R
-    needs_R <- !is.null(var_y) && !is.null(shat)
-    if (needs_R && nrow(X) < ncol(X)) {
-      warning_message(
-        "X is provided as a low-rank factor matrix, but var_y/shat ",
-        "requires the full correlation matrix R. Forming ",
-        "R = cov2cor(crossprod(X)/nrow(X)) and using the standard path.",
-        style = "hint")
-    }
-
-    # If nrow(X) >= ncol(X) or features require R, form R and use standard path
-    if (nrow(X) >= ncol(X) || needs_R) {
-      R <- safe_cor(X)
-      X <- NULL
-    }
-  }
-
   # Validate method arguments
   unmappable_effects       <- match.arg(unmappable_effects)
   estimate_residual_method <- match.arg(estimate_residual_method)
   convergence_method       <- match.arg(convergence_method)
+  R_mismatch               <- match.arg(R_mismatch)
+  R_mismatch_method        <- match.arg(R_mismatch_method)
   mp <- resolve_mixture_prior(estimate_prior_method, estimate_prior_variance,
                               prior_variance_grid, mixture_weights)
   estimate_prior_method   <- mp$estimate_prior_method
@@ -902,16 +756,9 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
   prior_variance_grid     <- mp$prior_variance_grid
   mixture_weights         <- mp$mixture_weights
 
-  # Auto-switch to PIP convergence when the SER likelihood is dynamically
-  # inflated by finite-reference R uncertainty or R-mismatch correction.
-  if ((!is.null(R_finite) || R_mismatch != "none") &&
-      convergence_method[1] == "elbo") {
-    convergence_method <- force_pip(
-      "R uncertainty inflation modifies per-variant SER ",
-      "likelihoods, which prevents a consistent model-level ELBO")
-  }
-
-  # Construct data and params objects with ALL parameters
+  # All input validation, max_iter default + hint, multi-panel dispatch,
+  # X->R conversion, and auto-switch convergence are owned by
+  # summary_stats_constructor.
   susie_objects <- summary_stats_constructor(
     z = z, R = R, X = X, n = n,
     bhat = bhat, shat = shat, var_y = var_y,
@@ -936,7 +783,7 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
     verbose = verbose, track_fit = track_fit, check_input = check_input,
     check_prior = check_prior,
     n_purity = n_purity, r_tol = r_tol, refine = refine,
-    R_finite = if (R_finite_explicit_false) FALSE else R_finite,
+    R_finite = R_finite,
     R_mismatch = R_mismatch,
     R_mismatch_method = R_mismatch_method,
     eig_delta_rel = eig_delta_rel, eig_delta_abs = eig_delta_abs,
@@ -957,19 +804,20 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
   # Run main SuSiE algorithm
   model <- susie_workhorse(susie_objects$data, susie_objects$params)
 
-  # Store single-panel fits inside the mixture result so users can compare.
-  # Always return the mixture result; users can choose a single-panel fit
-  # from model$single_panel_fits if they prefer.
-  if (exists("sp_fits") && !is.null(sp_fits)) {
+  # Attach multi-panel metadata when the constructor ran sub-fits to pick
+  # the mixture-init panel. Always return the mixture result; users can
+  # pick a single-panel fit from `model$single_panel_fits` if they prefer.
+  mp_meta <- susie_objects$multi_panel_meta
+  if (!is.null(mp_meta)) {
     if (verbose) {
       mix_elbo <- tail(model$elbo, 1)
-      best_k <- which.max(sp_elbos)
+      best_k <- which.max(mp_meta$elbos)
       omega_str <- paste(round(model$omega_weights, 3), collapse = ", ")
       message(sprintf(
         "Multi-panel: mixture ELBO = %.2f (omega = %s), best single-panel ELBO = %.2f (panel %d).",
-        mix_elbo, omega_str, sp_elbos[best_k], best_k))
+        mix_elbo, omega_str, mp_meta$elbos[best_k], best_k))
     }
-    model$single_panel_fits <- sp_fits
+    model$single_panel_fits <- mp_meta$fits
   }
 
   return(model)
@@ -1063,24 +911,6 @@ susie_rss_lambda <- function(z = NULL, R = NULL, n = NULL,
                              slot_prior = NULL) {
   if (missing(lambda))
     stop("susie_rss_lambda() requires lambda.")
-  if (is.null(R) && is.null(X))
-    stop("Please provide either R (correlation matrix) or X (factor matrix).")
-  if (!is.null(R) && !is.null(X))
-    stop("Please provide either R or X, but not both.")
-  if (is.list(R) && !is.matrix(R))
-    stop("susie_rss_lambda() accepts only a single R matrix.")
-  if (is.list(X) && !is.matrix(X))
-    stop("susie_rss_lambda() accepts only a single X matrix.")
-  if (!identical(estimate_residual_method, "MLE"))
-    stop("susie_rss_lambda() supports estimate_residual_method = \"MLE\" only.")
-  if (is.null(max_iter)) {
-    max_iter <- 50
-    warning_message("Setting max_iter = 50 for the SuSiE RSS-lambda model because ",
-                    "slow convergence is often a sign of unstable summary-statistics ",
-                    "fitting. To disable this message, explicitly set max_iter = 50 ",
-                    "or another value in the susie_rss_lambda() call.",
-                    style = "hint")
-  }
 
   convergence_method       <- match.arg(convergence_method)
   mp <- resolve_mixture_prior(estimate_prior_method, estimate_prior_variance,

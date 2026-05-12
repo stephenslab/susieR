@@ -1655,6 +1655,165 @@ test_that("summary_stats_constructor rejects MAF with wrong length", {
   )
 })
 
+test_that("summary_stats_constructor validates R-mismatch diagnostic params", {
+  p <- 30
+  z <- rnorm(p)
+  R <- diag(p)
+
+  # eig_delta_rel: must be a single nonnegative numeric
+  expect_error(
+    summary_stats_constructor(z = z, R = R, n = 100, eig_delta_rel = -1),
+    "eig_delta_rel"
+  )
+  expect_error(
+    summary_stats_constructor(z = z, R = R, n = 100,
+                              eig_delta_rel = c(0.1, 0.2)),
+    "eig_delta_rel"
+  )
+
+  # eig_delta_abs: must be a single nonnegative numeric
+  expect_error(
+    summary_stats_constructor(z = z, R = R, n = 100, eig_delta_abs = -0.5),
+    "eig_delta_abs"
+  )
+
+  # artifact_threshold: must be a single numeric in [0, 1]
+  expect_error(
+    summary_stats_constructor(z = z, R = R, n = 100,
+                              artifact_threshold = -0.1),
+    "artifact_threshold"
+  )
+  expect_error(
+    summary_stats_constructor(z = z, R = R, n = 100,
+                              artifact_threshold = 1.1),
+    "artifact_threshold"
+  )
+
+  # R_sensitivity_threshold: must be a single nonnegative finite numeric
+  expect_error(
+    summary_stats_constructor(z = z, R = R, n = 100,
+                              R_sensitivity_threshold = -1),
+    "R_sensitivity_threshold"
+  )
+  expect_error(
+    summary_stats_constructor(z = z, R = R, n = 100,
+                              R_sensitivity_threshold = Inf),
+    "R_sensitivity_threshold"
+  )
+})
+
+test_that("summary_stats_constructor rejects when both R and X are provided", {
+  p <- 30
+  z <- rnorm(p)
+  R <- diag(p)
+  X <- matrix(rnorm(100 * p), 100, p)
+
+  expect_error(
+    summary_stats_constructor(z = z, R = R, X = X, n = 100),
+    "Please provide either R or X, but not both"
+  )
+})
+
+test_that("summary_stats_constructor rejects when neither R nor X is provided", {
+  z <- rnorm(30)
+  expect_error(
+    summary_stats_constructor(z = z, n = 100),
+    "Please provide either R \\(correlation matrix\\) or X \\(factor matrix\\)"
+  )
+})
+
+test_that("summary_stats_constructor disables sigma^2 estimation when R_mismatch is active", {
+  set.seed(411)
+  p <- 30
+  z <- rnorm(p)
+  R <- diag(p)
+
+  expect_message(
+    result <- summary_stats_constructor(
+      z = z, R = R, n = 500,
+      R_mismatch = "eb_no_init",
+      estimate_residual_variance = TRUE,
+      verbose = FALSE
+    ),
+    "incompatible with"
+  )
+  expect_false(result$params$estimate_residual_variance)
+})
+
+test_that("summary_stats_constructor converts X to R when nrow(X) >= ncol(X)", {
+  set.seed(412)
+  n <- 100; p <- 30
+  X <- scale(matrix(rnorm(n * p), n, p), TRUE, TRUE)
+  z <- rnorm(p)
+
+  result <- summary_stats_constructor(z = z, X = X, n = n)
+  # Full-rank X path produces an `ss` data class (same as R path).
+  expect_s3_class(result$data, "ss")
+})
+
+test_that("summary_stats_constructor keeps low-rank X without conversion", {
+  set.seed(413)
+  n <- 30; p <- 80
+  X <- scale(matrix(rnorm(n * p), n, p), TRUE, TRUE)
+  z <- rnorm(p)
+
+  result <- summary_stats_constructor(z = z, X = X, n = n)
+  # Low-rank X with no var_y/shat keeps the X path.
+  expect_true(!is.null(result))
+})
+
+test_that("summary_stats_constructor handles multi-panel R input via sub-fits", {
+  set.seed(414)
+  p <- 25
+  z <- rnorm(p)
+  Ra <- cor(matrix(rnorm(500 * p), 500, p))
+  Rb <- cor(matrix(rnorm(500 * p), 500, p))
+
+  result <- summary_stats_constructor(
+    z = z, R = list(Ra, Rb), n = 500, L = 5, max_iter = 20, verbose = FALSE
+  )
+  expect_true(!is.null(result))
+  # Multi-panel constructor returns the ss_mixture result with sub-fit metadata.
+  expect_true(!is.null(result$multi_panel_meta))
+  expect_length(result$multi_panel_meta$fits, 2)
+  expect_length(result$multi_panel_meta$elbos, 2)
+})
+
+test_that("susie_rss with init_only = TRUE works on multi-panel input", {
+  # Regression test: previously crashed in vapply because the recursive
+  # sub-fits inherited init_only = TRUE and returned no $elbo. After the
+  # refactor, the constructor's sub-fit helper always runs the workhorse.
+  set.seed(415)
+  p <- 25
+  z <- rnorm(p)
+  Ra <- cor(matrix(rnorm(500 * p), 500, p))
+  Rb <- cor(matrix(rnorm(500 * p), 500, p))
+
+  expect_no_error(
+    res <- susie_rss(z = z, R = list(Ra, Rb), n = 500, L = 5,
+                     init_only = TRUE, max_iter = 20, verbose = FALSE)
+  )
+  expect_true(!is.null(res$multi_panel_meta))
+})
+
+test_that("ss_mixture_constructor accepts init_panel parameter explicitly", {
+  set.seed(416)
+  p <- 25
+  z <- rnorm(p)
+  Ra <- cor(matrix(rnorm(500 * p), 500, p))
+  Rb <- cor(matrix(rnorm(500 * p), 500, p))
+
+  res_default <- ss_mixture_constructor(
+    z = z, R = list(Ra, Rb), n = 500, L = 5, max_iter = 5, verbose = FALSE
+  )
+  res_explicit <- ss_mixture_constructor(
+    z = z, R = list(Ra, Rb), n = 500, L = 5, max_iter = 5, verbose = FALSE,
+    init_panel = 2
+  )
+  expect_true(!is.null(res_default))
+  expect_true(!is.null(res_explicit))
+})
+
 test_that("summary_stats_constructor handles shat and var_y for original scale effects", {
   p <- 50
   bhat <- rnorm(p)

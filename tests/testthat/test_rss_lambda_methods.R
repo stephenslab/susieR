@@ -938,6 +938,17 @@ test_that("susie_rss_lambda excludes R_finite, R_mismatch, and multi-panel", {
                      max_iter = 2, verbose = FALSE),
     "single X matrix"
   )
+  expect_error(
+    susie_rss_lambda(z = z, R = list(R, R), n = n, L = 3, lambda = 0.1,
+                     max_iter = 2, verbose = FALSE),
+    "single R matrix"
+  )
+  expect_error(
+    susie_rss_lambda(z = z, R = R, n = n, L = 3, lambda = 0.1,
+                     estimate_residual_method = "MoM",
+                     max_iter = 2, verbose = FALSE),
+    "MLE"
+  )
 })
 
 # =============================================================================
