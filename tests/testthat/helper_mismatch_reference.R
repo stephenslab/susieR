@@ -3,13 +3,15 @@
 # =============================================================================
 #
 # These functions compare the current susie_rss / susie_rss_lambda
-# implementation against a pinned reference commit on
-# alexmccreight/susieR@2a86b39 ("attainable coverage + vignette").
+# implementation against the upstream gold-standard commit
+# stephenslab/susieR@f110692 ("code refactor"), which is the head of
+# the upstream master branch at the time of the susie_rss thin-wrapper
+# refactor and includes the R_mismatch = "eb_adaptive_init" mode.
 #
-# The reference is the pre-refactor state of the same codebase used to
-# verify that the `susie_rss` thin-wrapper refactor preserves
-# machine-precision results across the RSS-mismatch surface
-# (R_mismatch, R_finite, multi-panel, susie_rss_lambda).
+# The contract: the refactored thin-wrapper susie_rss produces
+# machine-precision identical output to the upstream gold-standard
+# implementation across the full RSS-mismatch surface (R_mismatch,
+# R_finite, multi-panel, susie_rss_lambda).
 #
 # This helper parallels helper_reference.R and helper_nig_reference.R
 # but targets a different reference commit. It uses prefixed names
@@ -20,8 +22,8 @@ library(pkgload)
 library(rprojroot)
 
 # Reference package details for the RSS-mismatch comparison
-.mismatch_ref_repo   <- "alexmccreight/susieR"
-.mismatch_ref_commit <- "2a86b39"
+.mismatch_ref_repo   <- "stephenslab/susieR"
+.mismatch_ref_commit <- "f110692"
 
 # Cached environments (separate from other helpers' globals)
 .mismatch_ref_env         <- NULL

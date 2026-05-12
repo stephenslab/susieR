@@ -125,7 +125,7 @@ test_that("vignette full: susie_rss with R_mismatch = 'eb' only matches referenc
        n = n, bhat = bhat, shat = shat)
 }
 
-for (rmm in c("eb", "eb_no_init", "eb_force_init")) {
+for (rmm in c("eb", "eb_no_init", "eb_force_init", "eb_adaptive_init")) {
   for (rfin_label in c("NULL", "FALSE", "5000")) {
     rfin_val <- switch(rfin_label, "NULL" = NULL, "FALSE" = FALSE,
                        "5000" = 5000)
@@ -196,6 +196,16 @@ test_that("multi-panel R with R_finite vector matches reference", {
   set.seed(606); Rb <- cor(matrix(rnorm(500 * 80), 500, 80))
   args <- list(z = d$z, R = list(d$R, Rb), n = d$n, L = 10,
                R_finite = c(5000, 4000), R_mismatch = "eb",
+               max_iter = 30)
+  compare_to_mismatch_reference("susie_rss", args)
+})
+
+test_that("multi-panel R with R_mismatch=eb_adaptive_init matches reference", {
+  skip_if_no_mismatch_reference()
+  d <- .mismatch_make_data()
+  set.seed(606); Rb <- cor(matrix(rnorm(500 * 80), 500, 80))
+  args <- list(z = d$z, R = list(d$R, Rb), n = d$n, L = 10,
+               R_mismatch = "eb_adaptive_init",
                max_iter = 30)
   compare_to_mismatch_reference("susie_rss", args)
 })
