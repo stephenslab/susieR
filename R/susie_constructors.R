@@ -124,6 +124,20 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
     stop("X contains NA values.")
   }
 
+  # When n >> p, holding X in memory at every IBSS iteration is wasteful;
+  # nudge the user toward the sufficient-statistics path. The hint is
+  # advisory only and does not gate on `verbose` (matches the style of the
+  # constructor's other hints, e.g. the susie_rss max_iter default).
+  if (is.matrix(X) && nrow(X) >= 2 * ncol(X)) {
+    warning_message(
+      "nrow(X) = ", nrow(X), " >= 2 * ncol(X) = ", 2 * ncol(X), ". ",
+      "Consider precomputing sufficient statistics with compute_suff_stat() ",
+      "and fitting with susie_ss() instead -- this avoids holding X in ",
+      "memory at every iteration and lets you reuse XtX across multiple y.",
+      style = "hint"
+    )
+  }
+
   # Constant column check for regular matrix
   if (is.null(attr(X, "matrix.type")) || attr(X, "matrix.type") != "tfmatrix") {
     col_vars <- apply(X, 2, var)

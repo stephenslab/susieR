@@ -378,18 +378,8 @@ susie <- function(X, y, L = min(10, ncol(X)),
   prior_variance_grid     <- mp$prior_variance_grid
   mixture_weights         <- mp$mixture_weights
 
-  # See vignette "finemapping_summary_statistics" for the recommended workflow
-  if (verbose && nrow(X) >= 2 * ncol(X)) {
-    warning_message(
-      "nrow(X) = ", nrow(X), " >= 2 * ncol(X) = ", 2 * ncol(X), ". ",
-      "Consider precomputing sufficient statistics with compute_suff_stat() ",
-      "and fitting with susie_ss() instead -- this avoids holding X in ",
-      "memory at every iteration and lets you reuse XtX across multiple y.",
-      style = "hint"
-    )
-  }
-
-  # Construct data and params objects
+  # Construct data and params objects (the constructor owns the
+  # n >= 2 * p hint pointing at compute_suff_stat() / susie_ss()).
   susie_objects <- individual_data_constructor(
     X, y, L, scaled_prior_variance, residual_variance,
     prior_weights, null_weight, standardize, intercept,
