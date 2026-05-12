@@ -133,13 +133,14 @@ compute_residuals.ss <- function(data, params, model, l, ...) {
   b_minus_l <- colSums(sw * model$alpha * model$mu) - sw_l * model$alpha[l, ] * model$mu[l, ]
 
   if (params$unmappable_effects == "inf") {
-    # SuSiE-inf: Omega-weighted residuals
-    omega_res <- compute_omega_quantities(data, model$tau2, model$sigma2)
-    XtOmegay <- data$eigen_vectors %*% (data$VtXty / omega_res$omega_var)
-    XtOmegaXb <- data$eigen_vectors %*% ((t(data$eigen_vectors) %*% b_minus_l) * data$eigen_values / omega_res$omega_var)
+    # SuSiE-inf: Omega-weighted residuals.  model$XtOmegay, model$omega_var,
+    # and model$predictor_weights (= diagXtOmegaX) are cached at iter
+    # boundaries; no recompute here.
+    XtOmegaXb <- as.vector(data$eigen_vectors %*%
+                             ((crossprod(data$eigen_vectors, b_minus_l)) *
+                                data$eigen_values / model$omega_var))
 
-    model$residuals         <- XtOmegay - XtOmegaXb
-    model$predictor_weights <- omega_res$diagXtOmegaX
+    model$residuals         <- model$XtOmegay - XtOmegaXb
     model$residual_variance <- 1   # Already incorporated in Omega
 
     # R inflation uses standard (non-Omega) quantities
@@ -444,10 +445,10 @@ update_fitted_values.ss <- function(data, params, model, l, ...) {
 #' @keywords internal
 update_variance_components.ss <- function(data, params, model, ...) {
   if (params$unmappable_effects == "inf") {
-    # Calculate omega
+    # Calculate omega.  model$predictor_weights == diagXtOmegaX is cached at
+    # iter boundaries; no recompute needed.
     L         <- nrow(model$alpha)
-    omega_res <- compute_omega_quantities(data, model$tau2, model$sigma2)
-    omega     <- matrix(rep(omega_res$diagXtOmegaX, L), nrow = L, ncol = data$p, byrow = TRUE) +
+    omega     <- matrix(rep(model$predictor_weights, L), nrow = L, ncol = data$p, byrow = TRUE) +
       matrix(rep(1 / model$V, data$p), nrow = L, ncol = data$p, byrow = FALSE)
 
     # Compute theta for infinitesimal effects.

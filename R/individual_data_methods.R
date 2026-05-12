@@ -117,23 +117,24 @@ compute_residuals.individual <- function(data, params, model, l, ...) {
     # SuSiE-inf: Omega-weighted residuals computed in eigenspace.
     # The full b_minus_l is built from (alpha, mu) directly here since
     # fitted_without_l (n-space) is not maintained on the inf path.
+    # model$XtOmegay, model$omega_var, model$predictor_weights are cached
+    # at iter boundaries.
     sw <- if (!is.null(model$slot_weights)) model$slot_weights else rep(1, nrow(model$alpha))
     b_minus_l <- colSums(sw * model$alpha * model$mu) - sw_l * model$alpha[l, ] * model$mu[l, ]
 
-    omega_res <- compute_omega_quantities(data, model$tau2, model$sigma2)
-    XtOmegay  <- as.vector(data$eigen_vectors %*%
-                             (data$VtXty / omega_res$omega_var))
-    XtOmegaXb <- as.vector(data$eigen_vectors %*%
-                             ((crossprod(data$eigen_vectors, b_minus_l)) *
-                                data$eigen_values / omega_res$omega_var))
+    # Compute V' b_minus_l once; reused for XtOmegaXb (Omega-weighted) and
+    # the inflation-tail XtXr_without_l (un-weighted).  Saves one O(pr)
+    # crossprod per SER step.
+    Vtb_minus_l <- as.vector(crossprod(data$eigen_vectors, b_minus_l))
 
-    model$residuals         <- XtOmegay - XtOmegaXb
-    model$predictor_weights <- omega_res$diagXtOmegaX
+    XtOmegaXb <- as.vector(data$eigen_vectors %*%
+                             (Vtb_minus_l * data$eigen_values / model$omega_var))
+    model$residuals         <- model$XtOmegay - XtOmegaXb
     model$residual_variance <- 1   # Already incorporated in Omega
 
-    # R inflation uses standard (non-Omega) quantities; use the SVD-based
-    # (scaled X)'(scaled X) operator to match data$Xty's standardization.
-    XtXr_without_l <- compute_XtXv_eigen(data, b_minus_l)
+    # R inflation uses standard (non-Omega) quantities.
+    XtXr_without_l <- as.vector(data$eigen_vectors %*%
+                                  (data$eigen_values * Vtb_minus_l))
     r_vec <- data$Xty - XtXr_without_l
     infl_state <- compute_shat2_inflation(data, model, XtXr_without_l,
                                           b_minus_l, r_vec)
@@ -396,9 +397,9 @@ update_fitted_values.individual <- function(data, params, model, l, ...) {
 update_variance_components.individual <- function(data, params, model, ...) {
   if (params$unmappable_effects == "inf") {
     # SuSiE-inf: identical math to update_variance_components.ss; all eigenspace.
+    # model$predictor_weights == diagXtOmegaX is cached at iter boundaries.
     L         <- nrow(model$alpha)
-    omega_res <- compute_omega_quantities(data, model$tau2, model$sigma2)
-    omega     <- matrix(rep(omega_res$diagXtOmegaX, L), nrow = L, ncol = data$p, byrow = TRUE) +
+    omega     <- matrix(rep(model$predictor_weights, L), nrow = L, ncol = data$p, byrow = TRUE) +
       matrix(rep(1 / model$V, data$p), nrow = L, ncol = data$p, byrow = FALSE)
 
     theta <- compute_theta_blup(data, model)

@@ -338,7 +338,8 @@ get_objective.default <- function(data, params, model) {
       model$alpha, model$mu, omega, model$lbf,
       model$sigma2, model$tau2, data$n, data$p,
       data$eigen_vectors, data$eigen_values,
-      data$VtXty, data$yty
+      data$VtXty, data$yty,
+      eigen_vectors_sq = data$eigen_vectors_sq
     )
   } else if (params$use_NIG && nrow(model$alpha) == 1) {
     objective <- model$marginal_loglik[1]
