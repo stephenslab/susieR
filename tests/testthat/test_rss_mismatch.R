@@ -157,6 +157,29 @@ test_that("R_mismatch = 'eb_force_init' initializes even with finite R_finite", 
   expect_equal(d$R_mismatch_trace[[1]]$phase, "init_ser")
 })
 
+test_that("R_mismatch = 'eb_adaptive_init' tempers SER initialization", {
+  set.seed(19)
+  p <- 20
+  n <- 1000
+  X <- matrix(rnorm(n * p), n, p)
+  R <- cor(X)
+  z <- rnorm(p)
+
+  fit <- susie_rss(z = z, R = R, n = n, L = 3,
+                   R_finite = 5000, R_mismatch = "eb_adaptive_init",
+                   max_iter = 2, track_fit = TRUE, verbose = FALSE)
+  d <- fit$R_finite_diagnostics
+  init <- d$R_mismatch_init
+  expect_true(!is.null(init))
+  expect_true(!is.null(d$Q_art))
+  expect_equal(d$R_mismatch_trace[[1]]$phase, "init_ser")
+  expect_true(is.finite(init$ld_coherence))
+  expect_true(init$ld_coherence >= 0 && init$ld_coherence <= 1)
+  expect_true(is.finite(init$lambda_bias))
+  expect_false("lambda_bias_raw" %in% names(init))
+  expect_false("B_corrected" %in% names(init))
+})
+
 test_that("R_mismatch = 'eb_no_init' skips SER-protected initialization", {
   set.seed(18)
   p <- 20
@@ -407,4 +430,24 @@ test_that("eb works on lambda=0 multi-panel SS path", {
   expect_true(!is.null(d$Q_art))
   expect_true(d$Q_art >= 0 && d$Q_art <= 1)
   expect_length(d$lambda_bias, 1)
+})
+
+test_that("eb_adaptive_init handles multi-panel X input", {
+  set.seed(21)
+  n <- 80
+  p <- 12
+  X1 <- matrix(rnorm(n * p), n, p)
+  X2 <- matrix(rnorm(n * p), n, p)
+  z <- rnorm(p)
+
+  fit <- susie_rss(z = z, X = list(X1, X2), n = 1000, L = 3,
+                   R_finite = TRUE, R_mismatch = "eb_adaptive_init",
+                   max_iter = 3, verbose = FALSE)
+  d <- fit$R_finite_diagnostics
+  expect_true(!is.null(d$R_mismatch_init))
+  expect_true(is.finite(d$R_mismatch_init$ld_coherence))
+  expect_true(d$R_mismatch_init$ld_coherence >= 0)
+  expect_true(d$R_mismatch_init$ld_coherence <= 1)
+  expect_length(d$lambda_bias, 1)
+  expect_length(d$B_corrected, 1)
 })

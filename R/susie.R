@@ -626,8 +626,10 @@ susie_ss <- function(XtX, Xty, yty, n,
 #'   updates the region-level variance component after each IBSS sweep. With
 #'   finite \code{R_finite}, the finite-reference component already supplies
 #'   early protection, so \code{"eb"} skips the initializer. \code{"eb_force_init"}
-#'   always uses the one-SER initializer, and \code{"eb_no_init"} always starts
-#'   from \code{lambda = 0}; these are mainly useful as diagnostic modes. All
+#'   always uses the one-SER initializer. \code{"eb_adaptive_init"} uses the
+#'   same initializer but tempers it by the SER posterior LD coherence,
+#'   \eqn{\alpha^T(R \circ R)\alpha}. \code{"eb_no_init"} always starts
+#'   from \code{lambda = 0}. These are mainly useful as diagnostic modes. All
 #'   EB modes report a QC score (\code{Q_art}) that extends the Zou et al.
 #'   (2022) column-space check from the input summary vector to the fitted
 #'   residual after correction. They warn when that residual still projects
@@ -730,7 +732,7 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
                       r_tol = 1e-8,
                       refine = FALSE,
                       R_finite = NULL,
-                      R_mismatch = c("none", "eb", "eb_force_init", "eb_no_init"),
+                      R_mismatch = c("none", "eb", "eb_force_init", "eb_adaptive_init", "eb_no_init"),
                       R_mismatch_method = c("mle", "map"),
                       eig_delta_rel = 1e-3,
                       eig_delta_abs = 0,

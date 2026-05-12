@@ -215,6 +215,38 @@ compute_R_finite_diagnostics <- function(X = NULL, R = NULL, B, p,
   )
 }
 
+# Resolve the current mixture weights for ss_mixture objects. During
+# initialization model$omega may not yet exist, so fall back to the constructor's
+# initial omega rather than an unrelated uniform mixture.
+#' @keywords internal
+#' @noRd
+get_mixture_omega <- function(data, model) {
+  if (!inherits(data, "ss_mixture") || is.null(data$K))
+    return(NULL)
+  omega <- if (!is.null(model$omega)) model$omega else data$omega_init
+  if (is.null(omega))
+    omega <- rep(1 / data$K, data$K)
+  omega <- as.numeric(omega)
+  if (length(omega) != data$K || any(!is.finite(omega)))
+    omega <- rep(1 / data$K, data$K)
+  omega[omega < 0] <- 0
+  if (sum(omega) <= 0)
+    omega <- rep(1 / data$K, data$K)
+  omega / sum(omega)
+}
+
+# Current finite reference size for ss_mixture uses the same omega as the
+# current LD mixture, B_eff(omega) = 1 / sum_k omega_k^2 / B_k.
+#' @keywords internal
+#' @noRd
+get_current_R_finite_B <- function(data, model) {
+  if (inherits(data, "ss_mixture") && !is.null(data$B_list)) {
+    omega <- get_mixture_omega(data, model)
+    return(1 / sum(omega^2 / data$B_list))
+  }
+  if (!is.null(model$R_finite_B)) model$R_finite_B else data$R_finite_B
+}
+
 # =============================================================================
 # 1-D ESTIMATOR FOR lambda_bias
 # =============================================================================
@@ -295,7 +327,7 @@ estimate_lambda_bias <- function(r, s, sigma2, R_finite_B, method,
 # per-variable inflation vector.
 #' @keywords internal
 compute_shat2_inflation <- function(data, model, XtXr_without_l, b_minus_l, r) {
-  R_finite_B <- if (!is.null(model$R_finite_B)) model$R_finite_B else data$R_finite_B
+  R_finite_B <- get_current_R_finite_B(data, model)
   if (is.null(R_finite_B) ||
       model$sigma2 <= .Machine$double.eps) {
     return(NULL)
@@ -350,7 +382,7 @@ apply_inflation_state <- function(model, infl_state) {
 compute_R_mismatch_state <- function(data, params, model, phase = "sweep") {
   R_mismatch <- if (!is.null(params$R_mismatch)) params$R_mismatch else "none"
   if (R_mismatch == "none") return(model)
-  R_finite_B <- if (!is.null(model$R_finite_B)) model$R_finite_B else data$R_finite_B
+  R_finite_B <- get_current_R_finite_B(data, model)
   if (is.null(R_finite_B) || !is.finite(model$sigma2) ||
       model$sigma2 <= .Machine$double.eps)
     return(model)
@@ -449,14 +481,15 @@ compute_R_mismatch_state <- function(data, params, model, phase = "sweep") {
 #' the variance component is estimated. For R_mismatch = "eb", initialize only
 #' in the B = Inf limit, where no finite-reference component is available for
 #' early protection. R_mismatch = "eb_force_init" always initializes this way;
-#' R_mismatch = "eb_no_init" always skips it.
+#' R_mismatch = "eb_adaptive_init" uses the same initializer but tempers it by
+#' the SER posterior LD coherence; R_mismatch = "eb_no_init" always skips it.
 #'
 #' @keywords internal
 #' @noRd
 initialize_R_mismatch <- function(data, params, model) {
   R_mismatch <- if (!is.null(params$R_mismatch)) params$R_mismatch else "none"
   R_finite_B <- if (!is.null(model$R_finite_B)) model$R_finite_B else data$R_finite_B
-  should_init <- R_mismatch == "eb_force_init" ||
+  should_init <- R_mismatch %in% c("eb_force_init", "eb_adaptive_init") ||
                  (R_mismatch == "eb" && is.infinite(R_finite_B))
   if (!should_init || !inherits(data, c("ss", "ss_mixture")) ||
       nrow(model$alpha) < 1)
@@ -465,15 +498,53 @@ initialize_R_mismatch <- function(data, params, model) {
   model <- single_effect_update(data, params, model, 1L)
   model$R_mismatch_ser_model <- make_R_mismatch_ser_model(data, params, model, 1L)
   model <- compute_R_mismatch_state(data, params, model, phase = "init_ser")
+  init_coherence <- if (R_mismatch == "eb_adaptive_init") compute_ser_ld_coherence(data, model, model$alpha[1, ]) else 1
+  model$lambda_bias <- init_coherence * model$lambda_bias
   model$R_mismatch_init <- list(
     method = "ser",
+    ld_coherence = init_coherence,
     lambda_bias = model$lambda_bias,
-    B_corrected = model$B_corrected,
     Q_art = if (!is.null(model$Q_art)) model$Q_art else NA_real_,
     artifact_flag = if (!is.null(model$artifact_flag))
                       model$artifact_flag else NA
   )
   model
+}
+
+#' @keywords internal
+#' @noRd
+compute_ser_ld_coherence <- function(data, model, alpha) {
+  alpha <- as.numeric(alpha)
+  alpha[!is.finite(alpha) | alpha < 0] <- 0
+  if (sum(alpha) <= 0)
+    return(1)
+  prior <- as.numeric(model$pi)
+  if (length(prior) != length(alpha) || any(!is.finite(prior)) ||
+      sum(prior) <= 0)
+    prior <- rep(1 / length(alpha), length(alpha))
+  prior <- prior / sum(prior)
+  keep <- alpha > 0 & alpha >= 2 * prior
+  if (!any(keep))
+    return(1)
+  alpha <- alpha[keep]
+  alpha <- alpha / sum(alpha)
+  nm1 <- if (!is.null(data$nm1)) data$nm1 else (data$n - 1)
+  R <- if (inherits(data, "ss_mixture") && !is.null(data$panel_R)) {
+         omega <- get_mixture_omega(data, model)
+         Reduce("+", Map(function(w, Rk) {
+           w * Rk[keep, keep, drop = FALSE]
+         }, omega, data$panel_R))
+       } else if (!is.null(data$XtX)) {
+         data$XtX[keep, keep, drop = FALSE] / nm1
+       } else if (!is.null(data$X)) {
+         crossprod(data$X[, keep, drop = FALSE]) / nm1
+       } else {
+         NULL
+       }
+  if (is.null(R))
+    return(1)
+  # Hadamard squared LD, not the spectral matrix square used by Q_art.
+  pmin(1, pmax(0, as.numeric(crossprod(alpha, (R * R) %*% alpha))))
 }
 
 #' @keywords internal
@@ -521,14 +592,14 @@ get_R_mismatch_eigen <- function(data, model) {
   if (!is.null(data$eigen_R) && !inherits(data, "ss_mixture"))
     return(data$eigen_R)
   if (inherits(data, "ss_mixture")) {
-    if (!is.null(model$omega) && !is.null(data$omega_cache)) {
-      eig <- eigen_from_reduced(data$omega_cache, model$omega,
-                                data$K, data$p)
+    omega <- get_mixture_omega(data, model)
+    if (!is.null(omega) && !is.null(data$omega_cache)) {
+      eig <- eigen_from_reduced(data$omega_cache, omega, data$K, data$p)
       eig$values <- pmax(eig$values, 0)
       return(eig)
     }
-    if (!is.null(model$omega) && !is.null(data$panel_R)) {
-      R_mix <- Reduce("+", Map(function(w, R) w * R, model$omega, data$panel_R))
+    if (!is.null(omega) && !is.null(data$panel_R)) {
+      R_mix <- Reduce("+", Map(function(w, R) w * R, omega, data$panel_R))
       R_mix <- 0.5 * (R_mix + t(R_mix))
       eig <- eigen(R_mix, symmetric = TRUE)
       eig$values <- pmax(eig$values, 0)
