@@ -74,6 +74,7 @@ articles:
     - l0_initialization
     - trend_filtering
     - susie_unmappable_effects
+    - susie_attainable_coverage
   - title: "Package Information"
     navbar: ~
     contents:

@@ -1003,18 +1003,13 @@ compute_BR <- function(data, B_mat) {
 #' @keywords internal
 compute_eigen_decomposition <- function(XtX, n, X = NULL) {
   if (!is.null(X)) {
-    # Thin SVD: O(p*B^2) instead of O(p^3)
-    p <- ncol(X)
-    sv <- svd(X, nu = 0)
-    V <- sv$v                        # p x min(B,p) right singular vectors
-    Dsq <- pmax(sv$d^2, 0)           # eigenvalues of X'X
-    # Pad to length p with zeros (null-space eigenvectors)
-    if (ncol(V) < p) {
-      V <- cbind(V, matrix(0, p, p - ncol(V)))
-      Dsq <- c(Dsq, rep(0, p - length(Dsq)))
-    }
+    # Thin SVD: V is p x r where r = min(n,p).  No null-space padding -
+    # null-space components contribute 0 to every eigenspace sum in the
+    # SuSiE-inf math, and storing them as p x p was the memory wall.
+    sv  <- svd(X, nu = 0)
+    Dsq <- pmax(sv$d^2, 0)
     idx <- order(Dsq, decreasing = TRUE)
-    return(list(V = V[, idx], Dsq = Dsq[idx], VtXty = NULL))
+    return(list(V = sv$v[, idx, drop = FALSE], Dsq = Dsq[idx], VtXty = NULL))
   }
 
   LD  <- XtX / n
@@ -1028,17 +1023,46 @@ compute_eigen_decomposition <- function(XtX, n, X = NULL) {
   )
 }
 
-# Add eigen decomposition to ss data objects for unmappable methods
+# Add eigen decomposition to a data object for unmappable_effects = "inf".
+# Two input shapes are supported:
+#   (a) Individual-level data: data$X present, data$XtX absent.  Thin SVD of
+#       standardized X; stores p x r eigen factors with NO null-space padding.
+#       Skips the O(np^2) XtX formation entirely.
+#   (b) Sufficient-statistics data: data$XtX present.  Existing behavior.
 #' @keywords internal
 add_eigen_decomposition <- function(data, params, individual_data = NULL) {
-  # Compute eigen decomposition (thin SVD when X is available)
+
+  if (!is.null(data$X) && is.null(data$XtX)) {
+    # (a) Individual-data path.  SVD operates on the standardized X so that
+    # V/D match (scaled X)'(scaled X), which is the operator the rest of the
+    # SuSiE-inf eigenspace math assumes.  X_std is materialized only for the
+    # SVD call and then released.
+    cm    <- attr(data$X, "scaled:center")
+    csd   <- attr(data$X, "scaled:scale")
+    X_std <- scale_design_matrix(data$X, cm, csd)
+    sv    <- svd(X_std)
+    rm(X_std)
+
+    r <- length(sv$d)
+    data$eigen_vectors    <- sv$v                                # p x r
+    data$eigen_vectors_sq <- sv$v^2                              # p x r (cached)
+    data$eigen_values     <- sv$d^2                              # length r
+    data$Uty              <- as.vector(crossprod(sv$u, data$y))  # length r
+    data$VtXty            <- sv$d * data$Uty                     # = V' Xty
+    data$rank             <- r
+
+    data$Xty <- compute_Xty(data$X, data$y)
+    data$yty <- sum(data$y^2)
+    return(data)
+  }
+
+  # (b) Sufficient-statistics path.
   eigen_decomp <- compute_eigen_decomposition(data$XtX, data$n, X = data$X)
-
-  # Append eigen components to data object
-  data$eigen_vectors <- eigen_decomp$V
-  data$eigen_values  <- eigen_decomp$Dsq
-  data$VtXty         <- t(eigen_decomp$V) %*% data$Xty
-
+  data$eigen_vectors    <- eigen_decomp$V
+  data$eigen_vectors_sq <- eigen_decomp$V^2
+  data$eigen_values     <- eigen_decomp$Dsq
+  data$VtXty            <- t(eigen_decomp$V) %*% data$Xty   # match reference summation order
+  data$rank             <- length(eigen_decomp$Dsq)
   return(data)
 }
 
@@ -1064,39 +1088,52 @@ scale_design_matrix <- function(X, center = NULL, scale = NULL) {
   return(X_scaled)
 }
 
-# Compute Omega-weighted quantities for unmappable effects methods
+# Compute (scaled X)'(scaled X) v using the cached thin-SVD factors.
+# Cost is O(p * r) instead of O(p^2) or O(n p).  Used in the SuSiE-inf
+# individual path where compute_Rv with raw data$X would return the
+# unscaled X'X v -- here the eigen factors come from svd(X_std), so
+# V (D^2 V' v) is the standardized operator that matches compute_XtX().
 #' @keywords internal
-compute_omega_quantities <- function(data, tau2, sigma2) {
-  # Compute variance in eigen space
-  omega_var <- tau2 * data$eigen_values + sigma2
-
-  # Compute diagonal of X'OmegaX
-  diagXtOmegaX <- rowSums(sweep(data$eigen_vectors^2, 2,
-                                (data$eigen_values / omega_var), `*`))
-
-  return(list(
-    omega_var    = omega_var,
-    diagXtOmegaX = diagXtOmegaX
-  ))
+compute_XtXv_eigen <- function(data, v) {
+  Vtv <- crossprod(data$eigen_vectors, v)
+  as.vector(data$eigen_vectors %*% (data$eigen_values * Vtv))
 }
 
-# Compute unmappable effects coefficient vector using BLUP
+# Compute Omega-weighted quantities for unmappable effects methods.
+# diagXtOmegaX[j] = sum_k V[j,k]^2 * (lambda_k / omega_var_k) is a length-p
+# vector.  Uses cached V^2 (eigen_vectors_sq) to skip the inline V^2
+# computation but keeps the rowSums(sweep(...)) summation order so output
+# is bit-identical to the upstream reference (which forms V^2 inline).
+#' @keywords internal
+compute_omega_quantities <- function(data, tau2, sigma2) {
+  omega_var    <- tau2 * data$eigen_values + sigma2
+  V_sq         <- if (!is.null(data$eigen_vectors_sq)) data$eigen_vectors_sq
+                  else data$eigen_vectors^2
+  diagXtOmegaX <- rowSums(sweep(V_sq, 2, data$eigen_values / omega_var, `*`))
+  list(omega_var = omega_var, diagXtOmegaX = diagXtOmegaX)
+}
+
+# Compute unmappable effects coefficient vector using BLUP.
+# Reads model$omega_var and model$XtOmegay (cached at iteration boundaries by
+# initialize_susie_model and update_derived_quantities).  Falls back to
+# computing them on the fly if the caches are absent.
 #' @keywords internal
 compute_theta_blup <- function(data, model) {
-  # Calculate diagXtOmegaX, diagonal variances, and Beta
-  omega_res <- compute_omega_quantities(data, model$tau2, model$sigma2)
+  if (is.null(model$omega_var) || is.null(model$XtOmegay)) {
+    omega_res <- compute_omega_quantities(data, model$tau2, model$sigma2)
+    omega_var <- omega_res$omega_var
+    XtOmegay  <- as.vector(data$eigen_vectors %*% (data$VtXty / omega_var))
+  } else {
+    omega_var <- model$omega_var
+    XtOmegay  <- model$XtOmegay
+  }
+
   b         <- colSums(model$mu * model$alpha)
-
-  # Compute XtOmegaXb, XtOmegay, and XtOmegar
-  XtOmegaXb <- data$eigen_vectors %*% ((t(data$eigen_vectors) %*% b) *
-                                         data$eigen_values / omega_res$omega_var)
-  XtOmegay  <- data$eigen_vectors %*% (data$VtXty / omega_res$omega_var)
+  XtOmegaXb <- as.vector(data$eigen_vectors %*%
+                           ((t(data$eigen_vectors) %*% b) *
+                              data$eigen_values / omega_var))
   XtOmegar  <- XtOmegay - XtOmegaXb
-
-  # Compute theta
-  theta     <- model$tau2 * XtOmegar
-
-  return(theta)
+  model$tau2 * XtOmegar
 }
 
 # Stabilize log Bayes factors and compute log posterior odds
@@ -1166,7 +1203,9 @@ mom_unmappable <- function(data, params, model, omega, tau2, est_tau2 = TRUE, es
   A[2, 1] <- A[1, 2]
   A[2, 2] <- sum(data$eigen_values^2)
 
-  # Compute diag(V'MV)
+  # Compute diag(V'MV).  Final accumulator: rowSums(sweep(t(V)^2, 2, tmpD, *))
+  # = sum_j V[j,k]^2 tmpD[j] for each k.  Same summation order as upstream
+  # reference, but with V^2 already cached so we skip the inline t(V)^2.
   b <- colSums(model$mu * model$alpha)
   Vtb <- crossprod(data$eigen_vectors, b)
   diagVtMV <- Vtb^2
@@ -1179,7 +1218,7 @@ mom_unmappable <- function(data, params, model, omega, tau2, est_tau2 = TRUE, es
     tmpD <- tmpD + model$alpha[l, ] * (model$mu[l, ]^2 + 1 / omega[l, ])
   }
 
-  diagVtMV <- diagVtMV + rowSums(sweep(t(data$eigen_vectors)^2, 2, tmpD, `*`))
+  diagVtMV <- diagVtMV + rowSums(sweep(t(data$eigen_vectors_sq), 2, tmpD, `*`))
 
   # Compute x
   x <- rep(0, 2)
@@ -1212,12 +1251,14 @@ mom_unmappable <- function(data, params, model, omega, tau2, est_tau2 = TRUE, es
 #' @keywords internal
 mle_unmappable <- function(data, params, model, omega, est_tau2 = TRUE, est_sigma2 = TRUE) {
   L <- nrow(model$alpha)
+  r <- length(data$eigen_values)   # rank of the stored eigenspace
 
   # Set default ranges
   sigma2_range <- c(0.2 * data$yty / data$n, 1.2 * data$yty / data$n)
   tau2_range   <- c(1e-12, 1.2 * data$yty / (data$n * data$p))
 
-  # Compute diag(V'MV)
+  # Compute diag(V'MV) (same form as mom_unmappable -- preserves the upstream
+  # summation order while using the cached V^2).
   b        <- colSums(model$mu * model$alpha)
   Vtb      <- crossprod(data$eigen_vectors, b)
   diagVtMV <- Vtb^2
@@ -1230,15 +1271,19 @@ mle_unmappable <- function(data, params, model, omega, est_tau2 = TRUE, est_sigm
     tmpD     <- tmpD + model$alpha[l, ] * (model$mu[l, ]^2 + 1 / omega[l, ])
   }
 
-  diagVtMV <- diagVtMV + rowSums(sweep(t(data$eigen_vectors)^2, 2, tmpD, `*`))
+  diagVtMV <- diagVtMV + rowSums(sweep(t(data$eigen_vectors_sq), 2, tmpD, `*`))
 
-  # Negative ELBO as function of x = (sigma^2, tau^2)
+  # Negative ELBO as function of x = (sigma^2, tau^2).
+  # Use (n - r) instead of (n - p): when eigen_values is stored without
+  # null-space padding (length r < p), the dropped null-space components
+  # would each contribute 0.5 log(sigma^2), and (n - p) over-counts them.
+  # For the legacy full-eigen path r = p, so behavior is unchanged.
   f <- function(x) {
     sigma2_val <- x[1]
     tau2_val   <- x[2]
     var_val    <- tau2_val * data$eigen_values + sigma2_val
 
-    0.5 * (data$n - data$p) * log(sigma2_val) + 0.5 / sigma2_val * data$yty +
+    0.5 * (data$n - r) * log(sigma2_val) + 0.5 / sigma2_val * data$yty +
       sum(0.5 * log(var_val) -
             0.5 * tau2_val / sigma2_val * data$VtXty^2 / var_val -
             Vtb * data$VtXty / var_val +
@@ -2377,8 +2422,14 @@ run_final_ash_pass <- function(data, params, model) {
 # Compute ELBO for infinitesimal effects model
 #' @keywords internal
 compute_elbo_inf <- function(alpha, mu, omega, lbf, sigma2, tau2, n, p,
-                             eigen_vectors, eigen_values, VtXty, yty) {
+                             eigen_vectors, eigen_values, VtXty, yty,
+                             eigen_vectors_sq = NULL) {
   L <- nrow(mu)
+  r <- length(eigen_values)        # rank of the stored eigenspace
+  # Use cached V^2 (p x r) if available to skip the inline V^2; otherwise
+  # form it.  Summation order matches the upstream reference.
+  if (is.null(eigen_vectors_sq))
+    eigen_vectors_sq <- eigen_vectors^2
 
   b <- colSums(mu * alpha)
   Vtb <- t(eigen_vectors) %*% b
@@ -2392,13 +2443,16 @@ compute_elbo_inf <- function(alpha, mu, omega, lbf, sigma2, tau2, n, p,
     tmpD <- tmpD + alpha[l, ] * (mu[l, ]^2 + 1 / omega[l, ])
   }
 
-  diagVtMV <- diagVtMV + rowSums(sweep(t(eigen_vectors)^2, 2, tmpD, `*`))
+  diagVtMV <- diagVtMV + rowSums(sweep(t(eigen_vectors_sq), 2, tmpD, `*`))
 
   # Compute variance
   var <- tau2 * eigen_values + sigma2
 
-  # Compute negative ELBO
-  neg_elbo <- 0.5 * (n - p) * log(sigma2) + 0.5 / sigma2 * yty +
+  # Compute negative ELBO.  (n - r) replaces the original (n - p): when the
+  # eigenspace is stored without null-space padding (length r < p), the
+  # dropped null-space components would each contribute 0.5 log(sigma^2),
+  # so (n - p) double-counts them.  Equivalent for full-eigen (r = p).
+  neg_elbo <- 0.5 * (n - r) * log(sigma2) + 0.5 / sigma2 * yty +
     sum(0.5 * log(var) -
           0.5 * tau2 / sigma2 * VtXty^2 / var -
           Vtb * VtXty / var +

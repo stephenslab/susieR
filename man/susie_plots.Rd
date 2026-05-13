@@ -23,7 +23,9 @@ susie_plot_iteration(model, L, file_prefix, pos = NULL)
 \code{\link{susie}} or one of its variants. For \code{suse_plot},
 the susie fit must have \code{model$z}, \code{model$PIP}, and may
 include \code{model$sets}. \code{model} may also be a vector of
-z-scores or PIPs.}
+z-scores or PIPs. For \code{susie_plot_iteration}, \code{model}
+must be either a SuSiE fit or its \code{susie_track} object from
+\code{model$trace}.}
 
 \item{y}{A string indicating what to plot: either \code{"z_original"} for
 z-scores, \code{"z"} for z-score derived p-values on (base-10) log-scale,
@@ -54,7 +56,7 @@ specified as location where legends should be added, e.g.,
 \item{\dots}{Additional arguments passed to
 \code{\link[graphics]{plot}}.}
 
-\item{L}{An integer specifying the number of credible sets to plot.}
+\item{L}{An integer specifying the number of single-effect rows to plot.}
 
 \item{file_prefix}{Prefix to path of output plot file. If not
 specified, the plot, or plots, will be saved to a temporary
@@ -101,7 +103,7 @@ beta[sample(1:1000, 4)] <- 1
 X <- matrix(rnorm(n * p), nrow = n, ncol = p)
 X <- scale(X, center = TRUE, scale = TRUE)
 y <- drop(X \%*\% beta + rnorm(n))
-res <- susie(X, y, L = 10)
+res <- susie(X, y, L = 10, track_fit = TRUE)
 susie_plot_iteration(res, L = 10)
 
 }

@@ -244,9 +244,10 @@ than \code{tol}.}
 a summary of the optimization settings, and refinement progress (if
 \code{refine = TRUE}) are printed to the console.}
 
-\item{track_fit}{If \code{track_fit = TRUE}, \code{trace}
-is also returned containing detailed information about the
-estimates at each iteration of the IBSS fitting procedure.}
+\item{track_fit}{If \code{track_fit = TRUE}, a compact
+\code{susie_track} object is returned in \code{trace}, containing
+alpha history, effect summaries and available diagnostics at each
+iteration of the IBSS fitting procedure.}
 
 \item{check_input}{If \code{check_input = TRUE}, \code{susie_ss} performs
 additional checks on \code{XtX} and \code{Xty}. The checks are:

@@ -124,6 +124,20 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
     stop("X contains NA values.")
   }
 
+  # When n >> p, holding X in memory at every IBSS iteration is wasteful;
+  # nudge the user toward the sufficient-statistics path. The hint is
+  # advisory only and does not gate on `verbose` (matches the style of the
+  # constructor's other hints, e.g. the susie_rss max_iter default).
+  if (is.matrix(X) && nrow(X) >= 2 * ncol(X)) {
+    warning_message(
+      "nrow(X) = ", nrow(X), " >= 2 * ncol(X) = ", 2 * ncol(X), ". ",
+      "Consider precomputing sufficient statistics with compute_suff_stat() ",
+      "and fitting with susie_ss() instead -- this avoids holding X in ",
+      "memory at every iteration and lets you reuse XtX across multiple y.",
+      style = "hint"
+    )
+  }
+
   # Constant column check for regular matrix
   if (is.null(attr(X, "matrix.type")) || attr(X, "matrix.type") != "tfmatrix") {
     col_vars <- apply(X, 2, var)
@@ -617,6 +631,25 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
                                       L_greedy = NULL,
                                       greedy_lbf_cutoff = 0.1) {
 
+  # Validate: exactly one of R or X must be provided
+  if (is.null(R) && is.null(X))
+    stop("Please provide either R (correlation matrix) or X (factor matrix).")
+  if (!is.null(R) && !is.null(X))
+    stop("Please provide either R or X, but not both.")
+
+  # Default max_iter for susie_rss-style summary-statistics fitting:
+  # callers (such as susie_rss) that pass max_iter = NULL get the SuSiE-RSS
+  # default of 50 plus a one-time hint. Direct constructor callers keep
+  # the constructor's own `max_iter = 100` default and never see the hint.
+  if (is.null(max_iter)) {
+    max_iter <- 50
+    warning_message("Setting max_iter = 50 for the SuSiE RSS model because ",
+                    "slow convergence is often a sign of unstable summary-statistics ",
+                    "fitting. To disable this message, explicitly set max_iter = 50 ",
+                    "or another value in the susie_rss() call.",
+                    style = "hint")
+  }
+
   model_init <- resolve_model_init(model_init, s_init)
 
   # NIG prior requires an explicit sample size n: the default alpha0/beta0
@@ -634,6 +667,11 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
   # PVE-adjusted z-scores: shrink large z toward zero to account for
   # winner's curse. Applied to ALL paths when sample size is available.
   # Guard: z may be NULL when bhat/shat are provided (converted later).
+  # Snapshot the user-supplied z before mutation so the multi-panel
+  # sub-fit dispatch (below) can hand the *unadjusted* z to per-panel
+  # constructor calls — they will apply the PVE adjustment themselves
+  # and double-applying it would silently corrupt Xty.
+  z_user <- z
   pve_adjusted <- FALSE
   if (!is.null(z) && !is.null(n) && n > 1) {
     adj <- (n - 1) / (z^2 + n - 2)
@@ -650,12 +688,34 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
       !is.finite(R_sensitivity_threshold) ||
       R_sensitivity_threshold < 0)
     stop("R_sensitivity_threshold must be a single nonnegative finite numeric.")
+  if (!is.numeric(eig_delta_rel) || length(eig_delta_rel) != 1L ||
+      eig_delta_rel < 0)
+    stop("eig_delta_rel must be a single nonnegative numeric.")
+  if (!is.numeric(eig_delta_abs) || length(eig_delta_abs) != 1L ||
+      eig_delta_abs < 0)
+    stop("eig_delta_abs must be a single nonnegative numeric.")
+  if (!is.numeric(artifact_threshold) || length(artifact_threshold) != 1L ||
+      artifact_threshold < 0 || artifact_threshold > 1)
+    stop("artifact_threshold must be a single numeric in [0, 1].")
   R_finite_explicit_false <- identical(R_finite, FALSE)
   if (isTRUE(R_finite) && is.null(X))
     stop("R_finite = TRUE requires X input. When using precomputed R, ",
          "provide the reference sample size explicitly.")
   R_finite <- resolve_R_finite(R_finite, if (!is.null(X)) X else R,
                                is_multipanel)
+
+  # sigma^2 and lambda_bias both inflate the residual variance and are
+  # only weakly jointly identified, so sigma^2 is fixed when R_mismatch is
+  # active.
+  if (R_mismatch != "none" && isTRUE(estimate_residual_variance)) {
+    warning_message(
+      "R_mismatch = '", R_mismatch, "' is incompatible with ",
+      "estimate_residual_variance = TRUE; disabling sigma^2 estimation.",
+      style = "hint"
+    )
+    estimate_residual_variance <- FALSE
+  }
+
   if (is_multipanel) {
     if (!is.null(bhat) || !is.null(shat)) {
       stop("Parameters 'bhat' and 'shat' are not supported in the ",
@@ -664,7 +724,60 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
     }
     if (!is.null(var_y))
       stop("Parameter 'var_y' is not supported in the multi-panel path.")
-    return(ss_mixture_constructor(
+
+    # n required for multi-panel sub-fits and ss_mixture_constructor.
+    if (is.null(n))
+      stop("Sample size 'n' is required for multi-panel mode.")
+
+    # Validate panel-list elements (lighter than ss_mixture's per-p check;
+    # this catches type errors before the per-panel sub-fits run, so that
+    # the user sees a list-element error instead of a confusing per-panel
+    # constructor error).
+    if (!is.null(R)) {
+      for (k in seq_along(R)) {
+        if (!is.matrix(R[[k]]) || !is.numeric(R[[k]]))
+          stop("Each element of R list must be a numeric matrix.")
+        if (nrow(R[[k]]) != ncol(R[[k]]))
+          stop("Each element of R list must be square.")
+      }
+    } else {
+      for (k in seq_along(X)) {
+        if (!is.matrix(X[[k]]) || !is.numeric(X[[k]]))
+          stop("Each element of X list must be a numeric matrix.")
+      }
+      # Center each panel before sub-fits so that crossprod(Xk) gives a
+      # covariance-like quantity, matching ss_mixture_constructor's
+      # downstream expectation.
+      X <- lapply(X, function(Xk) {
+        cm <- colMeans(Xk)
+        if (max(abs(cm)) > 1e-10 * max(abs(Xk)))
+          Xk <- t(t(Xk) - cm)
+        Xk
+      })
+    }
+
+    # Capture parent args BEFORE force_pip so sub-fits inherit the user's
+    # original convergence_method (today's match.call-based recursion does
+    # the same via the captured user call).
+    parent_args <- mget(names(formals()))
+    parent_args$z <- z_user                     # restore pre-PVE z (sub-fits PVE-adjust on their own)
+    parent_args$max_iter <- max_iter
+    parent_args$model_init <- model_init
+    parent_args$R_finite <- R_finite
+    parent_args$X <- X
+    parent_args$estimate_residual_variance <- estimate_residual_variance
+
+    if (convergence_method[1] == "elbo") {
+      convergence_method <- force_pip(
+        "multi-panel mixture weight updates change R(omega) each ",
+        "iteration, which prevents ELBO monotonicity")
+    }
+
+    panel_arg <- if (!is.null(R)) "R" else "X"
+    panels <- if (panel_arg == "R") R else X
+    sub <- pick_init_panel_via_subfits(panels, panel_arg, parent_args)
+
+    result <- ss_mixture_constructor(
       z = z, R = R, X = X, n = n, L = L,
       maf = maf, maf_thresh = maf_thresh,
       scaled_prior_variance = scaled_prior_variance,
@@ -692,8 +805,44 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
       eig_delta_abs = eig_delta_abs, artifact_threshold = artifact_threshold,
       R_sensitivity_threshold = R_sensitivity_threshold,
       alpha0 = alpha0, beta0 = beta0, slot_prior = slot_prior,
-      L_greedy = L_greedy, greedy_lbf_cutoff = greedy_lbf_cutoff
-    ))
+      L_greedy = L_greedy, greedy_lbf_cutoff = greedy_lbf_cutoff,
+      init_panel = sub$idx
+    )
+    # Stash sub-fit metadata so susie_rss can attach it to the workhorse
+    # output (single_panel_fits) and emit the verbose ELBO summary.
+    result$multi_panel_meta <- list(fits = sub$fits, elbos = sub$elbos)
+    return(result)
+  }
+
+  # Single-panel X handling: validate, center, and convert to R when the
+  # full-rank or var_y/shat path requires the correlation matrix.
+  if (!is.null(X)) {
+    if (!is.matrix(X) || !is.numeric(X))
+      stop("X must be a numeric matrix.")
+    cm <- colMeans(X)
+    if (max(abs(cm)) > 1e-10 * max(abs(X)))
+      X <- t(t(X) - cm)
+    needs_R <- !is.null(var_y) && !is.null(shat)
+    if (needs_R && nrow(X) < ncol(X)) {
+      warning_message(
+        "X is provided as a low-rank factor matrix, but var_y/shat ",
+        "requires the full correlation matrix R. Forming ",
+        "R = cov2cor(crossprod(X)/nrow(X)) and using the standard path.",
+        style = "hint")
+    }
+    if (nrow(X) >= ncol(X) || needs_R) {
+      R <- safe_cor(X)
+      X <- NULL
+    }
+  }
+
+  # Auto-switch to PIP convergence when the SER likelihood is dynamically
+  # inflated by finite-reference R uncertainty or R-mismatch correction.
+  if ((!is.null(R_finite) || R_mismatch != "none") &&
+      convergence_method[1] == "elbo") {
+    convergence_method <- force_pip(
+      "R uncertainty inflation modifies per-variant SER ",
+      "likelihoods, which prevents a consistent model-level ELBO")
   }
 
   # Issue warning for estimate_residual_variance if TRUE, unless the caller
@@ -966,7 +1115,8 @@ ss_mixture_constructor <- function(z, R = NULL, X = NULL, n,
                                    beta0 = NULL,
                                    slot_prior = NULL,
                                    L_greedy = NULL,
-                                   greedy_lbf_cutoff = 0.1) {
+                                   greedy_lbf_cutoff = 0.1,
+                                   init_panel = NULL) {
   if (is.null(n) || !is.numeric(n) || length(n) != 1 || n <= 1)
     stop("Sample size 'n' is required for multi-panel mode.")
   R_mismatch <- match.arg(R_mismatch, c("none", "eb", "eb_force_init", "eb_adaptive_init", "eb_no_init"))
@@ -1000,7 +1150,7 @@ ss_mixture_constructor <- function(z, R = NULL, X = NULL, n,
     panel_R <- lapply(R, safe_cov2cor)
     X_list <- NULL
     B_list <- R_finite
-    init_panel <- attr(R, ".init_panel")
+    if (is.null(init_panel)) init_panel <- attr(R, ".init_panel")
     omega_cache <- NULL
   } else {
     for (k in seq_len(K)) {
@@ -1012,7 +1162,7 @@ ss_mixture_constructor <- function(z, R = NULL, X = NULL, n,
     X_list <- lapply(X, standardize_X)
     panel_R <- lapply(X_list, function(Xk) cov2cor(crossprod(Xk)))
     B_list <- if (is.null(R_finite)) NULL else R_finite
-    init_panel <- attr(X, ".init_panel")
+    if (is.null(init_panel)) init_panel <- attr(X, ".init_panel")
     omega_cache <- if (sum(vapply(X_list, nrow, integer(1))) < p)
                      precompute_omega_cache(X_list, z) else NULL
   }
@@ -1198,6 +1348,11 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
                                    L_greedy = NULL,
                                    greedy_lbf_cutoff = 0.1) {
 
+  # Validate: exactly one of R or X must be provided.
+  if (is.null(R) && is.null(X))
+    stop("Please provide either R (correlation matrix) or X (factor matrix).")
+  if (!is.null(R) && !is.null(X))
+    stop("Please provide either R or X, but not both.")
   if (!identical(estimate_residual_method, "MLE")) {
     stop("RSS-lambda supports estimate_residual_method = \"MLE\" only.")
   }
@@ -1205,6 +1360,18 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
     stop("rss_lambda_constructor() accepts only a single R matrix.")
   if (is.list(X) && !is.matrix(X))
     stop("rss_lambda_constructor() accepts only a single X matrix.")
+
+  # Default max_iter for susie_rss_lambda-style fitting (see notes in
+  # summary_stats_constructor). NULL from `susie_rss_lambda` triggers the
+  # default and hint; direct constructor callers keep `max_iter = 100`.
+  if (is.null(max_iter)) {
+    max_iter <- 50
+    warning_message("Setting max_iter = 50 for the SuSiE RSS-lambda model because ",
+                    "slow convergence is often a sign of unstable summary-statistics ",
+                    "fitting. To disable this message, explicitly set max_iter = 50 ",
+                    "or another value in the susie_rss_lambda() call.",
+                    style = "hint")
+  }
 
   # PVE-adjust z when sample size is provided. Shrinks large z toward
   # zero to account for winner's curse. Same form as the SS path

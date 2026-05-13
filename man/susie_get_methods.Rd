@@ -10,6 +10,7 @@
 \alias{susie_get_lfsr}
 \alias{susie_get_posterior_samples}
 \alias{susie_get_cs}
+\alias{susie_get_cs_attainable}
 \alias{susie_get_pip}
 \title{Inferences From Fitted SuSiE Model}
 \usage{
@@ -42,6 +43,8 @@ susie_get_cs(
   use_rfast = NULL,
   ld_extend_threshold = 0.99
 )
+
+susie_get_cs_attainable(res, coverage = 0.95, ethres = NULL, ...)
 
 susie_get_pip(res, prune_by_cs = FALSE, prior_tol = 1e-09)
 }
@@ -107,6 +110,11 @@ installed.}
 Variants with |correlation| > threshold with any CS member are added.
 Set to NULL to disable LD extension. Requires Xcorr (would not work if only X is provided).}
 
+\item{ethres}{Entropy threshold expressed as an effective number of
+variables: an effect is dropped when its attainable-projection
+entropy is at least \code{log(ethres)}. Defaults to
+\code{max(100, 0.1 * p)} where \code{p} is the number of variables.}
+
 \item{prune_by_cs}{Whether or not to ignore single effects not in
 a reported CS when calculating PIP.}
 }
@@ -165,6 +173,23 @@ elements:
 \description{
 These functions access basic properties or draw
   inferences from a fitted susie model.
+
+\code{susie_get_cs_attainable} returns credible sets after
+  a post-hoc filter based on \emph{attainable coverage} and per-effect
+  entropy. Use this as a fallback when no LD reference is available
+  for the standard purity filter in \code{susie_get_cs}.
+}
+\details{
+For each effect \eqn{l}, the \emph{attainable coverage} is
+  computed by zeroing every entry of \code{res$alpha} that is not the
+  column maximum, then summing across variables. Intuitively, it is
+  the coverage effect \eqn{l} could attain if it did not have to
+  share probability mass with other effects. Effects with attainable
+  coverage at most \code{coverage}, or with attainable-projection
+  entropy at least \code{log(ethres)}, are dropped before delegating
+  to \code{susie_get_cs}. Any \code{X} or \code{Xcorr} passed through
+  \code{...} is ignored, since the procedure is intended for the
+  no-LD setting.
 }
 \examples{
 set.seed(1)

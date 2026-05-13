@@ -717,3 +717,39 @@ kriging_rss <- function(z, R, n, r_tol = 1e-08,
   }
   return(list(plot = p, conditional_dist = res))
 }
+
+# =============================================================================
+# MULTI-PANEL SUB-FIT DISPATCH
+#
+# Helper for multi-panel SuSiE-RSS: runs K independent single-panel fits,
+# one per panel, and returns the index of the highest-ELBO panel along with
+# the K fits and their ELBOs. Used by summary_stats_constructor's multi-panel
+# branch to pick the mixture-init panel.
+# =============================================================================
+
+#' @keywords internal
+#' @noRd
+pick_init_panel_via_subfits <- function(panels, panel_arg, parent_args) {
+  fits <- lapply(seq_along(panels), function(k) {
+    args_k <- modifyList(parent_args, list(
+      R = if (panel_arg == "R") panels[[k]] else NULL,
+      X = if (panel_arg == "X") panels[[k]] else NULL,
+      R_finite = if (is.null(parent_args$R_finite)) NULL
+                 else parent_args$R_finite[k],
+      verbose    = FALSE,
+      model_init = NULL,
+      s_init     = NULL
+    ))
+    sub <- tryCatch(do.call(summary_stats_constructor, args_k),
+                    error = function(e) NULL)
+    if (is.null(sub)) return(NULL)
+    tryCatch(susie_workhorse(sub$data, sub$params), error = function(e) NULL)
+  })
+  elbos <- vapply(
+    fits,
+    function(f) if (!is.null(f) && !is.null(f$elbo)) tail(f$elbo, 1) else -Inf,
+    numeric(1)
+  )
+  list(idx = which.max(elbos), fits = fits, elbos = elbos)
+}
+

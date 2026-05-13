@@ -11,16 +11,11 @@
 # Configure individual data for specified method
 #' @keywords internal
 configure_data.individual <- function(data, params) {
-  if (params$unmappable_effects == "none" || params$unmappable_effects %in% c("ash", "ash_filter_archived")) {
-    return(configure_data.default(data, params))
-  } else {
-    # "inf" mode still requires sufficient statistics conversion
-    warning_message("Individual-level data will be converted to sufficient ",
-                    "statistics for unmappable effects methods (this step ",
-                    "may take a while for a large data set).",
-                    style = "hint")
-    return(convert_individual_to_ss(data, params))
+  if (params$unmappable_effects == "inf") {
+    # Stay in the individual-data path: thin SVD of standardized X, no XtX.
+    return(add_eigen_decomposition(data, params))
   }
+  return(configure_data.default(data, params))
 }
 
 # Get variance of y
@@ -46,6 +41,21 @@ initialize_susie_model.individual <- function(data, params, var_y, ...) {
 
   # Base model
   model <- initialize_matrices(data, params, var_y)
+
+  # SuSiE-inf: predictor_weights are the diag of X'OmegaX (eigenspace),
+  # not attr(X, "d").  Also cache omega_var and XtOmegay for the first
+  # SER pass.
+  if (params$unmappable_effects == "inf") {
+    omega_res               <- compute_omega_quantities(data, tau2 = 0, sigma2 = var_y)
+    model$omega_var         <- omega_res$omega_var
+    model$predictor_weights <- omega_res$diagXtOmegaX
+    model$XtOmegay          <- as.vector(data$eigen_vectors %*%
+                                           (data$VtXty / omega_res$omega_var))
+
+    model$tau2  <- 0
+    model$theta <- rep(0, data$p)
+    return(model)
+  }
 
   # Append predictor weights
   model$predictor_weights <- attr(data$X, "d")
@@ -101,8 +111,38 @@ track_ibss_fit.individual <- function(data, params, model, tracking, iter, elbo,
 # Compute residuals for single effect regression
 #' @keywords internal
 compute_residuals.individual <- function(data, params, model, l, ...) {
-  # Remove lth effect from fitted values (scaled by slot weight)
   sw_l <- get_slot_weight(model, l)
+
+  if (params$unmappable_effects == "inf") {
+    # SuSiE-inf: Omega-weighted residuals computed in eigenspace.
+    # The full b_minus_l is built from (alpha, mu) directly here since
+    # fitted_without_l (n-space) is not maintained on the inf path.
+    # model$XtOmegay, model$omega_var, model$predictor_weights are cached
+    # at iter boundaries.
+    sw <- if (!is.null(model$slot_weights)) model$slot_weights else rep(1, nrow(model$alpha))
+    b_minus_l <- colSums(sw * model$alpha * model$mu) - sw_l * model$alpha[l, ] * model$mu[l, ]
+
+    # Compute V' b_minus_l once; reused for XtOmegaXb (Omega-weighted) and
+    # the inflation-tail XtXr_without_l (un-weighted).  Saves one O(pr)
+    # crossprod per SER step.
+    Vtb_minus_l <- as.vector(crossprod(data$eigen_vectors, b_minus_l))
+
+    XtOmegaXb <- as.vector(data$eigen_vectors %*%
+                             (Vtb_minus_l * data$eigen_values / model$omega_var))
+    model$residuals         <- model$XtOmegay - XtOmegaXb
+    model$residual_variance <- 1   # Already incorporated in Omega
+
+    # R inflation uses standard (non-Omega) quantities.
+    XtXr_without_l <- as.vector(data$eigen_vectors %*%
+                                  (data$eigen_values * Vtb_minus_l))
+    r_vec <- data$Xty - XtXr_without_l
+    infl_state <- compute_shat2_inflation(data, model, XtXr_without_l,
+                                          b_minus_l, r_vec)
+    model <- apply_inflation_state(model, infl_state)
+    return(model)
+  }
+
+  # Remove lth effect from fitted values (scaled by slot weight)
   Xr_without_l <- model$Xr - sw_l * compute_Xb(data$X, model$alpha[l, ] * model$mu[l, ])
 
   # Compute residuals
@@ -129,10 +169,21 @@ compute_ser_statistics.individual <- function(data, params, model, l, ...) {
   betahat <- (1 / model$predictor_weights) * model$residuals
   shat2   <- model$residual_variance / model$predictor_weights
 
+  # Inflate shat2 for finite-reference R variance tracking (set by the
+  # SuSiE-inf branch in compute_residuals.individual via shat2_inflation).
+  if (!is.null(model$shat2_inflation))
+    shat2 <- shat2 * model$shat2_inflation
+
   # Optimization parameters
-  optim_init   <- log(max(c(betahat^2 - shat2, 1), na.rm = TRUE))
-  optim_bounds <- c(-30, 15)
-  optim_scale  <- "log"
+  if (params$unmappable_effects == "inf") {
+    optim_init   <- model$V[l]
+    optim_bounds <- c(0, 1)
+    optim_scale  <- "linear"
+  } else {
+    optim_init   <- log(max(c(betahat^2 - shat2, 1), na.rm = TRUE))
+    optim_bounds <- c(-30, 15)
+    optim_scale  <- "log"
+  }
 
   return(list(
     betahat      = betahat,
@@ -148,6 +199,16 @@ compute_ser_statistics.individual <- function(data, params, model, l, ...) {
 SER_posterior_e_loglik.individual <- function(data, params, model, l) {
   Eb  <- model$alpha[l, ] * model$mu[l, ]
   Eb2 <- model$alpha[l, ] * model$mu2[l, ]
+
+  if (params$unmappable_effects == "inf") {
+    # SuSiE-inf: Omega-weighted likelihood (matches SER_posterior_e_loglik.ss).
+    # raw_residuals is not maintained on the inf path; the marginal y-density
+    # constant is absorbed by the standard compute_kl.default rather than
+    # being canceled here.
+    return(-0.5 * (-2 * sum(Eb * model$residuals) +
+                     sum(model$predictor_weights * as.vector(Eb2))))
+  }
+
   return(-0.5 * data$n * log(2 * pi * model$sigma2) -
            0.5 / model$sigma2 * (sum(model$raw_residuals * model$raw_residuals)
                                  - 2 * sum(model$raw_residuals * compute_Xb(data$X, Eb)) +
@@ -180,6 +241,9 @@ calculate_posterior_moments.individual <- function(data, params, model, V, l, ..
   } else {
     # Standard Gaussian posterior calculations
     shat2 <- model$residual_variance / model$predictor_weights
+    if (!is.null(model$shat2_inflation))
+      shat2 <- shat2 * model$shat2_inflation
+
     betahat <- model$residuals / model$predictor_weights
     moments <- gaussian_ser_moments(betahat, shat2, V)
   }
@@ -191,6 +255,13 @@ calculate_posterior_moments.individual <- function(data, params, model, V, l, ..
 # Calculate KL divergence
 #' @keywords internal
 compute_kl.individual <- function(data, params, model, l) {
+  if (params$unmappable_effects == "inf") {
+    # SuSiE-inf: standard form KL = -lbf + SER_posterior_e_loglik (no
+    # marginal-y constant to cancel since SER_posterior on the inf path
+    # already omits it).
+    return(compute_kl.default(data, params, model, l))
+  }
+
   if (params$use_NIG) {
     # NIG KL only valid for L=1 (gIBSS for L>1 has no coherent ELBO; supp. line 503)
     if (params$L == 1) {
@@ -274,8 +345,21 @@ loglik.individual <- function(data, params, model, V, ser_stats, l = NULL, ...) 
 
 #' @keywords internal
 neg_loglik.individual <- function(data, params, model, V_param, ser_stats, ...) {
-  # Convert parameter to V based on optimization scale (always log for individual)
-  V <- exp(V_param)
+  # Convert parameter to V based on optimization scale.  SuSiE-inf optimizes
+  # on the linear scale; the rest (and the previous individual default) use
+  # the log scale.
+  V <- if (ser_stats$optim_scale == "log") exp(V_param) else V_param
+
+  if (params$unmappable_effects == "inf") {
+    pw   <- model$predictor_weights
+    infl <- if (!is.null(model$shat2_inflation)) model$shat2_inflation else 1
+    return(-matrixStats::logSumExp(
+      -0.5 * log(1 + V * pw / infl) +
+        V * model$residuals^2 / (2 * infl * (1 + V * pw / infl)) +
+        log(model$pi + sqrt(.Machine$double.eps))
+    ))
+  }
+
   lbf_model <- loglik.individual(data, params, model, V, ser_stats)
   return(-lbf_model)
 }
@@ -293,6 +377,15 @@ neg_loglik.individual <- function(data, params, model, V_param, ser_stats, ...) 
 # Update fitted values
 #' @keywords internal
 update_fitted_values.individual <- function(data, params, model, l, ...) {
+  if (params$unmappable_effects == "inf") {
+    # SuSiE-inf: include theta in fitted values; recompute from scratch
+    # because fitted_without_l is not maintained on the inf path.
+    sw <- if (!is.null(model$slot_weights)) model$slot_weights else rep(1, nrow(model$alpha))
+    b_total <- colSums(sw * model$alpha * model$mu) + model$theta
+    model$Xr <- as.vector(compute_Xb(data$X, b_total))
+    return(model)
+  }
+
   sw_l <- get_slot_weight(model, l)
   model$Xr <- model$fitted_without_l + sw_l * compute_Xb(data$X, model$alpha[l, ] * model$mu[l, ])
 
@@ -302,7 +395,27 @@ update_fitted_values.individual <- function(data, params, model, l, ...) {
 # Update variance components for individual data
 #' @keywords internal
 update_variance_components.individual <- function(data, params, model, ...) {
-  if (params$unmappable_effects == "ash_filter_archived") {
+  if (params$unmappable_effects == "inf") {
+    # SuSiE-inf: identical math to update_variance_components.ss; all eigenspace.
+    # model$predictor_weights == diagXtOmegaX is cached at iter boundaries.
+    L         <- nrow(model$alpha)
+    omega     <- matrix(rep(model$predictor_weights, L), nrow = L, ncol = data$p, byrow = TRUE) +
+      matrix(rep(1 / model$V, data$p), nrow = L, ncol = data$p, byrow = FALSE)
+
+    theta <- compute_theta_blup(data, model)
+
+    if (params$estimate_residual_method == "MLE") {
+      mle_result <- mle_unmappable(data, params, model, omega)
+      return(list(sigma2 = mle_result$sigma2,
+                  tau2   = mle_result$tau2,
+                  theta  = theta))
+    } else {
+      mom_result <- mom_unmappable(data, params, model, omega, model$tau2)
+      return(list(sigma2 = mom_result$sigma2,
+                  tau2   = mom_result$tau2,
+                  theta  = theta))
+    }
+  } else if (params$unmappable_effects == "ash_filter_archived") {
     # Original filter-based masking (archived for internal diagnostics)
     return(update_ash_variance_components_filter_archived(data, model, params))
   } else if (params$unmappable_effects == "ash") {
@@ -315,6 +428,19 @@ update_variance_components.individual <- function(data, params, model, ...) {
 # Update derived quantities for individual data
 #' @keywords internal
 update_derived_quantities.individual <- function(data, params, model) {
+  if (params$unmappable_effects == "inf") {
+    # SuSiE-inf: refresh omega caches with new (tau2, sigma2) and update
+    # the fitted vector to include theta.  Mirrors update_derived_quantities.ss.
+    omega_res               <- compute_omega_quantities(data, model$tau2, model$sigma2)
+    model$omega_var         <- omega_res$omega_var
+    model$predictor_weights <- omega_res$diagXtOmegaX
+    model$XtOmegay          <- as.vector(data$eigen_vectors %*%
+                                           (data$VtXty / omega_res$omega_var))
+
+    b <- colSums(model$alpha * model$mu)
+    model$Xr <- as.vector(compute_Xb(data$X, b + model$theta))
+    return(model)
+  }
   if (params$unmappable_effects %in% c("ash", "ash_filter_archived")) {
     # For ash, recompute full Xr including sparse effects only
     # (theta is tracked separately via X_theta)
