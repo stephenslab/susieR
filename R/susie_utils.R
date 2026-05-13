@@ -1061,7 +1061,7 @@ add_eigen_decomposition <- function(data, params, individual_data = NULL) {
   data$eigen_vectors    <- eigen_decomp$V
   data$eigen_vectors_sq <- eigen_decomp$V^2
   data$eigen_values     <- eigen_decomp$Dsq
-  data$VtXty            <- as.vector(crossprod(eigen_decomp$V, data$Xty))
+  data$VtXty            <- t(eigen_decomp$V) %*% data$Xty   # match reference summation order
   data$rank             <- length(eigen_decomp$Dsq)
   return(data)
 }
@@ -1101,15 +1101,15 @@ compute_XtXv_eigen <- function(data, v) {
 
 # Compute Omega-weighted quantities for unmappable effects methods.
 # diagXtOmegaX[j] = sum_k V[j,k]^2 * (lambda_k / omega_var_k) is a length-p
-# vector formed as a BLAS matvec on the cached V^2 (p x r) -- avoids the
-# p x r intermediate that sweep+rowSums allocated.  Falls back to V^2 on
-# the fly if the cache is absent (e.g. when callers build `data` directly).
+# vector.  Uses cached V^2 (eigen_vectors_sq) to skip the inline V^2
+# computation but keeps the rowSums(sweep(...)) summation order so output
+# is bit-identical to the upstream reference (which forms V^2 inline).
 #' @keywords internal
 compute_omega_quantities <- function(data, tau2, sigma2) {
   omega_var    <- tau2 * data$eigen_values + sigma2
   V_sq         <- if (!is.null(data$eigen_vectors_sq)) data$eigen_vectors_sq
                   else data$eigen_vectors^2
-  diagXtOmegaX <- as.vector(V_sq %*% (data$eigen_values / omega_var))
+  diagXtOmegaX <- rowSums(sweep(V_sq, 2, data$eigen_values / omega_var, `*`))
   list(omega_var = omega_var, diagXtOmegaX = diagXtOmegaX)
 }
 
@@ -1130,7 +1130,7 @@ compute_theta_blup <- function(data, model) {
 
   b         <- colSums(model$mu * model$alpha)
   XtOmegaXb <- as.vector(data$eigen_vectors %*%
-                           ((crossprod(data$eigen_vectors, b)) *
+                           ((t(data$eigen_vectors) %*% b) *
                               data$eigen_values / omega_var))
   XtOmegar  <- XtOmegay - XtOmegaXb
   model$tau2 * XtOmegar
@@ -1203,9 +1203,9 @@ mom_unmappable <- function(data, params, model, omega, tau2, est_tau2 = TRUE, es
   A[2, 1] <- A[1, 2]
   A[2, 2] <- sum(data$eigen_values^2)
 
-  # Compute diag(V'MV).  Final accumulator uses cached V^2 (p x r): summing
-  # tmpD-weighted columns of V^2 is equivalent to rowSums(sweep(t(V)^2, 2,
-  # tmpD, *)) but uses BLAS crossprod without the r x p intermediate.
+  # Compute diag(V'MV).  Final accumulator: rowSums(sweep(t(V)^2, 2, tmpD, *))
+  # = sum_j V[j,k]^2 tmpD[j] for each k.  Same summation order as upstream
+  # reference, but with V^2 already cached so we skip the inline t(V)^2.
   b <- colSums(model$mu * model$alpha)
   Vtb <- crossprod(data$eigen_vectors, b)
   diagVtMV <- Vtb^2
@@ -1218,7 +1218,7 @@ mom_unmappable <- function(data, params, model, omega, tau2, est_tau2 = TRUE, es
     tmpD <- tmpD + model$alpha[l, ] * (model$mu[l, ]^2 + 1 / omega[l, ])
   }
 
-  diagVtMV <- diagVtMV + as.vector(crossprod(data$eigen_vectors_sq, tmpD))
+  diagVtMV <- diagVtMV + rowSums(sweep(t(data$eigen_vectors_sq), 2, tmpD, `*`))
 
   # Compute x
   x <- rep(0, 2)
@@ -1257,8 +1257,8 @@ mle_unmappable <- function(data, params, model, omega, est_tau2 = TRUE, est_sigm
   sigma2_range <- c(0.2 * data$yty / data$n, 1.2 * data$yty / data$n)
   tau2_range   <- c(1e-12, 1.2 * data$yty / (data$n * data$p))
 
-  # Compute diag(V'MV).  Final accumulator uses cached V^2 (see mom_unmappable
-  # for derivation).
+  # Compute diag(V'MV) (same form as mom_unmappable -- preserves the upstream
+  # summation order while using the cached V^2).
   b        <- colSums(model$mu * model$alpha)
   Vtb      <- crossprod(data$eigen_vectors, b)
   diagVtMV <- Vtb^2
@@ -1271,7 +1271,7 @@ mle_unmappable <- function(data, params, model, omega, est_tau2 = TRUE, est_sigm
     tmpD     <- tmpD + model$alpha[l, ] * (model$mu[l, ]^2 + 1 / omega[l, ])
   }
 
-  diagVtMV <- diagVtMV + as.vector(crossprod(data$eigen_vectors_sq, tmpD))
+  diagVtMV <- diagVtMV + rowSums(sweep(t(data$eigen_vectors_sq), 2, tmpD, `*`))
 
   # Negative ELBO as function of x = (sigma^2, tau^2).
   # Use (n - r) instead of (n - p): when eigen_values is stored without
@@ -2426,24 +2426,24 @@ compute_elbo_inf <- function(alpha, mu, omega, lbf, sigma2, tau2, n, p,
                              eigen_vectors_sq = NULL) {
   L <- nrow(mu)
   r <- length(eigen_values)        # rank of the stored eigenspace
-  # Cached V^2 (p x r) avoids the r x p intermediate from sweep+rowSums in
-  # the tmpD accumulation below.  Recompute if caller didn't pass it.
+  # Use cached V^2 (p x r) if available to skip the inline V^2; otherwise
+  # form it.  Summation order matches the upstream reference.
   if (is.null(eigen_vectors_sq))
     eigen_vectors_sq <- eigen_vectors^2
 
   b <- colSums(mu * alpha)
-  Vtb <- crossprod(eigen_vectors, b)
+  Vtb <- t(eigen_vectors) %*% b
   diagVtMV <- Vtb^2
   tmpD <- rep(0, p)
 
   for (l in seq_len(L)) {
     bl <- mu[l, ] * alpha[l, ]
-    Vtbl <- crossprod(eigen_vectors, bl)
+    Vtbl <- t(eigen_vectors) %*% bl
     diagVtMV <- diagVtMV - Vtbl^2
     tmpD <- tmpD + alpha[l, ] * (mu[l, ]^2 + 1 / omega[l, ])
   }
 
-  diagVtMV <- diagVtMV + as.vector(crossprod(eigen_vectors_sq, tmpD))
+  diagVtMV <- diagVtMV + rowSums(sweep(t(eigen_vectors_sq), 2, tmpD, `*`))
 
   # Compute variance
   var <- tau2 * eigen_values + sigma2
