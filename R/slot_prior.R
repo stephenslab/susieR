@@ -23,7 +23,7 @@
 #' @param update_schedule How the Gamma shape parameter is updated
 #'   during IBSS iterations (Gamma-Poisson only; ignored for
 #'   Beta-Binomial which is inherently sequential).
-#'   \code{"batch"} updates once per full sweep (standard CAVI).
+#'   \code{"batch"} updates once per full IBSS iteration (standard CAVI).
 #'   \code{"sequential"} updates after each slot (faster convergence
 #'   per iteration, used by susieAnn).
 #' @param c_hat_init Optional numeric L-vector of initial slot activity
@@ -32,8 +32,8 @@
 #' @param skip_threshold_multiplier Multiplier for the adaptive skip
 #'   threshold. Slots with c_hat below this fraction of the baseline
 #'   (prior with zero signal) are skipped. Default 0 (no skipping).
-#'   The threshold is recomputed after each sweep from the current
-#'   model state, and is set to 0 on the first sweep so all slots
+#'   The threshold is recomputed after each IBSS iteration from the current
+#'   model state, and is set to 0 on the first iteration so all slots
 #'   are evaluated at least once.
 #'
 #' @return A list of class \code{"slot_prior"} with the appropriate

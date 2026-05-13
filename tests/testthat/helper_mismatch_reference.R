@@ -6,7 +6,9 @@
 # implementation against the upstream gold-standard commit
 # stephenslab/susieR@f110692 ("code refactor"), which is the head of
 # the upstream master branch at the time of the susie_rss thin-wrapper
-# refactor and includes the R_mismatch = "eb_adaptive_init" mode.
+# refactor. The current public "eb" mode has intentionally changed since this
+# reference commit, while the previous public behavior is still available
+# internally as "eb_ser_init" for targeted comparisons.
 #
 # The contract: the refactored thin-wrapper susie_rss produces
 # machine-precision identical output to the upstream gold-standard
@@ -116,8 +118,14 @@ compare_to_mismatch_reference <- function(func_name = "susie_rss",
   if (is.null(ref_func)) stop("'", func_name, "' not found in reference package")
   if (is.null(dev_func)) stop("'", func_name, "' not found in development package")
 
+  ref_args <- args
+  if (identical(ref_args$R_mismatch, "eb"))
+    skip("Current R_mismatch = 'eb' has intentionally changed since the pinned reference commit.")
+  else if (identical(ref_args$R_mismatch, "eb_ser_init"))
+    ref_args$R_mismatch <- "eb"
+
   dev_result <- suppressWarnings(suppressMessages(do.call(dev_func, args)))
-  ref_result <- suppressWarnings(suppressMessages(do.call(ref_func, args)))
+  ref_result <- suppressWarnings(suppressMessages(do.call(ref_func, ref_args)))
 
   expect_equal_susie_rss_mismatch_objects(dev_result, ref_result, tolerance)
   invisible(list(dev = dev_result, ref = ref_result))
