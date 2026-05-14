@@ -394,6 +394,8 @@ sufficient_stats_constructor <- function(Xty, yty, n,
       id <- which(maf > maf_thresh)
       XtX <- XtX[id, id]
       Xty <- Xty[id]
+      if (!is.null(prior_weights))
+        prior_weights <- prior_weights[id]
     }
 
     # Additional validation
@@ -943,6 +945,8 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
     if (!is.null(R)) R <- R[id, id]
     if (!is.null(X)) X <- X[, id, drop = FALSE]
     z <- z[id]
+    if (!is.null(prior_weights))
+      prior_weights <- prior_weights[id]
     # Update p after filtering
     p <- length(z)
   }
@@ -1175,6 +1179,8 @@ ss_mixture_constructor <- function(z, R = NULL, X = NULL, n,
     panel_R <- lapply(panel_R, function(Rk) Rk[id, id, drop = FALSE])
     if (!is.null(X_list))
       X_list <- lapply(X_list, function(Xk) Xk[, id, drop = FALSE])
+    if (!is.null(prior_weights))
+      prior_weights <- prior_weights[id]
     p <- length(z)
   }
 
@@ -1418,6 +1424,8 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
     if (!is.null(R)) R <- R[id, id]
     if (!is.null(X)) X <- X[, id, drop = FALSE]
     z <- z[id]
+    if (!is.null(prior_weights))
+      prior_weights <- prior_weights[id]
   }
 
   if (any(is.infinite(z))) {

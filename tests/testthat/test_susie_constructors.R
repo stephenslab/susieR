@@ -1941,3 +1941,55 @@ test_that("rss_lambda_constructor output works with ibss_initialize", {
     NA
   )
 })
+
+test_that("sufficient_stats_constructor with maf filtering subsets prior_weights", {
+  p <- 6
+  n <- 100
+  X <- matrix(rnorm(n * p), n, p)
+  XtX <- crossprod(X)
+  Xty <- rnorm(p)
+  yty <- 100
+  prior_weights <- c(0.10, 0.20, 0.30, 0.25, 0.10, 0.05)
+  maf <- c(0.20, 0.02, 0.30, 0.25, 0.01, 0.40)
+  keep <- maf > 0.05
+
+  result <- sufficient_stats_constructor(
+    Xty = Xty, yty = yty, n = n, XtX = XtX, L = 1,
+    prior_weights = prior_weights, maf = maf, maf_thresh = 0.05)
+
+  expect_equal(result$params$prior_weights,
+               prior_weights[keep] / sum(prior_weights[keep]))
+})
+
+test_that("ss_mixture_constructor with maf filtering subsets prior_weights", {
+  p <- 6
+  n <- 100
+  z <- rnorm(p)
+  R <- list(diag(p), diag(p))
+  prior_weights <- c(0.10, 0.20, 0.30, 0.25, 0.10, 0.05)
+  maf <- c(0.20, 0.02, 0.30, 0.25, 0.01, 0.40)
+  keep <- maf > 0.05
+
+  result <- ss_mixture_constructor(
+    z = z, R = R, n = n, L = 1,
+    prior_weights = prior_weights, maf = maf, maf_thresh = 0.05)
+
+  expect_equal(result$params$prior_weights,
+               prior_weights[keep] / sum(prior_weights[keep]))
+})
+
+test_that("rss_lambda_constructor with maf filtering subsets prior_weights", {
+  p <- 6
+  z <- rnorm(p)
+  R <- diag(p)
+  prior_weights <- c(0.10, 0.20, 0.30, 0.25, 0.10, 0.05)
+  maf <- c(0.20, 0.02, 0.30, 0.25, 0.01, 0.40)
+  keep <- maf > 0.05
+
+  result <- rss_lambda_constructor(
+    z = z, R = R, lambda = 0.5, L = 1,
+    prior_weights = prior_weights, maf = maf, maf_thresh = 0.05)
+
+  expect_equal(result$params$prior_weights,
+               prior_weights[keep] / sum(prior_weights[keep]))
+})
