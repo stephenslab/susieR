@@ -864,9 +864,22 @@ adjust_L <- function(params, model_init_pruned, var_y) {
   }
 
   V <- expand_scaled_prior_variance(params$scaled_prior_variance, var_y, L)
-  model_init <- prune_single_effects(model_init_pruned, L = L, V = V)
+  model_init <- extract_model_init_fields(
+    model_init_pruned, L = L, V = V,
+    estimate_residual_variance = params$estimate_residual_variance)
 
   return(list(model_init = model_init, L = L))
+}
+
+# Extract the fitted state needed to initialize a new SuSiE fit.
+#' @keywords internal
+extract_model_init_fields <- function(model_init, L = 0, V = NULL,
+                                      estimate_residual_variance = TRUE) {
+  model_init <- prune_single_effects(model_init, L = L, V = V)
+  keep <- c("alpha", "mu", "mu2", "V")
+  if (isTRUE(estimate_residual_variance))
+    keep <- c(keep, "sigma2")
+  model_init[intersect(keep, names(model_init))]
 }
 
 # Prune single effects to given number L in susie model object.

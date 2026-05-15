@@ -223,7 +223,7 @@ compute_R_finite_diagnostics <- function(X = NULL, R = NULL, B, p,
 get_mixture_omega <- function(data, model) {
   if (!inherits(data, "ss_mixture") || is.null(data$K))
     return(NULL)
-  omega <- if (!is.null(model$omega)) model$omega else data$omega_init
+  omega <- if (!is.null(model[["omega"]])) model[["omega"]] else data[["omega_init"]]
   if (is.null(omega))
     omega <- rep(1 / data$K, data$K)
   omega <- as.numeric(omega)

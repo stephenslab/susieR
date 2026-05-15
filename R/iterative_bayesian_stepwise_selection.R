@@ -56,7 +56,9 @@ ibss_initialize.default <- function(data, params) {
     validate_init(data, params)
 
     # Prune effects with zero prior variance
-    model_init_pruned <- prune_single_effects(params$model_init)
+    model_init_pruned <- extract_model_init_fields(
+      params$model_init,
+      estimate_residual_variance = params$estimate_residual_variance)
 
     # Adjust the number of effects
     adjustment <- adjust_L(params, model_init_pruned, var_y)
@@ -434,8 +436,8 @@ ibss_finalize <- function(data, params, model, elbo = NULL, iter = NA_integer_,
   }
 
   # Multi-panel omega weights
-  if (!is.null(model$omega))
-    model$omega_weights <- model$omega
+  if (!is.null(model[["omega"]]))
+    model$omega_weights <- model[["omega"]]
 
   # Store Gamma-Poisson c_hat results on output for user access
   # and for susieAnn to extract (a_g, b_g needed for genome-wide nu update).
