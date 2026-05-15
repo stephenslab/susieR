@@ -876,6 +876,13 @@ adjust_L <- function(params, model_init_pruned, var_y) {
 extract_model_init_fields <- function(model_init, L = 0, V = NULL,
                                       estimate_residual_variance = TRUE) {
   model_init <- prune_single_effects(model_init, L = L, V = V)
+  # If pruning left no informative content (V and mu both all zero or empty),
+  # there is nothing useful to initialize from. Return NULL so callers can
+  # fall back to a fresh model.
+  all_zero_or_empty <- function(x) is.null(x) || length(x) == 0 || all(x == 0, na.rm = TRUE)
+  if (all_zero_or_empty(model_init$V) && all_zero_or_empty(model_init$mu)) {
+    return(NULL)
+  }
   keep <- c("alpha", "mu", "mu2", "V")
   if (isTRUE(estimate_residual_variance))
     keep <- c(keep, "sigma2")

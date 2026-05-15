@@ -50,31 +50,24 @@ ibss_initialize.default <- function(data, params) {
     }
   }
 
-  # Handle model initialization
+  # Handle model initialization. extract_model_init_fields returns NULL when
+  # pruning leaves nothing useful (V and mu all zero), which collapses into the
+  # same "no init" path as model_init being NULL to begin with.
   if (!is.null(params$model_init)) {
-    # Validate the contents of model_init
     validate_init(data, params)
-
-    # Prune effects with zero prior variance
-    model_init_pruned <- extract_model_init_fields(
+    params$model_init <- extract_model_init_fields(
       params$model_init,
       estimate_residual_variance = params$estimate_residual_variance)
+  }
 
-    # Adjust the number of effects
-    adjustment <- adjust_L(params, model_init_pruned, var_y)
-    params$L   <- adjustment$L
-
-    # Create base model with all required fields
-    mat_init <- initialize_susie_model(data, params, var_y)
-
-    # Merge with adjusted model_init
-    mat_init <- modifyList(mat_init, adjustment$model_init)
-
-    # Reset iteration-specific values
+  if (!is.null(params$model_init)) {
+    adjustment   <- adjust_L(params, params$model_init, var_y)
+    params$L     <- adjustment$L
+    mat_init     <- initialize_susie_model(data, params, var_y)
+    mat_init     <- modifyList(mat_init, adjustment$model_init)
     mat_init$KL  <- rep(as.numeric(NA), params$L)
     mat_init$lbf <- rep(as.numeric(NA), params$L)
   } else {
-    # Create fresh model
     mat_init <- initialize_susie_model(data, params, var_y)
   }
 
