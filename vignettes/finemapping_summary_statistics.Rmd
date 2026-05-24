@@ -175,6 +175,37 @@ fitted_standardize = susie(scale(X), scale(Y[,1]), L = 10)
 all.equal(coef(fitted_standardize)[-1], coef(fitted_rss2)[-1])
 ```
 
+### Single-effect summary-statistics analysis without LD
+
+If the goal is to fit a one-effect credible-set model, the LD matrix is
+not needed. The `susie_ser` function works directly with z-scores, or
+with $\hat{\beta}$ and $SE(\hat{\beta})$, and avoids constructing an
+LD matrix internally. This is useful for a quick single-effect analysis
+or as a diagnostic before running a full multi-effect RSS fit.
+
+```{r}
+fitted_ser <- susie_ser(z = z_scores, n = n, coverage = 0.95)
+fitted_ser$sets
+```
+
+Because no LD reference is supplied, this credible set does not have a
+purity filter. It is the one-effect credible-set model of Maller et
+al. (2012), with the attainable-coverage filter from SparsePro (Zhang
+et al. 2023). To apply a purity filter afterward, call `susie_get_cs`
+with an LD matrix:
+
+```{r, eval=FALSE}
+susie_get_cs(fitted_ser, Xcorr = R, coverage = 0.95)
+```
+
+To skip credible-set construction and silence the no-LD hint, set
+`coverage = NULL`:
+
+```{r}
+fitted_ser_no_cs <- susie_ser(z = z_scores, n = n, coverage = NULL)
+is.null(fitted_ser_no_cs$sets)
+```
+
 
 ## Fine-mapping with `susieR` using LD matrix from reference panel
 
