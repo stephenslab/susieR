@@ -997,21 +997,51 @@ compute_BR <- function(data, B_mat) {
 # lbf_stabilization, compute_posterior_weights, compute_lbf_gradient
 # =============================================================================
 
-# Compute eigenvalue decomposition for unmappable methods
-# When X (low-rank factor) is available, uses thin SVD (O(pB^2)) instead
-# of eigen decomposition of XtX (O(p^3)).
+# Compute eigenvalue decomposition for unmappable methods.
+#
+# Three branches by decreasing efficiency for the QTL (p >> n) regime:
+#   (a) X (low-rank factor) provided: thin SVD of X.  O(min(n,p)^2 * max(n,p)).
+#   (b) Only XtX provided AND XtX is rank-deficient (n + 1 < p): pivoted
+#       Cholesky XtX = L L' followed by SVD of L recovers eigenpairs of XtX
+#       without spending O((p-r)*p^2) work on the null space.  O(p^2 * r).
+#   (c) Only XtX provided AND p <= n (or n unknown): full eigen(XtX).
+#       O(p^3); legacy path.
+#
+# (b) is a math-level equivalent of (c): the dropped eigenvalues are exactly
+# zero by rank-deficiency, contributing zero to every SuSiE-inf eigenspace
+# operation.  Eigenvectors agree with (c) up to sign (downstream code is
+# sign-invariant) and within ~1e-10 numerical tolerance.
 #' @keywords internal
 compute_eigen_decomposition <- function(XtX, n, X = NULL) {
   if (!is.null(X)) {
-    # Thin SVD: V is p x r where r = min(n,p).  No null-space padding -
-    # null-space components contribute 0 to every eigenspace sum in the
-    # SuSiE-inf math, and storing them as p x p was the memory wall.
+    # (a) Thin SVD of X.  V is p x r where r = min(n,p).
     sv  <- svd(X, nu = 0)
     Dsq <- pmax(sv$d^2, 0)
     idx <- order(Dsq, decreasing = TRUE)
     return(list(V = sv$v[, idx, drop = FALSE], Dsq = Dsq[idx], VtXty = NULL))
   }
 
+  p <- ncol(XtX)
+  if (!is.null(n) && is.finite(n) && n + 1 < p) {
+    # (b) Pivoted Cholesky + SVD.  XtX has rank <= n; the (p - n) null-space
+    # eigenvalues are exactly zero and contribute nothing downstream.
+    ch  <- chol(XtX, pivot = TRUE, tol = -1)
+    r   <- attr(ch, "rank")
+    piv <- attr(ch, "pivot")
+    if (r >= 1L) {
+      # B is r x p with t(B) %*% B = XtX in original variable ordering
+      # (R(1:r, ) is in pivot ordering; un-permute columns via order(piv)).
+      B  <- ch[seq_len(r), order(piv), drop = FALSE]
+      L  <- t(B)                              # p x r, L %*% t(L) = XtX
+      sv <- svd(L, nv = 0)                    # L = U D V', so XtX = U D^2 U'
+      Dsq <- pmax(sv$d^2, 0)
+      return(list(V = sv$u, Dsq = Dsq, VtXty = NULL))
+    }
+    # Degenerate rank-0 XtX (all zero): fall through to legacy eigen path.
+  }
+
+  # (c) Legacy full eigen.  Used when p <= n, n is unknown, or pivoted
+  # Cholesky detected rank 0.
   LD  <- XtX / n
   eig <- eigen(LD, symmetric = TRUE)
   idx <- order(eig$values, decreasing = TRUE)
