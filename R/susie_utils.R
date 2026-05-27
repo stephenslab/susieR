@@ -997,20 +997,10 @@ compute_BR <- function(data, B_mat) {
 # lbf_stabilization, compute_posterior_weights, compute_lbf_gradient
 # =============================================================================
 
-# Compute eigenvalue decomposition for unmappable methods.
-#
-# Three branches by decreasing efficiency for the QTL (p >> n) regime:
-#   (a) X (low-rank factor) provided: thin SVD of X.  O(min(n,p)^2 * max(n,p)).
-#   (b) Only XtX provided AND XtX is rank-deficient (n + 1 < p): pivoted
-#       Cholesky XtX = L L' followed by SVD of L recovers eigenpairs of XtX
-#       without spending O((p-r)*p^2) work on the null space.  O(p^2 * r).
-#   (c) Only XtX provided AND p <= n (or n unknown): full eigen(XtX).
-#       O(p^3); legacy path.
-#
-# (b) is a math-level equivalent of (c): the dropped eigenvalues are exactly
-# zero by rank-deficiency, contributing zero to every SuSiE-inf eigenspace
-# operation.  Eigenvectors agree with (c) up to sign (downstream code is
-# sign-invariant) and within ~1e-10 numerical tolerance.
+# Eigendecomposition for unmappable methods. Three branches, dispatched below:
+# (a) low-rank factor X -> thin SVD; (b) rank-deficient XtX (n+1<p) -> pivoted
+# Cholesky + SVD (skips the exactly-zero null space); (c) else -> eigen(XtX).
+# (b) equals (c) up to sign and ~1e-10 (dropped eigenpairs have eigenvalue 0).
 #' @keywords internal
 compute_eigen_decomposition <- function(XtX, n, X = NULL) {
   if (!is.null(X)) {
@@ -1054,19 +1044,14 @@ compute_eigen_decomposition <- function(XtX, n, X = NULL) {
 }
 
 # Add eigen decomposition to a data object for unmappable_effects = "inf".
-# Two input shapes are supported:
-#   (a) Individual-level data: data$X present, data$XtX absent.  Thin SVD of
-#       standardized X; stores p x r eigen factors with NO null-space padding.
-#       Skips the O(np^2) XtX formation entirely.
-#   (b) Sufficient-statistics data: data$XtX present.  Existing behavior.
+#   (a) Individual data (data$X, no XtX): thin SVD of standardized X; no XtX formed.
+#   (b) Sufficient-statistics data (data$XtX): via compute_eigen_decomposition.
 #' @keywords internal
 add_eigen_decomposition <- function(data, params, individual_data = NULL) {
 
   if (!is.null(data$X) && is.null(data$XtX)) {
-    # (a) Individual-data path.  SVD operates on the standardized X so that
-    # V/D match (scaled X)'(scaled X), which is the operator the rest of the
-    # SuSiE-inf eigenspace math assumes.  X_std is materialized only for the
-    # SVD call and then released.
+    # (a) Individual path: SVD the standardized X so V/D match (scaled X)'(scaled X),
+    # the operator the rest of the inf eigenspace math assumes.
     cm    <- attr(data$X, "scaled:center")
     csd   <- attr(data$X, "scaled:scale")
     X_std <- scale_design_matrix(data$X, cm, csd)
@@ -1074,10 +1059,10 @@ add_eigen_decomposition <- function(data, params, individual_data = NULL) {
     rm(X_std)
 
     r <- length(sv$d)
-    data$eigen_vectors    <- sv$v                                # p x r
-    data$eigen_vectors_sq <- sv$v^2                              # p x r (cached)
-    data$eigen_values     <- sv$d^2                              # length r
-    data$Uty              <- as.vector(crossprod(sv$u, data$y))  # length r
+    data$eigen_vectors    <- sv$v
+    data$eigen_vectors_sq <- sv$v^2
+    data$eigen_values     <- sv$d^2
+    data$Uty              <- as.vector(crossprod(sv$u, data$y))
     data$VtXty            <- sv$d * data$Uty                     # = V' Xty
     data$rank             <- r
 
@@ -1118,22 +1103,18 @@ scale_design_matrix <- function(X, center = NULL, scale = NULL) {
   return(X_scaled)
 }
 
-# Compute (scaled X)'(scaled X) v using the cached thin-SVD factors.
-# Cost is O(p * r) instead of O(p^2) or O(n p).  Used in the SuSiE-inf
-# individual path where compute_Rv with raw data$X would return the
-# unscaled X'X v -- here the eigen factors come from svd(X_std), so
-# V (D^2 V' v) is the standardized operator that matches compute_XtX().
+# Standardized (scaled X)'(scaled X) v from the cached thin-SVD factors:
+# V (D^2 (V' v)).  Used on the SuSiE-inf individual path (matches compute_XtX,
+# unlike compute_Rv on raw data$X which would give the unscaled X'X v).
 #' @keywords internal
 compute_XtXv_eigen <- function(data, v) {
   Vtv <- crossprod(data$eigen_vectors, v)
   as.vector(data$eigen_vectors %*% (data$eigen_values * Vtv))
 }
 
-# Compute Omega-weighted quantities for unmappable effects methods.
-# diagXtOmegaX[j] = sum_k V[j,k]^2 * (lambda_k / omega_var_k) is a length-p
-# vector.  Uses cached V^2 (eigen_vectors_sq) to skip the inline V^2
-# computation but keeps the rowSums(sweep(...)) summation order so output
-# is bit-identical to the upstream reference (which forms V^2 inline).
+# Omega-weighted quantities for unmappable methods.
+# diagXtOmegaX[j] = sum_k V[j,k]^2 * lambda_k / omega_var_k  (length p).
+# Uses cached V^2; rowSums(sweep(...)) order kept for bit-identical reference.
 #' @keywords internal
 compute_omega_quantities <- function(data, tau2, sigma2) {
   omega_var    <- tau2 * data$eigen_values + sigma2
