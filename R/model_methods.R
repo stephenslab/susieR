@@ -238,8 +238,9 @@ check_convergence.default <- function(data, params, model, elbo, iter) {
     pip_diff <- model$runtime$pip_diff
     lambda_diff <- if (!is.null(model$runtime$lambda_bias_diff))
                      model$runtime$lambda_bias_diff else 0
-    # Coordinate EB guard: fit_R_mismatch runs after the SER sweep, so a material
-    # lambda update must be consumed by one more sweep before convergence.
+    # Coordinate EB guard: fit_R_mismatch runs after the SER iteration, so a
+    # material lambda update must be consumed by one more iteration before
+    # convergence.
     if (isTRUE(model$converged) && lambda_diff > params$tol) {
       model$converged <- FALSE
       model$convergence_reason <- paste0("lambda_infl_changed(",
@@ -277,8 +278,9 @@ check_convergence.default <- function(data, params, model, elbo, iter) {
   model$converged <- (ELBO_diff >= 0 && ELBO_diff < params$tol)
   lambda_diff <- if (!is.null(model$runtime$lambda_bias_diff))
                    model$runtime$lambda_bias_diff else 0
-  # Coordinate EB guard: fit_R_mismatch runs after the SER sweep, so a material
-  # lambda update must be consumed by one more sweep before declaring convergence.
+  # Coordinate EB guard: fit_R_mismatch runs after the SER iteration, so a
+  # material lambda update must be consumed by one more iteration before
+  # declaring convergence.
   if (isTRUE(model$converged) && lambda_diff > params$tol)
     model$converged <- FALSE
 

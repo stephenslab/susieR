@@ -123,9 +123,12 @@ test_that("R_mismatch = 'eb' uses SER-protected initialization", {
   expect_equal(d$R_mismatch_init$method, "ser")
   expect_true(!is.null(d$R_mismatch_trace))
   expect_equal(d$R_mismatch_trace[[1]]$phase, "init_ser")
+  expect_true(is.finite(d$R_mismatch_init$ld_coherence))
+  expect_true(d$R_mismatch_init$ld_coherence >= 0)
+  expect_true(d$R_mismatch_init$ld_coherence <= 1)
 })
 
-test_that("R_mismatch = 'eb' skips SER-protected initialization with finite R_finite", {
+test_that("R_mismatch = 'eb_ser_init' preserves the old finite-B initialization rule", {
   set.seed(14)
   p <- 20
   n <- 1000
@@ -134,7 +137,7 @@ test_that("R_mismatch = 'eb' skips SER-protected initialization with finite R_fi
   z <- rnorm(p)
 
   fit <- suppressWarnings(susie_rss(z = z, R = R, n = n, L = 3,
-                   R_finite = 5000, R_mismatch = "eb", max_iter = 2,
+                   R_finite = 5000, R_mismatch = "eb_ser_init", max_iter = 2,
                    track_fit = TRUE, verbose = FALSE))
   d <- fit$R_finite_diagnostics
   expect_true(is.null(d$R_mismatch_init))
@@ -157,7 +160,7 @@ test_that("R_mismatch = 'eb_force_init' initializes even with finite R_finite", 
   expect_equal(d$R_mismatch_trace[[1]]$phase, "init_ser")
 })
 
-test_that("R_mismatch = 'eb_adaptive_init' tempers SER initialization", {
+test_that("R_mismatch = 'eb' uses adaptive SER initialization with finite R_finite", {
   set.seed(19)
   p <- 20
   n <- 1000
@@ -166,7 +169,7 @@ test_that("R_mismatch = 'eb_adaptive_init' tempers SER initialization", {
   z <- rnorm(p)
 
   fit <- susie_rss(z = z, R = R, n = n, L = 3,
-                   R_finite = 5000, R_mismatch = "eb_adaptive_init",
+                   R_finite = 5000, R_mismatch = "eb",
                    max_iter = 2, track_fit = TRUE, verbose = FALSE)
   d <- fit$R_finite_diagnostics
   init <- d$R_mismatch_init
@@ -432,7 +435,7 @@ test_that("eb works on lambda=0 multi-panel SS path", {
   expect_length(d$lambda_bias, 1)
 })
 
-test_that("eb_adaptive_init handles multi-panel X input", {
+test_that("eb handles multi-panel X input with adaptive initialization", {
   set.seed(21)
   n <- 80
   p <- 12
@@ -441,7 +444,7 @@ test_that("eb_adaptive_init handles multi-panel X input", {
   z <- rnorm(p)
 
   fit <- susie_rss(z = z, X = list(X1, X2), n = 1000, L = 3,
-                   R_finite = TRUE, R_mismatch = "eb_adaptive_init",
+                   R_finite = TRUE, R_mismatch = "eb",
                    max_iter = 3, verbose = FALSE)
   d <- fit$R_finite_diagnostics
   expect_true(!is.null(d$R_mismatch_init))

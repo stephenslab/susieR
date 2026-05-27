@@ -188,8 +188,8 @@ ibss_fit <- function(data, params, model) {
   L <- nrow(model$alpha)
   use_c_hat <- !is.null(model$c_hat_state)
 
-  # SS / ss_mixture: lambda_bias / B_corrected are scalars set per-sweep
-  # by fit_R_mismatch at the end of the sweep. rss_lambda does not carry
+  # SS / ss_mixture: lambda_bias / B_corrected are scalars set per iteration
+  # by fit_R_mismatch at the end of the iteration. rss_lambda does not carry
   # these because susie_rss_lambda() does not expose R_mismatch. No reset needed.
 
   if (L > 0) {
@@ -207,7 +207,7 @@ ibss_fit <- function(data, params, model) {
     }
   }
 
-  # Gamma-Poisson batch shape update (once per sweep)
+  # Gamma-Poisson batch shape update (once per iteration)
   if (use_c_hat && model$c_hat_state$update_schedule == "batch" &&
       model$c_hat_state$prior_type != "betabinom") {
     model$c_hat_state$a_g <- model$c_hat_state$nu + sum(model$slot_weights)
@@ -232,7 +232,7 @@ ibss_fit <- function(data, params, model) {
       st$skip_threshold_multiplier * c_hat_baseline
   }
 
-  # Region-level R-mismatch fit at the end of the sweep, before validate.
+  # Region-level R-mismatch fit at the end of the iteration, before validate.
   # No-op when R_mismatch = "none" or on the rss_lambda dispatch.
   if (inherits(data, c("ss", "ss_mixture"))) {
     old_lambda_bias <- model$lambda_bias
@@ -379,7 +379,7 @@ ibss_finalize <- function(data, params, model, elbo = NULL, iter = NA_integer_,
 
   # R diagnostics (from data -> model, following sets/pip/z pattern).
   # SS / ss_mixture paths store lambda_bias / B_corrected as scalars
-  # (set by fit_R_mismatch once per sweep). The rss_lambda dispatch keeps
+  # (set by fit_R_mismatch once per iteration). The rss_lambda dispatch keeps
   # the per-slot vector form. Copy whatever shape lives on the model.
   R_finite_diagnostics <- data$R_finite_diagnostics
   if (!is.null(R_finite_diagnostics)) {

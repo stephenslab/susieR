@@ -14,12 +14,12 @@
 #     (apply_inflation_state)
 #   * SER-protected initialization for the recommended EB path
 #     (initialize_R_mismatch)
-#   * per-sweep region-level fit (fit_R_mismatch)
+#   * per-iteration region-level fit (fit_R_mismatch)
 #   * residual R-mismatch QC diagnostic Q_art (always with R_mismatch)
 #   * Bayes-factor attenuation diagnostic for CS reliability
 #
 # Storage convention on the model:
-#   model$lambda_bias    scalar set once per sweep by fit_R_mismatch
+#   model$lambda_bias    scalar set once per iteration by fit_R_mismatch
 #   model$B_corrected    1 / (1/B + lambda_bias)
 #   model$shat2_inflation per-variable inflation vector of length p,
 #                        consumed by the SER step.
@@ -322,7 +322,7 @@ estimate_lambda_bias <- function(r, s, sigma2, R_finite_B, method,
 #   eta_j^2 = XtXr_without_l[j]^2 / (n-1)   (z-score scale)
 #   v_g     = sum(b_minus_l * XtXr_without_l).
 # Reads the region-level scalar lambda_bias from model (set once per
-# sweep by fit_R_mismatch) and applies it to the slot-specific xi_l.
+# iteration by fit_R_mismatch) and applies it to the slot-specific xi_l.
 # Returns NULL when no inflation applies, otherwise a list with the
 # per-variable inflation vector.
 #' @keywords internal
@@ -478,19 +478,19 @@ compute_R_mismatch_state <- function(data, params, model, phase = "sweep") {
 #'
 #' The joint EB/sparse objective is path dependent. Starting lambda_bias at
 #' zero can let secondary R-mismatch patterns enter as sparse effects before
-#' the variance component is estimated. For R_mismatch = "eb", initialize only
-#' in the B = Inf limit, where no finite-reference component is available for
-#' early protection. R_mismatch = "eb_force_init" always initializes this way;
-#' R_mismatch = "eb_adaptive_init" uses the same initializer but tempers it by
-#' the SER posterior LD coherence; R_mismatch = "eb_no_init" always skips it.
+#' the variance component is estimated. For R_mismatch = "eb", use the
+#' initialization procedure described in Sun et al. (2026+).
+#' R_mismatch = "eb_ser_init" keeps the previous initialization rule and only
+#' initializes in the B = Inf limit. R_mismatch = "eb_force_init" always uses
+#' the raw one-SER initializer; R_mismatch = "eb_no_init" always skips it.
 #'
 #' @keywords internal
 #' @noRd
 initialize_R_mismatch <- function(data, params, model) {
   R_mismatch <- if (!is.null(params$R_mismatch)) params$R_mismatch else "none"
   R_finite_B <- if (!is.null(model$R_finite_B)) model$R_finite_B else data$R_finite_B
-  should_init <- R_mismatch %in% c("eb_force_init", "eb_adaptive_init") ||
-                 (R_mismatch == "eb" && is.infinite(R_finite_B))
+  should_init <- R_mismatch %in% c("eb", "eb_force_init") ||
+                 (R_mismatch == "eb_ser_init" && is.infinite(R_finite_B))
   if (!should_init || !inherits(data, c("ss", "ss_mixture")) ||
       nrow(model$alpha) < 1)
     return(model)
@@ -498,7 +498,7 @@ initialize_R_mismatch <- function(data, params, model) {
   model <- single_effect_update(data, params, model, 1L)
   model$R_mismatch_ser_model <- make_R_mismatch_ser_model(data, params, model, 1L)
   model <- compute_R_mismatch_state(data, params, model, phase = "init_ser")
-  init_coherence <- if (R_mismatch == "eb_adaptive_init") compute_ser_ld_coherence(data, model, model$alpha[1, ]) else 1
+  init_coherence <- if (R_mismatch == "eb") compute_ser_ld_coherence(data, model, model$alpha[1, ]) else 1
   model$lambda_bias <- init_coherence * model$lambda_bias
   model$R_mismatch_init <- list(
     method = "ser",

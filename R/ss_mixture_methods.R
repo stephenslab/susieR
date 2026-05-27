@@ -41,7 +41,7 @@ compute_residuals.ss_mixture <- function(data, params, model, l, ...) {
 
   if (!is.null(data$R_finite_B) && model$sigma2 > .Machine$double.eps) {
     # Region-level scalar lambda_bias is set by fit_R_mismatch once per
-    # IBSS sweep; here we just apply it through the slot-specific
+    # IBSS iteration; here we just apply it through the slot-specific
     # xi_l = eta_l^2 + v_g,l on z-scale.
     sw <- if (!is.null(model$slot_weights)) model$slot_weights else
             rep(1, nrow(model$alpha))
