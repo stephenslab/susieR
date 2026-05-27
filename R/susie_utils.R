@@ -725,6 +725,13 @@ validate_and_override_params <- function(params) {
     stop("Refinement is not supported with unmappable effects (inf/ash) as it relies on ELBO, ",
          "which is not well-defined for these models. Please set refine = FALSE.")
   }
+  if (params$unmappable_effects == "inf" &&
+      identical(params$estimate_residual_method, "MLE")) {
+    stop("estimate_residual_method = 'MLE' is not supported with ",
+         "unmappable_effects = 'inf': the optimizer-based variance-component ",
+         "update is unstable for SuSiE-inf. Use estimate_residual_method = ",
+         "'MoM' (the default).")
+  }
 
   # Override prior estimation method when estimation is disabled,
   # unless using a fixed mixture prior (which does not estimate V but
