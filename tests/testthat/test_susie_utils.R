@@ -906,7 +906,7 @@ test_that("initialize_matrices creates correct model matrices", {
 
   var_y <- 2.0
 
-  result <- initialize_matrices(data, params, var_y)
+  result <- initialize_matrices.default(data, params, var_y)
 
   # Check all components exist
   expected_names <- c("alpha", "mu", "mu2", "V", "KL", "lbf",
@@ -950,7 +950,7 @@ test_that("initialize_matrices handles vector scaled_prior_variance of length L"
   )
   var_y <- 2.0
 
-  result <- initialize_matrices(data, params, var_y)
+  result <- initialize_matrices.default(data, params, var_y)
 
   expect_length(result$V, L)
   expect_equal(result$V, spv * var_y)
@@ -968,7 +968,7 @@ test_that("initialize_matrices keeps NIG prior variance on scaled sigma units", 
     use_NIG = TRUE
   )
 
-  result <- initialize_matrices(data, params, var_y = 20)
+  result <- initialize_matrices.default(data, params, var_y = 20)
 
   expect_equal(result$V, rep(0.2, L))
 })
@@ -986,7 +986,7 @@ test_that("initialize_matrices preserves vector NIG scaled prior variance", {
     use_NIG = TRUE
   )
 
-  result <- initialize_matrices(data, params, var_y = 20)
+  result <- initialize_matrices.default(data, params, var_y = 20)
 
   expect_equal(result$V, spv)
 })
@@ -1009,7 +1009,7 @@ test_that("NIG initial log BF uses scaled prior variance, not var_y-scaled V", {
     null_weight = 0,
     use_NIG = TRUE
   )
-  model <- initialize_matrices(data, params, var_y = var(y))
+  model <- initialize_matrices.default(data, params, var_y = var(y))
   model$predictor_weights <- colSums(X^2)
   model$raw_residuals <- y
   model$residuals <- drop(crossprod(X, y))
@@ -1793,7 +1793,7 @@ test_that("update_model_variance updates variance components", {
 
   old_sigma2 <- model$sigma2
 
-  result <- update_model_variance(data, params, model)
+  result <- update_model_variance.default(data, params, model)
 
   # Check sigma2 was updated
   expect_true("sigma2" %in% names(result))
@@ -1831,20 +1831,20 @@ test_that("check_convergence detects convergence correctly", {
   )
 
   # Test: first iteration (should not converge)
-  result_iter1 <- check_convergence(NULL, params, model, elbo = c(-1000, -999),
+  result_iter1 <- check_convergence.default(NULL, params, model, elbo = c(-1000, -999),
                                    iter = 1)
   expect_false(result_iter1$converged)
 
   # Test: ELBO converged
   elbo_converged <- c(-1000, -999.99)
-  result_elbo_conv <- check_convergence(NULL, params, model, elbo = elbo_converged,
+  result_elbo_conv <- check_convergence.default(NULL, params, model, elbo = elbo_converged,
                                        iter = 2)
   expect_true(result_elbo_conv$converged)
 
   # Test: ELBO not converged
   model$runtime$prev_elbo <- -1000
   elbo_not_conv <- c(NA, NA, -990)
-  result_elbo_not <- check_convergence(NULL, params, model, elbo = elbo_not_conv,
+  result_elbo_not <- check_convergence.default(NULL, params, model, elbo = elbo_not_conv,
                                       iter = 2)
   expect_false(result_elbo_not$converged)
 
@@ -1856,21 +1856,21 @@ test_that("check_convergence detects convergence correctly", {
   )
 
   # PIP converged (alpha unchanged)
-  result_pip_conv <- check_convergence(NULL, params_pip, model, elbo = c(-1000, -999),
+  result_pip_conv <- check_convergence.default(NULL, params_pip, model, elbo = c(-1000, -999),
                                       iter = 2)
   expect_true(result_pip_conv$converged)
 
   # PIP not converged (alpha changed)
   model_changed <- model
   model_changed$alpha[1, 1] <- 0.5
-  result_pip_not <- check_convergence(NULL, params_pip, model_changed,
+  result_pip_not <- check_convergence.default(NULL, params_pip, model_changed,
                                      elbo = c(-1000, -999),
                                      iter = 2)
   expect_false(result_pip_not$converged)
 
   # Test: ELBO is NA/Inf (fallback to PIP)
   expect_message(
-    result_na <- check_convergence(NULL, params, model, elbo = c(-1000, NA),
+    result_na <- check_convergence.default(NULL, params, model, elbo = c(-1000, NA),
                                   iter = 2),
     "NA/infinite ELBO"
   )

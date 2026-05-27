@@ -806,13 +806,13 @@ test_that("R_finite = FALSE silences in-sample R residual variance warning", {
   R <- diag(3)
 
   expect_message(
-    susie_rss(z = z, R = R, n = 100, L = 1,
+    susie_rss(z = z, R = R, n = 100, L = 1, max_iter = 50,
               estimate_residual_variance = TRUE, init_only = TRUE),
     "not recommended unless R is the"
   )
 
   expect_no_message(
-    susie_rss(z = z, R = R, n = 100, L = 1,
+    susie_rss(z = z, R = R, n = 100, L = 1, max_iter = 50,
               estimate_residual_variance = TRUE, R_finite = FALSE,
               init_only = TRUE)
   )

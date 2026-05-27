@@ -367,14 +367,14 @@ test_that("get_variable_names.default throws error for unimplemented class", {
 
 test_that("format_sigma2_summary.default returns sprintf %.4f of scalar sigma2", {
   model <- list(sigma2 = 1.2345678)
-  expect_equal(format_sigma2_summary(model), sprintf("%.4f", 1.2345678))
-  expect_type(format_sigma2_summary(model), "character")
-  expect_length(format_sigma2_summary(model), 1L)
+  expect_equal(format_sigma2_summary.default(model), sprintf("%.4f", 1.2345678))
+  expect_type(format_sigma2_summary.default(model), "character")
+  expect_length(format_sigma2_summary.default(model), 1L)
 })
 
 test_that("format_extra_diag.default returns empty string", {
   model <- list()
-  expect_identical(format_extra_diag(model), "")
+  expect_identical(format_extra_diag.default(model), "")
 })
 
 # =============================================================================
@@ -383,7 +383,7 @@ test_that("format_extra_diag.default returns empty string", {
 
 test_that("cleanup_extra_fields.default returns character(0)", {
   data <- list()
-  expect_identical(cleanup_extra_fields(data), character(0))
+  expect_identical(cleanup_extra_fields.default(data), character(0))
 })
 
 test_that("cleanup_model.default strips standard temp fields", {

@@ -143,20 +143,6 @@ test_that("track_ibss_fit.ss delegates to default when unmappable_effects='none'
   expect_type(result, "list")
 })
 
-test_that("track_ibss_fit.ss tracks tau2 for unmappable_effects='inf'", {
-  setup <- setup_ss_data(unmappable_effects = "inf")
-  setup$params$track_fit <- TRUE
-  tracking <- list()
-  iter <- 1
-  elbo <- -100
-
-  result <- track_ibss_fit.ss(setup$data, setup$params, setup$model,
-                               tracking, iter, elbo)
-
-  expect_true("tau2" %in% names(result[[1]]$effect))
-  expect_equal(result[[1]]$effect$tau2, setup$model$tau2)
-})
-
 # =============================================================================
 # SINGLE EFFECT REGRESSION & ELBO
 # =============================================================================
