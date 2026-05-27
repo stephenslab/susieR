@@ -650,6 +650,7 @@ test_that("validate_and_override_params validates and adjusts parameters", {
   # Test: unmappable effects overrides convergence method
   inf_params <- valid_params
   inf_params$unmappable_effects <- "inf"
+  inf_params$estimate_residual_method <- "MoM"  # MLE not allowed with inf
   inf_params$convergence_method <- "elbo"
   expect_message(
     result <- validate_and_override_params(inf_params),

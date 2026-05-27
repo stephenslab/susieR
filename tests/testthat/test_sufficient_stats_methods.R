@@ -394,6 +394,7 @@ test_that("update_variance_components.ss delegates to default for unmappable_eff
 })
 
 test_that("update_variance_components.ss uses MLE for unmappable_effects='inf' with estimate_residual_method='MLE'", {
+  skip("SuSiE-inf + MLE not supported")
   # Create setup with unmappable_effects='inf' but override to use MLE
   base_data <- generate_base_data(n = 100, p = 50, k = 0, seed = 42)
   X <- base_data$X

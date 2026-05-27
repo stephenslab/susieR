@@ -118,6 +118,7 @@ test_that("susie_ss + inf is bit-identical to reference at 1 iter (MoM, optim)",
 })
 
 test_that("susie_ss + inf is bit-identical to reference at 1 iter (MLE, optim)", {
+  skip("SuSiE-inf + MLE not supported")
   skip_if_no_inf_reference()
   d <- make_inf_X_y(seed = 21)
   ss <- make_inf_ss(d$X, d$y)
@@ -248,6 +249,7 @@ test_that("susie_ss + inf + MoM matches reference (sparse + polygenic, L=10)", {
 # =============================================================================
 
 test_that("susie_ss + inf + MLE matches reference (sparse only, L=5)", {
+  skip("SuSiE-inf + MLE not supported")
   skip_if_no_inf_reference()
   d <- make_inf_X_y(seed = 21)
   ss <- make_inf_ss(d$X, d$y)
@@ -259,6 +261,7 @@ test_that("susie_ss + inf + MLE matches reference (sparse only, L=5)", {
 })
 
 test_that("susie_ss + inf + MLE matches reference (sparse + polygenic, L=5)", {
+  skip("SuSiE-inf + MLE not supported")
   skip_if_no_inf_reference()
   d <- make_inf_X_y(seed = 22, k_dense = 200, dense_sd = 0.10)
   ss <- make_inf_ss(d$X, d$y)
@@ -308,6 +311,7 @@ test_that("susie + inf + MoM matches reference (sparse + polygenic, L=10)", {
 # =============================================================================
 
 test_that("susie + inf + MLE matches reference (sparse only, L=5)", {
+  skip("SuSiE-inf + MLE not supported")
   skip_if_no_inf_reference()
   d <- make_inf_X_y(seed = 41)
   args <- list(X = d$X, y = d$y, L = 5,
