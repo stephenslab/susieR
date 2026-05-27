@@ -1000,7 +1000,6 @@ compute_BR <- function(data, B_mat) {
 # Eigendecomposition for unmappable methods. Three branches, dispatched below:
 # (a) low-rank factor X -> thin SVD; (b) rank-deficient XtX (n+1<p) -> pivoted
 # Cholesky + SVD (skips the exactly-zero null space); (c) else -> eigen(XtX).
-# (b) equals (c) up to sign and ~1e-10 (dropped eigenpairs have eigenvalue 0).
 #' @keywords internal
 compute_eigen_decomposition <- function(XtX, n, X = NULL) {
   if (!is.null(X)) {
@@ -1019,19 +1018,17 @@ compute_eigen_decomposition <- function(XtX, n, X = NULL) {
     r   <- attr(ch, "rank")
     piv <- attr(ch, "pivot")
     if (r >= 1L) {
-      # B is r x p with t(B) %*% B = XtX in original variable ordering
-      # (R(1:r, ) is in pivot ordering; un-permute columns via order(piv)).
       B  <- ch[seq_len(r), order(piv), drop = FALSE]
-      L  <- t(B)                              # p x r, L %*% t(L) = XtX
-      sv <- svd(L, nv = 0)                    # L = U D V', so XtX = U D^2 U'
+      L  <- t(B)
+      sv <- svd(L, nv = 0)
       Dsq <- pmax(sv$d^2, 0)
       return(list(V = sv$u, Dsq = Dsq, VtXty = NULL))
     }
     # Degenerate rank-0 XtX (all zero): fall through to legacy eigen path.
   }
 
-  # (c) Legacy full eigen.  Used when p <= n, n is unknown, or pivoted
-  # Cholesky detected rank 0.
+  # (c) Legacy full eigen (requires finite n).  Used when p <= n+1, or when
+  # pivoted Cholesky detected rank 0.
   LD  <- XtX / n
   eig <- eigen(LD, symmetric = TRUE)
   idx <- order(eig$values, decreasing = TRUE)
@@ -1103,18 +1100,14 @@ scale_design_matrix <- function(X, center = NULL, scale = NULL) {
   return(X_scaled)
 }
 
-# Standardized (scaled X)'(scaled X) v from the cached thin-SVD factors:
-# V (D^2 (V' v)).  Used on the SuSiE-inf individual path (matches compute_XtX,
-# unlike compute_Rv on raw data$X which would give the unscaled X'X v).
+# Standardized X'X v from the cached thin-SVD factors: V (D^2 (V' v)).
 #' @keywords internal
 compute_XtXv_eigen <- function(data, v) {
   Vtv <- crossprod(data$eigen_vectors, v)
   as.vector(data$eigen_vectors %*% (data$eigen_values * Vtv))
 }
 
-# Omega-weighted quantities for unmappable methods.
-# diagXtOmegaX[j] = sum_k V[j,k]^2 * lambda_k / omega_var_k  (length p).
-# Uses cached V^2; rowSums(sweep(...)) order kept for bit-identical reference.
+# Omega-weighted quantities (omega_var, diagXtOmegaX) for unmappable methods.
 #' @keywords internal
 compute_omega_quantities <- function(data, tau2, sigma2) {
   omega_var    <- tau2 * data$eigen_values + sigma2
