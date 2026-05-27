@@ -454,3 +454,44 @@ test_that("eb handles multi-panel X input with adaptive initialization", {
   expect_length(d$lambda_bias, 1)
   expect_length(d$B_corrected, 1)
 })
+
+test_that("R_mismatch EB initialization respects non-uniform prior_weights", {
+  p <- 6
+  n <- 2000
+  R <- diag(p)
+  z <- rep(0, p)
+  z[2:3] <- 4
+  prior_weights <- rep(0.01, p)
+  prior_weights[3] <- 0.95
+  prior_weights <- prior_weights / sum(prior_weights)
+
+  fit <- susie_rss(z = z, R = R, n = n, L = 1,
+                   prior_weights = prior_weights,
+                   R_mismatch = "eb", max_iter = 2,
+                   track_fit = TRUE, verbose = FALSE)
+  ser <- fit$R_finite_diagnostics$ser_model
+
+  expect_equal(fit$pi, prior_weights)
+  expect_equal(ser$pi, prior_weights)
+  expect_gt(ser$pip[3], 0.9)
+  expect_lt(ser$pip[2], 0.1)
+})
+
+test_that("R_mismatch with maf filtering subsets prior_weights", {
+  p <- 6
+  n <- 2000
+  R <- diag(p)
+  z <- rnorm(p)
+  prior_weights <- c(0.10, 0.20, 0.30, 0.25, 0.10, 0.05)
+  maf <- c(0.20, 0.02, 0.30, 0.25, 0.01, 0.40)
+  keep <- maf > 0.05
+
+  fit <- susie_rss(z = z, R = R, n = n, L = 1,
+                   prior_weights = prior_weights,
+                   maf = maf, maf_thresh = 0.05,
+                   R_mismatch = "eb", max_iter = 2,
+                   verbose = FALSE)
+
+  expect_equal(length(fit$pi), sum(keep))
+  expect_equal(fit$pi, prior_weights[keep] / sum(prior_weights[keep]))
+})

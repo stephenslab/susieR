@@ -240,7 +240,10 @@ SER_posterior_e_loglik.ss <- function(data, params, model, l) {
     return(-0.5 * (-2 * sum(Eb * model$residuals) + sum(model$predictor_weights * as.vector(Eb2))))
   } else {
     # Standard SuSiE and SuSiE-ash
-    return(-0.5 / model$residual_variance * (-2 * sum(Eb * model$residuals) + sum(model$predictor_weights * as.vector(Eb2))))
+    return(gaussian_ser_posterior_e_loglik(
+      model$alpha[l, ], model$mu[l, ], model$mu2[l, ],
+      model$residuals / model$predictor_weights,
+      model$residual_variance / model$predictor_weights))
   }
 }
 

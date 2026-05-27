@@ -15,6 +15,11 @@
 #' @keywords internal
 #' @noRd
 single_effect_regression <- function(data, params, model, l) {
+    if (!params$estimate_prior_method %in%
+        c("optim", "uniroot", "simple", "none", "EM", "fixed_mixture")) {
+      stop("Invalid option for estimate_prior_method: ",
+           params$estimate_prior_method)
+    }
 
     # Fixed mixture prior path: evaluate BFs on a pre-specified variance grid
     # with given mixture weights, bypassing scalar V optimization entirely.
@@ -107,6 +112,18 @@ gaussian_ser_moments <- function(betahat, shat2, V) {
   post_var[no_info] <- 0
   post_mean[no_info] <- 0
   list(post_mean = post_mean, post_mean2 = post_var + post_mean^2)
+}
+
+#' Gaussian posterior expected log-likelihood for one SER
+#' @keywords internal
+#' @noRd
+gaussian_ser_posterior_e_loglik <- function(alpha, mu, mu2,
+                                            betahat, shat2) {
+  finite_info <- is.finite(shat2)
+  Eb  <- alpha * mu
+  Eb2 <- alpha * mu2
+  -0.5 * sum((-2 * Eb[finite_info] * betahat[finite_info] +
+                Eb2[finite_info]) / shat2[finite_info])
 }
 
 #' Store SER posterior moments for effect l
@@ -224,6 +241,61 @@ optimize_prior_variance <- function(data, params, model, ser_stats,
   UseMethod("optimize_prior_variance")
 }
 
+#' Optimize a scalar SER prior variance
+#'
+#' Shared implementation for one-dimensional scalar-prior updates. Callers
+#' supply likelihood closures on the backend's optimization scale.
+#'
+#' @keywords internal
+#' @noRd
+optimize_scalar_prior_variance <- function(V_init, estimate_prior_method,
+                                           neg_loglik_fn, loglik_fn,
+                                           optim_init, optim_bounds,
+                                           optim_scale,
+                                           check_null_threshold = 0) {
+  V <- V_init
+  if (estimate_prior_method == "optim") {
+    V_param_opt <- optim(par = optim_init, fn = neg_loglik_fn,
+                         method = "Brent",
+                         lower = optim_bounds[1],
+                         upper = optim_bounds[2])$par
+
+    V_new <- if (optim_scale == "linear") V_param_opt else exp(V_param_opt)
+    V_param_init <- if (optim_scale == "linear") V else log(V)
+    if (neg_loglik_fn(V_param_opt) > neg_loglik_fn(V_param_init))
+      V_new <- V
+    V <- V_new
+  } else if (estimate_prior_method == "uniroot") {
+    neg_loglik_grad <- function(V_param) {
+      h <- max(abs(V_param) * 1e-4, 1e-8)
+      (neg_loglik_fn(V_param + h) - neg_loglik_fn(V_param - h)) / (2 * h)
+    }
+
+    V_root <- tryCatch(
+      uniroot(neg_loglik_grad, interval = optim_bounds,
+              extendInt = "yes",
+              tol = .Machine$double.eps^0.25)$root,
+      error = function(e) {
+        if (optim_scale == "linear") V else log(V)
+      }
+    )
+
+    V_new <- if (optim_scale == "linear") V_root else exp(V_root)
+    V_param_init <- if (optim_scale == "linear") V else log(V)
+    if (neg_loglik_fn(V_root) > neg_loglik_fn(V_param_init))
+      V_new <- V
+    V <- V_new
+  } else if (!estimate_prior_method %in% c("simple", "none")) {
+    stop("Invalid option for estimate_prior_method: ", estimate_prior_method)
+  }
+
+  if (estimate_prior_method != "none" &&
+      loglik_fn(0) + check_null_threshold >= loglik_fn(V))
+    V <- 0
+
+  V
+}
+
 #' Default scalar-V prior-variance optimization
 #'
 #' Backbone implementation of `optimize_prior_variance`. Handles the
@@ -242,89 +314,20 @@ optimize_prior_variance.default <- function(data, params, model, ser_stats,
                                             alpha   = NULL,
                                             moments = NULL,
                                             V_init  = NULL) {
-  V <- V_init
-  if (params$estimate_prior_method != "simple") {
-    if (params$estimate_prior_method == "optim") {
-      V_param_opt <- optim(
-        par = ser_stats$optim_init,
-        fn = function(V_param) neg_loglik(data, params, model, V_param, ser_stats),
-        method = "Brent",
-        lower = ser_stats$optim_bounds[1],
-        upper = ser_stats$optim_bounds[2]
-      )$par
-
-      # Convert optimized parameter to V based on scale of optimization
-      V_new <- if (ser_stats$optim_scale == "linear") {
-        V_param_opt
-      } else {
-        exp(V_param_opt)
-      }
-
-      # Check if new estimate improves likelihood
-      V_param_init <- if (ser_stats$optim_scale == "linear") V else log(V)
-      if (neg_loglik(data, params, model, V_param_opt, ser_stats) >
-          neg_loglik(data, params, model, V_param_init, ser_stats)) {
-        V_new <- V
-      }
-      V <- V_new
-    } else if (params$estimate_prior_method == "uniroot") {
-      # Root-finding on the gradient of neg_loglik (on the optimization scale)
-      neg_loglik_fn <- function(V_param) neg_loglik(data, params, model, V_param, ser_stats)
-      neg_loglik_grad <- function(V_param) {
-        h <- max(abs(V_param) * 1e-4, 1e-8)
-        (neg_loglik_fn(V_param + h) - neg_loglik_fn(V_param - h)) / (2 * h)
-      }
-
-      V_root <- tryCatch(
-        uniroot(neg_loglik_grad,
-                interval = c(ser_stats$optim_bounds[1], ser_stats$optim_bounds[2]),
-                extendInt = "yes",
-                tol = .Machine$double.eps^0.25)$root,
-        error = function(e) {
-          # Fallback: if uniroot fails (no sign change), use initial value
-          if (ser_stats$optim_scale == "linear") V else log(V)
-        }
-      )
-
-      V_new <- if (ser_stats$optim_scale == "linear") V_root else exp(V_root)
-
-      # Check if new estimate improves likelihood
-      V_param_init <- if (ser_stats$optim_scale == "linear") V else log(V)
-      if (neg_loglik(data, params, model, V_root, ser_stats) >
-          neg_loglik(data, params, model, V_param_init, ser_stats)) {
-        V_new <- V
-      }
-      V <- V_new
-    } else if (params$estimate_prior_method == "EM") {
-      V <- em_update_prior_variance(data, params, model, alpha, moments, V_init)
-    } else {
-      stop("Invalid option for estimate_prior_method: ", params$estimate_prior_method)
-    }
-  }
-
-  # Set V exactly 0 if that beats the numerical value by
-  # check_null_threshold in loglik. check_null_threshold = 0.1 is
-  # exp(0.1) = 1.1 on likelihood scale; it means that for parsimony
-  # reasons we set estimate of V to zero, if its numerical estimate is
-  # only "negligibly" different from zero. We use a likelihood ratio
-  # of exp(check_null_threshold) to define "negligible" in this
-  # context. This is fairly modest condition compared to, say, a
-  # formal LRT with p-value 0.05. But the idea is to be lenient to
-  # non-zeros estimates unless they are indeed small enough to be
-  # neglible. See more intuition at
-  # https://stephens999.github.io/fiveMinuteStats/LR_and_BF.html
-  #
-  # For EM, skip this check: the null check would zero V without
-  # recomputing the posterior, creating an inconsistent (q, V) pair
-  # that can decrease the ELBO. Null effects are handled by
-  # trim_null_effects() after convergence instead.
-  # see https://github.com/stephenslab/mvsusieR/issues/26
-  if (params$estimate_prior_method != "EM" &&
-      params$estimate_prior_method != "none") {
-    if (loglik(data, params, model, 0, ser_stats) +
-      params$check_null_threshold >= loglik(data, params, model, V, ser_stats)) {
-      V <- 0
-    }
+  if (params$estimate_prior_method == "EM") {
+    V <- em_update_prior_variance(data, params, model, alpha, moments, V_init)
+  } else {
+    V <- optimize_scalar_prior_variance(
+      V_init = V_init,
+      estimate_prior_method = params$estimate_prior_method,
+      neg_loglik_fn = function(V_param)
+        neg_loglik(data, params, model, V_param, ser_stats),
+      loglik_fn = function(V_val)
+        loglik(data, params, model, V_val, ser_stats),
+      optim_init = ser_stats$optim_init,
+      optim_bounds = ser_stats$optim_bounds,
+      optim_scale = ser_stats$optim_scale,
+      check_null_threshold = params$check_null_threshold)
   }
 
   list(V = V, model = model)

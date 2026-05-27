@@ -50,29 +50,24 @@ ibss_initialize.default <- function(data, params) {
     }
   }
 
-  # Handle model initialization
+  # Handle model initialization. extract_model_init_fields returns NULL when
+  # pruning leaves nothing useful (V and mu all zero), which collapses into the
+  # same "no init" path as model_init being NULL to begin with.
   if (!is.null(params$model_init)) {
-    # Validate the contents of model_init
     validate_init(data, params)
+    params$model_init <- extract_model_init_fields(
+      params$model_init,
+      estimate_residual_variance = params$estimate_residual_variance)
+  }
 
-    # Prune effects with zero prior variance
-    model_init_pruned <- prune_single_effects(params$model_init)
-
-    # Adjust the number of effects
-    adjustment <- adjust_L(params, model_init_pruned, var_y)
-    params$L   <- adjustment$L
-
-    # Create base model with all required fields
-    mat_init <- initialize_susie_model(data, params, var_y)
-
-    # Merge with adjusted model_init
-    mat_init <- modifyList(mat_init, adjustment$model_init)
-
-    # Reset iteration-specific values
+  if (!is.null(params$model_init)) {
+    adjustment   <- adjust_L(params, params$model_init, var_y)
+    params$L     <- adjustment$L
+    mat_init     <- initialize_susie_model(data, params, var_y)
+    mat_init     <- modifyList(mat_init, adjustment$model_init)
     mat_init$KL  <- rep(as.numeric(NA), params$L)
     mat_init$lbf <- rep(as.numeric(NA), params$L)
   } else {
-    # Create fresh model
     mat_init <- initialize_susie_model(data, params, var_y)
   }
 
@@ -434,8 +429,8 @@ ibss_finalize <- function(data, params, model, elbo = NULL, iter = NA_integer_,
   }
 
   # Multi-panel omega weights
-  if (!is.null(model$omega))
-    model$omega_weights <- model$omega
+  if (!is.null(model[["omega"]]))
+    model$omega_weights <- model[["omega"]]
 
   # Store Gamma-Poisson c_hat results on output for user access
   # and for susieAnn to extract (a_g, b_g needed for genome-wide nu update).

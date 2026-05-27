@@ -334,7 +334,23 @@ test_that("susie handles unmappable_effects = inf", {
   expect_s3_class(fit, "susie")
   expect_true("theta" %in% names(fit))
   expect_true("tau2" %in% names(fit))
+  expect_false("omega_weights" %in% names(fit))
   expect_length(fit$theta, 50)
+})
+
+test_that("susie drops unmappable fields when SuSiE-inf initializes plain SuSiE", {
+  set.seed(21)
+  dat <- simulate_regression(n = 100, p = 50, k = 3)
+
+  fit_inf <- susie(dat$X, dat$y, L = 5, unmappable_effects = "inf",
+                   refine = FALSE, verbose = FALSE)
+  fit <- susie(dat$X, dat$y, L = 5, unmappable_effects = "none",
+               model_init = fit_inf, verbose = FALSE)
+
+  expect_s3_class(fit, "susie")
+  expect_false("theta" %in% names(fit))
+  expect_false("tau2" %in% names(fit))
+  expect_false("omega_weights" %in% names(fit))
 })
 
 test_that("susie handles unmappable_effects = ash", {

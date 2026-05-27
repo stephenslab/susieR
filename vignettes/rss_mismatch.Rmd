@@ -62,10 +62,11 @@ developed below.
 data(SummaryConsistency, package = "susieR")
 if (!exists("SummaryConsistency"))
   load(file.path("..", "data", "SummaryConsistency.RData"))
-attach(SummaryConsistency)
 
-zflip <- z
-Rtoy <- ldref
+zflip <- SummaryConsistency$z
+Rtoy <- SummaryConsistency$ldref
+flip_id <- SummaryConsistency$flip_id
+signal_id <- SummaryConsistency$signal_id
 ntoy <- 10000
 btoy <- numeric(length(zflip))
 btoy[signal_id] <- zflip[signal_id]
@@ -98,7 +99,6 @@ zfix[flip_id] <- -zfix[flip_id]
 fit_toy_fixed <- susie_rss(zfix, Rtoy, n = ntoy)
 susie_plot(fit_toy_fixed, y = "PIP", b = btoy, add_legend = TRUE,
            main = "after allele correction")
-detach(SummaryConsistency)
 ```
 
 In practice, it is useful to run this basic check before modeling LD
@@ -137,7 +137,11 @@ diagnostics to evaluate LD mismatch in practice.
 data(rss_mismatch_example, package = "susieR")
 if (!exists("rss_mismatch_example"))
   load(file.path("..", "data", "rss_mismatch_example.RData"))
-attach(rss_mismatch_example)
+z <- rss_mismatch_example$z
+bhat <- rss_mismatch_example$bhat
+shat <- rss_mismatch_example$shat
+n <- rss_mismatch_example$n
+R <- rss_mismatch_example$R
 str(rss_mismatch_example)
 ```
 
@@ -567,7 +571,7 @@ same toy example with `R_mismatch = "eb"` but without `R_finite = 500`
 does not raise the reliability warning.
 
 ```{r cleanup, include=FALSE}
-detach(rss_mismatch_example)
+invisible(NULL)
 ```
 
 ## Session information
