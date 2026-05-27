@@ -710,6 +710,16 @@ validate_and_override_params <- function(params) {
     params$convergence_method <- force_pip(reason)
   }
 
+  # SuSiE-inf: tau^2 is estimated only when estimate_residual_variance = TRUE.
+  if (identical(params$unmappable_effects, "inf") &&
+      !isTRUE(params$estimate_residual_variance)) {
+    warning_message(
+      "unmappable_effects = 'inf' requires estimate_residual_variance = TRUE ",
+      "to estimate the infinitesimal variance tau^2; overriding to TRUE.",
+      style = "hint")
+    params$estimate_residual_variance <- TRUE
+  }
+
   # Check for incompatible parameter combinations
   if (!is.null(params$refine) && params$refine && params$unmappable_effects != "none") {
     stop("Refinement is not supported with unmappable effects (inf/ash) as it relies on ELBO, ",
