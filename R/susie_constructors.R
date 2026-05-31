@@ -709,15 +709,16 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
   # sigma^2 and lambda_bias both inflate the residual variance and are
   # only weakly jointly identified, so sigma^2 is fixed when R_mismatch is
   # active.
-  if (R_mismatch != "none" && isTRUE(estimate_residual_variance)) {
-    warning_message(
-      "R_mismatch = '", R_mismatch, "' is incompatible with ",
-      "estimate_residual_variance = TRUE; disabling sigma^2 estimation.",
-      style = "hint"
-    )
-    estimate_residual_variance <- FALSE
-  }
-
+    if (R_mismatch != "none" && isTRUE(estimate_residual_variance)) {
+      warning_message(
+        "Joint estimation of sigma^2 and lambda_bias is weakly identified; ",
+        "sigma^2 and lambda_bias can trade off, especially early in EM. ",
+        "Consider track_fit=TRUE to monitor, or R_mismatch_method='map' ",
+        "to penalize lambda_bias.",
+        style = "hint"
+      )
+    }
+                               
   if (is_multipanel) {
     if (!is.null(bhat) || !is.null(shat)) {
       stop("Parameters 'bhat' and 'shat' are not supported in the ",
