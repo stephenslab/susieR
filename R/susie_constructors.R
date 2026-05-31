@@ -58,6 +58,107 @@ normalize_prior_weights <- function(prior_weights, p) {
   prior_weights / sum(prior_weights)
 }
 
+#' @keywords internal
+#' @noRd
+normalize_summary_stats_input <- function(z = NULL, bhat = NULL,
+                                          shat = NULL) {
+  if (!is.null(z) && (!is.null(bhat) || !is.null(shat))) {
+    stop("Please provide either z or (bhat, shat), but not both.")
+  }
+  if (is.null(z) && (is.null(bhat) || is.null(shat)))
+    stop("Please provide either z or (bhat, shat).")
+
+  if (is.null(z)) {
+    if (!is.numeric(bhat) || !is.numeric(shat))
+      stop("bhat and shat must be numeric.")
+    variable_names <- names(bhat)
+    bhat <- as.numeric(bhat)
+    if (length(shat) == 1L)
+      shat <- rep(shat, length(bhat))
+    else
+      shat <- as.numeric(shat)
+    if (length(bhat) != length(shat))
+      stop("The lengths of bhat and shat do not agree.")
+    if (anyNA(bhat) || anyNA(shat))
+      stop("bhat, shat cannot have missing values.")
+    if (any(shat <= 0))
+      stop("shat cannot have zero or negative elements.")
+    z <- bhat / shat
+    if (!is.null(variable_names))
+      names(z) <- variable_names
+  } else {
+    if (!is.numeric(z))
+      stop("z must be numeric.")
+    variable_names <- names(z)
+    z <- as.numeric(z)
+    if (!is.null(variable_names))
+      names(z) <- variable_names
+  }
+
+  if (length(z) < 1L)
+    stop("Input vector z should have at least one element.")
+
+  list(z = z, bhat = bhat, shat = shat, variable_names = variable_names)
+}
+
+#' @keywords internal
+#' @noRd
+apply_pve_adjustment <- function(z, n = NULL) {
+  if (is.null(z) || is.null(n) || n <= 1) {
+    return(list(z = z, adjustment = NULL, adjusted = FALSE))
+  }
+  adj <- (n - 1) / (z^2 + n - 2)
+  list(z = sqrt(adj) * z, adjustment = adj, adjusted = TRUE)
+}
+
+#' @keywords internal
+#' @noRd
+summary_stats_working_quantities <- function(z, n = NULL, shat = NULL,
+                                             var_y = NULL,
+                                             pve_adjustment = NULL,
+                                             prior_variance = 50,
+                                             scaled_prior_variance = 0.2) {
+  p <- length(z)
+
+  if (is.null(n)) {
+    return(list(path = "z_only", n = 2, Xty = z, yty = 1,
+                scaled_prior_variance = prior_variance,
+                ser_betahat = z, ser_shat2 = rep(1, p), ser_sigma2 = 1,
+                ser_V_init = prior_variance,
+                ser_scale_factors = rep(1, p)))
+  }
+
+  nm1 <- n - 1
+  yty <- nm1 * if (!is.null(var_y)) var_y else 1
+  y_var <- yty / nm1
+
+  if (!is.null(shat) && !is.null(var_y)) {
+    if (is.null(pve_adjustment))
+      stop("PVE adjustment is required with shat and var_y.")
+    XtXdiag <- var_y * pve_adjustment / (shat^2)
+    Xty <- z * sqrt(pve_adjustment) * var_y / shat
+    scale_factors <- sqrt(XtXdiag / nm1)
+    ser_betahat <- (1 / nm1) * (Xty / scale_factors)
+    return(list(path = "original_scale", n = n, Xty = z *
+                  sqrt(pve_adjustment) * var_y / shat,
+                yty = yty, scaled_prior_variance = scaled_prior_variance,
+                XtXdiag = XtXdiag,
+                ser_betahat = ser_betahat,
+                ser_shat2 = rep(y_var / nm1, p), ser_sigma2 = y_var,
+                ser_V_init = scaled_prior_variance * y_var,
+                ser_scale_factors = scale_factors))
+  }
+
+  Xty <- sqrt(nm1) * z
+  list(path = "standardized_scale", n = n, Xty = Xty,
+       yty = yty, scaled_prior_variance = scaled_prior_variance,
+       XtX_multiplier = nm1, X_multiplier = sqrt(nm1),
+       ser_betahat = (1 / nm1) * Xty,
+       ser_shat2 = rep(y_var / nm1, p),
+       ser_sigma2 = y_var, ser_V_init = scaled_prior_variance * y_var,
+       ser_scale_factors = rep(1, p))
+}
+
 # =============================================================================
 # INDIVIDUAL-LEVEL DATA CONSTRUCTOR
 #
@@ -674,12 +775,10 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
   # constructor calls — they will apply the PVE adjustment themselves
   # and double-applying it would silently corrupt Xty.
   z_user <- z
-  pve_adjusted <- FALSE
-  if (!is.null(z) && !is.null(n) && n > 1) {
-    adj <- (n - 1) / (z^2 + n - 2)
-    z <- sqrt(adj) * z
-    pve_adjusted <- TRUE
-  }
+  pve <- apply_pve_adjustment(z, n)
+  z <- pve$z
+  adj <- pve$adjustment
+  pve_adjusted <- pve$adjusted
 
   is_multipanel <- (is.list(X) && !is.matrix(X)) ||
                    (is.list(R) && !is.matrix(R))
@@ -873,14 +972,12 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
             "var_y instead of z-scores.", style = "hint")
   }
 
-  # Determine p from z or bhat
-  if (is.null(z) && !is.null(bhat)) {
-    p <- length(bhat)
-  } else if (!is.null(z)) {
-    p <- length(z)
-  } else {
-    stop("Please provide either z or (bhat, shat).")
-  }
+  summary_input <- normalize_summary_stats_input(z = z, bhat = bhat,
+                                                 shat = shat)
+  z <- summary_input$z
+  bhat <- summary_input$bhat
+  shat <- summary_input$shat
+  p <- length(z)
 
   # Check dimensions of R or X
   if (!is.null(R)) {
@@ -906,35 +1003,14 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
     }
   }
 
-  # Check inputs z, bhat and shat
-  if (sum(c(is.null(z), is.null(bhat) || is.null(shat))) != 1) {
-    stop("Please provide either z or (bhat, shat), but not both.")
-  }
-  if (is.null(z)) {
-    if (length(shat) == 1) {
-      shat <- rep(shat, length(bhat))
-    }
-    if (length(bhat) != length(shat)) {
-      stop("The lengths of bhat and shat do not agree.")
-    }
-    if (anyNA(bhat) || anyNA(shat)) {
-      stop("bhat, shat cannot have missing values.")
-    }
-    if (any(shat <= 0)) {
-      stop("shat cannot have zero or negative elements.")
-    }
-    z <- bhat / shat
-  }
-  if (length(z) < 1) {
-    stop("Input vector z should have at least one element.")
-  }
   z[is.na(z)] <- 0
 
   # Apply PVE adjustment if not already done (when z was computed from bhat/shat)
   if (!pve_adjusted && !is.null(n) && n > 1) {
-    adj <- (n - 1) / (z^2 + n - 2)
-    z <- sqrt(adj) * z
-    pve_adjusted <- TRUE
+    pve <- apply_pve_adjustment(z, n)
+    z <- pve$z
+    adj <- pve$adjustment
+    pve_adjusted <- pve$adjusted
   }
 
   # MAF filter (after z-scores are computed)
@@ -946,6 +1022,9 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
     if (!is.null(R)) R <- R[id, id]
     if (!is.null(X)) X <- X[, id, drop = FALSE]
     z <- z[id]
+    if (!is.null(bhat)) bhat <- bhat[id]
+    if (!is.null(shat)) shat <- shat[id]
+    if (!is.null(adj)) adj <- adj[id]
     if (!is.null(prior_weights))
       prior_weights <- prior_weights[id]
     # Update p after filtering
@@ -986,6 +1065,10 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
   }
 
   # Convert to sufficient statistics format
+  working <- summary_stats_working_quantities(
+    z = z, n = n, shat = shat, var_y = var_y, pve_adjustment = adj,
+    prior_variance = prior_variance,
+    scaled_prior_variance = scaled_prior_variance)
   XtX <- NULL
   if (is.null(n)) {
     # Sample size not provided - use unadjusted z-scores
@@ -994,30 +1077,27 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
       XtX <- R
     }
     # X path: X'X = R already after standardize_X, no further scaling needed.
-    Xty <- z
-    yty <- 1
-    n <- 2
-    scaled_prior_variance <- prior_variance
-  } else {
+    Xty <- working$Xty
+    yty <- working$yty
+    n <- working$n
+    scaled_prior_variance <- working$scaled_prior_variance
+  } else if (working$path == "original_scale") {
     # Sample size provided - use PVE-adjusted z-scores
-    if (!is.null(shat) && !is.null(var_y)) {
-      # var_y and shat provided - effects on original scale (R path only)
-      XtXdiag <- var_y * adj / (shat^2)
-      XtX <- t(R * sqrt(XtXdiag)) * sqrt(XtXdiag)
-      XtX <- (XtX + t(XtX)) / 2
-      Xty <- z * sqrt(adj) * var_y / shat
-      yty <- (n - 1) * var_y
+    # var_y and shat provided - effects on original scale (R path only)
+    XtX <- t(R * sqrt(working$XtXdiag)) * sqrt(working$XtXdiag)
+    XtX <- (XtX + t(XtX)) / 2
+    Xty <- working$Xty
+    yty <- working$yty
+  } else {
+    # Effects on standardized X scale.
+    if (!is.null(R)) {
+      XtX <- working$XtX_multiplier * R
     } else {
-      # Effects on standardized X, y scale
-      if (!is.null(R)) {
-        XtX <- (n - 1) * R
-      } else {
-        # X path: X'X = R after standardize_X, scale to X'X = (n-1)*R
-        X <- X * sqrt(n - 1)
-      }
-      Xty <- sqrt(n - 1) * z
-      yty <- (n - 1) * (if (!is.null(var_y)) var_y else 1)
+      # X path: X'X = R after standardize_X, scale to X'X = (n-1)*R
+      X <- X * working$X_multiplier
     }
+    Xty <- working$Xty
+    yty <- working$yty
   }
 
   # Use sufficient_stats_constructor with ALL parameters
@@ -1384,10 +1464,8 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
   # zero to account for winner's curse. Same form as the SS path
   # (summary_stats_constructor); skipped when n is unavailable.
   if (!is.null(z) && !is.null(n) && is.numeric(n) && length(n) == 1 &&
-      is.finite(n) && n > 1) {
-    adj <- (n - 1) / (z^2 + n - 2)
-    z <- sqrt(adj) * z
-  }
+      is.finite(n) && n > 1)
+    z <- apply_pve_adjustment(z, n)$z
 
   if (is.null(X)) {
     # R path: validate R

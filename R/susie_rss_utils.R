@@ -208,10 +208,8 @@ estimate_s_rss <- function(z, R, n, r_tol = 1e-08, method = "null-mle") {
   } else if (n <= 1) {
     stop("n must be greater than 1")
   }
-  if (!missing(n)) {
-    sigma2 <- (n - 1) / (z^2 + n - 2)
-    z <- sqrt(sigma2) * z
-  }
+  if (!missing(n))
+    z <- apply_pve_adjustment(z, n)$z
 
   if (method == "null-mle") {
     negloglikelihood <- function(s, ztv, d) {
@@ -648,8 +646,7 @@ kriging_rss <- function(z, R, n, r_tol = 1e-08,
   if (missing(n)) {
     hint_sample_size_recommended()
   } else {
-    sigma2 <- (n - 1) / (z^2 + n - 2)
-    z <- sqrt(sigma2) * z
+    z <- apply_pve_adjustment(z, n)$z
   }
 
   dinv <- 1 / ((1 - s) * eigenld$values + s)
@@ -752,4 +749,3 @@ pick_init_panel_via_subfits <- function(panels, panel_arg, parent_args) {
   )
   list(idx = which.max(elbos), fits = fits, elbos = elbos)
 }
-
