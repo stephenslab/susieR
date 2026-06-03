@@ -1063,6 +1063,9 @@ test_that("Large R_finite limit reduces to pure-drift estimator", {
                    R_mismatch = "eb_no_init", max_iter = 5, verbose = FALSE)
   lb <- fit$R_finite_diagnostics$lambda_bias
   bc <- fit$R_finite_diagnostics$B_corrected
+  expect_false(is.null(lb))
+  expect_true(all(is.finite(lb)) && all(lb >= 0))
+  # Where a drift correction is active, B_corrected -> 1/lambda_bias as R_finite -> Inf.
   active <- lb > 0
   if (any(active)) {
     expect_equal(bc[active], 1 / lb[active], tolerance = 1e-6,
