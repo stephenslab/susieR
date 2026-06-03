@@ -385,9 +385,16 @@ susie_plot_iteration <- function(model, L, file_prefix, pos = NULL) {
     if (file.exists(paste0(file_prefix, ".gif"))) {
       file.remove(paste0(file_prefix, ".gif"))
     }
-    output <- try(system(cmd))
-    if (inherits(output, "try-error")) {
-      stop("Cannot create GIF animation because convert command failed")
+    # system() returns the command's integer exit status (0 = success); it does
+    # not raise an R condition on failure, so check the status directly.
+    status <- system(cmd)
+    if (status != 0L) {
+      # nocov start  -- error path for an external ImageMagick failure; fires
+      # only when the 'convert' command is missing or errors, which is
+      # environment-dependent and not reproducible in CI.
+      stop("Cannot create GIF animation because convert command failed ",
+           "(exit status ", status, "). Is ImageMagick installed and on PATH?")
+      # nocov end
     } else {
       format <- ".gif"
     }

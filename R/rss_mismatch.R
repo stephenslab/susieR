@@ -290,7 +290,11 @@ estimate_lambda_bias <- function(r, s, sigma2, R_finite_B, method,
     while (is.finite(upper_lambda) &&
            upper_lambda < .Machine$double.xmax / 10 &&
            nll(upper_lambda) < nll(upper_lambda / 2)) {
+      # nocov start  -- defensive: upper_lambda is initialised to
+      # max(1, 100/B, 10*max(pos)), which already encloses the joint MLE, so the
+      # NLL is never still-decreasing at upper_lambda and this expansion never runs.
       upper_lambda <- upper_lambda * 10
+      # nocov end
     }
     opt <- optimize(nll, interval = c(0, upper_lambda), tol = 1e-8)
     if (nll(0) <= opt$objective)

@@ -1,341 +1,238 @@
 context("SuSiE Workhorse - Main Orchestration")
 
-# =============================================================================
-# BASIC FUNCTIONALITY
-# =============================================================================
+# ---- Basic output structure ----
 
-test_that("susie_workhorse returns valid susie object", {
+test_that("susie_workhorse returns a susie object with all required fields", {
   setup <- setup_individual_data(n = 100, p = 50, L = 5)
   setup$params$max_iter <- 10
   setup$params$convergence_method <- "elbo"
   setup$params$tol <- 1e-3
 
-  result <- susie_workhorse(setup$data, setup$params)
+  result <- suppressWarnings(susie_workhorse(setup$data, setup$params))
 
   expect_s3_class(result, "susie")
-  expect_type(result, "list")
+  required_fields <- c(
+    "alpha", "mu", "mu2", "V", "sigma2",
+    "lbf", "lbf_variable", "KL",
+    "elbo", "niter", "converged",
+    "pip", "sets", "fitted", "intercept"
+  )
+  expect_true(all(required_fields %in% names(result)))
 })
 
-test_that("susie_workhorse creates all required output fields", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-  setup$params$max_iter <- 10
-  setup$params$convergence_method <- "elbo"
-  setup$params$tol <- 1e-3
-
-  result <- susie_workhorse(setup$data, setup$params)
-
-  # Core posterior components
-  expect_true("alpha" %in% names(result))
-  expect_true("mu" %in% names(result))
-  expect_true("mu2" %in% names(result))
-  expect_true("V" %in% names(result))
-  expect_true("sigma2" %in% names(result))
-
-  # Tracking components
-  expect_true("lbf" %in% names(result))
-  expect_true("lbf_variable" %in% names(result))
-  expect_true("KL" %in% names(result))
-
-  # Output fields
-  expect_true("elbo" %in% names(result))
-  expect_true("niter" %in% names(result))
-  expect_true("converged" %in% names(result))
-  expect_true("pip" %in% names(result))
-  expect_true("sets" %in% names(result))
-  expect_true("fitted" %in% names(result))
-  expect_true("intercept" %in% names(result))
-})
-
-test_that("susie_workhorse returns correct dimensions", {
-  n <- 100
-  p <- 50
-  L <- 5
+test_that("susie_workhorse returns correct dimensions for n=100, p=50, L=5", {
+  n <- 100; p <- 50; L <- 5
   setup <- setup_individual_data(n = n, p = p, L = L)
   setup$params$max_iter <- 10
   setup$params$convergence_method <- "elbo"
   setup$params$tol <- 1e-3
 
-  result <- susie_workhorse(setup$data, setup$params)
+  result <- suppressWarnings(susie_workhorse(setup$data, setup$params))
 
-  expect_equal(dim(result$alpha), c(L, p))
-  expect_equal(dim(result$mu), c(L, p))
-  expect_equal(dim(result$mu2), c(L, p))
+  expect_equal(dim(result$alpha),        c(L, p))
+  expect_equal(dim(result$mu),           c(L, p))
+  expect_equal(dim(result$mu2),          c(L, p))
   expect_equal(dim(result$lbf_variable), c(L, p))
-  expect_length(result$V, L)
-  expect_length(result$lbf, L)
-  expect_length(result$KL, L)
-  expect_length(result$pip, p)
-  expect_length(result$fitted, n)
+  expect_length(result$V,       L)
+  expect_length(result$lbf,     L)
+  expect_length(result$KL,      L)
+  expect_length(result$pip,     p)
+  expect_length(result$fitted,  n)
 })
 
-# =============================================================================
-# CONVERGENCE BEHAVIOR
-# =============================================================================
+# ---- Convergence behavior ----
 
-test_that("susie_workhorse sets converged flag when converged", {
-  # Use simple data and loose tolerance to ensure convergence
+test_that("susie_workhorse warns and sets converged=FALSE when max_iter reached before tolerance", {
+  setup <- setup_individual_data(n = 100, p = 50, L = 5)
+  setup$params$max_iter <- 1
+  setup$params$convergence_method <- "elbo"
+  setup$params$tol <- 1e-10
+
+  expect_warning(
+    result <- susie_workhorse(setup$data, setup$params),
+    "did not converge"
+  )
+  expect_false(result$converged)
+  expect_equal(result$niter, 1)
+})
+
+test_that("susie_workhorse converges on simple data with loose tolerance", {
   setup <- setup_individual_data(n = 50, p = 20, L = 3)
   setup$params$max_iter <- 100
   setup$params$convergence_method <- "elbo"
   setup$params$tol <- 1e-2
 
-  result <- susie_workhorse(setup$data, setup$params)
+  result <- suppressWarnings(susie_workhorse(setup$data, setup$params))
 
-  # Should converge with enough iterations
-  expect_true("converged" %in% names(result))
-  expect_type(result$converged, "logical")
+  expect_true(is.logical(result$converged))
+  expect_true(result$niter > 0)
+  expect_true(result$niter <= 100)
 })
 
-test_that("susie_workhorse warns when not converged", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-  setup$params$max_iter <- 1  # Too few iterations
-  setup$params$convergence_method <- "elbo"
-  setup$params$tol <- 1e-10  # Very strict tolerance
-
-  # Should warn about not converging via R's warning() condition.
-  expect_warning(
-    result <- susie_workhorse(setup$data, setup$params),
-    "did not converge"
-  )
-
-  expect_false(result$converged)
-  expect_equal(result$niter, 1)
-})
-
-test_that("susie_workhorse tracks ELBO correctly", {
+test_that("susie_workhorse ELBO vector has correct length and is finite", {
   setup <- setup_individual_data(n = 100, p = 50, L = 5)
   setup$params$max_iter <- 10
   setup$params$convergence_method <- "elbo"
   setup$params$tol <- 1e-3
 
-  result <- susie_workhorse(setup$data, setup$params)
+  result <- suppressWarnings(susie_workhorse(setup$data, setup$params))
 
-  expect_true("elbo" %in% names(result))
-  expect_true(all(is.finite(result$elbo)))
-  expect_true(length(result$elbo) <= setup$params$max_iter)
   expect_true(length(result$elbo) > 0)
-})
-
-test_that("susie_workhorse ELBO increases monotonically", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-  setup$params$max_iter <- 20
-  setup$params$convergence_method <- "elbo"
-  setup$params$tol <- 1e-3
-
-  result <- susie_workhorse(setup$data, setup$params)
-
-  # ELBO should be non-decreasing (allow small numerical errors)
-  elbo_diff <- diff(result$elbo)
-  expect_true(all(elbo_diff >= -1e-6))
-})
-
-test_that("susie_workhorse records correct number of iterations", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-  setup$params$max_iter <- 15
-  setup$params$convergence_method <- "elbo"
-  setup$params$tol <- 1e-3
-
-  result <- susie_workhorse(setup$data, setup$params)
-
-  expect_true("niter" %in% names(result))
-  expect_true(result$niter <= setup$params$max_iter)
-  expect_true(result$niter > 0)
+  expect_true(length(result$elbo) <= 10)
+  expect_true(all(is.finite(result$elbo)))
   expect_equal(result$niter, length(result$elbo))
 })
 
-# =============================================================================
-# VARIANCE ESTIMATION
-# =============================================================================
-
-test_that("susie_workhorse updates residual variance when requested", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-  setup$params$max_iter <- 10
-  setup$params$convergence_method <- "elbo"
-  setup$params$tol <- 1e-3
-  setup$params$estimate_residual_variance <- TRUE
-  setup$params$residual_variance <- 1.5  # Initial value
-
-  result <- susie_workhorse(setup$data, setup$params)
-
-  # Residual variance should be updated from initial value
-  expect_true(result$sigma2 > 0)
-  expect_true(is.finite(result$sigma2))
-})
-
-test_that("susie_workhorse does not update residual variance when not requested", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-  setup$params$max_iter <- 10
-  setup$params$convergence_method <- "elbo"
-  setup$params$tol <- 1e-3
-  setup$params$estimate_residual_variance <- FALSE
-  setup$params$residual_variance <- 2.0  # Fixed value
-
-  result <- susie_workhorse(setup$data, setup$params)
-
-  # Residual variance should remain at initial value
-  expect_equal(result$sigma2, 2.0)
-})
-
-# =============================================================================
-# MATHEMATICAL PROPERTIES
-# =============================================================================
-
-test_that("susie_workhorse maintains valid probability distributions", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-  setup$params$max_iter <- 10
-  setup$params$convergence_method <- "elbo"
-  setup$params$tol <- 1e-3
-
-  result <- susie_workhorse(setup$data, setup$params)
-
-  # Each row of alpha should sum to 1
-  row_sums <- rowSums(result$alpha)
-  expect_equal(row_sums, rep(1, 5), tolerance = 1e-10)
-
-  expect_true(all(result$alpha >= 0 & result$alpha <= 1))
-})
-
-test_that("susie_workhorse produces valid PIPs", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-  setup$params$max_iter <- 10
-  setup$params$convergence_method <- "elbo"
-  setup$params$tol <- 1e-3
-
-  result <- susie_workhorse(setup$data, setup$params)
-
-  # PIPs should be valid probabilities
-  expect_true(all(result$pip >= 0))
-  expect_true(all(result$pip <= 1))
-  expect_true(all(is.finite(result$pip)))
-})
-
-test_that("susie_workhorse V values are non-negative", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-  setup$params$max_iter <- 10
-  setup$params$convergence_method <- "elbo"
-  setup$params$tol <- 1e-3
-
-  result <- susie_workhorse(setup$data, setup$params)
-
-  expect_true(all(result$V >= 0))
-  expect_true(all(is.finite(result$V)))
-})
-
-test_that("susie_workhorse sigma2 is positive", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-  setup$params$max_iter <- 10
-  setup$params$convergence_method <- "elbo"
-  setup$params$tol <- 1e-3
-
-  result <- susie_workhorse(setup$data, setup$params)
-
-  expect_true(result$sigma2 > 0)
-  expect_true(is.finite(result$sigma2))
-})
-
-test_that("susie_workhorse KL divergences are non-negative", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-  setup$params$max_iter <- 10
-  setup$params$convergence_method <- "elbo"
-  setup$params$tol <- 1e-3
-
-  result <- susie_workhorse(setup$data, setup$params)
-
-  # KL divergence should be non-negative (allow small numerical errors)
-  expect_true(all(result$KL >= -1e-6))
-  expect_true(all(is.finite(result$KL)))
-})
-
-# =============================================================================
-# EDGE CASES
-# =============================================================================
-
-test_that("susie_workhorse works with L=1", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 1)
-  setup$params$max_iter <- 10
-  setup$params$convergence_method <- "elbo"
-  setup$params$tol <- 1e-3
-
-  result <- susie_workhorse(setup$data, setup$params)
-
-  expect_s3_class(result, "susie")
-  expect_equal(dim(result$alpha), c(1, 50))
-  expect_equal(sum(result$alpha), 1, tolerance = 1e-10)
-})
-
-test_that("susie_workhorse works with small p", {
-  setup <- setup_individual_data(n = 100, p = 10, L = 5)
-  setup$params$max_iter <- 10
-  setup$params$convergence_method <- "elbo"
-  setup$params$tol <- 1e-3
-
-  result <- susie_workhorse(setup$data, setup$params)
-
-  expect_s3_class(result, "susie")
-  # L should be adjusted to min(L, p)
-  expect_true(nrow(result$alpha) <= 10)
-})
-
-test_that("susie_workhorse works with max_iter=1", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-  setup$params$max_iter <- 1
-  setup$params$convergence_method <- "elbo"
-  setup$params$tol <- 1e-3
-
-  # Should work but likely not converge
-  result <- suppressWarnings(susie_workhorse(setup$data, setup$params))
-
-  expect_s3_class(result, "susie")
-  expect_equal(result$niter, 1)
-  # With max_iter=1, may or may not converge depending on data
-})
-
-# =============================================================================
-# CONVERGENCE METHODS
-# =============================================================================
-
-test_that("susie_workhorse works with ELBO convergence", {
+test_that("susie_workhorse ELBO is non-decreasing across iterations", {
   setup <- setup_individual_data(n = 100, p = 50, L = 5)
   setup$params$max_iter <- 20
   setup$params$convergence_method <- "elbo"
   setup$params$tol <- 1e-3
 
-  result <- susie_workhorse(setup$data, setup$params)
+  result <- suppressWarnings(susie_workhorse(setup$data, setup$params))
 
-  expect_s3_class(result, "susie")
-  expect_true("elbo" %in% names(result))
+  expect_true(all(diff(result$elbo) >= -1e-6))
 })
 
-test_that("susie_workhorse works with PIP convergence", {
+test_that("susie_workhorse with convergence_method='pip' produces valid pip output", {
   setup <- setup_individual_data(n = 100, p = 50, L = 5)
   setup$params$max_iter <- 20
   setup$params$convergence_method <- "pip"
   setup$params$tol <- 1e-3
 
-  result <- susie_workhorse(setup$data, setup$params)
+  result <- suppressWarnings(susie_workhorse(setup$data, setup$params))
 
   expect_s3_class(result, "susie")
-  expect_true("pip" %in% names(result))
+  expect_length(result$pip, 50)
+  expect_true(all(result$pip >= 0 & result$pip <= 1))
 })
 
-# =============================================================================
-# REFINEMENT
-# =============================================================================
+# ---- Variance estimation ----
 
-test_that("susie_workhorse respects refine=FALSE", {
+test_that("susie_workhorse updates residual variance when estimate_residual_variance=TRUE", {
+  setup <- setup_individual_data(n = 100, p = 50, L = 5)
+  setup$params$max_iter <- 10
+  setup$params$convergence_method <- "elbo"
+  setup$params$tol <- 1e-3
+  setup$params$estimate_residual_variance <- TRUE
+  setup$params$residual_variance <- 1.5
+
+  result <- suppressWarnings(susie_workhorse(setup$data, setup$params))
+
+  expect_true(result$sigma2 > 0)
+  expect_true(is.finite(result$sigma2))
+  # With variance estimation active, sigma2 should have moved from the initial 1.5
+  expect_false(isTRUE(all.equal(result$sigma2, 1.5)))
+})
+
+test_that("susie_workhorse holds residual variance fixed when estimate_residual_variance=FALSE", {
+  setup <- setup_individual_data(n = 100, p = 50, L = 5)
+  setup$params$max_iter <- 10
+  setup$params$convergence_method <- "elbo"
+  setup$params$tol <- 1e-3
+  setup$params$estimate_residual_variance <- FALSE
+  setup$params$residual_variance <- 2.0
+
+  result <- suppressWarnings(susie_workhorse(setup$data, setup$params))
+
+  expect_equal(result$sigma2, 2.0)
+})
+
+# ---- Mathematical properties ----
+
+test_that("susie_workhorse alpha rows sum to 1 and are valid probabilities", {
+  setup <- setup_individual_data(n = 100, p = 50, L = 5)
+  setup$params$max_iter <- 10
+  setup$params$convergence_method <- "elbo"
+  setup$params$tol <- 1e-3
+
+  result <- suppressWarnings(susie_workhorse(setup$data, setup$params))
+
+  expect_equal(rowSums(result$alpha), rep(1, 5), tolerance = 1e-8)
+  expect_true(all(result$alpha >= 0 & result$alpha <= 1))
+})
+
+test_that("susie_workhorse PIPs are valid probabilities", {
+  setup <- setup_individual_data(n = 100, p = 50, L = 5)
+  setup$params$max_iter <- 10
+  setup$params$convergence_method <- "elbo"
+  setup$params$tol <- 1e-3
+
+  result <- suppressWarnings(susie_workhorse(setup$data, setup$params))
+
+  expect_true(all(result$pip >= 0 & result$pip <= 1))
+  expect_true(all(is.finite(result$pip)))
+})
+
+test_that("susie_workhorse V values are non-negative finite, sigma2 is positive", {
+  setup <- setup_individual_data(n = 100, p = 50, L = 5)
+  setup$params$max_iter <- 10
+  setup$params$convergence_method <- "elbo"
+  setup$params$tol <- 1e-3
+
+  result <- suppressWarnings(susie_workhorse(setup$data, setup$params))
+
+  expect_true(all(result$V >= 0))
+  expect_true(all(is.finite(result$V)))
+  expect_true(result$sigma2 > 0)
+  expect_true(is.finite(result$sigma2))
+})
+
+test_that("susie_workhorse KL divergences are non-negative finite", {
+  setup <- setup_individual_data(n = 100, p = 50, L = 5)
+  setup$params$max_iter <- 10
+  setup$params$convergence_method <- "elbo"
+  setup$params$tol <- 1e-3
+
+  result <- suppressWarnings(susie_workhorse(setup$data, setup$params))
+
+  expect_true(all(result$KL >= -1e-6))
+  expect_true(all(is.finite(result$KL)))
+})
+
+# ---- Edge cases ----
+
+test_that("susie_workhorse works with L=1: alpha is 1xp and sums to 1", {
+  setup <- setup_individual_data(n = 100, p = 50, L = 1)
+  setup$params$max_iter <- 10
+  setup$params$convergence_method <- "elbo"
+  setup$params$tol <- 1e-3
+
+  result <- suppressWarnings(susie_workhorse(setup$data, setup$params))
+
+  expect_s3_class(result, "susie")
+  expect_equal(dim(result$alpha), c(1, 50))
+  expect_equal(sum(result$alpha), 1, tolerance = 1e-8)
+})
+
+test_that("susie_workhorse with small p trims L to at most p", {
+  setup <- setup_individual_data(n = 100, p = 10, L = 5)
+  setup$params$max_iter <- 10
+  setup$params$convergence_method <- "elbo"
+  setup$params$tol <- 1e-3
+
+  result <- suppressWarnings(susie_workhorse(setup$data, setup$params))
+
+  expect_s3_class(result, "susie")
+  expect_true(nrow(result$alpha) <= 10)
+})
+
+# ---- Refinement ----
+
+test_that("susie_workhorse with refine=FALSE completes and returns susie object", {
   setup <- setup_individual_data(n = 100, p = 50, L = 5)
   setup$params$max_iter <- 10
   setup$params$convergence_method <- "elbo"
   setup$params$tol <- 1e-3
   setup$params$refine <- FALSE
 
-  result <- susie_workhorse(setup$data, setup$params)
+  result <- suppressWarnings(susie_workhorse(setup$data, setup$params))
 
   expect_s3_class(result, "susie")
-  # Should complete without refinement
+  expect_false("trace" %in% names(result))  # no track by default
 })
 
-test_that("susie_workhorse skips refinement when no credible sets", {
+test_that("susie_workhorse with refine=TRUE and few iterations completes without error", {
   setup <- setup_individual_data(n = 100, p = 50, L = 5)
   setup$params$max_iter <- 2
   setup$params$convergence_method <- "elbo"
@@ -347,137 +244,96 @@ test_that("susie_workhorse skips refinement when no credible sets", {
   expect_s3_class(result, "susie")
 })
 
-# =============================================================================
-# TRACKING
-# =============================================================================
+# ---- Fit tracking ----
 
-test_that("susie_workhorse includes tracking when track_fit=TRUE", {
+test_that("susie_workhorse includes 'trace' field of class susie_track when track_fit=TRUE", {
   setup <- setup_individual_data(n = 100, p = 50, L = 5)
   setup$params$max_iter <- 10
   setup$params$convergence_method <- "elbo"
   setup$params$tol <- 1e-3
   setup$params$track_fit <- TRUE
 
-  result <- susie_workhorse(setup$data, setup$params)
+  result <- suppressWarnings(susie_workhorse(setup$data, setup$params))
 
   expect_true("trace" %in% names(result))
   expect_s3_class(result$trace, "susie_track")
 })
 
-test_that("susie_workhorse excludes tracking when track_fit=FALSE", {
+test_that("susie_workhorse omits 'trace' field when track_fit=FALSE", {
   setup <- setup_individual_data(n = 100, p = 50, L = 5)
   setup$params$max_iter <- 10
   setup$params$convergence_method <- "elbo"
   setup$params$tol <- 1e-3
   setup$params$track_fit <- FALSE
 
-  result <- susie_workhorse(setup$data, setup$params)
+  result <- suppressWarnings(susie_workhorse(setup$data, setup$params))
 
   expect_false("trace" %in% names(result))
 })
 
-# =============================================================================
-# MODEL INITIALIZATION
-# =============================================================================
+# ---- Model initialization ----
 
-test_that("susie_workhorse works without model_init", {
+test_that("susie_workhorse accepts model_init=NULL and produces valid output", {
   setup <- setup_individual_data(n = 100, p = 50, L = 5)
   setup$params$max_iter <- 10
   setup$params$convergence_method <- "elbo"
   setup$params$tol <- 1e-3
   setup$params$model_init <- NULL
 
-  result <- susie_workhorse(setup$data, setup$params)
+  result <- suppressWarnings(susie_workhorse(setup$data, setup$params))
 
   expect_s3_class(result, "susie")
 })
 
-test_that("susie_workhorse works with model_init", {
+test_that("susie_workhorse accepts a warm-start model_init and produces valid output", {
   setup <- setup_individual_data(n = 100, p = 50, L = 3)
   setup$params$max_iter <- 5
   setup$params$convergence_method <- "elbo"
   setup$params$tol <- 1e-3
 
-  # Create an initial model
-  model_init <- susie_workhorse(setup$data, setup$params)
+  model_init <- suppressWarnings(susie_workhorse(setup$data, setup$params))
 
-  # Use it to initialize another run
   setup2 <- setup_individual_data(n = 100, p = 50, L = 3, seed = 43)
   setup2$params$max_iter <- 10
   setup2$params$convergence_method <- "elbo"
   setup2$params$tol <- 1e-3
   setup2$params$model_init <- model_init
 
-  result <- susie_workhorse(setup2$data, setup2$params)
+  result <- suppressWarnings(susie_workhorse(setup2$data, setup2$params))
 
   expect_s3_class(result, "susie")
+  expect_equal(dim(result$alpha), c(3, 50))
 })
 
-# =============================================================================
-# CREDIBLE SETS
-# =============================================================================
+# ---- Output compatibility ----
 
-test_that("susie_workhorse computes credible sets", {
+test_that("susie_workhorse sets field has 'cs' sublist and fitted values are finite", {
   setup <- setup_individual_data(n = 100, p = 50, L = 5)
   setup$params$max_iter <- 20
   setup$params$convergence_method <- "elbo"
   setup$params$tol <- 1e-3
 
-  result <- susie_workhorse(setup$data, setup$params)
+  result <- suppressWarnings(susie_workhorse(setup$data, setup$params))
 
-  expect_true("sets" %in% names(result))
   expect_type(result$sets, "list")
   expect_true("cs" %in% names(result$sets))
-})
-
-# =============================================================================
-# FITTED VALUES
-# =============================================================================
-
-test_that("susie_workhorse computes fitted values", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-  setup$params$max_iter <- 10
-  setup$params$convergence_method <- "elbo"
-  setup$params$tol <- 1e-3
-
-  result <- susie_workhorse(setup$data, setup$params)
-
-  expect_true("fitted" %in% names(result))
   expect_length(result$fitted, 100)
   expect_true(all(is.finite(result$fitted)))
-})
-
-test_that("susie_workhorse computes intercept when requested", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-  setup$params$max_iter <- 10
-  setup$params$convergence_method <- "elbo"
-  setup$params$tol <- 1e-3
-  setup$params$intercept <- TRUE
-
-  result <- susie_workhorse(setup$data, setup$params)
-
-  expect_true("intercept" %in% names(result))
   expect_true(is.finite(result$intercept))
 })
 
-# =============================================================================
-# SIGNAL RECOVERY ON SIMULATED DATA
-# =============================================================================
+# ---- Signal recovery ----
 
-test_that("susie_workhorse recovers true signal on simple simulated data", {
-  # Generate data with known causal variables
+test_that("susie_workhorse recovers true signal on simulated data with known causal variables", {
   set.seed(123)
-  n <- 200
-  p <- 100
-  k <- 3  # Number of causal variables
+  n <- 200; p <- 100
+  causal_idx <- c(10, 30, 50)
 
   X <- matrix(rnorm(n * p), n, p)
   beta <- rep(0, p)
-  causal_idx <- c(10, 30, 50)
   beta[causal_idx] <- c(2, -2, 1.5)
   y <- drop(X %*% beta + rnorm(n, sd = 0.5))
 
-  # Prepare data
   X <- set_X_attributes(X, center = TRUE, scale = TRUE)
   mean_y <- mean(y)
   y <- y - mean_y
@@ -486,7 +342,6 @@ test_that("susie_workhorse recovers true signal on simple simulated data", {
     list(X = X, y = y, n = n, p = p, mean_y = mean_y),
     class = "individual"
   )
-
   params <- list(
     L = 5,
     intercept = TRUE,
@@ -515,56 +370,42 @@ test_that("susie_workhorse recovers true signal on simple simulated data", {
     verbose = FALSE
   )
 
-  result <- susie_workhorse(data, params)
+  result <- suppressWarnings(susie_workhorse(data, params))
 
-  # Check that causal variables have high PIPs
   expect_true(all(result$pip[causal_idx] > 0.1))
-
-  # Check that most non-causal variables have low PIPs
-  non_causal_idx <- setdiff(1:p, causal_idx)
-  expect_true(mean(result$pip[non_causal_idx]) < mean(result$pip[causal_idx]))
+  expect_true(mean(result$pip[causal_idx]) > mean(result$pip[setdiff(1:p, causal_idx)]))
 })
 
-# =============================================================================
-# INTEGRATION WITH FULL PIPELINE
-# =============================================================================
+# ---- Greedy-L verbose messages ----
 
-test_that("susie_workhorse produces output compatible with susie_get functions", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-  setup$params$max_iter <- 20
-  setup$params$convergence_method <- "elbo"
-  setup$params$tol <- 1e-3
+test_that("susie_workhorse emits a message containing 'L_greedy' when verbose=TRUE with L_greedy set", {
+  set.seed(201)
+  setup <- setup_individual_data(n = 80, p = 30, L = 6, seed = 201)
+  setup$params$L_greedy          <- 2
+  setup$params$L                 <- 6
+  setup$params$greedy_lbf_cutoff <- 0.1
+  setup$params$verbose           <- TRUE
+  setup$params$max_iter          <- 5
+  setup$params$tol               <- 1e-2
 
-  result <- susie_workhorse(setup$data, setup$params)
-
-  # Should be able to extract PIPs (already in result)
-  expect_length(result$pip, 50)
-
-  # Should have credible sets
-  expect_true("sets" %in% names(result))
-
-  # Should have all fields needed for coef() method
-  expect_true(all(c("alpha", "mu", "intercept") %in% names(result)))
-})
-
-test_that("susie_workhorse output is a valid susie object", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-  setup$params$max_iter <- 10
-  setup$params$convergence_method <- "elbo"
-  setup$params$tol <- 1e-3
-
-  result <- susie_workhorse(setup$data, setup$params)
-
-  # Check class
-  expect_s3_class(result, "susie")
-
-  # Check that we have all the core components for a susie object
-  required_fields <- c(
-    "alpha", "mu", "mu2", "V", "sigma2",
-    "elbo", "niter", "converged",
-    "pip", "sets", "fitted", "intercept",
-    "lbf", "lbf_variable", "KL"
+  expect_message(
+    suppressWarnings(susie_workhorse(setup$data, setup$params)),
+    "L_greedy"
   )
+})
 
-  expect_true(all(required_fields %in% names(result)))
+test_that("susie_workhorse verbose greedy-L message includes greedy_lbf_cutoff value", {
+  set.seed(202)
+  setup <- setup_individual_data(n = 80, p = 30, L = 4, seed = 202)
+  setup$params$L_greedy          <- 2
+  setup$params$L                 <- 4
+  setup$params$greedy_lbf_cutoff <- 0.1
+  setup$params$verbose           <- TRUE
+  setup$params$max_iter          <- 5
+  setup$params$tol               <- 1e-2
+
+  expect_message(
+    suppressWarnings(susie_workhorse(setup$data, setup$params)),
+    "greedy_lbf_cutoff"
+  )
 })

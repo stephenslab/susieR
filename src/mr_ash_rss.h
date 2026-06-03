@@ -218,15 +218,18 @@ inline unordered_map<string, mat> mr_ash_sufficient(const vec& XTy, const mat& X
 /**
  * Rescale posterior mean and covariance
  *
- * @param mu1 Posterior mean vector
- * @param sigma2_1 Posterior covariance matrix
- * @param sx Scaling vector
- * @return An unordered_map containing the rescaled posterior mean (mu1_orig) and covariance (sigma2_1_orig)
+ * @param mu1 Posterior mean vector (length p)
+ * @param sigma2_1 Per-coefficient posterior variance vector (length p)
+ * @param sx Scaling vector (length p)
+ * @return An unordered_map containing the rescaled posterior mean (mu1_orig) and variance (sigma2_1_orig)
  */
-inline unordered_map<string, mat> rescale_post_mean_covar(const vec& mu1, const mat& sigma2_1, const vec& sx) {
+inline unordered_map<string, mat> rescale_post_mean_covar(const vec& mu1, const vec& sigma2_1, const vec& sx) {
 	vec mu1_orig = mu1 / sx;
-	mat sigma2_1_orig = diagmat(1 / sx) * sigma2_1 * diagmat(1 / sx);
-	return {{"mu1_orig", mat(mu1_orig)}, {"sigma2_1_orig", sigma2_1_orig}};
+	// sigma2_1 holds per-coefficient posterior variances (length p), not a full
+	// p x p covariance matrix, so rescale elementwise: var(beta_orig_j) =
+	// var(beta_std_j) / sx_j^2, consistent with mu1_orig = mu1 / sx.
+	vec sigma2_1_orig = sigma2_1 / square(sx);
+	return {{"mu1_orig", mat(mu1_orig)}, {"sigma2_1_orig", mat(sigma2_1_orig)}};
 }
 
 /**
@@ -250,7 +253,7 @@ inline unordered_map<string, mat> rescale_post_mean_covar(const vec& mu1, const 
  * @param standardize Whether to standardize the input data
  * @return An unordered_map containing the posterior mean (mu1) and covariance (sigma2_1) of the coefficients, the posterior assignment probabilities (w1), the error variance (sigma2_e), the mixture weights (w0), and optionally the ELBO
  */
-inline unordered_map<string, mat> mr_ash_rss(const vec& bhat, const vec& shat, const vec& z, const mat& R, double var_y, int n,
+inline unordered_map<string, mat> mr_ash_rss([[maybe_unused]] const vec& bhat, const vec& shat, const vec& z, const mat& R, double var_y, int n,
                                       double sigma2_e, const vec& s0, vec& w0, const vec& mu1_init, double tol = 1e-8,
                                       int max_iter = 1e5, bool update_w0 = true, bool update_sigma = true, bool compute_ELBO = true,
                                       bool standardize = false) {
@@ -263,11 +266,10 @@ inline unordered_map<string, mat> mr_ash_rss(const vec& bhat, const vec& shat, c
 		mu1_init_use = vec(p, fill::zeros);
 	}
 
-	// Compute Z-scores if not provided
+	// Z-scores. The public mr.ash.rss() wrapper always supplies z (it derives
+	// z = bhat/shat itself when z is not given), so z is never empty here;
+	// `bhat` is retained only for the wrapper/cpp11 binding signature.
 	vec z_use = z;
-	if (z.is_empty()) {
-		z_use = bhat / shat;
-	}
 
 	// Compute PVE-adjusted Z-scores if sample size is provided
 	vec adj(p, fill::ones);
@@ -307,7 +309,7 @@ inline unordered_map<string, mat> mr_ash_rss(const vec& bhat, const vec& shat, c
 
 	// Rescale posterior mean and covariance if X was standardized
 	if (standardize) {
-		unordered_map<string, mat> out_adj = rescale_post_mean_covar(vectorise(result["mu1"]), result["sigma2_1"], sx);
+		unordered_map<string, mat> out_adj = rescale_post_mean_covar(vectorise(result["mu1"]), vectorise(result["sigma2_1"]), sx);
 		result["mu1"] = out_adj["mu1_orig"];
 		result["sigma2_1"] = out_adj["sigma2_1_orig"];
 	}

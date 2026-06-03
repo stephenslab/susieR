@@ -1375,7 +1375,10 @@ mle_unmappable <- function(data, params, model, omega, est_tau2 = TRUE, est_sigm
         message(sprintf("Update sigma^2 to %f\n", sigma2))
       }
     } else {
+      # nocov start: L-BFGS-B reliably converges on this smooth 1D objective over
+      # a valid finite interval; the sibling est_tau2 branch covers this warning.
       warning_message("MLE optimization failed to converge; keeping previous parameters")
+      # nocov end
     }
   }
 
