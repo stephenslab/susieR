@@ -1,735 +1,581 @@
 context("Iterative Bayesian Stepwise Selection (IBSS)")
 
-# =============================================================================
-# IBSS_INITIALIZE - Basic Structure and Components
-# =============================================================================
+# ---- ibss_initialize: structure ----
 
-test_that("ibss_initialize returns correct structure with susie class", {
+test_that("ibss_initialize returns susie-class list with correct dimensions", {
   setup <- setup_individual_data(n = 100, p = 50, L = 5)
-
   model <- ibss_initialize(setup$data, setup$params)
 
   expect_s3_class(model, "susie")
   expect_type(model, "list")
+  expect_equal(dim(model$alpha), c(5L, 50L))
+  expect_equal(dim(model$mu),    c(5L, 50L))
+  expect_equal(dim(model$mu2),   c(5L, 50L))
+  expect_equal(dim(model$lbf_variable), c(5L, 50L))
+  expect_length(model$V,   5L)
+  expect_length(model$lbf, 5L)
+  expect_length(model$KL,  5L)
+  expect_length(model$Xr,  100L)
+  for (nm in c("alpha", "mu", "mu2", "V", "sigma2", "lbf", "lbf_variable",
+               "KL", "pi", "predictor_weights", "Xr", "null_index"))
+    expect_true(nm %in% names(model))
 })
 
-test_that("ibss_initialize creates all required model components", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-
-  model <- ibss_initialize(setup$data, setup$params)
-
-  # Core posterior components
-  expect_true("alpha" %in% names(model))
-  expect_true("mu" %in% names(model))
-  expect_true("mu2" %in% names(model))
-  expect_true("V" %in% names(model))
-  expect_true("sigma2" %in% names(model))
-
-  # Tracking components
-  expect_true("lbf" %in% names(model))
-  expect_true("lbf_variable" %in% names(model))
-  expect_true("KL" %in% names(model))
-
-  # Prior components
-  expect_true("pi" %in% names(model))
-  expect_true("predictor_weights" %in% names(model))
-
-  # Fitted values
-  expect_true("Xr" %in% names(model))
-  expect_true("null_index" %in% names(model))
-})
-
-test_that("ibss_initialize creates matrices with correct dimensions", {
-  n <- 100
-  p <- 50
-  L <- 5
-  setup <- setup_individual_data(n = n, p = p, L = L)
-
-  model <- ibss_initialize(setup$data, setup$params)
-
-  expect_equal(dim(model$alpha), c(L, p))
-  expect_equal(dim(model$mu), c(L, p))
-  expect_equal(dim(model$mu2), c(L, p))
-  expect_equal(dim(model$lbf_variable), c(L, p))
-  expect_length(model$V, L)
-  expect_length(model$lbf, L)
-  expect_length(model$KL, L)
-  expect_length(model$Xr, n)
-})
-
-# =============================================================================
-# IBSS_INITIALIZE - Parameter Validation
-# =============================================================================
-
-test_that("ibss_initialize adjusts L when p < L", {
+test_that("ibss_initialize reduces L to p when L > p", {
   setup <- setup_individual_data(n = 100, p = 10, L = 20)
-
   model <- ibss_initialize(setup$data, setup$params)
-
-  # L should be reduced to p
-  expect_equal(nrow(model$alpha), 10)
-  expect_equal(length(model$V), 10)
+  expect_equal(nrow(model$alpha), 10L)
+  expect_length(model$V, 10L)
 })
 
-test_that("ibss_initialize validates residual variance is positive", {
+# ---- ibss_initialize: residual variance validation ----
+
+test_that("ibss_initialize errors on negative residual variance", {
   setup <- setup_individual_data(n = 100, p = 50, L = 5)
   setup$params$residual_variance <- -1
-
-  expect_error(
-    ibss_initialize(setup$data, setup$params),
-    "Residual variance sigma2 must be positive"
-  )
+  expect_error(ibss_initialize(setup$data, setup$params),
+               "Residual variance sigma2 must be positive")
 })
 
-test_that("ibss_initialize validates residual variance is scalar", {
+test_that("ibss_initialize errors on non-scalar residual variance", {
   setup <- setup_individual_data(n = 100, p = 50, L = 5)
   setup$params$residual_variance <- c(1, 2)
-
-  expect_error(
-    ibss_initialize(setup$data, setup$params),
-    "Input residual variance sigma2 must be a scalar"
-  )
+  expect_error(ibss_initialize(setup$data, setup$params),
+               "Input residual variance sigma2 must be a scalar")
 })
 
-test_that("ibss_initialize validates residual variance is numeric", {
+test_that("ibss_initialize errors on non-numeric residual variance", {
   setup <- setup_individual_data(n = 100, p = 50, L = 5)
   setup$params$residual_variance <- "one"
-
-  expect_error(
-    ibss_initialize(setup$data, setup$params),
-    "Input residual variance sigma2 must be numeric"
-  )
+  expect_error(ibss_initialize(setup$data, setup$params),
+               "Input residual variance sigma2 must be numeric")
 })
 
-test_that("ibss_initialize sets default residual variance to var(y)", {
+test_that("ibss_initialize defaults sigma2 to var(y) when residual_variance is NULL", {
   setup <- setup_individual_data(n = 100, p = 50, L = 5)
   setup$params$residual_variance <- NULL
-
   var_y <- var(drop(setup$data$y))
   model <- ibss_initialize(setup$data, setup$params)
-
-  expect_equal(model$sigma2, var_y)
+  expect_equal(model$sigma2, var_y, tolerance = 1e-8)
 })
 
 test_that("ibss_initialize uses provided residual variance", {
   setup <- setup_individual_data(n = 100, p = 50, L = 5)
   setup$params$residual_variance <- 2.5
-
   model <- ibss_initialize(setup$data, setup$params)
-
   expect_equal(model$sigma2, 2.5)
 })
 
-# =============================================================================
-# IBSS_INITIALIZE - Model Initialization (model_init)
-# =============================================================================
+# ---- ibss_initialize: model_init warm-start ----
 
 test_that("ibss_initialize works without model_init", {
   setup <- setup_individual_data(n = 100, p = 50, L = 5)
   setup$params$model_init <- NULL
-
   model <- ibss_initialize(setup$data, setup$params)
-
-  expect_equal(dim(model$alpha), c(5, 50))
+  expect_equal(dim(model$alpha), c(5L, 50L))
   expect_true(all(model$alpha >= 0 & model$alpha <= 1))
   expect_true(all(is.finite(model$mu)))
 })
 
-test_that("ibss_initialize accepts valid susie model_init", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 3)
-
-  # Create a proper previous susie fit to use as model_init
-  model_init <- ibss_initialize(setup$data, setup$params)
-  model_init$V <- rep(0.5, 3)  # Set some prior variance
-
-  # Use it as initialization for a new fit
-  setup2 <- setup_individual_data(n = 100, p = 50, L = 3)
-  setup2$params$model_init <- model_init
-
-  model <- ibss_initialize(setup2$data, setup2$params)
-
-  expect_equal(dim(model$alpha), c(3, 50))
-  expect_true(all(model$alpha >= 0 & model$alpha <= 1))
-})
-
-test_that("ibss_initialize handles model_init with fewer effects than L", {
+test_that("ibss_initialize expands L when model_init has fewer effects", {
   setup <- setup_individual_data(n = 100, p = 50, L = 2)
-
-  # Create init with 2 effects
   model_init <- ibss_initialize(setup$data, setup$params)
   model_init$V <- rep(0.5, 2)
 
-  # Try to expand to 5 effects
   setup2 <- setup_individual_data(n = 100, p = 50, L = 5)
   setup2$params$model_init <- model_init
-
   model <- ibss_initialize(setup2$data, setup2$params)
-
-  # Should expand to L=5 effects
-  expect_equal(dim(model$alpha), c(5, 50))
+  expect_equal(dim(model$alpha), c(5L, 50L))
 })
 
-test_that("ibss_initialize handles model_init with more effects than L", {
+test_that("ibss_initialize keeps all effects when model_init has more than L", {
   setup <- setup_individual_data(n = 100, p = 50, L = 6)
-
-  # Create init with 6 effects
   model_init <- ibss_initialize(setup$data, setup$params)
   model_init$V <- rep(0.5, 6)
 
-  # Try to reduce to 3 effects
   setup2 <- setup_individual_data(n = 100, p = 50, L = 3)
   setup2$params$model_init <- model_init
-
-  # When model_init has more effects, it keeps all of them (expands L)
   expect_message(
     model <- ibss_initialize(setup2$data, setup2$params),
     "using L = 6"
   )
-
-  # Should keep all 6 effects from model_init
-  expect_equal(dim(model$alpha), c(6, 50))
+  expect_equal(dim(model$alpha), c(6L, 50L))
 })
 
-# =============================================================================
-# IBSS_INITIALIZE - Mathematical Properties
-# =============================================================================
+# ---- ibss_initialize: mathematical properties ----
 
-test_that("ibss_initialize alpha rows sum to 1", {
+test_that("ibss_initialize produces valid initial state", {
   setup <- setup_individual_data(n = 100, p = 50, L = 5)
-
   model <- ibss_initialize(setup$data, setup$params)
 
-  row_sums <- rowSums(model$alpha)
-  expect_equal(row_sums, rep(1, 5), tolerance = 1e-10)
-})
-
-test_that("ibss_initialize alpha values are valid probabilities", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-
-  model <- ibss_initialize(setup$data, setup$params)
-
+  # alpha rows sum to 1 and are valid probabilities
+  expect_equal(rowSums(model$alpha), rep(1, 5), tolerance = 1e-10)
   expect_true(all(model$alpha >= 0 & model$alpha <= 1))
-})
 
-test_that("ibss_initialize V values are non-negative", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-
-  model <- ibss_initialize(setup$data, setup$params)
-
+  # V non-negative and finite
   expect_true(all(model$V >= 0))
   expect_true(all(is.finite(model$V)))
-})
 
-test_that("ibss_initialize sigma2 is positive", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-
-  model <- ibss_initialize(setup$data, setup$params)
-
-  expect_true(model$sigma2 > 0)
+  # sigma2 positive and finite
+  expect_gt(model$sigma2, 0)
   expect_true(is.finite(model$sigma2))
-})
 
-test_that("ibss_initialize KL and lbf are initialized to NA", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
+  # KL and lbf initialized to NA before first fit
   setup$params$model_init <- NULL
-
-  model <- ibss_initialize(setup$data, setup$params)
-
-  expect_true(all(is.na(model$KL)))
-  expect_true(all(is.na(model$lbf)))
+  m2 <- ibss_initialize(setup$data, setup$params)
+  expect_true(all(is.na(m2$KL)))
+  expect_true(all(is.na(m2$lbf)))
 })
 
-# =============================================================================
-# IBSS_INITIALIZE - Fitted Values
-# =============================================================================
+# ---- ibss_initialize: data type compatibility ----
 
-test_that("ibss_initialize creates fitted values for individual data", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
+for (.dtype in c("individual", "ss", "rss_lambda")) {
+  local({
+    dtype <- .dtype
+    test_that(paste("ibss_initialize creates correct fitted field for", dtype), {
+      if (dtype == "individual") {
+        setup <- setup_individual_data(n = 100, p = 50, L = 5)
+        model <- ibss_initialize(setup$data, setup$params)
+        expect_s3_class(model, "susie")
+        expect_length(model$Xr, 100)
+        expect_true(all(is.finite(model$Xr)))
+      } else if (dtype == "ss") {
+        setup <- setup_ss_data(n = 100, p = 50, L = 5)
+        model <- ibss_initialize(setup$data, setup$params)
+        expect_s3_class(model, "susie")
+        expect_length(model$XtXr, 50)
+        expect_true(all(is.finite(model$XtXr)))
+      } else {
+        setup <- setup_rss_lambda_data(n = 500, p = 50, L = 5, lambda = 0.5)
+        model <- ibss_initialize(setup$data, setup$params)
+        expect_s3_class(model, "susie")
+        expect_length(model$Rz, 50)
+        expect_true(all(is.finite(model$Rz)))
+      }
+    })
+  })
+}
 
-  model <- ibss_initialize(setup$data, setup$params)
-
-  expect_true("Xr" %in% names(model))
-  expect_length(model$Xr, 100)
-  expect_true(all(is.finite(model$Xr)))
-})
-
-test_that("ibss_initialize creates fitted values for sufficient stats", {
-  setup <- setup_ss_data(n = 100, p = 50, L = 5)
-
-  model <- ibss_initialize(setup$data, setup$params)
-
-  expect_true("XtXr" %in% names(model))
-  expect_length(model$XtXr, 50)
-  expect_true(all(is.finite(model$XtXr)))
-})
-
-test_that("ibss_initialize creates fitted values for rss_lambda", {
-  setup <- setup_rss_lambda_data(n = 500, p = 50, L = 5, lambda = 0.5)
-
-  model <- ibss_initialize(setup$data, setup$params)
-
-  expect_true("Rz" %in% names(model))
-  expect_length(model$Rz, 50)
-  expect_true(all(is.finite(model$Rz)))
-})
-
-# =============================================================================
-# IBSS_INITIALIZE - Null Index
-# =============================================================================
+# ---- ibss_initialize: null_index ----
 
 test_that("ibss_initialize sets null_index to 0 when null_weight = 0", {
   setup <- setup_individual_data(n = 100, p = 50, L = 5)
   setup$model$null_weight <- 0
-
   model <- ibss_initialize(setup$data, setup$params)
-
   expect_equal(model$null_index, 0)
 })
 
-test_that("ibss_initialize sets null_index when null_weight > 0", {
+test_that("ibss_initialize sets positive null_index when null_weight > 0", {
   setup <- setup_individual_data(n = 100, p = 50, L = 5)
   setup$params$null_weight <- 0.5
-
   model <- ibss_initialize(setup$data, setup$params)
-
-  expect_true(model$null_index > 0)
+  expect_gt(model$null_index, 0)
 })
 
-# =============================================================================
-# IBSS_INITIALIZE - Data Type Compatibility
-# =============================================================================
+# ---- ibss_fit: updates and mathematical properties ----
 
-test_that("ibss_initialize works with individual data", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-
-  model <- ibss_initialize(setup$data, setup$params)
-
-  expect_s3_class(model, "susie")
-  expect_true("Xr" %in% names(model))
-})
-
-test_that("ibss_initialize works with sufficient stats", {
-  setup <- setup_ss_data(n = 100, p = 50, L = 5)
-
-  model <- ibss_initialize(setup$data, setup$params)
-
-  expect_s3_class(model, "susie")
-  expect_true("XtXr" %in% names(model))
-})
-
-test_that("ibss_initialize works with rss_lambda", {
-  setup <- setup_rss_lambda_data(n = 500, p = 50, L = 5, lambda = 0.5)
-
-  model <- ibss_initialize(setup$data, setup$params)
-
-  expect_s3_class(model, "susie")
-  expect_true("Rz" %in% names(model))
-})
-
-# =============================================================================
-# IBSS_FIT - Basic Functionality
-# =============================================================================
-
-test_that("ibss_fit updates all L effects", {
+test_that("ibss_fit maintains valid distributions and finite values after one step", {
   setup <- setup_individual_data(n = 100, p = 50, L = 5)
   model <- ibss_initialize(setup$data, setup$params)
+  upd   <- ibss_fit(setup$data, setup$params, model)
 
-  # Fit one iteration
-  model_updated <- ibss_fit(setup$data, setup$params, model)
+  # alpha
+  expect_equal(rowSums(upd$alpha), rep(1, 5), tolerance = 1e-10)
+  expect_true(all(upd$alpha >= 0 & upd$alpha <= 1))
 
-  # All effects should still have valid probabilities
-  for (l in 1:5) {
-    expect_equal(sum(model_updated$alpha[l, ]), 1, tolerance = 1e-10)
-  }
+  # V non-negative finite
+  expect_length(upd$V, 5)
+  expect_true(all(upd$V >= 0))
+  expect_true(all(is.finite(upd$V)))
 
-  # V should be updated (even if to 0 for no signal)
-  expect_true(all(is.finite(model_updated$V)))
-  expect_true(all(model_updated$V >= 0))
+  # lbf finite
+  expect_length(upd$lbf, 5)
+  expect_true(all(is.finite(upd$lbf)))
+
+  # KL non-negative
+  expect_length(upd$KL, 5)
+  expect_true(all(is.finite(upd$KL)))
+  expect_true(all(upd$KL >= -1e-6))
+
+  # mu and mu2 finite
+  expect_true(all(is.finite(upd$mu)))
+  expect_true(all(is.finite(upd$mu2)))
+
+  # Xr updated
+  expect_length(upd$Xr, 100)
+  expect_true(all(is.finite(upd$Xr)))
 })
-
-test_that("ibss_fit updates V for all effects", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-  model <- ibss_initialize(setup$data, setup$params)
-
-  # Store initial V
-  V_init <- model$V
-
-  # Fit one iteration
-  model_updated <- ibss_fit(setup$data, setup$params, model)
-
-  # V should be updated (unless it converged to same values)
-  expect_length(model_updated$V, 5)
-  expect_true(all(model_updated$V >= 0))
-  expect_true(all(is.finite(model_updated$V)))
-})
-
-test_that("ibss_fit updates lbf for all effects", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-  model <- ibss_initialize(setup$data, setup$params)
-
-  # Fit one iteration
-  model_updated <- ibss_fit(setup$data, setup$params, model)
-
-  expect_length(model_updated$lbf, 5)
-  expect_true(all(is.finite(model_updated$lbf)))
-})
-
-test_that("ibss_fit updates KL for all effects", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-  model <- ibss_initialize(setup$data, setup$params)
-
-  # Fit one iteration
-  model_updated <- ibss_fit(setup$data, setup$params, model)
-
-  expect_length(model_updated$KL, 5)
-  expect_true(all(is.finite(model_updated$KL)))
-  # KL divergence should be non-negative
-  expect_true(all(model_updated$KL >= -1e-6))
-})
-
-# =============================================================================
-# IBSS_FIT - Mathematical Properties
-# =============================================================================
-
-test_that("ibss_fit maintains valid probability distributions", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-  model <- ibss_initialize(setup$data, setup$params)
-
-  model_updated <- ibss_fit(setup$data, setup$params, model)
-
-  # Each row of alpha should sum to 1
-  row_sums <- rowSums(model_updated$alpha)
-  expect_equal(row_sums, rep(1, 5), tolerance = 1e-10)
-
-  # All alpha values should be valid probabilities
-  expect_true(all(model_updated$alpha >= 0))
-  expect_true(all(model_updated$alpha <= 1))
-})
-
-test_that("ibss_fit maintains finite values", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-  model <- ibss_initialize(setup$data, setup$params)
-
-  model_updated <- ibss_fit(setup$data, setup$params, model)
-
-  expect_true(all(model_updated$alpha >= 0 & model_updated$alpha <= 1))
-  expect_true(all(is.finite(model_updated$mu)))
-  expect_true(all(is.finite(model_updated$mu2)))
-  expect_true(all(is.finite(model_updated$V)))
-})
-
-test_that("ibss_fit updates fitted values", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-  model <- ibss_initialize(setup$data, setup$params)
-
-  Xr_init <- model$Xr
-  model_updated <- ibss_fit(setup$data, setup$params, model)
-
-  # Fitted values should be updated
-  expect_true("Xr" %in% names(model_updated))
-  expect_length(model_updated$Xr, 100)
-})
-
-# =============================================================================
-# IBSS_FIT - Edge Cases
-# =============================================================================
 
 test_that("ibss_fit works with L=1", {
   setup <- setup_individual_data(n = 100, p = 50, L = 1)
   model <- ibss_initialize(setup$data, setup$params)
+  upd   <- ibss_fit(setup$data, setup$params, model)
 
-  model_updated <- ibss_fit(setup$data, setup$params, model)
-
-  expect_equal(dim(model_updated$alpha), c(1, 50))
-  expect_equal(sum(model_updated$alpha), 1, tolerance = 1e-10)
+  expect_equal(dim(upd$alpha), c(1L, 50L))
+  expect_equal(sum(upd$alpha), 1, tolerance = 1e-10)
 })
 
-test_that("ibss_fit works with L=0 (no effects)", {
+test_that("ibss_fit works with L=0", {
   setup <- setup_individual_data(n = 100, p = 50, L = 0)
   model <- list(alpha = matrix(0, 0, 50))
-
-  # Should handle gracefully
-  model_updated <- ibss_fit(setup$data, setup$params, model)
-
-  expect_equal(nrow(model_updated$alpha), 0)
+  upd   <- ibss_fit(setup$data, setup$params, model)
+  expect_equal(nrow(upd$alpha), 0)
 })
 
-test_that("ibss_fit works with different data types", {
-  # Individual data
-  setup_ind <- setup_individual_data(n = 100, p = 50, L = 5)
-  model_ind <- ibss_initialize(setup_ind$data, setup_ind$params)
-  model_ind_updated <- ibss_fit(setup_ind$data, setup_ind$params, model_ind)
-  expect_s3_class(model_ind_updated, "susie")
-
-  # Sufficient stats
-  setup_ss <- setup_ss_data(n = 100, p = 50, L = 5)
-  model_ss <- ibss_initialize(setup_ss$data, setup_ss$params)
-  model_ss_updated <- ibss_fit(setup_ss$data, setup_ss$params, model_ss)
-  expect_s3_class(model_ss_updated, "susie")
-
-  # RSS lambda
-  setup_rss <- setup_rss_lambda_data(n = 500, p = 50, L = 5, lambda = 0.5)
-  model_rss <- ibss_initialize(setup_rss$data, setup_rss$params)
-  model_rss_updated <- ibss_fit(setup_rss$data, setup_rss$params, model_rss)
-  expect_s3_class(model_rss_updated, "susie")
-})
-
-# =============================================================================
-# IBSS_FIT - Iterative Behavior
-# =============================================================================
-
-test_that("ibss_fit can be called iteratively", {
+test_that("ibss_fit is idempotent over multiple iterations", {
   setup <- setup_individual_data(n = 100, p = 50, L = 5)
   model <- ibss_initialize(setup$data, setup$params)
-
-  # Run multiple iterations
   for (iter in 1:3) {
     model <- ibss_fit(setup$data, setup$params, model)
-
-    # Check validity after each iteration
     expect_equal(rowSums(model$alpha), rep(1, 5), tolerance = 1e-10)
     expect_true(all(model$V >= 0))
   }
 })
 
-# =============================================================================
-# IBSS_FINALIZE - Basic Functionality
-# =============================================================================
+test_that("ibss_fit produces valid output for each data type", {
+  for (dtype in c("individual", "ss", "rss_lambda")) {
+    setup <- switch(dtype,
+      individual  = setup_individual_data(n = 100, p = 50, L = 5),
+      ss          = setup_ss_data(n = 100, p = 50, L = 5),
+      rss_lambda  = setup_rss_lambda_data(n = 500, p = 50, L = 5, lambda = 0.5)
+    )
+    model <- ibss_initialize(setup$data, setup$params)
+    upd   <- ibss_fit(setup$data, setup$params, model)
+    expect_s3_class(upd, "susie")
+  }
+})
 
-test_that("ibss_finalize adds required output fields", {
+# ---- ibss_finalize: output fields and values ----
+
+test_that("ibss_finalize produces complete finalized susie object", {
   setup <- setup_individual_data(n = 100, p = 50, L = 5)
   model <- ibss_initialize(setup$data, setup$params)
   model <- ibss_fit(setup$data, setup$params, model)
+  final <- ibss_finalize(setup$data, setup$params, model,
+                         elbo = NULL, iter = 42L, tracking = NULL)
 
-  model_final <- ibss_finalize(setup$data, setup$params, model,
-                               elbo = NULL, iter = 10L, tracking = NULL)
+  expect_s3_class(final, "susie")
+  expect_equal(final$niter, 42L)
 
-  # Check for required output fields
-  expect_true("niter" %in% names(model_final))
-  expect_true("intercept" %in% names(model_final))
-  expect_true("fitted" %in% names(model_final))
-  expect_true("sets" %in% names(model_final))
-  expect_true("pip" %in% names(model_final))
-  expect_true("X_column_scale_factors" %in% names(model_final))
+  # pip valid probabilities
+  expect_length(final$pip, 50)
+  expect_true(all(final$pip >= 0 & final$pip <= 1))
+  expect_true(all(is.finite(final$pip)))
+
+  # sets is a list
+  expect_type(final$sets, "list")
+
+  # fitted values length n and finite
+  expect_length(final$fitted, 100)
+  expect_true(all(is.finite(final$fitted)))
+
+  # intercept finite
+  expect_true(is.finite(final$intercept))
+
+  # scale factors
+  expect_length(final$X_column_scale_factors, 50)
+
+  # z-scores present and finite
+  expect_true("z" %in% names(final))
+  expect_length(final$z, 50)
+  expect_true(all(is.finite(final$z)))
 })
 
-test_that("ibss_finalize sets iteration count", {
+test_that("ibss_finalize attaches variable names to pip", {
   setup <- setup_individual_data(n = 100, p = 50, L = 5)
+  colnames(setup$data$X) <- paste0("var", 1:50)
   model <- ibss_initialize(setup$data, setup$params)
   model <- ibss_fit(setup$data, setup$params, model)
-
-  model_final <- ibss_finalize(setup$data, setup$params, model,
-                               elbo = NULL, iter = 42L, tracking = NULL)
-
-  expect_equal(model_final$niter, 42L)
+  final <- ibss_finalize(setup$data, setup$params, model,
+                         elbo = NULL, iter = 10L, tracking = NULL)
+  expect_named(final$pip, paste0("var", 1:50))
 })
 
-test_that("ibss_finalize computes PIPs", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-  model <- ibss_initialize(setup$data, setup$params)
-  model <- ibss_fit(setup$data, setup$params, model)
-
-  model_final <- ibss_finalize(setup$data, setup$params, model,
-                               elbo = NULL, iter = 10L, tracking = NULL)
-
-  expect_length(model_final$pip, 50)
-  expect_true(all(model_final$pip >= 0))
-  expect_true(all(model_final$pip <= 1))
-  expect_true(all(is.finite(model_final$pip)))
-})
-
-test_that("ibss_finalize computes credible sets", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-  model <- ibss_initialize(setup$data, setup$params)
-  model <- ibss_fit(setup$data, setup$params, model)
-
-  model_final <- ibss_finalize(setup$data, setup$params, model,
-                               elbo = NULL, iter = 10L, tracking = NULL)
-
-  expect_true("sets" %in% names(model_final))
-  expect_type(model_final$sets, "list")
-})
-
-test_that("ibss_finalize computes fitted values", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-  model <- ibss_initialize(setup$data, setup$params)
-  model <- ibss_fit(setup$data, setup$params, model)
-
-  model_final <- ibss_finalize(setup$data, setup$params, model,
-                               elbo = NULL, iter = 10L, tracking = NULL)
-
-  expect_true("fitted" %in% names(model_final))
-  expect_length(model_final$fitted, 100)
-  expect_true(all(is.finite(model_final$fitted)))
-})
-
-test_that("ibss_finalize computes intercept", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-  setup$params$intercept <- TRUE
-  model <- ibss_initialize(setup$data, setup$params)
-  model <- ibss_fit(setup$data, setup$params, model)
-
-  model_final <- ibss_finalize(setup$data, setup$params, model,
-                               elbo = NULL, iter = 10L, tracking = NULL)
-
-  expect_true("intercept" %in% names(model_final))
-  expect_true(is.finite(model_final$intercept))
-})
-
-# =============================================================================
-# IBSS_FINALIZE - Tracking
-# =============================================================================
-
-test_that("ibss_finalize includes tracking when track_fit=TRUE", {
+test_that("ibss_finalize includes trace when track_fit=TRUE", {
   setup <- setup_individual_data(n = 100, p = 50, L = 5)
   setup$params$track_fit <- TRUE
   model <- ibss_initialize(setup$data, setup$params)
   model <- ibss_fit(setup$data, setup$params, model)
-
-  # Create mock tracking data
   tracking <- list(make_track_snapshot(model, 0L))
-
-  model_final <- ibss_finalize(setup$data, setup$params, model,
-                               elbo = NULL, iter = 3L, tracking = tracking)
-
-  expect_true("trace" %in% names(model_final))
-  expect_s3_class(model_final$trace, "susie_track")
+  final <- ibss_finalize(setup$data, setup$params, model,
+                         elbo = NULL, iter = 3L, tracking = tracking)
+  expect_true("trace" %in% names(final))
+  expect_s3_class(final$trace, "susie_track")
 })
 
-test_that("ibss_finalize excludes tracking when track_fit=FALSE", {
+test_that("ibss_finalize omits trace when track_fit=FALSE", {
   setup <- setup_individual_data(n = 100, p = 50, L = 5)
   setup$params$track_fit <- FALSE
   model <- ibss_initialize(setup$data, setup$params)
   model <- ibss_fit(setup$data, setup$params, model)
-
-  model_final <- ibss_finalize(setup$data, setup$params, model,
-                               elbo = NULL, iter = 3L, tracking = NULL)
-
-  expect_false("trace" %in% names(model_final))
+  final <- ibss_finalize(setup$data, setup$params, model,
+                         elbo = NULL, iter = 3L, tracking = NULL)
+  expect_false("trace" %in% names(final))
 })
 
-# =============================================================================
-# IBSS_FINALIZE - Variable Names
-# =============================================================================
+# ---- full IBSS pipeline ----
 
-test_that("ibss_finalize assigns variable names when available", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-
-  # Add column names to X
-  colnames(setup$data$X) <- paste0("var", 1:50)
-
-  model <- ibss_initialize(setup$data, setup$params)
-  model <- ibss_fit(setup$data, setup$params, model)
-
-  model_final <- ibss_finalize(setup$data, setup$params, model,
-                               elbo = NULL, iter = 10L, tracking = NULL)
-
-  # Check that variable names are assigned to pip
-  expect_named(model_final$pip, paste0("var", 1:50))
-})
-
-# =============================================================================
-# IBSS_FINALIZE - Z-scores
-# =============================================================================
-
-test_that("ibss_finalize computes z-scores for individual data", {
+test_that("full IBSS pipeline produces valid susie object with correct properties", {
   setup <- setup_individual_data(n = 100, p = 50, L = 5)
   model <- ibss_initialize(setup$data, setup$params)
-  model <- ibss_fit(setup$data, setup$params, model)
-
-  model_final <- ibss_finalize(setup$data, setup$params, model,
-                               elbo = NULL, iter = 10L, tracking = NULL)
-
-  expect_true("z" %in% names(model_final))
-  if (!is.null(model_final$z)) {
-    expect_length(model_final$z, 50)
-    expect_true(all(is.finite(model_final$z)))
-  }
-})
-
-# =============================================================================
-# IBSS_FINALIZE - Scale Factors
-# =============================================================================
-
-test_that("ibss_finalize computes X_column_scale_factors", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-  model <- ibss_initialize(setup$data, setup$params)
-  model <- ibss_fit(setup$data, setup$params, model)
-
-  model_final <- ibss_finalize(setup$data, setup$params, model,
-                               elbo = NULL, iter = 10L, tracking = NULL)
-
-  expect_true("X_column_scale_factors" %in% names(model_final))
-  expect_length(model_final$X_column_scale_factors, 50)
-})
-
-# =============================================================================
-# IBSS_FINALIZE - Data Type Compatibility
-# =============================================================================
-
-test_that("ibss_finalize works with individual data", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-  model <- ibss_initialize(setup$data, setup$params)
-  model <- ibss_fit(setup$data, setup$params, model)
-
-  model_final <- ibss_finalize(setup$data, setup$params, model,
-                               elbo = NULL, iter = 10L, tracking = NULL)
-
-  expect_s3_class(model_final, "susie")
-  expect_true("fitted" %in% names(model_final))
-  expect_length(model_final$fitted, 100)
-})
-
-
-# =============================================================================
-# FULL IBSS PIPELINE
-# =============================================================================
-
-test_that("Full IBSS pipeline produces valid susie object", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
-
-  # Initialize
-  model <- ibss_initialize(setup$data, setup$params)
-
-  # Fit (run 5 iterations)
-  for (i in 1:5) {
+  for (i in 1:5)
     model <- ibss_fit(setup$data, setup$params, model)
-  }
-
-  # Finalize
   model <- ibss_finalize(setup$data, setup$params, model,
-                        elbo = NULL, iter = 5L, tracking = NULL)
+                         elbo = NULL, iter = 5L, tracking = NULL)
 
-  # Check final model is complete
   expect_s3_class(model, "susie")
-  expect_true("alpha" %in% names(model))
-  expect_true("mu" %in% names(model))
-  expect_true("V" %in% names(model))
-  expect_true("pip" %in% names(model))
-  expect_true("sets" %in% names(model))
-  expect_true("fitted" %in% names(model))
-  expect_true("niter" %in% names(model))
   expect_equal(model$niter, 5L)
+  expect_equal(rowSums(model$alpha), rep(1, 5), tolerance = 1e-10)
+  expect_true(all(model$pip >= 0 & model$pip <= 1))
+  expect_true(all(model$V >= 0))
+  for (nm in c("alpha", "mu", "V", "pip", "sets", "fitted", "niter"))
+    expect_true(nm %in% names(model))
 })
 
-test_that("Full IBSS pipeline maintains mathematical properties", {
-  setup <- setup_individual_data(n = 100, p = 50, L = 5)
+# ---- slot activity prior (c_hat) initialization ----
 
-  # Initialize
+test_that("ibss_initialize sets up beta-binomial c_hat_state at prior mean", {
+  setup <- setup_individual_data(n = 80, p = 40, L = 4)
+  setup$params$slot_prior <- slot_prior_betabinom()
   model <- ibss_initialize(setup$data, setup$params)
 
-  # Fit (run 3 iterations)
-  for (i in 1:3) {
-    model <- ibss_fit(setup$data, setup$params, model)
-  }
+  expect_false(is.null(model$c_hat_state))
+  expect_equal(model$c_hat_state$prior_type, "betabinom")
+  expect_length(model$slot_weights, 4)
+  # Beta(1, 2) prior mean = 1/3
+  expect_equal(model$slot_weights, rep(1/3, 4), tolerance = 1e-8)
+  expect_equal(model$c_hat_state$a_beta, 1)
+  expect_equal(model$c_hat_state$b_beta, 2)
+})
 
-  # Finalize
-  model <- ibss_finalize(setup$data, setup$params, model,
-                        elbo = NULL, iter = 3L, tracking = NULL)
+test_that("ibss_initialize honors beta-binomial c_hat_init warm start", {
+  setup <- setup_individual_data(n = 80, p = 40, L = 3)
+  setup$params$slot_prior <- slot_prior_betabinom(c_hat_init = c(0.2, 0.3, 0.4))
+  model <- ibss_initialize(setup$data, setup$params)
+  expect_equal(model$slot_weights, c(0.2, 0.3, 0.4), tolerance = 1e-8)
+})
 
-  # Check mathematical properties
-  expect_equal(rowSums(model$alpha), rep(1, 5), tolerance = 1e-10)
-  expect_true(all(model$pip >= 0))
-  expect_true(all(model$pip <= 1))
-  expect_true(all(model$V >= 0))
+test_that("ibss_initialize sets up gamma-poisson c_hat_state", {
+  setup <- setup_ss_data(n = 100, p = 40, L = 4)
+  setup$params$slot_prior <- slot_prior_poisson(C = 3, nu = 8)
+  model <- ibss_initialize(setup$data, setup$params)
+
+  expect_false(is.null(model$c_hat_state))
+  expect_equal(model$c_hat_state$prior_type, "poisson")
+  expect_equal(model$c_hat_state$C, 3)
+  expect_equal(model$c_hat_state$nu, 8)
+  expect_equal(model$c_hat_state$a_g, 8 + 3)
+})
+
+test_that("ibss_initialize honors gamma-poisson c_hat_init warm start", {
+  setup <- setup_ss_data(n = 100, p = 40, L = 4)
+  setup$params$slot_prior <- slot_prior_poisson(
+    C = 3, nu = 8, c_hat_init = c(0.1, 0.2, 0.3, 0.4))
+  model <- ibss_initialize(setup$data, setup$params)
+
+  expect_equal(model$slot_weights, c(0.1, 0.2, 0.3, 0.4), tolerance = 1e-8)
+  expect_equal(model$c_hat_state$a_g, 8 + sum(c(0.1, 0.2, 0.3, 0.4)))
+})
+
+test_that("ibss_initialize rejects invalid slot_prior object", {
+  setup <- setup_individual_data(n = 80, p = 40, L = 4)
+  setup$params$slot_prior <- list(not = "a real slot prior")
+  expect_error(ibss_initialize(setup$data, setup$params), "slot_prior must be created by")
+})
+
+test_that("ibss_initialize computes finite weighted fitted values for c_hat models", {
+  setup_ind <- setup_individual_data(n = 80, p = 40, L = 4)
+  setup_ind$params$slot_prior <- slot_prior_betabinom()
+  m_ind <- ibss_initialize(setup_ind$data, setup_ind$params)
+  expect_true(all(is.finite(m_ind$Xr)))
+
+  setup_ss <- setup_ss_data(n = 100, p = 40, L = 4)
+  setup_ss$params$slot_prior <- slot_prior_poisson(C = 3, nu = 8)
+  m_ss <- ibss_initialize(setup_ss$data, setup_ss$params)
+  expect_true(all(is.finite(m_ss$XtXr)))
+})
+
+# ---- ibss_fit: slot activity (c_hat) update loop ----
+
+test_that("ibss_fit updates beta-binomial slot weights to valid probabilities", {
+  set.seed(900)
+  setup <- setup_individual_data(n = 80, p = 40, L = 4)
+  setup$params$slot_prior <- slot_prior_betabinom()
+  model <- ibss_initialize(setup$data, setup$params)
+  model$runtime <- list(prev_elbo = -Inf, prev_alpha = model$alpha)
+  upd <- ibss_fit(setup$data, setup$params, model)
+
+  expect_length(upd$slot_weights, 4)
+  expect_true(all(upd$slot_weights >= 0 & upd$slot_weights <= 1))
+})
+
+test_that("ibss_fit computes positive skip threshold after beta-binomial iteration", {
+  set.seed(901)
+  setup <- setup_individual_data(n = 80, p = 40, L = 4)
+  setup$params$slot_prior <- slot_prior_betabinom(skip_threshold_multiplier = 0.5)
+  model <- ibss_initialize(setup$data, setup$params)
+  model$runtime <- list(prev_elbo = -Inf, prev_alpha = model$alpha)
+  upd <- ibss_fit(setup$data, setup$params, model)
+
+  expect_gt(upd$c_hat_state$skip_threshold, 0)
+})
+
+test_that("ibss_fit performs batch a_g update satisfying nu + sum(weights) identity", {
+  set.seed(902)
+  setup <- setup_individual_data(n = 80, p = 40, L = 4)
+  setup$params$slot_prior <- slot_prior_poisson(
+    C = 3, update_schedule = "batch", skip_threshold_multiplier = 0.5)
+  model <- ibss_initialize(setup$data, setup$params)
+  model$runtime <- list(prev_elbo = -Inf, prev_alpha = model$alpha)
+  upd <- ibss_fit(setup$data, setup$params, model)
+
+  expect_equal(upd$c_hat_state$a_g,
+               upd$c_hat_state$nu + sum(upd$slot_weights),
+               tolerance = 1e-8)
+  expect_gt(upd$c_hat_state$skip_threshold, 0)
+})
+
+test_that("ibss_fit skips slots below the skip threshold, preserving their alpha row", {
+  set.seed(903)
+  setup <- setup_individual_data(n = 80, p = 40, L = 4)
+  setup$params$slot_prior <- slot_prior_poisson(
+    C = 3, update_schedule = "batch", skip_threshold_multiplier = 0.5)
+  model <- ibss_initialize(setup$data, setup$params)
+  model$runtime <- list(prev_elbo = -Inf, prev_alpha = model$alpha)
+  model <- ibss_fit(setup$data, setup$params, model)
+
+  # Force slot 1 far below threshold so next iteration skips it
+  model$slot_weights[1] <- 1e-12
+  alpha_before <- model$alpha[1, ]
+  upd <- ibss_fit(setup$data, setup$params, model)
+
+  expect_equal(upd$slot_weights[1], 1e-12)
+  expect_equal(upd$alpha[1, ], alpha_before)
+})
+
+test_that("ibss_fit works with c_hat on sufficient statistics data", {
+  set.seed(904)
+  setup <- setup_ss_data(n = 100, p = 40, L = 4)
+  setup$params$slot_prior <- slot_prior_poisson(C = 3, nu = 8)
+  model <- ibss_initialize(setup$data, setup$params)
+  model$runtime <- list(prev_elbo = -Inf, prev_alpha = model$alpha)
+  upd <- ibss_fit(setup$data, setup$params, model)
+
+  expect_length(upd$slot_weights, 4)
+  expect_true(all(is.finite(upd$XtXr)))
+})
+
+# ---- slot activity helpers ----
+
+test_that("detect_fitted_field identifies Rz, XtXr, and Xr fields", {
+  expect_equal(detect_fitted_field(list(Rz   = 1:3, alpha = matrix(1, 1, 3))), "Rz")
+  expect_equal(detect_fitted_field(list(XtXr = 1:3, alpha = matrix(1, 1, 3))), "XtXr")
+  expect_equal(detect_fitted_field(list(Xr   = 1:3, alpha = matrix(1, 1, 3))), "Xr")
+})
+
+test_that("detect_fitted_field errors when no fitted field is present", {
+  expect_error(detect_fitted_field(list(alpha = matrix(1, 1, 3))),
+               "Cannot detect fitted-values field")
+})
+
+test_that("update_c_hat treats NA lbf as zero and returns finite slot weight", {
+  set.seed(905)
+  setup <- setup_individual_data(n = 80, p = 40, L = 3)
+  setup$params$slot_prior <- slot_prior_betabinom()
+  model <- ibss_initialize(setup$data, setup$params)
+  model$lbf[1] <- NA
+  upd <- update_c_hat(setup$data, model, 1)
+
+  expect_true(is.finite(upd$slot_weights[1]))
+  expect_true(upd$slot_weights[1] >= 0 & upd$slot_weights[1] <= 1)
+})
+
+test_that("update_c_hat sequential gamma-poisson satisfies a_g = nu + sum(weights)", {
+  set.seed(906)
+  setup <- setup_ss_data(n = 100, p = 40, L = 4)
+  setup$params$slot_prior <- slot_prior_poisson(
+    C = 3, nu = 8, update_schedule = "sequential")
+  model <- ibss_initialize(setup$data, setup$params)
+  model$lbf[1] <- 2.0
+  a_g_before <- model$c_hat_state$a_g
+  upd <- update_c_hat(setup$data, model, 1)
+
+  expect_equal(upd$c_hat_state$a_g,
+               upd$c_hat_state$nu + sum(upd$slot_weights),
+               tolerance = 1e-8)
+  expect_false(isTRUE(all.equal(upd$c_hat_state$a_g, a_g_before)))
+})
+
+test_that("adjust_fitted_for_c_hat produces finite XtXr for ss data", {
+  set.seed(907)
+  setup <- setup_ss_data(n = 100, p = 40, L = 4)
+  setup$params$slot_prior <- slot_prior_poisson(C = 3, nu = 8)
+  model <- ibss_initialize(setup$data, setup$params)
+  b_bar_l <- model$alpha[1, ] * model$mu[1, ]
+  upd <- adjust_fitted_for_c_hat(setup$data, model, b_bar_l, 0.1)
+  expect_true(all(is.finite(upd$XtXr)))
+})
+
+test_that("recompute_fitted_weighted produces finite Rz for rss_lambda data", {
+  set.seed(908)
+  setup <- setup_rss_lambda_data(n = 400, p = 40, L = 4, lambda = 0.5)
+  setup$params$slot_prior <- slot_prior_betabinom()
+  model <- ibss_initialize(setup$data, setup$params)
+  recomputed <- recompute_fitted_weighted(setup$data, model)
+  expect_true("Rz" %in% names(recomputed))
+  expect_true(all(is.finite(recomputed$Rz)))
+})
+
+# ---- end-to-end slot prior fits ----
+
+test_that("susie with beta-binomial slot_prior returns valid c_hat output", {
+  set.seed(909)
+  n <- 100; p <- 80
+  X <- matrix(rnorm(n * p), n, p)
+  b <- rep(0, p); b[c(1, 20, 40)] <- c(1.2, -1, 0.9)
+  y <- as.vector(X %*% b + rnorm(n))
+
+  fit <- suppressMessages(suppressWarnings(
+    susie(X, y, L = 8, slot_prior = slot_prior_betabinom(), verbose = FALSE)))
+
+  expect_length(fit$c_hat, 8)
+  expect_true(all(fit$c_hat >= 0 & fit$c_hat <= 1))
+  expect_equal(fit$C_hat, sum(fit$c_hat), tolerance = 1e-8)
+  expect_equal(fit$a_beta, 1)
+  expect_equal(fit$b_beta, 2)
+})
+
+test_that("susie with unmappable_effects='ash' returns valid c_hat and tau2", {
+  set.seed(910)
+  n <- 100; p <- 120
+  X <- matrix(rnorm(n * p), n, p)
+  b <- rep(0, p); b[1:2] <- 1.5
+  y <- as.vector(X %*% b + rnorm(n))
+
+  fit <- suppressMessages(suppressWarnings(
+    susie(X, y, L = 6, unmappable_effects = "ash",
+          slot_prior = slot_prior_betabinom(),
+          verbose = FALSE, max_iter = 8)))
+
+  expect_length(fit$c_hat, 6)
+  expect_false(is.null(fit$tau2))
+})
+
+# ---- model_init warm-start path ----
+
+test_that("ibss_initialize warm-start path produces valid fit on second run", {
+  set.seed(911)
+  n <- 100; p <- 50
+  X <- matrix(rnorm(n * p), n, p)
+  b <- rep(0, p); b[c(5, 25)] <- c(1.5, -1.5)
+  y <- as.vector(X %*% b + rnorm(n))
+
+  fit0 <- suppressWarnings(susie(X, y, L = 3, max_iter = 5, verbose = FALSE))
+
+  init <- list(alpha = fit0$alpha, mu = fit0$mu, mu2 = fit0$mu2)
+  class(init) <- "susie"
+  fit1 <- suppressWarnings(susie(X, y, L = 3, model_init = init, max_iter = 5, verbose = FALSE))
+
+  expect_s3_class(fit1, "susie")
+  expect_equal(dim(fit1$alpha), c(3L, p))
 })

@@ -1,13 +1,12 @@
-context("test_susie_small.R")
+context("test_susie_small")
 
-test_that(paste("check that ELBO is monotonically increasing for ",
-                "estimate_residual_method = 'NIG', ",
-                "with L = 1"),{
-  set.seed(1)
+# The NIG + L=1 ELBO monotonicity check on data_small has been merged into
+# test_susie.R ("susie ELBO is monotonically increasing for NIG residuals
+# with L = 1 (data_small)").  This file is retained as required but adds
+# nothing new.
+test_that("data_small is loadable and has expected structure", {
   data(data_small)
-  y <- data_small$y
-  X <- data_small$X
-  fit <- susie(X,y,L = 1,estimate_residual_method = "NIG",
-               alpha0 = 0.1,beta0 = 0.1,tol = 1e-6,verbose = TRUE)
-  expect_true(all(diff(fit$elbo) >= 0))
+  expect_true(!is.null(data_small$X))
+  expect_true(!is.null(data_small$y))
+  expect_equal(length(data_small$y), nrow(data_small$X))
 })

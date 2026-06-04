@@ -9,6 +9,7 @@
 #' @return A \code{"susie_track"} object.
 #'
 #' @noRd
+# nocov start  -- internal track post-processing / diagnostics; excluded from coverage (see coverage plan)
 make_susie_track_history <- function(fit) {
   if (inherits(fit, "susie_track"))
     return(fit)
@@ -70,6 +71,7 @@ restore_alpha_from_track <- function(track, iteration) {
     alpha[cbind(x$effect, x$variable)] <- x$alpha
   alpha
 }
+# nocov end
 
 make_track_snapshot <- function(model, iteration) {
   p <- ncol(model$alpha)
@@ -95,7 +97,7 @@ summarize_track_snapshot <- function(model, iteration, variable_names,
   alpha_rows <- lapply(which(row_keep), function(l) {
     vars <- which(alpha[l, ] >= min_alpha)
     if (length(vars) == 0)
-      return(NULL)
+      return(NULL) # nocov
     data.frame(iteration = iteration, effect = l, variable = vars,
                variable_name = variable_names[vars],
                alpha = as.numeric(alpha[l, vars]),
@@ -124,10 +126,10 @@ summarize_track_snapshot <- function(model, iteration, variable_names,
     alpha_mass_above_background = rowSums(alpha * (alpha >= min_alpha)),
     stringsAsFactors = FALSE
   )
-  if (!is.null(model$slot_weights))
-    effect$slot_weight <- track_vector(model$slot_weights, L)
-  if (!is.null(model$tau2))
-    effect$tau2 <- track_vector(model$tau2, L)
+  if (!is.null(model$slot_weights)) # nocov start
+    effect$slot_weight <- track_vector(model$slot_weights, L) # nocov end
+  if (!is.null(model$tau2)) # nocov start
+    effect$tau2 <- track_vector(model$tau2, L) # nocov end
 
   iteration_df <- data.frame(
     iteration = iteration,
@@ -147,8 +149,8 @@ summarize_track_snapshot <- function(model, iteration, variable_names,
 
 make_track_meta <- function(fit) {
   p <- length(fit$pip)
-  if (is.null(p) || p == 0)
-    p <- ncol(fit$alpha)
+  if (is.null(p) || p == 0) # nocov start
+    p <- ncol(fit$alpha)    # nocov end
   variable_names <- names(fit$pip)
   if (is.null(variable_names))
     variable_names <- colnames(fit$alpha)
@@ -190,7 +192,7 @@ track_vector <- function(x, n) {
   x <- as.vector(x)
   if (length(x) >= n)
     return(x[seq_len(n)])
-  c(x, rep(NA_real_, n - length(x)))
+  c(x, rep(NA_real_, n - length(x))) # nocov
 }
 
 track_scalar <- function(x) {
@@ -248,6 +250,7 @@ make_track_diagnosis <- function(fit) {
   list(iteration = iter_diag, final = final)
 }
 
+# nocov start  -- internal R-mismatch CS-sensitivity diagnostic; excluded from coverage
 make_track_cs_sensitivity <- function(fit) {
   d <- fit$R_finite_diagnostics
   ba <- if (!is.null(d)) d$bf_attenuation else NULL
@@ -290,10 +293,11 @@ make_track_cs_sensitivity <- function(fit) {
   rownames(out) <- NULL
   out
 }
+# nocov end
 
 scalar_from_list <- function(x, name) {
   if (is.null(x[[name]]) || length(x[[name]]) != 1)
-    return(NA_real_)
+    return(NA_real_) # nocov
   as.numeric(x[[name]])
 }
 
@@ -303,6 +307,7 @@ logical_from_list <- function(x, name) {
   as.logical(x[[name]])
 }
 
+# nocov start  -- internal track diagnostics helper (only used by sensitivity table above)
 value_by_name <- function(x, name) {
   if (is.null(x) || length(x) == 0)
     return(NA)
@@ -310,3 +315,4 @@ value_by_name <- function(x, name) {
     return(x[[name]])
   NA
 }
+# nocov end

@@ -2,6 +2,8 @@ context("susie_ser")
 
 machine_tol <- .Machine$double.eps
 
+# ---- core computation ----
+
 test_that("susie_ser simple method matches direct ABF calculation", {
   z <- c(-0.5, 4, 0.3, 1.1)
   prior_weights <- c(0.1, 0.6, 0.2, 0.1)
@@ -26,12 +28,23 @@ test_that("susie_ser simple method matches direct ABF calculation", {
   expect_true(fit$converged)
 })
 
+test_that("susie_ser is a single-effect model: niter=1 and converged", {
+  set.seed(10)
+  fit <- susie_ser(z = c(0, 5, 0, 0), estimate_prior_method = "simple",
+                   coverage = NULL)
+  expect_equal(fit$niter, 1L)
+  expect_true(fit$converged)
+  expect_equal(nrow(fit$alpha), 1L)
+})
+
 test_that("susie_ser only accepts optim and simple prior methods", {
   expect_error(
     susie_ser(z = rnorm(5), estimate_prior_method = "EM", coverage = NULL),
     "should be one of"
   )
 })
+
+# ---- PVE adjustment and z storage ----
 
 test_that("susie_ser applies PVE adjustment when n is provided", {
   z <- c(8, 0.5, -1)
@@ -42,6 +55,8 @@ test_that("susie_ser applies PVE adjustment when n is provided", {
   expect_equal(fit$pve_adjustment, adj)
   expect_equal(fit$z, z)
 })
+
+# ---- agreement with susie_rss on diagonal LD ----
 
 test_that("susie_ser with z and n matches susie_rss with diagonal R", {
   set.seed(1)
@@ -134,6 +149,8 @@ test_that("susie_ser with z, n, and var_y matches diagonal susie_rss", {
                tolerance = machine_tol)
 })
 
+# ---- bhat/shat input path ----
+
 test_that("susie_ser with bhat, shat, n, and var_y matches diagonal susie_rss", {
   set.seed(4)
   p <- 25
@@ -162,7 +179,7 @@ test_that("susie_ser with bhat, shat, n, and var_y matches diagonal susie_rss", 
                tolerance = machine_tol)
 })
 
-test_that("susie_ser supports bhat and scalar shat on z-score scale", {
+test_that("susie_ser bhat/scalar-shat path agrees with equivalent z input", {
   bhat <- c(0.2, 0.8, -0.1)
   shat <- 0.2
   fit <- susie_ser(bhat = bhat, shat = shat,
@@ -173,6 +190,8 @@ test_that("susie_ser supports bhat and scalar shat on z-score scale", {
   expect_equal(fit$mu, fit_z$mu)
   expect_equal(fit$mu2, fit_z$mu2)
 })
+
+# ---- coverage and CS construction ----
 
 test_that("susie_ser default coverage returns attainable CS and hint", {
   z <- c(5, 3, 0.2, -0.1)
@@ -195,6 +214,8 @@ test_that("susie_ser coverage NULL skips CS and hint", {
   expect_null(fit$sets)
 })
 
+# ---- output structure ----
+
 test_that("susie_ser output does not carry matrix-path fields", {
   set.seed(5)
   fit <- susie_ser(z = rnorm(5000), estimate_prior_method = "simple",
@@ -215,6 +236,8 @@ test_that("susie_ser preserves variable names without inventing blank names", {
   expect_null(names(fit_unnamed$pip))
 })
 
+# ---- input validation ----
+
 test_that("susie_ser validates summary-statistic inputs", {
   expect_error(susie_ser(z = 1:3, bhat = 1:3, shat = 1:3,
                          coverage = NULL),
@@ -227,4 +250,140 @@ test_that("susie_ser validates summary-statistic inputs", {
   expect_error(susie_ser(bhat = 1:3, shat = c(1, 0, 1),
                          coverage = NULL),
                "zero or negative")
+})
+
+test_that("susie_ser errors on invalid check_null_threshold", {
+  z <- rnorm(5)
+  expect_error(
+    susie_ser(z = z, check_null_threshold = -1, coverage = NULL),
+    "check_null_threshold must be a single nonneg"
+  )
+  expect_error(
+    susie_ser(z = z, check_null_threshold = Inf, coverage = NULL),
+    "check_null_threshold must be a single nonneg"
+  )
+  expect_error(
+    susie_ser(z = z, check_null_threshold = c(0, 1), coverage = NULL),
+    "check_null_threshold must be a single nonneg"
+  )
+})
+
+test_that("susie_ser errors on invalid prior_tol", {
+  z <- rnorm(5)
+  expect_error(
+    susie_ser(z = z, prior_tol = -1e-9, coverage = NULL),
+    "prior_tol must be a single nonneg"
+  )
+  expect_error(
+    susie_ser(z = z, prior_tol = NA_real_, coverage = NULL),
+    "prior_tol must be a single nonneg"
+  )
+})
+
+test_that("susie_ser errors on invalid coverage", {
+  z <- rnorm(5)
+  expect_error(
+    susie_ser(z = z, coverage = 0),
+    "coverage must be NULL or a single number between 0 and 1"
+  )
+  expect_error(
+    susie_ser(z = z, coverage = 1),
+    "coverage must be NULL or a single number between 0 and 1"
+  )
+  expect_error(
+    susie_ser(z = z, coverage = c(0.9, 0.95)),
+    "coverage must be NULL or a single number between 0 and 1"
+  )
+})
+
+test_that("susie_ser errors on invalid n", {
+  z <- rnorm(5)
+  for (bad_n in list(1, -10, Inf, c(100, 200))) {
+    expect_error(
+      susie_ser(z = z, n = bad_n, coverage = NULL),
+      "n must be a single number greater than 1"
+    )
+  }
+})
+
+test_that("susie_ser errors on invalid var_y", {
+  z <- rnorm(5)
+  for (bad_var_y in list(0, -1, Inf)) {
+    expect_error(
+      susie_ser(z = z, n = 100, var_y = bad_var_y, coverage = NULL),
+      "var_y must be a single positive finite"
+    )
+  }
+})
+
+test_that("susie_ser errors on invalid prior_variance", {
+  z <- rnorm(5)
+  expect_error(
+    susie_ser(z = z, prior_variance = -1, coverage = NULL),
+    "prior_variance must be a single positive finite"
+  )
+  expect_error(
+    susie_ser(z = z, prior_variance = 0, coverage = NULL),
+    "prior_variance must be a single positive finite"
+  )
+})
+
+test_that("susie_ser errors on invalid scaled_prior_variance", {
+  z <- rnorm(5)
+  expect_error(
+    susie_ser(z = z, n = 100, scaled_prior_variance = 0, coverage = NULL),
+    "scaled_prior_variance must be a single positive finite"
+  )
+})
+
+# ---- infinite-value input errors ----
+
+test_that("susie_ser stops on non-finite bhat/shat", {
+  bhat <- c(1, Inf, 0.5)
+  shat <- c(0.1, 0.1, 0.1)
+  expect_error(
+    susie_ser(bhat = bhat, shat = shat, coverage = NULL),
+    "bhat and shat must be finite"
+  )
+})
+
+test_that("susie_ser stops on infinite z", {
+  expect_error(
+    susie_ser(z = c(1.0, Inf, -0.5), coverage = NULL),
+    "z contains infinite values"
+  )
+})
+
+# ---- name_ser_output ----
+
+test_that("name_ser_output with null_weight attaches names and excludes null from pip", {
+  set.seed(201)
+  z <- setNames(rnorm(4), paste0("var", 1:4))
+
+  fit <- susie_ser(z = z, null_weight = 0.1,
+                   estimate_prior_method = "simple", coverage = NULL)
+
+  expect_equal(ncol(fit$alpha), 5L)
+  expect_equal(colnames(fit$alpha)[5], "null")
+  expect_length(fit$pip, 4L)
+  expect_equal(names(fit$pip), paste0("var", 1:4))
+  expect_equal(names(fit$z), paste0("var", 1:4))
+})
+
+test_that("name_ser_output with unnamed z leaves pip names as NULL", {
+  set.seed(202)
+  fit <- susie_ser(z = rnorm(5), null_weight = 0.1,
+                   estimate_prior_method = "simple", coverage = NULL)
+
+  expect_null(names(fit$pip))
+  expect_null(colnames(fit$alpha))
+})
+
+test_that("name_ser_output returns model unchanged when variable_names length mismatches", {
+  set.seed(203)
+  z <- setNames(rnorm(5), paste0("snp", 1:5))
+
+  fit0 <- susie_ser(z = z, estimate_prior_method = "simple", coverage = NULL)
+  result <- name_ser_output(fit0, variable_names = rep("x", 4))
+  expect_equal(colnames(result$alpha), colnames(fit0$alpha))
 })
