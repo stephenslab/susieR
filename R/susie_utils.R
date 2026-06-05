@@ -616,6 +616,17 @@ validate_and_override_params <- function(params) {
     stop("tol must be a non-negative numeric scalar.")
   }
 
+  # Validate LD-extension threshold (NULL = off; otherwise a number in [0, 1]).
+  if (!is.null(params$ld_extend_threshold) &&
+      (!is.numeric(params$ld_extend_threshold) ||
+       length(params$ld_extend_threshold) != 1 ||
+       is.na(params$ld_extend_threshold) ||
+       !is.finite(params$ld_extend_threshold) ||
+       params$ld_extend_threshold < 0 ||
+       params$ld_extend_threshold > 1)) {
+    stop("ld_extend_threshold must be NULL or a single numeric value in [0, 1].")
+  }
+
   # Validate greedy-L parameters.
   if (!is.null(params$L_greedy)) {
     if (!is.numeric(params$L_greedy) || length(params$L_greedy) != 1 ||

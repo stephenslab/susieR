@@ -41,7 +41,7 @@ susie_get_cs(
   check_symmetric = TRUE,
   n_purity = 100,
   use_rfast = NULL,
-  ld_extend_threshold = 0.99
+  ld_extend_threshold = NULL
 )
 
 susie_get_cs_attainable(res, coverage = 0.95, ethres = NULL, ...)
@@ -106,9 +106,13 @@ greater than this number, the CS variables are randomly subsampled.}
 By default \code{use_rfast = TRUE} if the Rfast package is
 installed.}
 
-\item{ld_extend_threshold}{Threshold for extending CS by LD (default 0.99).
-Variants with |correlation| > threshold with any CS member are added.
-Set to NULL to disable LD extension. Requires Xcorr (would not work if only X is provided).}
+\item{ld_extend_threshold}{Either \code{NULL} or a single number between 0
+and 1. If non-\code{NULL}, each credible set is extended to include every
+variant whose absolute correlation with a credible-set member exceeds this
+threshold, pulling near-perfect LD proxies (variants statistically
+indistinguishable from the selected ones) into the set. Works from either
+\code{X} or \code{Xcorr}. The default, \code{NULL}, disables LD extension;
+\code{0.99} is the recommended value when extension is desired.}
 
 \item{ethres}{Entropy threshold expressed as an effective number of
 variables: an effect is dropped when its attainable-projection

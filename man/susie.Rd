@@ -40,6 +40,7 @@ susie(
   residual_variance_lowerbound = NULL,
   refine = FALSE,
   n_purity = 100,
+  ld_extend_threshold = NULL,
   alpha0 = NULL,
   beta0 = NULL,
   init_only = FALSE,
@@ -222,6 +223,14 @@ to check and escape from local optima (see details).}
 
 \item{n_purity}{Passed as argument \code{n_purity} to
 \code{\link{susie_get_cs}}.}
+
+\item{ld_extend_threshold}{Passed as argument
+\code{ld_extend_threshold} to \code{\link{susie_get_cs}} when the
+credible sets are constructed. Either \code{NULL} (the default,
+meaning no LD extension) or a single number between 0 and 1. When
+set, each credible set is extended to absorb every variant whose
+absolute correlation with a set member exceeds the threshold
+(near-perfect LD proxies); \code{0.99} is the recommended value.}
 
 \item{alpha0}{Numerical parameter for the NIG prior when using
 \code{estimate_residual_method = "NIG"}. Defaults to

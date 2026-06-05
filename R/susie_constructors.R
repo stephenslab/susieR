@@ -209,7 +209,8 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
                                         beta0 = NULL,
                                         slot_prior = NULL,
                                         L_greedy = NULL,
-                                        greedy_lbf_cutoff = 0.1) {
+                                        greedy_lbf_cutoff = 0.1,
+                                        ld_extend_threshold = NULL) {
 
   model_init <- resolve_model_init(model_init, s_init)
 
@@ -360,6 +361,7 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
     residual_variance_lowerbound = residual_variance_lowerbound,
     refine = refine,
     n_purity = n_purity,
+    ld_extend_threshold = ld_extend_threshold,
     alpha0 = alpha0,
     beta0 = beta0,
     n = n,
@@ -443,7 +445,8 @@ sufficient_stats_constructor <- function(Xty, yty, n,
                                          beta0 = NULL,
                                          slot_prior = NULL,
                                          L_greedy = NULL,
-                                         greedy_lbf_cutoff = 0.1) {
+                                         greedy_lbf_cutoff = 0.1,
+                                         ld_extend_threshold = NULL) {
 
   model_init <- resolve_model_init(model_init, s_init)
 
@@ -634,6 +637,7 @@ sufficient_stats_constructor <- function(Xty, yty, n,
     residual_variance_lowerbound = residual_variance_lowerbound,
     refine = refine,
     n_purity = n_purity,
+    ld_extend_threshold = ld_extend_threshold,
     alpha0 = alpha0,
     beta0 = beta0,
     n = n,
@@ -732,7 +736,8 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
                                       beta0 = NULL,
                                       slot_prior = NULL,
                                       L_greedy = NULL,
-                                      greedy_lbf_cutoff = 0.1) {
+                                      greedy_lbf_cutoff = 0.1,
+                                      ld_extend_threshold = NULL) {
 
   # Validate: exactly one of R or X must be provided
   if (is.null(R) && is.null(X))
@@ -900,6 +905,7 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
       convergence_method = convergence_method, verbose = verbose,
       track_fit = track_fit, check_input = check_input,
       check_prior = check_prior, n_purity = n_purity,
+      ld_extend_threshold = ld_extend_threshold,
       r_tol = r_tol, refine = refine, R_finite = R_finite,
       R_mismatch = R_mismatch, R_mismatch_method = R_mismatch_method,
       eig_delta_rel = eig_delta_rel,
@@ -1120,6 +1126,7 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
     check_null_threshold = check_null_threshold, prior_tol = prior_tol,
     max_iter = max_iter, tol = tol, convergence_method = convergence_method,
     coverage = coverage, min_abs_corr = min_abs_corr, n_purity = n_purity,
+    ld_extend_threshold = ld_extend_threshold,
     verbose = verbose, track_fit = track_fit, check_prior = check_prior,
     refine = refine, alpha0 = alpha0, beta0 = beta0,
     slot_prior = slot_prior, L_greedy = L_greedy,
@@ -1200,7 +1207,8 @@ ss_mixture_constructor <- function(z, R = NULL, X = NULL, n,
                                    slot_prior = NULL,
                                    L_greedy = NULL,
                                    greedy_lbf_cutoff = 0.1,
-                                   init_panel = NULL) {
+                                   init_panel = NULL,
+                                   ld_extend_threshold = NULL) {
   if (is.null(n) || !is.numeric(n) || length(n) != 1 || n <= 1)
     stop("Sample size 'n' is required for multi-panel mode.")
   R_mismatch <- match.arg(R_mismatch, c("none", "eb", "eb_ser_init", "eb_force_init", "eb_no_init"))
@@ -1341,6 +1349,7 @@ ss_mixture_constructor <- function(z, R = NULL, X = NULL, n,
     check_prior = check_prior,
     refine = refine,
     n_purity = n_purity,
+    ld_extend_threshold = ld_extend_threshold,
     alpha0 = alpha0,
     beta0 = beta0,
     n = n,
@@ -1432,7 +1441,8 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
                                    refine = FALSE,
                                    slot_prior = NULL,
                                    L_greedy = NULL,
-                                   greedy_lbf_cutoff = 0.1) {
+                                   greedy_lbf_cutoff = 0.1,
+                                   ld_extend_threshold = NULL) {
 
   # Validate: exactly one of R or X must be provided.
   if (is.null(R) && is.null(X))
@@ -1627,6 +1637,7 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
     residual_variance_lowerbound = residual_variance_lowerbound,
     refine = refine,
     n_purity = n_purity,
+    ld_extend_threshold = ld_extend_threshold,
     alpha0 = 0,  # RSS doesn't support NIG
     beta0 = 0,   # RSS doesn't support NIG
     n = n,

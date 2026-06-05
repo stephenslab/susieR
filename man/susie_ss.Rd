@@ -42,6 +42,7 @@ susie_ss(
   coverage = 0.95,
   min_abs_corr = 0.5,
   n_purity = 100,
+  ld_extend_threshold = NULL,
   verbose = FALSE,
   track_fit = FALSE,
   check_prior = FALSE,
@@ -228,6 +229,14 @@ skipped).}
 
 \item{n_purity}{Passed as argument \code{n_purity} to
 \code{\link{susie_get_cs}}.}
+
+\item{ld_extend_threshold}{Passed as argument
+\code{ld_extend_threshold} to \code{\link{susie_get_cs}} when the
+credible sets are constructed. Either \code{NULL} (the default,
+meaning no LD extension) or a single number between 0 and 1. When
+set, each credible set is extended to absorb every variant whose
+absolute correlation with a set member exceeds the threshold
+(near-perfect LD proxies); \code{0.99} is the recommended value.}
 
 \item{verbose}{If \code{verbose = TRUE}, the algorithm's progress,
 a summary of the optimization settings, and refinement progress (if

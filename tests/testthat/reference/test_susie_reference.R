@@ -1179,6 +1179,7 @@ test_that("susie() matches reference with model_init - simple", {
 
 # model_init with estimate_residual_variance=FALSE
 test_that("susie() matches reference with model_init and estimate_residual_variance=FALSE - optim", {
+  skip("Intentional behavioral difference (issue #291, s_init -> model_init), not a tolerance issue. With estimate_residual_variance=FALSE + residual_variance=1.0 AND an init object, the reference's `s <- modifyList(s, s_init)` overwrites sigma2 with the init's fitted value (~1.85), silently discarding the explicit residual_variance=1.0; susieR2.0's model_init honors the explicit residual_variance (sigma2=1.0). The two therefore fit at different fixed residual variances and cannot match. Dev's behavior is the intended one.")
   skip_if_no_reference()
 
   ref_env <- load_reference_env()
@@ -1211,6 +1212,7 @@ test_that("susie() matches reference with model_init and estimate_residual_varia
 })
 
 test_that("susie() matches reference with model_init and estimate_residual_variance=FALSE - EM", {
+  skip("Intentional behavioral difference (issue #291, s_init -> model_init), not a tolerance issue. With estimate_residual_variance=FALSE + residual_variance=1.0 AND an init object, the reference's `s <- modifyList(s, s_init)` overwrites sigma2 with the init's fitted value, silently discarding the explicit residual_variance=1.0; susieR2.0's model_init honors the explicit residual_variance. The two therefore fit at different fixed residual variances and cannot match. Dev's behavior is the intended one.")
   skip_if_no_reference()
 
   ref_env <- load_reference_env()
@@ -1243,6 +1245,7 @@ test_that("susie() matches reference with model_init and estimate_residual_varia
 })
 
 test_that("susie() matches reference with model_init and estimate_residual_variance=FALSE - simple", {
+  skip("Intentional behavioral difference (issue #291, s_init -> model_init), not a tolerance issue. With estimate_residual_variance=FALSE + residual_variance=1.0 AND an init object, the reference's `s <- modifyList(s, s_init)` overwrites sigma2 with the init's fitted value, silently discarding the explicit residual_variance=1.0; susieR2.0's model_init honors the explicit residual_variance. The two therefore fit at different fixed residual variances and cannot match. Dev's behavior is the intended one.")
   skip_if_no_reference()
 
   ref_env <- load_reference_env()
@@ -1733,6 +1736,7 @@ test_that("susie() matches reference with model_init, L expansion, both variance
 })
 
 test_that("susie() matches reference with model_init, L expansion, both variances fixed - simple", {
+  skip("Intentional behavioral difference (issue #291, s_init -> model_init), not a tolerance issue. susieR2.0 preserves the fitted prior variance V of existing effects when expanding L; the reference resets all V to the default on expansion. With both prior and residual variance fixed, that V-initialization difference cannot be re-estimated away, so final posteriors differ. Same cause as the already-skipped 'both variances fixed - optim' sibling.")
   skip_if_no_reference()
 
   ref_env <- load_reference_env()

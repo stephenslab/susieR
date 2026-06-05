@@ -542,7 +542,8 @@ get_cs.ss <- function(data, params, model, ...) {
                         X               = data$X,
                         coverage        = params$coverage,
                         min_abs_corr    = params$min_abs_corr,
-                        n_purity        = params$n_purity))
+                        n_purity        = params$n_purity,
+                        ld_extend_threshold = params$ld_extend_threshold))
   }
 
   if (any(!(diag(data$XtX) %in% c(0, 1)))) {
@@ -556,7 +557,8 @@ get_cs.ss <- function(data, params, model, ...) {
                       check_symmetric = FALSE,
                       coverage        = params$coverage,
                       min_abs_corr    = params$min_abs_corr,
-                      n_purity        = params$n_purity))
+                      n_purity        = params$n_purity,
+                      ld_extend_threshold = params$ld_extend_threshold))
 }
 
 # Get Variable Names

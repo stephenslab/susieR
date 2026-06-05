@@ -333,7 +333,8 @@ get_cs.rss_lambda <- function(data, params, model, ...) {
                         X               = data$X,
                         coverage        = params$coverage,
                         min_abs_corr    = params$min_abs_corr,
-                        n_purity        = params$n_purity))
+                        n_purity        = params$n_purity,
+                        ld_extend_threshold = params$ld_extend_threshold))
   }
 
   return(susie_get_cs(model,
@@ -341,7 +342,8 @@ get_cs.rss_lambda <- function(data, params, model, ...) {
                       check_symmetric = FALSE,
                       coverage        = params$coverage,
                       min_abs_corr    = params$min_abs_corr,
-                      n_purity        = params$n_purity))
+                      n_purity        = params$n_purity,
+                      ld_extend_threshold = params$ld_extend_threshold))
 }
 
 # Get variable names

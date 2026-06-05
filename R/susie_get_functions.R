@@ -268,18 +268,28 @@ susie_get_posterior_samples <- function(susie_fit, num_samples) {
 #'   By default \code{use_rfast = TRUE} if the Rfast package is
 #'   installed.
 #'
-#' @param ld_extend_threshold Threshold for extending CS by LD (default 0.99).
-#'   Variants with |correlation| > threshold with any CS member are added.
-#'   Set to NULL to disable LD extension. Requires Xcorr (would not work if only X is provided).
+#' @param ld_extend_threshold Either \code{NULL} or a single number between 0
+#'   and 1. If non-\code{NULL}, each credible set is extended to include every
+#'   variant whose absolute correlation with a credible-set member exceeds this
+#'   threshold, pulling near-perfect LD proxies (variants statistically
+#'   indistinguishable from the selected ones) into the set. Works from either
+#'   \code{X} or \code{Xcorr}. The default, \code{NULL}, disables LD extension;
+#'   \code{0.99} is the recommended value when extension is desired.
 #'
 #' @export
 #'
 susie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
                          min_abs_corr = 0.5, dedup = TRUE, squared = FALSE,
                          check_symmetric = TRUE, n_purity = 100,
-                         use_rfast = NULL, ld_extend_threshold = 0.99) {
+                         use_rfast = NULL, ld_extend_threshold = NULL) {
   if (!is.null(X) && !is.null(Xcorr)) {
     stop("Only one of X or Xcorr should be specified")
+  }
+  if (!is.null(ld_extend_threshold) &&
+      (!is.numeric(ld_extend_threshold) || length(ld_extend_threshold) != 1 ||
+       !is.finite(ld_extend_threshold) ||
+       ld_extend_threshold < 0 || ld_extend_threshold > 1)) {
+    stop("ld_extend_threshold must be NULL or a single numeric value in [0, 1].")
   }
   if (is.null(X) && is.null(Xcorr)) {
     warning_message(
@@ -344,20 +354,12 @@ susie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
     ))
   }
   
-  # Extend CS by LD if threshold is set and Xcorr is available
-  # Note: LD extension requires Xcorr; if only X is provided, skip extension
-  # (X may be sparse, and computing full Xcorr is expensive/infeasible)
-  if (!is.null(ld_extend_threshold) && !is.null(Xcorr)) {
-    for (i in 1:length(cs)) {
-      cs_idx <- cs[[i]]
-      # Find variants in tight LD with any CS member
-      ld_with_cs <- abs(Xcorr[cs_idx, , drop = FALSE]) > ld_extend_threshold
-      in_tight_ld <- which(colSums(ld_with_cs) > 0)
-      # Extend CS
-      cs[[i]] <- sort(unique(c(cs_idx, in_tight_ld)))
-      # Update coverage for extended CS
-      claimed_coverage[i] <- sum(res$alpha[effect_indices[i], cs[[i]]])
-    }
+  # Extend CS by LD if requested (works from either X or Xcorr; see
+  # extend_cs_by_ld). Recompute claimed coverage over the extended sets.
+  if (!is.null(ld_extend_threshold) && (!is.null(Xcorr) || !is.null(X))) {
+    cs <- extend_cs_by_ld(cs, X, Xcorr, ld_extend_threshold, null_index)
+    claimed_coverage <- vapply(seq_along(cs), function(i)
+      sum(res$alpha[effect_indices[i], cs[[i]]]), numeric(1))
   }
 
   # Compute purity for each CS
@@ -404,6 +406,48 @@ susie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
   } else {
     return(list(cs = NULL, coverage = NULL, requested_coverage = coverage))
   }
+}
+
+# Extend each credible set to include variants in tight LD (|corr| > threshold)
+# with any current member. Works from a precomputed correlation matrix
+# (Xcorr) or directly from the data matrix X; in the latter case the needed
+# correlations are computed on demand as crossprod(standardize_X(X)), which
+# equals cor(X) but never materializes the full p x p matrix (only an m x p
+# block per credible set). The null index, if any, is never pulled in. Returns
+# the (possibly extended) cs list in the same order; the caller recomputes
+# claimed coverage.
+#' @keywords internal
+extend_cs_by_ld <- function(cs, X, Xcorr, threshold, null_index = 0) {
+  if (is.null(threshold) || length(cs) == 0 || (is.null(X) && is.null(Xcorr)))
+    return(cs)
+
+  Xs <- NULL
+  if (is.null(Xcorr)) {
+    if (inherits(X, "sparseMatrix")) {
+      warning_message(
+        "LD extension from a sparse X would require densifying the matrix; ",
+        "skipping extension. Pass Xcorr (or a dense X) to enable it.",
+        style = "hint"
+      )
+      return(cs)
+    }
+    # standardize_X(X) so that crossprod(Xs[, a], Xs) equals cor(X)[a, ].
+    Xs <- standardize_X(X)
+  }
+
+  for (i in seq_along(cs)) {
+    cs_idx <- cs[[i]]
+    if (!is.null(Xcorr)) {
+      ld_with_cs <- abs(Xcorr[cs_idx, , drop = FALSE]) > threshold
+    } else {
+      ld_with_cs <- abs(crossprod(Xs[, cs_idx, drop = FALSE], Xs)) > threshold
+    }
+    in_tight_ld <- which(colSums(ld_with_cs) > 0)
+    if (null_index > 0)
+      in_tight_ld <- setdiff(in_tight_ld, null_index)
+    cs[[i]] <- sort(unique(c(cs_idx, in_tight_ld)))
+  }
+  cs
 }
 
 #' @rdname susie_get_methods

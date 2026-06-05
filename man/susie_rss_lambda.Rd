@@ -41,6 +41,7 @@ susie_rss_lambda(
   check_R = TRUE,
   check_z = FALSE,
   n_purity = 100,
+  ld_extend_threshold = NULL,
   r_tol = 1e-08,
   refine = FALSE,
   init_only = FALSE,
@@ -199,6 +200,14 @@ of \code{R}.}
 
 \item{n_purity}{Passed as argument \code{n_purity} to
 \code{\link{susie_get_cs}}.}
+
+\item{ld_extend_threshold}{Passed as argument
+\code{ld_extend_threshold} to \code{\link{susie_get_cs}} when the
+credible sets are constructed. Either \code{NULL} (the default,
+meaning no LD extension) or a single number between 0 and 1. When
+set, each credible set is extended to absorb every variant whose
+absolute correlation with a set member exceeds the threshold
+(near-perfect LD proxies); \code{0.99} is the recommended value.}
 
 \item{r_tol}{Tolerance level for eigenvalue check of positive semidefinite
 matrix \code{XtX}.}

@@ -251,6 +251,14 @@
 #' @param n_purity Passed as argument \code{n_purity} to
 #'   \code{\link{susie_get_cs}}.
 #'
+#' @param ld_extend_threshold Passed as argument
+#'   \code{ld_extend_threshold} to \code{\link{susie_get_cs}} when the
+#'   credible sets are constructed. Either \code{NULL} (the default,
+#'   meaning no LD extension) or a single number between 0 and 1. When
+#'   set, each credible set is extended to absorb every variant whose
+#'   absolute correlation with a set member exceeds the threshold
+#'   (near-perfect LD proxies); \code{0.99} is the recommended value.
+#'
 #' @param alpha0 Numerical parameter for the NIG prior when using
 #'   \code{estimate_residual_method = "NIG"}. Defaults to
 #'   \code{1/sqrt(n)}, where \code{n} is the sample size. When calling
@@ -362,6 +370,7 @@ susie <- function(X, y, L = min(10, ncol(X)),
                   residual_variance_lowerbound = NULL,
                   refine = FALSE,
                   n_purity = 100,
+                  ld_extend_threshold = NULL,
                   alpha0 = NULL,
                   beta0 = NULL,
                   init_only = FALSE,
@@ -390,7 +399,8 @@ susie <- function(X, y, L = min(10, ncol(X)),
     min_abs_corr, compute_univariate_zscore, na.rm,
     max_iter, tol, convergence_method, verbose, track_fit,
     residual_variance_lowerbound, refine, n_purity,
-    alpha0, beta0, slot_prior, L_greedy, greedy_lbf_cutoff
+    alpha0, beta0, slot_prior, L_greedy, greedy_lbf_cutoff,
+    ld_extend_threshold = ld_extend_threshold
   )
 
   # Return data and params without fitting if init_only is TRUE.
@@ -483,6 +493,7 @@ susie_ss <- function(XtX, Xty, yty, n,
                      coverage = 0.95,
                      min_abs_corr = 0.5,
                      n_purity = 100,
+                     ld_extend_threshold = NULL,
                      verbose = FALSE,
                      track_fit = FALSE,
                      check_prior = FALSE,
@@ -524,6 +535,7 @@ susie_ss <- function(XtX, Xty, yty, n,
     check_null_threshold = check_null_threshold, prior_tol = prior_tol,
     max_iter = max_iter, tol = tol, convergence_method = convergence_method,
     coverage = coverage, min_abs_corr = min_abs_corr, n_purity = n_purity,
+    ld_extend_threshold = ld_extend_threshold,
     verbose = verbose, track_fit = track_fit, check_prior = check_prior,
     refine = refine, alpha0 = alpha0, beta0 = beta0,
     slot_prior = slot_prior, L_greedy = L_greedy,
@@ -712,6 +724,7 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
                       check_input = FALSE,
                       check_prior = TRUE,
                       n_purity = 100,
+                      ld_extend_threshold = NULL,
                       r_tol = 1e-8,
                       refine = FALSE,
                       R_finite = NULL,
@@ -767,6 +780,7 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
     verbose = verbose, track_fit = track_fit, check_input = check_input,
     check_prior = check_prior,
     n_purity = n_purity, r_tol = r_tol, refine = refine,
+    ld_extend_threshold = ld_extend_threshold,
     R_finite = R_finite,
     R_mismatch = R_mismatch,
     R_mismatch_method = R_mismatch_method,
@@ -889,6 +903,7 @@ susie_rss_lambda <- function(z = NULL, R = NULL, n = NULL,
                              check_R = TRUE,
                              check_z = FALSE,
                              n_purity = 100,
+                             ld_extend_threshold = NULL,
                              r_tol = 1e-8,
                              refine = FALSE,
                              init_only = FALSE,
@@ -924,6 +939,7 @@ susie_rss_lambda <- function(z = NULL, R = NULL, n = NULL,
     verbose = verbose, track_fit = track_fit,
     check_prior = check_prior, check_R = check_R, check_z = check_z,
     n_purity = n_purity, r_tol = r_tol, refine = refine,
+    ld_extend_threshold = ld_extend_threshold,
     slot_prior = slot_prior, L_greedy = L_greedy,
     greedy_lbf_cutoff = greedy_lbf_cutoff
   )
