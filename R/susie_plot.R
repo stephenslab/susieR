@@ -381,15 +381,28 @@ susie_plot_iteration <- function(model, L, file_prefix, pos = NULL) {
       "\\( +clone -set delay 300 \\) +swap +delete -coalesce",
       "-layers optimize", paste0(file_prefix, ".gif")
     )
-    message("Creating GIF animation...")
-    if (file.exists(paste0(file_prefix, ".gif"))) {
-      file.remove(paste0(file_prefix, ".gif"))
-    }
-    output <- try(system(cmd))
-    if (inherits(output, "try-error")) {
-      stop("Cannot create GIF animation because convert command failed")
-    } else {
+    if (nzchar(Sys.which("convert"))) {
+      message("Creating GIF animation...")
+      if (file.exists(paste0(file_prefix, ".gif"))) {
+        file.remove(paste0(file_prefix, ".gif"))
+      }
+      # system() returns the command's integer exit status (0 = success); it
+      # does not raise an R condition on failure, so check the status directly.
+      status <- system(cmd)
+      if (status != 0L) {
+        # nocov start  -- 'convert' is installed but the command failed;
+        # environment-dependent and not reproducible in CI.
+        stop("Cannot create GIF animation because the convert command failed ",
+             "(exit status ", status, ").")
+        # nocov end
+      }
       format <- ".gif"
+    } else {
+      # nocov start  -- ImageMagick not installed: degrade to the PDF (the
+      # multi-page PDF is the primary output) instead of erroring.
+      message("ImageMagick 'convert' not found on PATH; saved ", file_prefix,
+              ".pdf only (skipping the GIF animation).")
+      # nocov end
     }
   }
   message(paste0("Iterplot saved to ", file_prefix, format, "\n"))

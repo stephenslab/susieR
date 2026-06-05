@@ -228,7 +228,7 @@ compute_marginal_bhat_shat <- function(X, Y,
       function(t) Rfast::colVars(Y[, t] - sweep(X, 2, Bhat[, t], "*")),
       numeric(J)
     )
-    if (!is.matrix(Shat)) Shat <- matrix(Shat, nrow = J, ncol = T_y)
+    if (!is.matrix(Shat)) Shat <- matrix(Shat, nrow = J, ncol = T_y) # nocov — vapply always returns matrix
     Shat <- sqrt(pmax(Shat, 1e-64)) / sqrt(n - 1)
   }
 
@@ -250,6 +250,11 @@ remove_covariate <- function (X, y, Z, standardize = FALSE, intercept = TRUE) {
   
   # check if Z is null and intercept = FALSE
   if (is.null(Z) & (intercept == FALSE)) {
+    # Still scale the columns of X when standardize = TRUE, so callers that
+    # rely on attr(X, "scaled:scale") to map coefficients back to the
+    # original scale (e.g. mr.ash) do not divide by a missing attribute.
+    if (standardize)
+      X = scale(X, center = FALSE, scale = TRUE)
     return(list(X = X, y = y, Z = Z,
                 ZtZiZX = rep(0,dim(X)[2]), ZtZiZy = 0))
   }

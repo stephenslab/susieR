@@ -86,7 +86,11 @@ ibss_initialize.default <- function(data, params) {
   # Use the class from initialize_susie_model if it inherits from "susie",
   # otherwise default to "susie"
   if (inherits(mat_init, "susie")) {
+    # nocov start  -- extension point: only reached when initialize_susie_model
+    # returns a "susie"-subclassed object (e.g. mvsusie / mfsusie). susieR's own
+    # data types return an unclassed mat_init and take the else branch below.
     class(model) <- model_class
+    # nocov end
   } else {
     class(model) <- "susie"
   }
