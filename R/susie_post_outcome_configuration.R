@@ -26,8 +26,8 @@
 #'
 #' Runs one of two complementary post-hoc analyses, selected by
 #' \code{method}: \code{"susiex"} (default) for the SuSiEx \eqn{2^N}
-#' combinatorial enumeration, reporting the posterior probability of
-#' every binary causality pattern across the \eqn{N} input traits; or
+#' combinatorial enumeration, reporting posterior probabilities over
+#' binary causality patterns across the \eqn{N} input traits; or
 #' \code{"coloc_pairwise"} for the coloc pairwise ABF, reporting the
 #' five colocalisation hypothesis posteriors (H0/H1/H2/H3/H4) for every
 #' pair of traits. To get both, call the function twice and combine.
@@ -50,75 +50,40 @@
 #'     fit (set \code{attach_lbf_variable_outcome = TRUE} when fitting).}
 #' }
 #'
-#' \subsection{SuSiEx algorithm}{
-#' For each credible-set tuple \eqn{(l_1, \dots, l_N)}, the \code{"susiex"}
-#' method computes post hoc probabilities of causal configurations following
-#' the SuSiEx activation-configuration framework.
-#'
-#' \enumerate{
-#'   \item Enumerate the \eqn{2^N} activation configurations
-#'     \eqn{c \in \{0,1\}^N}. Here \eqn{c_n = 1} indicates that, under this
-#'     configuration, the signal in the tuple is causal in trait / population
-#'     \eqn{n}.
-#'   \item For \eqn{c \ne 0}, score the configuration on aligned variants
-#'     \eqn{\mathcal V_c = \cap_{n:c_n=1}\mathcal V_n}:
-#'     \deqn{\log W(c) =
-#'       \log\sum_{j \in \mathcal V_c} \pi_j
-#'       \exp\{\sum_{n:c_n=1}\log\mathrm{BF}_{n,l_n,j}\},}
-#'     with \eqn{\pi_j} uniform over aligned variants and \eqn{\log W(0)=0}.
-#'   \item Normalise under a uniform prior over the \eqn{2^N} activation
-#'     configurations.
-#'   \item Per-trait marginal: \eqn{P(\mathrm{trait}\,n\,\mathrm{causal}) =
-#'     \sum_{c: c_n = 1} P(c \mid \mathrm{tuple})}.
+#' After SuSiE has been fit, the post-hoc step can answer two related
+#' questions:
+#' \describe{
+#'   \item{\code{"susiex"}}{SuSiEx \eqn{2^N} activation probabilities for
+#'     each credible-set tuple. It asks which traits have evidence for a
+#'     proposed shared CS-level event. In two traits, the both-active state
+#'     uses same-SNP evidence such as
+#'     \eqn{\sum_j \exp(\ell_{1j}+\ell_{2j})}, where \eqn{\ell_{tj}} is the
+#'     SNP-level log Bayes factor for trait \eqn{t}.}
+#'   \item{\code{"coloc_pairwise"}}{Pairwise coloc H0-H4 posteriors for
+#'     every trait pair and CS pair. It asks whether same-SNP evidence is
+#'     stronger than distinct-causal evidence, represented by terms such as
+#'     \eqn{\sum_{j \ne k}\exp(\ell_{1j}+\ell_{2k})}; this separates H3,
+#'     two distinct causal variants, from H4, one shared causal variant.}
 #' }
 #'
-#' The \eqn{2^N} activation space is a coherent post hoc model for a candidate
-#' credible-set event. It is especially useful in cross-population fine-mapping,
-#' where a proposed shared causal event may be causal or detectable in only a
-#' subset of populations because of differences in LD, allele frequency, sample
-#' size, or effect size.
+#' \subsection{Two-trait example}{
+#' For two traits and one CS pair, SuSiEx has four activation states:
+#' \eqn{(0,0)}, \eqn{(1,0)}, \eqn{(0,1)}, and \eqn{(1,1)}. The state
+#' \eqn{(1,1)} means both traits are active for the candidate shared event;
+#' it does not introduce a separate distinct-causal state.
 #'
-#' This activation space should be distinguished from the complete coloc-style
-#' sharing space. A complete colocalisation model also allows active traits to
-#' split into distinct causal groups. With inactive traits allowed, this is a
-#' partial-partition space of size Bell(\eqn{N+1}). In other words,
-#' SuSiEx-style activation asks which traits participate in one candidate
-#' event, whereas a complete coloc-style model asks how active traits are
-#' partitioned into one or more causal events.
-#'
-#' For two traits, the SuSiEx-style activation space contains
-#' \eqn{H(0,0)}, \eqn{H(1,0)}, \eqn{H(0,1)}, and \eqn{H(1,1)}. Coloc further
-#' separates the active state \eqn{H(1,1)} into two competing explanations:
-#' H3, where both traits are active but have distinct causal variants, and H4,
-#' where both traits share one causal variant.
-#'
+#' Coloc has five hypotheses: H0, no causal variant; H1, trait 1 only; H2,
+#' trait 2 only; H3, two distinct causal variants; and H4, one shared causal
+#' variant. Thus coloc splits the active two-trait case into H3 and H4,
+#' whereas SuSiEx represents it as the single activation state \eqn{(1,1)}.
 #' }
 #'
-#' \subsection{Coloc pairwise algorithm}{
-#' For each unordered trait pair \eqn{(n, n')} and each CS pair
-#' \eqn{(l_n, l_{n'})}, with per-SNP log BFs
-#' \eqn{\ell_1 = \log\mathrm{BF}_{n,l_n,\cdot}} and
-#' \eqn{\ell_2 = \log\mathrm{BF}_{n',l_{n'},\cdot}} (length \eqn{J}), the
-#' five hypothesis log-BFs are
-#' \deqn{\log\mathrm{BF}_{H_0} = 0,\quad
-#'       \log\mathrm{BF}_{H_1} = \log p_1 + \mathrm{LSE}(\ell_1),\quad
-#'       \log\mathrm{BF}_{H_2} = \log p_2 + \mathrm{LSE}(\ell_2),}
-#' \deqn{\log\mathrm{BF}_{H_3} = \log p_1 + \log p_2 +
-#'       \mathrm{logdiff}(\mathrm{LSE}(\ell_1) + \mathrm{LSE}(\ell_2),\;
-#'                        \mathrm{LSE}(\ell_1 + \ell_2)),}
-#' \deqn{\log\mathrm{BF}_{H_4} = \log p_{12} + \mathrm{LSE}(\ell_1 + \ell_2),}
-#' and the corresponding posteriors are
-#' \eqn{\mathrm{PP.H}_h = \exp(\log\mathrm{BF}_{H_h} -
-#'       \mathrm{LSE}(\log\mathrm{BF}_{H_0:H_4}))}, where
-#' \eqn{\mathrm{LSE}} is the log-sum-exp.
-#' \itemize{
-#'   \item H0: no causal variant in either CS.
-#'   \item H1: causal in trait \eqn{n} only.
-#'   \item H2: causal in trait \eqn{n'} only.
-#'   \item H3: distinct causals in the two traits.
-#'   \item H4: a single shared causal variant.
-#' }
-#' }
+#' The \code{"susiex"} output is an \eqn{N}-trait post-hoc activation model
+#' over CS tuples. The \code{"coloc_pairwise"} output is a pairwise
+#' colocalisation model over H0-H4 for each CS pair. Both are summaries of
+#' already fitted SuSiE-class models; neither refits the single-trait effects.
+#'
+#' To get both methods, call the function twice and combine the outputs.
 #'
 #' @param input A single fit of class \code{susie}, \code{mvsusie}, or
 #'   \code{mfsusie}, OR a list of such fits.
