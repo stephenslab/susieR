@@ -118,16 +118,32 @@ Coloc has five hypotheses: H0, no causal variant; H1, trait 1 only; H2,
 trait 2 only; H3, two distinct causal variants; and H4, one shared causal
 variant. Thus coloc splits the active two-trait case into H3 and H4,
 whereas SuSiEx represents it as the single activation state \eqn{(1,1)}.
-}
 
-The \code{"susiex"} output is an \eqn{N}-trait post-hoc activation model
+The \code{"susiex"} output is an \eqn{2}-trait post-hoc activation model
 over CS tuples. The \code{"coloc_pairwise"} output is a pairwise
 colocalisation model over H0-H4 for each CS pair. Both are summaries of
 already fitted SuSiE-class models; neither refits the single-trait effects.
+}
 
-To get both methods, call the function twice and combine the outputs.
+More generally, in \eqn{N}-trait analysis, the difference between
+SuSiEx-style activation and colocalization is a difference in hypothesis
+space:
+\describe{
+  \item{SuSiEx activation space}{\code{"susiex"} is an \eqn{N}-trait
+    post-hoc activation, or meta-analysis-style, model over CS tuples. It
+    enumerates the \eqn{2^N} binary activity patterns and asks which traits
+    participate in a proposed shared event.}
+  \item{Colocalization partition space}{A theoretical generalization to
+    \eqn{N}-trait colocalization has a larger hypothesis space: inactive
+    traits plus all ways of grouping active traits by shared causal
+    variant, of size Bell(\eqn{N+1}) (see HyPrColoc, Figure 1). This space
+    asks not only which traits are active, but which active traits share
+    the same causal variant versus distinct causal variants.}
+}
 }
 \references{
 SuSiEx, Nature Genetics 2024 (combinatorial \eqn{2^N} enumeration).
 Wallace, PLoS Genetics 2020 (coloc pairwise H0/H1/H2/H3/H4 ABF).
+Foley et al., Nature Communications 2021 (HyPrColoc; multi-trait
+colocalisation hypothesis space in Figure 1).
 }
