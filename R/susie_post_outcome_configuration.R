@@ -83,8 +83,6 @@
 #' colocalisation model over H0-H4 for each CS pair. Both are summaries of
 #' already fitted SuSiE-class models; neither refits the single-trait effects.
 #'
-#' To get both methods, call the function twice and combine the outputs.
-#'
 #' @param input A single fit of class \code{susie}, \code{mvsusie}, or
 #'   \code{mfsusie}, OR a list of such fits.
 #' @param by Either \code{"fit"} (one trait per input fit; default) or
