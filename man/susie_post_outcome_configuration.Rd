@@ -40,7 +40,7 @@ zero are skipped. When \code{TRUE}, every fit must carry a non-null
 alone, \code{p2} for trait 2 alone, \code{p12} for shared causal.
 Defaults match \code{coloc::coloc.bf_bf}: \code{p1 = p2 = 1e-4},
 \code{p12 = 5e-6}. Only used when \code{"coloc_pairwise"} is in
-\code{methods}.}
+\code{method}.}
 
 \item{...}{Currently ignored.}
 }
@@ -51,7 +51,8 @@ exactly one of the following components, depending on \code{method}:
   \item{\code{$susiex}}{(when \code{method = "susiex"}) A list of length
     equal to the number of CS tuples considered. Each element has
     components \code{cs_indices} (length-N integer tuple),
-    \code{logBF_trait} (length N), \code{configs} (\eqn{2^N \times N}
+    \code{logBF_trait} (length-N singleton activation log BF),
+    \code{configs} (\eqn{2^N \times N}
     binary matrix), \code{config_prob} (length \eqn{2^N}),
     \code{marginal_prob} (length-N per-trait marginal posterior
     probability of being active across the configuration ensemble),
@@ -92,19 +93,47 @@ Two grouping modes are supported through the \code{by} argument:
 }
 
 \subsection{SuSiEx algorithm}{
-For each credible-set tuple \eqn{(l_1, \dots, l_N)}:
+For each credible-set tuple \eqn{(l_1, \dots, l_N)}, the \code{"susiex"}
+method computes post hoc probabilities of causal configurations following
+the SuSiEx activation-configuration framework.
+
 \enumerate{
-  \item Per-trait CS-level log BF (alpha-weighted SNP average):
-    \deqn{\log\mathrm{BF}^{(n)}_{l_n} = \sum_j \alpha_{n,l_n,j}\,
-      \log\mathrm{BF}_{n,l_n,j}.}
-  \item Enumerate the \eqn{2^N} binary configurations
-    \eqn{c \in \{0,1\}^N}.
-  \item Configuration log BF:
-    \deqn{\log\mathrm{BF}^{(c)} = \sum_{n: c_n = 1} \log\mathrm{BF}^{(n)}_{l_n}.}
-  \item Normalise under a uniform prior over the \eqn{2^N} configurations.
+  \item Enumerate the \eqn{2^N} activation configurations
+    \eqn{c \in \{0,1\}^N}. Here \eqn{c_n = 1} indicates that, under this
+    configuration, the signal in the tuple is causal in trait / population
+    \eqn{n}.
+  \item For \eqn{c \ne 0}, score the configuration on aligned variants
+    \eqn{\mathcal V_c = \cap_{n:c_n=1}\mathcal V_n}:
+    \deqn{\log W(c) =
+      \log\sum_{j \in \mathcal V_c} \pi_j
+      \exp\{\sum_{n:c_n=1}\log\mathrm{BF}_{n,l_n,j}\},}
+    with \eqn{\pi_j} uniform over aligned variants and \eqn{\log W(0)=0}.
+  \item Normalise under a uniform prior over the \eqn{2^N} activation
+    configurations.
   \item Per-trait marginal: \eqn{P(\mathrm{trait}\,n\,\mathrm{causal}) =
     \sum_{c: c_n = 1} P(c \mid \mathrm{tuple})}.
 }
+
+The \eqn{2^N} activation space is a coherent post hoc model for a candidate
+credible-set event. It is especially useful in cross-population fine-mapping,
+where a proposed shared causal event may be causal or detectable in only a
+subset of populations because of differences in LD, allele frequency, sample
+size, or effect size.
+
+This activation space should be distinguished from the complete coloc-style
+sharing space. A complete colocalisation model also allows active traits to
+split into distinct causal groups. With inactive traits allowed, this is a
+partial-partition space of size Bell(\eqn{N+1}). In other words,
+SuSiEx-style activation asks which traits participate in one candidate
+event, whereas a complete coloc-style model asks how active traits are
+partitioned into one or more causal events.
+
+For two traits, the SuSiEx-style activation space contains
+\eqn{H(0,0)}, \eqn{H(1,0)}, \eqn{H(0,1)}, and \eqn{H(1,1)}. Coloc further
+separates the active state \eqn{H(1,1)} into two competing explanations:
+H3, where both traits are active but have distinct causal variants, and H4,
+where both traits share one causal variant.
+
 }
 
 \subsection{Coloc pairwise algorithm}{

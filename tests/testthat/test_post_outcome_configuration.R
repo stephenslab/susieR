@@ -345,20 +345,33 @@ test_that("susiex_configurations returns list() when no usable CS tuple exists",
                                      prob_thresh = 0.8), list())
 })
 
-test_that("susiex_configurations computes config / marginal probs correctly", {
-  # Two traits, each with a single CS at a single SNP. logBF_trait[n] =
-  # sum(alpha * lbf). With alpha = 1 at SNP1, logBF = lbf value there.
+test_that("susiex_configurations computes variant-level config / marginal probs correctly", {
+  # Two traits, each with one CS row over two aligned variants.
+  # logBF_trait and config_prob use the same variant-level LBF kernel.
   v <- list(
-    list(name = "g1", alpha = matrix(c(1, 0), 1, 2),
-         lbf = matrix(c(2, 0), 1, 2), sets_cs = list(L1 = 1L)),
-    list(name = "g2", alpha = matrix(c(1, 0), 1, 2),
-         lbf = matrix(c(3, 0), 1, 2), sets_cs = list(L1 = 1L)))
+    list(name = "g1",
+         alpha = matrix(c(1, 0), 1, 2,
+                        dimnames = list(NULL, c("rs1", "rs2"))),
+         lbf = matrix(c(2, 0), 1, 2,
+                      dimnames = list(NULL, c("rs1", "rs2"))),
+         sets_cs = list(L1 = 1L)),
+    list(name = "g2",
+         alpha = matrix(c(1, 0), 1, 2,
+                        dimnames = list(NULL, c("rs1", "rs2"))),
+         lbf = matrix(c(3, 0), 1, 2,
+                      dimnames = list(NULL, c("rs1", "rs2"))),
+         sets_cs = list(L1 = 1L)))
   res <- susiex_configurations(v, by = "fit", prob_thresh = 0.8)
   expect_length(res, 1L)
   tup <- res[[1]]
 
-  # logBF_trait = c(2, 3), named by trait.
-  expect_equal(tup$logBF_trait, c(g1 = 2, g2 = 3), tolerance = 1e-8)
+  lbf <- list(g1 = c(rs1 = 2, rs2 = 0), g2 = c(rs1 = 3, rs2 = 0))
+
+  # logBF_trait is the singleton-activation log BF, named by trait.
+  expect_equal(tup$logBF_trait,
+               c(g1 = log(sum(exp(-log(2) + lbf$g1))),
+                 g2 = log(sum(exp(-log(2) + lbf$g2)))),
+               tolerance = 1e-8)
   expect_named(tup$cs_indices, c("g1", "g2"))
 
   # config_prob is a proper distribution over 2^2 = 4 configs.
@@ -367,8 +380,13 @@ test_that("susiex_configurations computes config / marginal probs correctly", {
   expect_length(tup$marginal_prob, 2L)
   expect_named(tup$marginal_prob, c("g1", "g2"))
 
-  # Independent recomputation of the marginals from the configs matrix.
-  logBF_conf <- as.vector(tup$configs %*% c(2, 3))
+  # Independent recomputation from the variant-level SuSiEx kernel over
+  # aligned variants.
+  logBF_conf <- apply(tup$configs, 1, function(cfg) {
+    active <- which(cfg == 1L)
+    if (length(active) == 0L) return(0)
+    log(sum(exp(-log(2) + Reduce("+", lbf[active]))))
+  })
   p <- exp(logBF_conf - max(logBF_conf)); p <- p / sum(p)
   expect_equal(unname(tup$config_prob), p, tolerance = 1e-8)
   expect_equal(unname(tup$marginal_prob),
@@ -376,6 +394,73 @@ test_that("susiex_configurations computes config / marginal probs correctly", {
 
   # active = marginal >= prob_thresh.
   expect_equal(tup$active, tup$marginal_prob >= 0.8)
+})
+
+test_that("susiex_configurations does not call disjoint strong signals shared", {
+  variants <- c("rs1", "rs2", "rs3")
+  make_view <- function(name, peak) {
+    alpha <- matrix(0, 1, 3, dimnames = list(NULL, variants))
+    lbf   <- matrix(-20, 1, 3, dimnames = list(NULL, variants))
+    alpha[1, peak] <- 1
+    lbf[1, peak]   <- 12
+    list(name = name, alpha = alpha, lbf = lbf,
+         sets_cs = list(L1 = match(peak, variants)))
+  }
+  v <- list(make_view("t1", "rs1"),
+            make_view("t2", "rs2"),
+            make_view("t3", "rs3"))
+
+  tup <- susiex_configurations(v, by = "fit", prob_thresh = 0.8)[[1]]
+  all_active <- which(rowSums(tup$configs) == 3L)
+
+  expect_lt(tup$config_prob[all_active], 1e-8)
+  expect_true(all(tup$marginal_prob < 0.8))
+  expect_false(any(tup$active))
+})
+
+test_that("susiex_configurations aligns variant-level LBFs by column names", {
+  alpha1 <- matrix(c(1, 0), 1, 2, dimnames = list(NULL, c("rs1", "rs2")))
+  lbf1   <- matrix(c(8, 0), 1, 2, dimnames = list(NULL, c("rs1", "rs2")))
+
+  alpha2_same <- matrix(c(1, 0), 1, 2, dimnames = list(NULL, c("rs1", "rs2")))
+  lbf2_same   <- matrix(c(8, 0), 1, 2, dimnames = list(NULL, c("rs1", "rs2")))
+  alpha2_rev  <- matrix(c(0, 1), 1, 2, dimnames = list(NULL, c("rs2", "rs1")))
+  lbf2_rev    <- matrix(c(0, 8), 1, 2, dimnames = list(NULL, c("rs2", "rs1")))
+
+  v_same <- list(
+    list(name = "g1", alpha = alpha1, lbf = lbf1, sets_cs = list(L1 = 1L)),
+    list(name = "g2", alpha = alpha2_same, lbf = lbf2_same,
+         sets_cs = list(L1 = 1L)))
+  v_rev <- list(
+    list(name = "g1", alpha = alpha1, lbf = lbf1, sets_cs = list(L1 = 1L)),
+    list(name = "g2", alpha = alpha2_rev, lbf = lbf2_rev,
+         sets_cs = list(L1 = 1L)))
+
+  same <- susiex_configurations(v_same, by = "fit", prob_thresh = 0.8)[[1]]
+  rev  <- susiex_configurations(v_rev,  by = "fit", prob_thresh = 0.8)[[1]]
+
+  expect_equal(rev$config_prob, same$config_prob, tolerance = 1e-8)
+  expect_equal(rev$marginal_prob, same$marginal_prob, tolerance = 1e-8)
+})
+
+test_that("susiex_configurations rejects mismatched alpha / LBF names", {
+  v <- list(
+    list(name = "bad",
+         alpha = matrix(c(1, 0), 1, 2,
+                        dimnames = list(NULL, c("rs1", "rs2"))),
+         lbf = matrix(c(2, 0), 1, 2,
+                      dimnames = list(NULL, c("rs2", "rs1"))),
+         sets_cs = list(L1 = 1L)),
+    list(name = "ok",
+         alpha = matrix(c(1, 0), 1, 2,
+                        dimnames = list(NULL, c("rs1", "rs2"))),
+         lbf = matrix(c(3, 0), 1, 2,
+                      dimnames = list(NULL, c("rs1", "rs2"))),
+         sets_cs = list(L1 = 1L)))
+
+  expect_error(
+    susiex_configurations(v, by = "fit", prob_thresh = 0.8),
+    "column names of `alpha` and `lbf` must match")
 })
 
 test_that("susiex_configurations is reachable through the public entry point", {

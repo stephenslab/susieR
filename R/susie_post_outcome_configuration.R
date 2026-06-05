@@ -51,19 +51,47 @@
 #' }
 #'
 #' \subsection{SuSiEx algorithm}{
-#' For each credible-set tuple \eqn{(l_1, \dots, l_N)}:
+#' For each credible-set tuple \eqn{(l_1, \dots, l_N)}, the \code{"susiex"}
+#' method computes post hoc probabilities of causal configurations following
+#' the SuSiEx activation-configuration framework.
+#'
 #' \enumerate{
-#'   \item Per-trait CS-level log BF (alpha-weighted SNP average):
-#'     \deqn{\log\mathrm{BF}^{(n)}_{l_n} = \sum_j \alpha_{n,l_n,j}\,
-#'       \log\mathrm{BF}_{n,l_n,j}.}
-#'   \item Enumerate the \eqn{2^N} binary configurations
-#'     \eqn{c \in \{0,1\}^N}.
-#'   \item Configuration log BF:
-#'     \deqn{\log\mathrm{BF}^{(c)} = \sum_{n: c_n = 1} \log\mathrm{BF}^{(n)}_{l_n}.}
-#'   \item Normalise under a uniform prior over the \eqn{2^N} configurations.
+#'   \item Enumerate the \eqn{2^N} activation configurations
+#'     \eqn{c \in \{0,1\}^N}. Here \eqn{c_n = 1} indicates that, under this
+#'     configuration, the signal in the tuple is causal in trait / population
+#'     \eqn{n}.
+#'   \item For \eqn{c \ne 0}, score the configuration on aligned variants
+#'     \eqn{\mathcal V_c = \cap_{n:c_n=1}\mathcal V_n}:
+#'     \deqn{\log W(c) =
+#'       \log\sum_{j \in \mathcal V_c} \pi_j
+#'       \exp\{\sum_{n:c_n=1}\log\mathrm{BF}_{n,l_n,j}\},}
+#'     with \eqn{\pi_j} uniform over aligned variants and \eqn{\log W(0)=0}.
+#'   \item Normalise under a uniform prior over the \eqn{2^N} activation
+#'     configurations.
 #'   \item Per-trait marginal: \eqn{P(\mathrm{trait}\,n\,\mathrm{causal}) =
 #'     \sum_{c: c_n = 1} P(c \mid \mathrm{tuple})}.
 #' }
+#'
+#' The \eqn{2^N} activation space is a coherent post hoc model for a candidate
+#' credible-set event. It is especially useful in cross-population fine-mapping,
+#' where a proposed shared causal event may be causal or detectable in only a
+#' subset of populations because of differences in LD, allele frequency, sample
+#' size, or effect size.
+#'
+#' This activation space should be distinguished from the complete coloc-style
+#' sharing space. A complete colocalisation model also allows active traits to
+#' split into distinct causal groups. With inactive traits allowed, this is a
+#' partial-partition space of size Bell(\eqn{N+1}). In other words,
+#' SuSiEx-style activation asks which traits participate in one candidate
+#' event, whereas a complete coloc-style model asks how active traits are
+#' partitioned into one or more causal events.
+#'
+#' For two traits, the SuSiEx-style activation space contains
+#' \eqn{H(0,0)}, \eqn{H(1,0)}, \eqn{H(0,1)}, and \eqn{H(1,1)}. Coloc further
+#' separates the active state \eqn{H(1,1)} into two competing explanations:
+#' H3, where both traits are active but have distinct causal variants, and H4,
+#' where both traits share one causal variant.
+#'
 #' }
 #'
 #' \subsection{Coloc pairwise algorithm}{
@@ -110,7 +138,7 @@
 #'   alone, \code{p2} for trait 2 alone, \code{p12} for shared causal.
 #'   Defaults match \code{coloc::coloc.bf_bf}: \code{p1 = p2 = 1e-4},
 #'   \code{p12 = 5e-6}. Only used when \code{"coloc_pairwise"} is in
-#'   \code{methods}.
+#'   \code{method}.
 #' @param ... Currently ignored.
 #'
 #' @return A list of class \code{"susie_post_outcome_configuration"} with
@@ -119,7 +147,8 @@
 #'   \item{\code{$susiex}}{(when \code{method = "susiex"}) A list of length
 #'     equal to the number of CS tuples considered. Each element has
 #'     components \code{cs_indices} (length-N integer tuple),
-#'     \code{logBF_trait} (length N), \code{configs} (\eqn{2^N \times N}
+#'     \code{logBF_trait} (length-N singleton activation log BF),
+#'     \code{configs} (\eqn{2^N \times N}
 #'     binary matrix), \code{config_prob} (length \eqn{2^N}),
 #'     \code{marginal_prob} (length-N per-trait marginal posterior
 #'     probability of being active across the configuration ensemble),
@@ -323,6 +352,35 @@ enumerate_cs_tuples <- function(views, by, cs_only) {
 # SuSiEx 2^N configuration enumeration.
 # -----------------------------------------------------------------------------
 
+.view_variant_keys <- function(view) {
+  alpha_names <- colnames(view$alpha)
+  lbf_names   <- colnames(view$lbf)
+  if (!is.null(alpha_names) && !is.null(lbf_names) &&
+      !identical(alpha_names, lbf_names)) {
+    stop("Trait '", view$name, "': column names of `alpha` and `lbf` ",
+         "must match for SuSiEx variant-level configuration scoring.")
+  }
+  keys <- if (!is.null(lbf_names)) lbf_names else alpha_names
+  if (is.null(keys)) keys <- paste0(".variant_", seq_len(ncol(view$lbf)))
+  keys
+}
+
+.susiex_config_logbf <- function(config, tuple, views, variant_keys,
+                                 variant_space_size) {
+  active <- which(config == 1L)
+  if (length(active) == 0L) return(0)
+
+  common <- Reduce(intersect, variant_keys[active])
+  if (length(common) == 0L) return(-Inf)
+
+  logbf <- rep(-log(variant_space_size), length(common))
+  for (n in active) {
+    idx <- match(common, variant_keys[[n]])
+    logbf <- logbf + views[[n]]$lbf[tuple[n], idx]
+  }
+  .logsum(logbf)
+}
+
 susiex_configurations <- function(views, by, prob_thresh,
                                   max_traits = 20L) {
   N <- length(views)
@@ -337,6 +395,8 @@ susiex_configurations <- function(views, by, prob_thresh,
   configs <- as.matrix(expand.grid(rep(list(c(0L, 1L)), N)))
   colnames(configs) <- paste0("trait_", seq_len(N))
   trait_names <- vapply(views, function(v) v$name, character(1))
+  variant_keys <- lapply(views, .view_variant_keys)
+  variant_space_size <- length(Reduce(union, variant_keys))
 
   out <- vector("list", length(cs_tuples))
   for (ti in seq_along(cs_tuples)) {
@@ -347,16 +407,31 @@ susiex_configurations <- function(views, by, prob_thresh,
     for (n in seq_len(N)) {
       l_n       <- tuple[n]
       alpha_row <- views[[n]]$alpha[l_n, ]
-      lbf_row   <- views[[n]]$lbf  [l_n, ]
       if (all(alpha_row == 0)) { skip <- TRUE; break }
-      logBF_trait[n] <- sum(alpha_row * lbf_row)   # alpha-weighted SNP avg
+      singleton <- integer(N)
+      singleton[n] <- 1L
+      logBF_trait[n] <- .susiex_config_logbf(
+        config = singleton,
+        tuple = tuple,
+        views = views,
+        variant_keys = variant_keys,
+        variant_space_size = variant_space_size
+      )
     }
     if (skip) {
       out[[ti]] <- NULL
       next
     }
 
-    logBF_conf    <- as.vector(configs %*% logBF_trait)
+    logBF_conf    <- vapply(seq_len(nrow(configs)), function(m) {
+      .susiex_config_logbf(
+        config = configs[m, ],
+        tuple = tuple,
+        views = views,
+        variant_keys = variant_keys,
+        variant_space_size = variant_space_size
+      )
+    }, numeric(1))
     maxlog        <- max(logBF_conf)
     prob_conf     <- exp(logBF_conf - maxlog)
     prob_conf     <- prob_conf / sum(prob_conf)
