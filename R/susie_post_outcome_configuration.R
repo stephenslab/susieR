@@ -130,10 +130,13 @@
 #' \describe{
 #'   \item{\code{$susiex}}{(when \code{method = "susiex"}) A list of length
 #'     equal to the number of CS tuples considered. Each element has
-#'     components \code{cs_indices} (length-N integer tuple),
+#'     components \code{config_probability} (binary trait-activation table
+#'     with a \code{config_prob} column), \code{activation_summary}
+#'     (CS-level post-hoc activation summary by trait), \code{cs_indices}
+#'     (length-N integer tuple),
 #'     \code{logBF_trait} (length-N singleton activation log BF),
-#'     \code{configs} (\eqn{2^N \times N}
-#'     binary matrix), \code{config_prob} (length \eqn{2^N}),
+#'     \code{configs} (\eqn{2^N \times N} binary matrix),
+#'     \code{config_prob} (length \eqn{2^N}),
 #'     \code{marginal_prob} (length-N per-trait marginal posterior
 #'     probability of being active across the configuration ensemble),
 #'     and \code{active} (logical, \code{marginal_prob >= prob_thresh}).}
@@ -434,18 +437,53 @@ susiex_configurations <- function(views, by, prob_thresh,
     prob_conf     <- exp(logBF_conf - maxlog)
     prob_conf     <- prob_conf / sum(prob_conf)
     marginal_prob <- as.vector(crossprod(configs, prob_conf))
+    names(logBF_trait) <- names(marginal_prob) <- trait_names
+    active <- setNames(marginal_prob >= prob_thresh, trait_names)
 
     out[[ti]] <- list(
-      cs_indices    = setNames(as.integer(tuple),  trait_names),
-      logBF_trait   = setNames(logBF_trait,        trait_names),
+      cs_indices    = setNames(as.integer(tuple), trait_names),
+      logBF_trait   = logBF_trait,
       configs       = configs,
       config_prob   = prob_conf,
-      marginal_prob = setNames(marginal_prob,      trait_names),
-      active        = setNames(marginal_prob >= prob_thresh, trait_names)
+      marginal_prob = marginal_prob,
+      active        = active
     )
   }
 
-  out[!vapply(out, is.null, logical(1))]
+  .organize_susiex_output(out[!vapply(out, is.null, logical(1))])
+}
+
+.organize_susiex_output <- function(susiex) {
+  lapply(susiex, function(tup) {
+    if (!is.list(tup)) return(tup)
+
+    config_probability <- if (is.matrix(tup$configs) &&
+                              !is.null(tup$config_prob) &&
+                              nrow(tup$configs) == length(tup$config_prob)) {
+      config_probability <- as.data.frame(tup$configs)
+      config_probability$config_prob <- tup$config_prob
+      config_probability
+    } else NULL
+
+    trait_names <- names(tup$cs_indices)
+    if (is.null(trait_names) || any(!nzchar(trait_names))) {
+      trait_names <- names(tup$marginal_prob)
+    }
+    activation_summary <- if (!is.null(trait_names) &&
+                              length(trait_names) > 0L) {
+      vals <- rbind(
+        cs_indices    = as.character(tup$cs_indices[trait_names]),
+        logBF_trait   = as.character(tup$logBF_trait[trait_names]),
+        posthoc_prob  = as.character(tup$marginal_prob[trait_names]),
+        active        = as.character(tup$active[trait_names])
+      )
+      colnames(vals) <- trait_names
+      as.data.frame(vals, check.names = FALSE, stringsAsFactors = FALSE)
+    } else NULL
+
+    c(list(config_probability = config_probability,
+           activation_summary = activation_summary), tup)
+  })
 }
 
 # -----------------------------------------------------------------------------

@@ -56,10 +56,13 @@ exactly one of the following components, depending on \code{method}:
 \describe{
   \item{\code{$susiex}}{(when \code{method = "susiex"}) A list of length
     equal to the number of CS tuples considered. Each element has
-    components \code{cs_indices} (length-N integer tuple),
+    components \code{config_probability} (binary trait-activation table
+    with a \code{config_prob} column), \code{activation_summary}
+    (CS-level post-hoc activation summary by trait), \code{cs_indices}
+    (length-N integer tuple),
     \code{logBF_trait} (length-N singleton activation log BF),
-    \code{configs} (\eqn{2^N \times N}
-    binary matrix), \code{config_prob} (length \eqn{2^N}),
+    \code{configs} (\eqn{2^N \times N} binary matrix),
+    \code{config_prob} (length \eqn{2^N}),
     \code{marginal_prob} (length-N per-trait marginal posterior
     probability of being active across the configuration ensemble),
     and \code{active} (logical, \code{marginal_prob >= prob_thresh}).}

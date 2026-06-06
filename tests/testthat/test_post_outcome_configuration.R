@@ -96,7 +96,8 @@ test_that("method = 'susiex' returns tagged object with $susiex component", {
   expect_equal(attr(res, "prob_thresh"), 0.8)
   expect_true(length(res$susiex) >= 1L)
   # Each tuple carries the documented fields.
-  expect_named(res$susiex[[1]], c("cs_indices", "logBF_trait", "configs",
+  expect_named(res$susiex[[1]], c("config_probability", "activation_summary",
+                                  "cs_indices", "logBF_trait", "configs",
                                   "config_prob", "marginal_prob", "active"))
 })
 
@@ -419,6 +420,13 @@ test_that("susiex_configurations computes variant-level config / marginal probs 
   expect_equal(unname(tup$config_prob), p, tolerance = 1e-8)
   expect_equal(unname(tup$marginal_prob),
                as.vector(crossprod(tup$configs, p)), tolerance = 1e-8)
+  expect_named(tup$config_probability,
+               c("trait_1", "trait_2", "config_prob"))
+  expect_equal(tup$config_probability$config_prob, tup$config_prob,
+               tolerance = 1e-8)
+  expect_equal(rownames(tup$activation_summary),
+               c("cs_indices", "logBF_trait", "posthoc_prob", "active"))
+  expect_named(tup$activation_summary, c("g1", "g2"))
 
   # active = marginal >= prob_thresh.
   expect_equal(tup$active, tup$marginal_prob >= 0.8)
