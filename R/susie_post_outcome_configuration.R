@@ -180,8 +180,18 @@ susie_post_outcome_configuration <- function(input,
     }
   }
 
-  views <- normalise_to_views(input, by = by, cs_only = cs_only,
-                              outcome_names = outcome_names)
+  views <- normalise_to_views(input, by = by, cs_only = cs_only)
+  if (!is.null(outcome_names)) {
+    if (!is.character(outcome_names) ||
+        length(outcome_names) != length(views) ||
+        anyNA(outcome_names) || any(!nzchar(outcome_names))) {
+      stop("`outcome_names` must be a non-empty character vector with ",
+           "length equal to the number of trait views.")
+    }
+    for (k in seq_along(views)) {
+      views[[k]]$name <- outcome_names[k]
+    }
+  }
 
   out <- list()
   if (identical(method, "susiex")) {
@@ -209,7 +219,7 @@ is_susie_fit <- function(x) {
   inherits(x, "susie") || inherits(x, "mvsusie") || inherits(x, "mfsusie")
 }
 
-normalise_to_views <- function(input, by, cs_only, outcome_names = NULL) {
+normalise_to_views <- function(input, by, cs_only) {
   fits <- if (is_susie_fit(input)) list(input) else as.list(input)
 
   if (length(fits) == 0L) {
@@ -236,17 +246,6 @@ normalise_to_views <- function(input, by, cs_only, outcome_names = NULL) {
   views <- vector("list", 0)
   for (k in seq_along(fits)) {
     views <- c(views, expand_one_fit(fits[[k]], raw_names[k], by = by))
-  }
-  if (!is.null(outcome_names)) {
-    if (!is.character(outcome_names) ||
-        length(outcome_names) != length(views) ||
-        anyNA(outcome_names) || any(!nzchar(outcome_names))) {
-      stop("`outcome_names` must be a non-empty character vector with ",
-           "length equal to the number of trait views.")
-    }
-    for (k in seq_along(views)) {
-      views[[k]]$name <- outcome_names[k]
-    }
   }
   views
 }
