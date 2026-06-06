@@ -10,6 +10,7 @@ susie_post_outcome_configuration(
   outcome_names = NULL,
   method = c("susiex", "coloc_pairwise", "mvsusie"),
   prob_thresh = 0.8,
+  single_effect_lfsr_cutoff = 0.05,
   cs_only = TRUE,
   p1 = 1e-04,
   p2 = 1e-04,
@@ -35,6 +36,11 @@ for multiple analyses, call the function more than once.}
 
 \item{prob_thresh}{Per-trait marginal threshold for the convenience
 \code{$active} flags in the SuSiEx output. Default \code{0.8}.}
+
+\item{single_effect_lfsr_cutoff}{LFSR threshold used to flag mvSuSiE
+outcome-specific CS evidence in the \code{"mvsusie"} summary.
+The LFSR is read from \code{fit$lfsr} at each CS sentinel SNP.
+Default \code{0.05}.}
 
 \item{cs_only}{Logical. If \code{TRUE} (default) only enumerate over CSs
 present in each fit's \code{$sets$cs}; if \code{FALSE} loop over all L
@@ -66,11 +72,11 @@ components, depending on \code{method}:
     A data.frame with one row per (trait1, trait2, l1, l2)
     combination, columns \code{trait1, trait2, l1, l2, hit1, hit2,
     PP.H0, PP.H1, PP.H2, PP.H3, PP.H4}.}
-  \item{\code{$mvsusie}}{(when \code{method = "mvsusie"}) A CS-level
-    data.frame for one multi-output \code{mvsusie} or \code{mfsusie}
-    fit. The table organizes mvSuSiE-native quantities: CS label,
-    single-effect index, sentinel hit, max PIP, overall log BF,
-    per-outcome log BF, and \code{single_effect_lfsr}.}
+  \item{\code{$mvsusie}}{(when \code{method = "mvsusie"}) Summarizes one
+    multi-output \code{mvsusie} or \code{mfsusie} fit by CS, returning
+    \code{cs_summary}, \code{config_summary} (outcome log BF, sentinel
+    LFSR, cutoff flag), and \code{cs_variant_summary} (CS variant PIP and
+    outcome-specific LFSR).}
 }
 Pretty-print with \code{summary(out)}.
 }

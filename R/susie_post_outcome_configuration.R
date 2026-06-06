@@ -120,6 +120,10 @@
 #'   for multiple analyses, call the function more than once.
 #' @param prob_thresh Per-trait marginal threshold for the convenience
 #'   \code{$active} flags in the SuSiEx output. Default \code{0.8}.
+#' @param single_effect_lfsr_cutoff LFSR threshold used to flag mvSuSiE
+#'   outcome-specific CS evidence in the \code{"mvsusie"} summary.
+#'   The LFSR is read from \code{fit$lfsr} at each CS sentinel SNP.
+#'   Default \code{0.05}.
 #' @param cs_only Logical. If \code{TRUE} (default) only enumerate over CSs
 #'   present in each fit's \code{$sets$cs}; if \code{FALSE} loop over all L
 #'   rows of \code{$alpha}. Either way, effects whose entire alpha row is
@@ -147,11 +151,11 @@
 #'     A data.frame with one row per (trait1, trait2, l1, l2)
 #'     combination, columns \code{trait1, trait2, l1, l2, hit1, hit2,
 #'     PP.H0, PP.H1, PP.H2, PP.H3, PP.H4}.}
-#'   \item{\code{$mvsusie}}{(when \code{method = "mvsusie"}) A CS-level
-#'     data.frame for one multi-output \code{mvsusie} or \code{mfsusie}
-#'     fit. The table organizes mvSuSiE-native quantities: CS label,
-#'     single-effect index, sentinel hit, max PIP, overall log BF,
-#'     per-outcome log BF, and \code{single_effect_lfsr}.}
+#'   \item{\code{$mvsusie}}{(when \code{method = "mvsusie"}) Summarizes one
+#'     multi-output \code{mvsusie} or \code{mfsusie} fit by CS, returning
+#'     \code{cs_summary}, \code{config_summary} (outcome log BF, sentinel
+#'     LFSR, cutoff flag), and \code{cs_variant_summary} (CS variant PIP and
+#'     outcome-specific LFSR).}
 #' }
 #' Pretty-print with \code{summary(out)}.
 #'
@@ -166,9 +170,10 @@ susie_post_outcome_configuration <- function(input,
                                              by          = c("fit", "outcome"),
                                              outcome_names = NULL,
                                              method      = c("susiex",
-                                                             "coloc_pairwise",
-                                                             "mvsusie"),
+                                             "coloc_pairwise",
+                                             "mvsusie"),
                                              prob_thresh = 0.8,
+                                             single_effect_lfsr_cutoff = 0.05,
                                              cs_only     = TRUE,
                                              p1          = 1e-4,
                                              p2          = 1e-4,
@@ -180,6 +185,12 @@ susie_post_outcome_configuration <- function(input,
   if (!is.numeric(prob_thresh) || length(prob_thresh) != 1L ||
       !is.finite(prob_thresh) || prob_thresh < 0 || prob_thresh > 1) {
     stop("`prob_thresh` must be a single numeric in [0, 1].")
+  }
+  if (!is.numeric(single_effect_lfsr_cutoff) ||
+      length(single_effect_lfsr_cutoff) != 1L ||
+      !is.finite(single_effect_lfsr_cutoff) ||
+      single_effect_lfsr_cutoff < 0 || single_effect_lfsr_cutoff > 1) {
+    stop("`single_effect_lfsr_cutoff` must be a single numeric in [0, 1].")
   }
   if (!is.logical(cs_only) || length(cs_only) != 1L || is.na(cs_only)) {
     stop("`cs_only` must be a single logical (TRUE or FALSE).")
@@ -196,6 +207,8 @@ susie_post_outcome_configuration <- function(input,
   if (identical(method, "mvsusie")) {
     out$mvsusie <- mvsusie_cs_summary(input,
                                       outcome_names = outcome_names,
+                                      single_effect_lfsr_cutoff =
+                                        single_effect_lfsr_cutoff,
                                       cs_only       = cs_only)
     if (is.null(out$mvsusie)) return(NULL)
   } else {
@@ -227,6 +240,7 @@ susie_post_outcome_configuration <- function(input,
     }
   }
   attr(out, "prob_thresh") <- prob_thresh
+  attr(out, "single_effect_lfsr_cutoff") <- single_effect_lfsr_cutoff
   attr(out, "method")      <- method
   class(out) <- c("susie_post_outcome_configuration", "list")
   out
@@ -625,7 +639,9 @@ mvsusie_cs_indices <- function(fit, cs_only) {
 
 mvsusie_cs_hit <- function(fit, label, idx, variable_names) {
   cs <- fit$sets$cs
-  empty <- list(n_cs = 0L, hit = NA_character_, maxPIP = NA_real_)
+  empty <- list(n_cs = 0L, hit_idx = NA_integer_, hit = NA_character_,
+                maxPIP = NA_real_, variants = character(0),
+                variant_idx = integer(0), pips = numeric(0))
   if (is.null(cs) || length(cs) == 0L) return(empty)
 
   pos <- if (!is.null(names(cs))) match(label, names(cs)) else NA_integer_
@@ -636,28 +652,42 @@ mvsusie_cs_hit <- function(fit, label, idx, variable_names) {
   if (is.na(pos) || pos < 1L || pos > length(cs)) return(empty)
 
   members <- cs[[pos]]
+  member_idx <- if (is.character(members)) {
+    match(members, variable_names)
+  } else {
+    as.integer(members)
+  }
+  member_idx <- member_idx[!is.na(member_idx) &
+                             member_idx >= 1L &
+                             member_idx <= length(variable_names)]
+  variants <- variable_names[member_idx]
+
   if (length(members) == 0L || is.null(fit$pip)) {
     empty$n_cs <- length(members)
+    empty$variants <- variants
+    empty$variant_idx <- member_idx
+    empty$pips <- rep(NA_real_, length(variants))
     return(empty)
   }
-  if (is.character(members)) {
-    idx <- match(members, variable_names)
-  } else {
-    idx <- as.integer(members)
-  }
-  idx <- idx[!is.na(idx) & idx >= 1L & idx <= length(fit$pip)]
-  if (length(idx) == 0L) {
+  member_idx <- member_idx[member_idx <= length(fit$pip)]
+  if (length(member_idx) == 0L) {
     empty$n_cs <- length(members)
+    empty$variants <- variants
+    empty$variant_idx <- member_idx
+    empty$pips <- rep(NA_real_, length(variants))
     return(empty)
   }
 
-  pip <- fit$pip[idx]
-  best <- idx[which.max(pip)]
-  list(n_cs = length(members), hit = variable_names[best],
-       maxPIP = unname(fit$pip[best]))
+  pip <- fit$pip[member_idx]
+  best <- member_idx[which.max(pip)]
+  list(n_cs = length(members), hit_idx = best, hit = variable_names[best],
+       maxPIP = unname(fit$pip[best]), variants = variants,
+       variant_idx = member_idx, pips = pip)
 }
 
-mvsusie_cs_summary <- function(input, outcome_names = NULL, cs_only) {
+mvsusie_cs_summary <- function(input, outcome_names = NULL,
+                               single_effect_lfsr_cutoff = 0.05,
+                               cs_only) {
   fit <- as_single_mvsusie_fit(input)
   logBF_mat <- mvsusie_lbf_outcome(fit)
   if (nrow(logBF_mat) != nrow(fit$alpha)) {
@@ -671,7 +701,7 @@ mvsusie_cs_summary <- function(input, outcome_names = NULL, cs_only) {
     return(NULL)
   }
   trait_names <- mvsusie_names(
-    list(colnames(fit$lbf_outcome), colnames(fit$single_effect_lfsr),
+    list(colnames(fit$lbf_outcome), colnames(fit$lfsr),
          fit$outcome_names,
          if (!is.null(fit$lbf_variable_outcome)) {
            dimnames(fit$lbf_variable_outcome)[[3L]]
@@ -687,8 +717,10 @@ mvsusie_cs_summary <- function(input, outcome_names = NULL, cs_only) {
     return(NULL)
   }
 
-  lfsr_mat <- fit$single_effect_lfsr
-  if (!is.null(lfsr_mat) && !is.matrix(lfsr_mat)) lfsr_mat <- as.matrix(lfsr_mat)
+  sentinel_lfsr_mat <- fit$lfsr
+  if (!is.null(sentinel_lfsr_mat) && !is.matrix(sentinel_lfsr_mat)) {
+    sentinel_lfsr_mat <- as.matrix(sentinel_lfsr_mat)
+  }
   effect_lbf <- rep(NA_real_, nrow(fit$alpha))
   if (!is.null(fit$lbf)) {
     lbf <- as.numeric(unlist(fit$lbf, use.names = FALSE))
@@ -705,31 +737,66 @@ mvsusie_cs_summary <- function(input, outcome_names = NULL, cs_only) {
     l <- cs$idx[i]
     if (all(fit$alpha[l, ] == 0)) next
 
-    single_effect_lfsr <- rep(NA_real_, R)
-    if (!is.null(lfsr_mat) && nrow(lfsr_mat) >= l && ncol(lfsr_mat) == R) {
-      single_effect_lfsr <- as.numeric(lfsr_mat[l, ])
-    }
-
     hit <- mvsusie_cs_hit(fit, label = cs$labels[i], idx = l,
                           variable_names = variable_names)
-    row <- data.frame(
+    sentinel_lfsr <- rep(NA_real_, R)
+    if (!is.null(sentinel_lfsr_mat) &&
+        !is.na(hit$hit_idx) &&
+        nrow(sentinel_lfsr_mat) >= hit$hit_idx &&
+        ncol(sentinel_lfsr_mat) == R) {
+      sentinel_lfsr <- as.numeric(sentinel_lfsr_mat[hit$hit_idx, ])
+    }
+    sentinel_lfsr_pass <- sentinel_lfsr < single_effect_lfsr_cutoff
+
+    cs_summary <- data.frame(
       cs            = cs$labels[i],
       single_effect = l,
       n_cs          = hit$n_cs,
       hit           = hit$hit,
       maxPIP        = hit$maxPIP,
       lbf           = effect_lbf[l],
+      n_lfsr_pass   = sum(sentinel_lfsr_pass, na.rm = TRUE),
       stringsAsFactors = FALSE,
       check.names = FALSE
     )
-    row[paste0("lbf_outcome.", trait_names)] <- as.list(as.numeric(logBF_mat[l, ]))
-    row[paste0("single_effect_lfsr.", trait_names)] <- as.list(single_effect_lfsr)
-    out[[i]] <- row
+    cs_variant_summary <- data.frame(
+      variant = hit$variants,
+      pip = unname(hit$pips),
+      stringsAsFactors = FALSE,
+      check.names = FALSE
+    )
+    if (!is.null(sentinel_lfsr_mat) &&
+        length(hit$variant_idx) > 0L &&
+        length(hit$variant_idx) == length(hit$variants) &&
+        nrow(sentinel_lfsr_mat) >= max(hit$variant_idx, na.rm = TRUE) &&
+        ncol(sentinel_lfsr_mat) == R) {
+      cs_lfsr <- sentinel_lfsr_mat[hit$variant_idx, , drop = FALSE]
+      for (r in seq_len(R)) {
+        cs_variant_summary[[paste0("lfsr_", trait_names[r])]] <- cs_lfsr[, r]
+      }
+    } else {
+      for (trait in trait_names) {
+        cs_variant_summary[[paste0("lfsr_", trait)]] <-
+          rep(NA_real_, nrow(cs_variant_summary))
+      }
+    }
+
+    config_summary <- data.frame(
+      outcome = trait_names,
+      lbf_outcome = as.numeric(logBF_mat[l, ]),
+      sentinel_lfsr = sentinel_lfsr,
+      lfsr_pass = sentinel_lfsr_pass,
+      stringsAsFactors = FALSE,
+      check.names = FALSE
+    )
+    out[[i]] <- list(cs_summary = cs_summary,
+                     config_summary = config_summary,
+                     cs_variant_summary = cs_variant_summary)
   }
 
   out <- out[!vapply(out, is.null, logical(1))]
-  if (length(out) == 0L) return(data.frame())
-  do.call(rbind, out)
+  names(out) <- vapply(out, function(x) x$cs_summary$cs[[1]], character(1))
+  out
 }
 
 # -----------------------------------------------------------------------------

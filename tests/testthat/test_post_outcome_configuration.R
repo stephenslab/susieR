@@ -155,6 +155,10 @@ test_that("entry point rejects malformed p1/p2/p12 priors", {
     susie_post_outcome_configuration(fit, method = "coloc_pairwise",
                                      p12 = NA_real_),
     "`p12` must be a single numeric")
+  expect_error(
+    susie_post_outcome_configuration(fit, method = "mvsusie",
+                                     single_effect_lfsr_cutoff = NA_real_),
+    "`single_effect_lfsr_cutoff` must be a single numeric")
 })
 
 test_that("method = 'susiex' returns tagged object with $susiex component", {
@@ -190,6 +194,16 @@ test_that("method = 'coloc_pairwise' returns tagged object with coloc df", {
   expect_equal(unname(rowSums(pp)), rep(1, nrow(pp)), tolerance = 1e-8)
 })
 
+test_that("method = 'coloc_pairwise' errors when named variants do not overlap", {
+  f1 <- coloc_fit(matrix(1, 1, 1, dimnames = list(NULL, "a")),
+                  matrix(2, 1, 1, dimnames = list(NULL, "a")))
+  f2 <- coloc_fit(matrix(1, 1, 1, dimnames = list(NULL, "b")),
+                  matrix(2, 1, 1, dimnames = list(NULL, "b")))
+  expect_error(
+    susie_post_outcome_configuration(list(f1, f2), method = "coloc_pairwise"),
+    "no overlapping variants")
+})
+
 test_that("method = 'mvsusie' returns a CS-level mvSuSiE summary table", {
   A <- matrix(0, 3, 4)
   A[1, 1] <- 1; A[2, 2] <- 1; A[3, 3] <- 1
@@ -207,6 +221,10 @@ test_that("method = 'mvsusie' returns a CS-level mvSuSiE summary table", {
                       lbf_outcome = lbf_out,
                       single_effect_lfsr = lfsr)
   fit$pip <- c(0.8, 0.1, 0.2, 0.9)
+  fit$lfsr <- matrix(c(0.001, 0.2,
+                       0.2,   0.2,
+                       0.2,   0.2,
+                       0.2,   0.003), nrow = 4, byrow = TRUE)
   fit$lbf <- c(10, 2, 5)
   fit$variable_names <- paste0("s", 1:4)
 
@@ -215,19 +233,44 @@ test_that("method = 'mvsusie' returns a CS-level mvSuSiE summary table", {
   expect_s3_class(res, "susie_post_outcome_configuration")
   expect_true("mvsusie" %in% names(res))
   expect_identical(attr(res, "method"), "mvsusie")
-  expect_s3_class(res$mvsusie, "data.frame")
-  expect_equal(res$mvsusie$cs, c("L3", "L1"))
-  expect_equal(res$mvsusie$single_effect, c(3L, 1L))
-  expect_equal(res$mvsusie$n_cs, c(2L, 1L))
-  expect_equal(res$mvsusie$hit, c("s4", "s1"))
-  expect_equal(res$mvsusie$maxPIP, c(0.9, 0.8))
-  expect_equal(res$mvsusie$lbf, c(5, 10))
-  expect_equal(res$mvsusie[["lbf_outcome.old"]], c(3, 4))
-  expect_equal(res$mvsusie[["lbf_outcome.new"]], c(0, -1))
-  expect_equal(res$mvsusie[["single_effect_lfsr.old"]], c(0.04, 0.01))
-  expect_equal(res$mvsusie[["single_effect_lfsr.new"]], c(0.5, 1))
-  expect_false("activation_summary" %in% names(res$mvsusie))
-  expect_false("posthoc_prob" %in% names(res$mvsusie))
+  expect_type(res$mvsusie, "list")
+  expect_named(res$mvsusie, c("L3", "L1"))
+  expect_named(res$mvsusie$L3,
+               c("cs_summary", "config_summary", "cs_variant_summary"))
+
+  expect_s3_class(res$mvsusie$L3$cs_summary, "data.frame")
+  expect_equal(res$mvsusie$L3$cs_summary$cs, "L3")
+  expect_equal(res$mvsusie$L3$cs_summary$single_effect, 3L)
+  expect_equal(res$mvsusie$L3$cs_summary$n_cs, 2L)
+  expect_equal(res$mvsusie$L3$cs_summary$hit, "s4")
+  expect_equal(res$mvsusie$L3$cs_summary$maxPIP, 0.9)
+  expect_equal(res$mvsusie$L3$cs_summary$lbf, 5)
+  expect_equal(res$mvsusie$L3$cs_summary$n_lfsr_pass, 1L)
+
+  expect_s3_class(res$mvsusie$L3$config_summary, "data.frame")
+  expect_named(res$mvsusie$L3$config_summary,
+               c("outcome", "lbf_outcome", "sentinel_lfsr", "lfsr_pass"))
+  expect_equal(res$mvsusie$L3$config_summary$outcome, c("old", "new"))
+  expect_equal(res$mvsusie$L3$config_summary$lbf_outcome, c(3, 0))
+  expect_equal(res$mvsusie$L3$config_summary$sentinel_lfsr, c(0.2, 0.003))
+  expect_equal(res$mvsusie$L3$config_summary$lfsr_pass, c(FALSE, TRUE))
+  expect_identical(attr(res, "single_effect_lfsr_cutoff"), 0.05)
+  expect_false("activation_summary" %in% names(res$mvsusie$L3))
+  expect_false("posthoc_prob" %in% names(res$mvsusie$L3))
+  expect_false("single_effect_lfsr" %in%
+                 colnames(res$mvsusie$L3$config_summary))
+
+  expect_s3_class(res$mvsusie$L3$cs_variant_summary, "data.frame")
+  expect_named(res$mvsusie$L3$cs_variant_summary,
+               c("variant", "pip", "lfsr_old", "lfsr_new"))
+  expect_equal(res$mvsusie$L3$cs_variant_summary$variant, c("s3", "s4"))
+  expect_equal(res$mvsusie$L3$cs_variant_summary$pip, c(0.2, 0.9))
+  expect_equal(res$mvsusie$L3$cs_variant_summary$lfsr_old, c(0.2, 0.2))
+  expect_equal(res$mvsusie$L3$cs_variant_summary$lfsr_new, c(0.2, 0.003))
+
+  strict <- susie_post_outcome_configuration(
+    fit, method = "mvsusie", single_effect_lfsr_cutoff = 0.01)
+  expect_equal(strict$mvsusie$L3$config_summary$lfsr_pass, c(FALSE, TRUE))
 })
 
 test_that("method = 'mvsusie' can compute lbf_outcome from alpha-weighted outcome LBFs", {
@@ -244,10 +287,132 @@ test_that("method = 'mvsusie' can compute lbf_outcome from alpha-weighted outcom
 
   res <- susie_post_outcome_configuration(fit, method = "mvsusie")
 
-  expect_equal(res$mvsusie[["lbf_outcome.t1"]], c(5, 3))
-  expect_equal(res$mvsusie[["lbf_outcome.t2"]], c(7, 5))
+  expect_equal(res$mvsusie$L1$config_summary$lbf_outcome, c(5, 7))
+  expect_equal(res$mvsusie$L2$config_summary$lbf_outcome, c(3, 5))
   expect_true(all(c("cs", "single_effect", "hit", "maxPIP") %in%
-                    colnames(res$mvsusie)))
+                    colnames(res$mvsusie$L1$cs_summary)))
+})
+
+test_that("method = 'mvsusie' covers input and missing-data edge cases", {
+  A <- matrix(c(1, 0), 1, 2)
+  LV <- matrix(0, 1, 2)
+  fit <- coloc_mv_fit(A, LV, array(0, dim = c(1, 2, 2)),
+                      cs = list(L1 = 1L),
+                      lbf_outcome = as.data.frame(matrix(c(4, 2), 1, 2)))
+  fit$pip <- c(0.7, 0.2)
+  fit$lfsr <- data.frame(old = c(0.01, 0.2), new = c(0.2, 0.03))
+  fit$lbf <- 4
+  fit$variable_names <- c("s1", "s2")
+
+  res <- susie_post_outcome_configuration(
+    list(fit), method = "mvsusie", outcome_names = c("old", "new"))
+  expect_equal(res$mvsusie$L1$config_summary$outcome, c("old", "new"))
+  expect_equal(res$mvsusie$L1$config_summary$sentinel_lfsr, c(0.01, 0.2))
+
+  expect_error(
+    susie_post_outcome_configuration(list(fit, fit), method = "mvsusie"),
+    "requires one multi-output fit")
+  expect_error(
+    susie_post_outcome_configuration(fit, method = "mvsusie",
+                                     outcome_names = c("old", "")),
+    "outcome_names")
+
+  one_outcome <- fit
+  one_outcome$lbf_outcome <- matrix(1, 1, 1)
+  one_outcome$lfsr <- matrix(c(0.1, 0.2), 2, 1)
+  expect_message(
+    expect_null(susie_post_outcome_configuration(one_outcome,
+                                                 method = "mvsusie")),
+    "Fewer than two outcomes")
+
+  no_cs <- fit
+  no_cs$sets$cs <- list()
+  expect_message(
+    expect_null(susie_post_outcome_configuration(no_cs, method = "mvsusie")),
+    "No credible sets")
+
+  bad_lbf <- fit
+  bad_lbf$lbf_outcome <- matrix(1, 2, 2)
+  expect_error(
+    susie_post_outcome_configuration(bad_lbf, method = "mvsusie"),
+    "one row per")
+
+  missing_lbf <- fit
+  missing_lbf$lbf_outcome <- NULL
+  missing_lbf$lbf_variable_outcome <- NULL
+  expect_error(
+    susie_post_outcome_configuration(missing_lbf, method = "mvsusie"),
+    "requires.*lbf_outcome")
+
+  malformed_lbf <- fit
+  malformed_lbf$lbf_outcome <- NULL
+  malformed_lbf$lbf_variable_outcome <- array(0, dim = c(2, 2, 2))
+  expect_error(
+    susie_post_outcome_configuration(malformed_lbf, method = "mvsusie"),
+    "must be L x J")
+})
+
+test_that("method = 'mvsusie' covers CS member edge cases", {
+  A <- matrix(c(1, 0), 1, 2)
+  LV <- matrix(0, 1, 2)
+  fit <- coloc_mv_fit(A, LV, array(0, dim = c(1, 2, 2)),
+                      cs = list(L1 = c("s1", "s2")),
+                      lbf_outcome = matrix(c(4, 2), 1, 2))
+  fit$pip <- c(0.7, 0.2)
+  fit$lfsr <- matrix(c(0.01, 0.2,
+                       0.2,  0.03), 2, 2, byrow = TRUE)
+  fit$lbf <- 4
+  fit$variable_names <- c("s1", "s2")
+
+  empty_hit <- mvsusie_cs_hit(
+    structure(list(sets = list(cs = NULL)), class = "mvsusie"),
+    label = "L1", idx = 1L, variable_names = c("s1", "s2"))
+  expect_equal(empty_hit$n_cs, 0L)
+  expect_true(is.na(empty_hit$hit))
+
+  missing_hit <- mvsusie_cs_hit(fit, label = "missing", idx = 99L,
+                                variable_names = c("s1", "s2"))
+  expect_equal(missing_hit$n_cs, 0L)
+  expect_true(is.na(missing_hit$hit))
+
+  res <- susie_post_outcome_configuration(fit, method = "mvsusie")
+  expect_equal(res$mvsusie$L1$cs_variant_summary$variant, c("s1", "s2"))
+  expect_equal(res$mvsusie$L1$cs_variant_summary$pip, c(0.7, 0.2))
+
+  unnamed_cs <- fit
+  unnamed_cs$sets$cs <- list(2L)
+  attr(unnamed_cs$sets$cs, "cs_idx") <- 1L
+  res_unnamed <- susie_post_outcome_configuration(unnamed_cs,
+                                                  method = "mvsusie")
+  expect_equal(res_unnamed$mvsusie$L1$cs_summary$hit, "s2")
+
+  no_pip <- fit
+  no_pip$pip <- NULL
+  res_no_pip <- susie_post_outcome_configuration(no_pip, method = "mvsusie")
+  expect_true(all(is.na(res_no_pip$mvsusie$L1$cs_variant_summary$pip)))
+  expect_true(all(is.na(res_no_pip$mvsusie$L1$cs_summary$hit)))
+
+  bad_members <- fit
+  bad_members$sets$cs <- list(L1 = 99L)
+  res_bad_members <- susie_post_outcome_configuration(bad_members,
+                                                      method = "mvsusie")
+  expect_equal(res_bad_members$mvsusie$L1$cs_summary$n_cs, 1L)
+  expect_equal(nrow(res_bad_members$mvsusie$L1$cs_variant_summary), 0L)
+
+  zero_alpha <- coloc_mv_fit(matrix(c(0, 0,
+                                      0, 1), 2, 2, byrow = TRUE),
+                             matrix(0, 2, 2),
+                             array(0, dim = c(2, 2, 2)),
+                             cs = list(L1 = 1L, L2 = 2L),
+                             lbf_outcome = matrix(c(1, 2,
+                                                    3, 4), 2, 2,
+                                                  byrow = TRUE))
+  zero_alpha$pip <- c(0.1, 0.9)
+  zero_alpha$lfsr <- fit$lfsr
+  zero_alpha$variable_names <- c("s1", "s2")
+  res_zero_alpha <- susie_post_outcome_configuration(zero_alpha,
+                                                     method = "mvsusie")
+  expect_named(res_zero_alpha$mvsusie, "L2")
 })
 
 test_that("entry point returns NULL for a single fit", {
@@ -269,6 +434,42 @@ test_that("is_susie_fit recognises susie / mvsusie / mfsusie only", {
   expect_false(is_susie_fit(structure(list(), class = "lm")))
   expect_false(is_susie_fit(list()))
   expect_false(is_susie_fit(42))
+})
+
+test_that("internal helpers cover defensive display branches", {
+  expect_equal(view_cs_label(list(sets_cs = NULL), 2L), "L2")
+  expect_equal(view_cs_label(list(sets_cs = list(1L)), 1L), "L1")
+
+  views <- list(
+    list(name = "a", lbf = matrix(1, 1, 1)),
+    list(name = "b", lbf = matrix(1, 1, 1))
+  )
+  expect_equal(
+    .susiex_config_logbf(c(1L, 1L), c(1L, 1L), views,
+                         variant_keys = list("a_only", "b_only"),
+                         variant_space_size = 2L),
+    -Inf
+  )
+
+  expect_identical(.organize_susiex_output(list("plain"))[[1]], "plain")
+
+  tup_fallback <- coloc_tuple(c("a", "b"), cs_indices = c(1, 2),
+                              marginal_prob = c(0.9, 0.8))
+  names(tup_fallback$cs_indices) <- NULL
+  tup_fallback$cs_labels <- setNames(c("L1", "L2"), c("a", "b"))
+  org_fallback <- .organize_susiex_output(list(tup_fallback))[[1]]
+  expect_named(org_fallback$activation_summary, c("a", "b"))
+
+  tup_no_labels <- coloc_tuple(c("a", "b"), cs_indices = c(1, 2),
+                               marginal_prob = c(0.9, 0.8))
+  tup_no_labels$cs_labels <- NULL
+  org_no_labels <- .organize_susiex_output(list(tup_no_labels))[[1]]
+  expect_equal(as.character(org_no_labels$activation_summary["cs_indices", ]),
+               c("L1", "L2"))
+
+  wrapped <- list(shown = FALSE)
+  attr(wrapped, "raw") <- list(shown = TRUE)
+  expect_equal(.susiex_raw(wrapped), list(shown = TRUE))
 })
 
 # ---- normalise_to_views() --------------------------------------------------
