@@ -36,6 +36,34 @@ test_that("entry point rejects malformed cs_only", {
                "cs_only")
 })
 
+test_that("entry point uses provided outcome_names for trait labels", {
+  fits <- list(coloc_fit(matrix(c(0, 1), 1, 2), matrix(c(0, 4), 1, 2)),
+               coloc_fit(matrix(c(1, 0), 1, 2), matrix(c(3, 0), 1, 2)))
+  res_sx <- susie_post_outcome_configuration(fits, method = "susiex",
+                                             outcome_names = c("MDD", "BP"))
+  expect_named(res_sx$susiex[[1]]$cs_indices, c("MDD", "BP"))
+
+  res_coloc <- susie_post_outcome_configuration(fits,
+                                                method = "coloc_pairwise",
+                                                outcome_names = c("MDD", "BP"))
+  expect_equal(res_coloc$coloc_pairwise$trait1, "MDD")
+  expect_equal(res_coloc$coloc_pairwise$trait2, "BP")
+})
+
+test_that("entry point rejects malformed outcome_names", {
+  fits <- list(coloc_fit(matrix(0.5, 1, 2), matrix(1, 1, 2)),
+               coloc_fit(matrix(0.5, 1, 2), matrix(1, 1, 2)))
+  expect_error(susie_post_outcome_configuration(fits,
+                                                outcome_names = "one"),
+               "outcome_names")
+  expect_error(susie_post_outcome_configuration(fits,
+                                                outcome_names = c("one", NA)),
+               "outcome_names")
+  expect_error(susie_post_outcome_configuration(fits,
+                                                outcome_names = c("one", "")),
+               "outcome_names")
+})
+
 test_that("entry point rejects malformed p1/p2/p12 priors", {
   fit <- coloc_fit(matrix(0.5, 1, 2), matrix(1, 1, 2))
   expect_error(

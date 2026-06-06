@@ -104,6 +104,10 @@
 #'   \code{mfsusie}, OR a list of such fits.
 #' @param by Either \code{"fit"} (one trait per input fit; default) or
 #'   \code{"outcome"} (multi-output fits expand into per-outcome traits).
+#' @param outcome_names Optional character vector of trait-view names. If
+#'   \code{NULL}, names are taken from the input list when available, otherwise
+#'   \code{trait_1}, \code{trait_2}, ... are used. If provided, its length must
+#'   match the number of trait views after applying \code{by}.
 #' @param method Character scalar; one of \code{"susiex"} (default) or
 #'   \code{"coloc_pairwise"}. Pick the analysis to run; for both, call
 #'   the function twice.
@@ -149,6 +153,7 @@
 #' @export
 susie_post_outcome_configuration <- function(input,
                                              by          = c("fit", "outcome"),
+                                             outcome_names = NULL,
                                              method      = c("susiex",
                                                              "coloc_pairwise"),
                                              prob_thresh = 0.8,
@@ -175,7 +180,8 @@ susie_post_outcome_configuration <- function(input,
     }
   }
 
-  views <- normalise_to_views(input, by = by, cs_only = cs_only)
+  views <- normalise_to_views(input, by = by, cs_only = cs_only,
+                              outcome_names = outcome_names)
 
   out <- list()
   if (identical(method, "susiex")) {
@@ -203,7 +209,7 @@ is_susie_fit <- function(x) {
   inherits(x, "susie") || inherits(x, "mvsusie") || inherits(x, "mfsusie")
 }
 
-normalise_to_views <- function(input, by, cs_only) {
+normalise_to_views <- function(input, by, cs_only, outcome_names = NULL) {
   fits <- if (is_susie_fit(input)) list(input) else as.list(input)
 
   if (length(fits) == 0L) {
@@ -230,6 +236,17 @@ normalise_to_views <- function(input, by, cs_only) {
   views <- vector("list", 0)
   for (k in seq_along(fits)) {
     views <- c(views, expand_one_fit(fits[[k]], raw_names[k], by = by))
+  }
+  if (!is.null(outcome_names)) {
+    if (!is.character(outcome_names) ||
+        length(outcome_names) != length(views) ||
+        anyNA(outcome_names) || any(!nzchar(outcome_names))) {
+      stop("`outcome_names` must be a non-empty character vector with ",
+           "length equal to the number of trait views.")
+    }
+    for (k in seq_along(views)) {
+      views[[k]]$name <- outcome_names[k]
+    }
   }
   views
 }

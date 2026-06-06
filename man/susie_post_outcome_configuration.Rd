@@ -7,6 +7,7 @@
 susie_post_outcome_configuration(
   input,
   by = c("fit", "outcome"),
+  outcome_names = NULL,
   method = c("susiex", "coloc_pairwise"),
   prob_thresh = 0.8,
   cs_only = TRUE,
@@ -22,6 +23,11 @@ susie_post_outcome_configuration(
 
 \item{by}{Either \code{"fit"} (one trait per input fit; default) or
 \code{"outcome"} (multi-output fits expand into per-outcome traits).}
+
+\item{outcome_names}{Optional character vector of trait-view names. If
+\code{NULL}, names are taken from the input list when available, otherwise
+\code{trait_1}, \code{trait_2}, ... are used. If provided, its length must
+match the number of trait views after applying \code{by}.}
 
 \item{method}{Character scalar; one of \code{"susiex"} (default) or
 \code{"coloc_pairwise"}. Pick the analysis to run; for both, call
