@@ -63,7 +63,8 @@
 #'     every trait pair and CS pair. It asks whether same-SNP evidence is
 #'     stronger than distinct-causal evidence, represented by terms such as
 #'     \eqn{\sum_{j \ne k}\exp(\ell_{1j}+\ell_{2k})}; this separates H3,
-#'     two distinct causal variants, from H4, one shared causal variant.}
+#'     two distinct causal variants, from H4, one shared causal variant.
+#'     Per-SNP log Bayes factors are aligned by variant name when available.}
 #' }
 #'
 #' \subsection{Two-trait example}{
@@ -339,7 +340,7 @@ enumerate_cs_tuples <- function(views, by, cs_only) {
   if (!is.null(alpha_names) && !is.null(lbf_names) &&
       !identical(alpha_names, lbf_names)) {
     stop("Trait '", view$name, "': column names of `alpha` and `lbf` ",
-         "must match for SuSiEx variant-level configuration scoring.")
+         "must match for variant-level post-hoc scoring.")
   }
   keys <- if (!is.null(lbf_names)) lbf_names else alpha_names
   if (is.null(keys)) keys <- paste0(".variant_", seq_len(ncol(view$lbf)))
@@ -476,6 +477,10 @@ coloc_pairwise_abf <- function(views, p1, p2, p12) {
   if (N < 2L) return(empty)
 
   trait_names <- vapply(views, function(v) v$name, character(1))
+  variant_keys <- lapply(views, .view_variant_keys)
+  variant_named <- vapply(views, function(v) {
+    !is.null(colnames(v$alpha)) || !is.null(colnames(v$lbf))
+  }, logical(1))
   rows <- list()
 
   for (a in seq_len(N - 1L)) {
@@ -484,28 +489,38 @@ coloc_pairwise_abf <- function(views, p1, p2, p12) {
       L2 <- view_cs_indices(views[[b]], cs_only = TRUE)
       if (length(L1) == 0L || length(L2) == 0L) next
 
-      var_names_a <- colnames(views[[a]]$lbf)
-      var_names_b <- colnames(views[[b]]$lbf)
+      keys_a <- variant_keys[[a]]
+      keys_b <- variant_keys[[b]]
+      if ((!variant_named[a] || !variant_named[b]) &&
+          length(keys_a) != length(keys_b)) {
+        stop("coloc_pairwise: cannot align unnamed variant sets with ",
+             "different lengths for traits '", trait_names[a], "' and '",
+             trait_names[b], "'.")
+      }
+      common <- intersect(keys_a, keys_b)
+      if (length(common) == 0L) {
+        stop("coloc_pairwise: no overlapping variants between traits '",
+             trait_names[a], "' and '", trait_names[b], "'.")
+      }
+      idx_a <- match(common, keys_a)
+      idx_b <- match(common, keys_b)
+      hit_names <- if (variant_named[a] || variant_named[b]) {
+        common
+      } else {
+        paste0("snp_", idx_a)
+      }
 
       for (i in L1) {
         if (all(views[[a]]$alpha[i, ] == 0)) next
-        l1_row <- views[[a]]$lbf[i, ]
+        l1_row <- views[[a]]$lbf[i, idx_a]
         for (j in L2) {
           if (all(views[[b]]$alpha[j, ] == 0)) next
-          l2_row <- views[[b]]$lbf[j, ]
+          l2_row <- views[[b]]$lbf[j, idx_b]
 
           pp <- combine_abf_pair(l1_row, l2_row, p1 = p1, p2 = p2, p12 = p12)
 
-          hit1 <- if (!is.null(var_names_a)) {
-                    var_names_a[which.max(l1_row)]
-                  } else {
-                    paste0("snp_", which.max(l1_row))
-                  }
-          hit2 <- if (!is.null(var_names_b)) {
-                    var_names_b[which.max(l2_row)]
-                  } else {
-                    paste0("snp_", which.max(l2_row))
-                  }
+          hit1 <- hit_names[which.max(l1_row)]
+          hit2 <- hit_names[which.max(l2_row)]
 
           rows[[length(rows) + 1L]] <- data.frame(
             trait1 = trait_names[a], trait2 = trait_names[b],

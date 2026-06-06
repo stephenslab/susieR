@@ -105,7 +105,8 @@ questions:
     every trait pair and CS pair. It asks whether same-SNP evidence is
     stronger than distinct-causal evidence, represented by terms such as
     \eqn{\sum_{j \ne k}\exp(\ell_{1j}+\ell_{2k})}; this separates H3,
-    two distinct causal variants, from H4, one shared causal variant.}
+    two distinct causal variants, from H4, one shared causal variant.
+    Per-SNP log Bayes factors are aligned by variant name when available.}
 }
 
 \subsection{Two-trait example}{

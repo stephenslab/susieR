@@ -551,6 +551,40 @@ test_that("coloc_pairwise_abf uses lbf colnames for hit labels when present", {
   expect_equal(df$hit2, "rsZ")
 })
 
+test_that("coloc_pairwise_abf aligns variant sets by name before ABF", {
+  cn_a <- c("rs1", "rs2", "rs3", "rs4")
+  cn_b <- c("rs3", "rs2", "rs5")
+  v <- list(
+    list(name = "A", alpha = matrix(c(0, 1, 0, 0), 1, 4,
+                                    dimnames = list(NULL, cn_a)),
+         lbf = matrix(c(0, 5, 0, 1), 1, 4, dimnames = list(NULL, cn_a)),
+         sets_cs = list(L1 = 1L)),
+    list(name = "B", alpha = matrix(c(0, 1, 0), 1, 3,
+                                    dimnames = list(NULL, cn_b)),
+         lbf = matrix(c(0, 5, 0), 1, 3, dimnames = list(NULL, cn_b)),
+         sets_cs = list(L1 = 1L)))
+  df <- coloc_pairwise_abf(v, p1 = 1e-4, p2 = 1e-4, p12 = 5e-6)
+  expected <- combine_abf_pair(c(5, 0), c(5, 0),
+                               p1 = 1e-4, p2 = 1e-4, p12 = 5e-6)
+  expect_equal(nrow(df), 1L)
+  expect_equal(df$hit1, "rs2")
+  expect_equal(df$hit2, "rs2")
+  expect_equal(unname(as.numeric(df[1, paste0("PP.H", 0:4)])),
+               unname(expected))
+})
+
+test_that("coloc_pairwise_abf errors on unequal unnamed variant sets", {
+  v <- list(
+    list(name = "A", alpha = matrix(c(0, 1, 0), 1, 3),
+         lbf = matrix(c(0, 5, 0), 1, 3),
+         sets_cs = list(L1 = 1L)),
+    list(name = "B", alpha = matrix(c(0, 1), 1, 2),
+         lbf = matrix(c(0, 5), 1, 2),
+         sets_cs = list(L1 = 1L)))
+  expect_error(coloc_pairwise_abf(v, p1 = 1e-4, p2 = 1e-4, p12 = 5e-6),
+               "cannot align unnamed variant sets")
+})
+
 test_that("coloc_pairwise_abf skips all-zero alpha rows in either trait", {
   # Both traits' only CS row is all-zero alpha => no eligible pairs.
   v_both <- list(
