@@ -190,6 +190,66 @@ test_that("method = 'coloc_pairwise' returns tagged object with coloc df", {
   expect_equal(unname(rowSums(pp)), rep(1, nrow(pp)), tolerance = 1e-8)
 })
 
+test_that("method = 'mvsusie' returns a CS-level mvSuSiE summary table", {
+  A <- matrix(0, 3, 4)
+  A[1, 1] <- 1; A[2, 2] <- 1; A[3, 3] <- 1
+  LV <- matrix(0, 3, 4)
+  lbf_out <- matrix(c(4, -1,
+                      1,  2,
+                      3,  0), nrow = 3, byrow = TRUE)
+  colnames(lbf_out) <- c("old", "new")
+  lfsr <- matrix(c(0.01, 1,
+                   0.2,  0.03,
+                   0.04, 0.5), nrow = 3, byrow = TRUE,
+                 dimnames = list(paste0("L", 1:3), c("old", "new")))
+  fit <- coloc_mv_fit(A, LV, array(0, dim = c(3, 4, 2)),
+                      cs = list(L3 = c(3L, 4L), L1 = 1L),
+                      lbf_outcome = lbf_out,
+                      single_effect_lfsr = lfsr)
+  fit$pip <- c(0.8, 0.1, 0.2, 0.9)
+  fit$lbf <- c(10, 2, 5)
+  fit$variable_names <- paste0("s", 1:4)
+
+  res <- susie_post_outcome_configuration(fit, method = "mvsusie")
+
+  expect_s3_class(res, "susie_post_outcome_configuration")
+  expect_true("mvsusie" %in% names(res))
+  expect_identical(attr(res, "method"), "mvsusie")
+  expect_s3_class(res$mvsusie, "data.frame")
+  expect_equal(res$mvsusie$cs, c("L3", "L1"))
+  expect_equal(res$mvsusie$single_effect, c(3L, 1L))
+  expect_equal(res$mvsusie$n_cs, c(2L, 1L))
+  expect_equal(res$mvsusie$hit, c("s4", "s1"))
+  expect_equal(res$mvsusie$maxPIP, c(0.9, 0.8))
+  expect_equal(res$mvsusie$lbf, c(5, 10))
+  expect_equal(res$mvsusie[["lbf_outcome.old"]], c(3, 4))
+  expect_equal(res$mvsusie[["lbf_outcome.new"]], c(0, -1))
+  expect_equal(res$mvsusie[["single_effect_lfsr.old"]], c(0.04, 0.01))
+  expect_equal(res$mvsusie[["single_effect_lfsr.new"]], c(0.5, 1))
+  expect_false("activation_summary" %in% names(res$mvsusie))
+  expect_false("posthoc_prob" %in% names(res$mvsusie))
+})
+
+test_that("method = 'mvsusie' can compute lbf_outcome from alpha-weighted outcome LBFs", {
+  A <- matrix(c(0.25, 0.75,
+                1.00, 0.00), nrow = 2, byrow = TRUE)
+  LV <- matrix(0, 2, 2)
+  arr <- array(0, dim = c(2, 2, 2),
+               dimnames = list(NULL, NULL, c("t1", "t2")))
+  arr[1, , 1] <- c(2, 6)
+  arr[1, , 2] <- c(4, 8)
+  arr[2, , 1] <- c(3, 9)
+  arr[2, , 2] <- c(5, 7)
+  fit <- coloc_mv_fit(A, LV, arr, cs = list(L1 = 1L, L2 = 2L))
+
+  res <- susie_post_outcome_configuration(fit, method = "mvsusie")
+
+  expect_equal(res$mvsusie[["lbf_outcome.t1"]], c(5, 3))
+  expect_equal(res$mvsusie[["lbf_outcome.t2"]], c(7, 5))
+  expect_true(all(c("cs", "single_effect", "hit", "maxPIP") %in%
+                    colnames(res$mvsusie)))
+})
+
 test_that("entry point returns NULL for a single fit", {
   fit <- coloc_real_fit(7)
   res <- "not null"

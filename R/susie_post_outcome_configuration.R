@@ -14,6 +14,9 @@
 #     verbatim port of `coloc:::combine.abf` so susieR has no soft
 #     dependency on coloc.
 #
+#   * mvSuSiE CS-level summary: for one multi-output mvsusie/mfsusie fit,
+#     organize native mvSuSiE CS/effect evidence into readable tables.
+#
 # The public function normalises any supported input shape (single fit, list
 # of fits, or a single multi-output fit treated outcome-wise) to a flat list
 # of "trait views", then runs the requested algorithms against that list.
@@ -24,23 +27,25 @@
 
 #' Post-hoc causal-configuration probabilities for one or more SuSiE-class fits
 #'
-#' Runs one of two complementary post-hoc analyses, selected by
+#' Runs one of three complementary post-hoc analyses, selected by
 #' \code{method}: \code{"susiex"} (default) for the SuSiEx \eqn{2^N}
 #' combinatorial enumeration, reporting posterior probabilities over
-#' binary causality patterns across the \eqn{N} input traits; or
+#' binary causality patterns across the \eqn{N} input traits;
 #' \code{"coloc_pairwise"} for the coloc pairwise ABF, reporting the
 #' five colocalisation hypothesis posteriors (H0/H1/H2/H3/H4) for every
-#' pair of traits. To get both, call the function twice and combine.
+#' pair of traits; or \code{"mvsusie"} for CS-level summaries
+#' from one multi-output mvSuSiE fit. To get multiple views, call the
+#' function more than once and combine.
 #'
-#' Two grouping modes are supported through the \code{by} argument:
+#' Three input organizations are supported:
 #' \describe{
-#'   \item{\code{"fit"}}{Each input fit contributes a single trait view.
+#'   \item{\code{by = "fit"}}{Each input fit contributes a single trait view.
 #'     Multi-output fits (\code{mvsusie}, \code{mfsusie}) are kept whole: the
 #'     trait's per-(CS, SNP) log Bayes factors are the joint composite
 #'     stored on the fit as \code{lbf_variable}. Configuration enumeration
 #'     loops over the cross-product \eqn{L_1 \times \dots \times L_N} of CS
 #'     indices.}
-#'   \item{\code{"outcome"}}{Multi-output fits fan out into per-outcome views,
+#'   \item{\code{by = "outcome"}}{Multi-output fits fan out into per-outcome views,
 #'     each with its own per-(CS, SNP) log Bayes factors read from
 #'     \code{fit$lbf_variable_outcome} (an \eqn{L \times J \times R} or
 #'     \eqn{L \times J \times M} array). All per-outcome views share the
@@ -48,6 +53,8 @@
 #'     reduces to a single index \eqn{l \in 1..L}. Single-output \code{susie}
 #'     fits pass through unchanged. Requires \code{$lbf_variable_outcome} on the
 #'     fit (set \code{attach_lbf_variable_outcome = TRUE} when fitting).}
+#'   \item{\code{method = "mvsusie"}}{One multi-output mvSuSiE fit is used
+#'     directly, and results are summarized at the CS/effect level.}
 #' }
 #'
 #' After SuSiE has been fit, the post-hoc step can answer two related
@@ -108,9 +115,9 @@
 #'   \code{NULL}, names are taken from the input list when available, otherwise
 #'   \code{trait_1}, \code{trait_2}, ... are used. If provided, its length must
 #'   match the number of trait views after applying \code{by}.
-#' @param method Character scalar; one of \code{"susiex"} (default) or
-#'   \code{"coloc_pairwise"}. Pick the analysis to run; for both, call
-#'   the function twice.
+#' @param method Character scalar; one of \code{"susiex"} (default),
+#'   \code{"coloc_pairwise"}, or \code{"mvsusie"}. Pick the analysis to run;
+#'   for multiple analyses, call the function more than once.
 #' @param prob_thresh Per-trait marginal threshold for the convenience
 #'   \code{$active} flags in the SuSiEx output. Default \code{0.8}.
 #' @param cs_only Logical. If \code{TRUE} (default) only enumerate over CSs
@@ -140,6 +147,11 @@
 #'     A data.frame with one row per (trait1, trait2, l1, l2)
 #'     combination, columns \code{trait1, trait2, l1, l2, hit1, hit2,
 #'     PP.H0, PP.H1, PP.H2, PP.H3, PP.H4}.}
+#'   \item{\code{$mvsusie}}{(when \code{method = "mvsusie"}) A CS-level
+#'     data.frame for one multi-output \code{mvsusie} or \code{mfsusie}
+#'     fit. The table organizes mvSuSiE-native quantities: CS label,
+#'     single-effect index, sentinel hit, max PIP, overall log BF,
+#'     per-outcome log BF, and \code{single_effect_lfsr}.}
 #' }
 #' Pretty-print with \code{summary(out)}.
 #'
@@ -154,7 +166,8 @@ susie_post_outcome_configuration <- function(input,
                                              by          = c("fit", "outcome"),
                                              outcome_names = NULL,
                                              method      = c("susiex",
-                                                             "coloc_pairwise"),
+                                                             "coloc_pairwise",
+                                                             "mvsusie"),
                                              prob_thresh = 0.8,
                                              cs_only     = TRUE,
                                              p1          = 1e-4,
@@ -179,32 +192,39 @@ susie_post_outcome_configuration <- function(input,
     }
   }
 
-  views <- normalise_to_views(input, by = by)
-  if (!is.null(outcome_names)) {
-    if (!is.character(outcome_names) ||
-        length(outcome_names) != length(views) ||
-        anyNA(outcome_names) || any(!nzchar(outcome_names))) {
-      stop("`outcome_names` must be a non-empty character vector with ",
-           "length equal to the number of trait views.")
-    }
-    for (k in seq_along(views)) {
-      views[[k]]$name <- outcome_names[k]
-    }
-  }
-  views <- filter_views_for_posthoc(views, cs_only = cs_only)
-  if (is.null(views)) return(NULL)
-
   out <- list()
-  if (identical(method, "susiex")) {
-    out$susiex <- susiex_configurations(views,
-                                        by          = by,
-                                        prob_thresh = prob_thresh)
+  if (identical(method, "mvsusie")) {
+    out$mvsusie <- mvsusie_cs_summary(input,
+                                      outcome_names = outcome_names,
+                                      cs_only       = cs_only)
+    if (is.null(out$mvsusie)) return(NULL)
   } else {
-    # method == "coloc_pairwise"
-    out$coloc_pairwise <- coloc_pairwise_abf(views,
-                                             p1  = p1,
-                                             p2  = p2,
-                                             p12 = p12)
+    views <- normalise_to_views(input, by = by)
+    if (!is.null(outcome_names)) {
+      if (!is.character(outcome_names) ||
+          length(outcome_names) != length(views) ||
+          anyNA(outcome_names) || any(!nzchar(outcome_names))) {
+        stop("`outcome_names` must be a non-empty character vector with ",
+             "length equal to the number of trait views.")
+      }
+      for (k in seq_along(views)) {
+        views[[k]]$name <- outcome_names[k]
+      }
+    }
+    views <- filter_views_for_posthoc(views, cs_only = cs_only)
+    if (is.null(views)) return(NULL)
+
+    if (identical(method, "susiex")) {
+      out$susiex <- susiex_configurations(views,
+                                          by          = by,
+                                          prob_thresh = prob_thresh)
+    } else {
+      # method == "coloc_pairwise"
+      out$coloc_pairwise <- coloc_pairwise_abf(views,
+                                               p1  = p1,
+                                               p2  = p2,
+                                               p12 = p12)
+    }
   }
   attr(out, "prob_thresh") <- prob_thresh
   attr(out, "method")      <- method
@@ -535,6 +555,181 @@ susiex_configurations <- function(views, by, prob_thresh,
     attr(out, "raw") <- tup
     out
   })
+}
+
+
+# -----------------------------------------------------------------------------
+# mvSuSiE CS-level summary helpers.
+# -----------------------------------------------------------------------------
+
+as_single_mvsusie_fit <- function(input) {
+  is_mv <- function(x) inherits(x, "mvsusie") || inherits(x, "mfsusie")
+  if (is_mv(input)) return(input)
+  if (is.list(input) && length(input) == 1L && is_mv(input[[1L]])) {
+    return(input[[1L]])
+  }
+  stop("method = \"mvsusie\" requires one multi-output fit of class ",
+       "`mvsusie` or `mfsusie`.")
+}
+
+mvsusie_names <- function(candidates, n, prefix, provided = NULL,
+                          what = "names") {
+  if (!is.null(provided)) {
+    if (!is.character(provided) || length(provided) != n ||
+        anyNA(provided) || any(!nzchar(provided))) {
+      stop("`", what, "` must be a non-empty character vector of length ", n, ".")
+    }
+    return(provided)
+  }
+  for (x in candidates) {
+    if (!is.null(x) && length(x) == n && all(!is.na(x)) && all(nzchar(x))) {
+      return(as.character(x))
+    }
+  }
+  paste0(prefix, seq_len(n))
+}
+
+mvsusie_lbf_outcome <- function(fit) {
+  if (!is.null(fit$lbf_outcome)) {
+    x <- fit$lbf_outcome
+    if (!is.matrix(x)) x <- as.matrix(x)
+    return(x)
+  }
+
+  if (is.null(fit$alpha) || is.null(fit$lbf_variable_outcome)) {
+    stop("method = \"mvsusie\" requires `$lbf_outcome`, or both `$alpha` ",
+         "and `$lbf_variable_outcome` to compute CS-level log Bayes factors.")
+  }
+  alpha <- fit$alpha
+  arr <- fit$lbf_variable_outcome
+  if (!is.matrix(alpha) || length(dim(arr)) != 3L ||
+      nrow(alpha) != dim(arr)[1L] || ncol(alpha) != dim(arr)[2L]) {
+    stop("For method = \"mvsusie\", `$alpha` must be L x J and ",
+         "`$lbf_variable_outcome` must be L x J x R with matching L and J.")
+  }
+
+  out <- matrix(0, nrow = dim(arr)[1L], ncol = dim(arr)[3L])
+  for (l in seq_len(nrow(out))) {
+    out[l, ] <- as.vector(crossprod(alpha[l, ], arr[l, , ]))
+  }
+  colnames(out) <- dimnames(arr)[[3L]]
+  out
+}
+
+mvsusie_cs_indices <- function(fit, cs_only) {
+  view <- list(alpha = fit$alpha, sets_cs = fit$sets$cs)
+  idx <- view_cs_indices(view, cs_only = cs_only)
+  list(idx = idx,
+       labels = vapply(idx, function(l) view_cs_label(view, l), character(1)))
+}
+
+mvsusie_cs_hit <- function(fit, label, idx, variable_names) {
+  cs <- fit$sets$cs
+  empty <- list(n_cs = 0L, hit = NA_character_, maxPIP = NA_real_)
+  if (is.null(cs) || length(cs) == 0L) return(empty)
+
+  pos <- if (!is.null(names(cs))) match(label, names(cs)) else NA_integer_
+  if (is.na(pos)) {
+    cs_idx <- attr(cs, "cs_idx")
+    if (!is.null(cs_idx)) pos <- match(idx, cs_idx)
+  }
+  if (is.na(pos) || pos < 1L || pos > length(cs)) return(empty)
+
+  members <- cs[[pos]]
+  if (length(members) == 0L || is.null(fit$pip)) {
+    empty$n_cs <- length(members)
+    return(empty)
+  }
+  if (is.character(members)) {
+    idx <- match(members, variable_names)
+  } else {
+    idx <- as.integer(members)
+  }
+  idx <- idx[!is.na(idx) & idx >= 1L & idx <= length(fit$pip)]
+  if (length(idx) == 0L) {
+    empty$n_cs <- length(members)
+    return(empty)
+  }
+
+  pip <- fit$pip[idx]
+  best <- idx[which.max(pip)]
+  list(n_cs = length(members), hit = variable_names[best],
+       maxPIP = unname(fit$pip[best]))
+}
+
+mvsusie_cs_summary <- function(input, outcome_names = NULL, cs_only) {
+  fit <- as_single_mvsusie_fit(input)
+  logBF_mat <- mvsusie_lbf_outcome(fit)
+  if (nrow(logBF_mat) != nrow(fit$alpha)) {
+    stop("For method = \"mvsusie\", `$lbf_outcome` must have one row per ",
+         "single effect in `$alpha`.")
+  }
+
+  R <- ncol(logBF_mat)
+  if (R < 2L) {
+    message("Fewer than two outcomes in mvSuSiE fit; returning NULL.")
+    return(NULL)
+  }
+  trait_names <- mvsusie_names(
+    list(colnames(fit$lbf_outcome), colnames(fit$single_effect_lfsr),
+         fit$outcome_names,
+         if (!is.null(fit$lbf_variable_outcome)) {
+           dimnames(fit$lbf_variable_outcome)[[3L]]
+         } else NULL),
+    n = R, prefix = "outcome_", provided = outcome_names,
+    what = "outcome_names"
+  )
+
+  cs <- mvsusie_cs_indices(fit, cs_only = cs_only)
+  if (length(cs$idx) == 0L) {
+    message("No credible sets available for mvSuSiE CS summary; ",
+            "returning NULL.")
+    return(NULL)
+  }
+
+  lfsr_mat <- fit$single_effect_lfsr
+  if (!is.null(lfsr_mat) && !is.matrix(lfsr_mat)) lfsr_mat <- as.matrix(lfsr_mat)
+  effect_lbf <- rep(NA_real_, nrow(fit$alpha))
+  if (!is.null(fit$lbf)) {
+    lbf <- as.numeric(unlist(fit$lbf, use.names = FALSE))
+    effect_lbf[seq_len(min(length(lbf), length(effect_lbf)))] <- lbf
+  }
+  variable_names <- mvsusie_names(
+    list(fit$variable_names, names(fit$pip), colnames(fit$alpha),
+         colnames(fit$lbf_variable)),
+    n = ncol(fit$alpha), prefix = "", what = "variable names"
+  )
+
+  out <- vector("list", length(cs$idx))
+  for (i in seq_along(cs$idx)) {
+    l <- cs$idx[i]
+    if (all(fit$alpha[l, ] == 0)) next
+
+    single_effect_lfsr <- rep(NA_real_, R)
+    if (!is.null(lfsr_mat) && nrow(lfsr_mat) >= l && ncol(lfsr_mat) == R) {
+      single_effect_lfsr <- as.numeric(lfsr_mat[l, ])
+    }
+
+    hit <- mvsusie_cs_hit(fit, label = cs$labels[i], idx = l,
+                          variable_names = variable_names)
+    row <- data.frame(
+      cs            = cs$labels[i],
+      single_effect = l,
+      n_cs          = hit$n_cs,
+      hit           = hit$hit,
+      maxPIP        = hit$maxPIP,
+      lbf           = effect_lbf[l],
+      stringsAsFactors = FALSE,
+      check.names = FALSE
+    )
+    row[paste0("lbf_outcome.", trait_names)] <- as.list(as.numeric(logBF_mat[l, ]))
+    row[paste0("single_effect_lfsr.", trait_names)] <- as.list(single_effect_lfsr)
+    out[[i]] <- row
+  }
+
+  out <- out[!vapply(out, is.null, logical(1))]
+  if (length(out) == 0L) return(data.frame())
+  do.call(rbind, out)
 }
 
 # -----------------------------------------------------------------------------

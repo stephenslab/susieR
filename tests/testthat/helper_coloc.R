@@ -24,9 +24,14 @@ coloc_fit <- function(alpha, lbf, cs = list(L1 = 1L)) {
 }
 
 # Minimal hand-built mvsusie fit with a per-outcome log-BF array.
-coloc_mv_fit <- function(alpha, lbf, lbf_outcome, cs = list(L1 = 1L)) {
+coloc_mv_fit <- function(alpha, lbf, lbf_variable_outcome,
+                         cs = list(L1 = 1L), lbf_outcome = NULL,
+                         single_effect_lfsr = NULL, outcome_names = NULL) {
   structure(list(alpha = alpha, lbf_variable = lbf,
-                 lbf_variable_outcome = lbf_outcome,
+                 lbf_variable_outcome = lbf_variable_outcome,
+                 lbf_outcome = lbf_outcome,
+                 single_effect_lfsr = single_effect_lfsr,
+                 outcome_names = outcome_names,
                  sets = list(cs = cs)),
             class = "mvsusie")
 }

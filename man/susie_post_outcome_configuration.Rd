@@ -8,7 +8,7 @@ susie_post_outcome_configuration(
   input,
   by = c("fit", "outcome"),
   outcome_names = NULL,
-  method = c("susiex", "coloc_pairwise"),
+  method = c("susiex", "coloc_pairwise", "mvsusie"),
   prob_thresh = 0.8,
   cs_only = TRUE,
   p1 = 1e-04,
@@ -29,9 +29,9 @@ susie_post_outcome_configuration(
 \code{trait_1}, \code{trait_2}, ... are used. If provided, its length must
 match the number of trait views after applying \code{by}.}
 
-\item{method}{Character scalar; one of \code{"susiex"} (default) or
-\code{"coloc_pairwise"}. Pick the analysis to run; for both, call
-the function twice.}
+\item{method}{Character scalar; one of \code{"susiex"} (default),
+\code{"coloc_pairwise"}, or \code{"mvsusie"}. Pick the analysis to run;
+for multiple analyses, call the function more than once.}
 
 \item{prob_thresh}{Per-trait marginal threshold for the convenience
 \code{$active} flags in the SuSiEx output. Default \code{0.8}.}
@@ -66,28 +66,35 @@ components, depending on \code{method}:
     A data.frame with one row per (trait1, trait2, l1, l2)
     combination, columns \code{trait1, trait2, l1, l2, hit1, hit2,
     PP.H0, PP.H1, PP.H2, PP.H3, PP.H4}.}
+  \item{\code{$mvsusie}}{(when \code{method = "mvsusie"}) A CS-level
+    data.frame for one multi-output \code{mvsusie} or \code{mfsusie}
+    fit. The table organizes mvSuSiE-native quantities: CS label,
+    single-effect index, sentinel hit, max PIP, overall log BF,
+    per-outcome log BF, and \code{single_effect_lfsr}.}
 }
 Pretty-print with \code{summary(out)}.
 }
 \description{
-Runs one of two complementary post-hoc analyses, selected by
+Runs one of three complementary post-hoc analyses, selected by
 \code{method}: \code{"susiex"} (default) for the SuSiEx \eqn{2^N}
 combinatorial enumeration, reporting posterior probabilities over
-binary causality patterns across the \eqn{N} input traits; or
+binary causality patterns across the \eqn{N} input traits;
 \code{"coloc_pairwise"} for the coloc pairwise ABF, reporting the
 five colocalisation hypothesis posteriors (H0/H1/H2/H3/H4) for every
-pair of traits. To get both, call the function twice and combine.
+pair of traits; or \code{"mvsusie"} for CS-level summaries
+from one multi-output mvSuSiE fit. To get multiple views, call the
+function more than once and combine.
 }
 \details{
-Two grouping modes are supported through the \code{by} argument:
+Three input organizations are supported:
 \describe{
-  \item{\code{"fit"}}{Each input fit contributes a single trait view.
+  \item{\code{by = "fit"}}{Each input fit contributes a single trait view.
     Multi-output fits (\code{mvsusie}, \code{mfsusie}) are kept whole: the
     trait's per-(CS, SNP) log Bayes factors are the joint composite
     stored on the fit as \code{lbf_variable}. Configuration enumeration
     loops over the cross-product \eqn{L_1 \times \dots \times L_N} of CS
     indices.}
-  \item{\code{"outcome"}}{Multi-output fits fan out into per-outcome views,
+  \item{\code{by = "outcome"}}{Multi-output fits fan out into per-outcome views,
     each with its own per-(CS, SNP) log Bayes factors read from
     \code{fit$lbf_variable_outcome} (an \eqn{L \times J \times R} or
     \eqn{L \times J \times M} array). All per-outcome views share the
@@ -95,6 +102,8 @@ Two grouping modes are supported through the \code{by} argument:
     reduces to a single index \eqn{l \in 1..L}. Single-output \code{susie}
     fits pass through unchanged. Requires \code{$lbf_variable_outcome} on the
     fit (set \code{attach_lbf_variable_outcome = TRUE} when fitting).}
+  \item{\code{method = "mvsusie"}}{One multi-output mvSuSiE fit is used
+    directly, and results are summarized at the CS/effect level.}
 }
 
 After SuSiE has been fit, the post-hoc step can answer two related
