@@ -153,9 +153,9 @@
 #'     PP.H0, PP.H1, PP.H2, PP.H3, PP.H4}.}
 #'   \item{\code{$mvsusie}}{(when \code{method = "mvsusie"}) Summarizes one
 #'     multi-output \code{mvsusie} or \code{mfsusie} fit by CS, returning
-#'     \code{cs_summary}, \code{config_summary} (outcome log BF, sentinel
-#'     LFSR, cutoff flag), and \code{cs_variant_summary} (CS variant PIP and
-#'     outcome-specific LFSR).}
+#'     \code{cs_summary} (CS purity and sentinel), \code{config_summary}
+#'     (outcome log BF, sentinel variant/LFSR, cutoff flag), and
+#'     \code{cs_variant_summary} (CS variant PIP and outcome-specific LFSR).}
 #' }
 #' Pretty-print with \code{summary(out)}.
 #'
@@ -685,6 +685,28 @@ mvsusie_cs_hit <- function(fit, label, idx, variable_names) {
        variant_idx = member_idx, pips = pip)
 }
 
+mvsusie_cs_purity <- function(fit, label, idx) {
+  purity <- fit$sets$purity
+  if (is.null(purity)) return(NA_real_)
+
+  pos <- if (!is.null(rownames(purity))) {
+    match(label, rownames(purity))
+  } else {
+    NA_integer_
+  }
+  if (is.na(pos) && !is.null(names(fit$sets$cs))) {
+    pos <- match(label, names(fit$sets$cs))
+  }
+  if (is.na(pos)) {
+    cs_idx <- attr(fit$sets$cs, "cs_idx")
+    if (!is.null(cs_idx)) pos <- match(idx, cs_idx)
+  }
+  if (is.na(pos) || pos < 1L || pos > nrow(purity) || ncol(purity) < 1L) {
+    return(NA_real_)
+  }
+  as.numeric(purity[pos, 1L])
+}
+
 mvsusie_cs_summary <- function(input, outcome_names = NULL,
                                single_effect_lfsr_cutoff = 0.05,
                                cs_only) {
@@ -750,12 +772,12 @@ mvsusie_cs_summary <- function(input, outcome_names = NULL,
 
     cs_summary <- data.frame(
       cs            = cs$labels[i],
-      single_effect = l,
-      n_cs          = hit$n_cs,
+      n_variant     = hit$n_cs,
+      purity        = mvsusie_cs_purity(fit, label = cs$labels[i], idx = l),
       hit           = hit$hit,
       maxPIP        = hit$maxPIP,
       lbf           = effect_lbf[l],
-      n_lfsr_pass   = sum(sentinel_lfsr_pass, na.rm = TRUE),
+      n_lfsr_outcome = sum(sentinel_lfsr_pass, na.rm = TRUE),
       stringsAsFactors = FALSE,
       check.names = FALSE
     )
@@ -784,8 +806,10 @@ mvsusie_cs_summary <- function(input, outcome_names = NULL,
     config_summary <- data.frame(
       outcome = trait_names,
       lbf_outcome = as.numeric(logBF_mat[l, ]),
+      sentinel_variant = rep(hit$hit, R),
       sentinel_lfsr = sentinel_lfsr,
       lfsr_pass = sentinel_lfsr_pass,
+      lfsr_cutoff = rep(single_effect_lfsr_cutoff, R),
       stringsAsFactors = FALSE,
       check.names = FALSE
     )

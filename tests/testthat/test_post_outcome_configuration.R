@@ -227,6 +227,12 @@ test_that("method = 'mvsusie' returns a CS-level mvSuSiE summary table", {
                        0.2,   0.003), nrow = 4, byrow = TRUE)
   fit$lbf <- c(10, 2, 5)
   fit$variable_names <- paste0("s", 1:4)
+  fit$sets$purity <- data.frame(
+    min.abs.corr = c(0.77, 0.91),
+    mean.abs.corr = c(0.84, 0.91),
+    median.abs.corr = c(0.84, 0.91),
+    row.names = c("L3", "L1")
+  )
 
   res <- susie_post_outcome_configuration(fit, method = "mvsusie")
 
@@ -240,20 +246,23 @@ test_that("method = 'mvsusie' returns a CS-level mvSuSiE summary table", {
 
   expect_s3_class(res$mvsusie$L3$cs_summary, "data.frame")
   expect_equal(res$mvsusie$L3$cs_summary$cs, "L3")
-  expect_equal(res$mvsusie$L3$cs_summary$single_effect, 3L)
-  expect_equal(res$mvsusie$L3$cs_summary$n_cs, 2L)
+  expect_equal(res$mvsusie$L3$cs_summary$n_variant, 2L)
+  expect_equal(res$mvsusie$L3$cs_summary$purity, 0.77)
   expect_equal(res$mvsusie$L3$cs_summary$hit, "s4")
   expect_equal(res$mvsusie$L3$cs_summary$maxPIP, 0.9)
   expect_equal(res$mvsusie$L3$cs_summary$lbf, 5)
-  expect_equal(res$mvsusie$L3$cs_summary$n_lfsr_pass, 1L)
+  expect_equal(res$mvsusie$L3$cs_summary$n_lfsr_outcome, 1L)
 
   expect_s3_class(res$mvsusie$L3$config_summary, "data.frame")
   expect_named(res$mvsusie$L3$config_summary,
-               c("outcome", "lbf_outcome", "sentinel_lfsr", "lfsr_pass"))
+               c("outcome", "lbf_outcome", "sentinel_variant",
+                 "sentinel_lfsr", "lfsr_pass", "lfsr_cutoff"))
   expect_equal(res$mvsusie$L3$config_summary$outcome, c("old", "new"))
   expect_equal(res$mvsusie$L3$config_summary$lbf_outcome, c(3, 0))
+  expect_equal(res$mvsusie$L3$config_summary$sentinel_variant, c("s4", "s4"))
   expect_equal(res$mvsusie$L3$config_summary$sentinel_lfsr, c(0.2, 0.003))
   expect_equal(res$mvsusie$L3$config_summary$lfsr_pass, c(FALSE, TRUE))
+  expect_equal(res$mvsusie$L3$config_summary$lfsr_cutoff, c(0.05, 0.05))
   expect_identical(attr(res, "single_effect_lfsr_cutoff"), 0.05)
   expect_false("activation_summary" %in% names(res$mvsusie$L3))
   expect_false("posthoc_prob" %in% names(res$mvsusie$L3))
@@ -289,7 +298,7 @@ test_that("method = 'mvsusie' can compute lbf_outcome from alpha-weighted outcom
 
   expect_equal(res$mvsusie$L1$config_summary$lbf_outcome, c(5, 7))
   expect_equal(res$mvsusie$L2$config_summary$lbf_outcome, c(3, 5))
-  expect_true(all(c("cs", "single_effect", "hit", "maxPIP") %in%
+  expect_true(all(c("cs", "n_variant", "purity", "hit", "maxPIP") %in%
                     colnames(res$mvsusie$L1$cs_summary)))
 })
 
@@ -378,13 +387,20 @@ test_that("method = 'mvsusie' covers CS member edge cases", {
   res <- susie_post_outcome_configuration(fit, method = "mvsusie")
   expect_equal(res$mvsusie$L1$cs_variant_summary$variant, c("s1", "s2"))
   expect_equal(res$mvsusie$L1$cs_variant_summary$pip, c(0.7, 0.2))
+  expect_true(is.na(res$mvsusie$L1$cs_summary$purity))
+
+  fit$sets$purity <- matrix(0.61, nrow = 1)
+  expect_equal(mvsusie_cs_purity(fit, label = "L1", idx = 1L), 0.61)
+  expect_true(is.na(mvsusie_cs_purity(fit, label = "missing", idx = 99L)))
 
   unnamed_cs <- fit
   unnamed_cs$sets$cs <- list(2L)
+  unnamed_cs$sets$purity <- data.frame(min.abs.corr = 0.42)
   attr(unnamed_cs$sets$cs, "cs_idx") <- 1L
   res_unnamed <- susie_post_outcome_configuration(unnamed_cs,
                                                   method = "mvsusie")
   expect_equal(res_unnamed$mvsusie$L1$cs_summary$hit, "s2")
+  expect_equal(res_unnamed$mvsusie$L1$cs_summary$purity, 0.42)
 
   no_pip <- fit
   no_pip$pip <- NULL
@@ -396,7 +412,7 @@ test_that("method = 'mvsusie' covers CS member edge cases", {
   bad_members$sets$cs <- list(L1 = 99L)
   res_bad_members <- susie_post_outcome_configuration(bad_members,
                                                       method = "mvsusie")
-  expect_equal(res_bad_members$mvsusie$L1$cs_summary$n_cs, 1L)
+  expect_equal(res_bad_members$mvsusie$L1$cs_summary$n_variant, 1L)
   expect_equal(nrow(res_bad_members$mvsusie$L1$cs_variant_summary), 0L)
 
   zero_alpha <- coloc_mv_fit(matrix(c(0, 0,

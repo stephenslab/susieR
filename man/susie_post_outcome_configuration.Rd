@@ -74,9 +74,9 @@ components, depending on \code{method}:
     PP.H0, PP.H1, PP.H2, PP.H3, PP.H4}.}
   \item{\code{$mvsusie}}{(when \code{method = "mvsusie"}) Summarizes one
     multi-output \code{mvsusie} or \code{mfsusie} fit by CS, returning
-    \code{cs_summary}, \code{config_summary} (outcome log BF, sentinel
-    LFSR, cutoff flag), and \code{cs_variant_summary} (CS variant PIP and
-    outcome-specific LFSR).}
+    \code{cs_summary} (CS purity and sentinel), \code{config_summary}
+    (outcome log BF, sentinel variant/LFSR, cutoff flag), and
+    \code{cs_variant_summary} (CS variant PIP and outcome-specific LFSR).}
 }
 Pretty-print with \code{summary(out)}.
 }
