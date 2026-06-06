@@ -116,8 +116,9 @@
 #' @param cs_only Logical. If \code{TRUE} (default) only enumerate over CSs
 #'   present in each fit's \code{$sets$cs}; if \code{FALSE} loop over all L
 #'   rows of \code{$alpha}. Either way, effects whose entire alpha row is
-#'   zero are skipped. When \code{TRUE}, every fit must carry a non-null
-#'   \code{$sets$cs} or the function errors.
+#'   zero are skipped. When \code{TRUE}, trait views without credible sets
+#'   are skipped with a warning; if fewer than two trait views remain, the
+#'   function returns \code{NULL}.
 #' @param p1,p2,p12 Coloc per-SNP causal priors: \code{p1} for trait 1
 #'   alone, \code{p2} for trait 2 alone, \code{p12} for shared causal.
 #'   Defaults match \code{coloc::coloc.bf_bf}: \code{p1 = p2 = 1e-4},
@@ -125,8 +126,10 @@
 #'   \code{method}.
 #' @param ... Currently ignored.
 #'
-#' @return A list of class \code{"susie_post_outcome_configuration"} with
-#' exactly one of the following components, depending on \code{method}:
+#' @return \code{NULL} if fewer than two trait views are available for
+#' post-hoc analysis; otherwise a list of class
+#' \code{"susie_post_outcome_configuration"} with exactly one of the following
+#' components, depending on \code{method}:
 #' \describe{
 #'   \item{\code{$susiex}}{(when \code{method = "susiex"}) A list of length
 #'     equal to the number of CS tuples considered. Each element has
@@ -176,7 +179,7 @@ susie_post_outcome_configuration <- function(input,
     }
   }
 
-  views <- normalise_to_views(input, by = by, cs_only = cs_only)
+  views <- normalise_to_views(input, by = by)
   if (!is.null(outcome_names)) {
     if (!is.character(outcome_names) ||
         length(outcome_names) != length(views) ||
@@ -188,6 +191,8 @@ susie_post_outcome_configuration <- function(input,
       views[[k]]$name <- outcome_names[k]
     }
   }
+  views <- filter_views_for_posthoc(views, cs_only = cs_only)
+  if (is.null(views)) return(NULL)
 
   out <- list()
   if (identical(method, "susiex")) {
@@ -215,7 +220,7 @@ is_susie_fit <- function(x) {
   inherits(x, "susie") || inherits(x, "mvsusie") || inherits(x, "mfsusie")
 }
 
-normalise_to_views <- function(input, by, cs_only) {
+normalise_to_views <- function(input, by) {
   fits <- if (is_susie_fit(input)) list(input) else as.list(input)
 
   if (length(fits) == 0L) {
@@ -227,11 +232,6 @@ normalise_to_views <- function(input, by, cs_only) {
            " of `input` is not a SuSiE-class fit (`susie`, `mvsusie`, or ",
            "`mfsusie`).")
     }
-    if (cs_only && is.null(fits[[k]]$sets$cs)) {
-      stop("Fit ", k, ": `cs_only = TRUE` requires `$sets$cs` to be present. ",
-           "Either pass `cs_only = FALSE` or attach a credible-set list via ",
-           "susie_get_cs() before calling.")
-    }
   }
 
   raw_names <- names(fits)
@@ -242,6 +242,27 @@ normalise_to_views <- function(input, by, cs_only) {
   views <- vector("list", 0)
   for (k in seq_along(fits)) {
     views <- c(views, expand_one_fit(fits[[k]], raw_names[k], by = by))
+  }
+  views
+}
+
+filter_views_for_posthoc <- function(views, cs_only) {
+  if (cs_only) {
+    has_cs <- lengths(lapply(views, view_cs_indices, cs_only = TRUE)) > 0L
+    if (any(!has_cs)) {
+      warning("Skipping trait view(s) with no credible sets for post-hoc ",
+              "analysis: ", paste(vapply(views[!has_cs], function(v) v$name,
+                                          character(1)), collapse = ", "),
+              call. = FALSE)
+    }
+    views <- views[has_cs]
+  }
+
+  if (length(views) < 2L) {
+    message("Fewer than two trait views ",
+            if (cs_only) "with credible sets " else "",
+            "for post-hoc outcome configuration analysis; returning NULL.")
+    return(NULL)
   }
   views
 }
@@ -313,6 +334,10 @@ make_view <- function(name, alpha, lbf, sets_cs) {
 view_cs_indices <- function(view, cs_only) {
   L_n <- nrow(view$alpha)
   if (!cs_only) return(seq_len(L_n))
+  if (is.null(view$sets_cs) ||
+      (length(view$sets_cs) == 0L && is.null(attr(view$sets_cs, "cs_idx")))) {
+    return(integer(0))
+  }
 
   idx <- attr(view$sets_cs, "cs_idx")
   if (is.null(idx)) {
@@ -324,6 +349,25 @@ view_cs_indices <- function(view, cs_only) {
     }
   }
   idx[idx >= 1L & idx <= L_n]
+}
+
+view_cs_label <- function(view, idx) {
+  target <- paste0("L", idx)
+  cs <- view$sets_cs
+  if (is.null(cs) || is.na(idx)) return(target)
+
+  cs_names <- names(cs)
+  if (is.null(cs_names)) return(target)
+
+  cs_idx <- attr(cs, "cs_idx")
+  if (!is.null(cs_idx)) {
+    pos <- match(idx, cs_idx)
+    if (!is.na(pos) && pos <= length(cs_names) && nzchar(cs_names[pos])) {
+      return(cs_names[pos])
+    }
+  }
+
+  target
 }
 
 # Returns a list of length-N integer tuples (one CS index per view).
@@ -435,6 +479,9 @@ susiex_configurations <- function(views, by, prob_thresh,
 
     out[[ti]] <- list(
       cs_indices    = setNames(as.integer(tuple), trait_names),
+      cs_labels     = setNames(vapply(seq_len(N), function(n) {
+        view_cs_label(views[[n]], tuple[n])
+      }, character(1)), trait_names),
       logBF_trait   = logBF_trait,
       configs       = configs,
       config_prob   = prob_conf,
@@ -468,8 +515,13 @@ susiex_configurations <- function(views, by, prob_thresh,
 
     activation_summary <- if (!is.null(trait_names) &&
                               length(trait_names) > 0L) {
+      cs_display <- if (!is.null(tup$cs_labels)) {
+        tup$cs_labels[trait_names]
+      } else {
+        paste0("L", tup$cs_indices[trait_names])
+      }
       vals <- rbind(
-        cs_indices    = as.character(tup$cs_indices[trait_names]),
+        cs_indices    = as.character(cs_display),
         logBF_trait   = as.character(tup$logBF_trait[trait_names]),
         posthoc_prob  = as.character(tup$marginal_prob[trait_names]),
         active        = as.character(tup$active[trait_names])

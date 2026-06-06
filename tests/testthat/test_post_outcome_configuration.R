@@ -64,6 +64,78 @@ test_that("entry point rejects malformed outcome_names", {
                "outcome_names")
 })
 
+test_that("entry point skips traits with no credible sets", {
+  no_cs <- structure(list(alpha = matrix(c(0, 1), 1, 2),
+                          lbf_variable = matrix(c(0, 4), 1, 2)),
+                     class = "susie")
+  has_a <- coloc_fit(matrix(c(1, 0), 1, 2), matrix(c(3, 0), 1, 2))
+  has_b <- coloc_fit(matrix(c(0, 1), 1, 2), matrix(c(0, 4), 1, 2))
+  expect_warning(
+    res <- susie_post_outcome_configuration(
+      list(no_cs, has_a, has_b),
+      method = "susiex",
+      outcome_names = c("drop_me", "A", "B")),
+    "drop_me"
+  )
+  expect_s3_class(res, "susie_post_outcome_configuration")
+  expect_named(res$susiex[[1]]$activation_summary, c("A", "B"))
+})
+
+test_that("entry point returns NULL when all traits have no credible sets", {
+  no_cs <- structure(list(alpha = matrix(c(0, 1), 1, 2),
+                          lbf_variable = matrix(c(0, 4), 1, 2)),
+                     class = "susie")
+  res <- "not null"
+  expect_message(
+    expect_warning(
+      res <- susie_post_outcome_configuration(
+        list(no_cs, no_cs),
+        method = "susiex",
+        outcome_names = c("a", "b")),
+      "a, b"
+    ),
+    "returning NULL"
+  )
+  expect_null(res)
+})
+
+test_that("entry point skips no-CS traits for coloc_pairwise", {
+  no_cs <- structure(list(alpha = matrix(c(0, 1), 1, 2),
+                          lbf_variable = matrix(c(0, 4), 1, 2)),
+                     class = "susie")
+  has_a <- coloc_fit(matrix(c(1, 0), 1, 2), matrix(c(3, 0), 1, 2))
+  has_b <- coloc_fit(matrix(c(0, 1), 1, 2), matrix(c(0, 4), 1, 2))
+  expect_warning(
+    res <- susie_post_outcome_configuration(
+      list(no_cs, has_a, has_b),
+      method = "coloc_pairwise",
+      outcome_names = c("drop_me", "A", "B")),
+    "drop_me"
+  )
+  expect_s3_class(res, "susie_post_outcome_configuration")
+  expect_equal(unique(res$coloc_pairwise$trait1), "A")
+  expect_equal(unique(res$coloc_pairwise$trait2), "B")
+})
+
+test_that("entry point returns NULL when coloc_pairwise has fewer than two CS traits", {
+  no_cs <- structure(list(alpha = matrix(c(0, 1), 1, 2),
+                          lbf_variable = matrix(c(0, 4), 1, 2)),
+                     class = "susie")
+  has_cs <- coloc_fit(matrix(c(1, 0), 1, 2), matrix(c(3, 0), 1, 2))
+  res <- "not null"
+  expect_message(
+    expect_warning(
+      res <- susie_post_outcome_configuration(
+        list(no_cs, has_cs),
+        method = "coloc_pairwise",
+        outcome_names = c("drop_me", "keep_me")),
+      "drop_me"
+    ),
+    "Fewer than two trait views"
+  )
+  expect_null(res)
+})
+
 test_that("entry point rejects malformed p1/p2/p12 priors", {
   fit <- coloc_fit(matrix(0.5, 1, 2), matrix(1, 1, 2))
   expect_error(
@@ -98,8 +170,8 @@ test_that("method = 'susiex' returns tagged object with $susiex component", {
   # Each tuple carries the documented fields.
   expect_named(res$susiex[[1]], c("config_probability", "activation_summary"))
   expect_named(attr(res$susiex[[1]], "raw"),
-               c("cs_indices", "logBF_trait", "configs", "config_prob",
-                 "marginal_prob", "active"))
+               c("cs_indices", "cs_labels", "logBF_trait", "configs",
+                 "config_prob", "marginal_prob", "active"))
 })
 
 test_that("method = 'coloc_pairwise' returns tagged object with coloc df", {
@@ -118,13 +190,14 @@ test_that("method = 'coloc_pairwise' returns tagged object with coloc df", {
   expect_equal(unname(rowSums(pp)), rep(1, nrow(pp)), tolerance = 1e-8)
 })
 
-test_that("entry point accepts a single fit (not wrapped in a list)", {
+test_that("entry point returns NULL for a single fit", {
   fit <- coloc_real_fit(7)
-  res <- susie_post_outcome_configuration(fit, method = "susiex", by = "fit")
-  expect_s3_class(res, "susie_post_outcome_configuration")
-  # Single trait => each config matrix has 2^1 = 2 rows.
-  expect_equal(nrow(res$susiex[[1]]$config_probability), 2L)
-  expect_equal(nrow(attr(res$susiex[[1]], "raw")$configs), 2L)
+  res <- "not null"
+  expect_message(
+    res <- susie_post_outcome_configuration(fit, method = "susiex", by = "fit"),
+    "Fewer than two trait views"
+  )
+  expect_null(res)
 })
 
 # ---- is_susie_fit() --------------------------------------------------------
@@ -142,32 +215,28 @@ test_that("is_susie_fit recognises susie / mvsusie / mfsusie only", {
 
 test_that("normalise_to_views wraps a single fit into a one-element view list", {
   fit   <- coloc_fit(matrix(0.5, 2, 3), matrix(1, 2, 3))
-  views <- normalise_to_views(fit, by = "fit", cs_only = TRUE)
+  views <- normalise_to_views(fit, by = "fit")
   expect_length(views, 1L)
   expect_equal(views[[1]]$name, "trait_1")
 })
 
 test_that("normalise_to_views errors on an empty list", {
-  expect_error(normalise_to_views(list(), by = "fit", cs_only = TRUE),
+  expect_error(normalise_to_views(list(), by = "fit"),
                "non-empty list")
 })
 
 test_that("normalise_to_views errors when an element is not a SuSiE fit", {
   fit <- coloc_fit(matrix(0.5, 1, 2), matrix(1, 1, 2))
   expect_error(
-    normalise_to_views(list(fit, 1), by = "fit", cs_only = TRUE),
+    normalise_to_views(list(fit, 1), by = "fit"),
     "Element 2 of `input` is not a SuSiE-class fit")
 })
 
-test_that("normalise_to_views requires $sets$cs only when cs_only = TRUE", {
+test_that("normalise_to_views does not require $sets$cs", {
   bare <- structure(list(alpha = matrix(0.5, 1, 2),
                          lbf_variable = matrix(1, 1, 2)),
                     class = "susie")
-  expect_error(
-    normalise_to_views(bare, by = "fit", cs_only = TRUE),
-    "requires `\\$sets\\$cs`")
-  # cs_only = FALSE does not need $sets$cs.
-  views <- normalise_to_views(bare, by = "fit", cs_only = FALSE)
+  views <- normalise_to_views(bare, by = "fit")
   expect_length(views, 1L)
 })
 
@@ -175,18 +244,15 @@ test_that("normalise_to_views keeps explicit names and defaults unnamed ones", {
   fitA <- coloc_fit(matrix(0.5, 1, 2), matrix(1, 1, 2))
   fitB <- coloc_fit(matrix(0.5, 1, 2), matrix(1, 1, 2))
   # Named list -> names preserved.
-  v_named <- normalise_to_views(list(gene = fitA, qtl = fitB),
-                                by = "fit", cs_only = TRUE)
+  v_named <- normalise_to_views(list(gene = fitA, qtl = fitB), by = "fit")
   expect_equal(vapply(v_named, function(v) v$name, character(1)),
                c("gene", "qtl"))
   # Unnamed list -> trait_1, trait_2.
-  v_unnamed <- normalise_to_views(list(fitA, fitB),
-                                  by = "fit", cs_only = TRUE)
+  v_unnamed <- normalise_to_views(list(fitA, fitB), by = "fit")
   expect_equal(vapply(v_unnamed, function(v) v$name, character(1)),
                c("trait_1", "trait_2"))
   # Partially named -> blank entries get the default.
-  v_partial <- normalise_to_views(list(gene = fitA, fitB),
-                                  by = "fit", cs_only = TRUE)
+  v_partial <- normalise_to_views(list(gene = fitA, fitB), by = "fit")
   expect_equal(vapply(v_partial, function(v) v$name, character(1)),
                c("gene", "trait_2"))
 })
@@ -289,14 +355,27 @@ test_that("view_cs_indices falls back to L-prefixed names", {
   expect_equal(view_cs_indices(v, cs_only = TRUE), c(1L, 3L))
 })
 
-test_that("view_cs_indices falls back to seq_len when sets_cs is empty or unnamed", {
-  # length-0 list
+test_that("view_cs_indices treats empty sets_cs as no CS", {
   v0 <- list(alpha = matrix(0, 3, 3), lbf = matrix(0, 3, 3), sets_cs = list())
-  expect_equal(view_cs_indices(v0, cs_only = TRUE), 1:3)
-  # named-less list
+  expect_equal(view_cs_indices(v0, cs_only = TRUE), integer(0))
+})
+
+test_that("view_cs_indices falls back to seq_len when sets_cs is unnamed", {
   vu <- list(alpha = matrix(0, 4, 3), lbf = matrix(0, 4, 3),
              sets_cs = list(1L, 1L))
   expect_equal(view_cs_indices(vu, cs_only = TRUE), 1:4)
+})
+
+test_that("view_cs_label uses original CS names", {
+  v <- list(alpha = matrix(0, 5, 3), lbf = matrix(0, 5, 3),
+            sets_cs = list(L2 = 1L, L4 = 1L))
+  expect_equal(view_cs_label(v, 2L), "L2")
+  expect_equal(view_cs_label(v, 4L), "L4")
+
+  sc <- structure(list(custom = 1L), cs_idx = 3L)
+  v_attr <- list(alpha = matrix(0, 5, 3), lbf = matrix(0, 5, 3),
+                 sets_cs = sc)
+  expect_equal(view_cs_label(v_attr, 3L), "custom")
 })
 
 test_that("view_cs_indices drops out-of-range CS indices", {
@@ -430,6 +509,8 @@ test_that("susiex_configurations computes variant-level config / marginal probs 
   expect_equal(rownames(tup$activation_summary),
                c("cs_indices", "logBF_trait", "posthoc_prob", "active"))
   expect_named(tup$activation_summary, c("g1", "g2"))
+  expect_equal(unname(unlist(tup$activation_summary["cs_indices", ])),
+               c("L1", "L1"))
 
   # active = marginal >= prob_thresh.
   expect_equal(raw$active, raw$marginal_prob >= 0.8)

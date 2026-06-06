@@ -39,8 +39,9 @@ the function twice.}
 \item{cs_only}{Logical. If \code{TRUE} (default) only enumerate over CSs
 present in each fit's \code{$sets$cs}; if \code{FALSE} loop over all L
 rows of \code{$alpha}. Either way, effects whose entire alpha row is
-zero are skipped. When \code{TRUE}, every fit must carry a non-null
-\code{$sets$cs} or the function errors.}
+zero are skipped. When \code{TRUE}, trait views without credible sets
+are skipped with a warning; if fewer than two trait views remain, the
+function returns \code{NULL}.}
 
 \item{p1, p2, p12}{Coloc per-SNP causal priors: \code{p1} for trait 1
 alone, \code{p2} for trait 2 alone, \code{p12} for shared causal.
@@ -51,8 +52,10 @@ Defaults match \code{coloc::coloc.bf_bf}: \code{p1 = p2 = 1e-4},
 \item{...}{Currently ignored.}
 }
 \value{
-A list of class \code{"susie_post_outcome_configuration"} with
-exactly one of the following components, depending on \code{method}:
+\code{NULL} if fewer than two trait views are available for
+post-hoc analysis; otherwise a list of class
+\code{"susie_post_outcome_configuration"} with exactly one of the following
+components, depending on \code{method}:
 \describe{
   \item{\code{$susiex}}{(when \code{method = "susiex"}) A list of length
     equal to the number of CS tuples considered. Each element has
