@@ -131,15 +131,8 @@
 #'   \item{\code{$susiex}}{(when \code{method = "susiex"}) A list of length
 #'     equal to the number of CS tuples considered. Each element has
 #'     components \code{config_probability} (binary trait-activation table
-#'     with a \code{config_prob} column), \code{activation_summary}
-#'     (CS-level post-hoc activation summary by trait), \code{cs_indices}
-#'     (length-N integer tuple),
-#'     \code{logBF_trait} (length-N singleton activation log BF),
-#'     \code{configs} (\eqn{2^N \times N} binary matrix),
-#'     \code{config_prob} (length \eqn{2^N}),
-#'     \code{marginal_prob} (length-N per-trait marginal posterior
-#'     probability of being active across the configuration ensemble),
-#'     and \code{active} (logical, \code{marginal_prob >= prob_thresh}).}
+#'     with a \code{config_prob} column) and \code{activation_summary}
+#'     (CS-level post-hoc activation summary by trait).}
 #'   \item{\code{$coloc_pairwise}}{(when \code{method = "coloc_pairwise"})
 #'     A data.frame with one row per (trait1, trait2, l1, l2)
 #'     combination, columns \code{trait1, trait2, l1, l2, hit1, hit2,
@@ -457,18 +450,22 @@ susiex_configurations <- function(views, by, prob_thresh,
   lapply(susiex, function(tup) {
     if (!is.list(tup)) return(tup)
 
-    config_probability <- if (is.matrix(tup$configs) &&
-                              !is.null(tup$config_prob) &&
-                              nrow(tup$configs) == length(tup$config_prob)) {
-      config_probability <- as.data.frame(tup$configs)
-      config_probability$config_prob <- tup$config_prob
-      config_probability
-    } else NULL
-
     trait_names <- names(tup$cs_indices)
     if (is.null(trait_names) || any(!nzchar(trait_names))) {
       trait_names <- names(tup$marginal_prob)
     }
+
+    config_probability <- if (is.matrix(tup$configs) &&
+                              !is.null(tup$config_prob) &&
+                              nrow(tup$configs) == length(tup$config_prob)) {
+      config_probability <- as.data.frame(tup$configs)
+      if (!is.null(trait_names) && length(trait_names) == ncol(tup$configs)) {
+        colnames(config_probability) <- trait_names
+      }
+      config_probability$config_prob <- tup$config_prob
+      config_probability
+    } else NULL
+
     activation_summary <- if (!is.null(trait_names) &&
                               length(trait_names) > 0L) {
       vals <- rbind(
@@ -481,8 +478,10 @@ susiex_configurations <- function(views, by, prob_thresh,
       as.data.frame(vals, check.names = FALSE, stringsAsFactors = FALSE)
     } else NULL
 
-    c(list(config_probability = config_probability,
-           activation_summary = activation_summary), tup)
+    out <- list(config_probability = config_probability,
+                activation_summary = activation_summary)
+    attr(out, "raw") <- tup
+    out
   })
 }
 
@@ -751,8 +750,9 @@ summary.susie_post_outcome_configuration <- function(
   # Pull the union of trait names across all tuples (some tuples might be
   # malformed and missing fields; we just skip those).
   trait_names_all <- unique(unlist(lapply(susiex, function(tup) {
-    if (is.list(tup) && !is.null(tup$marginal_prob)) {
-      names(tup$marginal_prob)
+    raw <- .susiex_raw(tup)
+    if (is.list(raw) && !is.null(raw$marginal_prob)) {
+      names(raw$marginal_prob)
     } else character(0)
   })))
   if (length(trait_names_all) == 0L) {
@@ -766,25 +766,26 @@ summary.susie_post_outcome_configuration <- function(
   names(trait_cols) <- trait_names_all   # raw -> column-name mapping
 
   rows <- lapply(susiex, function(tup) {
-    if (!is.list(tup) || is.null(tup$marginal_prob) ||
-        is.null(tup$config_prob) || is.null(tup$configs)) {
+    raw <- .susiex_raw(tup)
+    if (!is.list(raw) || is.null(raw$marginal_prob) ||
+        is.null(raw$config_prob) || is.null(raw$configs)) {
       return(NULL)
     }
-    mp <- tup$marginal_prob
+    mp <- raw$marginal_prob
     if (signal_only) {
       # Re-derive active using current prob_thresh (don't trust the stored
       # active flag, which was computed against the call-time threshold).
       if (!any(is.finite(mp) & mp >= prob_thresh)) return(NULL)
     }
-    cp <- tup$config_prob
+    cp <- raw$config_prob
     if (length(cp) == 0L || !all(is.finite(cp))) return(NULL)
     top_idx <- which.max(cp)
-    cfg     <- tup$configs
+    cfg     <- raw$configs
     top_pat <- if (is.matrix(cfg) && nrow(cfg) >= top_idx) {
       paste(cfg[top_idx, ], collapse = "")
     } else NA_character_
-    cs_idx_str <- if (!is.null(tup$cs_indices)) {
-      paste0("(", paste(tup$cs_indices, collapse = ","), ")")
+    cs_idx_str <- if (!is.null(raw$cs_indices)) {
+      paste0("(", paste(raw$cs_indices, collapse = ","), ")")
     } else NA_character_
 
     out <- data.frame(tuple = cs_idx_str, stringsAsFactors = FALSE)
@@ -804,6 +805,11 @@ summary.susie_post_outcome_configuration <- function(
   df <- do.call(rbind, rows)
   rownames(df) <- NULL
   list(df = df, n_total = n_total, n_kept = nrow(df))
+}
+
+.susiex_raw <- function(tup) {
+  raw <- attr(tup, "raw", exact = TRUE)
+  if (is.list(raw)) raw else tup
 }
 
 # Annotate the coloc data.frame with verdict + dominant PP, and optionally

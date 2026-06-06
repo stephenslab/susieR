@@ -41,7 +41,7 @@ test_that("entry point uses provided outcome_names for trait labels", {
                coloc_fit(matrix(c(1, 0), 1, 2), matrix(c(3, 0), 1, 2)))
   res_sx <- susie_post_outcome_configuration(fits, method = "susiex",
                                              outcome_names = c("MDD", "BP"))
-  expect_named(res_sx$susiex[[1]]$cs_indices, c("MDD", "BP"))
+  expect_named(res_sx$susiex[[1]]$activation_summary, c("MDD", "BP"))
 
   res_coloc <- susie_post_outcome_configuration(fits,
                                                 method = "coloc_pairwise",
@@ -96,9 +96,10 @@ test_that("method = 'susiex' returns tagged object with $susiex component", {
   expect_equal(attr(res, "prob_thresh"), 0.8)
   expect_true(length(res$susiex) >= 1L)
   # Each tuple carries the documented fields.
-  expect_named(res$susiex[[1]], c("config_probability", "activation_summary",
-                                  "cs_indices", "logBF_trait", "configs",
-                                  "config_prob", "marginal_prob", "active"))
+  expect_named(res$susiex[[1]], c("config_probability", "activation_summary"))
+  expect_named(attr(res$susiex[[1]], "raw"),
+               c("cs_indices", "logBF_trait", "configs", "config_prob",
+                 "marginal_prob", "active"))
 })
 
 test_that("method = 'coloc_pairwise' returns tagged object with coloc df", {
@@ -122,7 +123,8 @@ test_that("entry point accepts a single fit (not wrapped in a list)", {
   res <- susie_post_outcome_configuration(fit, method = "susiex", by = "fit")
   expect_s3_class(res, "susie_post_outcome_configuration")
   # Single trait => each config matrix has 2^1 = 2 rows.
-  expect_equal(nrow(res$susiex[[1]]$configs), 2L)
+  expect_equal(nrow(res$susiex[[1]]$config_probability), 2L)
+  expect_equal(nrow(attr(res$susiex[[1]], "raw")$configs), 2L)
 })
 
 # ---- is_susie_fit() --------------------------------------------------------
@@ -393,43 +395,44 @@ test_that("susiex_configurations computes variant-level config / marginal probs 
   res <- susiex_configurations(v, by = "fit", prob_thresh = 0.8)
   expect_length(res, 1L)
   tup <- res[[1]]
+  raw <- attr(tup, "raw")
 
   lbf <- list(g1 = c(rs1 = 2, rs2 = 0), g2 = c(rs1 = 3, rs2 = 0))
 
   # logBF_trait is the singleton-activation log BF, named by trait.
-  expect_equal(tup$logBF_trait,
+  expect_equal(raw$logBF_trait,
                c(g1 = log(sum(exp(-log(2) + lbf$g1))),
                  g2 = log(sum(exp(-log(2) + lbf$g2)))),
                tolerance = 1e-8)
-  expect_named(tup$cs_indices, c("g1", "g2"))
+  expect_named(raw$cs_indices, c("g1", "g2"))
 
   # config_prob is a proper distribution over 2^2 = 4 configs.
-  expect_length(tup$config_prob, 4L)
-  expect_equal(sum(tup$config_prob), 1, tolerance = 1e-8)
-  expect_length(tup$marginal_prob, 2L)
-  expect_named(tup$marginal_prob, c("g1", "g2"))
+  expect_length(raw$config_prob, 4L)
+  expect_equal(sum(raw$config_prob), 1, tolerance = 1e-8)
+  expect_length(raw$marginal_prob, 2L)
+  expect_named(raw$marginal_prob, c("g1", "g2"))
 
   # Independent recomputation from the variant-level SuSiEx kernel over
   # aligned variants.
-  logBF_conf <- apply(tup$configs, 1, function(cfg) {
+  logBF_conf <- apply(raw$configs, 1, function(cfg) {
     active <- which(cfg == 1L)
     if (length(active) == 0L) return(0)
     log(sum(exp(-log(2) + Reduce("+", lbf[active]))))
   })
   p <- exp(logBF_conf - max(logBF_conf)); p <- p / sum(p)
-  expect_equal(unname(tup$config_prob), p, tolerance = 1e-8)
-  expect_equal(unname(tup$marginal_prob),
-               as.vector(crossprod(tup$configs, p)), tolerance = 1e-8)
+  expect_equal(unname(raw$config_prob), p, tolerance = 1e-8)
+  expect_equal(unname(raw$marginal_prob),
+               as.vector(crossprod(raw$configs, p)), tolerance = 1e-8)
   expect_named(tup$config_probability,
-               c("trait_1", "trait_2", "config_prob"))
-  expect_equal(tup$config_probability$config_prob, tup$config_prob,
+               c("g1", "g2", "config_prob"))
+  expect_equal(tup$config_probability$config_prob, raw$config_prob,
                tolerance = 1e-8)
   expect_equal(rownames(tup$activation_summary),
                c("cs_indices", "logBF_trait", "posthoc_prob", "active"))
   expect_named(tup$activation_summary, c("g1", "g2"))
 
   # active = marginal >= prob_thresh.
-  expect_equal(tup$active, tup$marginal_prob >= 0.8)
+  expect_equal(raw$active, raw$marginal_prob >= 0.8)
 })
 
 test_that("susiex_configurations does not call disjoint strong signals shared", {
@@ -447,11 +450,12 @@ test_that("susiex_configurations does not call disjoint strong signals shared", 
             make_view("t3", "rs3"))
 
   tup <- susiex_configurations(v, by = "fit", prob_thresh = 0.8)[[1]]
-  all_active <- which(rowSums(tup$configs) == 3L)
+  raw <- attr(tup, "raw")
+  all_active <- which(rowSums(raw$configs) == 3L)
 
-  expect_lt(tup$config_prob[all_active], 1e-8)
-  expect_true(all(tup$marginal_prob < 0.8))
-  expect_false(any(tup$active))
+  expect_lt(raw$config_prob[all_active], 1e-8)
+  expect_true(all(raw$marginal_prob < 0.8))
+  expect_false(any(raw$active))
 })
 
 test_that("susiex_configurations aligns variant-level LBFs by column names", {
@@ -475,8 +479,10 @@ test_that("susiex_configurations aligns variant-level LBFs by column names", {
   same <- susiex_configurations(v_same, by = "fit", prob_thresh = 0.8)[[1]]
   rev  <- susiex_configurations(v_rev,  by = "fit", prob_thresh = 0.8)[[1]]
 
-  expect_equal(rev$config_prob, same$config_prob, tolerance = 1e-8)
-  expect_equal(rev$marginal_prob, same$marginal_prob, tolerance = 1e-8)
+  expect_equal(attr(rev, "raw")$config_prob, attr(same, "raw")$config_prob,
+               tolerance = 1e-8)
+  expect_equal(attr(rev, "raw")$marginal_prob,
+               attr(same, "raw")$marginal_prob, tolerance = 1e-8)
 })
 
 test_that("susiex_configurations rejects mismatched alpha / LBF names", {
@@ -503,7 +509,8 @@ test_that("susiex_configurations is reachable through the public entry point", {
   fits <- list(coloc_real_fit(11), coloc_real_fit(12))
   res  <- susie_post_outcome_configuration(fits, method = "susiex", by = "fit")
   expect_true(length(res$susiex) >= 1L)
-  expect_equal(sum(res$susiex[[1]]$config_prob), 1, tolerance = 1e-8)
+  expect_equal(sum(attr(res$susiex[[1]], "raw")$config_prob), 1,
+               tolerance = 1e-8)
 })
 
 # ---- .logsum() / .logdiff() / combine_abf_pair() ---------------------------
@@ -681,9 +688,11 @@ test_that("by = 'outcome' on an mvsusie runs SuSiEx per-outcome on the diagonal"
                                           by = "outcome")
   # 3 outcome views => configs over 2^3 = 8 patterns; diagonal of 2 CSs => 2.
   expect_length(res$susiex, 2L)
-  expect_equal(nrow(res$susiex[[1]]$configs), 8L)
-  expect_equal(unname(res$susiex[[1]]$cs_indices), c(1L, 1L, 1L))
-  expect_equal(unname(res$susiex[[2]]$cs_indices), c(2L, 2L, 2L))
+  expect_equal(nrow(res$susiex[[1]]$config_probability), 8L)
+  expect_equal(unname(attr(res$susiex[[1]], "raw")$cs_indices),
+               c(1L, 1L, 1L))
+  expect_equal(unname(attr(res$susiex[[2]], "raw")$cs_indices),
+               c(2L, 2L, 2L))
 })
 
 # ---- Renderer color / NA branches ------------------------------------------
