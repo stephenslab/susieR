@@ -8,7 +8,7 @@ susie_post_outcome_configuration(
   input,
   by = c("fit", "outcome"),
   outcome_names = NULL,
-  method = c("susiex", "coloc_pairwise", "mvsusie"),
+  method = c("susiex", "coloc_pairwise"),
   prob_thresh = 0.8,
   single_effect_lfsr_cutoff = 0.05,
   cs_only = TRUE,
@@ -31,16 +31,16 @@ susie_post_outcome_configuration(
 match the number of trait views after applying \code{by}.}
 
 \item{method}{Character scalar; one of \code{"susiex"} (default),
-\code{"coloc_pairwise"}, or \code{"mvsusie"}. Pick the analysis to run;
-for multiple analyses, call the function more than once.}
+or \code{"coloc_pairwise"}. Pick the analysis to run; for both analyses,
+call the function twice.}
 
 \item{prob_thresh}{Per-trait marginal threshold for the convenience
 \code{$active} flags in the SuSiEx output. Default \code{0.8}.}
 
-\item{single_effect_lfsr_cutoff}{LFSR threshold used to flag mvSuSiE
-outcome-specific CS evidence in the \code{"mvsusie"} summary.
-The LFSR is read from \code{fit$lfsr} at each CS sentinel SNP.
-Default \code{0.05}.}
+\item{single_effect_lfsr_cutoff}{LFSR threshold used to flag
+outcome-specific CS evidence when \code{method = "susiex"} is applied to
+one multi-output \code{mvsusie} or \code{mfsusie} fit. The LFSR is read
+from \code{fit$lfsr} at each CS sentinel SNP. Default \code{0.05}.}
 
 \item{cs_only}{Logical. If \code{TRUE} (default) only enumerate over CSs
 present in each fit's \code{$sets$cs}; if \code{FALSE} loop over all L
@@ -67,32 +67,30 @@ components, depending on \code{method}:
     equal to the number of CS tuples considered. Each element has
     components \code{config_probability} (binary trait-activation table
     with a \code{config_prob} column) and \code{activation_summary}
-    (CS-level post-hoc activation summary by trait).}
+    (CS-level post-hoc activation summary by trait). For one multi-output
+    \code{mvsusie} or \code{mfsusie} fit, each CS element instead combines
+    native CS summaries (\code{mvsusie_cs_summary}, \code{mvsusie_config_summary},
+    \code{mvsusie_cs_variant_summary}) with SuSiEx interpretation tables
+    (\code{susiex_config_probability},
+    \code{susiex_activation_summary}).}
   \item{\code{$coloc_pairwise}}{(when \code{method = "coloc_pairwise"})
     A data.frame with one row per (trait1, trait2, l1, l2)
     combination, columns \code{trait1, trait2, l1, l2, hit1, hit2,
     PP.H0, PP.H1, PP.H2, PP.H3, PP.H4}.}
-  \item{\code{$mvsusie}}{(when \code{method = "mvsusie"}) Summarizes one
-    multi-output \code{mvsusie} or \code{mfsusie} fit by CS, returning
-    \code{cs_summary} (CS purity and sentinel), \code{config_summary}
-    (outcome log BF, sentinel variant/LFSR, cutoff flag), and
-    \code{cs_variant_summary} (CS variant PIP and outcome-specific LFSR).}
 }
 Pretty-print with \code{summary(out)}.
 }
 \description{
-Runs one of three complementary post-hoc analyses, selected by
+Runs one of two complementary post-hoc analyses, selected by
 \code{method}: \code{"susiex"} (default) for the SuSiEx \eqn{2^N}
 combinatorial enumeration, reporting posterior probabilities over
 binary causality patterns across the \eqn{N} input traits;
 \code{"coloc_pairwise"} for the coloc pairwise ABF, reporting the
 five colocalisation hypothesis posteriors (H0/H1/H2/H3/H4) for every
-pair of traits; or \code{"mvsusie"} for CS-level summaries
-from one multi-output mvSuSiE fit. To get multiple views, call the
-function more than once and combine.
+pair of traits. To get both views, call the function twice and combine.
 }
 \details{
-Three input organizations are supported:
+Two input organizations are supported:
 \describe{
   \item{\code{by = "fit"}}{Each input fit contributes a single trait view.
     Multi-output fits (\code{mvsusie}, \code{mfsusie}) are kept whole: the
@@ -108,8 +106,6 @@ Three input organizations are supported:
     reduces to a single index \eqn{l \in 1..L}. Single-output \code{susie}
     fits pass through unchanged. Requires \code{$lbf_variable_outcome} on the
     fit (set \code{attach_lbf_variable_outcome = TRUE} when fitting).}
-  \item{\code{method = "mvsusie"}}{One multi-output mvSuSiE fit is used
-    directly, and results are summarized at the CS/effect level.}
 }
 
 After SuSiE has been fit, the post-hoc step can answer two related

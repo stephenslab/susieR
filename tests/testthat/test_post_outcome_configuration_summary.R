@@ -55,6 +55,29 @@ test_that("single-trait susiex tuple yields a one-trait tidy row", {
   expect_equal(s$susiex$solo, 0.95)
 })
 
+test_that("summary reads SuSiEx raw fields from enriched mvSuSiE CS entries", {
+  raw <- coloc_tuple(c("old", "new"), cs_indices = c(1, 1),
+                     marginal_prob = c(0.91, 0.93))
+  enriched <- list(
+    mvsusie_cs_summary = data.frame(cs = "L1"),
+    mvsusie_config_summary = data.frame(outcome = c("old", "new")),
+    mvsusie_cs_variant_summary = data.frame(variant = "s1"),
+    susiex_config_probability = data.frame(old = c(0, 1),
+                                           new = c(0, 1),
+                                           config_prob = c(0.1, 0.9)),
+    susiex_activation_summary = data.frame(old = "TRUE", new = "TRUE")
+  )
+  attr(enriched, "raw") <- raw
+
+  s <- summary(coloc_post_obj(susiex = list(L1 = enriched)),
+               color = FALSE, signal_only = FALSE)
+
+  expect_equal(nrow(s$susiex), 1L)
+  expect_equal(s$susiex$tuple, "(1,1)")
+  expect_equal(s$susiex$old, 0.91)
+  expect_equal(s$susiex$new, 0.93)
+})
+
 test_that("coloc tidy table extends the input data.frame with verdict and top_pp", {
   rows <- list(
     list(t1 = "A", t2 = "B", l1 = 1, l2 = 1, h1 = "rs1", h2 = "rs1",

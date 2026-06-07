@@ -14,9 +14,6 @@
 #     verbatim port of `coloc:::combine.abf` so susieR has no soft
 #     dependency on coloc.
 #
-#   * mvSuSiE CS-level summary: for one multi-output mvsusie/mfsusie fit,
-#     organize native mvSuSiE CS/effect evidence into readable tables.
-#
 # The public function normalises any supported input shape (single fit, list
 # of fits, or a single multi-output fit treated outcome-wise) to a flat list
 # of "trait views", then runs the requested algorithms against that list.
@@ -27,17 +24,15 @@
 
 #' Post-hoc causal-configuration probabilities for one or more SuSiE-class fits
 #'
-#' Runs one of three complementary post-hoc analyses, selected by
+#' Runs one of two complementary post-hoc analyses, selected by
 #' \code{method}: \code{"susiex"} (default) for the SuSiEx \eqn{2^N}
 #' combinatorial enumeration, reporting posterior probabilities over
 #' binary causality patterns across the \eqn{N} input traits;
 #' \code{"coloc_pairwise"} for the coloc pairwise ABF, reporting the
 #' five colocalisation hypothesis posteriors (H0/H1/H2/H3/H4) for every
-#' pair of traits; or \code{"mvsusie"} for CS-level summaries
-#' from one multi-output mvSuSiE fit. To get multiple views, call the
-#' function more than once and combine.
+#' pair of traits. To get both views, call the function twice and combine.
 #'
-#' Three input organizations are supported:
+#' Two input organizations are supported:
 #' \describe{
 #'   \item{\code{by = "fit"}}{Each input fit contributes a single trait view.
 #'     Multi-output fits (\code{mvsusie}, \code{mfsusie}) are kept whole: the
@@ -53,8 +48,6 @@
 #'     reduces to a single index \eqn{l \in 1..L}. Single-output \code{susie}
 #'     fits pass through unchanged. Requires \code{$lbf_variable_outcome} on the
 #'     fit (set \code{attach_lbf_variable_outcome = TRUE} when fitting).}
-#'   \item{\code{method = "mvsusie"}}{One multi-output mvSuSiE fit is used
-#'     directly, and results are summarized at the CS/effect level.}
 #' }
 #'
 #' After SuSiE has been fit, the post-hoc step can answer two related
@@ -116,14 +109,14 @@
 #'   \code{trait_1}, \code{trait_2}, ... are used. If provided, its length must
 #'   match the number of trait views after applying \code{by}.
 #' @param method Character scalar; one of \code{"susiex"} (default),
-#'   \code{"coloc_pairwise"}, or \code{"mvsusie"}. Pick the analysis to run;
-#'   for multiple analyses, call the function more than once.
+#'   or \code{"coloc_pairwise"}. Pick the analysis to run; for both analyses,
+#'   call the function twice.
 #' @param prob_thresh Per-trait marginal threshold for the convenience
 #'   \code{$active} flags in the SuSiEx output. Default \code{0.8}.
-#' @param single_effect_lfsr_cutoff LFSR threshold used to flag mvSuSiE
-#'   outcome-specific CS evidence in the \code{"mvsusie"} summary.
-#'   The LFSR is read from \code{fit$lfsr} at each CS sentinel SNP.
-#'   Default \code{0.05}.
+#' @param single_effect_lfsr_cutoff LFSR threshold used to flag
+#'   outcome-specific CS evidence when \code{method = "susiex"} is applied to
+#'   one multi-output \code{mvsusie} or \code{mfsusie} fit. The LFSR is read
+#'   from \code{fit$lfsr} at each CS sentinel SNP. Default \code{0.05}.
 #' @param cs_only Logical. If \code{TRUE} (default) only enumerate over CSs
 #'   present in each fit's \code{$sets$cs}; if \code{FALSE} loop over all L
 #'   rows of \code{$alpha}. Either way, effects whose entire alpha row is
@@ -146,16 +139,17 @@
 #'     equal to the number of CS tuples considered. Each element has
 #'     components \code{config_probability} (binary trait-activation table
 #'     with a \code{config_prob} column) and \code{activation_summary}
-#'     (CS-level post-hoc activation summary by trait).}
+#'     (CS-level post-hoc activation summary by trait). For one multi-output
+#'     \code{mvsusie} or \code{mfsusie} fit, each CS element instead combines
+#'     native CS summaries (\code{mvsusie_cs_summary},
+#'     \code{mvsusie_config_summary},
+#'     \code{mvsusie_cs_variant_summary}) with SuSiEx interpretation tables
+#'     (\code{susiex_config_probability},
+#'     \code{susiex_activation_summary}).}
 #'   \item{\code{$coloc_pairwise}}{(when \code{method = "coloc_pairwise"})
 #'     A data.frame with one row per (trait1, trait2, l1, l2)
 #'     combination, columns \code{trait1, trait2, l1, l2, hit1, hit2,
 #'     PP.H0, PP.H1, PP.H2, PP.H3, PP.H4}.}
-#'   \item{\code{$mvsusie}}{(when \code{method = "mvsusie"}) Summarizes one
-#'     multi-output \code{mvsusie} or \code{mfsusie} fit by CS, returning
-#'     \code{cs_summary} (CS purity and sentinel), \code{config_summary}
-#'     (outcome log BF, sentinel variant/LFSR, cutoff flag), and
-#'     \code{cs_variant_summary} (CS variant PIP and outcome-specific LFSR).}
 #' }
 #' Pretty-print with \code{summary(out)}.
 #'
@@ -170,8 +164,7 @@ susie_post_outcome_configuration <- function(input,
                                              by          = c("fit", "outcome"),
                                              outcome_names = NULL,
                                              method      = c("susiex",
-                                             "coloc_pairwise",
-                                             "mvsusie"),
+                                             "coloc_pairwise"),
                                              prob_thresh = 0.8,
                                              single_effect_lfsr_cutoff = 0.05,
                                              cs_only     = TRUE,
@@ -179,6 +172,7 @@ susie_post_outcome_configuration <- function(input,
                                              p2          = 1e-4,
                                              p12         = 5e-6,
                                              ...) {
+  by_missing <- missing(by)
   by     <- match.arg(by)
   method <- match.arg(method)
 
@@ -204,13 +198,17 @@ susie_post_outcome_configuration <- function(input,
   }
 
   out <- list()
-  if (identical(method, "mvsusie")) {
-    out$mvsusie <- mvsusie_cs_summary(input,
-                                      outcome_names = outcome_names,
-                                      single_effect_lfsr_cutoff =
-                                        single_effect_lfsr_cutoff,
-                                      cs_only       = cs_only)
-    if (is.null(out$mvsusie)) return(NULL)
+  if (identical(method, "susiex") &&
+      is_single_multi_output_fit_input(input) &&
+      (by_missing || identical(by, "outcome"))) {
+    out$susiex <- multi_output_susiex_summary(
+      input,
+      outcome_names = outcome_names,
+      single_effect_lfsr_cutoff = single_effect_lfsr_cutoff,
+      prob_thresh = prob_thresh,
+      cs_only = cs_only
+    )
+    if (is.null(out$susiex)) return(NULL)
   } else {
     views <- normalise_to_views(input, by = by)
     if (!is.null(outcome_names)) {
@@ -252,6 +250,15 @@ susie_post_outcome_configuration <- function(input,
 
 is_susie_fit <- function(x) {
   inherits(x, "susie") || inherits(x, "mvsusie") || inherits(x, "mfsusie")
+}
+
+is_multi_output_fit <- function(x) {
+  inherits(x, "mvsusie") || inherits(x, "mfsusie")
+}
+
+is_single_multi_output_fit_input <- function(input) {
+  is_multi_output_fit(input) ||
+    (is.list(input) && length(input) == 1L && is_multi_output_fit(input[[1L]]))
 }
 
 normalise_to_views <- function(input, by) {
@@ -313,7 +320,7 @@ expand_one_fit <- function(fit, base_name, by) {
 
   # by = "outcome": multi-output fits fan out; single-output fits pass
   # through as one view.
-  if (inherits(fit, "mvsusie") || inherits(fit, "mfsusie")) {
+  if (is_multi_output_fit(fit)) {
     if (is.null(fit$lbf_variable_outcome)) {
       stop("Fit '", base_name, "': `by = \"outcome\"` requires `$lbf_variable_outcome` ",
            "(an L x J x R or L x J x M array) on the fit. ",
@@ -326,10 +333,17 @@ expand_one_fit <- function(fit, base_name, by) {
     if (is.null(out_names)) out_names <- paste0("outcome_", seq_len(R))
     views <- vector("list", R)
     for (r in seq_len(R)) {
+      lbf_r <- fit$lbf_variable_outcome[, , r, drop = FALSE]
+      dim(lbf_r) <- dim(fit$lbf_variable_outcome)[1:2]
+      lbf_dimnames <- dimnames(fit$lbf_variable_outcome)
+      if (!is.null(lbf_dimnames) &&
+          (!is.null(lbf_dimnames[[1L]]) || !is.null(lbf_dimnames[[2L]]))) {
+        dimnames(lbf_r) <- lbf_dimnames[1:2]
+      }
       views[[r]] <- make_view(
         name    = paste0(base_name, "_", out_names[r]),
         alpha   = fit$alpha,
-        lbf     = fit$lbf_variable_outcome[, , r, drop = TRUE],
+        lbf     = lbf_r,
         sets_cs = fit$sets$cs
       )
     }
@@ -577,12 +591,10 @@ susiex_configurations <- function(views, by, prob_thresh,
 # -----------------------------------------------------------------------------
 
 as_single_mvsusie_fit <- function(input) {
-  is_mv <- function(x) inherits(x, "mvsusie") || inherits(x, "mfsusie")
-  if (is_mv(input)) return(input)
-  if (is.list(input) && length(input) == 1L && is_mv(input[[1L]])) {
-    return(input[[1L]])
+  if (is_single_multi_output_fit_input(input)) {
+    return(if (is_multi_output_fit(input)) input else input[[1L]])
   }
-  stop("method = \"mvsusie\" requires one multi-output fit of class ",
+  stop("multi-output SuSiE summary requires one fit of class ",
        "`mvsusie` or `mfsusie`.")
 }
 
@@ -611,14 +623,14 @@ mvsusie_lbf_outcome <- function(fit) {
   }
 
   if (is.null(fit$alpha) || is.null(fit$lbf_variable_outcome)) {
-    stop("method = \"mvsusie\" requires `$lbf_outcome`, or both `$alpha` ",
+    stop("multi-output SuSiE summary requires `$lbf_outcome`, or both `$alpha` ",
          "and `$lbf_variable_outcome` to compute CS-level log Bayes factors.")
   }
   alpha <- fit$alpha
   arr <- fit$lbf_variable_outcome
   if (!is.matrix(alpha) || length(dim(arr)) != 3L ||
       nrow(alpha) != dim(arr)[1L] || ncol(alpha) != dim(arr)[2L]) {
-    stop("For method = \"mvsusie\", `$alpha` must be L x J and ",
+    stop("For multi-output SuSiE summary, `$alpha` must be L x J and ",
          "`$lbf_variable_outcome` must be L x J x R with matching L and J.")
   }
 
@@ -707,13 +719,54 @@ mvsusie_cs_purity <- function(fit, label, idx) {
   as.numeric(purity[pos, 1L])
 }
 
+multi_output_susiex_summary <- function(input, outcome_names = NULL,
+                                        single_effect_lfsr_cutoff = 0.05,
+                                        prob_thresh = 0.8,
+                                        cs_only) {
+  fit <- as_single_mvsusie_fit(input)
+  native <- mvsusie_cs_summary(
+    fit,
+    outcome_names = outcome_names,
+    single_effect_lfsr_cutoff = single_effect_lfsr_cutoff,
+    cs_only = cs_only
+  )
+  if (is.null(native)) return(NULL)
+
+  views <- expand_one_fit(fit, base_name = "trait", by = "outcome")
+  trait_names <- native[[1L]]$mvsusie_config_summary$outcome
+  if (length(trait_names) != length(views)) {
+    stop("Internal error: multi-output CS summary and outcome views disagree.")
+  }
+  for (r in seq_along(views)) {
+    views[[r]]$name <- trait_names[r]
+  }
+
+  sx <- susiex_configurations(views, by = "outcome",
+                              prob_thresh = prob_thresh)
+  sx_names <- vapply(sx, function(x) {
+    raw <- .susiex_raw(x)
+    if (is.list(raw) && !is.null(raw$cs_labels)) raw$cs_labels[[1L]]
+    else NA_character_
+  }, character(1))
+
+  for (nm in names(native)) {
+    pos <- match(nm, sx_names)
+    if (!is.na(pos)) {
+      native[[nm]]$susiex_config_probability <- sx[[pos]]$config_probability
+      native[[nm]]$susiex_activation_summary <- sx[[pos]]$activation_summary
+      attr(native[[nm]], "raw") <- attr(sx[[pos]], "raw", exact = TRUE)
+    }
+  }
+  native
+}
+
 mvsusie_cs_summary <- function(input, outcome_names = NULL,
                                single_effect_lfsr_cutoff = 0.05,
                                cs_only) {
   fit <- as_single_mvsusie_fit(input)
   logBF_mat <- mvsusie_lbf_outcome(fit)
   if (nrow(logBF_mat) != nrow(fit$alpha)) {
-    stop("For method = \"mvsusie\", `$lbf_outcome` must have one row per ",
+    stop("For multi-output SuSiE summary, `$lbf_outcome` must have one row per ",
          "single effect in `$alpha`.")
   }
 
@@ -813,13 +866,14 @@ mvsusie_cs_summary <- function(input, outcome_names = NULL,
       stringsAsFactors = FALSE,
       check.names = FALSE
     )
-    out[[i]] <- list(cs_summary = cs_summary,
-                     config_summary = config_summary,
-                     cs_variant_summary = cs_variant_summary)
+    out[[i]] <- list(mvsusie_cs_summary = cs_summary,
+                     mvsusie_config_summary = config_summary,
+                     mvsusie_cs_variant_summary = cs_variant_summary)
   }
 
   out <- out[!vapply(out, is.null, logical(1))]
-  names(out) <- vapply(out, function(x) x$cs_summary$cs[[1]], character(1))
+  names(out) <- vapply(out, function(x) x$mvsusie_cs_summary$cs[[1]],
+                       character(1))
   out
 }
 
