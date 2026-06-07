@@ -262,12 +262,12 @@ test_that("method = 'susiex' returns mvSuSiE CS summaries with SuSiEx activation
   expect_s3_class(l3_config, "data.frame")
   expect_named(l3_config,
                c("outcome", "lbf_outcome", "sentinel_variant",
-                 "sentinel_lfsr", "lfsr_pass", "lfsr_cutoff"))
+                 "sentinel_lfsr", "lfsr_significant", "lfsr_cutoff"))
   expect_equal(l3_config$outcome, c("old", "new"))
   expect_equal(l3_config$lbf_outcome, c(3, 0))
   expect_equal(l3_config$sentinel_variant, c("s4", "s4"))
   expect_equal(l3_config$sentinel_lfsr, c(0.2, 0.003))
-  expect_equal(l3_config$lfsr_pass, c(FALSE, TRUE))
+  expect_equal(l3_config$lfsr_significant, c(FALSE, TRUE))
   expect_equal(l3_config$lfsr_cutoff, c(0.05, 0.05))
   expect_identical(attr(res, "single_effect_lfsr_cutoff"), 0.05)
   expect_false("activation_summary" %in% names(res$susiex$L3))
@@ -289,7 +289,7 @@ test_that("method = 'susiex' returns mvSuSiE CS summaries with SuSiEx activation
   expect_equal(nrow(res$susiex$L3$config_probability), 4L)
   expect_s3_class(res$susiex$L3$config_summary, "data.frame")
   expect_named(res$susiex$L3$config_summary,
-               c("cs_indices", "logBF_trait", "posthoc_prob", "active"))
+               c("cs_indices", "logBF_outcome", "posthoc_prob", "active"))
   expect_equal(rownames(res$susiex$L3$config_summary), c("old", "new"))
   expect_equal(res$susiex$L3$config_summary$cs_indices, c("L3", "L3"))
   expect_named(attr(res$susiex$L3, "raw"),
@@ -298,7 +298,7 @@ test_that("method = 'susiex' returns mvSuSiE CS summaries with SuSiEx activation
 
   strict <- susie_post_outcome_configuration(
     fit, method = "susiex", single_effect_lfsr_cutoff = 0.01)
-  expect_equal(strict$mvsusie$L3$config_summary$lfsr_pass, c(FALSE, TRUE))
+  expect_equal(strict$mvsusie$L3$config_summary$lfsr_significant, c(FALSE, TRUE))
 })
 
 test_that("method = 'susiex' can compute lbf_outcome from alpha-weighted outcome LBFs", {
@@ -828,7 +828,7 @@ test_that("susiex_configurations computes variant-level config / marginal probs 
   expect_equal(tup$config_probability$config_prob, raw$config_prob,
                tolerance = 1e-8)
   expect_named(tup$config_summary,
-               c("cs_indices", "logBF_trait", "posthoc_prob", "active"))
+               c("cs_indices", "logBF_outcome", "posthoc_prob", "active"))
   expect_equal(rownames(tup$config_summary), c("g1", "g2"))
   expect_equal(tup$config_summary$cs_indices, c("L1", "L1"))
 

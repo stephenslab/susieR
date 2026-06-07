@@ -575,7 +575,7 @@ susiex_configurations <- function(views, by, prob_thresh,
       }
       data.frame(
         cs_indices    = as.character(cs_display),
-        logBF_trait   = as.numeric(tup$logBF_trait[trait_names]),
+        logBF_outcome = as.numeric(tup$logBF_trait[trait_names]),
         posthoc_prob  = as.numeric(tup$marginal_prob[trait_names]),
         active        = as.logical(tup$active[trait_names]),
         row.names     = trait_names,
@@ -838,7 +838,7 @@ mvsusie_cs_summary <- function(input, outcome_names = NULL,
         ncol(sentinel_lfsr_mat) == R) {
       sentinel_lfsr <- as.numeric(sentinel_lfsr_mat[hit$hit_idx, ])
     }
-    sentinel_lfsr_pass <- sentinel_lfsr < single_effect_lfsr_cutoff
+    sentinel_lfsr_significant <- sentinel_lfsr < single_effect_lfsr_cutoff
 
     cs_summary <- data.frame(
       cs            = cs$labels[i],
@@ -847,7 +847,7 @@ mvsusie_cs_summary <- function(input, outcome_names = NULL,
       hit           = hit$hit,
       maxPIP        = hit$maxPIP,
       lbf           = effect_lbf[l],
-      n_lfsr_outcome = sum(sentinel_lfsr_pass, na.rm = TRUE),
+      n_lfsr_outcome = sum(sentinel_lfsr_significant, na.rm = TRUE),
       stringsAsFactors = FALSE,
       check.names = FALSE
     )
@@ -878,7 +878,7 @@ mvsusie_cs_summary <- function(input, outcome_names = NULL,
       lbf_outcome = as.numeric(logBF_mat[l, ]),
       sentinel_variant = rep(hit$hit, R),
       sentinel_lfsr = sentinel_lfsr,
-      lfsr_pass = sentinel_lfsr_pass,
+      lfsr_significant = sentinel_lfsr_significant,
       lfsr_cutoff = rep(single_effect_lfsr_cutoff, R),
       stringsAsFactors = FALSE,
       check.names = FALSE
