@@ -138,14 +138,11 @@
 #'   \item{\code{$susiex}}{(when \code{method = "susiex"}) A list of length
 #'     equal to the number of CS tuples considered. Each element has
 #'     components \code{config_probability} (binary trait-activation table
-#'     with a \code{config_prob} column) and \code{activation_summary}
-#'     (CS-level post-hoc activation summary by trait). For one multi-output
-#'     \code{mvsusie} or \code{mfsusie} fit, each CS element instead combines
-#'     native CS summaries (\code{mvsusie_cs_summary},
-#'     \code{mvsusie_config_summary},
-#'     \code{mvsusie_cs_variant_summary}) with SuSiEx interpretation tables
-#'     (\code{susiex_config_probability},
-#'     \code{susiex_activation_summary}).}
+#'     with a \code{config_prob} column) and \code{config_summary}
+#'     (CS-level post-hoc activation summary, with one row per trait). For one
+#'     multi-output \code{mvsusie} or \code{mfsusie} fit, the return also has
+#'     \code{$mvsusie}, a native summary list with \code{cs_summary},
+#'     \code{config_summary}, and \code{cs_variant_summary}.}
 #'   \item{\code{$coloc_pairwise}}{(when \code{method = "coloc_pairwise"})
 #'     A data.frame with one row per (trait1, trait2, l1, l2)
 #'     combination, columns \code{trait1, trait2, l1, l2, hit1, hit2,
@@ -201,14 +198,16 @@ susie_post_outcome_configuration <- function(input,
   if (identical(method, "susiex") &&
       is_single_multi_output_fit_input(input) &&
       (by_missing || identical(by, "outcome"))) {
-    out$susiex <- multi_output_susiex_summary(
+    multi_output <- multi_output_susiex_summary(
       input,
       outcome_names = outcome_names,
       single_effect_lfsr_cutoff = single_effect_lfsr_cutoff,
       prob_thresh = prob_thresh,
       cs_only = cs_only
     )
-    if (is.null(out$susiex)) return(NULL)
+    if (is.null(multi_output)) return(NULL)
+    out$mvsusie <- multi_output$mvsusie
+    out$susiex <- multi_output$susiex
   } else {
     views <- normalise_to_views(input, by = by)
     if (!is.null(outcome_names)) {
@@ -561,25 +560,25 @@ susiex_configurations <- function(views, by, prob_thresh,
       config_probability
     } else NULL
 
-    activation_summary <- if (!is.null(trait_names) &&
-                              length(trait_names) > 0L) {
+    config_summary <- if (!is.null(trait_names) &&
+                          length(trait_names) > 0L) {
       cs_display <- if (!is.null(tup$cs_labels)) {
         tup$cs_labels[trait_names]
       } else {
         paste0("L", tup$cs_indices[trait_names])
       }
-      vals <- rbind(
+      data.frame(
         cs_indices    = as.character(cs_display),
-        logBF_trait   = as.character(tup$logBF_trait[trait_names]),
-        posthoc_prob  = as.character(tup$marginal_prob[trait_names]),
-        active        = as.character(tup$active[trait_names])
+        logBF_trait   = as.numeric(tup$logBF_trait[trait_names]),
+        posthoc_prob  = as.numeric(tup$marginal_prob[trait_names]),
+        active        = as.logical(tup$active[trait_names]),
+        row.names     = trait_names,
+        check.names   = FALSE
       )
-      colnames(vals) <- trait_names
-      as.data.frame(vals, check.names = FALSE, stringsAsFactors = FALSE)
     } else NULL
 
     out <- list(config_probability = config_probability,
-                activation_summary = activation_summary)
+                config_summary = config_summary)
     attr(out, "raw") <- tup
     out
   })
@@ -748,16 +747,31 @@ multi_output_susiex_summary <- function(input, outcome_names = NULL,
     if (is.list(raw) && !is.null(raw$cs_labels)) raw$cs_labels[[1L]]
     else NA_character_
   }, character(1))
+  names(sx) <- sx_names
 
-  for (nm in names(native)) {
-    pos <- match(nm, sx_names)
-    if (!is.na(pos)) {
-      native[[nm]]$susiex_config_probability <- sx[[pos]]$config_probability
-      native[[nm]]$susiex_activation_summary <- sx[[pos]]$activation_summary
-      attr(native[[nm]], "raw") <- attr(sx[[pos]], "raw", exact = TRUE)
-    }
+  list(mvsusie = flatten_mvsusie_summary(native),
+       susiex = sx[!is.na(names(sx))])
+}
+
+flatten_mvsusie_summary <- function(native) {
+  add_cs <- function(df, cs) {
+    data.frame(cs = rep(cs, nrow(df)), df,
+               check.names = FALSE, row.names = NULL)
   }
-  native
+  cs <- do.call(rbind, lapply(native, `[[`, "mvsusie_cs_summary"))
+  config <- do.call(rbind, Map(function(x, nm) {
+    add_cs(x$mvsusie_config_summary, nm)
+  }, native, names(native)))
+  variants <- do.call(rbind, Map(function(x, nm) {
+    add_cs(x$mvsusie_cs_variant_summary, nm)
+  }, native, names(native)))
+  rownames(cs) <- rownames(config) <- rownames(variants) <- NULL
+
+  list(
+    cs_summary = cs,
+    config_summary = config,
+    cs_variant_summary = variants
+  )
 }
 
 mvsusie_cs_summary <- function(input, outcome_names = NULL,

@@ -66,13 +66,11 @@ components, depending on \code{method}:
   \item{\code{$susiex}}{(when \code{method = "susiex"}) A list of length
     equal to the number of CS tuples considered. Each element has
     components \code{config_probability} (binary trait-activation table
-    with a \code{config_prob} column) and \code{activation_summary}
-    (CS-level post-hoc activation summary by trait). For one multi-output
-    \code{mvsusie} or \code{mfsusie} fit, each CS element instead combines
-    native CS summaries (\code{mvsusie_cs_summary}, \code{mvsusie_config_summary},
-    \code{mvsusie_cs_variant_summary}) with SuSiEx interpretation tables
-    (\code{susiex_config_probability},
-    \code{susiex_activation_summary}).}
+    with a \code{config_prob} column) and \code{config_summary}
+    (CS-level post-hoc activation summary, with one row per trait). For one
+    multi-output \code{mvsusie} or \code{mfsusie} fit, the return also has
+    \code{$mvsusie}, a native summary list with \code{cs_summary},
+    \code{config_summary}, and \code{cs_variant_summary}.}
   \item{\code{$coloc_pairwise}}{(when \code{method = "coloc_pairwise"})
     A data.frame with one row per (trait1, trait2, l1, l2)
     combination, columns \code{trait1, trait2, l1, l2, hit1, hit2,

@@ -41,7 +41,7 @@ test_that("entry point uses provided outcome_names for trait labels", {
                coloc_fit(matrix(c(1, 0), 1, 2), matrix(c(3, 0), 1, 2)))
   res_sx <- susie_post_outcome_configuration(fits, method = "susiex",
                                              outcome_names = c("MDD", "BP"))
-  expect_named(res_sx$susiex[[1]]$activation_summary, c("MDD", "BP"))
+  expect_equal(rownames(res_sx$susiex[[1]]$config_summary), c("MDD", "BP"))
 
   res_coloc <- susie_post_outcome_configuration(fits,
                                                 method = "coloc_pairwise",
@@ -78,7 +78,7 @@ test_that("entry point skips traits with no credible sets", {
     "drop_me"
   )
   expect_s3_class(res, "susie_post_outcome_configuration")
-  expect_named(res$susiex[[1]]$activation_summary, c("A", "B"))
+  expect_equal(rownames(res$susiex[[1]]$config_summary), c("A", "B"))
 })
 
 test_that("entry point returns NULL when all traits have no credible sets", {
@@ -172,7 +172,7 @@ test_that("method = 'susiex' returns tagged object with $susiex component", {
   expect_equal(attr(res, "prob_thresh"), 0.8)
   expect_true(length(res$susiex) >= 1L)
   # Each tuple carries the documented fields.
-  expect_named(res$susiex[[1]], c("config_probability", "activation_summary"))
+  expect_named(res$susiex[[1]], c("config_probability", "config_summary"))
   expect_named(attr(res$susiex[[1]], "raw"),
                c("cs_indices", "cs_labels", "logBF_trait", "configs",
                  "config_prob", "marginal_prob", "active"))
@@ -238,66 +238,68 @@ test_that("method = 'susiex' returns mvSuSiE CS summaries with SuSiEx activation
 
   expect_s3_class(res, "susie_post_outcome_configuration")
   expect_true("susiex" %in% names(res))
-  expect_false("mvsusie" %in% names(res))
+  expect_true("mvsusie" %in% names(res))
   expect_identical(attr(res, "method"), "susiex")
   expect_type(res$susiex, "list")
   expect_named(res$susiex, c("L3", "L1"))
-  expect_named(res$susiex$L3,
-               c("mvsusie_cs_summary", "mvsusie_config_summary", "mvsusie_cs_variant_summary",
-                 "susiex_config_probability", "susiex_activation_summary"))
+  expect_named(res$susiex$L3, c("config_probability", "config_summary"))
+  expect_named(res$mvsusie,
+               c("cs_summary", "config_summary", "cs_variant_summary"))
 
-  expect_s3_class(res$susiex$L3$mvsusie_cs_summary, "data.frame")
-  expect_equal(res$susiex$L3$mvsusie_cs_summary$cs, "L3")
-  expect_equal(res$susiex$L3$mvsusie_cs_summary$n_variant, 2L)
-  expect_equal(res$susiex$L3$mvsusie_cs_summary$purity, 0.77)
-  expect_equal(res$susiex$L3$mvsusie_cs_summary$hit, "s4")
-  expect_equal(res$susiex$L3$mvsusie_cs_summary$maxPIP, 0.9)
-  expect_equal(res$susiex$L3$mvsusie_cs_summary$lbf, 5)
-  expect_equal(res$susiex$L3$mvsusie_cs_summary$n_lfsr_outcome, 1L)
+  l3_cs <- res$mvsusie$cs_summary[res$mvsusie$cs_summary$cs == "L3", ]
+  expect_s3_class(res$mvsusie$cs_summary, "data.frame")
+  expect_equal(l3_cs$cs, "L3")
+  expect_equal(l3_cs$n_variant, 2L)
+  expect_equal(l3_cs$purity, 0.77)
+  expect_equal(l3_cs$hit, "s4")
+  expect_equal(l3_cs$maxPIP, 0.9)
+  expect_equal(l3_cs$lbf, 5)
+  expect_equal(l3_cs$n_lfsr_outcome, 1L)
 
-  expect_s3_class(res$susiex$L3$mvsusie_config_summary, "data.frame")
-  expect_named(res$susiex$L3$mvsusie_config_summary,
-               c("outcome", "lbf_outcome", "sentinel_variant",
+  l3_config <- res$mvsusie$config_summary[res$mvsusie$config_summary$cs == "L3", ]
+  expect_s3_class(res$mvsusie$config_summary, "data.frame")
+  expect_named(l3_config,
+               c("cs", "outcome", "lbf_outcome", "sentinel_variant",
                  "sentinel_lfsr", "lfsr_pass", "lfsr_cutoff"))
-  expect_equal(res$susiex$L3$mvsusie_config_summary$outcome, c("old", "new"))
-  expect_equal(res$susiex$L3$mvsusie_config_summary$lbf_outcome, c(3, 0))
-  expect_equal(res$susiex$L3$mvsusie_config_summary$sentinel_variant, c("s4", "s4"))
-  expect_equal(res$susiex$L3$mvsusie_config_summary$sentinel_lfsr, c(0.2, 0.003))
-  expect_equal(res$susiex$L3$mvsusie_config_summary$lfsr_pass, c(FALSE, TRUE))
-  expect_equal(res$susiex$L3$mvsusie_config_summary$lfsr_cutoff, c(0.05, 0.05))
+  expect_equal(l3_config$outcome, c("old", "new"))
+  expect_equal(l3_config$lbf_outcome, c(3, 0))
+  expect_equal(l3_config$sentinel_variant, c("s4", "s4"))
+  expect_equal(l3_config$sentinel_lfsr, c(0.2, 0.003))
+  expect_equal(l3_config$lfsr_pass, c(FALSE, TRUE))
+  expect_equal(l3_config$lfsr_cutoff, c(0.05, 0.05))
   expect_identical(attr(res, "single_effect_lfsr_cutoff"), 0.05)
   expect_false("activation_summary" %in% names(res$susiex$L3))
-  expect_true("susiex_activation_summary" %in% names(res$susiex$L3))
   expect_false("posthoc_prob" %in% names(res$susiex$L3))
   expect_false("single_effect_lfsr" %in%
-                 colnames(res$susiex$L3$mvsusie_config_summary))
+                 colnames(res$mvsusie$config_summary))
 
-  expect_s3_class(res$susiex$L3$mvsusie_cs_variant_summary, "data.frame")
-  expect_named(res$susiex$L3$mvsusie_cs_variant_summary,
-               c("variant", "pip", "lfsr_old", "lfsr_new"))
-  expect_equal(res$susiex$L3$mvsusie_cs_variant_summary$variant, c("s3", "s4"))
-  expect_equal(res$susiex$L3$mvsusie_cs_variant_summary$pip, c(0.2, 0.9))
-  expect_equal(res$susiex$L3$mvsusie_cs_variant_summary$lfsr_old, c(0.2, 0.2))
-  expect_equal(res$susiex$L3$mvsusie_cs_variant_summary$lfsr_new, c(0.2, 0.003))
-  expect_s3_class(res$susiex$L3$susiex_config_probability, "data.frame")
-  expect_named(res$susiex$L3$susiex_config_probability,
+  l3_variants <- res$mvsusie$cs_variant_summary[
+    res$mvsusie$cs_variant_summary$cs == "L3", ]
+  expect_s3_class(res$mvsusie$cs_variant_summary, "data.frame")
+  expect_named(l3_variants,
+               c("cs", "variant", "pip", "lfsr_old", "lfsr_new"))
+  expect_equal(l3_variants$variant, c("s3", "s4"))
+  expect_equal(l3_variants$pip, c(0.2, 0.9))
+  expect_equal(l3_variants$lfsr_old, c(0.2, 0.2))
+  expect_equal(l3_variants$lfsr_new, c(0.2, 0.003))
+  expect_s3_class(res$susiex$L3$config_probability, "data.frame")
+  expect_named(res$susiex$L3$config_probability,
                c("old", "new", "config_prob"))
-  expect_equal(nrow(res$susiex$L3$susiex_config_probability), 4L)
-  expect_s3_class(res$susiex$L3$susiex_activation_summary, "data.frame")
-  expect_named(res$susiex$L3$susiex_activation_summary, c("old", "new"))
-  expect_equal(
-    rownames(res$susiex$L3$susiex_activation_summary),
-    c("cs_indices", "logBF_trait", "posthoc_prob", "active"))
-  expect_equal(
-    as.character(res$susiex$L3$susiex_activation_summary["cs_indices", ]),
-    c("L3", "L3"))
+  expect_equal(nrow(res$susiex$L3$config_probability), 4L)
+  expect_s3_class(res$susiex$L3$config_summary, "data.frame")
+  expect_named(res$susiex$L3$config_summary,
+               c("cs_indices", "logBF_trait", "posthoc_prob", "active"))
+  expect_equal(rownames(res$susiex$L3$config_summary), c("old", "new"))
+  expect_equal(res$susiex$L3$config_summary$cs_indices, c("L3", "L3"))
   expect_named(attr(res$susiex$L3, "raw"),
                c("cs_indices", "cs_labels", "logBF_trait", "configs",
                  "config_prob", "marginal_prob", "active"))
 
   strict <- susie_post_outcome_configuration(
     fit, method = "susiex", single_effect_lfsr_cutoff = 0.01)
-  expect_equal(strict$susiex$L3$mvsusie_config_summary$lfsr_pass, c(FALSE, TRUE))
+  strict_l3 <- strict$mvsusie$config_summary[
+    strict$mvsusie$config_summary$cs == "L3", ]
+  expect_equal(strict_l3$lfsr_pass, c(FALSE, TRUE))
 })
 
 test_that("method = 'susiex' can compute lbf_outcome from alpha-weighted outcome LBFs", {
@@ -314,10 +316,12 @@ test_that("method = 'susiex' can compute lbf_outcome from alpha-weighted outcome
 
   res <- susie_post_outcome_configuration(fit, method = "susiex")
 
-  expect_equal(res$susiex$L1$mvsusie_config_summary$lbf_outcome, c(5, 7))
-  expect_equal(res$susiex$L2$mvsusie_config_summary$lbf_outcome, c(3, 5))
+  l1_config <- res$mvsusie$config_summary[res$mvsusie$config_summary$cs == "L1", ]
+  l2_config <- res$mvsusie$config_summary[res$mvsusie$config_summary$cs == "L2", ]
+  expect_equal(l1_config$lbf_outcome, c(5, 7))
+  expect_equal(l2_config$lbf_outcome, c(3, 5))
   expect_true(all(c("cs", "n_variant", "purity", "hit", "maxPIP") %in%
-                    colnames(res$susiex$L1$mvsusie_cs_summary)))
+                    colnames(res$mvsusie$cs_summary)))
 })
 
 test_that("method = 'susiex' handles mfsusie with the multi-output contract", {
@@ -338,9 +342,10 @@ test_that("method = 'susiex' handles mfsusie with the multi-output contract", {
   res <- susie_post_outcome_configuration(fit, method = "susiex")
 
   expect_true("susiex" %in% names(res))
+  expect_true("mvsusie" %in% names(res))
   expect_named(res$susiex, "L1")
-  expect_named(res$susiex$L1$susiex_activation_summary, c("old", "new"))
-  expect_equal(nrow(res$susiex$L1$susiex_config_probability), 4L)
+  expect_equal(rownames(res$susiex$L1$config_summary), c("old", "new"))
+  expect_equal(nrow(res$susiex$L1$config_probability), 4L)
 })
 
 test_that("method = 'susiex' covers input and missing-data edge cases", {
@@ -356,9 +361,9 @@ test_that("method = 'susiex' covers input and missing-data edge cases", {
 
   res <- susie_post_outcome_configuration(
     list(fit), method = "susiex", outcome_names = c("old", "new"))
-  expect_equal(res$susiex$L1$mvsusie_config_summary$outcome, c("old", "new"))
-  expect_equal(res$susiex$L1$mvsusie_config_summary$sentinel_lfsr, c(0.01, 0.2))
-  expect_named(res$susiex$L1$susiex_activation_summary, c("old", "new"))
+  expect_equal(res$mvsusie$config_summary$outcome, c("old", "new"))
+  expect_equal(res$mvsusie$config_summary$sentinel_lfsr, c(0.01, 0.2))
+  expect_equal(rownames(res$susiex$L1$config_summary), c("old", "new"))
 
   expect_error(
     susie_post_outcome_configuration(fit, method = "mvsusie"),
@@ -427,9 +432,9 @@ test_that("method = 'susiex' covers CS member edge cases", {
   expect_true(is.na(missing_hit$hit))
 
   res <- susie_post_outcome_configuration(fit, method = "susiex")
-  expect_equal(res$susiex$L1$mvsusie_cs_variant_summary$variant, c("s1", "s2"))
-  expect_equal(res$susiex$L1$mvsusie_cs_variant_summary$pip, c(0.7, 0.2))
-  expect_true(is.na(res$susiex$L1$mvsusie_cs_summary$purity))
+  expect_equal(res$mvsusie$cs_variant_summary$variant, c("s1", "s2"))
+  expect_equal(res$mvsusie$cs_variant_summary$pip, c(0.7, 0.2))
+  expect_true(is.na(res$mvsusie$cs_summary$purity))
 
   fit$sets$purity <- matrix(0.61, nrow = 1)
   expect_equal(mvsusie_cs_purity(fit, label = "L1", idx = 1L), 0.61)
@@ -441,21 +446,21 @@ test_that("method = 'susiex' covers CS member edge cases", {
   attr(unnamed_cs$sets$cs, "cs_idx") <- 1L
   res_unnamed <- susie_post_outcome_configuration(unnamed_cs,
                                                   method = "susiex")
-  expect_equal(res_unnamed$susiex$L1$mvsusie_cs_summary$hit, "s2")
-  expect_equal(res_unnamed$susiex$L1$mvsusie_cs_summary$purity, 0.42)
+  expect_equal(res_unnamed$mvsusie$cs_summary$hit, "s2")
+  expect_equal(res_unnamed$mvsusie$cs_summary$purity, 0.42)
 
   no_pip <- fit
   no_pip$pip <- NULL
   res_no_pip <- susie_post_outcome_configuration(no_pip, method = "susiex")
-  expect_true(all(is.na(res_no_pip$susiex$L1$mvsusie_cs_variant_summary$pip)))
-  expect_true(all(is.na(res_no_pip$susiex$L1$mvsusie_cs_summary$hit)))
+  expect_true(all(is.na(res_no_pip$mvsusie$cs_variant_summary$pip)))
+  expect_true(all(is.na(res_no_pip$mvsusie$cs_summary$hit)))
 
   bad_members <- fit
   bad_members$sets$cs <- list(L1 = 99L)
   res_bad_members <- susie_post_outcome_configuration(bad_members,
                                                       method = "susiex")
-  expect_equal(res_bad_members$susiex$L1$mvsusie_cs_summary$n_variant, 1L)
-  expect_equal(nrow(res_bad_members$susiex$L1$mvsusie_cs_variant_summary), 0L)
+  expect_equal(res_bad_members$mvsusie$cs_summary$n_variant, 1L)
+  expect_equal(nrow(res_bad_members$mvsusie$cs_variant_summary), 0L)
 
   zero_alpha <- coloc_mv_fit(matrix(c(0, 0,
                                       0, 1), 2, 2, byrow = TRUE),
@@ -516,14 +521,13 @@ test_that("internal helpers cover defensive display branches", {
   names(tup_fallback$cs_indices) <- NULL
   tup_fallback$cs_labels <- setNames(c("L1", "L2"), c("a", "b"))
   org_fallback <- .organize_susiex_output(list(tup_fallback))[[1]]
-  expect_named(org_fallback$activation_summary, c("a", "b"))
+  expect_equal(rownames(org_fallback$config_summary), c("a", "b"))
 
   tup_no_labels <- coloc_tuple(c("a", "b"), cs_indices = c(1, 2),
                                marginal_prob = c(0.9, 0.8))
   tup_no_labels$cs_labels <- NULL
   org_no_labels <- .organize_susiex_output(list(tup_no_labels))[[1]]
-  expect_equal(as.character(org_no_labels$activation_summary["cs_indices", ]),
-               c("L1", "L2"))
+  expect_equal(org_no_labels$config_summary$cs_indices, c("L1", "L2"))
 
   wrapped <- list(shown = FALSE)
   attr(wrapped, "raw") <- list(shown = TRUE)
@@ -825,11 +829,10 @@ test_that("susiex_configurations computes variant-level config / marginal probs 
                c("g1", "g2", "config_prob"))
   expect_equal(tup$config_probability$config_prob, raw$config_prob,
                tolerance = 1e-8)
-  expect_equal(rownames(tup$activation_summary),
+  expect_named(tup$config_summary,
                c("cs_indices", "logBF_trait", "posthoc_prob", "active"))
-  expect_named(tup$activation_summary, c("g1", "g2"))
-  expect_equal(unname(unlist(tup$activation_summary["cs_indices", ])),
-               c("L1", "L1"))
+  expect_equal(rownames(tup$config_summary), c("g1", "g2"))
+  expect_equal(tup$config_summary$cs_indices, c("L1", "L1"))
 
   # active = marginal >= prob_thresh.
   expect_equal(raw$active, raw$marginal_prob >= 0.8)
@@ -1087,12 +1090,12 @@ test_that("by = 'outcome' on an mvsusie runs SuSiEx per-outcome on the diagonal"
   res <- susie_post_outcome_configuration(fit, method = "susiex",
                                           by = "outcome")
   # 3 outcome views => configs over 2^3 = 8 patterns; diagonal of 2 CSs => 2.
+  expect_named(res$mvsusie,
+               c("cs_summary", "config_summary", "cs_variant_summary"))
   expect_length(res$susiex, 2L)
-  expect_named(res$susiex[[1]],
-               c("mvsusie_cs_summary", "mvsusie_config_summary", "mvsusie_cs_variant_summary",
-                 "susiex_config_probability", "susiex_activation_summary"))
-  expect_equal(nrow(res$susiex[[1]]$susiex_config_probability), 8L)
-  expect_named(res$susiex[[1]]$susiex_activation_summary,
+  expect_named(res$susiex[[1]], c("config_probability", "config_summary"))
+  expect_equal(nrow(res$susiex[[1]]$config_probability), 8L)
+  expect_equal(rownames(res$susiex[[1]]$config_summary),
                c("o1", "o2", "o3"))
   expect_equal(unname(attr(res$susiex[[1]], "raw")$cs_indices),
                c(1L, 1L, 1L))
