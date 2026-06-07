@@ -64,13 +64,15 @@ post-hoc analysis; otherwise a list of class
 components, depending on \code{method}:
 \describe{
   \item{\code{$susiex}}{(when \code{method = "susiex"}) A list of length
-    equal to the number of CS tuples considered. Each element has
+    equal to the number of CS tuples considered, named \code{config_1},
+    \code{config_2}, etc. Each element has
     components \code{config_probability} (binary trait-activation table
     with a \code{config_prob} column) and \code{config_summary}
     (CS-level post-hoc activation summary, with one row per trait). For one
-    multi-output \code{mvsusie} or \code{mfsusie} fit, the return also has
-    \code{$mvsusie}, a native summary list with \code{cs_summary},
-    \code{config_summary}, and \code{cs_variant_summary}.}
+    multi-output \code{mvsusie} or \code{mfsusie} fit, both \code{$susiex}
+    and \code{$mvsusie} are named by CS label, e.g. \code{L1}; each
+    \code{$mvsusie} element has \code{cs_summary}, \code{config_summary},
+    and \code{cs_variant_summary}.}
   \item{\code{$coloc_pairwise}}{(when \code{method = "coloc_pairwise"})
     A data.frame with one row per (trait1, trait2, l1, l2)
     combination, columns \code{trait1, trait2, l1, l2, hit1, hit2,

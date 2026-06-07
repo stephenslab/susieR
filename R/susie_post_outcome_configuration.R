@@ -136,13 +136,15 @@
 #' components, depending on \code{method}:
 #' \describe{
 #'   \item{\code{$susiex}}{(when \code{method = "susiex"}) A list of length
-#'     equal to the number of CS tuples considered. Each element has
+#'     equal to the number of CS tuples considered, named \code{config_1},
+#'     \code{config_2}, etc. Each element has
 #'     components \code{config_probability} (binary trait-activation table
 #'     with a \code{config_prob} column) and \code{config_summary}
 #'     (CS-level post-hoc activation summary, with one row per trait). For one
-#'     multi-output \code{mvsusie} or \code{mfsusie} fit, the return also has
-#'     \code{$mvsusie}, a native summary list with \code{cs_summary},
-#'     \code{config_summary}, and \code{cs_variant_summary}.}
+#'     multi-output \code{mvsusie} or \code{mfsusie} fit, both \code{$susiex}
+#'     and \code{$mvsusie} are named by CS label, e.g. \code{L1}; each
+#'     \code{$mvsusie} element has \code{cs_summary}, \code{config_summary},
+#'     and \code{cs_variant_summary}.}
 #'   \item{\code{$coloc_pairwise}}{(when \code{method = "coloc_pairwise"})
 #'     A data.frame with one row per (trait1, trait2, l1, l2)
 #'     combination, columns \code{trait1, trait2, l1, l2, hit1, hit2,
@@ -467,7 +469,9 @@ enumerate_cs_tuples <- function(views, by, cs_only) {
 }
 
 susiex_configurations <- function(views, by, prob_thresh,
-                                  max_traits = 20L) {
+                                  max_traits = 20L,
+                                  name_by = c("config", "cs")) {
+  name_by <- match.arg(name_by)
   N <- length(views)
   if (N > max_traits) {
     stop("susiex: N = ", N, " traits exceeds the safety ceiling (",
@@ -537,11 +541,13 @@ susiex_configurations <- function(views, by, prob_thresh,
     )
   }
 
-  .organize_susiex_output(out[!vapply(out, is.null, logical(1))])
+  .organize_susiex_output(out[!vapply(out, is.null, logical(1))],
+                          name_by = name_by)
 }
 
-.organize_susiex_output <- function(susiex) {
-  lapply(susiex, function(tup) {
+.organize_susiex_output <- function(susiex, name_by = c("config", "cs")) {
+  name_by <- match.arg(name_by)
+  out <- lapply(susiex, function(tup) {
     if (!is.list(tup)) return(tup)
 
     trait_names <- names(tup$cs_indices)
@@ -582,6 +588,29 @@ susiex_configurations <- function(views, by, prob_thresh,
     attr(out, "raw") <- tup
     out
   })
+  if (length(out) == 0L) return(out)
+  out_names <- if (identical(name_by, "config")) {
+    paste0("config_", seq_len(length(out)))
+  } else {
+    vapply(out, .susiex_tuple_name, character(1))
+  }
+  out_names[!nzchar(out_names)] <- paste0("config_", which(!nzchar(out_names)))
+  names(out) <- make.unique(out_names, sep = "_")
+  out
+}
+
+.susiex_tuple_name <- function(tup) {
+  raw <- .susiex_raw(tup)
+  if (!is.list(raw)) return("")
+  labels <- raw$cs_labels
+  if (is.null(labels) && !is.null(raw$cs_indices)) {
+    labels <- paste0("L", raw$cs_indices)
+  }
+  labels <- as.character(labels)
+  labels <- labels[!is.na(labels) & nzchar(labels)]
+  if (length(labels) == 0L) return("")
+  if (length(unique(labels)) == 1L) return(labels[[1L]])
+  paste(labels, collapse = "_")
 }
 
 
@@ -732,7 +761,7 @@ multi_output_susiex_summary <- function(input, outcome_names = NULL,
   if (is.null(native)) return(NULL)
 
   views <- expand_one_fit(fit, base_name = "trait", by = "outcome")
-  trait_names <- native[[1L]]$mvsusie_config_summary$outcome
+  trait_names <- native[[1L]]$config_summary$outcome
   if (length(trait_names) != length(views)) {
     stop("Internal error: multi-output CS summary and outcome views disagree.")
   }
@@ -741,37 +770,11 @@ multi_output_susiex_summary <- function(input, outcome_names = NULL,
   }
 
   sx <- susiex_configurations(views, by = "outcome",
-                              prob_thresh = prob_thresh)
-  sx_names <- vapply(sx, function(x) {
-    raw <- .susiex_raw(x)
-    if (is.list(raw) && !is.null(raw$cs_labels)) raw$cs_labels[[1L]]
-    else NA_character_
-  }, character(1))
-  names(sx) <- sx_names
+                              prob_thresh = prob_thresh,
+                              name_by = "cs")
 
-  list(mvsusie = flatten_mvsusie_summary(native),
-       susiex = sx[!is.na(names(sx))])
-}
-
-flatten_mvsusie_summary <- function(native) {
-  add_cs <- function(df, cs) {
-    data.frame(cs = rep(cs, nrow(df)), df,
-               check.names = FALSE, row.names = NULL)
-  }
-  cs <- do.call(rbind, lapply(native, `[[`, "mvsusie_cs_summary"))
-  config <- do.call(rbind, Map(function(x, nm) {
-    add_cs(x$mvsusie_config_summary, nm)
-  }, native, names(native)))
-  variants <- do.call(rbind, Map(function(x, nm) {
-    add_cs(x$mvsusie_cs_variant_summary, nm)
-  }, native, names(native)))
-  rownames(cs) <- rownames(config) <- rownames(variants) <- NULL
-
-  list(
-    cs_summary = cs,
-    config_summary = config,
-    cs_variant_summary = variants
-  )
+  list(mvsusie = native,
+       susiex = sx)
 }
 
 mvsusie_cs_summary <- function(input, outcome_names = NULL,
@@ -880,13 +883,13 @@ mvsusie_cs_summary <- function(input, outcome_names = NULL,
       stringsAsFactors = FALSE,
       check.names = FALSE
     )
-    out[[i]] <- list(mvsusie_cs_summary = cs_summary,
-                     mvsusie_config_summary = config_summary,
-                     mvsusie_cs_variant_summary = cs_variant_summary)
+    out[[i]] <- list(cs_summary = cs_summary,
+                     config_summary = config_summary,
+                     cs_variant_summary = cs_variant_summary)
   }
 
   out <- out[!vapply(out, is.null, logical(1))]
-  names(out) <- vapply(out, function(x) x$mvsusie_cs_summary$cs[[1]],
+  names(out) <- vapply(out, function(x) x$cs_summary$cs[[1]],
                        character(1))
   out
 }
