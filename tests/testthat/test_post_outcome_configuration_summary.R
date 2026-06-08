@@ -55,6 +55,20 @@ test_that("single-trait susiex tuple yields a one-trait tidy row", {
   expect_equal(s$susiex$solo, 0.95)
 })
 
+test_that("summary reads SuSiEx raw fields from organized CS entries", {
+  raw <- coloc_tuple(c("old", "new"), cs_indices = c(1, 1),
+                     marginal_prob = c(0.91, 0.93))
+  organized <- .organize_susiex_output(list(raw))[[1]]
+
+  s <- summary(coloc_post_obj(susiex = list(L1 = organized)),
+               color = FALSE, signal_only = FALSE)
+
+  expect_equal(nrow(s$susiex), 1L)
+  expect_equal(s$susiex$tuple, "(1,1)")
+  expect_equal(s$susiex$old, 0.91)
+  expect_equal(s$susiex$new, 0.93)
+})
+
 test_that("coloc tidy table extends the input data.frame with verdict and top_pp", {
   rows <- list(
     list(t1 = "A", t2 = "B", l1 = 1, l2 = 1, h1 = "rs1", h2 = "rs1",
