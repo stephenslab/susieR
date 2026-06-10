@@ -1,84 +1,39 @@
-# Tests for `summary.susie_post_outcome_configuration` and its print
-# method. The numerical algorithms (susiex / coloc_pairwise) are exercised
-# in mfsusieR's `tests/testthat/test_susie_post_outcome_configuration.R`
-# against a verbatim port of the legacy `mvf.susie.alpha::posthoc_multfsusie`
-# kernel; here we focus on:
-#   * dispatch via class tag
-#   * tidy-table shape and column names
-#   * signal_only filtering and the kept/total bookkeeping
-#   * defensive handling of malformed / partial input
+context("susie_post_outcome_configuration summary")
 
-# ---- Helpers --------------------------------------------------------------
+# Tests for summary.susie_post_outcome_configuration and its print method.
+# The numerical kernels (susiex / coloc_pairwise) are exercised in
+# test_post_outcome_configuration.R; here we focus on dispatch via the class
+# tag, tidy-table shape and column names, signal_only filtering with the
+# kept/total bookkeeping, and defensive handling of malformed / partial
+# input. Shared tuple / object / data.frame builders live in helper_coloc.R
+# (coloc_tuple, coloc_post_obj, coloc_df).
 
-# A minimal hand-built `susiex` tuple (skips the IBSS + algorithm and
-# constructs the documented fields directly).
-make_susiex_tuple <- function(trait_names,
-                              cs_indices,
-                              marginal_prob,
-                              top_config_idx = 1L,
-                              prob_thresh    = 0.8) {
-  N         <- length(trait_names)
-  configs   <- as.matrix(expand.grid(rep(list(c(0L, 1L)), N)))
-  colnames(configs) <- paste0("trait_", seq_len(N))
-  cp        <- numeric(2L^N)
-  cp[top_config_idx] <- 1
-  list(
-    cs_indices    = setNames(as.integer(cs_indices), trait_names),
-    logBF_trait   = setNames(rep(0, N),              trait_names),
-    configs       = configs,
-    config_prob   = cp,
-    marginal_prob = setNames(marginal_prob,          trait_names),
-    active        = setNames(marginal_prob >= prob_thresh, trait_names)
-  )
-}
-
-make_post_obj <- function(susiex = NULL, coloc = NULL) {
-  out <- list()
-  if (!is.null(susiex)) out$susiex <- susiex
-  if (!is.null(coloc))  out$coloc_pairwise <- coloc
-  class(out) <- c("susie_post_outcome_configuration", "list")
-  out
-}
-
-make_coloc_df <- function(rows) {
-  do.call(rbind, lapply(rows, function(r) {
-    pp <- r$pp
-    data.frame(trait1 = r$t1, trait2 = r$t2,
-               l1 = r$l1, l2 = r$l2,
-               hit1 = r$h1, hit2 = r$h2,
-               PP.H0 = pp[1], PP.H1 = pp[2], PP.H2 = pp[3],
-               PP.H3 = pp[4], PP.H4 = pp[5],
-               stringsAsFactors = FALSE, row.names = NULL)
-  }))
-}
-
-# ---- Dispatch -------------------------------------------------------------
+# ---- Dispatch --------------------------------------------------------------
 
 test_that("summary() dispatches on the class tag", {
-  obj <- make_post_obj(
-    susiex = list(make_susiex_tuple(c("a", "b"),
-                                    cs_indices    = c(1, 1),
-                                    marginal_prob = c(0.95, 0.95))))
+  obj <- coloc_post_obj(
+    susiex = list(coloc_tuple(c("a", "b"),
+                              cs_indices    = c(1, 1),
+                              marginal_prob = c(0.95, 0.95))))
   s <- summary(obj, color = FALSE)
   expect_s3_class(s, "summary.susie_post_outcome_configuration")
-  # Print returns input invisibly without erroring.
+  # Print returns its input invisibly without erroring.
   out <- capture.output(p <- print(s))
   expect_identical(p, s)
-  # The captured output mentions the SuSiEx header.
   expect_true(any(grepl("SuSiEx:", out)))
 })
 
-# ---- Tidy table shape -----------------------------------------------------
+# ---- Tidy table shape ------------------------------------------------------
 
 test_that("susiex tidy table carries one row per CS tuple with reserved + per-trait columns", {
   tuples <- list(
-    make_susiex_tuple(c("trait_a", "trait_b"),
-                      cs_indices    = c(1, 1),
-                      marginal_prob = c(0.95, 0.30)),
-    make_susiex_tuple(c("trait_a", "trait_b"),
-                      cs_indices    = c(2, 2),
-                      marginal_prob = c(0.10, 0.92)))
-  s <- summary(make_post_obj(susiex = tuples), color = FALSE,
+    coloc_tuple(c("trait_a", "trait_b"),
+                cs_indices    = c(1, 1),
+                marginal_prob = c(0.95, 0.30)),
+    coloc_tuple(c("trait_a", "trait_b"),
+                cs_indices    = c(2, 2),
+                marginal_prob = c(0.10, 0.92)))
+  s <- summary(coloc_post_obj(susiex = tuples), color = FALSE,
                signal_only = FALSE)
   expect_s3_class(s$susiex, "data.frame")
   expect_equal(nrow(s$susiex), 2L)
@@ -88,13 +43,39 @@ test_that("susiex tidy table carries one row per CS tuple with reserved + per-tr
   expect_equal(s$susiex$trait_a, c(0.95, 0.10))
 })
 
+test_that("single-trait susiex tuple yields a one-trait tidy row", {
+  s <- summary(coloc_post_obj(
+         susiex = list(coloc_tuple("solo", cs_indices = 1,
+                                   marginal_prob = 0.95))),
+       color = FALSE, signal_only = FALSE)
+  expect_equal(nrow(s$susiex), 1L)
+  expect_setequal(colnames(s$susiex),
+                  c("tuple", "solo", "top_pattern", "top_prob"))
+  expect_equal(s$susiex$tuple, "(1)")
+  expect_equal(s$susiex$solo, 0.95)
+})
+
+test_that("summary reads SuSiEx raw fields from organized CS entries", {
+  raw <- coloc_tuple(c("old", "new"), cs_indices = c(1, 1),
+                     marginal_prob = c(0.91, 0.93))
+  organized <- .organize_susiex_output(list(raw))[[1]]
+
+  s <- summary(coloc_post_obj(susiex = list(L1 = organized)),
+               color = FALSE, signal_only = FALSE)
+
+  expect_equal(nrow(s$susiex), 1L)
+  expect_equal(s$susiex$tuple, "(1,1)")
+  expect_equal(s$susiex$old, 0.91)
+  expect_equal(s$susiex$new, 0.93)
+})
+
 test_that("coloc tidy table extends the input data.frame with verdict and top_pp", {
   rows <- list(
     list(t1 = "A", t2 = "B", l1 = 1, l2 = 1, h1 = "rs1", h2 = "rs1",
          pp = c(0.001, 0.001, 0.001, 0.05, 0.947)),
     list(t1 = "A", t2 = "C", l1 = 1, l2 = 1, h1 = "rs1", h2 = "rs9",
          pp = c(0.99, 0.005, 0.002, 0.002, 0.001)))   # H0 dominant
-  s <- summary(make_post_obj(coloc = make_coloc_df(rows)),
+  s <- summary(coloc_post_obj(coloc = coloc_df(rows)),
                color = FALSE, signal_only = FALSE)
   expect_s3_class(s$coloc_pairwise, "data.frame")
   expect_equal(nrow(s$coloc_pairwise), 2L)
@@ -103,19 +84,19 @@ test_that("coloc tidy table extends the input data.frame with verdict and top_pp
   expect_equal(s$coloc_pairwise$top_pp, c(0.947, 0.990), tolerance = 1e-9)
 })
 
-# ---- signal_only filtering + bookkeeping ----------------------------------
+# ---- signal_only filtering + bookkeeping -----------------------------------
 
 test_that("signal_only drops below-threshold susiex rows and counts them in n_total/n_kept", {
   tuples <- list(
-    make_susiex_tuple(c("a", "b"),
-                      cs_indices    = c(1, 1),
-                      marginal_prob = c(0.95, 0.20)),    # signal (a active)
-    make_susiex_tuple(c("a", "b"),
-                      cs_indices    = c(2, 2),
-                      marginal_prob = c(0.40, 0.30)))    # no signal
-  s_filt <- summary(make_post_obj(susiex = tuples), color = FALSE,
+    coloc_tuple(c("a", "b"),
+                cs_indices    = c(1, 1),
+                marginal_prob = c(0.95, 0.20)),    # signal (a active)
+    coloc_tuple(c("a", "b"),
+                cs_indices    = c(2, 2),
+                marginal_prob = c(0.40, 0.30)))    # no signal
+  s_filt <- summary(coloc_post_obj(susiex = tuples), color = FALSE,
                     signal_only = TRUE)
-  s_all  <- summary(make_post_obj(susiex = tuples), color = FALSE,
+  s_all  <- summary(coloc_post_obj(susiex = tuples), color = FALSE,
                     signal_only = FALSE)
   expect_equal(s_filt$susiex_n_total, 2L)
   expect_equal(s_filt$susiex_n_kept,  1L)
@@ -129,18 +110,18 @@ test_that("signal_only drops H0-dominant coloc rows and footers the count", {
          pp = c(0.99, 0.005, 0.002, 0.002, 0.001)),    # H0
     list(t1 = "A", t2 = "B", l1 = 1, l2 = 2, h1 = "rs1", h2 = "rs7",
          pp = c(0.001, 0.001, 0.001, 0.05, 0.947)))    # H4
-  obj   <- make_post_obj(coloc = make_coloc_df(rows))
-  s     <- summary(obj, color = FALSE, signal_only = TRUE)
+  obj <- coloc_post_obj(coloc = coloc_df(rows))
+  s   <- summary(obj, color = FALSE, signal_only = TRUE)
   expect_equal(s$coloc_n_total, 2L)
   expect_equal(s$coloc_n_kept,  1L)
   out <- capture.output(print(s))
   expect_true(any(grepl("1/2 pairs hidden", out)))
 })
 
-# ---- Defensive paths ------------------------------------------------------
+# ---- Defensive paths -------------------------------------------------------
 
 test_that("summary handles entirely empty input gracefully", {
-  s <- summary(make_post_obj(), color = FALSE)
+  s <- summary(coloc_post_obj(), color = FALSE)
   expect_null(s$susiex)
   expect_null(s$coloc_pairwise)
   out <- capture.output(print(s))
@@ -148,11 +129,11 @@ test_that("summary handles entirely empty input gracefully", {
 })
 
 test_that("summary tolerates susiex tuples with missing fields (skips them)", {
-  good   <- make_susiex_tuple(c("a", "b"),
-                              cs_indices    = c(1, 1),
-                              marginal_prob = c(0.95, 0.95))
+  good   <- coloc_tuple(c("a", "b"),
+                        cs_indices    = c(1, 1),
+                        marginal_prob = c(0.95, 0.95))
   broken <- list(cs_indices = c(2, 2))   # missing marginal_prob etc.
-  s <- summary(make_post_obj(susiex = list(good, broken)),
+  s <- summary(coloc_post_obj(susiex = list(good, broken)),
                color = FALSE, signal_only = FALSE)
   expect_equal(nrow(s$susiex), 1L)
   expect_equal(s$susiex_n_total, 2L)   # both counted in total
@@ -161,13 +142,13 @@ test_that("summary tolerates susiex tuples with missing fields (skips them)", {
 
 test_that("summary prefixes trait names that collide with reserved column names", {
   # Trait literally named "tuple" must not clobber the CS-tuple column.
-  tup <- make_susiex_tuple(c("tuple", "top_prob"),
-                           cs_indices    = c(1, 1),
-                           marginal_prob = c(0.95, 0.95))
-  s <- summary(make_post_obj(susiex = list(tup)), color = FALSE)
+  tup <- coloc_tuple(c("tuple", "top_prob"),
+                     cs_indices    = c(1, 1),
+                     marginal_prob = c(0.95, 0.95))
+  s <- summary(coloc_post_obj(susiex = list(tup)), color = FALSE)
   expect_true("tuple" %in% colnames(s$susiex))
   # Reserved-name traits get a "trait_" prefix.
-  expect_true("trait_tuple"   %in% colnames(s$susiex))
+  expect_true("trait_tuple"    %in% colnames(s$susiex))
   expect_true("trait_top_prob" %in% colnames(s$susiex))
 })
 
@@ -177,7 +158,7 @@ test_that("summary warns and skips coloc when required PP columns are missing", 
                     PP.H0 = 0.5, PP.H1 = 0.5,
                     stringsAsFactors = FALSE)
   expect_warning(
-    s <- summary(make_post_obj(coloc = bad), color = FALSE),
+    s <- summary(coloc_post_obj(coloc = bad), color = FALSE),
     "missing required columns")
   expect_null(s$coloc_pairwise)
   expect_equal(s$coloc_n_total, 1L)
@@ -185,7 +166,7 @@ test_that("summary warns and skips coloc when required PP columns are missing", 
 })
 
 test_that("summary validates its arguments", {
-  obj <- make_post_obj()
+  obj <- coloc_post_obj()
   expect_error(summary(obj, prob_thresh = 1.1),     "prob_thresh")
   expect_error(summary(obj, prob_thresh = -0.1),    "prob_thresh")
   expect_error(summary(obj, ambiguous_lower = 0.9, prob_thresh = 0.8),
@@ -194,24 +175,16 @@ test_that("summary validates its arguments", {
   expect_error(summary(obj, color = "yes"),         "color")
 })
 
-# ---- Color toggle ---------------------------------------------------------
+# ---- Color toggle ----------------------------------------------------------
 
-test_that("color = FALSE produces ASCII-only output", {
-  obj <- make_post_obj(
-    susiex = list(make_susiex_tuple(c("a", "b"),
-                                    cs_indices    = c(1, 1),
-                                    marginal_prob = c(0.95, 0.95))))
-  out <- capture.output(print(summary(obj, color = FALSE)))
-  # No ANSI escape sequences.
-  expect_false(any(grepl("\033\\[", out)))
-})
-
-test_that("color = TRUE injects ANSI escape sequences", {
-  obj <- make_post_obj(
-    susiex = list(make_susiex_tuple(c("a", "b"),
-                                    cs_indices    = c(1, 1),
-                                    marginal_prob = c(0.95, 0.95))))
-  out <- capture.output(print(summary(obj, color = TRUE)))
-  expect_true(any(grepl("\033\\[", out)),
+test_that("color toggle controls ANSI escape sequences in output", {
+  obj <- coloc_post_obj(
+    susiex = list(coloc_tuple(c("a", "b"),
+                              cs_indices    = c(1, 1),
+                              marginal_prob = c(0.95, 0.95))))
+  out_plain <- capture.output(print(summary(obj, color = FALSE)))
+  out_color <- capture.output(print(summary(obj, color = TRUE)))
+  expect_false(any(grepl("\033\\[", out_plain)))
+  expect_true(any(grepl("\033\\[", out_color)),
               info = "Forcing color = TRUE should emit at least one ANSI SGR.")
 })

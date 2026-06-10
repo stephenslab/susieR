@@ -114,17 +114,9 @@ compute_residuals.individual <- function(data, params, model, l, ...) {
   sw_l <- get_slot_weight(model, l)
 
   if (params$unmappable_effects == "inf") {
-    # SuSiE-inf: Omega-weighted residuals computed in eigenspace.
-    # The full b_minus_l is built from (alpha, mu) directly here since
-    # fitted_without_l (n-space) is not maintained on the inf path.
-    # model$XtOmegay, model$omega_var, model$predictor_weights are cached
-    # at iter boundaries.
     sw <- if (!is.null(model$slot_weights)) model$slot_weights else rep(1, nrow(model$alpha))
     b_minus_l <- colSums(sw * model$alpha * model$mu) - sw_l * model$alpha[l, ] * model$mu[l, ]
 
-    # Compute V' b_minus_l once; reused for XtOmegaXb (Omega-weighted) and
-    # the inflation-tail XtXr_without_l (un-weighted).  Saves one O(pr)
-    # crossprod per SER step.
     Vtb_minus_l <- as.vector(crossprod(data$eigen_vectors, b_minus_l))
 
     XtOmegaXb <- as.vector(data$eigen_vectors %*%

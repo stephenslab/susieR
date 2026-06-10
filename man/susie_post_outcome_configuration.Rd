@@ -7,8 +7,10 @@
 susie_post_outcome_configuration(
   input,
   by = c("fit", "outcome"),
+  outcome_names = NULL,
   method = c("susiex", "coloc_pairwise"),
   prob_thresh = 0.8,
+  single_effect_lfsr_cutoff = 0.05,
   cs_only = TRUE,
   p1 = 1e-04,
   p2 = 1e-04,
@@ -23,39 +25,54 @@ susie_post_outcome_configuration(
 \item{by}{Either \code{"fit"} (one trait per input fit; default) or
 \code{"outcome"} (multi-output fits expand into per-outcome traits).}
 
-\item{method}{Character scalar; one of \code{"susiex"} (default) or
-\code{"coloc_pairwise"}. Pick the analysis to run; for both, call
-the function twice.}
+\item{outcome_names}{Optional character vector of trait-view names. If
+\code{NULL}, names are taken from the input list when available, otherwise
+\code{trait_1}, \code{trait_2}, ... are used. If provided, its length must
+match the number of trait views after applying \code{by}.}
+
+\item{method}{Character scalar; one of \code{"susiex"} (default),
+or \code{"coloc_pairwise"}. Pick the analysis to run; for both analyses,
+call the function twice.}
 
 \item{prob_thresh}{Per-trait marginal threshold for the convenience
 \code{$active} flags in the SuSiEx output. Default \code{0.8}.}
 
+\item{single_effect_lfsr_cutoff}{LFSR threshold used to flag
+outcome-specific CS evidence when \code{method = "susiex"} is applied to
+one multi-output \code{mvsusie} or \code{mfsusie} fit. The LFSR is read
+from \code{fit$lfsr} at each CS sentinel SNP. Default \code{0.05}.}
+
 \item{cs_only}{Logical. If \code{TRUE} (default) only enumerate over CSs
 present in each fit's \code{$sets$cs}; if \code{FALSE} loop over all L
 rows of \code{$alpha}. Either way, effects whose entire alpha row is
-zero are skipped. When \code{TRUE}, every fit must carry a non-null
-\code{$sets$cs} or the function errors.}
+zero are skipped. When \code{TRUE}, trait views without credible sets
+are skipped with a warning; if fewer than two trait views remain, the
+function returns \code{NULL}.}
 
 \item{p1, p2, p12}{Coloc per-SNP causal priors: \code{p1} for trait 1
 alone, \code{p2} for trait 2 alone, \code{p12} for shared causal.
 Defaults match \code{coloc::coloc.bf_bf}: \code{p1 = p2 = 1e-4},
 \code{p12 = 5e-6}. Only used when \code{"coloc_pairwise"} is in
-\code{methods}.}
+\code{method}.}
 
 \item{...}{Currently ignored.}
 }
 \value{
-A list of class \code{"susie_post_outcome_configuration"} with
-exactly one of the following components, depending on \code{method}:
+\code{NULL} if fewer than two trait views are available for
+post-hoc analysis; otherwise a list of class
+\code{"susie_post_outcome_configuration"} with exactly one of the following
+components, depending on \code{method}:
 \describe{
   \item{\code{$susiex}}{(when \code{method = "susiex"}) A list of length
-    equal to the number of CS tuples considered. Each element has
-    components \code{cs_indices} (length-N integer tuple),
-    \code{logBF_trait} (length N), \code{configs} (\eqn{2^N \times N}
-    binary matrix), \code{config_prob} (length \eqn{2^N}),
-    \code{marginal_prob} (length-N per-trait marginal posterior
-    probability of being active across the configuration ensemble),
-    and \code{active} (logical, \code{marginal_prob >= prob_thresh}).}
+    equal to the number of CS tuples considered, named \code{config_1},
+    \code{config_2}, etc. Each element has
+    components \code{config_probability} (binary trait-activation table
+    with a \code{config_prob} column) and \code{config_summary}
+    (CS-level post-hoc activation summary, with one row per trait). For one
+    multi-output \code{mvsusie} or \code{mfsusie} fit, both \code{$susiex}
+    and \code{$mvsusie} are named by CS label, e.g. \code{L1}; each
+    \code{$mvsusie} element has \code{cs_summary}, \code{config_summary},
+    and \code{cs_variant_summary}.}
   \item{\code{$coloc_pairwise}}{(when \code{method = "coloc_pairwise"})
     A data.frame with one row per (trait1, trait2, l1, l2)
     combination, columns \code{trait1, trait2, l1, l2, hit1, hit2,
@@ -66,22 +83,22 @@ Pretty-print with \code{summary(out)}.
 \description{
 Runs one of two complementary post-hoc analyses, selected by
 \code{method}: \code{"susiex"} (default) for the SuSiEx \eqn{2^N}
-combinatorial enumeration, reporting the posterior probability of
-every binary causality pattern across the \eqn{N} input traits; or
+combinatorial enumeration, reporting posterior probabilities over
+binary causality patterns across the \eqn{N} input traits;
 \code{"coloc_pairwise"} for the coloc pairwise ABF, reporting the
 five colocalisation hypothesis posteriors (H0/H1/H2/H3/H4) for every
-pair of traits. To get both, call the function twice and combine.
+pair of traits. To get both views, call the function twice and combine.
 }
 \details{
-Two grouping modes are supported through the \code{by} argument:
+Two input organizations are supported:
 \describe{
-  \item{\code{"fit"}}{Each input fit contributes a single trait view.
+  \item{\code{by = "fit"}}{Each input fit contributes a single trait view.
     Multi-output fits (\code{mvsusie}, \code{mfsusie}) are kept whole: the
     trait's per-(CS, SNP) log Bayes factors are the joint composite
     stored on the fit as \code{lbf_variable}. Configuration enumeration
     loops over the cross-product \eqn{L_1 \times \dots \times L_N} of CS
     indices.}
-  \item{\code{"outcome"}}{Multi-output fits fan out into per-outcome views,
+  \item{\code{by = "outcome"}}{Multi-output fits fan out into per-outcome views,
     each with its own per-(CS, SNP) log Bayes factors read from
     \code{fit$lbf_variable_outcome} (an \eqn{L \times J \times R} or
     \eqn{L \times J \times M} array). All per-outcome views share the
@@ -91,49 +108,59 @@ Two grouping modes are supported through the \code{by} argument:
     fit (set \code{attach_lbf_variable_outcome = TRUE} when fitting).}
 }
 
-\subsection{SuSiEx algorithm}{
-For each credible-set tuple \eqn{(l_1, \dots, l_N)}:
-\enumerate{
-  \item Per-trait CS-level log BF (alpha-weighted SNP average):
-    \deqn{\log\mathrm{BF}^{(n)}_{l_n} = \sum_j \alpha_{n,l_n,j}\,
-      \log\mathrm{BF}_{n,l_n,j}.}
-  \item Enumerate the \eqn{2^N} binary configurations
-    \eqn{c \in \{0,1\}^N}.
-  \item Configuration log BF:
-    \deqn{\log\mathrm{BF}^{(c)} = \sum_{n: c_n = 1} \log\mathrm{BF}^{(n)}_{l_n}.}
-  \item Normalise under a uniform prior over the \eqn{2^N} configurations.
-  \item Per-trait marginal: \eqn{P(\mathrm{trait}\,n\,\mathrm{causal}) =
-    \sum_{c: c_n = 1} P(c \mid \mathrm{tuple})}.
-}
+After SuSiE has been fit, the post-hoc step can answer two related
+questions:
+\describe{
+  \item{\code{"susiex"}}{SuSiEx \eqn{2^N} activation probabilities for
+    each credible-set tuple. It asks which traits have evidence for a
+    proposed shared CS-level event. In two traits, the both-active state
+    uses same-SNP evidence such as
+    \eqn{\sum_j \exp(\ell_{1j}+\ell_{2j})}, where \eqn{\ell_{tj}} is the
+    SNP-level log Bayes factor for trait \eqn{t}.}
+  \item{\code{"coloc_pairwise"}}{Pairwise coloc H0-H4 posteriors for
+    every trait pair and CS pair. It asks whether same-SNP evidence is
+    stronger than distinct-causal evidence, represented by terms such as
+    \eqn{\sum_{j \ne k}\exp(\ell_{1j}+\ell_{2k})}; this separates H3,
+    two distinct causal variants, from H4, one shared causal variant.
+    Per-SNP log Bayes factors are aligned by variant name when available.}
 }
 
-\subsection{Coloc pairwise algorithm}{
-For each unordered trait pair \eqn{(n, n')} and each CS pair
-\eqn{(l_n, l_{n'})}, with per-SNP log BFs
-\eqn{\ell_1 = \log\mathrm{BF}_{n,l_n,\cdot}} and
-\eqn{\ell_2 = \log\mathrm{BF}_{n',l_{n'},\cdot}} (length \eqn{J}), the
-five hypothesis log-BFs are
-\deqn{\log\mathrm{BF}_{H_0} = 0,\quad
-      \log\mathrm{BF}_{H_1} = \log p_1 + \mathrm{LSE}(\ell_1),\quad
-      \log\mathrm{BF}_{H_2} = \log p_2 + \mathrm{LSE}(\ell_2),}
-\deqn{\log\mathrm{BF}_{H_3} = \log p_1 + \log p_2 +
-      \mathrm{logdiff}(\mathrm{LSE}(\ell_1) + \mathrm{LSE}(\ell_2),\;
-                       \mathrm{LSE}(\ell_1 + \ell_2)),}
-\deqn{\log\mathrm{BF}_{H_4} = \log p_{12} + \mathrm{LSE}(\ell_1 + \ell_2),}
-and the corresponding posteriors are
-\eqn{\mathrm{PP.H}_h = \exp(\log\mathrm{BF}_{H_h} -
-      \mathrm{LSE}(\log\mathrm{BF}_{H_0:H_4}))}, where
-\eqn{\mathrm{LSE}} is the log-sum-exp.
-\itemize{
-  \item H0: no causal variant in either CS.
-  \item H1: causal in trait \eqn{n} only.
-  \item H2: causal in trait \eqn{n'} only.
-  \item H3: distinct causals in the two traits.
-  \item H4: a single shared causal variant.
+\subsection{Two-trait example}{
+For two traits and one CS pair, SuSiEx has four activation states:
+\eqn{(0,0)}, \eqn{(1,0)}, \eqn{(0,1)}, and \eqn{(1,1)}. The state
+\eqn{(1,1)} means both traits are active for the candidate shared event;
+it does not introduce a separate distinct-causal state.
+
+Coloc has five hypotheses: H0, no causal variant; H1, trait 1 only; H2,
+trait 2 only; H3, two distinct causal variants; and H4, one shared causal
+variant. Thus coloc splits the active two-trait case into H3 and H4,
+whereas SuSiEx represents it as the single activation state \eqn{(1,1)}.
+
+The \code{"susiex"} output is an \eqn{2}-trait post-hoc activation model
+over CS tuples. The \code{"coloc_pairwise"} output is a pairwise
+colocalisation model over H0-H4 for each CS pair. Both are summaries of
+already fitted SuSiE-class models; neither refits the single-trait effects.
 }
+
+More generally, in \eqn{N}-trait analysis, the difference between
+SuSiEx-style activation and colocalization is a difference in hypothesis
+space:
+\describe{
+  \item{SuSiEx activation space}{\code{"susiex"} is an \eqn{N}-trait
+    post-hoc activation, or meta-analysis-style, model over CS tuples. It
+    enumerates the \eqn{2^N} binary activity patterns and asks which traits
+    participate in a proposed shared event.}
+  \item{Colocalization partition space}{A theoretical generalization to
+    \eqn{N}-trait colocalization has a larger hypothesis space: inactive
+    traits plus all ways of grouping active traits by shared causal
+    variant, of size Bell(\eqn{N+1}) (see HyPrColoc, Figure 1). This space
+    asks not only which traits are active, but which active traits share
+    the same causal variant versus distinct causal variants.}
 }
 }
 \references{
 SuSiEx, Nature Genetics 2024 (combinatorial \eqn{2^N} enumeration).
 Wallace, PLoS Genetics 2020 (coloc pairwise H0/H1/H2/H3/H4 ABF).
+Foley et al., Nature Communications 2021 (HyPrColoc; multi-trait
+colocalisation hypothesis space in Figure 1).
 }

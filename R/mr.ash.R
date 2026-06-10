@@ -303,7 +303,9 @@ mr.ash                      = function(X, y, Z = NULL, sa2 = NULL,
   if ( is.null(update.order) ) {
     o               = rep(0:(p-1), max.iter)
   } else if (is.numeric(update.order)) {
-    o               = rep(update.order - 1, max.iter)
+    # as.integer(): caisa_cpp's `o_r` is typed cpp11::integers, and
+    # `update.order - 1` coerces to double, which it would reject.
+    o               = rep(as.integer(update.order - 1), max.iter)
   } else if (update.order == "random") {
     o               = random_order(p, max.iter)
   }
@@ -317,9 +319,11 @@ mr.ash                      = function(X, y, Z = NULL, sa2 = NULL,
   out$pi            = c(out$pi)
   out$sigma2        = c(out$sigma2)
 
+  # nocov start  -- unreachable: method_q restricted by match.arg to c("sigma_dep_q","sigma_indep_q"), so it can never equal "sigma_scaled_beta"
   if (method_q == "sigma_scaled_beta") {
     out$beta        = out$beta * sqrt(out$sigma2)
   }
+  # nocov end
 
   ## polish return object
   out$intercept     = c(data$ZtZiZy - data$ZtZiZX %*% out$beta)
@@ -518,6 +522,7 @@ get.full.posterior <- function(fit) {
   return (list(phi = phi, m = m, s2 = s2))
 }
 
+# nocov start  -- broken/unused Gibbs sampler (recurses on itself, no C++ backend); excluded from coverage
 gibbs.sampling              = function(X, y, pi, sa2 = (2^((0:19) / 20) - 1)^2,
                                        max.iter = 1500, burn.in = 500,
                                        standardize = FALSE, intercept = TRUE,
@@ -553,6 +558,7 @@ gibbs.sampling              = function(X, y, pi, sa2 = (2^((0:19) / 20) - 1)^2,
   
   return (out)
 }
+# nocov end
 
 var.n                       = function(x) {
   a             = x - mean(x)

@@ -473,10 +473,10 @@ susie_get_cs_attainable <- function(res, coverage = 0.95, ethres = NULL,
     filtered_idx <- as.integer(sub("^L", "", names(out$cs)))
     original_idx <- keep_effects[filtered_idx]
     names(out$cs) <- paste0("L", original_idx)
-    if (!is.null(out$cs_index))
-      out$cs_index <- original_idx
-    if (!is.null(out$purity))
-      rownames(out$purity) <- paste0("L", original_idx)
+    if (!is.null(out$cs_index)) # nocov - susie_get_cs_attainable strips X/Xcorr so cs_index is always NULL
+      out$cs_index <- original_idx # nocov
+    if (!is.null(out$purity)) # nocov - purity is always NULL (X/Xcorr stripped above)
+      rownames(out$purity) <- paste0("L", original_idx) # nocov
   }
 
   out

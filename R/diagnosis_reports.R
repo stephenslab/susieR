@@ -32,6 +32,8 @@
 # Data.frames accumulated on fit$.diag_env$history during the run.
 # Debug flag .ash_debug in susie_utils.R (TRUE = on, never turn off).
 
+# nocov start  -- internal susieR::: ML-debug scaffolding; excluded from coverage (see coverage plan)
+
 
 #' BB+ash per-iteration diagnostic
 #'
@@ -628,3 +630,4 @@ extract_bb_ash_features <- function(fit, X, causal = NULL) {
   }
   do.call(rbind, rows)
 }
+# nocov end

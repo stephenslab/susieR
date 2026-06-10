@@ -1,77 +1,43 @@
 context("Generic methods infrastructure")
 
-# =============================================================================
-# GENERIC EXISTENCE
-# =============================================================================
+# ---- Generic existence ----
 
-test_that("all core generics are defined", {
-  # Data initialization
-  expect_true(exists("configure_data", mode = "function"))
-  expect_true(exists("get_var_y", mode = "function"))
-
-  # Model initialization
-  expect_true(exists("initialize_susie_model", mode = "function"))
-  expect_true(exists("initialize_fitted", mode = "function"))
-  expect_true(exists("validate_prior", mode = "function"))
-  expect_true(exists("track_ibss_fit", mode = "function"))
-
-  # Single effect regression
-  expect_true(exists("compute_residuals", mode = "function"))
-  expect_true(exists("compute_ser_statistics", mode = "function"))
-  expect_true(exists("SER_posterior_e_loglik", mode = "function"))
-  expect_true(exists("calculate_posterior_moments", mode = "function"))
-  expect_true(exists("compute_kl", mode = "function"))
-  expect_true(exists("get_ER2", mode = "function"))
-  expect_true(exists("Eloglik", mode = "function"))
-  expect_true(exists("loglik", mode = "function"))
-  expect_true(exists("neg_loglik", mode = "function"))
-
-  # Model updates
-  expect_true(exists("update_fitted_values", mode = "function"))
-  expect_true(exists("update_variance_components", mode = "function"))
-  expect_true(exists("update_derived_quantities", mode = "function"))
-
-  # Output generation
-  expect_true(exists("get_scale_factors", mode = "function"))
-  expect_true(exists("get_intercept", mode = "function"))
-  expect_true(exists("get_fitted", mode = "function"))
-  expect_true(exists("get_cs", mode = "function"))
-  expect_true(exists("get_variable_names", mode = "function"))
-  expect_true(exists("get_zscore", mode = "function"))
-  expect_true(exists("cleanup_model", mode = "function"))
+test_that("all core generics are defined as functions", {
+  generics <- c(
+    # Data initialization
+    "configure_data", "get_var_y",
+    # Model initialization
+    "initialize_susie_model", "initialize_fitted", "validate_prior",
+    "track_ibss_fit",
+    # Single effect regression
+    "compute_residuals", "compute_ser_statistics",
+    "SER_posterior_e_loglik", "calculate_posterior_moments",
+    "compute_kl", "get_ER2", "Eloglik", "loglik", "neg_loglik",
+    # Model updates
+    "update_fitted_values", "update_variance_components",
+    "update_derived_quantities",
+    # Output generation
+    "get_scale_factors", "get_intercept", "get_fitted", "get_cs",
+    "get_variable_names", "get_zscore", "cleanup_model"
+  )
+  for (g in generics) {
+    expect_true(exists(g, mode = "function"), info = paste("Missing generic:", g))
+  }
 })
 
-# =============================================================================
-# METHOD DISPATCH
-# =============================================================================
+# ---- Method dispatch by data type ----
 
-test_that("methods exist for all three data types", {
+test_that("concrete methods exist for individual, ss, and rss_lambda data classes", {
   classes <- c("individual", "ss", "rss_lambda")
-
-  # Core generics that all data types must implement
   key_generics <- c(
-    "configure_data",
-    "get_var_y",
-    "initialize_susie_model",
-    "initialize_fitted",
-    "compute_residuals",
-    "compute_ser_statistics",
-    "SER_posterior_e_loglik",
-    "calculate_posterior_moments",
-    "get_ER2",
-    "Eloglik",
-    "loglik",
-    "neg_loglik",
-    "update_fitted_values",
-    "update_variance_components",
-    "get_scale_factors",
-    "get_intercept",
-    "get_fitted",
-    "get_cs",
-    "get_variable_names",
-    "cleanup_model"
+    "configure_data", "get_var_y", "initialize_susie_model",
+    "initialize_fitted", "compute_residuals", "compute_ser_statistics",
+    "SER_posterior_e_loglik", "calculate_posterior_moments",
+    "get_ER2", "Eloglik", "loglik", "neg_loglik",
+    "update_fitted_values", "update_variance_components",
+    "get_scale_factors", "get_intercept", "get_fitted", "get_cs",
+    "get_variable_names", "cleanup_model"
   )
-
   for (generic in key_generics) {
     for (cls in classes) {
       method_name <- paste0(generic, ".", cls)
@@ -83,338 +49,280 @@ test_that("methods exist for all three data types", {
 
 test_that("default methods exist for optional generics", {
   default_methods <- c(
-    "configure_data.default",
-    "validate_prior.default",
-    "track_ibss_fit.default",
-    "compute_kl.default",
+    "configure_data.default", "validate_prior.default",
+    "track_ibss_fit.default", "compute_kl.default",
     "update_variance_components.default",
     "update_derived_quantities.default",
-    "get_fitted.default",
-    "get_zscore.default",
+    "get_fitted.default", "get_zscore.default",
     "cleanup_model.default"
   )
-
   for (method in default_methods) {
     expect_true(exists(method, mode = "function"),
                 info = paste("Missing default method:", method))
   }
 })
 
-# =============================================================================
-# DEFAULT METHOD BEHAVIOR
-# =============================================================================
+# ---- Default method behavior ----
 
-test_that("default methods have sensible fallback behavior", {
-  data <- structure(list(n = 50, p = 10), class = "test_class")
+test_that("configure_data.default returns data unchanged", {
+  data   <- structure(list(n = 50, p = 10), class = "test_class")
   params <- list(track_fit = FALSE)
-  model <- list(alpha = matrix(1/10, 3, 10), V = c(0.1, 0.2, 0.3), sigma2 = 1)
-
-  # configure_data.default returns data unchanged
   expect_identical(configure_data.default(data, params), data)
+})
 
-  # validate_prior.default returns TRUE
+test_that("validate_prior.default returns TRUE", {
+  data   <- structure(list(n = 50, p = 10), class = "test_class")
+  params <- list()
+  model  <- list(alpha = matrix(1/10, 3, 10), V = c(0.1, 0.2, 0.3), sigma2 = 1)
   expect_true(validate_prior.default(data, params, model))
+})
 
-  # update_derived_quantities.default returns model unchanged
+test_that("update_derived_quantities.default returns model unchanged", {
+  data   <- structure(list(n = 50, p = 10), class = "test_class")
+  params <- list()
+  model  <- list(alpha = matrix(1/10, 3, 10), V = c(0.1, 0.2, 0.3), sigma2 = 1)
   expect_identical(update_derived_quantities.default(data, params, model), model)
+})
 
-  # get_fitted.default and get_zscore.default return NULL
+test_that("get_fitted.default and get_zscore.default return NULL", {
+  data   <- structure(list(n = 50, p = 10), class = "test_class")
+  params <- list()
+  model  <- list(alpha = matrix(1/10, 3, 10))
   expect_null(get_fitted.default(data, params, model))
   expect_null(get_zscore.default(data, params, model))
 })
 
-test_that("track_ibss_fit.default stores iteration snapshots", {
-  data <- structure(list(), class = "test_class")
-  params <- list(track_fit = TRUE)
-  model <- list(alpha = matrix(1/10, 3, 10), V = c(0.1, 0.2, 0.3), sigma2 = 1)
+test_that("track_ibss_fit.default stores iteration snapshots and respects track_fit=FALSE", {
+  data    <- structure(list(), class = "test_class")
+  model   <- list(alpha = matrix(1/10, 3, 10), V = c(0.1, 0.2, 0.3), sigma2 = 1)
   tracking <- list()
 
-  # Should store snapshot at iteration 1
-  result <- track_ibss_fit.default(data, params, model, tracking, iter = 1, elbo = c(-Inf))
-  expect_true(is.list(result[[1]]))
-  expect_s3_class(result[[1]]$alpha, "data.frame")
-  expect_s3_class(result[[1]]$effect, "data.frame")
-  expect_s3_class(result[[1]]$iteration, "data.frame")
-  expect_equal(result[[1]]$iteration$sigma2, 1)
+  # track_fit = TRUE: first snapshot is stored
+  params1 <- list(track_fit = TRUE)
+  result1 <- track_ibss_fit.default(data, params1, model, tracking, iter = 1, elbo = c(-Inf))
+  expect_true(is.list(result1[[1]]))
+  expect_s3_class(result1[[1]]$alpha,     "data.frame")
+  expect_s3_class(result1[[1]]$effect,    "data.frame")
+  expect_s3_class(result1[[1]]$iteration, "data.frame")
+  expect_equal(result1[[1]]$iteration$sigma2, 1)
 
-  # Should store snapshot at iteration 2
-  result2 <- track_ibss_fit.default(data, params, model, result, iter = 2, elbo = c(-Inf, 100))
+  # Second call appends a second snapshot
+  result2 <- track_ibss_fit.default(data, params1, model, result1, iter = 2, elbo = c(-Inf, 100))
   expect_equal(length(result2), 2)
   expect_equal(result2[[2]]$iteration$iteration, 1)
 
-  # With track_fit = FALSE, tracking stays empty
-  params_no_track <- list(track_fit = FALSE)
-  result3 <- track_ibss_fit.default(data, params_no_track, model, list(), iter = 1, elbo = c(-Inf))
+  # track_fit = FALSE: tracking list stays empty
+  params2 <- list(track_fit = FALSE)
+  result3 <- track_ibss_fit.default(data, params2, model, list(), iter = 1, elbo = c(-Inf))
   expect_equal(length(result3), 0)
 })
 
-test_that("cleanup_model.default removes temporary fields", {
-  data <- structure(list(), class = "test_class")
-  params <- list()
+test_that("cleanup_model.default removes temporary fields and keeps core fields", {
+  data  <- structure(list(), class = "test_class")
   model <- list(
-    alpha = matrix(1/10, 3, 10),
-    mu = matrix(0, 3, 10),
-    sigma2 = 1,
-    V = c(0.1, 0.2, 0.3),
-    # Temporary fields to remove
-    null_weight = 0,
+    alpha            = matrix(1/10, 3, 10),
+    mu               = matrix(0, 3, 10),
+    sigma2           = 1,
+    V                = c(0.1, 0.2, 0.3),
+    null_weight      = 0,
     predictor_weights = rep(1/10, 10),
-    residuals = rnorm(50),
+    residuals        = rnorm(50),
     fitted_without_l = rnorm(50),
-    runtime = list(prev_elbo = -100, prev_alpha = matrix(1/10, 3, 10), prev_pip_diff = 0.01)
+    runtime          = list(prev_elbo = -100, prev_alpha = matrix(1/10, 3, 10),
+                            prev_pip_diff = 0.01)
   )
 
-  result <- cleanup_model.default(data, params, model)
+  result <- cleanup_model.default(data, params = list(), model)
 
-  # Keep core fields
-  expect_true("alpha" %in% names(result))
-  expect_true("mu" %in% names(result))
+  expect_true("alpha"  %in% names(result))
+  expect_true("mu"     %in% names(result))
   expect_true("sigma2" %in% names(result))
-  expect_true("V" %in% names(result))
+  expect_true("V"      %in% names(result))
 
-  # Remove temporary fields
-  expect_false("null_weight" %in% names(result))
+  expect_false("null_weight"       %in% names(result))
   expect_false("predictor_weights" %in% names(result))
-  expect_false("residuals" %in% names(result))
-  expect_false("fitted_without_l" %in% names(result))
-  expect_false("runtime" %in% names(result))
+  expect_false("residuals"         %in% names(result))
+  expect_false("fitted_without_l"  %in% names(result))
+  expect_false("runtime"           %in% names(result))
 })
 
-# =============================================================================
-# DEFAULT METHOD ERROR MESSAGES
-# =============================================================================
+# ---- Default method error dispatch (stop() branches) ----
 
-test_that("get_var_y.default throws error for unimplemented class", {
-  data <- structure(list(y = rnorm(50)), class = "unsupported_class")
-
-  expect_error(
-    get_var_y.default(data),
-    "get_var_y: no method for class 'unsupported_class'"
-  )
-})
-
-test_that("initialize_susie_model.default throws error for unimplemented class", {
-  data <- structure(list(n = 50, p = 10), class = "unsupported_class")
-  params <- list(L = 5)
-
-  expect_error(
-    initialize_susie_model.default(data, params),
-    "initialize_susie_model: no method for class 'unsupported_class'"
-  )
-})
-
-test_that("initialize_fitted.default throws error for unimplemented class", {
-  data <- structure(list(n = 50, p = 10), class = "unsupported_class")
-  mat_init <- matrix(0, 5, 10)
-
-  expect_error(
-    initialize_fitted.default(data, mat_init),
-    "initialize_fitted: no method for class 'unsupported_class'"
-  )
-})
-
-test_that("compute_residuals.default throws error for unimplemented class", {
-  data <- structure(list(n = 50, p = 10), class = "unsupported_class")
-  params <- list()
-  model <- list(alpha = matrix(1/10, 5, 10), V = rep(1, 5))
-  l <- 1
-
-  expect_error(
-    compute_residuals.default(data, params, model, l),
-    "compute_residuals: no method for class 'unsupported_class'"
-  )
-})
-
-test_that("compute_ser_statistics.default throws error for unimplemented class", {
-  data <- structure(list(n = 50, p = 10), class = "unsupported_class")
-  params <- list()
-  model <- list(alpha = matrix(1/10, 5, 10), residuals = rnorm(50))
-  l <- 1
-
-  expect_error(
-    compute_ser_statistics.default(data, params, model, l),
-    "compute_ser_statistics: no method for class 'unsupported_class'"
-  )
-})
-
-test_that("SER_posterior_e_loglik.default throws error for unimplemented class", {
-  data <- structure(list(n = 50, p = 10), class = "unsupported_class")
-  params <- list()
-  model <- list(alpha = matrix(1/10, 5, 10), lbf_variable = matrix(0, 5, 10))
-  l <- 1
-
-  expect_error(
-    SER_posterior_e_loglik.default(data, params, model, l),
-    "SER_posterior_e_loglik: no method for class 'unsupported_class'"
-  )
-})
-
-test_that("calculate_posterior_moments.default throws error for unimplemented class", {
-  data <- structure(list(n = 50, p = 10), class = "unsupported_class")
-  params <- list()
-  model <- list(alpha = matrix(1/10, 5, 10))
-  V <- 1.0
-
-  expect_error(
-    calculate_posterior_moments.default(data, params, model, V),
-    "calculate_posterior_moments: no method for class 'unsupported_class'"
-  )
-})
-
-test_that("get_ER2.default throws error for unimplemented class", {
-  data <- structure(list(n = 50, p = 10), class = "unsupported_class")
-  model <- list(alpha = matrix(1/10, 5, 10), sigma2 = 1)
-
-  expect_error(
-    get_ER2.default(data, model),
-    "get_ER2: no method for class 'unsupported_class'"
-  )
-})
-
-test_that("Eloglik.default throws error for unimplemented class", {
-  data <- structure(list(n = 50, p = 10), class = "unsupported_class")
-  model <- list(alpha = matrix(1/10, 5, 10), sigma2 = 1)
-
-  expect_error(
-    Eloglik.default(data, model),
-    "Eloglik: no method for class 'unsupported_class'"
-  )
-})
-
-test_that("loglik.default throws error for unimplemented class", {
-  data <- structure(list(n = 50, p = 10), class = "unsupported_class")
-  params <- list()
-  model <- list(alpha = matrix(1/10, 5, 10), sigma2 = 1)
-  V <- 1.0
+test_that("required generics stop() with informative message for unsupported class", {
+  unsupported <- structure(list(n = 50, p = 10), class = "unsupported_class")
+  params   <- list()
+  model    <- list(alpha = matrix(1/10, 5, 10), sigma2 = 1,
+                   lbf_variable = matrix(0, 5, 10))
   ser_stats <- list(betahat = rnorm(10), shat2 = rep(1, 10))
 
-  expect_error(
-    loglik.default(data, params, model, V, ser_stats),
-    "loglik: no method for class 'unsupported_class'"
+  cases <- list(
+    list(fn = "get_var_y.default",
+         args = list(unsupported),
+         pat = "get_var_y: no method for class 'unsupported_class'"),
+
+    list(fn = "initialize_susie_model.default",
+         args = list(unsupported, params),
+         pat = "initialize_susie_model: no method for class 'unsupported_class'"),
+
+    list(fn = "initialize_fitted.default",
+         args = list(unsupported, matrix(0, 5, 10)),
+         pat = "initialize_fitted: no method for class 'unsupported_class'"),
+
+    list(fn = "compute_residuals.default",
+         args = list(unsupported, params, model, 1L),
+         pat = "compute_residuals: no method for class 'unsupported_class'"),
+
+    list(fn = "compute_ser_statistics.default",
+         args = list(unsupported, params,
+                     modifyList(model, list(residuals = rnorm(50))), 1L),
+         pat = "compute_ser_statistics: no method for class 'unsupported_class'"),
+
+    list(fn = "SER_posterior_e_loglik.default",
+         args = list(unsupported, params, model, 1L),
+         pat = "SER_posterior_e_loglik: no method for class 'unsupported_class'"),
+
+    list(fn = "calculate_posterior_moments.default",
+         args = list(unsupported, params, model, 1.0),
+         pat = "calculate_posterior_moments: no method for class 'unsupported_class'"),
+
+    list(fn = "get_ER2.default",
+         args = list(unsupported, model),
+         pat = "get_ER2: no method for class 'unsupported_class'"),
+
+    list(fn = "Eloglik.default",
+         args = list(unsupported, model),
+         pat = "Eloglik: no method for class 'unsupported_class'"),
+
+    list(fn = "loglik.default",
+         args = list(unsupported, params, model, 1.0, ser_stats),
+         pat = "loglik: no method for class 'unsupported_class'"),
+
+    list(fn = "neg_loglik.default",
+         args = list(unsupported, params, model, 0.0, ser_stats),
+         pat = "neg_loglik: no method for class 'unsupported_class'"),
+
+    list(fn = "update_fitted_values.default",
+         args = list(unsupported, params,
+                     modifyList(model, list(mu = matrix(0, 5, 10))), 1L),
+         pat = "update_fitted_values: no method for class 'unsupported_class'"),
+
+    list(fn = "get_scale_factors.default",
+         args = list(unsupported, params),
+         pat = "get_scale_factors: no method for class 'unsupported_class'"),
+
+    list(fn = "get_intercept.default",
+         args = list(unsupported, params,
+                     modifyList(model, list(mu = matrix(0, 5, 10)))),
+         pat = "get_intercept: no method for class 'unsupported_class'"),
+
+    list(fn = "get_cs.default",
+         args = list(unsupported,
+                     modifyList(params, list(coverage = 0.95, min_abs_corr = 0.5)),
+                     model),
+         pat = "get_cs: no method for class 'unsupported_class'"),
+
+    list(fn = "get_variable_names.default",
+         args = list(unsupported, model),
+         pat = "get_variable_names: no method for class 'unsupported_class'")
   )
+
+  for (case in cases) {
+    # Resolve the unexported .default method from the namespace so this works
+    # under both devtools::load_all() and installed-package testing (R CMD check).
+    fn   <- getFromNamespace(case$fn, "susieR")
+    args <- case$args
+    pat  <- case$pat
+    expect_error(
+      do.call(fn, args),
+      pat,
+      info = paste("Expected stop() in", case$fn)
+    )
+  }
 })
 
-test_that("neg_loglik.default throws error for unimplemented class", {
-  data <- structure(list(n = 50, p = 10), class = "unsupported_class")
-  params <- list()
-  model <- list(alpha = matrix(1/10, 5, 10), sigma2 = 1)
-  V_param <- 0.0  # log scale
-  ser_stats <- list(betahat = rnorm(10), shat2 = rep(1, 10))
+# ---- Verbose row generics ----
 
-  expect_error(
-    neg_loglik.default(data, params, model, V_param, ser_stats),
-    "neg_loglik: no method for class 'unsupported_class'"
-  )
-})
-
-test_that("update_fitted_values.default throws error for unimplemented class", {
-  data <- structure(list(n = 50, p = 10), class = "unsupported_class")
-  params <- list()
-  model <- list(alpha = matrix(1/10, 5, 10), mu = matrix(0, 5, 10))
-  l <- 1
-
-  expect_error(
-    update_fitted_values.default(data, params, model, l),
-    "update_fitted_values: no method for class 'unsupported_class'"
-  )
-})
-
-test_that("get_scale_factors.default throws error for unimplemented class", {
-  data <- structure(list(n = 50, p = 10), class = "unsupported_class")
-  params <- list()
-
-  expect_error(
-    get_scale_factors.default(data, params),
-    "get_scale_factors: no method for class 'unsupported_class'"
-  )
-})
-
-test_that("get_intercept.default throws error for unimplemented class", {
-  data <- structure(list(n = 50, p = 10), class = "unsupported_class")
-  params <- list()
-  model <- list(alpha = matrix(1/10, 5, 10), mu = matrix(0, 5, 10))
-
-  expect_error(
-    get_intercept.default(data, params, model),
-    "get_intercept: no method for class 'unsupported_class'"
-  )
-})
-
-test_that("get_cs.default throws error for unimplemented class", {
-  data <- structure(list(n = 50, p = 10), class = "unsupported_class")
-  params <- list(coverage = 0.95, min_abs_corr = 0.5)
-  model <- list(alpha = matrix(1/10, 5, 10))
-
-  expect_error(
-    get_cs.default(data, params, model),
-    "get_cs: no method for class 'unsupported_class'"
-  )
-})
-
-test_that("get_variable_names.default throws error for unimplemented class", {
-  data <- structure(list(n = 50, p = 10), class = "unsupported_class")
-  model <- list(alpha = matrix(1/10, 5, 10))
-
-  expect_error(
-    get_variable_names.default(data, model),
-    "get_variable_names: no method for class 'unsupported_class'"
-  )
-})
-
-# =============================================================================
-# Per-class verbose-row generics (format_sigma2_summary, format_extra_diag)
-# =============================================================================
-
-test_that("format_sigma2_summary.default returns sprintf %.4f of scalar sigma2", {
-  model <- list(sigma2 = 1.2345678)
-  expect_equal(format_sigma2_summary(model), sprintf("%.4f", 1.2345678))
-  expect_type(format_sigma2_summary(model), "character")
-  expect_length(format_sigma2_summary(model), 1L)
+test_that("format_sigma2_summary.default returns sprintf '%.4f' of scalar sigma2", {
+  model  <- list(sigma2 = 1.2345678)
+  result <- format_sigma2_summary.default(model)
+  expect_equal(result, sprintf("%.4f", 1.2345678))
+  expect_type(result, "character")
+  expect_length(result, 1L)
 })
 
 test_that("format_extra_diag.default returns empty string", {
-  model <- list()
-  expect_identical(format_extra_diag(model), "")
+  expect_identical(format_extra_diag.default(list()), "")
 })
 
-# =============================================================================
-# cleanup_extra_fields generic
-# =============================================================================
+# ---- cleanup_extra_fields generic ----
 
 test_that("cleanup_extra_fields.default returns character(0)", {
-  data <- list()
-  expect_identical(cleanup_extra_fields(data), character(0))
+  expect_identical(cleanup_extra_fields.default(list()), character(0))
 })
 
-test_that("cleanup_model.default strips standard temp fields", {
-  data <- list()  # default class
+test_that("cleanup_model.default strips only standard temp fields, preserves others", {
   model <- list(
-    null_weight       = 0.5,
-    runtime           = list(prev_elbo = -Inf),
-    fitted_without_l  = NA,
-    keep_me           = 42
+    null_weight      = 0.5,
+    runtime          = list(prev_elbo = -Inf),
+    fitted_without_l = NA,
+    keep_me          = 42
   )
-  out <- cleanup_model.default(data, params = list(), model = model)
+  out <- cleanup_model.default(list(), params = list(), model = model)
   expect_null(out$null_weight)
   expect_null(out$runtime)
   expect_null(out$fitted_without_l)
   expect_equal(out$keep_me, 42)
 })
 
-# =============================================================================
-# get_objective.default sum(KL) tolerates NA entries via na.rm = TRUE
-# =============================================================================
+# ---- get_objective.default na.rm = TRUE branch ----
 
-test_that("get_objective.default skips NA entries in KL via na.rm = TRUE", {
-  # Construct a minimal model where KL contains NA on a null effect.
-  # Eloglik will throw because the model class is generic; instead we
-  # intercept at the line that computes objective. Use a tiny test:
-  model <- list(
-    alpha  = matrix(1/10, 5, 10),
-    KL     = c(1.0, NA_real_, 2.0, NA_real_, 0.5),
-    sigma2 = 1.0
+test_that("get_objective.default skips NA entries in KL when computing standard ELBO", {
+  # Use a real individual data object so Eloglik.individual is dispatched.
+  # Inject NA into model$KL to exercise the na.rm = TRUE code path.
+  set.seed(7)
+  setup <- setup_individual_data(n = 50, p = 20, L = 5)
+  setup$params$max_iter <- 5
+  setup$params$tol      <- 1e-2
+
+  # Run one iteration to get a properly initialised model with fitted_without_l etc.
+  model_warm <- suppressWarnings(
+    susie_workhorse(setup$data, setup$params)
   )
 
-  # Direct test: does sum(model$KL, na.rm = TRUE) equal 3.5?
-  expect_equal(sum(model$KL, na.rm = TRUE), 3.5)
+  # Build a minimal model compatible with get_objective: needs the fields that
+  # Eloglik.individual and the standard branch expect.
+  # predictor_weights = attr(data$X, "d") is the per-predictor squared norm,
+  # stripped by cleanup_model but required by get_ER2.individual.
+  model_na <- list(
+    alpha             = model_warm$alpha,
+    mu                = model_warm$mu,
+    mu2               = model_warm$mu2,
+    V                 = model_warm$V,
+    sigma2            = model_warm$sigma2,
+    # Inject NA in two positions to exercise na.rm = TRUE
+    KL                = replace(model_warm$KL, c(2, 4), NA_real_),
+    lbf               = model_warm$lbf,
+    lbf_variable      = model_warm$lbf_variable,
+    Xr                = model_warm$fitted,
+    predictor_weights = attr(setup$data$X, "d")
+  )
+
+  params_std <- modifyList(setup$params, list(
+    unmappable_effects = "none",
+    use_NIG            = FALSE
+  ))
+
+  obj_na <- get_objective(setup$data, params_std, model_na)
+
+  # The same call with KL NAs replaced by zero should differ only by those KL terms
+  model_zero_kl         <- model_na
+  model_zero_kl$KL      <- replace(model_warm$KL, c(2, 4), 0)
+  obj_zero              <- get_objective(setup$data, params_std, model_zero_kl)
+
+  # Both should be finite (na.rm prevented NA propagation)
+  expect_true(is.finite(obj_na))
+  expect_true(is.finite(obj_zero))
+  # The difference equals the sum of the zeroed-out KL terms
+  expected_diff <- sum(model_warm$KL[c(2, 4)], na.rm = TRUE)
+  expect_equal(obj_zero - obj_na, expected_diff, tolerance = 1e-8)
 })
