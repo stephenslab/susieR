@@ -45,7 +45,7 @@ susie_rss(
   track_fit = FALSE,
   check_input = FALSE,
   check_prior = TRUE,
-  n_purity = 100,
+  n_purity = "auto",
   r_tol = 1e-08,
   refine = FALSE,
   R_finite = NULL,

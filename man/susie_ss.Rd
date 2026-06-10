@@ -41,7 +41,7 @@ susie_ss(
   convergence_method = c("elbo", "pip"),
   coverage = 0.95,
   min_abs_corr = 0.5,
-  n_purity = 100,
+  n_purity = "auto",
   verbose = FALSE,
   track_fit = FALSE,
   check_prior = FALSE,

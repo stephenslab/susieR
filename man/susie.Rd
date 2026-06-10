@@ -39,7 +39,7 @@ susie(
   track_fit = FALSE,
   residual_variance_lowerbound = NULL,
   refine = FALSE,
-  n_purity = 100,
+  n_purity = "auto",
   alpha0 = NULL,
   beta0 = NULL,
   init_only = FALSE,

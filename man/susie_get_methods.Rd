@@ -39,7 +39,7 @@ susie_get_cs(
   dedup = TRUE,
   squared = FALSE,
   check_symmetric = TRUE,
-  n_purity = 100,
+  n_purity = "auto",
   use_rfast = NULL,
   ld_extend_threshold = 0.99
 )
@@ -97,10 +97,10 @@ median of squared correlation instead of the absolute correlation.}
 check for symmetry of matrix \code{Xcorr} when \code{Xcorr} is
 provided (not \code{NULL}).}
 
-\item{n_purity}{The maximum number of credible set (CS) variables
-used in calculating the correlation (\dQuote{purity})
-statistics. When the number of variables included in the CS is
-greater than this number, the CS variables are randomly subsampled.}
+\item{n_purity}{Maximum number of CS variables used for purity when
+correlations are computed from \code{X}. The default, \code{"auto"}, uses
+a resource-aware cap; a positive number gives a fixed cap; a negative
+number uses all CS variables. \code{Xcorr} inputs always use all variables.}
 
 \item{use_rfast}{Use the Rfast package for the purity calculations.
 By default \code{use_rfast = TRUE} if the Rfast package is
