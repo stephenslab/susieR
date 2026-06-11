@@ -505,7 +505,7 @@ get_cs.individual <- function(data, params, model, ...) {
                       coverage     = params$coverage,
                       min_abs_corr = params$min_abs_corr,
                       n_purity     = params$n_purity,
-                      ld_extend_threshold = params$ld_extend_threshold))
+                      cs_extension_corr = params$cs_extension_corr))
 }
 
 

@@ -803,61 +803,61 @@ test_that("susie_get_cs_attainable remaps L2/L3 when L1 is filtered by entropy",
 })
 
 # =============================================================================
-# LD extension of credible sets (ld_extend_threshold)
+# LD extension of credible sets (cs_extension_corr)
 # =============================================================================
 
-# extend_cs_by_ld() internal helper
+# extend_cs_by_correlation() internal helper
 
-test_that("extend_cs_by_ld adds tight-LD proxies via the Xcorr branch", {
+test_that("extend_cs_by_correlation adds tight-LD proxies via the Xcorr branch", {
   R <- diag(5)
   R[1, 4] <- R[4, 1] <- 0.995          # variant 4 is a near-perfect proxy of 1
   cs <- list(c(1L))
 
-  ext <- extend_cs_by_ld(cs, X = NULL, Xcorr = R, threshold = 0.99)
+  ext <- extend_cs_by_correlation(cs, X = NULL, Xcorr = R, threshold = 0.99)
   expect_true(setequal(ext[[1]], c(1, 4)))
 
   # Higher threshold than the proxy correlation -> no extension.
-  ext_none <- extend_cs_by_ld(cs, X = NULL, Xcorr = R, threshold = 0.999)
+  ext_none <- extend_cs_by_correlation(cs, X = NULL, Xcorr = R, threshold = 0.999)
   expect_true(setequal(ext_none[[1]], 1))
 })
 
-test_that("extend_cs_by_ld X branch equals the Xcorr branch (the oracle)", {
+test_that("extend_cs_by_correlation X branch equals the Xcorr branch (the oracle)", {
   set.seed(101)
   X <- matrix(rnorm(80 * 6), 80, 6)
   X[, 4] <- X[, 1] + rnorm(80, sd = 1e-6)   # |cor(1,4)| > 0.99
   R <- cor(X)
 
-  e_x <- extend_cs_by_ld(list(c(1L)), X = X,    Xcorr = NULL, threshold = 0.99)
-  e_r <- extend_cs_by_ld(list(c(1L)), X = NULL, Xcorr = R,    threshold = 0.99)
+  e_x <- extend_cs_by_correlation(list(c(1L)), X = X,    Xcorr = NULL, threshold = 0.99)
+  e_r <- extend_cs_by_correlation(list(c(1L)), X = NULL, Xcorr = R,    threshold = 0.99)
   expect_identical(lapply(e_x, sort), lapply(e_r, sort))
   expect_true(setequal(e_x[[1]], c(1, 4)))
 })
 
-test_that("extend_cs_by_ld is a no-op for NULL threshold or empty cs", {
+test_that("extend_cs_by_correlation is a no-op for NULL threshold or empty cs", {
   R <- diag(3); R[1, 2] <- R[2, 1] <- 0.999
   cs <- list(c(1L))
-  expect_identical(extend_cs_by_ld(cs, NULL, R, threshold = NULL), cs)
-  expect_identical(extend_cs_by_ld(list(), NULL, R, threshold = 0.99), list())
+  expect_identical(extend_cs_by_correlation(cs, NULL, R, threshold = NULL), cs)
+  expect_identical(extend_cs_by_correlation(list(), NULL, R, threshold = 0.99), list())
   # No correlation info at all -> unchanged.
-  expect_identical(extend_cs_by_ld(cs, NULL, NULL, threshold = 0.99), cs)
+  expect_identical(extend_cs_by_correlation(cs, NULL, NULL, threshold = 0.99), cs)
 })
 
-test_that("extend_cs_by_ld never pulls in the null index", {
+test_that("extend_cs_by_correlation never pulls in the null index", {
   R <- diag(5)
   R[1, 4] <- R[4, 1] <- 0.995
-  ext <- extend_cs_by_ld(list(c(1L)), X = NULL, Xcorr = R,
+  ext <- extend_cs_by_correlation(list(c(1L)), X = NULL, Xcorr = R,
                          threshold = 0.99, null_index = 4)
   expect_true(setequal(ext[[1]], 1))     # variant 4 would be added but is the null
 })
 
-test_that("extend_cs_by_ld skips (with a hint) a sparse X instead of densifying", {
+test_that("extend_cs_by_correlation skips (with a hint) a sparse X instead of densifying", {
   set.seed(102)
   X <- matrix(rnorm(60 * 5), 60, 5)
   X[, 4] <- X[, 1] + rnorm(60, sd = 1e-6)
   spX <- Matrix::Matrix(X, sparse = TRUE)
 
   expect_message(
-    res <- extend_cs_by_ld(list(c(1L)), X = spX, Xcorr = NULL, threshold = 0.99),
+    res <- extend_cs_by_correlation(list(c(1L)), X = spX, Xcorr = NULL, threshold = 0.99),
     "sparse"
   )
   expect_identical(res, list(c(1L)))     # unchanged because extension was skipped
@@ -875,7 +875,7 @@ test_that("susie_get_cs extends with a threshold and not by default", {
   R <- diag(5); R[1, 4] <- R[4, 1] <- 0.995
 
   off <- susie_get_cs(res, Xcorr = R)                              # default NULL
-  on  <- susie_get_cs(res, Xcorr = R, ld_extend_threshold = 0.99)
+  on  <- susie_get_cs(res, Xcorr = R, cs_extension_corr = 0.99)
 
   off_sets <- lapply(off$cs, sort)
   on_sets  <- lapply(on$cs,  sort)
@@ -891,113 +891,113 @@ test_that("susie_get_cs X and Xcorr pathways agree end-to-end with extension on"
   X[, 2] <- X[, 1] + rnorm(nrow(X), sd = 0.05)      # tight-LD proxy
   fit <- suppressWarnings(susie(X, dat$y, L = 5, verbose = FALSE))
 
-  a <- susie_get_cs(fit, X = X,         ld_extend_threshold = 0.99, n_purity = ncol(X))
-  b <- susie_get_cs(fit, Xcorr = cor(X), ld_extend_threshold = 0.99, n_purity = ncol(X))
+  a <- susie_get_cs(fit, X = X,         cs_extension_corr = 0.99, n_purity = ncol(X))
+  b <- susie_get_cs(fit, Xcorr = cor(X), cs_extension_corr = 0.99, n_purity = ncol(X))
   expect_identical(lapply(a$cs, sort), lapply(b$cs, sort))
 })
 
-test_that("susie_get_cs validates ld_extend_threshold (inline guard)", {
+test_that("susie_get_cs validates cs_extension_corr (inline guard)", {
   res <- make_ld_fit()
   R <- diag(5)
   for (bad in list(1.5, -0.1, NA_real_, Inf, c(0.9, 0.99), "x")) {
     expect_error(
-      susie_get_cs(res, Xcorr = R, ld_extend_threshold = bad),
-      "ld_extend_threshold must be NULL or a single numeric value"
+      susie_get_cs(res, Xcorr = R, cs_extension_corr = bad),
+      "cs_extension_corr must be NULL or a single numeric value"
     )
   }
   # Boundary and NULL values are accepted.
   for (ok in list(NULL, 0, 1, 0.99))
-    expect_silent(susie_get_cs(res, Xcorr = R, ld_extend_threshold = ok))
+    expect_silent(susie_get_cs(res, Xcorr = R, cs_extension_corr = ok))
 })
 
-# ld_extend_threshold validation and threading through constructors / fitters
+# cs_extension_corr validation and threading through constructors / fitters
 
-test_that("constructor validation rejects bad ld_extend_threshold and accepts good", {
+test_that("constructor validation rejects bad cs_extension_corr and accepts good", {
   dat <- simulate_regression(n = 100, p = 10, k = 2)
   expect_error(
-    individual_data_constructor(dat$X, dat$y, ld_extend_threshold = 1.5),
-    "ld_extend_threshold must be NULL or a single numeric value in \\[0, 1\\]"
+    individual_data_constructor(dat$X, dat$y, cs_extension_corr = 1.5),
+    "cs_extension_corr must be NULL or a single numeric value in \\[0, 1\\]"
   )
   expect_error(
-    individual_data_constructor(dat$X, dat$y, ld_extend_threshold = c(0.5, 0.6)),
-    "ld_extend_threshold must be NULL"
+    individual_data_constructor(dat$X, dat$y, cs_extension_corr = c(0.5, 0.6)),
+    "cs_extension_corr must be NULL"
   )
   expect_error(
-    individual_data_constructor(dat$X, dat$y, ld_extend_threshold = "x"),
-    "ld_extend_threshold must be NULL"
+    individual_data_constructor(dat$X, dat$y, cs_extension_corr = "x"),
+    "cs_extension_corr must be NULL"
   )
   expect_equal(
-    individual_data_constructor(dat$X, dat$y, ld_extend_threshold = 0)$params$ld_extend_threshold, 0
+    individual_data_constructor(dat$X, dat$y, cs_extension_corr = 0)$params$cs_extension_corr, 0
   )
   expect_equal(
-    individual_data_constructor(dat$X, dat$y, ld_extend_threshold = 1)$params$ld_extend_threshold, 1
+    individual_data_constructor(dat$X, dat$y, cs_extension_corr = 1)$params$cs_extension_corr, 1
   )
 })
 
-test_that("all constructors thread ld_extend_threshold into params", {
+test_that("all constructors thread cs_extension_corr into params", {
   set.seed(104)
   dat <- simulate_regression(n = 200, p = 20, k = 2, signal_sd = 2)
   X <- dat$X; y <- dat$y
   XtX <- crossprod(X); Xty <- as.vector(crossprod(X, y)); yty <- sum(y^2)
   R <- cor(X); z <- Xty / sqrt(diag(XtX)); n <- nrow(X)
 
-  ind <- individual_data_constructor(X, y, ld_extend_threshold = 0.99)
-  expect_equal(ind$params$ld_extend_threshold, 0.99)
+  ind <- individual_data_constructor(X, y, cs_extension_corr = 0.99)
+  expect_equal(ind$params$cs_extension_corr, 0.99)
 
   ss <- sufficient_stats_constructor(Xty = Xty, yty = yty, n = n, XtX = XtX,
-                                     ld_extend_threshold = 0.7)
-  expect_equal(ss$params$ld_extend_threshold, 0.7)
+                                     cs_extension_corr = 0.7)
+  expect_equal(ss$params$cs_extension_corr, 0.7)
 
   rl <- suppressWarnings(rss_lambda_constructor(z = z, R = R, n = n, lambda = 0.5,
-                                                ld_extend_threshold = 0.8))
-  expect_equal(rl$params$ld_extend_threshold, 0.8)
+                                                cs_extension_corr = 0.8))
+  expect_equal(rl$params$cs_extension_corr, 0.8)
 
   mix <- suppressWarnings(ss_mixture_constructor(z = z, R = list(R, R), n = n,
-                                                 ld_extend_threshold = 0.6))
-  expect_equal(mix$params$ld_extend_threshold, 0.6)
+                                                 cs_extension_corr = 0.6))
+  expect_equal(mix$params$cs_extension_corr, 0.6)
 
   # summary_stats_constructor forwards to sufficient_stats (single panel)...
   sm1 <- suppressWarnings(summary_stats_constructor(z = z, R = R, n = n,
-                                                    ld_extend_threshold = 0.95))
-  expect_equal(sm1$params$ld_extend_threshold, 0.95)
+                                                    cs_extension_corr = 0.95))
+  expect_equal(sm1$params$cs_extension_corr, 0.95)
   # ...and to ss_mixture (multi panel).
   sm2 <- suppressWarnings(summary_stats_constructor(z = z, R = list(R, R), n = n,
-                                                    ld_extend_threshold = 0.55))
-  expect_equal(sm2$params$ld_extend_threshold, 0.55)
+                                                    cs_extension_corr = 0.55))
+  expect_equal(sm2$params$cs_extension_corr, 0.55)
 })
 
-test_that("susie / susie_ss / susie_rss / susie_rss_lambda accept ld_extend_threshold", {
+test_that("susie / susie_ss / susie_rss / susie_rss_lambda accept cs_extension_corr", {
   set.seed(105)
   dat <- simulate_regression(n = 200, p = 20, k = 2, signal_sd = 2)
   X <- dat$X; y <- dat$y
   XtX <- crossprod(X); Xty <- as.vector(crossprod(X, y)); yty <- sum(y^2)
   R <- cor(X); z <- Xty / sqrt(diag(XtX)); n <- nrow(X)
 
-  f1 <- suppressWarnings(susie(X, y, L = 5, ld_extend_threshold = 0.99))
+  f1 <- suppressWarnings(susie(X, y, L = 5, cs_extension_corr = 0.99))
   expect_s3_class(f1, "susie")
 
   f2 <- suppressWarnings(susie_ss(XtX = XtX, Xty = Xty, yty = yty, n = n,
-                                  ld_extend_threshold = 0.99))
+                                  cs_extension_corr = 0.99))
   expect_s3_class(f2, "susie")
 
-  f3 <- suppressWarnings(susie_rss(z = z, R = R, n = n, ld_extend_threshold = 0.99))
+  f3 <- suppressWarnings(susie_rss(z = z, R = R, n = n, cs_extension_corr = 0.99))
   expect_s3_class(f3, "susie")
 
   f4 <- suppressWarnings(susie_rss_lambda(z = z, R = R, n = n, lambda = 0.5,
-                                          ld_extend_threshold = 0.99))
+                                          cs_extension_corr = 0.99))
   expect_s3_class(f4, "susie")
 
   # Invalid value is rejected at the constructor/validation layer.
-  expect_error(susie(X, y, L = 5, ld_extend_threshold = 1.5),
-               "ld_extend_threshold must be NULL or a single numeric value")
+  expect_error(susie(X, y, L = 5, cs_extension_corr = 1.5),
+               "cs_extension_corr must be NULL or a single numeric value")
 })
 
-test_that("susie_rss low-rank X path threads ld_extend_threshold (get_cs.ss X branch)", {
+test_that("susie_rss low-rank X path threads cs_extension_corr (get_cs.ss X branch)", {
   set.seed(106)
   dat <- simulate_regression(n = 150, p = 12, k = 2, signal_sd = 2)
   X <- dat$X; y <- dat$y
   z <- as.vector(crossprod(X, y)) / sqrt(diag(crossprod(X)))
   fit <- suppressWarnings(susie_rss(z = z, X = X, n = nrow(X),
-                                    ld_extend_threshold = 0.99))
+                                    cs_extension_corr = 0.99))
   expect_s3_class(fit, "susie")
 })

@@ -268,28 +268,28 @@ susie_get_posterior_samples <- function(susie_fit, num_samples) {
 #'   By default \code{use_rfast = TRUE} if the Rfast package is
 #'   installed.
 #'
-#' @param ld_extend_threshold Either \code{NULL} or a single number between 0
+#' @param cs_extension_corr Either \code{NULL} or a single number between 0
 #'   and 1. If non-\code{NULL}, each credible set is extended to include every
-#'   variant whose absolute correlation with a credible-set member exceeds this
-#'   threshold, pulling near-perfect LD proxies (variants statistically
-#'   indistinguishable from the selected ones) into the set. Works from either
-#'   \code{X} or \code{Xcorr}. The default, \code{NULL}, disables LD extension;
-#'   \code{0.99} is the recommended value when extension is desired.
+#'   variable whose absolute correlation with a credible-set member exceeds this
+#'   threshold, pulling in near-perfectly correlated proxies (variables
+#'   statistically indistinguishable from the selected ones). Works from either
+#'   \code{X} or \code{Xcorr}. The default, \code{NULL}, disables correlation-based
+#'   extension; \code{0.99} is the recommended value when extension is desired.
 #'
 #' @export
 #'
 susie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
                          min_abs_corr = 0.5, dedup = TRUE, squared = FALSE,
                          check_symmetric = TRUE, n_purity = "auto",
-                         use_rfast = NULL, ld_extend_threshold = NULL) {
+                         use_rfast = NULL, cs_extension_corr = NULL) {
   if (!is.null(X) && !is.null(Xcorr)) {
     stop("Only one of X or Xcorr should be specified")
   }
-  if (!is.null(ld_extend_threshold) &&
-      (!is.numeric(ld_extend_threshold) || length(ld_extend_threshold) != 1 ||
-       !is.finite(ld_extend_threshold) ||
-       ld_extend_threshold < 0 || ld_extend_threshold > 1)) {
-    stop("ld_extend_threshold must be NULL or a single numeric value in [0, 1].")
+  if (!is.null(cs_extension_corr) &&
+      (!is.numeric(cs_extension_corr) || length(cs_extension_corr) != 1 ||
+       !is.finite(cs_extension_corr) ||
+       cs_extension_corr < 0 || cs_extension_corr > 1)) {
+    stop("cs_extension_corr must be NULL or a single numeric value in [0, 1].")
   }
   if (is.null(X) && is.null(Xcorr)) {
     warning_message(
@@ -344,7 +344,7 @@ susie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
     use_rfast <- requireNamespace("Rfast", quietly = TRUE)
   }
   
-  # If no correlation info, return without purity or LD extension
+  # If no correlation info, return without purity or extension
   if (is.null(Xcorr) && is.null(X)) {
     names(cs) <- paste0("L", effect_indices)
     return(list(
@@ -354,10 +354,10 @@ susie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
     ))
   }
   
-  # Extend CS by LD if requested (works from either X or Xcorr; see
-  # extend_cs_by_ld). Recompute claimed coverage over the extended sets.
-  if (!is.null(ld_extend_threshold) && (!is.null(Xcorr) || !is.null(X))) {
-    cs <- extend_cs_by_ld(cs, X, Xcorr, ld_extend_threshold, null_index)
+  # Extend CS by correlation if requested (works from either X or Xcorr; see
+  # extend_cs_by_correlation). Recompute claimed coverage over the extended sets.
+  if (!is.null(cs_extension_corr) && (!is.null(Xcorr) || !is.null(X))) {
+    cs <- extend_cs_by_correlation(cs, X, Xcorr, cs_extension_corr, null_index)
     claimed_coverage <- vapply(seq_along(cs), function(i)
       sum(res$alpha[effect_indices[i], cs[[i]]]), numeric(1))
   }
@@ -408,7 +408,7 @@ susie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
   }
 }
 
-# Extend each credible set to include variants in tight LD (|corr| > threshold)
+# Extend each credible set to include variables with |corr| > threshold
 # with any current member. Works from a precomputed correlation matrix
 # (Xcorr) or directly from the data matrix X; in the latter case the needed
 # correlations are computed on demand as crossprod(standardize_X(X)), which
@@ -417,7 +417,7 @@ susie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
 # the (possibly extended) cs list in the same order; the caller recomputes
 # claimed coverage.
 #' @keywords internal
-extend_cs_by_ld <- function(cs, X, Xcorr, threshold, null_index = 0) {
+extend_cs_by_correlation <- function(cs, X, Xcorr, threshold, null_index = 0) {
   if (is.null(threshold) || length(cs) == 0 || (is.null(X) && is.null(Xcorr)))
     return(cs)
 

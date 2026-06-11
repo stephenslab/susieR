@@ -41,7 +41,7 @@ susie_get_cs(
   check_symmetric = TRUE,
   n_purity = "auto",
   use_rfast = NULL,
-  ld_extend_threshold = NULL
+  cs_extension_corr = NULL
 )
 
 susie_get_cs_attainable(res, coverage = 0.95, ethres = NULL, ...)
@@ -106,13 +106,13 @@ number uses all CS variables. \code{Xcorr} inputs always use all variables.}
 By default \code{use_rfast = TRUE} if the Rfast package is
 installed.}
 
-\item{ld_extend_threshold}{Either \code{NULL} or a single number between 0
+\item{cs_extension_corr}{Either \code{NULL} or a single number between 0
 and 1. If non-\code{NULL}, each credible set is extended to include every
-variant whose absolute correlation with a credible-set member exceeds this
-threshold, pulling near-perfect LD proxies (variants statistically
-indistinguishable from the selected ones) into the set. Works from either
-\code{X} or \code{Xcorr}. The default, \code{NULL}, disables LD extension;
-\code{0.99} is the recommended value when extension is desired.}
+variable whose absolute correlation with a credible-set member exceeds this
+threshold, pulling in near-perfectly correlated proxies (variables
+statistically indistinguishable from the selected ones). Works from either
+\code{X} or \code{Xcorr}. The default, \code{NULL}, disables correlation-based
+extension; \code{0.99} is the recommended value when extension is desired.}
 
 \item{ethres}{Entropy threshold expressed as an effective number of
 variables: an effect is dropped when its attainable-projection

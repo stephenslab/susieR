@@ -20,6 +20,7 @@ susie_rss_lambda(
   intercept_value = 0,
   estimate_residual_variance = FALSE,
   estimate_residual_method = "MLE",
+  z_method = c("wald", "score"),
   estimate_prior_variance = TRUE,
   estimate_prior_method = c("optim", "EM", "simple"),
   prior_variance_grid = NULL,
@@ -41,7 +42,7 @@ susie_rss_lambda(
   check_R = TRUE,
   check_z = FALSE,
   n_purity = "auto",
-  ld_extend_threshold = NULL,
+  cs_extension_corr = NULL,
   r_tol = 1e-08,
   refine = FALSE,
   init_only = FALSE,
@@ -101,6 +102,11 @@ RSS-lambda residual variance by maximum likelihood.}
 
 \item{estimate_residual_method}{Variance-component estimator. The
 RSS-lambda path supports \code{"MLE"} only; any other value errors.}
+
+\item{z_method}{The single-variant test that produced \code{z}, either
+\code{"wald"} (default; z-scores are PVE-adjusted onto the
+\eqn{\sigma^2 = 1} scale) or \code{"score"} (z-scores already on that
+scale, e.g. from a linear mixed model GWAS, so no adjustment is applied).}
 
 \item{estimate_prior_variance}{If \code{estimate_prior_variance = TRUE},
 the prior variance is estimated (a separate parameter for each of
@@ -201,13 +207,14 @@ of \code{R}.}
 \item{n_purity}{Passed as argument \code{n_purity} to
 \code{\link{susie_get_cs}}.}
 
-\item{ld_extend_threshold}{Passed as argument
-\code{ld_extend_threshold} to \code{\link{susie_get_cs}} when the
+\item{cs_extension_corr}{Passed as argument
+\code{cs_extension_corr} to \code{\link{susie_get_cs}} when the
 credible sets are constructed. Either \code{NULL} (the default,
-meaning no LD extension) or a single number between 0 and 1. When
-set, each credible set is extended to absorb every variant whose
-absolute correlation with a set member exceeds the threshold
-(near-perfect LD proxies); \code{0.99} is the recommended value.}
+meaning no correlation-based extension) or a single number between
+0 and 1. When set, each credible set is extended to absorb every
+variable whose absolute correlation with a set member exceeds the
+threshold (near-perfectly correlated proxies); \code{0.99} is the
+recommended value.}
 
 \item{r_tol}{Tolerance level for eigenvalue check of positive semidefinite
 matrix \code{XtX}.}
