@@ -32,7 +32,7 @@
 # Data.frames accumulated on fit$.diag_env$history during the run.
 # Debug flag .ash_debug in susie_utils.R (TRUE = on, never turn off).
 
-# nocov start  -- internal susieR::: ML-debug scaffolding; excluded from coverage (see coverage plan)
+# nocov start  (debug scaffolding)
 
 
 #' BB+ash per-iteration diagnostic

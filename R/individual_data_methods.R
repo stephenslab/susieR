@@ -338,8 +338,7 @@ loglik.individual <- function(data, params, model, V, ser_stats, l = NULL, ...) 
 #' @keywords internal
 neg_loglik.individual <- function(data, params, model, V_param, ser_stats, ...) {
   # Convert parameter to V based on optimization scale.  SuSiE-inf optimizes
-  # on the linear scale; the rest (and the previous individual default) use
-  # the log scale.
+  # on the linear scale; the rest use the log scale.
   V <- if (ser_stats$optim_scale == "log") exp(V_param) else V_param
 
   if (params$unmappable_effects == "inf") {

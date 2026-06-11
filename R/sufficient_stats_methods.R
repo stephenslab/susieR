@@ -195,8 +195,6 @@ compute_residuals.ss <- function(data, params, model, l, ...) {
   return(model)
 }
 
-# compute_shat2_inflation moved to R/rss_mismatch.R.
-
 # Compute SER statistics
 #' @keywords internal
 compute_ser_statistics.ss <- function(data, params, model, l, ...) {

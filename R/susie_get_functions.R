@@ -517,9 +517,9 @@ susie_get_cs_attainable <- function(res, coverage = 0.95, ethres = NULL,
     filtered_idx <- as.integer(sub("^L", "", names(out$cs)))
     original_idx <- keep_effects[filtered_idx]
     names(out$cs) <- paste0("L", original_idx)
-    if (!is.null(out$cs_index)) # nocov - susie_get_cs_attainable strips X/Xcorr so cs_index is always NULL
+    if (!is.null(out$cs_index)) # nocov
       out$cs_index <- original_idx # nocov
-    if (!is.null(out$purity)) # nocov - purity is always NULL (X/Xcorr stripped above)
+    if (!is.null(out$purity)) # nocov
       rownames(out$purity) <- paste0("L", original_idx) # nocov
   }
 
@@ -620,7 +620,6 @@ susie_get_pip <- function(res, prune_by_cs = FALSE, prior_tol = 1e-9) {
 
     # Extract slot weights (c_hat) if available for Gamma-Poisson weighting.
     # PIP_j = 1 - prod_l(1 - c_hat[l] * alpha[l,j])
-    # (Faithfully ported from susieAnn posterior.R:195-200)
     slot_wt <- res$slot_weights
 
     # now extract relevant rows from alpha matrix

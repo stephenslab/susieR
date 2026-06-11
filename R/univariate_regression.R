@@ -115,7 +115,7 @@ univariate_regression = function (X, y, Z = NULL, center = TRUE,
       res
     }, silent = TRUE)
   } else {
-    # original .lm.fit-based implementation
+    # .lm.fit-based implementation
     output = try(do.call(rbind,
                         lapply(1:ncol(X), function (i) {
                           g = .lm.fit(cbind(1,X[,i]),y)
@@ -228,7 +228,7 @@ compute_marginal_bhat_shat <- function(X, Y,
       function(t) Rfast::colVars(Y[, t] - sweep(X, 2, Bhat[, t], "*")),
       numeric(J)
     )
-    if (!is.matrix(Shat)) Shat <- matrix(Shat, nrow = J, ncol = T_y) # nocov — vapply always returns matrix
+    if (!is.matrix(Shat)) Shat <- matrix(Shat, nrow = J, ncol = T_y) # nocov
     Shat <- sqrt(pmax(Shat, 1e-64)) / sqrt(n - 1)
   }
 

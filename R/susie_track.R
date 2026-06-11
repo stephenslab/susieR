@@ -9,7 +9,7 @@
 #' @return A \code{"susie_track"} object.
 #'
 #' @noRd
-# nocov start  -- internal track post-processing / diagnostics; excluded from coverage (see coverage plan)
+# nocov start
 make_susie_track_history <- function(fit) {
   if (inherits(fit, "susie_track"))
     return(fit)
@@ -250,7 +250,7 @@ make_track_diagnosis <- function(fit) {
   list(iteration = iter_diag, final = final)
 }
 
-# nocov start  -- internal R-mismatch CS-sensitivity diagnostic; excluded from coverage
+# nocov start
 make_track_cs_sensitivity <- function(fit) {
   d <- fit$R_finite_diagnostics
   ba <- if (!is.null(d)) d$bf_attenuation else NULL
@@ -307,7 +307,7 @@ logical_from_list <- function(x, name) {
   as.logical(x[[name]])
 }
 
-# nocov start  -- internal track diagnostics helper (only used by sensitivity table above)
+# nocov start
 value_by_name <- function(x, name) {
   if (is.null(x) || length(x) == 0)
     return(NA)

@@ -1478,11 +1478,6 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
 
   if (is.null(X)) {
     # R path: validate R
-    if (is.null(R))
-      # nocov start  -- unreachable: the constructor already stops above when
-      # both R and X are NULL, so inside `is.null(X)` R is always non-NULL.
-      stop("Please provide either R or X for rss_lambda_constructor.")
-      # nocov end
     if (nrow(R) != length(z)) {
       stop(paste0(
         "The dimension of correlation matrix (", nrow(R), " by ",

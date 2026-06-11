@@ -381,10 +381,7 @@ susie_plot_iteration <- function(model, L, file_prefix, pos = NULL) {
       "\\( +clone -set delay 300 \\) +swap +delete -coalesce",
       "-layers optimize", paste0(file_prefix, ".gif")
     )
-    # nocov start  -- GIF assembly shells out to ImageMagick's `convert`, which
-    # is not installed in CI. Exactly one of these branches runs depending on
-    # whether ImageMagick is present, so the whole block is environment-
-    # dependent and only exercised in local runs that have it.
+    # nocov start  (needs ImageMagick)
     if (nzchar(Sys.which("convert"))) {
       message("Creating GIF animation...")
       if (file.exists(paste0(file_prefix, ".gif"))) {
