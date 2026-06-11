@@ -2559,10 +2559,30 @@ n_in_CS <- function(res, coverage = 0.9) {
   return(apply(res, 1, function(x) n_in_CS_x(x, coverage)))
 }
 
-# Subsample and compute min, mean, median and max abs corr.
+resolve_n_purity <- function(n_purity, n_samples, n_vars, use_rfast) {
+  if (identical(n_purity, "auto")) {
+    memory_budget <- 512 * 1024^2
+    work_budget <- if (use_rfast) 2e10 else 2e8
+    min_cap <- if (use_rfast) 500 else 100
+    n_samples <- max(1, n_samples)
+    cap <- min(
+      n_vars,
+      max(min_cap, sqrt(work_budget / n_samples)),
+      memory_budget / (16 * n_samples),
+      sqrt(memory_budget / 32)
+    )
+    return(max(1, floor(cap)))
+  }
+  if (!is.numeric(n_purity) || length(n_purity) != 1 || is.na(n_purity)) {
+    stop("n_purity must be \"auto\" or a number")
+  }
+  if (n_purity > 0) max(1, min(n_vars, floor(n_purity))) else n_vars
+}
+
+# Subsample and compute min, mean and median abs corr.
 #' @importFrom stats median
 #' @keywords internal
-get_purity <- function(pos, X, Xcorr, squared = FALSE, n = 100,
+get_purity <- function(pos, X, Xcorr, squared = FALSE, n = "auto",
                        use_rfast = NULL) {
   if (is.null(use_rfast)) {
     use_rfast <- requireNamespace("Rfast", quietly = TRUE)
@@ -2578,6 +2598,7 @@ get_purity <- function(pos, X, Xcorr, squared = FALSE, n = 100,
     return(c(1, 1, 1))
   } else {
     if (is.null(Xcorr)) {
+      n <- resolve_n_purity(n, nrow(X), length(pos), use_rfast)
       if (length(pos) > n) {
         pos <- sample(pos, n)
       }

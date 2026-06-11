@@ -259,10 +259,10 @@ susie_get_posterior_samples <- function(susie_fit, num_samples) {
 #'   check for symmetry of matrix \code{Xcorr} when \code{Xcorr} is
 #'   provided (not \code{NULL}).
 #'
-#' @param n_purity The maximum number of credible set (CS) variables
-#'   used in calculating the correlation (\dQuote{purity})
-#'   statistics. When the number of variables included in the CS is
-#'   greater than this number, the CS variables are randomly subsampled.
+#' @param n_purity Maximum number of CS variables used for purity when
+#'   correlations are computed from \code{X}. The default, \code{"auto"}, uses
+#'   a resource-aware cap; a positive number gives a fixed cap; a negative
+#'   number uses all CS variables. \code{Xcorr} inputs always use all variables.
 #'
 #' @param use_rfast Use the Rfast package for the purity calculations.
 #'   By default \code{use_rfast = TRUE} if the Rfast package is
@@ -280,7 +280,7 @@ susie_get_posterior_samples <- function(susie_fit, num_samples) {
 #'
 susie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
                          min_abs_corr = 0.5, dedup = TRUE, squared = FALSE,
-                         check_symmetric = TRUE, n_purity = 100,
+                         check_symmetric = TRUE, n_purity = "auto",
                          use_rfast = NULL, ld_extend_threshold = NULL) {
   if (!is.null(X) && !is.null(Xcorr)) {
     stop("Only one of X or Xcorr should be specified")

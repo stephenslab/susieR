@@ -40,7 +40,7 @@ susie_rss_lambda(
   check_prior = TRUE,
   check_R = TRUE,
   check_z = FALSE,
-  n_purity = 100,
+  n_purity = "auto",
   ld_extend_threshold = NULL,
   r_tol = 1e-08,
   refine = FALSE,

@@ -1556,6 +1556,66 @@ test_that("get_purity computes valid purity statistics", {
   expect_true(all(result_sq >= 0 & result_sq <= 1))
 })
 
+test_that("get_purity uses full Xcorr and subsamples only X path", {
+  base_data <- generate_base_data(n = 80, p = 150, seed = 321)
+  pos <- 1:120
+  Xcorr <- cor(base_data$X)
+  upper <- abs(Xcorr[pos, pos][upper.tri(Xcorr[pos, pos])])
+  expected <- c(min(upper), sum(upper) / length(upper), median(upper))
+
+  set.seed(1)
+  result_xcorr_1 <- get_purity(pos, X = NULL, Xcorr = Xcorr, n = 20,
+                               use_rfast = FALSE)
+  set.seed(2)
+  result_xcorr_2 <- get_purity(pos, X = NULL, Xcorr = Xcorr, n = 20,
+                               use_rfast = FALSE)
+
+  expect_equal(result_xcorr_1, expected, tolerance = 10 * .Machine$double.eps)
+  expect_identical(result_xcorr_1, result_xcorr_2)
+
+  set.seed(1)
+  result_x_1 <- get_purity(pos, X = base_data$X, Xcorr = NULL, n = 20,
+                           use_rfast = FALSE)
+  set.seed(2)
+  result_x_2 <- get_purity(pos, X = base_data$X, Xcorr = NULL, n = 20,
+                           use_rfast = FALSE)
+  expect_false(isTRUE(all.equal(result_x_1, result_x_2,
+                                tolerance = 10 * .Machine$double.eps)))
+})
+
+test_that("get_purity uses Rfast correlation for X path when requested", {
+  skip_if_not_installed("Rfast")
+  base_data <- generate_base_data(n = 80, p = 150, seed = 456)
+  pos <- 1:120
+
+  set.seed(7)
+  sampled <- sample(pos, 30)
+  R <- Rfast::cora(as.matrix(base_data$X[, sampled]))
+  upper <- abs(Rfast::upper_tri(R))
+  expected <- c(min(upper), sum(upper) / length(upper), Rfast::med(upper))
+
+  set.seed(7)
+  result <- get_purity(pos, X = base_data$X, Xcorr = NULL, n = 30,
+                       use_rfast = TRUE)
+  expect_equal(result, expected)
+})
+
+test_that("purity subsampling defaults to auto", {
+  expect_equal(formals(get_purity)$n, "auto")
+  expect_equal(formals(susie_get_cs)$n_purity, "auto")
+})
+
+test_that("resolve_n_purity uses simple work and memory caps", {
+  expect_equal(resolve_n_purity(50, 1000, 10000, TRUE), 50)
+  expect_equal(resolve_n_purity(-1, 1000, 10000, TRUE), 10000)
+  expect_equal(resolve_n_purity(Inf, 1000, 10000, TRUE), 10000)
+  expect_equal(resolve_n_purity("auto", 100, 2000, TRUE), 2000)
+  expect_equal(resolve_n_purity("auto", 1000, 10000, TRUE), 4096)
+  expect_equal(resolve_n_purity("auto", 1000, 10000, FALSE), 447)
+  expect_error(resolve_n_purity("bad", 1000, 10000, TRUE),
+               "auto")
+})
+
 test_that("get_purity errors when correlations contain NaN/NA", {
   Xc <- matrix(0.5, 5, 5); diag(Xc) <- 1
   Xc[1, 2] <- NA; Xc[2, 1] <- NA
