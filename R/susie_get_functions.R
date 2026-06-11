@@ -244,11 +244,20 @@ susie_get_posterior_samples <- function(susie_fit, num_samples) {
 #' @param coverage A number between 0 and 1 specifying desired
 #'   coverage of each CS.
 #'
-#' @param min_abs_corr A "purity" threshold for the CS. Any CS that
-#'   contains a pair of variables with correlation less than this
-#'   threshold will be filtered out and not reported. This filter is
-#'   only applied when \code{X} or \code{Xcorr} is provided; otherwise
-#'   it is ignored and a warning is issued.
+#' @param min_abs_corr A "purity" threshold for the CS, applied to the
+#'   minimum absolute correlation among the CS variables: a CS is filtered
+#'   out unless this minimum is at least \code{min_abs_corr}. Set to
+#'   \code{NULL} to disable this clause. This filter is only applied when
+#'   \code{X} or \code{Xcorr} is provided; otherwise it is ignored and a
+#'   warning is issued.
+#'
+#' @param median_abs_corr An optional second purity threshold applied to
+#'   the \emph{median} absolute correlation among the CS variables. The
+#'   default, \code{NULL}, leaves it off. When both \code{min_abs_corr} and
+#'   \code{median_abs_corr} are non-\code{NULL}, they are combined with OR:
+#'   a CS is kept if it clears \emph{either} threshold (its min
+#'   \eqn{\ge} \code{min_abs_corr} \strong{or} its median \eqn{\ge}
+#'   \code{median_abs_corr}).
 #'
 #' @param dedup If \code{dedup = TRUE}, remove duplicate CSs.
 #'
@@ -281,15 +290,17 @@ susie_get_posterior_samples <- function(susie_fit, num_samples) {
 susie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
                          min_abs_corr = 0.5, dedup = TRUE, squared = FALSE,
                          check_symmetric = TRUE, n_purity = "auto",
-                         use_rfast = NULL, cs_extension_corr = NULL) {
+                         use_rfast = NULL, median_abs_corr = NULL,
+                         cs_extension_corr = NULL) {
   if (!is.null(X) && !is.null(Xcorr)) {
     stop("Only one of X or Xcorr should be specified")
   }
-  if (!is.null(cs_extension_corr) &&
-      (!is.numeric(cs_extension_corr) || length(cs_extension_corr) != 1 ||
-       !is.finite(cs_extension_corr) ||
-       cs_extension_corr < 0 || cs_extension_corr > 1)) {
-    stop("cs_extension_corr must be NULL or a single numeric value in [0, 1].")
+  for (nm in c("min_abs_corr", "median_abs_corr", "cs_extension_corr")) {
+    v <- get(nm)
+    if (!is.null(v) && (!is.numeric(v) || length(v) != 1 || !is.finite(v) ||
+                        v < 0 || v > 1)) {
+      stop(nm, " must be NULL or a single numeric value in [0, 1].")
+    }
   }
   if (is.null(X) && is.null(Xcorr)) {
     warning_message(
@@ -381,8 +392,28 @@ susie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
     colnames(purity) <- c("min.abs.corr", "mean.abs.corr", "median.abs.corr")
   }
   
-  threshold <- ifelse(squared, min_abs_corr^2, min_abs_corr)
-  is_pure <- which(purity[, 1] >= threshold)
+  if (!is.null(min_abs_corr) && !is.null(median_abs_corr)) {
+    warning_message(
+      "Both min_abs_corr and median_abs_corr are set; a credible set is kept ",
+      "if it clears EITHER threshold (OR), which retains more sets than either ",
+      "filter alone.",
+      style = "hint")
+  }
+  # A CS is kept if it clears any active purity threshold (OR-linked).
+  # min_abs_corr gates column 1 (min |corr|); median_abs_corr gates column 3
+  # (median |corr|). Either may be NULL to disable that clause.
+  keep <- rep(FALSE, nrow(purity))
+  active <- FALSE
+  if (!is.null(min_abs_corr)) {
+    keep <- keep | (purity[, 1] >= if (squared) min_abs_corr^2 else min_abs_corr)
+    active <- TRUE
+  }
+  if (!is.null(median_abs_corr)) {
+    keep <- keep | (purity[, 3] >= if (squared) median_abs_corr^2 else median_abs_corr)
+    active <- TRUE
+  }
+  if (!active) keep <- purity[, 1] > -1   # no threshold: keep all but the null CS (purity = -9)
+  is_pure <- which(keep)
   
   if (length(is_pure) > 0) {
     cs <- cs[is_pure]
@@ -394,8 +425,11 @@ susie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
     names(cs) <- row_names
     rownames(purity) <- row_names
     
-    # Re-order CS list and purity rows based on purity
-    ordering <- order(purity[, 1], decreasing = TRUE)
+    # Re-order CS list and purity rows by the primary active statistic
+    # (min |corr| if on, else median |corr|).
+    order_col <- if (!is.null(min_abs_corr)) 1L
+                 else if (!is.null(median_abs_corr)) 3L else 1L
+    ordering <- order(purity[, order_col], decreasing = TRUE)
     return(list(
       cs = cs[ordering],
       purity = purity[ordering, , drop = FALSE],

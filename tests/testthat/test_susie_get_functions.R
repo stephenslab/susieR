@@ -1001,3 +1001,61 @@ test_that("susie_rss low-rank X path threads cs_extension_corr (get_cs.ss X bran
                                     cs_extension_corr = 0.99))
   expect_s3_class(fit, "susie")
 })
+
+# median_abs_corr: second purity threshold, OR-linked with min_abs_corr -----
+
+test_that("susie_get_cs OR-links min_abs_corr and median_abs_corr", {
+  # CS {1,2,3}: |corr| pairs (0.9, 0.9, 0.3) -> min = 0.3, median = 0.9.
+  R <- diag(4)
+  R[1, 2] <- R[2, 1] <- 0.9
+  R[1, 3] <- R[3, 1] <- 0.9
+  R[2, 3] <- R[3, 2] <- 0.3
+  res <- list(alpha = matrix(c(0.4, 0.35, 0.2, 0.05), nrow = 1))
+  n_cs <- function(...) length(suppressMessages(
+    susie_get_cs(res, Xcorr = R, coverage = 0.9, ...))$cs)
+
+  expect_equal(n_cs(),                                              0)  # default min=0.5 -> drop
+  expect_equal(n_cs(min_abs_corr = NULL, median_abs_corr = 0.5),   1)  # median only -> keep
+  expect_equal(n_cs(min_abs_corr = 0.5, median_abs_corr = 0.5),    1)  # OR: median passes
+  expect_equal(n_cs(min_abs_corr = 0.5, median_abs_corr = 0.95),   0)  # OR: both fail
+  expect_equal(n_cs(min_abs_corr = 0.2, median_abs_corr = 0.95),   1)  # OR: min passes
+  expect_equal(n_cs(min_abs_corr = NULL, median_abs_corr = NULL),  1)  # no filter (null CS dropped)
+})
+
+test_that("susie_get_cs validates median_abs_corr and NULL-able min_abs_corr", {
+  res <- list(alpha = matrix(c(0.6, 0.4), nrow = 1))
+  expect_error(susie_get_cs(res, Xcorr = diag(2), median_abs_corr = 2),
+               "median_abs_corr must be NULL or a single numeric value")
+  expect_error(susie_get_cs(res, Xcorr = diag(2), min_abs_corr = -1),
+               "min_abs_corr must be NULL or a single numeric value")
+})
+
+test_that("fit functions accept and thread median_abs_corr (positional binding intact)", {
+  set.seed(1)
+  X <- matrix(rnorm(200 * 20), 200, 20); y <- X[, 1] + X[, 2] + rnorm(200)
+  f <- suppressWarnings(susie(X, y, L = 5, median_abs_corr = 0.5))
+  expect_s3_class(f, "susie")
+  # compute_univariate_zscore is passed positionally after min_abs_corr; if the
+  # median_abs_corr signature insertion shifted positions this would be NULL.
+  fz <- suppressWarnings(susie(X, y, L = 5, compute_univariate_zscore = TRUE))
+  expect_false(is.null(fz$z))
+})
+
+test_that("susie_get_cs hints (only) when both purity thresholds are set", {
+  R <- diag(3)
+  R[1, 2] <- R[2, 1] <- 0.9
+  R[1, 3] <- R[3, 1] <- 0.9
+  R[2, 3] <- R[3, 2] <- 0.3
+  res <- list(alpha = matrix(c(0.5, 0.3, 0.2), nrow = 1))
+  msgs_of <- function(...) {
+    msgs <- character(0)
+    withCallingHandlers(
+      susie_get_cs(res, Xcorr = R, coverage = 0.9, ...),
+      message = function(m) { msgs <<- c(msgs, conditionMessage(m)); invokeRestart("muffleMessage") })
+    msgs
+  }
+  hint <- "EITHER threshold"
+  expect_true(any(grepl(hint, msgs_of(min_abs_corr = 0.5, median_abs_corr = 0.5))))
+  expect_false(any(grepl(hint, msgs_of(min_abs_corr = 0.5))))                       # min only
+  expect_false(any(grepl(hint, msgs_of(min_abs_corr = NULL, median_abs_corr = 0.5)))) # median only
+})

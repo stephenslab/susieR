@@ -40,6 +40,7 @@ susie(
   residual_variance_lowerbound = NULL,
   refine = FALSE,
   n_purity = "auto",
+  median_abs_corr = NULL,
   cs_extension_corr = NULL,
   alpha0 = NULL,
   beta0 = NULL,
@@ -171,7 +172,8 @@ applied to the CSs reported in the fit object, so the CS list
 returned here may be a subset of the one produced by calling
 \code{\link{susie_get_cs}} on the same fit without passing
 \code{X} or \code{Xcorr} (in which case the purity filter is
-skipped).}
+skipped). Set to \code{NULL} to disable the minimum-correlation
+clause (e.g. to filter on \code{median_abs_corr} alone).}
 
 \item{compute_univariate_zscore}{If \code{compute_univariate_zscore
 = TRUE}, the univariate regression z-scores are outputted for each
@@ -223,6 +225,12 @@ to check and escape from local optima (see details).}
 
 \item{n_purity}{Passed as argument \code{n_purity} to
 \code{\link{susie_get_cs}}.}
+
+\item{median_abs_corr}{An optional second purity threshold applied to
+the median absolute correlation among the CS variables (default
+\code{NULL}, off). When both \code{min_abs_corr} and
+\code{median_abs_corr} are set, they are OR-linked: a CS is kept if it
+clears either one. See \code{\link{susie_get_cs}}.}
 
 \item{cs_extension_corr}{Passed as argument
 \code{cs_extension_corr} to \code{\link{susie_get_cs}} when the

@@ -41,6 +41,7 @@ susie_get_cs(
   check_symmetric = TRUE,
   n_purity = "auto",
   use_rfast = NULL,
+  median_abs_corr = NULL,
   cs_extension_corr = NULL
 )
 
@@ -82,11 +83,12 @@ minimum correlation among variables is smaller than
 \item{coverage}{A number between 0 and 1 specifying desired
 coverage of each CS.}
 
-\item{min_abs_corr}{A "purity" threshold for the CS. Any CS that
-contains a pair of variables with correlation less than this
-threshold will be filtered out and not reported. This filter is
-only applied when \code{X} or \code{Xcorr} is provided; otherwise
-it is ignored and a warning is issued.}
+\item{min_abs_corr}{A "purity" threshold for the CS, applied to the
+minimum absolute correlation among the CS variables: a CS is filtered
+out unless this minimum is at least \code{min_abs_corr}. Set to
+\code{NULL} to disable this clause. This filter is only applied when
+\code{X} or \code{Xcorr} is provided; otherwise it is ignored and a
+warning is issued.}
 
 \item{dedup}{If \code{dedup = TRUE}, remove duplicate CSs.}
 
@@ -105,6 +107,14 @@ number uses all CS variables. \code{Xcorr} inputs always use all variables.}
 \item{use_rfast}{Use the Rfast package for the purity calculations.
 By default \code{use_rfast = TRUE} if the Rfast package is
 installed.}
+
+\item{median_abs_corr}{An optional second purity threshold applied to
+the \emph{median} absolute correlation among the CS variables. The
+default, \code{NULL}, leaves it off. When both \code{min_abs_corr} and
+\code{median_abs_corr} are non-\code{NULL}, they are combined with OR:
+a CS is kept if it clears \emph{either} threshold (its min
+\eqn{\ge} \code{min_abs_corr} \strong{or} its median \eqn{\ge}
+\code{median_abs_corr}).}
 
 \item{cs_extension_corr}{Either \code{NULL} or a single number between 0
 and 1. If non-\code{NULL}, each credible set is extended to include every
