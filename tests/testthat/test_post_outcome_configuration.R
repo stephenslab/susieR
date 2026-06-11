@@ -1217,3 +1217,23 @@ test_that("print.summary footers hidden susiex CS tuples", {
   out <- capture.output(print(s))
   expect_true(any(grepl("1/2 CS tuples hidden", out)))
 })
+
+# ---- .susiex_tuple_name() edge cases & as_single_mvsusie_fit() guard --------
+
+test_that(".susiex_tuple_name returns '' when the raw tuple is not a list", {
+  expect_identical(.susiex_tuple_name(42), "")
+})
+
+test_that(".susiex_tuple_name derives labels from cs_indices when cs_labels is NULL", {
+  # No cs_labels -> labels become L<index>; two distinct labels -> joined with '_'.
+  expect_identical(.susiex_tuple_name(list(cs_indices = c(1L, 2L))), "L1_L2")
+})
+
+test_that(".susiex_tuple_name returns '' when every label is empty or NA", {
+  expect_identical(.susiex_tuple_name(list(cs_labels = c("", NA))), "")
+})
+
+test_that("as_single_mvsusie_fit errors when input is not a single mvsusie/mfsusie fit", {
+  expect_error(as_single_mvsusie_fit(list(1, 2)),
+               "requires one fit of class")
+})

@@ -763,7 +763,7 @@ multi_output_susiex_summary <- function(input, outcome_names = NULL,
   views <- expand_one_fit(fit, base_name = "trait", by = "outcome")
   trait_names <- native[[1L]]$config_summary$outcome
   if (length(trait_names) != length(views)) {
-    stop("Internal error: multi-output CS summary and outcome views disagree.")
+    stop("Internal error: multi-output CS summary and outcome views disagree.")  # nocov
   }
   for (r in seq_along(views)) {
     views[[r]]$name <- trait_names[r]
