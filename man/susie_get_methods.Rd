@@ -129,6 +129,9 @@ variables: an effect is dropped when its attainable-projection
 entropy is at least \code{log(ethres)}. Defaults to
 \code{max(100, 0.1 * p)} where \code{p} is the number of variables.}
 
+\item{...}{Additional arguments (e.g. \code{X} or \code{Xcorr}) accepted
+for compatibility with \code{susie_get_cs}; they are ignored here.}
+
 \item{prune_by_cs}{Whether or not to ignore single effects not in
 a reported CS when calculating PIP.}
 }

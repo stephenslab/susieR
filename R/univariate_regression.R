@@ -8,6 +8,9 @@
 #' 
 #' @param y n-vector of response variables.
 #' 
+#' @param Y For \code{calc_z}, an n-vector or n by T matrix of response
+#'   variables.
+#'
 #' @param Z Optional n by k matrix of covariates to be included in all
 #'   regresions. If Z is not \code{NULL}, the linear effects of
 #'   covariates are removed from y first, and the resulting residuals

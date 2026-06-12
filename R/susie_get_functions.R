@@ -507,6 +507,9 @@ extend_cs_by_correlation <- function(cs, X, Xcorr, threshold, null_index = 0) {
 #'   \code{...} is ignored, since the procedure is intended for the
 #'   no-LD setting.
 #'
+#' @param ... Additional arguments (e.g. \code{X} or \code{Xcorr}) accepted
+#'   for compatibility with \code{susie_get_cs}; they are ignored here.
+#'
 #' @export
 #'
 susie_get_cs_attainable <- function(res, coverage = 0.95, ethres = NULL,
