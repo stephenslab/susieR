@@ -141,6 +141,16 @@ compare_to_reference <- function(func_name, args, tolerance = 1e-8, ref_func_nam
       ref_args$check_null_threshold <- -Inf
   }
 
+  # susieR 2.0 lowered the default convergence tolerance from the reference's
+  # 1e-3 to 1e-4 (R/susie_utils.R). This is an intentional refinement, not an
+  # algorithm change: at a common tol the dev and reference fits are identical
+  # to machine precision. Slowly-converging fits (notably estimate_prior_method
+  # = "EM") otherwise iterate further on dev and converge to a slightly better
+  # ELBO, which fails the comparison. Pin both sides to the reference's 1e-3 so
+  # this suite tests algorithm equivalence, not the default-value change.
+  if (is.null(args$tol))     args$tol     <- 1e-3
+  if (is.null(ref_args$tol)) ref_args$tol <- 1e-3
+
   # Get functions from each environment
   ref_func <- ref_env$env[[ref_func_name]]
   dev_func <- dev_env$env[[func_name]]
@@ -163,18 +173,25 @@ compare_to_reference <- function(func_name, args, tolerance = 1e-8, ref_func_nam
   invisible(list(dev = dev_result, ref = ref_result))
 }
 
-# Inject check_null_threshold = -Inf when estimate_prior_method = "EM" and
-# the caller hasn't explicitly set a threshold. Needed because dev skips the
-# null-likelihood V-zeroing step for EM while the reference always runs it;
-# -Inf disables the check on the reference side. Safe for dev (the branch is
-# not executed). Used by direct do.call sites in tests that don't go through
-# compare_to_reference().
+# Align an argument list with the reference's defaults so direct do.call sites
+# (tests that don't go through compare_to_reference) compare the algorithm, not
+# intentional default-value changes. Two adjustments, each only when the caller
+# hasn't set the value explicitly:
+#  1. check_null_threshold = -Inf for EM: dev skips the null-likelihood
+#     V-zeroing step for EM while the reference always runs it; -Inf disables
+#     the check on the reference side (and is a no-op for dev).
+#  2. tol = 1e-3: susieR 2.0 lowered the default convergence tolerance to 1e-4
+#     (R/susie_utils.R), an intentional refinement that makes slowly-converging
+#     fits iterate further; at a common tol dev and the reference match to
+#     machine precision, so we pin both to the reference's historical 1e-3.
 #' @keywords internal
 inject_em_null_check <- function(args) {
   if (identical(args$estimate_prior_method, "EM") &&
       is.null(args$check_null_threshold)) {
     args$check_null_threshold <- -Inf
   }
+  if (is.null(args$tol))
+    args$tol <- 1e-3
   args
 }
 

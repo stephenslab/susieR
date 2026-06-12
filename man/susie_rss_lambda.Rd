@@ -20,6 +20,7 @@ susie_rss_lambda(
   intercept_value = 0,
   estimate_residual_variance = FALSE,
   estimate_residual_method = "MLE",
+  z_method = c("wald", "score"),
   estimate_prior_variance = TRUE,
   estimate_prior_method = c("optim", "EM", "simple"),
   prior_variance_grid = NULL,
@@ -41,6 +42,8 @@ susie_rss_lambda(
   check_R = TRUE,
   check_z = FALSE,
   n_purity = "auto",
+  median_abs_corr = NULL,
+  cs_extension_corr = NULL,
   r_tol = 1e-08,
   refine = FALSE,
   init_only = FALSE,
@@ -101,6 +104,11 @@ RSS-lambda residual variance by maximum likelihood.}
 \item{estimate_residual_method}{Variance-component estimator. The
 RSS-lambda path supports \code{"MLE"} only; any other value errors.}
 
+\item{z_method}{The single-variant test that produced \code{z}, either
+\code{"wald"} (default; z-scores are PVE-adjusted onto the
+\eqn{\sigma^2 = 1} scale) or \code{"score"} (z-scores already on that
+scale, e.g. from a linear mixed model GWAS, so no adjustment is applied).}
+
 \item{estimate_prior_variance}{If \code{estimate_prior_variance = TRUE},
 the prior variance is estimated (a separate parameter for each of
 the L effects). When \code{TRUE}, \code{prior_variance} provides the
@@ -152,7 +160,8 @@ applied to the CSs reported in the fit object, so the CS list
 returned here may be a subset of the one produced by calling
 \code{\link{susie_get_cs}} on the same fit without passing
 \code{X} or \code{Xcorr} (in which case the purity filter is
-skipped).}
+skipped). Set to \code{NULL} to disable the minimum-correlation
+clause (e.g. to filter on \code{median_abs_corr} alone).}
 
 \item{max_iter}{Maximum number of IBSS iterations to perform. For
 \code{susie_rss()} and \code{susie_rss_lambda()}, \code{NULL} uses
@@ -199,6 +208,21 @@ of \code{R}.}
 
 \item{n_purity}{Passed as argument \code{n_purity} to
 \code{\link{susie_get_cs}}.}
+
+\item{median_abs_corr}{An optional second purity threshold applied to
+the median absolute correlation among the CS variables (default
+\code{NULL}, off). When both \code{min_abs_corr} and
+\code{median_abs_corr} are set, they are OR-linked: a CS is kept if it
+clears either one. See \code{\link{susie_get_cs}}.}
+
+\item{cs_extension_corr}{Passed as argument
+\code{cs_extension_corr} to \code{\link{susie_get_cs}} when the
+credible sets are constructed. Either \code{NULL} (the default,
+meaning no correlation-based extension) or a single number between
+0 and 1. When set, each credible set is extended to absorb every
+variable whose absolute correlation with a set member exceeds the
+threshold (near-perfectly correlated proxies); \code{0.99} is the
+recommended value.}
 
 \item{r_tol}{Tolerance level for eigenvalue check of positive semidefinite
 matrix \code{XtX}.}

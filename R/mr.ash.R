@@ -319,7 +319,7 @@ mr.ash                      = function(X, y, Z = NULL, sa2 = NULL,
   out$pi            = c(out$pi)
   out$sigma2        = c(out$sigma2)
 
-  # nocov start  -- unreachable: method_q restricted by match.arg to c("sigma_dep_q","sigma_indep_q"), so it can never equal "sigma_scaled_beta"
+  # nocov start
   if (method_q == "sigma_scaled_beta") {
     out$beta        = out$beta * sqrt(out$sigma2)
   }
@@ -522,7 +522,7 @@ get.full.posterior <- function(fit) {
   return (list(phi = phi, m = m, s2 = s2))
 }
 
-# nocov start  -- broken/unused Gibbs sampler (recurses on itself, no C++ backend); excluded from coverage
+# nocov start  (unused Gibbs sampler)
 gibbs.sampling              = function(X, y, pi, sa2 = (2^((0:19) / 20) - 1)^2,
                                        max.iter = 1500, burn.in = 500,
                                        standardize = FALSE, intercept = TRUE,

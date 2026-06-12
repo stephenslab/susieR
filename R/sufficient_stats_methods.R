@@ -195,8 +195,6 @@ compute_residuals.ss <- function(data, params, model, l, ...) {
   return(model)
 }
 
-# compute_shat2_inflation moved to R/rss_mismatch.R.
-
 # Compute SER statistics
 #' @keywords internal
 compute_ser_statistics.ss <- function(data, params, model, l, ...) {
@@ -541,8 +539,9 @@ get_cs.ss <- function(data, params, model, ...) {
     return(susie_get_cs(model,
                         X               = data$X,
                         coverage        = params$coverage,
-                        min_abs_corr    = params$min_abs_corr,
-                        n_purity        = params$n_purity))
+                        min_abs_corr    = params$min_abs_corr, median_abs_corr = params$median_abs_corr,
+                        n_purity        = params$n_purity,
+                        cs_extension_corr = params$cs_extension_corr))
   }
 
   if (any(!(diag(data$XtX) %in% c(0, 1)))) {
@@ -555,8 +554,9 @@ get_cs.ss <- function(data, params, model, ...) {
                       Xcorr           = Xcorr,
                       check_symmetric = FALSE,
                       coverage        = params$coverage,
-                      min_abs_corr    = params$min_abs_corr,
-                      n_purity        = params$n_purity))
+                      min_abs_corr    = params$min_abs_corr, median_abs_corr = params$median_abs_corr,
+                      n_purity        = params$n_purity,
+                      cs_extension_corr = params$cs_extension_corr))
 }
 
 # Get Variable Names

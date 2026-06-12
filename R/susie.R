@@ -198,7 +198,14 @@
 #'   returned here may be a subset of the one produced by calling
 #'   \code{\link{susie_get_cs}} on the same fit without passing
 #'   \code{X} or \code{Xcorr} (in which case the purity filter is
-#'   skipped).
+#'   skipped). Set to \code{NULL} to disable the minimum-correlation
+#'   clause (e.g. to filter on \code{median_abs_corr} alone).
+#'
+#' @param median_abs_corr An optional second purity threshold applied to
+#'   the median absolute correlation among the CS variables (default
+#'   \code{NULL}, off). When both \code{min_abs_corr} and
+#'   \code{median_abs_corr} are set, they are OR-linked: a CS is kept if it
+#'   clears either one. See \code{\link{susie_get_cs}}.
 #'
 #' @param compute_univariate_zscore If \code{compute_univariate_zscore
 #'   = TRUE}, the univariate regression z-scores are outputted for each
@@ -250,6 +257,15 @@
 #'
 #' @param n_purity Passed as argument \code{n_purity} to
 #'   \code{\link{susie_get_cs}}.
+#'
+#' @param cs_extension_corr Passed as argument
+#'   \code{cs_extension_corr} to \code{\link{susie_get_cs}} when the
+#'   credible sets are constructed. Either \code{NULL} (the default,
+#'   meaning no correlation-based extension) or a single number between
+#'   0 and 1. When set, each credible set is extended to absorb every
+#'   variable whose absolute correlation with a set member exceeds the
+#'   threshold (near-perfectly correlated proxies); \code{0.99} is the
+#'   recommended value.
 #'
 #' @param alpha0 Numerical parameter for the NIG prior when using
 #'   \code{estimate_residual_method = "NIG"}. Defaults to
@@ -362,6 +378,8 @@ susie <- function(X, y, L = min(10, ncol(X)),
                   residual_variance_lowerbound = NULL,
                   refine = FALSE,
                   n_purity = "auto",
+                  median_abs_corr = NULL,
+                  cs_extension_corr = NULL,
                   alpha0 = NULL,
                   beta0 = NULL,
                   init_only = FALSE,
@@ -390,7 +408,9 @@ susie <- function(X, y, L = min(10, ncol(X)),
     min_abs_corr, compute_univariate_zscore, na.rm,
     max_iter, tol, convergence_method, verbose, track_fit,
     residual_variance_lowerbound, refine, n_purity,
-    alpha0, beta0, slot_prior, L_greedy, greedy_lbf_cutoff
+    alpha0, beta0, slot_prior, L_greedy, greedy_lbf_cutoff,
+    median_abs_corr = median_abs_corr,
+    cs_extension_corr = cs_extension_corr
   )
 
   # Return data and params without fitting if init_only is TRUE.
@@ -483,6 +503,8 @@ susie_ss <- function(XtX, Xty, yty, n,
                      coverage = 0.95,
                      min_abs_corr = 0.5,
                      n_purity = "auto",
+                     median_abs_corr = NULL,
+                     cs_extension_corr = NULL,
                      verbose = FALSE,
                      track_fit = FALSE,
                      check_prior = FALSE,
@@ -523,7 +545,8 @@ susie_ss <- function(XtX, Xty, yty, n,
     unmappable_effects = unmappable_effects,
     check_null_threshold = check_null_threshold, prior_tol = prior_tol,
     max_iter = max_iter, tol = tol, convergence_method = convergence_method,
-    coverage = coverage, min_abs_corr = min_abs_corr, n_purity = n_purity,
+    coverage = coverage, min_abs_corr = min_abs_corr, median_abs_corr = median_abs_corr, n_purity = n_purity,
+    cs_extension_corr = cs_extension_corr,
     verbose = verbose, track_fit = track_fit, check_prior = check_prior,
     refine = refine, alpha0 = alpha0, beta0 = beta0,
     slot_prior = slot_prior, L_greedy = L_greedy,
@@ -550,6 +573,14 @@ susie_ss <- function(XtX, Xty, yty, n,
 #' \code{\link{susie_rss_lambda}}.
 #'
 #' @param z A p-vector of z-scores.
+#'
+#' @param z_method The single-variant test that produced \code{z}, either
+#'   \code{"wald"} (default) or \code{"score"}. With \code{"wald"}, the
+#'   z-scores are PVE-adjusted (shrunk by \eqn{\sqrt{1 - \mathrm{PVE}_j}}) onto
+#'   the model's \eqn{\sigma^2 = 1} scale. With \code{"score"} (e.g. z-scores
+#'   from a linear mixed model GWAS), the z-scores are already on that scale,
+#'   so no adjustment is applied. Forced to \code{"wald"} when \code{bhat} /
+#'   \code{shat} are supplied, since those are inherently Wald.
 #'
 #' @param R A p by p correlation matrix. Exactly one of \code{R} or
 #'   \code{X} must be provided.
@@ -689,6 +720,7 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
                       standardize = TRUE,
                       estimate_residual_variance = FALSE,
                       estimate_residual_method = c("MoM", "MLE", "NIG"),
+                      z_method = c("wald", "score"),
                       estimate_prior_variance = TRUE,
                       estimate_prior_method = c("optim", "EM", "simple"),
                       prior_variance_grid = NULL,
@@ -712,6 +744,8 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
                       check_input = FALSE,
                       check_prior = TRUE,
                       n_purity = "auto",
+                      median_abs_corr = NULL,
+                      cs_extension_corr = NULL,
                       r_tol = 1e-8,
                       refine = FALSE,
                       R_finite = NULL,
@@ -730,6 +764,7 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
   unmappable_effects       <- match.arg(unmappable_effects)
   estimate_residual_method <- match.arg(estimate_residual_method)
   convergence_method       <- match.arg(convergence_method)
+  z_method                 <- match.arg(z_method)
   if (length(R_mismatch) > 1L)
     R_mismatch <- R_mismatch[1L]
   R_mismatch <- match.arg(R_mismatch,
@@ -762,11 +797,13 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
     residual_variance_lowerbound = residual_variance_lowerbound,
     residual_variance_upperbound = residual_variance_upperbound,
     model_init = model_init, s_init = s_init,
-    coverage = coverage, min_abs_corr = min_abs_corr,
+    coverage = coverage, min_abs_corr = min_abs_corr, median_abs_corr = median_abs_corr,
     max_iter = max_iter, tol = tol, convergence_method = convergence_method,
     verbose = verbose, track_fit = track_fit, check_input = check_input,
     check_prior = check_prior,
     n_purity = n_purity, r_tol = r_tol, refine = refine,
+    cs_extension_corr = cs_extension_corr,
+    z_method = z_method,
     R_finite = R_finite,
     R_mismatch = R_mismatch,
     R_mismatch_method = R_mismatch_method,
@@ -849,6 +886,10 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
 #' @param check_R If TRUE, verify that \code{R} is positive semidefinite.
 #' @param check_z If TRUE, verify that \code{z} lies in the column space
 #'   of \code{R}.
+#' @param z_method The single-variant test that produced \code{z}, either
+#'   \code{"wald"} (default; z-scores are PVE-adjusted onto the
+#'   \eqn{\sigma^2 = 1} scale) or \code{"score"} (z-scores already on that
+#'   scale, e.g. from a linear mixed model GWAS, so no adjustment is applied).
 #'
 #' @return A \code{"susie"} fit (or, with \code{init_only = TRUE}, the
 #'   constructed data and params objects).
@@ -868,6 +909,7 @@ susie_rss_lambda <- function(z = NULL, R = NULL, n = NULL,
                              intercept_value = 0,
                              estimate_residual_variance = FALSE,
                              estimate_residual_method = "MLE",
+                             z_method = c("wald", "score"),
                              estimate_prior_variance = TRUE,
                              estimate_prior_method = c("optim", "EM", "simple"),
                              prior_variance_grid = NULL,
@@ -889,6 +931,8 @@ susie_rss_lambda <- function(z = NULL, R = NULL, n = NULL,
                              check_R = TRUE,
                              check_z = FALSE,
                              n_purity = "auto",
+                             median_abs_corr = NULL,
+                             cs_extension_corr = NULL,
                              r_tol = 1e-8,
                              refine = FALSE,
                              init_only = FALSE,
@@ -897,6 +941,7 @@ susie_rss_lambda <- function(z = NULL, R = NULL, n = NULL,
     stop("susie_rss_lambda() requires lambda.")
 
   convergence_method       <- match.arg(convergence_method)
+  z_method                 <- match.arg(z_method)
   mp <- resolve_mixture_prior(estimate_prior_method, estimate_prior_variance,
                               prior_variance_grid, mixture_weights)
   estimate_prior_method   <- mp$estimate_prior_method
@@ -906,6 +951,7 @@ susie_rss_lambda <- function(z = NULL, R = NULL, n = NULL,
 
   susie_objects <- rss_lambda_constructor(
     z = z, R = R, X = X, n = n,
+    z_method = z_method,
     L = L, lambda = lambda, maf = maf, maf_thresh = maf_thresh,
     prior_variance = prior_variance,
     residual_variance = residual_variance,
@@ -919,11 +965,12 @@ susie_rss_lambda <- function(z = NULL, R = NULL, n = NULL,
     mixture_weights = mixture_weights,
     check_null_threshold = check_null_threshold, prior_tol = prior_tol,
     residual_variance_lowerbound = residual_variance_lowerbound,
-    model_init = model_init, coverage = coverage, min_abs_corr = min_abs_corr,
+    model_init = model_init, coverage = coverage, min_abs_corr = min_abs_corr, median_abs_corr = median_abs_corr,
     max_iter = max_iter, tol = tol, convergence_method = convergence_method,
     verbose = verbose, track_fit = track_fit,
     check_prior = check_prior, check_R = check_R, check_z = check_z,
     n_purity = n_purity, r_tol = r_tol, refine = refine,
+    cs_extension_corr = cs_extension_corr,
     slot_prior = slot_prior, L_greedy = L_greedy,
     greedy_lbf_cutoff = greedy_lbf_cutoff
   )

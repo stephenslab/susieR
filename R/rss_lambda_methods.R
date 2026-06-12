@@ -332,16 +332,18 @@ get_cs.rss_lambda <- function(data, params, model, ...) {
     return(susie_get_cs(model,
                         X               = data$X,
                         coverage        = params$coverage,
-                        min_abs_corr    = params$min_abs_corr,
-                        n_purity        = params$n_purity))
+                        min_abs_corr    = params$min_abs_corr, median_abs_corr = params$median_abs_corr,
+                        n_purity        = params$n_purity,
+                        cs_extension_corr = params$cs_extension_corr))
   }
 
   return(susie_get_cs(model,
                       Xcorr           = safe_cov2cor(data$R),
                       check_symmetric = FALSE,
                       coverage        = params$coverage,
-                      min_abs_corr    = params$min_abs_corr,
-                      n_purity        = params$n_purity))
+                      min_abs_corr    = params$min_abs_corr, median_abs_corr = params$median_abs_corr,
+                      n_purity        = params$n_purity,
+                      cs_extension_corr = params$cs_extension_corr))
 }
 
 # Get variable names

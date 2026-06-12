@@ -36,6 +36,9 @@ is not \code{NULL}.}
 
 \item{method}{Either \dQuote{sumstats} (faster implementation) or
 \dQuote{lmfit} (uses \code{\link[stats]{.lm.fit}}).}
+
+\item{Y}{For \code{calc_z}, an n-vector or n by T matrix of response
+variables.}
 }
 \value{
 A list with two vectors containing the least-squares

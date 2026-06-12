@@ -1946,3 +1946,66 @@ test_that("individual_data_constructor null_weight at boundary 0 leaves p unchan
   expect_null(result$params$null_weight)
   expect_length(result$params$prior_weights, 10)
 })
+
+# ---- z_method: Wald (default, PVE-adjust) vs score (identity) ---------------
+
+test_that("apply_pve_adjustment: score is identity, wald shrinks, default = wald", {
+  set.seed(11); z <- rnorm(20); z[3] <- 6; n <- 500
+  sc <- apply_pve_adjustment(z, n, "score")
+  expect_identical(sc$z, z)
+  expect_equal(sc$adjustment, rep(1, length(z)))
+  expect_true(sc$adjusted)
+
+  wa <- apply_pve_adjustment(z, n, "wald")
+  expect_equal(wa$z, sqrt((n - 1) / (z^2 + n - 2)) * z)
+  expect_identical(apply_pve_adjustment(z, n)$z, wa$z)        # default = wald
+
+  expect_false(apply_pve_adjustment(z, NULL, "score")$adjusted)
+  expect_error(apply_pve_adjustment(z, n, "bogus"))
+})
+
+test_that("susie_rss z_method='score' applies no adjustment", {
+  set.seed(12); p <- 20; n <- 500
+  R <- 0.6^abs(outer(1:p, 1:p, "-"))
+  z <- rnorm(p); z[5] <- 6; z[12] <- -5
+
+  fw <- suppressWarnings(susie_rss(z = z, R = R, n = n, z_method = "wald",
+                                   max_iter = 50, check_prior = FALSE))
+  fd <- suppressWarnings(susie_rss(z = z, R = R, n = n,
+                                   max_iter = 50, check_prior = FALSE))
+  expect_equal(fd$pip, fw$pip)                               # default == wald
+
+  # Feeding the already-Wald-adjusted z with z_method='score' must reproduce the
+  # wald fit on the raw z exactly -- i.e. 'score' performs no further adjustment.
+  zadj <- apply_pve_adjustment(z, n, "wald")$z
+  fsp <- suppressWarnings(susie_rss(z = zadj, R = R, n = n, z_method = "score",
+                                    max_iter = 50, check_prior = FALSE))
+  expect_equal(fsp$pip, fw$pip, tolerance = 1e-8)
+
+  fs <- suppressWarnings(susie_rss(z = z, R = R, n = n, z_method = "score",
+                                   max_iter = 50, check_prior = FALSE))
+  expect_gt(max(abs(fs$pip - fw$pip)), 1e-3)                 # and it matters
+})
+
+test_that("susie_rss with bhat/shat forces z_method='wald' and hints", {
+  set.seed(13); p <- 20; n <- 500
+  R <- 0.6^abs(outer(1:p, 1:p, "-"))
+  z <- rnorm(p); z[4] <- 5
+  bhat <- z / sqrt(n); shat <- rep(1 / sqrt(n), p)
+
+  msgs <- character(0)
+  fsc <- withCallingHandlers(
+    suppressWarnings(susie_rss(bhat = bhat, shat = shat, R = R, n = n, var_y = 1,
+                               z_method = "score", max_iter = 50, check_prior = FALSE)),
+    message = function(m) { msgs <<- c(msgs, conditionMessage(m)); invokeRestart("muffleMessage") })
+  fwa <- suppressWarnings(susie_rss(bhat = bhat, shat = shat, R = R, n = n, var_y = 1,
+                                    z_method = "wald", max_iter = 50, check_prior = FALSE))
+  expect_equal(fsc$pip, fwa$pip)
+  expect_true(any(grepl("z_method", msgs)))
+})
+
+test_that("susie_rss and susie_rss_lambda reject an invalid z_method", {
+  set.seed(14); p <- 10; z <- rnorm(p); R <- diag(p)
+  expect_error(susie_rss(z = z, R = R, n = 500, z_method = "bogus"))
+  expect_error(susie_rss_lambda(z = z, R = R, n = 500, lambda = 0, z_method = "bogus"))
+})

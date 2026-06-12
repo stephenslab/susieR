@@ -616,6 +616,17 @@ validate_and_override_params <- function(params) {
     stop("tol must be a non-negative numeric scalar.")
   }
 
+  # Validate cs_extension_corr (NULL = off; otherwise a number in [0, 1]).
+  if (!is.null(params$cs_extension_corr) &&
+      (!is.numeric(params$cs_extension_corr) ||
+       length(params$cs_extension_corr) != 1 ||
+       is.na(params$cs_extension_corr) ||
+       !is.finite(params$cs_extension_corr) ||
+       params$cs_extension_corr < 0 ||
+       params$cs_extension_corr > 1)) {
+    stop("cs_extension_corr must be NULL or a single numeric value in [0, 1].")
+  }
+
   # Validate greedy-L parameters.
   if (!is.null(params$L_greedy)) {
     if (!is.numeric(params$L_greedy) || length(params$L_greedy) != 1 ||
@@ -1375,8 +1386,7 @@ mle_unmappable <- function(data, params, model, omega, est_tau2 = TRUE, est_sigm
         message(sprintf("Update sigma^2 to %f\n", sigma2))
       }
     } else {
-      # nocov start: L-BFGS-B reliably converges on this smooth 1D objective over
-      # a valid finite interval; the sibling est_tau2 branch covers this warning.
+      # nocov start
       warning_message("MLE optimization failed to converge; keeping previous parameters")
       # nocov end
     }
@@ -1678,10 +1688,6 @@ init_ash_fields_filter_archived <- function(model, n, p, L, is_individual = FALS
 #   to be merged into model via modifyList.
 #
 # @keywords internal
-## V0-faithful three-case classification for BB+ash filter
-## Replaces the body of update_ash_variance_components()
-## Key change: standard purity (not effect_purity) for case classification
-## + force_mask for diffuse slots' sentinel LD (from V0)
 
 update_ash_variance_components <- function(data, model, params) {
 

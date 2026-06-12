@@ -433,8 +433,10 @@ test_that("susie_plot_iteration with track_fit=TRUE creates a GIF animation", {
 })
 
 test_that("susie_plot_iteration accepts a susie_track object directly", {
-  # GIF creation shells out to ImageMagick's `convert`; skip where it's absent.
-  skip_if(Sys.which("convert") == "", "ImageMagick 'convert' not on PATH")
+  # Passing the susie_track object directly exercises the
+  # inherits(model, "susie_track") branch. No ImageMagick required: when
+  # `convert` is absent the function degrades to a PDF, so this test runs (and
+  # covers that branch) in every environment, including ones without convert.
   set.seed(25)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
   fit <- susie(dat$X, dat$y, L = 5, track_fit = TRUE, max_iter = 5, verbose = FALSE)

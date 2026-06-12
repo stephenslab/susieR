@@ -3,7 +3,7 @@
 #' Generic framework for post-convergence refinement of fitted models.
 #' Repeatedly applies a block update (\code{step_fn}) to a fitted model,
 #' monitoring ELBO for convergence and stability.  Both CS refinement
-#' (\code{\link{run_refine}}) and residual variance estimation (mvsusieR)
+#' (\code{run_refine}) and residual variance estimation (mvsusieR)
 #' are instances of block coordinate ascent over different parameter blocks.
 #'
 #' Convergence is reached when either:

@@ -338,8 +338,7 @@ loglik.individual <- function(data, params, model, V, ser_stats, l = NULL, ...) 
 #' @keywords internal
 neg_loglik.individual <- function(data, params, model, V_param, ser_stats, ...) {
   # Convert parameter to V based on optimization scale.  SuSiE-inf optimizes
-  # on the linear scale; the rest (and the previous individual default) use
-  # the log scale.
+  # on the linear scale; the rest use the log scale.
   V <- if (ser_stats$optim_scale == "log") exp(V_param) else V_param
 
   if (params$unmappable_effects == "inf") {
@@ -504,8 +503,9 @@ get_cs.individual <- function(data, params, model, ...) {
   return(susie_get_cs(model,
                       X            = data$X,
                       coverage     = params$coverage,
-                      min_abs_corr = params$min_abs_corr,
-                      n_purity     = params$n_purity))
+                      min_abs_corr = params$min_abs_corr, median_abs_corr = params$median_abs_corr,
+                      n_purity     = params$n_purity,
+                      cs_extension_corr = params$cs_extension_corr))
 }
 
 

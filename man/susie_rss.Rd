@@ -23,6 +23,7 @@ susie_rss(
   standardize = TRUE,
   estimate_residual_variance = FALSE,
   estimate_residual_method = c("MoM", "MLE", "NIG"),
+  z_method = c("wald", "score"),
   estimate_prior_variance = TRUE,
   estimate_prior_method = c("optim", "EM", "simple"),
   prior_variance_grid = NULL,
@@ -46,6 +47,8 @@ susie_rss(
   check_input = FALSE,
   check_prior = TRUE,
   n_purity = "auto",
+  median_abs_corr = NULL,
+  cs_extension_corr = NULL,
   r_tol = 1e-08,
   refine = FALSE,
   R_finite = NULL,
@@ -145,6 +148,14 @@ the infinitesimal model, "MoM" is more stable. We recommend using "NIG"
 when n < 80 for improved coverage, although it is currently only implemented
 for individual-level data.}
 
+\item{z_method}{The single-variant test that produced \code{z}, either
+\code{"wald"} (default) or \code{"score"}. With \code{"wald"}, the
+z-scores are PVE-adjusted (shrunk by \eqn{\sqrt{1 - \mathrm{PVE}_j}}) onto
+the model's \eqn{\sigma^2 = 1} scale. With \code{"score"} (e.g. z-scores
+from a linear mixed model GWAS), the z-scores are already on that scale,
+so no adjustment is applied. Forced to \code{"wald"} when \code{bhat} /
+\code{shat} are supplied, since those are inherently Wald.}
+
 \item{estimate_prior_variance}{If \code{estimate_prior_variance =
 TRUE}, the prior variance is estimated (this is a separate
 parameter for each of the L effects). If provided,
@@ -213,7 +224,8 @@ applied to the CSs reported in the fit object, so the CS list
 returned here may be a subset of the one produced by calling
 \code{\link{susie_get_cs}} on the same fit without passing
 \code{X} or \code{Xcorr} (in which case the purity filter is
-skipped).}
+skipped). Set to \code{NULL} to disable the minimum-correlation
+clause (e.g. to filter on \code{median_abs_corr} alone).}
 
 \item{max_iter}{Maximum number of IBSS iterations to perform. For
 \code{susie_rss()} and \code{susie_rss_lambda()}, \code{NULL} uses
@@ -260,6 +272,21 @@ estimated prior variance becomes unreasonably large (comparing with
 
 \item{n_purity}{Passed as argument \code{n_purity} to
 \code{\link{susie_get_cs}}.}
+
+\item{median_abs_corr}{An optional second purity threshold applied to
+the median absolute correlation among the CS variables (default
+\code{NULL}, off). When both \code{min_abs_corr} and
+\code{median_abs_corr} are set, they are OR-linked: a CS is kept if it
+clears either one. See \code{\link{susie_get_cs}}.}
+
+\item{cs_extension_corr}{Passed as argument
+\code{cs_extension_corr} to \code{\link{susie_get_cs}} when the
+credible sets are constructed. Either \code{NULL} (the default,
+meaning no correlation-based extension) or a single number between
+0 and 1. When set, each credible set is extended to absorb every
+variable whose absolute correlation with a set member exceeds the
+threshold (near-perfectly correlated proxies); \code{0.99} is the
+recommended value.}
 
 \item{r_tol}{Tolerance level for eigenvalue check of positive semidefinite
 matrix \code{XtX}.}

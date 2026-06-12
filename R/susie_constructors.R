@@ -103,9 +103,14 @@ normalize_summary_stats_input <- function(z = NULL, bhat = NULL,
 
 #' @keywords internal
 #' @noRd
-apply_pve_adjustment <- function(z, n = NULL) {
+apply_pve_adjustment <- function(z, n = NULL, z_method = c("wald", "score")) {
+  z_method <- match.arg(z_method)
   if (is.null(z) || is.null(n) || n <= 1) {
     return(list(z = z, adjustment = NULL, adjusted = FALSE))
+  }
+  if (z_method == "score") {
+    # Score z is already on the sigma^2 = 1 scale; adjusting would double-shrink.
+    return(list(z = z, adjustment = rep(1, length(z)), adjusted = TRUE))
   }
   adj <- (n - 1) / (z^2 + n - 2)
   list(z = sqrt(adj) * z, adjustment = adj, adjusted = TRUE)
@@ -209,7 +214,9 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
                                         beta0 = NULL,
                                         slot_prior = NULL,
                                         L_greedy = NULL,
-                                        greedy_lbf_cutoff = 0.1) {
+                                        greedy_lbf_cutoff = 0.1,
+                                        median_abs_corr = NULL,
+                                        cs_extension_corr = NULL) {
 
   model_init <- resolve_model_init(model_init, s_init)
 
@@ -350,7 +357,7 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
     residual_variance_upperbound = residual_variance_upperbound,
     model_init = model_init,
     coverage = coverage,
-    min_abs_corr = min_abs_corr,
+    min_abs_corr = min_abs_corr, median_abs_corr = median_abs_corr,
     compute_univariate_zscore = compute_univariate_zscore,
     max_iter = max_iter,
     tol = tol,
@@ -360,6 +367,7 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
     residual_variance_lowerbound = residual_variance_lowerbound,
     refine = refine,
     n_purity = n_purity,
+    cs_extension_corr = cs_extension_corr,
     alpha0 = alpha0,
     beta0 = beta0,
     n = n,
@@ -443,7 +451,9 @@ sufficient_stats_constructor <- function(Xty, yty, n,
                                          beta0 = NULL,
                                          slot_prior = NULL,
                                          L_greedy = NULL,
-                                         greedy_lbf_cutoff = 0.1) {
+                                         greedy_lbf_cutoff = 0.1,
+                                         median_abs_corr = NULL,
+                                         cs_extension_corr = NULL) {
 
   model_init <- resolve_model_init(model_init, s_init)
 
@@ -624,7 +634,7 @@ sufficient_stats_constructor <- function(Xty, yty, n,
     residual_variance_upperbound = residual_variance_upperbound,
     model_init = model_init,
     coverage = coverage,
-    min_abs_corr = min_abs_corr,
+    min_abs_corr = min_abs_corr, median_abs_corr = median_abs_corr,
     compute_univariate_zscore = FALSE,  # SS doesn't support univariate zscore
     max_iter = max_iter,
     tol = tol,
@@ -634,6 +644,7 @@ sufficient_stats_constructor <- function(Xty, yty, n,
     residual_variance_lowerbound = residual_variance_lowerbound,
     refine = refine,
     n_purity = n_purity,
+    cs_extension_corr = cs_extension_corr,
     alpha0 = alpha0,
     beta0 = beta0,
     n = n,
@@ -696,6 +707,7 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
                                       prior_weights = NULL,
                                       null_weight = 0,
                                       standardize = TRUE,
+                                      z_method = c("wald", "score"),
                                       estimate_residual_variance = FALSE,
                                       estimate_residual_method = "MoM",
                                       estimate_prior_variance = TRUE,
@@ -732,7 +744,9 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
                                       beta0 = NULL,
                                       slot_prior = NULL,
                                       L_greedy = NULL,
-                                      greedy_lbf_cutoff = 0.1) {
+                                      greedy_lbf_cutoff = 0.1,
+                                      median_abs_corr = NULL,
+                                      cs_extension_corr = NULL) {
 
   # Validate: exactly one of R or X must be provided
   if (is.null(R) && is.null(X))
@@ -767,15 +781,19 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
          "For susie_rss(), pass `n` explicitly.")
   }
 
-  # PVE-adjusted z-scores: shrink large z toward zero to account for
-  # winner's curse. Applied to ALL paths when sample size is available.
-  # Guard: z may be NULL when bhat/shat are provided (converted later).
-  # Snapshot the user-supplied z before mutation so the multi-panel
-  # sub-fit dispatch (below) can hand the *unadjusted* z to per-panel
-  # constructor calls — they will apply the PVE adjustment themselves
-  # and double-applying it would silently corrupt Xty.
+  # PVE-adjust Wald z onto the model's sigma^2 = 1 scale; z_method = "score"
+  # means z is already there (identity). bhat/shat are Wald, so force "wald".
+  z_method <- match.arg(z_method)
+  if (z_method == "score" && !is.null(bhat)) {
+    warning_message("z_method = \"score\" applies only to z-score input; ",
+                    "bhat/shat are Wald-scale, so using z_method = \"wald\".",
+                    style = "hint")
+    z_method <- "wald"
+  }
+  # Snapshot the unadjusted z (may be NULL on the bhat/shat path): multi-panel
+  # sub-fits re-adjust per panel, so they must get the pre-adjustment z.
   z_user <- z
-  pve <- apply_pve_adjustment(z, n)
+  pve <- apply_pve_adjustment(z, n, z_method)
   z <- pve$z
   adj <- pve$adjustment
   pve_adjusted <- pve$adjusted
@@ -896,10 +914,11 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
       residual_variance_lowerbound = residual_variance_lowerbound,
       residual_variance_upperbound = residual_variance_upperbound,
       model_init = model_init, coverage = coverage,
-      min_abs_corr = min_abs_corr, max_iter = max_iter, tol = tol,
+      min_abs_corr = min_abs_corr, median_abs_corr = median_abs_corr, max_iter = max_iter, tol = tol,
       convergence_method = convergence_method, verbose = verbose,
       track_fit = track_fit, check_input = check_input,
       check_prior = check_prior, n_purity = n_purity,
+      cs_extension_corr = cs_extension_corr,
       r_tol = r_tol, refine = refine, R_finite = R_finite,
       R_mismatch = R_mismatch, R_mismatch_method = R_mismatch_method,
       eig_delta_rel = eig_delta_rel,
@@ -1006,7 +1025,7 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
 
   # Apply PVE adjustment if not already done (when z was computed from bhat/shat)
   if (!pve_adjusted && !is.null(n) && n > 1) {
-    pve <- apply_pve_adjustment(z, n)
+    pve <- apply_pve_adjustment(z, n, z_method)
     z <- pve$z
     adj <- pve$adjustment
     pve_adjusted <- pve$adjusted
@@ -1119,7 +1138,8 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
     unmappable_effects = unmappable_effects,
     check_null_threshold = check_null_threshold, prior_tol = prior_tol,
     max_iter = max_iter, tol = tol, convergence_method = convergence_method,
-    coverage = coverage, min_abs_corr = min_abs_corr, n_purity = n_purity,
+    coverage = coverage, min_abs_corr = min_abs_corr, median_abs_corr = median_abs_corr, n_purity = n_purity,
+    cs_extension_corr = cs_extension_corr,
     verbose = verbose, track_fit = track_fit, check_prior = check_prior,
     refine = refine, alpha0 = alpha0, beta0 = beta0,
     slot_prior = slot_prior, L_greedy = L_greedy,
@@ -1200,7 +1220,9 @@ ss_mixture_constructor <- function(z, R = NULL, X = NULL, n,
                                    slot_prior = NULL,
                                    L_greedy = NULL,
                                    greedy_lbf_cutoff = 0.1,
-                                   init_panel = NULL) {
+                                   init_panel = NULL,
+                                   median_abs_corr = NULL,
+                                   cs_extension_corr = NULL) {
   if (is.null(n) || !is.numeric(n) || length(n) != 1 || n <= 1)
     stop("Sample size 'n' is required for multi-panel mode.")
   R_mismatch <- match.arg(R_mismatch, c("none", "eb", "eb_ser_init", "eb_force_init", "eb_no_init"))
@@ -1334,13 +1356,14 @@ ss_mixture_constructor <- function(z, R = NULL, X = NULL, n,
     tol = tol,
     convergence_method = convergence_method,
     coverage = coverage,
-    min_abs_corr = min_abs_corr,
+    min_abs_corr = min_abs_corr, median_abs_corr = median_abs_corr,
     compute_univariate_zscore = FALSE,
     verbose = verbose,
     track_fit = track_fit,
     check_prior = check_prior,
     refine = refine,
     n_purity = n_purity,
+    cs_extension_corr = cs_extension_corr,
     alpha0 = alpha0,
     beta0 = beta0,
     n = n,
@@ -1400,6 +1423,7 @@ ss_mixture_constructor <- function(z, R = NULL, X = NULL, n,
 rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
                                    L = min(10, if (!is.null(R)) ncol(R) else ncol(X)),
                                    lambda = 0,
+                                   z_method = c("wald", "score"),
                                    maf = NULL,
                                    maf_thresh = 0,
                                    prior_variance = 50,
@@ -1432,7 +1456,11 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
                                    refine = FALSE,
                                    slot_prior = NULL,
                                    L_greedy = NULL,
-                                   greedy_lbf_cutoff = 0.1) {
+                                   greedy_lbf_cutoff = 0.1,
+                                   median_abs_corr = NULL,
+                                   cs_extension_corr = NULL) {
+
+  z_method <- match.arg(z_method)
 
   # Validate: exactly one of R or X must be provided.
   if (is.null(R) && is.null(X))
@@ -1459,20 +1487,14 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
                     style = "hint")
   }
 
-  # PVE-adjust z when sample size is provided. Shrinks large z toward
-  # zero to account for winner's curse. Same form as the SS path
-  # (summary_stats_constructor); skipped when n is unavailable.
+  # PVE-adjust z onto the sigma^2 = 1 scale when n is available
+  # (z_method = "score" = identity); same form as summary_stats_constructor.
   if (!is.null(z) && !is.null(n) && is.numeric(n) && length(n) == 1 &&
       is.finite(n) && n > 1)
-    z <- apply_pve_adjustment(z, n)$z
+    z <- apply_pve_adjustment(z, n, z_method)$z
 
   if (is.null(X)) {
     # R path: validate R
-    if (is.null(R))
-      # nocov start  -- unreachable: the constructor already stops above when
-      # both R and X are NULL, so inside `is.null(X)` R is always non-NULL.
-      stop("Please provide either R or X for rss_lambda_constructor.")
-      # nocov end
     if (nrow(R) != length(z)) {
       stop(paste0(
         "The dimension of correlation matrix (", nrow(R), " by ",
@@ -1617,7 +1639,7 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
     residual_variance_upperbound = 1, # RSS constraint
     model_init = model_init,
     coverage = coverage,
-    min_abs_corr = min_abs_corr,
+    min_abs_corr = min_abs_corr, median_abs_corr = median_abs_corr,
     compute_univariate_zscore = FALSE,
     max_iter = max_iter,
     tol = tol,
@@ -1627,6 +1649,7 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
     residual_variance_lowerbound = residual_variance_lowerbound,
     refine = refine,
     n_purity = n_purity,
+    cs_extension_corr = cs_extension_corr,
     alpha0 = 0,  # RSS doesn't support NIG
     beta0 = 0,   # RSS doesn't support NIG
     n = n,

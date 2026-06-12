@@ -8,6 +8,9 @@
 #' 
 #' @param y n-vector of response variables.
 #' 
+#' @param Y For \code{calc_z}, an n-vector or n by T matrix of response
+#'   variables.
+#'
 #' @param Z Optional n by k matrix of covariates to be included in all
 #'   regresions. If Z is not \code{NULL}, the linear effects of
 #'   covariates are removed from y first, and the resulting residuals
@@ -115,7 +118,7 @@ univariate_regression = function (X, y, Z = NULL, center = TRUE,
       res
     }, silent = TRUE)
   } else {
-    # original .lm.fit-based implementation
+    # .lm.fit-based implementation
     output = try(do.call(rbind,
                         lapply(1:ncol(X), function (i) {
                           g = .lm.fit(cbind(1,X[,i]),y)
@@ -228,7 +231,7 @@ compute_marginal_bhat_shat <- function(X, Y,
       function(t) Rfast::colVars(Y[, t] - sweep(X, 2, Bhat[, t], "*")),
       numeric(J)
     )
-    if (!is.matrix(Shat)) Shat <- matrix(Shat, nrow = J, ncol = T_y) # nocov — vapply always returns matrix
+    if (!is.matrix(Shat)) Shat <- matrix(Shat, nrow = J, ncol = T_y) # nocov
     Shat <- sqrt(pmax(Shat, 1e-64)) / sqrt(n - 1)
   }
 

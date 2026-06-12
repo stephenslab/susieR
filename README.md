@@ -83,7 +83,7 @@ If you use any of the summary data methods such as `susie_ss` or
 > from summary data with the "Sum of Single Effects" model. *PLoS
 > Genetics* **18**, e1010299. https://doi.org/10.1371/journal.pgen.1010299
 
-If you use the Servin-Stephens prior on residual variance estimates
+If you use the Normal-Inverse-Gamma prior on residual variance estimates
 (`estimate_residual_method = "NIG"`), please also cite:
 
 > Denault, W.R.P., Carbonetto, P., Li, R., Alzheimer's Disease Functional

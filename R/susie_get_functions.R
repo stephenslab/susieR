@@ -244,11 +244,20 @@ susie_get_posterior_samples <- function(susie_fit, num_samples) {
 #' @param coverage A number between 0 and 1 specifying desired
 #'   coverage of each CS.
 #'
-#' @param min_abs_corr A "purity" threshold for the CS. Any CS that
-#'   contains a pair of variables with correlation less than this
-#'   threshold will be filtered out and not reported. This filter is
-#'   only applied when \code{X} or \code{Xcorr} is provided; otherwise
-#'   it is ignored and a warning is issued.
+#' @param min_abs_corr A "purity" threshold for the CS, applied to the
+#'   minimum absolute correlation among the CS variables: a CS is filtered
+#'   out unless this minimum is at least \code{min_abs_corr}. Set to
+#'   \code{NULL} to disable this clause. This filter is only applied when
+#'   \code{X} or \code{Xcorr} is provided; otherwise it is ignored and a
+#'   warning is issued.
+#'
+#' @param median_abs_corr An optional second purity threshold applied to
+#'   the \emph{median} absolute correlation among the CS variables. The
+#'   default, \code{NULL}, leaves it off. When both \code{min_abs_corr} and
+#'   \code{median_abs_corr} are non-\code{NULL}, they are combined with OR:
+#'   a CS is kept if it clears \emph{either} threshold (its min
+#'   \eqn{\ge} \code{min_abs_corr} \strong{or} its median \eqn{\ge}
+#'   \code{median_abs_corr}).
 #'
 #' @param dedup If \code{dedup = TRUE}, remove duplicate CSs.
 #'
@@ -268,18 +277,30 @@ susie_get_posterior_samples <- function(susie_fit, num_samples) {
 #'   By default \code{use_rfast = TRUE} if the Rfast package is
 #'   installed.
 #'
-#' @param ld_extend_threshold Threshold for extending CS by LD (default 0.99).
-#'   Variants with |correlation| > threshold with any CS member are added.
-#'   Set to NULL to disable LD extension. Requires Xcorr (would not work if only X is provided).
+#' @param cs_extension_corr Either \code{NULL} or a single number between 0
+#'   and 1. If non-\code{NULL}, each credible set is extended to include every
+#'   variable whose absolute correlation with a credible-set member exceeds this
+#'   threshold, pulling in near-perfectly correlated proxies (variables
+#'   statistically indistinguishable from the selected ones). Works from either
+#'   \code{X} or \code{Xcorr}. The default, \code{NULL}, disables correlation-based
+#'   extension; \code{0.99} is the recommended value when extension is desired.
 #'
 #' @export
 #'
 susie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
                          min_abs_corr = 0.5, dedup = TRUE, squared = FALSE,
                          check_symmetric = TRUE, n_purity = "auto",
-                         use_rfast = NULL, ld_extend_threshold = 0.99) {
+                         use_rfast = NULL, median_abs_corr = NULL,
+                         cs_extension_corr = NULL) {
   if (!is.null(X) && !is.null(Xcorr)) {
     stop("Only one of X or Xcorr should be specified")
+  }
+  for (nm in c("min_abs_corr", "median_abs_corr", "cs_extension_corr")) {
+    v <- get(nm)
+    if (!is.null(v) && (!is.numeric(v) || length(v) != 1 || !is.finite(v) ||
+                        v < 0 || v > 1)) {
+      stop(nm, " must be NULL or a single numeric value in [0, 1].")
+    }
   }
   if (is.null(X) && is.null(Xcorr)) {
     warning_message(
@@ -334,7 +355,7 @@ susie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
     use_rfast <- requireNamespace("Rfast", quietly = TRUE)
   }
   
-  # If no correlation info, return without purity or LD extension
+  # If no correlation info, return without purity or extension
   if (is.null(Xcorr) && is.null(X)) {
     names(cs) <- paste0("L", effect_indices)
     return(list(
@@ -344,20 +365,12 @@ susie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
     ))
   }
   
-  # Extend CS by LD if threshold is set and Xcorr is available
-  # Note: LD extension requires Xcorr; if only X is provided, skip extension
-  # (X may be sparse, and computing full Xcorr is expensive/infeasible)
-  if (!is.null(ld_extend_threshold) && !is.null(Xcorr)) {
-    for (i in 1:length(cs)) {
-      cs_idx <- cs[[i]]
-      # Find variants in tight LD with any CS member
-      ld_with_cs <- abs(Xcorr[cs_idx, , drop = FALSE]) > ld_extend_threshold
-      in_tight_ld <- which(colSums(ld_with_cs) > 0)
-      # Extend CS
-      cs[[i]] <- sort(unique(c(cs_idx, in_tight_ld)))
-      # Update coverage for extended CS
-      claimed_coverage[i] <- sum(res$alpha[effect_indices[i], cs[[i]]])
-    }
+  # Extend CS by correlation if requested (works from either X or Xcorr; see
+  # extend_cs_by_correlation). Recompute claimed coverage over the extended sets.
+  if (!is.null(cs_extension_corr) && (!is.null(Xcorr) || !is.null(X))) {
+    cs <- extend_cs_by_correlation(cs, X, Xcorr, cs_extension_corr, null_index)
+    claimed_coverage <- vapply(seq_along(cs), function(i)
+      sum(res$alpha[effect_indices[i], cs[[i]]]), numeric(1))
   }
 
   # Compute purity for each CS
@@ -379,8 +392,28 @@ susie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
     colnames(purity) <- c("min.abs.corr", "mean.abs.corr", "median.abs.corr")
   }
   
-  threshold <- ifelse(squared, min_abs_corr^2, min_abs_corr)
-  is_pure <- which(purity[, 1] >= threshold)
+  if (!is.null(min_abs_corr) && !is.null(median_abs_corr)) {
+    warning_message(
+      "Both min_abs_corr and median_abs_corr are set; a credible set is kept ",
+      "if it clears EITHER threshold (OR), which retains more sets than either ",
+      "filter alone.",
+      style = "hint")
+  }
+  # A CS is kept if it clears any active purity threshold (OR-linked).
+  # min_abs_corr gates column 1 (min |corr|); median_abs_corr gates column 3
+  # (median |corr|). Either may be NULL to disable that clause.
+  keep <- rep(FALSE, nrow(purity))
+  active <- FALSE
+  if (!is.null(min_abs_corr)) {
+    keep <- keep | (purity[, 1] >= if (squared) min_abs_corr^2 else min_abs_corr)
+    active <- TRUE
+  }
+  if (!is.null(median_abs_corr)) {
+    keep <- keep | (purity[, 3] >= if (squared) median_abs_corr^2 else median_abs_corr)
+    active <- TRUE
+  }
+  if (!active) keep <- purity[, 1] > -1   # no threshold: keep all but the null CS (purity = -9)
+  is_pure <- which(keep)
   
   if (length(is_pure) > 0) {
     cs <- cs[is_pure]
@@ -392,8 +425,11 @@ susie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
     names(cs) <- row_names
     rownames(purity) <- row_names
     
-    # Re-order CS list and purity rows based on purity
-    ordering <- order(purity[, 1], decreasing = TRUE)
+    # Re-order CS list and purity rows by the primary active statistic
+    # (min |corr| if on, else median |corr|).
+    order_col <- if (!is.null(min_abs_corr)) 1L
+                 else if (!is.null(median_abs_corr)) 3L else 1L
+    ordering <- order(purity[, order_col], decreasing = TRUE)
     return(list(
       cs = cs[ordering],
       purity = purity[ordering, , drop = FALSE],
@@ -404,6 +440,48 @@ susie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
   } else {
     return(list(cs = NULL, coverage = NULL, requested_coverage = coverage))
   }
+}
+
+# Extend each credible set to include variables with |corr| > threshold
+# with any current member. Works from a precomputed correlation matrix
+# (Xcorr) or directly from the data matrix X; in the latter case the needed
+# correlations are computed on demand as crossprod(standardize_X(X)), which
+# equals cor(X) but never materializes the full p x p matrix (only an m x p
+# block per credible set). The null index, if any, is never pulled in. Returns
+# the (possibly extended) cs list in the same order; the caller recomputes
+# claimed coverage.
+#' @keywords internal
+extend_cs_by_correlation <- function(cs, X, Xcorr, threshold, null_index = 0) {
+  if (is.null(threshold) || length(cs) == 0 || (is.null(X) && is.null(Xcorr)))
+    return(cs)
+
+  Xs <- NULL
+  if (is.null(Xcorr)) {
+    if (inherits(X, "sparseMatrix")) {
+      warning_message(
+        "LD extension from a sparse X would require densifying the matrix; ",
+        "skipping extension. Pass Xcorr (or a dense X) to enable it.",
+        style = "hint"
+      )
+      return(cs)
+    }
+    # standardize_X(X) so that crossprod(Xs[, a], Xs) equals cor(X)[a, ].
+    Xs <- standardize_X(X)
+  }
+
+  for (i in seq_along(cs)) {
+    cs_idx <- cs[[i]]
+    if (!is.null(Xcorr)) {
+      ld_with_cs <- abs(Xcorr[cs_idx, , drop = FALSE]) > threshold
+    } else {
+      ld_with_cs <- abs(crossprod(Xs[, cs_idx, drop = FALSE], Xs)) > threshold
+    }
+    in_tight_ld <- which(colSums(ld_with_cs) > 0)
+    if (null_index > 0)
+      in_tight_ld <- setdiff(in_tight_ld, null_index)
+    cs[[i]] <- sort(unique(c(cs_idx, in_tight_ld)))
+  }
+  cs
 }
 
 #' @rdname susie_get_methods
@@ -428,6 +506,9 @@ susie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
 #'   to \code{susie_get_cs}. Any \code{X} or \code{Xcorr} passed through
 #'   \code{...} is ignored, since the procedure is intended for the
 #'   no-LD setting.
+#'
+#' @param ... Additional arguments (e.g. \code{X} or \code{Xcorr}) accepted
+#'   for compatibility with \code{susie_get_cs}; they are ignored here.
 #'
 #' @export
 #'
@@ -473,9 +554,9 @@ susie_get_cs_attainable <- function(res, coverage = 0.95, ethres = NULL,
     filtered_idx <- as.integer(sub("^L", "", names(out$cs)))
     original_idx <- keep_effects[filtered_idx]
     names(out$cs) <- paste0("L", original_idx)
-    if (!is.null(out$cs_index)) # nocov - susie_get_cs_attainable strips X/Xcorr so cs_index is always NULL
+    if (!is.null(out$cs_index)) # nocov
       out$cs_index <- original_idx # nocov
-    if (!is.null(out$purity)) # nocov - purity is always NULL (X/Xcorr stripped above)
+    if (!is.null(out$purity)) # nocov
       rownames(out$purity) <- paste0("L", original_idx) # nocov
   }
 
@@ -576,7 +657,6 @@ susie_get_pip <- function(res, prune_by_cs = FALSE, prior_tol = 1e-9) {
 
     # Extract slot weights (c_hat) if available for Gamma-Poisson weighting.
     # PIP_j = 1 - prod_l(1 - c_hat[l] * alpha[l,j])
-    # (Faithfully ported from susieAnn posterior.R:195-200)
     slot_wt <- res$slot_weights
 
     # now extract relevant rows from alpha matrix

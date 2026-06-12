@@ -41,7 +41,8 @@ susie_get_cs(
   check_symmetric = TRUE,
   n_purity = "auto",
   use_rfast = NULL,
-  ld_extend_threshold = 0.99
+  median_abs_corr = NULL,
+  cs_extension_corr = NULL
 )
 
 susie_get_cs_attainable(res, coverage = 0.95, ethres = NULL, ...)
@@ -82,11 +83,12 @@ minimum correlation among variables is smaller than
 \item{coverage}{A number between 0 and 1 specifying desired
 coverage of each CS.}
 
-\item{min_abs_corr}{A "purity" threshold for the CS. Any CS that
-contains a pair of variables with correlation less than this
-threshold will be filtered out and not reported. This filter is
-only applied when \code{X} or \code{Xcorr} is provided; otherwise
-it is ignored and a warning is issued.}
+\item{min_abs_corr}{A "purity" threshold for the CS, applied to the
+minimum absolute correlation among the CS variables: a CS is filtered
+out unless this minimum is at least \code{min_abs_corr}. Set to
+\code{NULL} to disable this clause. This filter is only applied when
+\code{X} or \code{Xcorr} is provided; otherwise it is ignored and a
+warning is issued.}
 
 \item{dedup}{If \code{dedup = TRUE}, remove duplicate CSs.}
 
@@ -106,14 +108,29 @@ number uses all CS variables. \code{Xcorr} inputs always use all variables.}
 By default \code{use_rfast = TRUE} if the Rfast package is
 installed.}
 
-\item{ld_extend_threshold}{Threshold for extending CS by LD (default 0.99).
-Variants with |correlation| > threshold with any CS member are added.
-Set to NULL to disable LD extension. Requires Xcorr (would not work if only X is provided).}
+\item{median_abs_corr}{An optional second purity threshold applied to
+the \emph{median} absolute correlation among the CS variables. The
+default, \code{NULL}, leaves it off. When both \code{min_abs_corr} and
+\code{median_abs_corr} are non-\code{NULL}, they are combined with OR:
+a CS is kept if it clears \emph{either} threshold (its min
+\eqn{\ge} \code{min_abs_corr} \strong{or} its median \eqn{\ge}
+\code{median_abs_corr}).}
+
+\item{cs_extension_corr}{Either \code{NULL} or a single number between 0
+and 1. If non-\code{NULL}, each credible set is extended to include every
+variable whose absolute correlation with a credible-set member exceeds this
+threshold, pulling in near-perfectly correlated proxies (variables
+statistically indistinguishable from the selected ones). Works from either
+\code{X} or \code{Xcorr}. The default, \code{NULL}, disables correlation-based
+extension; \code{0.99} is the recommended value when extension is desired.}
 
 \item{ethres}{Entropy threshold expressed as an effective number of
 variables: an effect is dropped when its attainable-projection
 entropy is at least \code{log(ethres)}. Defaults to
 \code{max(100, 0.1 * p)} where \code{p} is the number of variables.}
+
+\item{...}{Additional arguments (e.g. \code{X} or \code{Xcorr}) accepted
+for compatibility with \code{susie_get_cs}; they are ignored here.}
 
 \item{prune_by_cs}{Whether or not to ignore single effects not in
 a reported CS when calculating PIP.}
