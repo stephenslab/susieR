@@ -20,6 +20,8 @@ update_each_effect_ss = function (XtX, Xty, s_init,
   # Repeat for each effect to update.
   s = s_init
   L = nrow(s$alpha)
+  p = nrow(XtX)
+  s$XtR = matrix(0,p,L)
   if (L > 0) {
     for (l in 1:L) {
         
@@ -28,6 +30,7 @@ update_each_effect_ss = function (XtX, Xty, s_init,
 
       # Compute residuals.
       XtR = Xty - as.vector(s$XtXr)
+      s$XtR[,l] = XtR
       res = single_effect_regression_ss(as.matrix(XtR),attr(XtX,"d"),s$V[l],
               s$sigma2,s$pi,estimate_prior_method,check_null_threshold)
       
