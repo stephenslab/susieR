@@ -21,8 +21,16 @@ colnames(X) <- paste0("SNP", seq_len(ncol(X)))
 y <- 0.5 + 1.5 * (X[, 3] == 2) - 0.8 * (X[, 14] >= 1) +
   rnorm(nrow(X), sd = 0.4)
 fit <- susie(X, y, L = 2, min_obs = 5)
-fit$delta_cs
+fit$delta_cs$summary
+fit$delta_cs$delta
 ```
+
+`delta_cs$summary` lists member SNPs in each reported credible set (CS).
+`delta_cs$delta` is a CS-by-SNP matrix: rows follow `sets$cs`, mapped to
+component rows by `sets$cs_index`; columns include all input SNPs in their
+original order, excluding an explicit null column. Each entry is that
+component's estimated delta for the candidate SNP, even outside the CS.
+The full component-by-SNP matrix remains available as `fit$delta`.
 
 Supply original `0/1/2` genotypes. Centering and standardization are performed
 internally, dividing both genotype and heterozygote terms by the original

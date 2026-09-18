@@ -26,7 +26,8 @@ fit <- susieSlide::susie(X, y, L = 10, min_obs = 5)
 fit$pip                         # SNP inclusion probabilities
 fit$sets                        # familiar credible-set output
 fit$delta                       # L-by-p matrix, aligned with fit$alpha
-fit$delta_cs                    # one row per SNP in each reported CS
+fit$delta_cs$summary             # one row per member SNP in each reported CS
+fit$delta_cs$delta               # reported CSs x all input SNPs
 susieSlide::slider_cs_table(fit)
 predict(fit, newx = X_test)      # original 0/1/2 genotype matrix
 coef(fit)                       # additive and heterozygote coefficient columns
@@ -74,6 +75,13 @@ This is an additive fallback, not a statistical test of additivity.
 - `delta[l,j]` is conditional on SNP j being the selected SNP for component l.
   Its row corresponds to the same row of `alpha`, `mu`, and `mu2`.
 - `sets$cs_index` maps reported credible sets to component rows.
+- `delta_cs$summary` is the member-SNP table returned by `slider_cs_table()`.
+  `delta_cs$delta` selects the corresponding rows of `delta` using
+  `sets$cs_index`, with row names matching `sets$cs`. Its columns contain
+  all input SNPs in their original order, including SNPs outside each CS,
+  and exclude an explicit null column. If no CS is reported, it is a
+  zero-row matrix with one column per input SNP. Deltas are estimated for
+  each candidate SNP within each component, rather than shared across a CS.
 - `mu` and `mu2` are first and second moments on the internal coefficient
   scale. `mu_delta` is `mu * delta`, valid for this plug-in delta model.
 - `lbf_variable` contains fixed-delta Gaussian log-BFs evaluated at fitted

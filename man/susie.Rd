@@ -133,7 +133,14 @@ A list of class c("susie_slide","susie") with usual SuSiE fields
   column, if requested, appears in component matrices but not SNP PIPs.
   mu and mu2 use internal coefficient units. coef returns additive and
   heterozygote coefficient columns on the original scale; predict accepts
-  original hard-call genotypes. delta_cs has one row per SNP per CS.
+  original hard-call genotypes. delta_cs is a list with summary (one row
+  per member SNP per reported CS) and delta (a CS-by-SNP matrix). Its
+  matrix rows follow sets$cs and use the component indices in sets$cs_index;
+  columns include all input SNPs in their original order, including SNPs
+  outside each CS, and exclude any explicit null column. With no reported
+  CSs, the matrix has zero rows and one column per input SNP. Delta is
+  estimated separately for each candidate SNP in each component, not
+  shared across the SNPs in a CS.
 }
 \description{
 Fits individual-level genotype effects using \eqn{x+\delta I(x=1)}, with
@@ -169,7 +176,8 @@ set.seed(1)
 X <- matrix(rbinom(4000, 2, 0.3), 200, 20)
 y <- 1.5 * (X[, 1] == 2) + rnorm(200)
 fit <- susie(X, y, L = 1, estimate_prior_variance = FALSE)
-fit$delta_cs
+fit$delta_cs$summary
+fit$delta_cs$delta
 head(predict(fit, newx = X))
 }
 \seealso{

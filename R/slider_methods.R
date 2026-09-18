@@ -52,7 +52,11 @@ predict.susie_slide <- function(object,newx=NULL,type=c("response","coefficients
 #'   times additive coefficients plus I(X=1) times heterozygote coefficients.
 #'   predict returns predictions or that coefficient matrix. slider_cs_table
 #'   returns one row per SNP per reported credible set, with the component
-#'   index, delta, alpha, SNP PIP, and count-forced status. summary returns
+#'   index, delta, alpha, SNP PIP, and count-forced status, matching
+#'   fit$delta_cs$summary. The fit also stores delta_cs$delta, a matrix with
+#'   one row per reported CS and one column per input SNP (including SNPs
+#'   outside that CS, excluding an explicit null column). Rows follow
+#'   sets$cs and select component rows using sets$cs_index. summary returns
 #'   the usual SuSiE summary with an additional delta table.
 #' @importFrom stats setNames
 #' @export
@@ -71,6 +75,20 @@ slider_cs_table <- function(fit) {
   })
   do.call(rbind,rows)
 }
+
+.slider_cs_output <- function(fit) {
+  components <- if(length(fit$sets$cs)) fit$sets$cs_index else integer(0)
+  snps <- seq_len(ncol(fit$delta))
+  if(!is.null(fit$null_index) && fit$null_index>0)
+    snps <- snps[snps!=fit$null_index]
+  deltas <- fit$delta[components,snps,drop=FALSE]
+  rownames(deltas) <- names(fit$sets$cs)
+  snp_names <- colnames(fit$alpha)
+  if(is.null(snp_names)) snp_names <- paste0("SNP",seq_len(ncol(fit$alpha)))
+  colnames(deltas) <- snp_names[snps]
+  list(summary=slider_cs_table(fit),delta=deltas)
+}
+
 #' @rdname slider_cs_table
 #' @method summary susie_slide
 #' @export

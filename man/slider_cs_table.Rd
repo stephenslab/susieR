@@ -31,7 +31,11 @@ coef returns a two-column matrix, additive and heterozygote,
   times additive coefficients plus I(X=1) times heterozygote coefficients.
   predict returns predictions or that coefficient matrix. slider_cs_table
   returns one row per SNP per reported credible set, with the component
-  index, delta, alpha, SNP PIP, and count-forced status. summary returns
+  index, delta, alpha, SNP PIP, and count-forced status, matching
+  fit$delta_cs$summary. The fit also stores delta_cs$delta, a matrix with
+  one row per reported CS and one column per input SNP (including SNPs
+  outside that CS, excluding an explicit null column). Rows follow
+  sets$cs and select component rows using sets$cs_index. summary returns
   the usual SuSiE summary with an additional delta table.
 }
 \description{

@@ -15,7 +15,12 @@ test_that("the repository entry point is the slider and uses its own engine", {
   expect_gt(fit$delta[which.max(fit$alpha[,9]),9],.8)
   expect_equal(susieSlide::predict.susie(fit,newx=X),predict(fit,newx=X),tolerance=1e-10)
   expect_equal(susieSlide::coef.susie(fit),coef(fit),tolerance=1e-10)
-  expect_equal(summary(fit)$delta,fit$delta_cs)
+  expect_equal(summary(fit)$delta,fit$delta_cs$summary)
+  expect_named(fit$delta_cs,c("summary","delta"))
+  expect_identical(rownames(fit$delta_cs$delta),names(fit$sets$cs))
+  expect_identical(colnames(fit$delta_cs$delta),colnames(X))
+  expect_equal(unname(fit$delta_cs$delta),
+               unname(fit$delta[fit$sets$cs_index,,drop=FALSE]))
 })
 
 test_that("the copied additive engine agrees with the separately installed upstream", {

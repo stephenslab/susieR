@@ -21,7 +21,7 @@ rows <- lapply(modes,function(mode) {
   stopifnot(fit$converged,max(differences)<1e-8,
             max(abs(predict(fit,newx=example$X)-fit$fitted))<1e-10,
             identical(dim(fit$delta),dim(fit$alpha)),
-            isTRUE(all.equal(summary(fit)$delta,fit$delta_cs)))
+            isTRUE(all.equal(summary(fit)$delta,fit$delta_cs$summary)))
   data.frame(mode=mode,converged=fit$converged,max_field_difference=max(differences),
              mean_function_mse=mean((predict(fit,newx=example$Xtest)-example$mean_test)^2))
 })
