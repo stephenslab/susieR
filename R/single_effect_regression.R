@@ -309,6 +309,8 @@ optimize_scalar_prior_variance <- function(V_init, estimate_prior_method,
 #'   returned unchanged by this default method.
 #' @keywords internal
 #' @noRd
+#' @export
+#' @noRd
 optimize_prior_variance.default <- function(data, params, model, ser_stats,
                                             l       = NULL,
                                             alpha   = NULL,

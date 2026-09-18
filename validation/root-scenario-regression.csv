@@ -1,0 +1,7 @@
+"mode","converged","max_field_difference","mean_function_mse"
+"Additive",TRUE,0,0.00209580913884369
+"Recessive",TRUE,0,0.00088177005562917
+"Partially_recessive",TRUE,0,0.00377157475863123
+"Dominant",TRUE,0,0.00175492137886488
+"Partially_dominant",TRUE,0,0.00106363495822399
+"Mixed",TRUE,0,0.000985638459957922

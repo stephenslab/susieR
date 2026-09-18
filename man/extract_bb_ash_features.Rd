@@ -18,6 +18,6 @@ data.frame with one row per slot, all features + TP/FP label
 }
 \description{
 Computes per-slot features from the converged model. Call with
-susieR:::extract_bb_ash_features(fit, X_or_Xcorr, causal).
+susieSlide:::extract_bb_ash_features(fit, X_or_Xcorr, causal).
 }
 \keyword{internal}

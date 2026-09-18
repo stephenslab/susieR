@@ -229,7 +229,7 @@ test_that("required generics stop() with informative message for unsupported cla
   for (case in cases) {
     # Resolve the unexported .default method from the namespace so this works
     # under both devtools::load_all() and installed-package testing (R CMD check).
-    fn   <- getFromNamespace(case$fn, "susieR")
+    fn   <- getFromNamespace(case$fn, "susieSlide")
     args <- case$args
     pat  <- case$pat
     expect_error(

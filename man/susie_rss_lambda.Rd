@@ -197,9 +197,8 @@ a summary of the optimization settings, and refinement progress (if
 alpha history, effect summaries and available diagnostics at each
 iteration of the IBSS fitting procedure.}
 
-\item{check_prior}{If \code{check_prior = TRUE}, it checks if the
-estimated prior variance becomes unreasonably large (comparing with
-10 * max(abs(z))^2).}
+\item{check_prior}{If TRUE, check for an excessively large estimated
+effect-prior variance during fitting.}
 
 \item{check_R}{If TRUE, verify that \code{R} is positive semidefinite.}
 
@@ -224,8 +223,7 @@ variable whose absolute correlation with a set member exceeds the
 threshold (near-perfectly correlated proxies); \code{0.99} is the
 recommended value.}
 
-\item{r_tol}{Tolerance level for eigenvalue check of positive semidefinite
-matrix \code{XtX}.}
+\item{r_tol}{Tolerance for eigenvalue and column-space checks of R.}
 
 \item{refine}{If \code{refine = TRUE}, then an additional
 iterative refinement procedure is used, after the IBSS algorithm,

@@ -2,8 +2,8 @@
 # X_column_scale_factors and intercept absent.
 
 test_that("assume_unit_scale returns 1 (with a hint) on NULL, else unchanged", {
-  expect_equal(susieR:::assume_unit_scale(c(1, 2, 3)), c(1, 2, 3))
-  expect_message(v <- susieR:::assume_unit_scale(NULL), "assuming 1")
+  expect_equal(susieSlide:::assume_unit_scale(c(1, 2, 3)), c(1, 2, 3))
+  expect_message(v <- susieSlide:::assume_unit_scale(NULL), "assuming 1")
   expect_equal(v, 1)
 })
 
@@ -35,7 +35,7 @@ test_that("individual-level fit: coef unchanged (regression guard, no hint)", {
   set.seed(4); n <- 200; p <- 20
   X <- matrix(rnorm(n * p), n, p); X[, 1] <- X[, 1] * 5  # unequal column SDs
   y <- X[, 3] * 0.5 + rnorm(n)
-  fit <- suppressMessages(susie(X, y, L = 5))
+  fit <- suppressMessages(susie_additive(X, y, L = 5))
   expect_false(is.null(fit$X_column_scale_factors))  # present -> guard is a no-op
   cf <- coef(fit)                                     # no "assuming 1" hint
   expect_length(cf, p + 1L)

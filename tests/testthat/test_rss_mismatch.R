@@ -60,25 +60,25 @@ test_that("R_mismatch = 'eb' with B = Inf stores finite r_over_B = 0", {
 })
 
 test_that("MLE lambda estimator handles zero, interior, and capped fits", {
-  lam_zero <- susieR:::estimate_lambda_bias(
+  lam_zero <- susieSlide:::estimate_lambda_bias(
     r = c(0.2, -0.1), s = c(1, 2), sigma2 = 1,
     R_finite_B = Inf, method = "eb",
     R_mismatch_method = "mle")
   expect_equal(lam_zero, 0)
 
-  lam_interior <- susieR:::estimate_lambda_bias(
+  lam_interior <- susieSlide:::estimate_lambda_bias(
     r = sqrt(1.25), s = 1, sigma2 = 1,
     R_finite_B = Inf, method = "eb",
     R_mismatch_method = "mle")
   expect_equal(lam_interior, 0.25, tolerance = 5e-5)
 
-  lam_small <- susieR:::estimate_lambda_bias(
+  lam_small <- susieSlide:::estimate_lambda_bias(
     r = sqrt(1.01), s = 1, sigma2 = 1,
     R_finite_B = Inf, method = "eb",
     R_mismatch_method = "mle")
   expect_equal(lam_small, 0)
 
-  lam_large <- susieR:::estimate_lambda_bias(
+  lam_large <- susieSlide:::estimate_lambda_bias(
     r = 4, s = 1, sigma2 = 1,
     R_finite_B = 500, method = "eb",
     R_mismatch_method = "mle")
@@ -223,9 +223,9 @@ test_that("BF attenuation diagnostic stores nonnegative BF loss", {
     shat2_inflation = c(4, 1)
   )
   ser_stats <- list(betahat = c(5, 0), shat2 = c(4, 1))
-  lbf_adjusted <- susieR:::gaussian_ser_lbf(ser_stats$betahat,
+  lbf_adjusted <- susieSlide:::gaussian_ser_lbf(ser_stats$betahat,
                                             ser_stats$shat2, V = 1)
-  out <- susieR:::record_R_bf_attenuation(model, ser_stats,
+  out <- susieSlide:::record_R_bf_attenuation(model, ser_stats,
                                           lbf_adjusted, V = 1, l = 1)
   expect_equal(dim(out$R_bf_attenuation), c(1, 2))
   expect_gt(out$R_bf_attenuation[1, 1], 0)
@@ -240,7 +240,7 @@ test_that("BF attenuation summary flags sensitive credible sets", {
     sets = list(cs = list(L1 = 1L, L2 = 2L), cs_index = c(1L, 2L)),
     R_finite_diagnostics = list(artifact_flag = FALSE)
   )
-  out <- susieR:::summarize_R_bf_attenuation(model, threshold = log(20))
+  out <- susieSlide:::summarize_R_bf_attenuation(model, threshold = log(20))
   d <- out$R_finite_diagnostics
   expect_true(d$R_sensitivity_flag)
   expect_equal(d$bf_attenuation$cs_label[["L1"]], "sensitive")
@@ -275,7 +275,7 @@ test_that("compute_Q_art recovers Q ~ 1 when r_fit lies in low-eigen direction",
   d <- c(2, 1, 1e-6)
   eig <- list(values = d, vectors = V)
   r_fit <- c(0, 0, 1)
-  out <- susieR:::compute_Q_art(eig, r_fit)
+  out <- susieSlide:::compute_Q_art(eig, r_fit)
   expect_equal(out$Q_art, 1, tolerance = 1e-12)
   expect_true(out$evaluable)
   expect_equal(out$low_eigen_count, 1L)
@@ -286,7 +286,7 @@ test_that("compute_Q_art returns Q ~ 0 when r_fit avoids low-eigen directions", 
   d <- c(2, 1, 1e-6)
   eig <- list(values = d, vectors = V)
   r_fit <- c(1, 0.5, 0)
-  out <- susieR:::compute_Q_art(eig, r_fit)
+  out <- susieSlide:::compute_Q_art(eig, r_fit)
   expect_equal(out$Q_art, 0, tolerance = 1e-12)
 })
 
@@ -294,7 +294,7 @@ test_that("compute_Q_art is non-evaluable when r_fit has negligible energy", {
   V <- diag(3)
   d <- c(2, 1, 1e-6)
   eig <- list(values = d, vectors = V)
-  out <- susieR:::compute_Q_art(eig, rep(0, 3))
+  out <- susieSlide:::compute_Q_art(eig, rep(0, 3))
   expect_equal(out$Q_art, 0)
   expect_false(out$evaluable)
 })
@@ -303,7 +303,7 @@ test_that("compute_Q_art is non-evaluable when no low-eigenvalues exist", {
   V <- diag(3)
   d <- c(2, 1, 0.5)
   eig <- list(values = d, vectors = V)
-  out <- susieR:::compute_Q_art(eig, c(1, 0, 0))
+  out <- susieSlide:::compute_Q_art(eig, c(1, 0, 0))
   expect_equal(out$low_eigen_count, 0L)
   expect_false(out$evaluable)
 })
@@ -314,7 +314,7 @@ test_that("compute_Q_art stays in [0, 1] for typical inputs", {
   eig <- list(values = d, vectors = V)
   for (r_fit in list(c(1, 0, 0), c(0, 1, 0), c(0, 0, 1),
                      c(0.5, 0.5, 0.5), c(-1, 1, -1))) {
-    out <- susieR:::compute_Q_art(eig, r_fit)
+    out <- susieSlide:::compute_Q_art(eig, r_fit)
     expect_gte(out$Q_art, 0)
     expect_lte(out$Q_art, 1)
   }
@@ -1061,7 +1061,7 @@ test_that("mixture_reference_p reaches multi-panel RSS constructors", {
 test_that("eb_mix signal variance scale is estimated by MLE at fixed signal prior", {
   r_z <- c(rep(0, 40), seq(-2, 2, length.out = 20))
   tau_det2 <- rep(1, length(r_z))
-  V_sig <- susieR:::estimate_eb_mix_vsig(r_z, tau_det2, pi_signal = 0.1)
+  V_sig <- susieSlide:::estimate_eb_mix_vsig(r_z, tau_det2, pi_signal = 0.1)
   expect_true(is.finite(V_sig))
   expect_gt(V_sig, 0)
   expect_lt(V_sig, 100)
@@ -1069,15 +1069,15 @@ test_that("eb_mix signal variance scale is estimated by MLE at fixed signal prio
 
 test_that("eb_mix helper fallbacks are conservative", {
   expect_equal(
-    susieR:::estimate_eb_mix_vsig(c(2, 3), c(1, 2), pi_signal = 0),
+    susieSlide:::estimate_eb_mix_vsig(c(2, 3), c(1, 2), pi_signal = 0),
     9
   )
   expect_equal(
-    susieR:::estimate_eb_mix_vsig(c(2, NA), c(1, 2), pi_signal = 0.1),
+    susieSlide:::estimate_eb_mix_vsig(c(2, NA), c(1, 2), pi_signal = 0.1),
     4
   )
   expect_equal(
-    susieR:::compute_mixture_gate(c(1, 2), c(1, 2), R_finite_B = 100,
+    susieSlide:::compute_mixture_gate(c(1, 2), c(1, 2), R_finite_B = 100,
                                   lambda_bias = 0.1, sigma2 = 1,
                                   data = list(nm1 = 0)),
     rep(1, 2)
@@ -1087,10 +1087,10 @@ test_that("eb_mix helper fallbacks are conservative", {
 test_that("stronger marginal evidence raises the mismatch gate", {
   eta2 <- c(A = 1e-8, B = 100)
   r <- c(A = 6, B = 6) * sqrt(2000)
-  w_weak <- susieR:::compute_mixture_gate(
+  w_weak <- susieSlide:::compute_mixture_gate(
     r, eta2, R_finite_B = 200, lambda_bias = 0.1, sigma2 = 1,
     data = list(nm1 = 2000), z_marginal = c(A = 0, B = 0), z_ref = 1)
-  w_strong <- susieR:::compute_mixture_gate(
+  w_strong <- susieSlide:::compute_mixture_gate(
     r, eta2, R_finite_B = 200, lambda_bias = 0.1, sigma2 = 1,
     data = list(nm1 = 2000), z_marginal = c(A = 0, B = 4), z_ref = 1)
   expect_gt(w_strong[["A"]], w_weak[["A"]])
@@ -1100,11 +1100,11 @@ test_that("stronger marginal evidence raises the mismatch gate", {
 test_that("marginal z prior is a region-level shift", {
   eta2 <- c(weak = 1, strong = 1)
   r <- c(weak = 2, strong = 2) * sqrt(2000)
-  w_weak_region <- susieR:::compute_mixture_gate(
+  w_weak_region <- susieSlide:::compute_mixture_gate(
     r, eta2, R_finite_B = 200, lambda_bias = 0.1, sigma2 = 1,
     data = list(nm1 = 2000),
     z_marginal = c(weak = 0, strong = 0), z_ref = 1)
-  w_strong_region <- susieR:::compute_mixture_gate(
+  w_strong_region <- susieSlide:::compute_mixture_gate(
     r, eta2, R_finite_B = 200, lambda_bias = 0.1, sigma2 = 1,
     data = list(nm1 = 2000),
     z_marginal = c(weak = 0, strong = 4), z_ref = 1)
@@ -1114,10 +1114,10 @@ test_that("marginal z prior is a region-level shift", {
 })
 
 test_that("marginal z prior is driven by the strongest marginal evidence", {
-  weak <- susieR:::compute_marginal_z_log_odds(
+  weak <- susieSlide:::compute_marginal_z_log_odds(
     c(A = 2, B = 4), z_ref = qnorm(5e-8 / 2, lower.tail = FALSE)
   )
-  strong <- susieR:::compute_marginal_z_log_odds(
+  strong <- susieSlide:::compute_marginal_z_log_odds(
     c(A = 2, B = 6), z_ref = qnorm(5e-8 / 2, lower.tail = FALSE)
   )
   expect_true(all(weak < 0))
@@ -1131,7 +1131,7 @@ test_that("compute_mixture_gate returns probabilities in [0,1]", {
   set.seed(1)
   eta2 <- runif(50, 0, 30)
   r <- rnorm(50) * sqrt(2000)
-  w <- susieR:::compute_mixture_gate(r, eta2, R_finite_B = 500,
+  w <- susieSlide:::compute_mixture_gate(r, eta2, R_finite_B = 500,
                                      lambda_bias = 0.05, sigma2 = 1, data)
   expect_length(w, 50)
   expect_true(all(w >= 0 & w <= 1))
@@ -1142,7 +1142,7 @@ test_that("compute_mixture_gate is asymmetric: high-eta leakage corrected, low-e
   data <- list(nm1 = 2000)
   eta2 <- c(A = 1e-8, B = 100)
   r <- c(A = 6, B = 6) * sqrt(2000)
-  w <- susieR:::compute_mixture_gate(r, eta2, R_finite_B = 200,
+  w <- susieSlide:::compute_mixture_gate(r, eta2, R_finite_B = 200,
                                      lambda_bias = 0.1, sigma2 = 1, data,
                                      z_marginal = c(A = 0, B = 6),
                                      z_ref = 1)
@@ -1162,9 +1162,9 @@ test_that("eb_mix gates ONLY lambda (keeps finite-reference B^-1); 'eb' path unc
   v_g <- sum(b_minus_l * XtXr_without_l)
   s   <- XtXr_without_l^2 / (data_eb$n - 1) + v_g
 
-  infl_eb  <- susieR:::compute_shat2_inflation(data_eb,  model,
+  infl_eb  <- susieSlide:::compute_shat2_inflation(data_eb,  model,
                  XtXr_without_l, b_minus_l, r)$infl
-  infl_mix <- susieR:::compute_shat2_inflation(data_mix, model,
+  infl_mix <- susieSlide:::compute_shat2_inflation(data_mix, model,
                  XtXr_without_l, b_minus_l, r)$infl
 
   expect_equal(infl_eb, 1 + (1 / B + model$lambda_bias) * s / model$sigma2)
@@ -1181,9 +1181,9 @@ test_that("eb_mix == eb when lambda_bias = 0 (no population term to gate)", {
   XtXr_without_l <- rep(10, 5)
   b_minus_l <- rep(0.05, 5)
   r <- c(300, 10, 10, 10, 10)
-  infl_eb  <- susieR:::compute_shat2_inflation(data_eb,  model,
+  infl_eb  <- susieSlide:::compute_shat2_inflation(data_eb,  model,
                                                XtXr_without_l, b_minus_l, r)$infl
-  infl_mix <- susieR:::compute_shat2_inflation(data_mix, model,
+  infl_mix <- susieSlide:::compute_shat2_inflation(data_mix, model,
                                                XtXr_without_l, b_minus_l, r)$infl
   expect_equal(infl_mix, infl_eb)
 })

@@ -43,9 +43,9 @@
 #'   typically improves reliability of the results by reducing a
 #'   tendency to converge to poor local optima of the ELBO.
 #'
-#' @param ... Other arguments passed to \code{\link{susie}}.
+#' @param ... Other arguments passed to \code{\link{susie_additive}}.
 #'
-#' @return A "susie" fit; see \code{\link{susie}} for details.
+#' @return A "susie" fit; see \code{\link{susie_additive}} for details.
 #'
 #' @references R. J. Tibshirani (2014). Adaptive piecewise polynomial
 #'   estimation via trend filtering. \emph{Annals of Statistics}
@@ -82,13 +82,13 @@ susie_trendfilter <- function(y, order = 0, standardize = FALSE,
   attr(X, "order") <- order
   if (use_mad && !("model_init" %in% names(list(...)))) {
     mad <- estimate_mad_residual_variance(y)
-    s_mad_init <- suppressWarnings(susie(
+    s_mad_init <- suppressWarnings(susie_additive(
       X = X, y = y, standardize = standardize,
       estimate_residual_variance = FALSE, residual_variance = mad, ...
     ))
-    s <- susie(X = X, y = y, standardize = standardize, model_init = s_mad_init, ...)
+    s <- susie_additive(X = X, y = y, standardize = standardize, model_init = s_mad_init, ...)
   } else {
-    s <- susie(X = X, y = y, standardize = standardize, ...)
+    s <- susie_additive(X = X, y = y, standardize = standardize, ...)
   }
   return(s)
 }

@@ -1,0 +1,55 @@
+---
+title: "SuSiE with a genotype slider"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{SuSiE with a genotype slider}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+The root package in this repository is `susieSlide`. Its default `susie()`
+fits `x + delta * I(x == 1)`, with `delta` in `[-1, 1]`, separately for each
+candidate SNP and single-effect component. `delta = -1` is recessive,
+`delta = 0` additive, and `delta = 1` dominant.
+
+```{r}
+library(susieSlide)
+set.seed(341)
+X <- matrix(rbinom(600 * 20, 2, 0.3), 600, 20)
+storage.mode(X) <- "double"
+colnames(X) <- paste0("SNP", seq_len(ncol(X)))
+y <- 0.5 + 1.5 * (X[, 3] == 2) - 0.8 * (X[, 14] >= 1) +
+  rnorm(nrow(X), sd = 0.4)
+fit <- susie(X, y, L = 2, min_obs = 5)
+fit$delta_cs
+```
+
+Supply original `0/1/2` genotypes. Centering and standardization are performed
+internally, dividing both genotype and heterozygote terms by the original
+additive genotype SD. The Gaussian coefficient prior uses those internal
+units, as in SuSiE. Output deltas keep their original interpretation.
+
+```{r}
+stopifnot(identical(dim(fit$delta), dim(fit$alpha)))
+head(predict(fit, newx = X))
+coef(fit)[c(1, 4, 15), , drop = FALSE]
+```
+
+`min_obs = 5` fixes delta at **zero** if any genotype class has fewer than
+five retained observations, including an absent class. `coef()` returns
+additive and heterozygote coefficients because both are needed for prediction.
+
+The original additive fitter is available explicitly:
+
+```{r}
+additive <- susie_additive(X, y, L = 2)
+fixed_zero <- susie(X, y, L = 2, delta = 0)
+max(abs(additive$fitted - fixed_zero$fitted))
+```
+
+The slider integrates beta analytically and estimates delta by maximizing
+marginal likelihood. Evidence scores, PIPs and credible sets condition on
+fitted delta. Null simulations show additional fitting from optimizing
+delta; genome-wide calibration is not established. The model currently
+requires complete hard-call genotypes. The inherited summary-statistic
+interfaces remain additive and do not estimate sliders.

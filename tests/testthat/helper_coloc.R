@@ -42,7 +42,7 @@ coloc_real_fit <- function(seed, n = 200, p = 60, k = 3, signal_sd = 3,
                            L = 5, coverage = 0.95) {
   set.seed(seed)
   dat <- simulate_regression(n = n, p = p, k = k, signal_sd = signal_sd)
-  fit <- susie(dat$X, dat$y, L = L, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = L, verbose = FALSE)
   fit$sets <- susie_get_cs(fit, X = dat$X, coverage = coverage)
   fit
 }

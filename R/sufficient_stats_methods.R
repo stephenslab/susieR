@@ -10,6 +10,8 @@
 
 # Configure ss data for specified method
 #' @keywords internal
+#' @export
+#' @noRd
 configure_data.ss <- function(data, params) {
   if (params$unmappable_effects == "inf") {
     return(add_eigen_decomposition(data, params))
@@ -20,6 +22,8 @@ configure_data.ss <- function(data, params) {
 
 # Get variance of y
 #' @keywords internal
+#' @export
+#' @noRd
 get_var_y.ss <- function(data, ...) {
   return(data$yty / (data$n - 1))
 }
@@ -36,6 +40,8 @@ get_var_y.ss <- function(data, ...) {
 
 # Initialize SuSiE model
 #' @keywords internal
+#' @export
+#' @noRd
 initialize_susie_model.ss <- function(data, params, var_y, ...) {
 
   # Base model
@@ -77,12 +83,16 @@ initialize_susie_model.ss <- function(data, params, var_y, ...) {
 
 # Initialize fitted values
 #' @keywords internal
+#' @export
+#' @noRd
 initialize_fitted.ss <- function(data, mat_init) {
   return(list(XtXr = compute_Rv(data, colSums(mat_init$alpha * mat_init$mu))))
 }
 
 # Validate Prior Variance
 #' @keywords internal
+#' @export
+#' @noRd
 validate_prior.ss <- function(data, params, model, ...) {
   if (isTRUE(params$check_prior)) {
     if (is.null(data$zm)) {
@@ -104,6 +114,8 @@ validate_prior.ss <- function(data, params, model, ...) {
 
 # Track core parameters across iterations
 #' @keywords internal
+#' @export
+#' @noRd
 track_ibss_fit.ss <- function(data, params, model, tracking, iter, elbo, ...) {
   if (params$unmappable_effects %in% c("inf", "ash", "ash_filter_archived")) {
     return(track_ibss_fit.default(data, params, model, tracking, iter, elbo, ...))
@@ -126,6 +138,8 @@ track_ibss_fit.ss <- function(data, params, model, tracking, iter, elbo, ...) {
 
 # Compute residuals for single effect regression
 #' @keywords internal
+#' @export
+#' @noRd
 compute_residuals.ss <- function(data, params, model, l, ...) {
   # Weighted sum of effects excluding l (slot_weights scale each effect's contribution)
   sw_l <- get_slot_weight(model, l)
@@ -197,6 +211,8 @@ compute_residuals.ss <- function(data, params, model, l, ...) {
 
 # Compute SER statistics
 #' @keywords internal
+#' @export
+#' @noRd
 compute_ser_statistics.ss <- function(data, params, model, l, ...) {
   betahat <- (1 / model$predictor_weights) * model$residuals
   shat2   <- model$residual_variance / model$predictor_weights
@@ -229,6 +245,8 @@ compute_ser_statistics.ss <- function(data, params, model, l, ...) {
 
 # Posterior expected log-likelihood for a single effect regression
 #' @keywords internal
+#' @export
+#' @noRd
 SER_posterior_e_loglik.ss <- function(data, params, model, l) {
   Eb  <- model$alpha[l, ] * model$mu[l, ]
   Eb2 <- model$alpha[l, ] * model$mu2[l, ]
@@ -247,6 +265,8 @@ SER_posterior_e_loglik.ss <- function(data, params, model, l) {
 
 # Calculate posterior moments for single effect regression
 #' @keywords internal
+#' @export
+#' @noRd
 calculate_posterior_moments.ss <- function(data, params, model, V, l, ...) {
   if (params$use_NIG) {
     # NIG posterior moments
@@ -280,6 +300,8 @@ calculate_posterior_moments.ss <- function(data, params, model, V, l, ...) {
 
 # Calculate KL divergence
 #' @keywords internal
+#' @export
+#' @noRd
 compute_kl.ss <- function(data, params, model, l) {
   if (params$use_NIG) {
     # NIG KL only valid for L=1 (gIBSS for L>1 has no coherent ELBO; supp. line 503)
@@ -301,6 +323,8 @@ compute_kl.ss <- function(data, params, model, l) {
 
 # Expected Squared Residuals
 #' @keywords internal
+#' @export
+#' @noRd
 get_ER2.ss <- function(data, model) {
   B       <- model$alpha * model$mu
   postb2  <- model$alpha * model$mu2 # Posterior second moment.
@@ -323,6 +347,8 @@ get_ER2.ss <- function(data, model) {
 # model; switch to the matching data-fit term.  Affects ELBO only; PIP/CS/
 # sigma2 (which goes through est_residual_variance, not Eloglik) are unchanged.
 #' @keywords internal
+#' @export
+#' @noRd
 Eloglik.ss <- function(data, model) {
   if (!is.null(model$shat2_inflation))
     return(compute_augmented_eloglik_ss(data, model))
@@ -363,6 +389,8 @@ compute_augmented_eloglik_ss <- function(data, model) {
 #' @importFrom Matrix colSums
 #' @importFrom stats dnorm
 #' @keywords internal
+#' @export
+#' @noRd
 loglik.ss <- function(data, params, model, V, ser_stats, l = NULL, ...) {
   if (params$use_NIG) {
     # NIG log Bayes factors
@@ -396,6 +424,8 @@ loglik.ss <- function(data, params, model, V, ser_stats, l = NULL, ...) {
 }
 
 #' @keywords internal
+#' @export
+#' @noRd
 neg_loglik.ss <- function(data, params, model, V_param, ser_stats, ...) {
   # Convert parameter to V based on optimization scale
   V <- if (ser_stats$optim_scale == "log") exp(V_param) else V_param
@@ -429,6 +459,8 @@ neg_loglik.ss <- function(data, params, model, V_param, ser_stats, ...) {
 
 # Update fitted values
 #' @keywords internal
+#' @export
+#' @noRd
 update_fitted_values.ss <- function(data, params, model, l, ...) {
   sw_l <- get_slot_weight(model, l)
   if (params$unmappable_effects == "inf") {
@@ -444,6 +476,8 @@ update_fitted_values.ss <- function(data, params, model, l, ...) {
 
 # Update variance components for ss data
 #' @keywords internal
+#' @export
+#' @noRd
 update_variance_components.ss <- function(data, params, model, ...) {
   if (params$unmappable_effects == "inf") {
     # Calculate omega.  model$predictor_weights == diagXtOmegaX is cached at
@@ -481,6 +515,8 @@ update_variance_components.ss <- function(data, params, model, ...) {
 
 # Update derived quantities for ss data
 #' @keywords internal
+#' @export
+#' @noRd
 update_derived_quantities.ss <- function(data, params, model) {
   if (params$unmappable_effects == "inf") {
     # Update omega quantities for next iteration
@@ -510,25 +546,33 @@ update_derived_quantities.ss <- function(data, params, model) {
 
 # Get column scale factors
 #' @keywords internal
-get_scale_factors.ss <- function(data, params) {
+#' @export
+#' @noRd
+get_scale_factors.ss <- function(data, params, ...) {
   pm <- if (!is.null(data$XtX)) data$XtX else data$X
   return(attr(pm, "scaled:scale"))
 }
 
 # Get intercept
 #' @keywords internal
+#' @export
+#' @noRd
 get_intercept.ss <- function(data, params, model, ...) {
   return(data$y_mean - sum(data$X_colmeans * (colSums(model$alpha * model$mu) / model$X_column_scale_factors)))
 }
 
 # Get Fitted Values
 #' @keywords internal
+#' @export
+#' @noRd
 get_fitted.ss <- function(data, params, model, ...) {
   return(get_fitted.default(data, params, model, ...))
 }
 
 # Get Credible Sets
 #' @keywords internal
+#' @export
+#' @noRd
 get_cs.ss <- function(data, params, model, ...) {
   if (is.null(params$coverage) ||
       (is.null(params$min_abs_corr) && is.null(params$median_abs_corr))) {
@@ -565,6 +609,8 @@ get_cs.ss <- function(data, params, model, ...) {
 # to safe_cov2cor (which is now BLAS-free). This avoids materializing the
 # full n x n correlation matrix in get_cs.ss.
 #' @keywords internal
+#' @export
+#' @noRd
 `[.scaled_XtX` <- function(x, i, j, drop = TRUE) {
   sub <- safe_cov2cor(x$XtX[i, j, drop = FALSE])
   if (drop && (nrow(sub) == 1L || ncol(sub) == 1L))
@@ -574,6 +620,8 @@ get_cs.ss <- function(data, params, model, ...) {
 
 # Get Variable Names
 #' @keywords internal
+#' @export
+#' @noRd
 get_variable_names.ss <- function(data, model, ...) {
   pm <- if (!is.null(data$XtX)) data$XtX else data$X
   return(assign_names(data, model, colnames(pm)))
@@ -581,12 +629,16 @@ get_variable_names.ss <- function(data, model, ...) {
 
 # Get univariate z-score
 #' @keywords internal
+#' @export
+#' @noRd
 get_zscore.ss <- function(data, params, model, ...) {
   return(get_zscore.default(data, params, model))
 }
 
 # Clean up model object for sufficient statistics data
 #' @keywords internal
+#' @export
+#' @noRd
 cleanup_model.ss <- function(data, params, model, ...) {
   # Remove common fields
   model <- cleanup_model.default(data, params, model, ...)

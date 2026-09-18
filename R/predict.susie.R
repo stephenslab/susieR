@@ -17,6 +17,7 @@
 #' @export
 #'
 coef.susie <- function(object, ...) {
+  if (inherits(object, "susie_slide")) return(coef.susie_slide(object, ...))
   s <- object
 
   # Assume unit scale when X_column_scale_factors is absent (susie_rss() /
@@ -78,6 +79,8 @@ coef.susie <- function(object, ...) {
 #'
 predict.susie <- function(object, newx = NULL,
                           type = c("response", "coefficients"), ...) {
+  if (inherits(object, "susie_slide"))
+    return(predict.susie_slide(object, newx = newx, type = type, ...))
   s <- object
   type <- match.arg(type)
   if (type == "coefficients") {

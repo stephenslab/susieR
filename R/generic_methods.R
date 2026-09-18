@@ -14,6 +14,8 @@ configure_data <- function(data, params) {
   UseMethod("configure_data")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 configure_data.default <- function(data, params) {
   return(data)
 }
@@ -24,6 +26,8 @@ get_var_y <- function(data, ...) {
   UseMethod("get_var_y")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 get_var_y.default <- function(data, ...) {
   stop("get_var_y: no method for class '", class(data)[1], "'")
 }
@@ -44,6 +48,8 @@ initialize_susie_model <- function(data, params, ...) {
   UseMethod("initialize_susie_model")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 initialize_susie_model.default <- function(data, params, ...) {
   stop("initialize_susie_model: no method for class '", class(data)[1], "'")
 }
@@ -54,6 +60,8 @@ initialize_fitted <- function(data, mat_init) {
   UseMethod("initialize_fitted")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 initialize_fitted.default <- function(data, mat_init, ...) {
   stop("initialize_fitted: no method for class '", class(data)[1], "'")
 }
@@ -64,6 +72,8 @@ validate_prior <- function(data, params, model, ...) {
   UseMethod("validate_prior")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 validate_prior.default <- function(data, params, model, ...) {
   invisible(TRUE)
 }
@@ -74,6 +84,8 @@ track_ibss_fit <- function(data, params, model, tracking, iter, ...) {
   UseMethod("track_ibss_fit")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 track_ibss_fit.default <- function(data, params, model, tracking, iter, elbo, ...) {
   # Store iteration snapshot if tracking is enabled.
   if (isTRUE(params$track_fit)) {
@@ -121,6 +133,8 @@ compute_residuals <- function(data, params, model, l, ...) {
   UseMethod("compute_residuals")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 compute_residuals.default <- function(data, params, model, l, ...) {
   stop("compute_residuals: no method for class '", class(data)[1], "'")
 }
@@ -131,6 +145,8 @@ compute_ser_statistics <- function(data, params, model, l, ...) {
   UseMethod("compute_ser_statistics")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 compute_ser_statistics.default <- function(data, params, model, l, ...) {
   stop("compute_ser_statistics: no method for class '", class(data)[1], "'")
 }
@@ -141,6 +157,8 @@ SER_posterior_e_loglik <- function(data, params, model, l) {
   UseMethod("SER_posterior_e_loglik")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 SER_posterior_e_loglik.default <- function(data, params, model, l) {
   stop("SER_posterior_e_loglik: no method for class '", class(data)[1], "'")
 }
@@ -151,6 +169,8 @@ calculate_posterior_moments <- function(data, params, model, V, l, ...) {
   UseMethod("calculate_posterior_moments")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 calculate_posterior_moments.default <- function(data, params, model, V, l = NULL, ...) {
   stop("calculate_posterior_moments: no method for class '", class(data)[1], "'")
 }
@@ -161,6 +181,8 @@ compute_kl <- function(data, params, model, l) {
   UseMethod("compute_kl")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 compute_kl.default <- function(data, params, model, l) {
   model$KL[l] <- -model$lbf[l] + SER_posterior_e_loglik(data, params, model, l)
   return(model)
@@ -172,6 +194,8 @@ get_ER2 <- function(data, model) {
   UseMethod("get_ER2")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 get_ER2.default <- function(data, model) {
   stop("get_ER2: no method for class '", class(data)[1], "'")
 }
@@ -182,6 +206,8 @@ Eloglik <- function(data, model) {
   UseMethod("Eloglik")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 Eloglik.default <- function(data, model) {
   stop("Eloglik: no method for class '", class(data)[1], "'")
 }
@@ -220,6 +246,8 @@ loglik_mixture <- function(data, params, model, ser_stats, l, ...) {
   UseMethod("loglik_mixture")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 loglik_mixture.default <- function(data, params, model, ser_stats, l, ...) {
   # Shared implementation for all data types.
   # compute_ser_statistics() (type-specific) has already produced betahat and shat2.
@@ -232,6 +260,8 @@ calculate_posterior_moments_mixture <- function(data, params, model, l, ...) {
   UseMethod("calculate_posterior_moments_mixture")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 calculate_posterior_moments_mixture.default <- function(data, params, model, l, ...) {
   # Shared implementation: mixture posterior from stored lbf_grid and ser_stats
   model <- calculate_posterior_moments_mixture_common(params, model, l)
@@ -244,6 +274,8 @@ loglik <- function(data, params, model, V, ser_stats, l = NULL, ...) {
   UseMethod("loglik")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 loglik.default <- function(data, params, model, V, ser_stats, l = NULL, ...) {
   stop("loglik: no method for class '", class(data)[1], "'")
 }
@@ -254,6 +286,8 @@ neg_loglik <- function(data, params, model, V_param, ser_stats, ...) {
   UseMethod("neg_loglik")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 neg_loglik.default <- function(data, params, model, V_param, ser_stats, ...) {
   stop("neg_loglik: no method for class '", class(data)[1], "'")
 }
@@ -264,6 +298,8 @@ em_update_prior_variance <- function(data, params, model, alpha, moments, V_init
   UseMethod("em_update_prior_variance")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 em_update_prior_variance.default <- function(data, params, model, alpha, moments, V_init) {
   if (!is.null(params$use_NIG) && params$use_NIG) {
     nig_ss <- get_nig_sufficient_stats(data, model)
@@ -292,6 +328,8 @@ update_fitted_values <- function(data, params, model, l, ...) {
   UseMethod("update_fitted_values")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 update_fitted_values.default <- function(data, params, model, l, ...) {
   stop("update_fitted_values: no method for class '", class(data)[1], "'")
 }
@@ -302,6 +340,8 @@ update_variance_components <- function(data, params, model, ...) {
   UseMethod("update_variance_components")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 update_variance_components.default <- function(data, params, model, ...) {
   if (isTRUE(params$use_NIG)) {
     # Posterior mean of IG((alpha0+n)/2, (beta0+ERSS)/2)
@@ -319,6 +359,8 @@ update_derived_quantities <- function(data, params, model) {
   UseMethod("update_derived_quantities")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 update_derived_quantities.default <- function(data, params, model) {
   return(model)
 }
@@ -340,6 +382,8 @@ get_scale_factors <- function(data, params, ...) {
   UseMethod("get_scale_factors")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 get_scale_factors.default <- function(data, params, ...) {
   stop("get_scale_factors: no method for class '", class(data)[1], "'")
 }
@@ -350,6 +394,8 @@ get_intercept <- function(data, params, model, ...) {
   UseMethod("get_intercept")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 get_intercept.default <- function(data, params, model, ...) {
   stop("get_intercept: no method for class '", class(data)[1], "'")
 }
@@ -360,6 +406,8 @@ get_fitted <- function(data, params, model, ...) {
   UseMethod("get_fitted")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 get_fitted.default <- function(data, params, model, ...) {
   return(NULL)
 }
@@ -370,6 +418,8 @@ get_cs <- function(data, params, model, ...) {
   UseMethod("get_cs")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 get_cs.default <- function(data, params, model, ...) {
   stop("get_cs: no method for class '", class(data)[1], "'")
 }
@@ -380,6 +430,8 @@ get_variable_names <- function(data, model, ...) {
   UseMethod("get_variable_names")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 get_variable_names.default <- function(data, model, ...) {
   stop("get_variable_names: no method for class '", class(data)[1], "'")
 }
@@ -390,6 +442,8 @@ get_zscore <- function(data, params, model, ...) {
   UseMethod("get_zscore")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 get_zscore.default <- function(data, params, model, ...) {
   return(NULL)
 }
@@ -411,11 +465,15 @@ cleanup_extra_fields <- function(data) {
   UseMethod("cleanup_extra_fields")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 cleanup_extra_fields.default <- function(data) {
   character(0)
 }
 
 #' @keywords internal
+#' @export
+#' @noRd
 cleanup_model.default <- function(data, params, model, ...) {
   # Remove temporary fields common to all data types
   temp_fields <- c("null_weight", "predictor_weights", "runtime",

@@ -47,11 +47,11 @@
 #'   \dQuote{ELBO} (the objective function to be maximized), is
 #'   less than \code{tol}.
 #'
-#' @param \dots Additional arguments passed to \code{\link{susie}}.
+#' @param \dots Additional arguments passed to \code{\link{susie_additive}}.
 #'
-#' @return See \code{\link{susie}} for a description of return values.
+#' @return See \code{\link{susie_additive}} for a description of return values.
 #'
-#' @seealso \code{\link{susie}}
+#' @seealso \code{\link{susie_additive}}
 #'
 #' @examples
 #' set.seed(1)
@@ -78,16 +78,16 @@ susie_auto = function (X, y, L_init = 1, L_max = 512, verbose = FALSE,
   L = L_init
   if (verbose)
     message(paste0("Trying L=",L))
-  s.0 = susie(X,y,L = L,residual_variance = 0.01*sd(y)^2,tol = init_tol,
+  s.0 = susie_additive(X,y,L = L,residual_variance = 0.01*sd(y)^2,tol = init_tol,
               scaled_prior_variance = 1,estimate_residual_variance = FALSE,
               estimate_prior_variance = FALSE,standardize = standardize,
               intercept = intercept,max_iter = max_iter,...)
-  s.1 = susie(X,y,L = nrow(s.0$alpha),model_init = s.0,tol = init_tol,
+  s.1 = susie_additive(X,y,L = nrow(s.0$alpha),model_init = s.0,tol = init_tol,
               estimate_residual_variance = TRUE,
               estimate_prior_variance = FALSE,
               standardize = standardize,intercept = intercept,
               max_iter = max_iter,...)
-  s.2 = susie(X,y,L = nrow(s.1$alpha),model_init = s.1,tol = init_tol,
+  s.2 = susie_additive(X,y,L = nrow(s.1$alpha),model_init = s.1,tol = init_tol,
               estimate_residual_variance = TRUE,
               estimate_prior_variance = TRUE,
               standardize = standardize,intercept = intercept,
@@ -105,17 +105,17 @@ susie_auto = function (X, y, L_init = 1, L_max = 512, verbose = FALSE,
     L = 2*L
     if (verbose)
       message(paste0("Trying L=",L))
-    s.0 = susie(X,y,L = nrow(s.2$alpha),model_init = s.2,tol = init_tol,
+    s.0 = susie_additive(X,y,L = nrow(s.2$alpha),model_init = s.2,tol = init_tol,
                 estimate_residual_variance = FALSE,
                 estimate_prior_variance = FALSE,
                 standardize = standardize,intercept = intercept,
                 max_iter = max_iter,...)
-    s.1 = susie(X,y,L = nrow(s.0$alpha),model_init = s.0,tol = init_tol,
+    s.1 = susie_additive(X,y,L = nrow(s.0$alpha),model_init = s.0,tol = init_tol,
                 estimate_residual_variance = TRUE,
                 estimate_prior_variance = FALSE,
                 standardize = standardize,intercept = intercept,
                 max_iter = max_iter,...)
-    s.2 = susie(X,y,L = nrow(s.1$alpha),model_init = s.1,tol = init_tol,
+    s.2 = susie_additive(X,y,L = nrow(s.1$alpha),model_init = s.1,tol = init_tol,
                 estimate_residual_variance = TRUE,
                 estimate_prior_variance = TRUE,
                 standardize = standardize,intercept = intercept,
@@ -127,7 +127,7 @@ susie_auto = function (X, y, L_init = 1, L_max = 512, verbose = FALSE,
   }
 
   # Final run at default tolerance to improve fit.
-  s.2 = susie(X,y,L = nrow(s.2$alpha),model_init = s.2,estimate_residual_variance = TRUE,
+  s.2 = susie_additive(X,y,L = nrow(s.2$alpha),model_init = s.2,estimate_residual_variance = TRUE,
               estimate_prior_variance = TRUE,tol = tol,
               standardize = standardize,intercept = intercept,
               max_iter = max_iter,...)

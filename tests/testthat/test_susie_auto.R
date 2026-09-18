@@ -27,7 +27,7 @@ test_that("susie_auto converges (stops doubling) when any prior variance hits ze
 
 test_that("susie_auto exercises the final-run path with tighter tol", {
   # Two different init_tol values should produce nearly the same final result
-  # because the final susie() call uses `tol`, not `init_tol`
+  # because the final susie_additive() call uses `tol`, not `init_tol`
   base_data <- generate_base_data(n = 100, p = 50, k = 2, signal_sd = 1.75, seed = 132)
   result_large <- susie_auto(base_data$X, base_data$y, L_init = 2, L_max = 2,
                              init_tol = 10, tol = 1e-3, verbose = FALSE)

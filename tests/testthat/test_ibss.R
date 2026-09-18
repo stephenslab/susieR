@@ -536,7 +536,7 @@ test_that("susie with beta-binomial slot_prior returns valid c_hat output", {
   y <- as.vector(X %*% b + rnorm(n))
 
   fit <- suppressMessages(suppressWarnings(
-    susie(X, y, L = 8, slot_prior = slot_prior_betabinom(), verbose = FALSE)))
+    susie_additive(X, y, L = 8, slot_prior = slot_prior_betabinom(), verbose = FALSE)))
 
   expect_length(fit$c_hat, 8)
   expect_true(all(fit$c_hat >= 0 & fit$c_hat <= 1))
@@ -553,7 +553,7 @@ test_that("susie with unmappable_effects='ash' returns valid c_hat and tau2", {
   y <- as.vector(X %*% b + rnorm(n))
 
   fit <- suppressMessages(suppressWarnings(
-    susie(X, y, L = 6, unmappable_effects = "ash",
+    susie_additive(X, y, L = 6, unmappable_effects = "ash",
           slot_prior = slot_prior_betabinom(),
           verbose = FALSE, max_iter = 8)))
 
@@ -570,11 +570,11 @@ test_that("ibss_initialize warm-start path produces valid fit on second run", {
   b <- rep(0, p); b[c(5, 25)] <- c(1.5, -1.5)
   y <- as.vector(X %*% b + rnorm(n))
 
-  fit0 <- suppressWarnings(susie(X, y, L = 3, max_iter = 5, verbose = FALSE))
+  fit0 <- suppressWarnings(susie_additive(X, y, L = 3, max_iter = 5, verbose = FALSE))
 
   init <- list(alpha = fit0$alpha, mu = fit0$mu, mu2 = fit0$mu2)
   class(init) <- "susie"
-  fit1 <- suppressWarnings(susie(X, y, L = 3, model_init = init, max_iter = 5, verbose = FALSE))
+  fit1 <- suppressWarnings(susie_additive(X, y, L = 3, model_init = init, max_iter = 5, verbose = FALSE))
 
   expect_s3_class(fit1, "susie")
   expect_equal(dim(fit1$alpha), c(3L, p))

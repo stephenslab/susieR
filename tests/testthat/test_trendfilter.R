@@ -333,7 +333,7 @@ test_that("susie_trendfilter matches manual susie call for order 0, 1, and 2", {
     set.seed(30 + ord)
     with(simulate_tf(ord), {
       result_manual <- suppressWarnings(
-        susie(X, y, estimate_prior_variance = FALSE, standardize = TRUE, max_iter = 5)
+        susie_additive(X, y, estimate_prior_variance = FALSE, standardize = TRUE, max_iter = 5)
       )
       result_tf <- suppressWarnings(
         susie_trendfilter(y, order = ord,

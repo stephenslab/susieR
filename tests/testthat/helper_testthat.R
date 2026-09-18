@@ -273,8 +273,8 @@ expect_equal_susie_rss = function(new.res, original.res, tolerance = .Machine$do
 #'
 #' @examples
 #' # Automatically handles all susie object types
-#' fit1 <- susie(X, y, L = 5)
-#' fit2 <- susie(X, y, L = 5)
+#' fit1 <- susie_additive(X, y, L = 5)
+#' fit2 <- susie_additive(X, y, L = 5)
 #' expect_equal_susie_objects(fit1, fit2)
 #'
 expect_equal_susie_objects <- function(new.res, original.res,
@@ -459,7 +459,7 @@ create_base_params <- function(L, p, unmappable_effects = "none",
 #' @examples
 #' # Internal use in tests
 #' setup <- setup_individual_data(n = 100, p = 50, L = 5)
-#' fit <- susie(setup$data$X, setup$data$y, L = setup$params$L)
+#' fit <- susie_additive(setup$data$X, setup$data$y, L = setup$params$L)
 setup_individual_data <- function(n = 100, p = 50, L = 5, seed = 42) {
   # Use base helper for data generation
   base_data <- generate_base_data(n, p, k = 0, seed = seed)
@@ -704,7 +704,7 @@ create_model_with_cs <- function(n = 100, p = 50, L = 5, n_causal = 3,
   y <- as.vector(X %*% beta + rnorm(n, sd = 0.5))
 
   if (run_susie) {
-    model <- susie(X, y, L = L, verbose = FALSE)
+    model <- susie_additive(X, y, L = L, verbose = FALSE)
 
     constructor_result <- individual_data_constructor(
       X = X, y = y, L = L,

@@ -4,7 +4,7 @@ source(file.path("..", "helper_reference.R"), local = TRUE)
 context("susie reference comparison")
 
 # =============================================================================
-# REFERENCE TESTS FOR susie()
+# REFERENCE TESTS FOR susie_additive()
 # =============================================================================
 #
 # These functions compare the new susieR implementation against the reference

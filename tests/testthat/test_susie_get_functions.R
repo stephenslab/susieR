@@ -7,7 +7,7 @@ context("susie_get_* functions")
 test_that("susie_get_objective returns last ELBO when last_only=TRUE", {
   set.seed(1)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, verbose = FALSE)
 
   obj <- susie_get_objective(fit, last_only = TRUE)
 
@@ -19,7 +19,7 @@ test_that("susie_get_objective returns last ELBO when last_only=TRUE", {
 test_that("susie_get_objective returns full ELBO vector when last_only=FALSE", {
   set.seed(2)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, verbose = FALSE)
 
   obj <- susie_get_objective(fit, last_only = FALSE)
 
@@ -31,7 +31,7 @@ test_that("susie_get_objective returns full ELBO vector when last_only=FALSE", {
 test_that("susie_get_objective detects ELBO decrease", {
   set.seed(3)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, verbose = FALSE)
 
   fit$elbo <- c(-100, -90, -95, -85)
 
@@ -48,7 +48,7 @@ test_that("susie_get_objective detects ELBO decrease", {
 test_that("susie_get_posterior_mean computes correctly using all effects", {
   set.seed(4)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, verbose = FALSE)
 
   pm <- susie_get_posterior_mean(fit)
 
@@ -61,7 +61,7 @@ test_that("susie_get_posterior_mean computes correctly using all effects", {
 test_that("susie_get_posterior_mean filters effects with V < prior_tol", {
   set.seed(5)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, verbose = FALSE)
 
   fit$V[c(1, 3)] <- 0
   pm <- susie_get_posterior_mean(fit, prior_tol = 1e-9)
@@ -74,7 +74,7 @@ test_that("susie_get_posterior_mean filters effects with V < prior_tol", {
 test_that("susie_get_posterior_mean returns zeros when all V=0", {
   set.seed(6)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, verbose = FALSE)
 
   fit$V <- rep(0, 5)
   pm <- susie_get_posterior_mean(fit)
@@ -86,7 +86,7 @@ test_that("susie_get_posterior_mean returns zeros when all V=0", {
 test_that("susie_get_posterior_mean uses all effects when V is not numeric", {
   set.seed(26)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, verbose = FALSE)
 
   fit$V <- NULL
   pm <- susie_get_posterior_mean(fit)
@@ -100,7 +100,7 @@ test_that("susie_get_posterior_mean uses all effects when V is not numeric", {
 test_that("susie_get_posterior_sd computes correctly", {
   set.seed(7)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, verbose = FALSE)
 
   psd <- susie_get_posterior_sd(fit)
 
@@ -116,7 +116,7 @@ test_that("susie_get_posterior_sd computes correctly", {
 test_that("susie_get_posterior_sd filters effects with V < prior_tol", {
   set.seed(8)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, verbose = FALSE)
 
   fit$V[c(2, 4)] <- 0
   psd <- susie_get_posterior_sd(fit, prior_tol = 1e-9)
@@ -130,7 +130,7 @@ test_that("susie_get_posterior_sd filters effects with V < prior_tol", {
 test_that("susie_get_posterior_sd uses all effects when V is not numeric", {
   set.seed(27)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, verbose = FALSE)
 
   fit$V <- NULL
   psd <- susie_get_posterior_sd(fit)
@@ -147,7 +147,7 @@ test_that("susie_get_posterior_sd uses all effects when V is not numeric", {
 test_that("susie_get_posterior_sd returns zeros when no effects pass prior_tol", {
   set.seed(28)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, verbose = FALSE)
 
   fit$V <- rep(0, 5)
   psd <- susie_get_posterior_sd(fit, prior_tol = 1e-9)
@@ -160,7 +160,7 @@ test_that("susie_get_posterior_sd returns zeros when no effects pass prior_tol",
 test_that("susie_get_niter returns correct iteration count", {
   set.seed(9)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, max_iter = 50, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, max_iter = 50, verbose = FALSE)
 
   niter <- susie_get_niter(fit)
 
@@ -172,7 +172,7 @@ test_that("susie_get_niter returns correct iteration count", {
 test_that("susie_get_prior_variance returns V", {
   set.seed(10)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, verbose = FALSE)
 
   V <- susie_get_prior_variance(fit)
 
@@ -184,7 +184,7 @@ test_that("susie_get_prior_variance returns V", {
 test_that("susie_get_residual_variance returns sigma2", {
   set.seed(11)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, verbose = FALSE)
 
   sigma2 <- susie_get_residual_variance(fit)
 
@@ -197,7 +197,7 @@ test_that("susie_get_residual_variance returns sigma2", {
 test_that("susie_get_lfsr computes local false sign rate in [0, 1]", {
   set.seed(17)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, verbose = FALSE)
 
   lfsr <- susie_get_lfsr(fit)
 
@@ -209,7 +209,7 @@ test_that("susie_get_lfsr computes local false sign rate in [0, 1]", {
 test_that("susie_get_posterior_samples returns binary gamma and non-zero b only where gamma=1", {
   set.seed(18)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, verbose = FALSE)
 
   num_samples <- 100
   samples <- susie_get_posterior_samples(fit, num_samples = num_samples)
@@ -227,7 +227,7 @@ test_that("susie_get_posterior_samples returns binary gamma and non-zero b only 
 test_that("susie_get_posterior_samples returns all zeros when all V=0", {
   set.seed(19)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, verbose = FALSE)
 
   fit$V <- rep(0, 5)
   samples <- susie_get_posterior_samples(fit, num_samples = 50)
@@ -239,7 +239,7 @@ test_that("susie_get_posterior_samples returns all zeros when all V=0", {
 test_that("susie_get_posterior_samples uses all effects when V is not numeric", {
   set.seed(29)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, verbose = FALSE)
 
   fit$V <- NULL
   num_samples <- 100
@@ -259,7 +259,7 @@ test_that("susie_get_posterior_samples uses all effects when V is not numeric", 
 test_that("susie_get_cs identifies credible sets with correct structure", {
   set.seed(20)
   dat <- simulate_regression(n = 200, p = 100, k = 3, signal_sd = 2)
-  fit <- suppressWarnings(susie(dat$X, dat$y, L = 10, verbose = FALSE))
+  fit <- suppressWarnings(susie_additive(dat$X, dat$y, L = 10, verbose = FALSE))
 
   cs <- suppressMessages(susie_get_cs(fit, coverage = 0.95))
 
@@ -274,7 +274,7 @@ test_that("susie_get_cs identifies credible sets with correct structure", {
 test_that("susie_get_cs filters by purity when X provided", {
   set.seed(20)
   dat <- simulate_regression(n = 200, p = 100, k = 3, signal_sd = 2)
-  fit <- suppressWarnings(susie(dat$X, dat$y, L = 10, verbose = FALSE))
+  fit <- suppressWarnings(susie_additive(dat$X, dat$y, L = 10, verbose = FALSE))
 
   cs_with_purity <- susie_get_cs(fit, X = dat$X, min_abs_corr = 0.5, coverage = 0.95)
 
@@ -289,7 +289,7 @@ test_that("susie_get_cs filters by purity when X provided", {
 test_that("susie_get_cs dedup=TRUE returns <= CS count vs dedup=FALSE", {
   set.seed(22)
   dat <- simulate_regression(n = 200, p = 100, k = 3, signal_sd = 2)
-  fit <- suppressWarnings(susie(dat$X, dat$y, L = 10, verbose = FALSE))
+  fit <- suppressWarnings(susie_additive(dat$X, dat$y, L = 10, verbose = FALSE))
 
   cs_dedup    <- suppressMessages(susie_get_cs(fit, coverage = 0.95, dedup = TRUE))
   cs_no_dedup <- suppressMessages(susie_get_cs(fit, coverage = 0.95, dedup = FALSE))
@@ -302,7 +302,7 @@ test_that("susie_get_cs dedup=TRUE returns <= CS count vs dedup=FALSE", {
 test_that("susie_get_cs errors when both X and Xcorr are provided", {
   set.seed(20)
   dat <- simulate_regression(n = 200, p = 100, k = 3, signal_sd = 2)
-  fit <- suppressWarnings(susie(dat$X, dat$y, L = 10, verbose = FALSE))
+  fit <- suppressWarnings(susie_additive(dat$X, dat$y, L = 10, verbose = FALSE))
 
   expect_error(
     susie_get_cs(fit, X = dat$X, Xcorr = cor(dat$X), coverage = 0.95),
@@ -313,7 +313,7 @@ test_that("susie_get_cs errors when both X and Xcorr are provided", {
 test_that("susie_get_cs warns about skipped purity filtering when neither X nor Xcorr given", {
   set.seed(20)
   dat <- simulate_regression(n = 200, p = 100, k = 3, signal_sd = 2)
-  fit <- suppressWarnings(susie(dat$X, dat$y, L = 10, verbose = FALSE))
+  fit <- suppressWarnings(susie_additive(dat$X, dat$y, L = 10, verbose = FALSE))
 
   expect_message(susie_get_cs(fit), "purity filtering is skipped")
   expect_message(susie_get_cs(fit, min_abs_corr = 0.9), "purity filtering is skipped")
@@ -322,7 +322,7 @@ test_that("susie_get_cs warns about skipped purity filtering when neither X nor 
 test_that("susie_get_cs does not warn about purity filtering when X or Xcorr provided", {
   set.seed(20)
   dat <- simulate_regression(n = 200, p = 100, k = 3, signal_sd = 2)
-  fit <- suppressWarnings(susie(dat$X, dat$y, L = 10, verbose = FALSE))
+  fit <- suppressWarnings(susie_additive(dat$X, dat$y, L = 10, verbose = FALSE))
 
   expect_no_message(
     susie_get_cs(fit, X = dat$X, min_abs_corr = 0.5),
@@ -337,7 +337,7 @@ test_that("susie_get_cs does not warn about purity filtering when X or Xcorr pro
 test_that("susie_get_cs warns and symmetrizes non-symmetric Xcorr", {
   set.seed(20)
   dat <- simulate_regression(n = 200, p = 100, k = 3, signal_sd = 2)
-  fit <- suppressWarnings(susie(dat$X, dat$y, L = 10, verbose = FALSE))
+  fit <- suppressWarnings(susie_additive(dat$X, dat$y, L = 10, verbose = FALSE))
 
   Xcorr <- cor(dat$X)
   Xcorr[1, 2] <- 0.9
@@ -355,7 +355,7 @@ test_that("susie_get_cs warns and symmetrizes non-symmetric Xcorr", {
 test_that("susie_get_cs uses squared-correlation column names when squared=TRUE", {
   set.seed(20)
   dat <- simulate_regression(n = 200, p = 100, k = 3, signal_sd = 2)
-  fit <- suppressWarnings(susie(dat$X, dat$y, L = 10, verbose = FALSE))
+  fit <- suppressWarnings(susie_additive(dat$X, dat$y, L = 10, verbose = FALSE))
 
   cs_sq  <- susie_get_cs(fit, X = dat$X, coverage = 0.95, squared = TRUE)
   cs_abs <- susie_get_cs(fit, X = dat$X, coverage = 0.95, squared = FALSE)
@@ -372,7 +372,7 @@ local({
   make_multi_cs_fit <- function() {
     set.seed(23)
     dat <- simulate_regression(n = 200, p = 100, k = 3, signal_sd = 2)
-    fit <- suppressWarnings(susie(dat$X, dat$y, L = 10, verbose = FALSE))
+    fit <- suppressWarnings(susie_additive(dat$X, dat$y, L = 10, verbose = FALSE))
     fit$sets <- susie_get_cs(fit, X = dat$X, coverage = 0.95)
     list(fit = fit, dat = dat)
   }
@@ -453,7 +453,7 @@ local({
 test_that("get_cs_correlation returns NA when no CS or only one CS", {
   set.seed(33)
   dat <- simulate_regression(n = 100, p = 50, k = 1)
-  fit <- suppressWarnings(susie(dat$X, dat$y, L = 5, verbose = FALSE))
+  fit <- suppressWarnings(susie_additive(dat$X, dat$y, L = 5, verbose = FALSE))
 
   fit$sets <- list(cs = NULL)
   expect_true(is.na(get_cs_correlation(fit, X = dat$X)))
@@ -469,7 +469,7 @@ test_that("get_cs_correlation returns NA when no CS or only one CS", {
 test_that("susie_get_pip computes PIPs correctly as 1 - prod(1 - alpha)", {
   set.seed(12)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, verbose = FALSE)
 
   pip <- susie_get_pip(fit)
 
@@ -484,7 +484,7 @@ test_that("susie_get_pip computes PIPs correctly as 1 - prod(1 - alpha)", {
 test_that("susie_get_pip handles null_index correctly with null_weight", {
   set.seed(13)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, null_weight = 0.1, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, null_weight = 0.1, verbose = FALSE)
 
   pip <- susie_get_pip(fit)
 
@@ -498,7 +498,7 @@ test_that("susie_get_pip handles null_index correctly with null_weight", {
 test_that("susie_get_pip filters by prior_tol", {
   set.seed(14)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, verbose = FALSE)
 
   fit$V[c(1, 5)] <- 0
   pip <- susie_get_pip(fit, prior_tol = 1e-9)
@@ -510,7 +510,7 @@ test_that("susie_get_pip filters by prior_tol", {
 test_that("susie_get_pip with prune_by_cs=TRUE restricts to CS-indexed effects", {
   set.seed(15)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- suppressWarnings(susie(dat$X, dat$y, L = 10, verbose = FALSE))
+  fit <- suppressWarnings(susie_additive(dat$X, dat$y, L = 10, verbose = FALSE))
   fit$sets <- suppressMessages(susie_get_cs(fit, coverage = 0.95))
 
   pip_pruned <- susie_get_pip(fit, prune_by_cs = TRUE)
@@ -528,7 +528,7 @@ test_that("susie_get_pip with prune_by_cs=TRUE restricts to CS-indexed effects",
 test_that("susie_get_pip returns zeros when no CS and prune_by_cs=TRUE", {
   set.seed(16)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, verbose = FALSE)
 
   fit$sets <- list(cs = NULL, cs_index = NULL)
   pip <- susie_get_pip(fit, prune_by_cs = TRUE)
@@ -540,7 +540,7 @@ test_that("susie_get_pip returns zeros when no CS and prune_by_cs=TRUE", {
 test_that("susie_get_pip uses all effects when V is not numeric", {
   set.seed(38)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, verbose = FALSE)
 
   fit$V <- NULL
   pip <- susie_get_pip(fit)
@@ -555,7 +555,7 @@ test_that("susie_get_pip uses all effects when V is not numeric", {
 test_that("susie_get_pip with prune_by_cs intersects prior_tol filter and cs_index", {
   set.seed(39)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- suppressWarnings(susie(dat$X, dat$y, L = 10, verbose = FALSE))
+  fit <- suppressWarnings(susie_additive(dat$X, dat$y, L = 10, verbose = FALSE))
   fit$sets <- suppressMessages(susie_get_cs(fit, coverage = 0.95))
   fit$V[c(1, 2)] <- 0
 
@@ -580,7 +580,7 @@ test_that("susie_get_pip with prune_by_cs intersects prior_tol filter and cs_ind
 test_that("susie_get_pip with prune_by_cs=TRUE uses cs_index branch", {
   set.seed(502)
   dat <- simulate_regression(n = 150, p = 40, k = 2, signal_sd = 3)
-  fit <- suppressWarnings(susie(dat$X, dat$y, L = 5, verbose = FALSE))
+  fit <- suppressWarnings(susie_additive(dat$X, dat$y, L = 5, verbose = FALSE))
 
   skip_if(is.null(fit$sets$cs_index), "No CS found in this fit")
 
@@ -646,7 +646,7 @@ test_that("susie_init_coef integrates with susie via model_init", {
   true_coef_val <- dat$beta[true_coef_idx]
   init <- susie_init_coef(true_coef_idx, true_coef_val, dat$p)
 
-  fit <- susie(dat$X, dat$y, L = 10, model_init = init, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 10, model_init = init, verbose = FALSE)
 
   expect_s3_class(fit, "susie")
   expect_false(is.null(fit$alpha))
@@ -669,7 +669,7 @@ make_alpha_fit <- function(alpha, V = NULL) {
 test_that("susie_get_cs_attainable returns list with cs/coverage/requested_coverage", {
   set.seed(50)
   dat <- simulate_regression(n = 200, p = 100, k = 3, signal_sd = 2)
-  fit <- suppressWarnings(susie(dat$X, dat$y, L = 10, verbose = FALSE))
+  fit <- suppressWarnings(susie_additive(dat$X, dat$y, L = 10, verbose = FALSE))
 
   cs <- suppressMessages(susie_get_cs_attainable(fit, coverage = 0.95))
 
@@ -762,7 +762,7 @@ test_that("susie_get_cs_attainable handles scalar V without error", {
 test_that("susie_get_cs_attainable strips X and Xcorr from ... arguments", {
   set.seed(51)
   dat <- simulate_regression(n = 200, p = 100, k = 3, signal_sd = 2)
-  fit <- suppressWarnings(susie(dat$X, dat$y, L = 10, verbose = FALSE))
+  fit <- suppressWarnings(susie_additive(dat$X, dat$y, L = 10, verbose = FALSE))
 
   expect_no_error(
     suppressMessages(
@@ -889,7 +889,7 @@ test_that("susie_get_cs X and Xcorr pathways agree end-to-end with extension on"
   dat <- simulate_regression(n = 200, p = 30, k = 2, signal_sd = 2)
   X <- dat$X
   X[, 2] <- X[, 1] + rnorm(nrow(X), sd = 0.05)      # tight-LD proxy
-  fit <- suppressWarnings(susie(X, dat$y, L = 5, verbose = FALSE))
+  fit <- suppressWarnings(susie_additive(X, dat$y, L = 5, verbose = FALSE))
 
   a <- susie_get_cs(fit, X = X,         cs_extension_corr = 0.99, n_purity = ncol(X))
   b <- susie_get_cs(fit, Xcorr = cor(X), cs_extension_corr = 0.99, n_purity = ncol(X))
@@ -973,7 +973,7 @@ test_that("susie / susie_ss / susie_rss / susie_rss_lambda accept cs_extension_c
   XtX <- crossprod(X); Xty <- as.vector(crossprod(X, y)); yty <- sum(y^2)
   R <- cor(X); z <- Xty / sqrt(diag(XtX)); n <- nrow(X)
 
-  f1 <- suppressWarnings(susie(X, y, L = 5, cs_extension_corr = 0.99))
+  f1 <- suppressWarnings(susie_additive(X, y, L = 5, cs_extension_corr = 0.99))
   expect_s3_class(f1, "susie")
 
   f2 <- suppressWarnings(susie_ss(XtX = XtX, Xty = Xty, yty = yty, n = n,
@@ -988,7 +988,7 @@ test_that("susie / susie_ss / susie_rss / susie_rss_lambda accept cs_extension_c
   expect_s3_class(f4, "susie")
 
   # Invalid value is rejected at the constructor/validation layer.
-  expect_error(susie(X, y, L = 5, cs_extension_corr = 1.5),
+  expect_error(susie_additive(X, y, L = 5, cs_extension_corr = 1.5),
                "cs_extension_corr must be NULL or a single numeric value")
 })
 
@@ -1033,11 +1033,11 @@ test_that("susie_get_cs validates median_abs_corr and NULL-able min_abs_corr", {
 test_that("fit functions accept and thread median_abs_corr (positional binding intact)", {
   set.seed(1)
   X <- matrix(rnorm(200 * 20), 200, 20); y <- X[, 1] + X[, 2] + rnorm(200)
-  f <- suppressWarnings(susie(X, y, L = 5, median_abs_corr = 0.5))
+  f <- suppressWarnings(susie_additive(X, y, L = 5, median_abs_corr = 0.5))
   expect_s3_class(f, "susie")
   # compute_univariate_zscore is passed positionally after min_abs_corr; if the
   # median_abs_corr signature insertion shifted positions this would be NULL.
-  fz <- suppressWarnings(susie(X, y, L = 5, compute_univariate_zscore = TRUE))
+  fz <- suppressWarnings(susie_additive(X, y, L = 5, compute_univariate_zscore = TRUE))
   expect_false(is.null(fz$z))
 })
 

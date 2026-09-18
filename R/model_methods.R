@@ -11,6 +11,8 @@ get_prior_variance_l <- function(model, l) {
   UseMethod("get_prior_variance_l")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 get_prior_variance_l.default <- function(model, l) {
   model$V[l]
 }
@@ -21,6 +23,8 @@ set_prior_variance_l <- function(model, l, V) {
   UseMethod("set_prior_variance_l")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 set_prior_variance_l.default <- function(model, l, V) {
   model$V[l] <- V
   model
@@ -32,6 +36,8 @@ get_alpha_l <- function(model, l) {
   UseMethod("get_alpha_l")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 get_alpha_l.default <- function(model, l) {
   model$alpha[l, ]
 }
@@ -42,6 +48,8 @@ get_posterior_moments_l <- function(model, l) {
   UseMethod("get_posterior_moments_l")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 get_posterior_moments_l.default <- function(model, l) {
   list(post_mean = model$mu[l, ], post_mean2 = model$mu2[l, ])
 }
@@ -52,6 +60,8 @@ get_posterior_mean_l <- function(model, l) {
   UseMethod("get_posterior_mean_l")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 get_posterior_mean_l.default <- function(model, l) {
   model$alpha[l, ] * model$mu[l, ]
 }
@@ -62,6 +72,8 @@ get_posterior_mean_sum <- function(model) {
   UseMethod("get_posterior_mean_sum")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 get_posterior_mean_sum.default <- function(model) {
   colSums(model$alpha * model$mu)
 }
@@ -78,6 +90,8 @@ initialize_matrices <- function(data, params, var_y) {
 }
 
 #' @keywords internal
+#' @export
+#' @noRd
 initialize_matrices.default <- function(data, params, var_y) {
   L <- params$L
   # NIG uses the scaled slab variance s0 = sigma0^2 / sigma^2 during fitting.
@@ -114,6 +128,8 @@ update_model_variance <- function(data, params, model) {
 }
 
 #' @keywords internal
+#' @export
+#' @noRd
 update_model_variance.default <- function(data, params, model) {
   if (!isTRUE(params$estimate_residual_variance)) return(model)
   # Update variance components
@@ -150,6 +166,8 @@ format_sigma2_summary <- function(model) {
   UseMethod("format_sigma2_summary")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 format_sigma2_summary.default <- function(model) {
   sprintf("%.4f", model$sigma2)
 }
@@ -165,6 +183,8 @@ format_extra_diag <- function(model) {
   UseMethod("format_extra_diag")
 }
 #' @keywords internal
+#' @export
+#' @noRd
 format_extra_diag.default <- function(model) {
   if (is.null(model$lambda_bias))
     return("")
@@ -187,6 +207,8 @@ format_extra_diag.default <- function(model) {
 }
 
 #' @keywords internal
+#' @export
+#' @noRd
 check_convergence.default <- function(data, params, model, elbo, iter) {
   verbose <- isTRUE(params$verbose)
   V_str <- format_V_summary(model$V)
@@ -381,6 +403,8 @@ trim_null_effects <- function(data, params, model) {
 }
 
 #' @keywords internal
+#' @export
+#' @noRd
 trim_null_effects.default <- function(data, params, model) {
   null_idx <- which(model$V < params$prior_tol)
   if (length(null_idx) == 0) return(model)

@@ -780,7 +780,7 @@ validate_and_override_params <- function(params) {
     params$use_NIG <- TRUE
 
     # Require a valid sample size n. The default alpha0/beta0 scale as
-    # 1/sqrt(n), so n must be a positive finite scalar. susie() infers
+    # 1/sqrt(n), so n must be a positive finite scalar. susie_additive() infers
     # this from nrow(X); susie_ss()'s constructor enforces it; susie_rss()
     # allows n = NULL by default, so users who select NIG must also
     # supply `n` explicitly.

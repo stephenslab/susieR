@@ -475,7 +475,7 @@ test_that("susie emits a hint pointing to compute_suff_stat() when nrow(X) >= 2 
   y <- rnorm(n)
 
   expect_message(
-    suppressWarnings(susie(X, y, L = 3, max_iter = 2, verbose = FALSE)),
+    suppressWarnings(susie_additive(X, y, L = 3, max_iter = 2, verbose = FALSE)),
     "compute_suff_stat"
   )
 })
@@ -487,7 +487,7 @@ test_that("susie does not emit the compute_suff_stat hint when nrow(X) < 2 * nco
   y <- rnorm(n)
 
   msgs <- suppressWarnings(capture_messages(
-    susie(X, y, L = 3, max_iter = 2, verbose = FALSE)
+    susie_additive(X, y, L = 3, max_iter = 2, verbose = FALSE)
   ))
   expect_false(any(grepl("compute_suff_stat", msgs, fixed = TRUE)))
 })
@@ -500,7 +500,7 @@ test_that("the hint does not change susie output relative to a hint-suppressed r
   y <- as.vector(X %*% beta + rnorm(n, sd = 0.5))
 
   fit <- suppressMessages(
-    suppressWarnings(susie(X, y, L = 5, max_iter = 100, verbose = FALSE))
+    suppressWarnings(susie_additive(X, y, L = 5, max_iter = 100, verbose = FALSE))
   )
 
   expect_s3_class(fit, "susie")
@@ -518,7 +518,7 @@ test_that("compute_suff_stat() + susie_ss() agrees with susie() on the same data
   beta <- rep(0, p); beta[c(5, 15, 25)] <- c(1, -1, 1.5)
   y <- as.vector(X %*% beta + rnorm(n, sd = 0.5))
 
-  fit_ind <- suppressMessages(susie(
+  fit_ind <- suppressMessages(susie_additive(
     X, y, L = 5, standardize = TRUE, intercept = TRUE, verbose = FALSE
   ))
 

@@ -8,7 +8,7 @@ get_cs_correlation(model, X = NULL, Xcorr = NULL, max = FALSE)
 }
 \arguments{
 \item{model}{A SuSiE fit, typically an output from
-\code{\link{susie}} or one of its variants.}
+\code{\link{susie_additive}} or one of its variants.}
 
 \item{X}{n by p matrix of values of the p variables (covariates) in
 n samples. When provided, correlation between variables will be

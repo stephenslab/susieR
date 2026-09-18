@@ -77,7 +77,7 @@ test_that("run_refine with no credible sets returns model unchanged", {
   X <- matrix(rnorm(n * p), n, p)
   y <- rnorm(n)
 
-  model <- suppressWarnings(susie(X, y, L = 5, verbose = FALSE))
+  model <- suppressWarnings(susie_additive(X, y, L = 5, verbose = FALSE))
 
   constructor_result <- individual_data_constructor(
     X = X, y = y, L = 5,
@@ -94,7 +94,7 @@ test_that("run_refine with no credible sets returns model unchanged", {
     set.seed(9999)
     X2 <- matrix(rnorm(n * p), n, p)
     y2 <- rnorm(n)
-    model <- suppressWarnings(susie(X2, y2, L = 5, verbose = FALSE))
+    model <- suppressWarnings(susie_additive(X2, y2, L = 5, verbose = FALSE))
     constructor_result <- individual_data_constructor(
       X = X2, y = y2, L = 5,
       standardize = TRUE, intercept = TRUE,
@@ -455,7 +455,7 @@ test_that("run_refine handles all-zero pw_cs (break) and empty candidates (short
   pw[1] <- 1
 
   fit <- suppressWarnings(suppressMessages(
-    susie(X, y, L = 3, prior_weights = pw, refine = TRUE,
+    susie_additive(X, y, L = 3, prior_weights = pw, refine = TRUE,
           max_iter = 10, verbose = FALSE)
   ))
 
@@ -474,8 +474,8 @@ test_that("run_refine accepts a strictly higher-ELBO candidate when the greedy f
   X <- scale(cbind(s1, s2, decoy, matrix(rnorm(n * 2), n, 2)))
   y <- as.vector(1.6 * s1 + 1.6 * s2 + rnorm(n))
 
-  fit_norefine <- suppressWarnings(susie(X, y, L = 3, refine = FALSE, verbose = FALSE))
-  fit_refine   <- suppressWarnings(susie(X, y, L = 3, refine = TRUE,  verbose = FALSE))
+  fit_norefine <- suppressWarnings(susie_additive(X, y, L = 3, refine = FALSE, verbose = FALSE))
+  fit_refine   <- suppressWarnings(susie_additive(X, y, L = 3, refine = TRUE,  verbose = FALSE))
 
   expect_s3_class(fit_refine, "susie")
   expect_gt(susie_get_objective(fit_refine),

@@ -18,15 +18,15 @@ z <- as.vector(sqrt(n) * crossprod(X, y) / sqrt(n * diag(crossprod(X))))
 # ---- get_slot_weight: boundary values ----
 
 test_that("get_slot_weight returns 1 when slot_weights is NULL", {
-  expect_equal(susieR:::get_slot_weight(list(), 1), 1)
-  expect_equal(susieR:::get_slot_weight(list(), 5), 1)
+  expect_equal(susieSlide:::get_slot_weight(list(), 1), 1)
+  expect_equal(susieSlide:::get_slot_weight(list(), 5), 1)
 })
 
 test_that("get_slot_weight returns correct weight at each index", {
   model <- list(slot_weights = c(0.0, 0.5, 1.0))
-  expect_equal(susieR:::get_slot_weight(model, 1), 0.0)
-  expect_equal(susieR:::get_slot_weight(model, 2), 0.5)
-  expect_equal(susieR:::get_slot_weight(model, 3), 1.0)
+  expect_equal(susieSlide:::get_slot_weight(model, 1), 0.0)
+  expect_equal(susieSlide:::get_slot_weight(model, 2), 0.5)
+  expect_equal(susieSlide:::get_slot_weight(model, 3), 1.0)
 })
 
 # ---- slot_weight = 0 zeroes effect contribution ----
@@ -39,13 +39,13 @@ test_that("slot_weight = 0 for a slot: that slot's SER runs but contributes noth
                     init_only = TRUE)
   data   <- objs$data
   params <- objs$params
-  model  <- susieR:::ibss_initialize(data, params)
+  model  <- susieSlide:::ibss_initialize(data, params)
 
   # Set slot 2 weight to 0; save Rz before update
   model$slot_weights <- c(1, 0, 1)
   Rz_before <- model$Rz
 
-  model_after <- susieR:::single_effect_update(data, params, model, 2)
+  model_after <- susieSlide:::single_effect_update(data, params, model, 2)
 
   # SER still populates alpha and mu for slot 2
   expect_true(is.numeric(model_after$alpha[2, ]))
@@ -71,7 +71,7 @@ test_that("slot_weight = 0 vs 1 for a slot produces different alpha when model h
   params <- objs$params
 
   # Warm-start both models from the fitted state
-  m1 <- susieR:::ibss_initialize(data, params)
+  m1 <- susieSlide:::ibss_initialize(data, params)
   m1$alpha <- fit_warm$alpha
   m1$mu    <- fit_warm$mu
   m1$mu2   <- fit_warm$mu2
@@ -81,8 +81,8 @@ test_that("slot_weight = 0 vs 1 for a slot produces different alpha when model h
   m0 <- m1
   m0$slot_weights <- c(0, 1)
 
-  m1_after <- susieR:::single_effect_update(data, params, m1, 1)
-  m0_after <- susieR:::single_effect_update(data, params, m0, 1)
+  m1_after <- susieSlide:::single_effect_update(data, params, m1, 1)
+  m0_after <- susieSlide:::single_effect_update(data, params, m0, 1)
 
   # With sw_l=0 the residuals exclude slot 1's contribution entirely,
   # while with sw_l=1 they include it; the posteriors therefore differ
@@ -95,7 +95,7 @@ test_that("slot_weight = 0 vs 1 for a slot produces different alpha when model h
 test_that("susie with slot_prior_betabinom produces valid PIPs and alpha rows sum to 1", {
   set.seed(2)
   fit <- suppressWarnings(
-    susie(X, y, L = 5,
+    susie_additive(X, y, L = 5,
           slot_prior = slot_prior_betabinom(),
           estimate_prior_variance = FALSE,
           estimate_residual_variance = FALSE,
@@ -135,14 +135,14 @@ test_that("susie_ss with slot_prior_betabinom produces valid PIPs", {
 test_that("slot_prior_betabinom: uniform prior (a=b=1) activates more slots than sparse prior (a=1,b=10)", {
   set.seed(4)
   fit_sparse  <- suppressWarnings(
-    susie(X, y, L = 10,
+    susie_additive(X, y, L = 10,
           slot_prior = slot_prior_betabinom(a_beta = 1, b_beta = 10),
           estimate_prior_variance = FALSE,
           estimate_residual_variance = FALSE,
           max_iter = 10)
   )
   fit_uniform <- suppressWarnings(
-    susie(X, y, L = 10,
+    susie_additive(X, y, L = 10,
           slot_prior = slot_prior_betabinom(a_beta = 1, b_beta = 1),
           estimate_prior_variance = FALSE,
           estimate_residual_variance = FALSE,

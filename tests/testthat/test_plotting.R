@@ -5,9 +5,9 @@ context("Plotting functions")
 test_that("susie_plot produces PIP, z, z_original, and log10PIP plots without error", {
   set.seed(1)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit_no_z  <- susie(dat$X, dat$y, L = 5, compute_univariate_zscore = FALSE,
+  fit_no_z  <- susie_additive(dat$X, dat$y, L = 5, compute_univariate_zscore = FALSE,
                      verbose = FALSE)
-  fit_with_z <- susie(dat$X, dat$y, L = 5, compute_univariate_zscore = TRUE,
+  fit_with_z <- susie_additive(dat$X, dat$y, L = 5, compute_univariate_zscore = TRUE,
                       verbose = FALSE)
 
   pdf(tempfile()); on.exit(dev.off(), add = TRUE)
@@ -31,7 +31,7 @@ test_that("susie_plot produces PIP, z, z_original, and log10PIP plots without er
 test_that("susie_plot returns NULL invisibly", {
   set.seed(2)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, verbose = FALSE)
 
   pdf(tempfile()); on.exit(dev.off(), add = TRUE)
   result <- susie_plot(fit, "PIP")
@@ -43,7 +43,7 @@ test_that("susie_plot returns NULL invisibly", {
 test_that("susie_plot errors when pos list is missing required elements", {
   set.seed(3)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, verbose = FALSE)
   fit$genomic_position <- 1000 + seq_along(fit$pip)
 
   pdf(tempfile()); on.exit(dev.off(), add = TRUE)
@@ -65,7 +65,7 @@ test_that("susie_plot errors when pos list is missing required elements", {
 test_that("susie_plot errors when pos$attr is not in model", {
   set.seed(4)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, verbose = FALSE)
 
   pdf(tempfile()); on.exit(dev.off(), add = TRUE)
   expect_error(
@@ -77,7 +77,7 @@ test_that("susie_plot errors when pos$attr is not in model", {
 test_that("susie_plot errors when pos$start >= pos$end", {
   set.seed(5)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, verbose = FALSE)
   fit$genomic_position <- 1000 + seq_along(fit$pip)
 
   pdf(tempfile()); on.exit(dev.off(), add = TRUE)
@@ -95,7 +95,7 @@ test_that("susie_plot errors when pos$start >= pos$end", {
 test_that("susie_plot errors when numeric pos is outside variable range", {
   set.seed(6)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, verbose = FALSE)
 
   pdf(tempfile()); on.exit(dev.off(), add = TRUE)
 
@@ -114,7 +114,7 @@ test_that("susie_plot errors when numeric pos is outside variable range", {
 test_that("susie_plot optional parameters work: add_bar, numeric pos, list pos, b", {
   set.seed(7)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, verbose = FALSE)
   fit$genomic_position <- 1000 + seq_along(fit$pip)
 
   b_test <- rep(0, 50); b_test[c(10, 20, 30)] <- 1
@@ -135,7 +135,7 @@ test_that("susie_plot optional parameters work: add_bar, numeric pos, list pos, 
 test_that("susie_plot add_legend works for all valid positions and invalid falls back to topright", {
   set.seed(8)
   dat <- simulate_regression(n = 200, p = 100, k = 3, signal_sd = 2)
-  fit <- susie(dat$X, dat$y, L = 10, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 10, verbose = FALSE)
 
   pdf(tempfile()); on.exit(dev.off(), add = TRUE)
 
@@ -152,7 +152,7 @@ test_that("susie_plot add_legend works for all valid positions and invalid falls
 test_that("susie_plot max_cs filters CS by size and by purity", {
   set.seed(9)
   dat <- simulate_regression(n = 200, p = 100, k = 3, signal_sd = 2)
-  fit <- susie(dat$X, dat$y, L = 10, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 10, verbose = FALSE)
 
   pdf(tempfile()); on.exit(dev.off(), add = TRUE)
 
@@ -191,7 +191,7 @@ test_that("susie_plot works with plain numeric vectors for all y types", {
 test_that("susie_plot works with a fit that has no credible sets", {
   set.seed(11)
   dat <- simulate_regression(n = 100, p = 50, k = 0)   # no signal
-  fit <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, verbose = FALSE)
 
   pdf(tempfile()); on.exit(dev.off(), add = TRUE)
   expect_error(susie_plot(fit, "PIP"), NA)
@@ -200,7 +200,7 @@ test_that("susie_plot works with a fit that has no credible sets", {
 test_that("susie_plot works for a single-variable fit", {
   set.seed(12)
   dat <- simulate_regression(n = 100, p = 1, k = 1)
-  fit <- susie(dat$X, dat$y, L = 1, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 1, verbose = FALSE)
 
   pdf(tempfile()); on.exit(dev.off(), add = TRUE)
   expect_error(susie_plot(fit, "PIP"), NA)
@@ -209,7 +209,7 @@ test_that("susie_plot works for a single-variable fit", {
 test_that("susie_plot with list pos and credible sets adjusts to new positions", {
   set.seed(13)
   dat <- simulate_regression(n = 200, p = 100, k = 3, signal_sd = 2)
-  fit <- susie(dat$X, dat$y, L = 10, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 10, verbose = FALSE)
   fit$genomic_position <- 1000 + seq_along(fit$pip)
 
   pdf(tempfile()); on.exit(dev.off(), add = TRUE)
@@ -241,7 +241,7 @@ test_that("susie_plot PIP and log10PIP fall back to alpha[1,] when pip is NULL",
 test_that("susie_plot uses cs_index when available and cs_idx as fallback", {
   set.seed(15)
   dat <- simulate_regression(n = 200, p = 100, k = 3, signal_sd = 2)
-  fit <- susie(dat$X, dat$y, L = 10, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 10, verbose = FALSE)
   fit$sets <- susie_get_cs(fit, X = dat$X, coverage = 0.95)
 
   expect_true(!is.null(fit$sets$cs_index))
@@ -285,7 +285,7 @@ test_that("susie_plot works with susie_ss and susie_rss outputs", {
 test_that("susie_plot_iteration uses tempdir when file_prefix is missing", {
   set.seed(17)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, track_fit = FALSE, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, track_fit = FALSE, verbose = FALSE)
 
   expected_path <- file.path(tempdir(), "susie_plot.pdf")
   if (file.exists(expected_path)) file.remove(expected_path)
@@ -302,7 +302,7 @@ test_that("susie_plot_iteration uses tempdir when file_prefix is missing", {
 test_that("susie_plot_iteration returns NULL invisibly", {
   set.seed(18)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, track_fit = FALSE, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, track_fit = FALSE, verbose = FALSE)
 
   temp_prefix <- tempfile("susie_invisible_")
   on.exit({
@@ -320,7 +320,7 @@ test_that("susie_plot_iteration returns NULL invisibly", {
 test_that("susie_plot_iteration with track_fit=FALSE plots only the final iteration", {
   set.seed(19)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, track_fit = FALSE, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, track_fit = FALSE, verbose = FALSE)
 
   temp_prefix <- tempfile("susie_notrack_")
   on.exit({
@@ -339,7 +339,7 @@ test_that("susie_plot_iteration with track_fit=FALSE plots only the final iterat
 test_that("susie_plot_iteration with track_fit=TRUE creates PDF files", {
   set.seed(20)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- suppressWarnings(susie(dat$X, dat$y, L = 5, track_fit = TRUE, max_iter = 5, verbose = FALSE))
+  fit <- suppressWarnings(susie_additive(dat$X, dat$y, L = 5, track_fit = TRUE, max_iter = 5, verbose = FALSE))
 
   temp_dir    <- tempdir()
   temp_prefix <- file.path(temp_dir, "test_susie_iter")
@@ -360,7 +360,7 @@ test_that("susie_plot_iteration with track_fit=TRUE creates PDF files", {
 test_that("susie_plot_iteration with pos subset works", {
   set.seed(21)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, track_fit = TRUE, max_iter = 10, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, track_fit = TRUE, max_iter = 10, verbose = FALSE)
 
   temp_prefix <- tempfile("susie_pos_")
   on.exit({
@@ -379,7 +379,7 @@ test_that("susie_plot_iteration with pos subset works", {
 test_that("susie_plot_iteration with L greater than nrow(alpha) uses available rows", {
   set.seed(22)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 3, track_fit = TRUE, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 3, track_fit = TRUE, verbose = FALSE)
 
   temp_prefix <- tempfile("susie_largeL_")
   on.exit({
@@ -398,7 +398,7 @@ test_that("susie_plot_iteration with L greater than nrow(alpha) uses available r
 test_that("susie_plot_iteration defaults L to nrow(alpha) when L is not supplied", {
   set.seed(23)
   dat <- simulate_regression(n = 80, p = 40, k = 2)
-  fit <- susie(dat$X, dat$y, L = 4, track_fit = FALSE, max_iter = 5, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 4, track_fit = FALSE, max_iter = 5, verbose = FALSE)
 
   temp_prefix <- tempfile("susie_noL_")
   on.exit({
@@ -413,10 +413,10 @@ test_that("susie_plot_iteration defaults L to nrow(alpha) when L is not supplied
 
 test_that("susie_plot_iteration with track_fit=TRUE creates a GIF animation", {
   # GIF creation shells out to ImageMagick's `convert`; skip where it's absent.
-  skip_if(Sys.which("convert") == "", "ImageMagick 'convert' not on PATH")
+  skip_if(!nzchar(.imagemagick_convert()), "ImageMagick 'convert' not on PATH")
   set.seed(24)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, track_fit = TRUE, max_iter = 10, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, track_fit = TRUE, max_iter = 10, verbose = FALSE)
 
   temp_prefix <- tempfile("susie_gif_")
   on.exit({
@@ -439,7 +439,7 @@ test_that("susie_plot_iteration accepts a susie_track object directly", {
   # covers that branch) in every environment, including ones without convert.
   set.seed(25)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
-  fit <- susie(dat$X, dat$y, L = 5, track_fit = TRUE, max_iter = 5, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 5, track_fit = TRUE, max_iter = 5, verbose = FALSE)
 
   track <- fit$trace
   expect_s3_class(track, "susie_track")
@@ -462,7 +462,7 @@ test_that("susie_plot_iteration removes pre-existing gif before re-creating it",
   set.seed(26)
   dat <- simulate_regression(n = 80, p = 40, k = 2)
   fit <- suppressWarnings(
-    susie(dat$X, dat$y, L = 3, track_fit = TRUE, max_iter = 4, verbose = FALSE)
+    susie_additive(dat$X, dat$y, L = 3, track_fit = TRUE, max_iter = 4, verbose = FALSE)
   )
 
   temp_prefix <- tempfile("susie_gifremove_")
@@ -494,7 +494,7 @@ test_that("susie_plot_iteration errors on invalid model input", {
 test_that("susie_plot_iteration errors when trace is not a susie_track object", {
   set.seed(27)
   dat <- simulate_regression(n = 50, p = 20, k = 2)
-  fit <- susie(dat$X, dat$y, L = 3, track_fit = FALSE, verbose = FALSE)
+  fit <- susie_additive(dat$X, dat$y, L = 3, track_fit = FALSE, verbose = FALSE)
   fit$trace <- list(not_a_track = TRUE)
 
   expect_error(
@@ -555,7 +555,7 @@ test_that("all three plot functions work in sequence on the same data", {
   dat <- simulate_regression(n = 100, p = 50, k = 3)
 
   # susie_plot
-  fit1 <- susie(dat$X, dat$y, L = 5, verbose = FALSE)
+  fit1 <- susie_additive(dat$X, dat$y, L = 5, verbose = FALSE)
   pdf(tempfile()); on.exit(dev.off(), add = TRUE)
   expect_error(susie_plot(fit1, "PIP"), NA)
 
@@ -567,7 +567,7 @@ test_that("all three plot functions work in sequence on the same data", {
 
   # susie_plot_iteration (GIF only when ImageMagick is available)
   fit3 <- suppressWarnings(
-    susie(dat$X, dat$y, L = 5, track_fit = TRUE, max_iter = 5, verbose = FALSE)
+    susie_additive(dat$X, dat$y, L = 5, track_fit = TRUE, max_iter = 5, verbose = FALSE)
   )
   temp_prefix <- tempfile("test_seq_")
   on.exit({
@@ -575,7 +575,7 @@ test_that("all three plot functions work in sequence on the same data", {
     if (length(f) > 0) file.remove(f)
   }, add = TRUE)
 
-  if (Sys.which("convert") != "") {
+  if (nzchar(.imagemagick_convert())) {
     expect_error({
       invisible(capture.output(
         suppressMessages(susie_plot_iteration(fit3, L = 5, file_prefix = temp_prefix)),
@@ -595,7 +595,7 @@ test_that("susie_plot legend labels a credible set with more than one variable",
   X <- scale(X)
   beta <- rep(0, p); beta[1] <- 2
   y <- as.vector(X %*% beta + rnorm(n))
-  fit <- suppressWarnings(susie(X, y, L = 3, verbose = FALSE))
+  fit <- suppressWarnings(susie_additive(X, y, L = 3, verbose = FALSE))
   expect_gt(max(vapply(fit$sets$cs, length, integer(1))), 1)  # a multi-variable CS
 
   pdf(tempfile()); on.exit(dev.off(), add = TRUE)

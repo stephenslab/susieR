@@ -153,7 +153,7 @@ compare_to_reference <- function(func_name, args, tolerance = 1e-8, ref_func_nam
 
   # Get functions from each environment
   ref_func <- ref_env$env[[ref_func_name]]
-  dev_func <- dev_env$env[[func_name]]
+  dev_func <- dev_env$env[[if(func_name=="susie") "susie_additive" else func_name]]
 
   if (is.null(ref_func)) {
     stop("Function '", ref_func_name, "' not found in reference package")

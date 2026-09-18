@@ -10,12 +10,16 @@
 
 # Configure data
 #' @keywords internal
+#' @export
+#' @noRd
 configure_data.rss_lambda <- function(data, params) {
   return(configure_data.default(data, params))
 }
 
 # Get variance of y
 #' @keywords internal
+#' @export
+#' @noRd
 get_var_y.rss_lambda <- function(data, ...) {
   return(1)
 }
@@ -32,6 +36,8 @@ get_var_y.rss_lambda <- function(data, ...) {
 
 # Initialize SuSiE model
 #' @keywords internal
+#' @export
+#' @noRd
 initialize_susie_model.rss_lambda <- function(data, params, var_y, ...) {
   # Base model
   model <- initialize_matrices(data, params, var_y)
@@ -51,18 +57,24 @@ initialize_susie_model.rss_lambda <- function(data, params, var_y, ...) {
 
 # Initialize fitted values.
 #' @keywords internal
+#' @export
+#' @noRd
 initialize_fitted.rss_lambda <- function(data, mat_init) {
   return(list(Rz = as.vector(compute_Rv(data, colSums(mat_init$alpha * mat_init$mu)))))
 }
 
 # Validate prior variance
 #' @keywords internal
+#' @export
+#' @noRd
 validate_prior.rss_lambda <- function(data, params, model, ...) {
   return(validate_prior.default(data, params, model, ...))
 }
 
 # Track core parameters for tracking
 #' @keywords internal
+#' @export
+#' @noRd
 track_ibss_fit.rss_lambda <- function(data, params, model, tracking, iter, elbo, ...) {
   return(track_ibss_fit.default(data, params, model, tracking, iter, elbo, ...))
 }
@@ -80,6 +92,8 @@ track_ibss_fit.rss_lambda <- function(data, params, model, tracking, iter, elbo,
 
 # Compute residuals for single effect regression
 #' @keywords internal
+#' @export
+#' @noRd
 compute_residuals.rss_lambda <- function(data, params, model, l, ...) {
   # Remove lth effect from fitted values (scaled by slot weight)
   sw_l <- get_slot_weight(model, l)
@@ -95,6 +109,8 @@ compute_residuals.rss_lambda <- function(data, params, model, l, ...) {
 
 # Compute SER statistics
 #' @keywords internal
+#' @export
+#' @noRd
 compute_ser_statistics.rss_lambda <- function(data, params, model, l, ...) {
   signal  <- as.vector(crossprod(model$SinvRj, model$residuals))
   shat2   <- 1 / model$RjSinvRj
@@ -116,6 +132,8 @@ compute_ser_statistics.rss_lambda <- function(data, params, model, l, ...) {
 
 # SER posterior expected log-likelihood
 #' @keywords internal
+#' @export
+#' @noRd
 SER_posterior_e_loglik.rss_lambda <- function(data, params, model, l) {
   Eb     <- model$alpha[l, ] * model$mu[l, ]
   Eb2    <- model$alpha[l, ] * model$mu2[l, ]
@@ -130,6 +148,8 @@ SER_posterior_e_loglik.rss_lambda <- function(data, params, model, l) {
 
 # Calculate posterior moments for single effect regression
 #' @keywords internal
+#' @export
+#' @noRd
 calculate_posterior_moments.rss_lambda <- function(data, params, model, V, l, ...) {
   shat2 <- 1 / model$RjSinvRj
   signal    <- as.vector(crossprod(model$SinvRj, model$residuals))
@@ -142,6 +162,8 @@ calculate_posterior_moments.rss_lambda <- function(data, params, model, V, l, ..
 
 # Calculate KL divergence
 #' @keywords internal
+#' @export
+#' @noRd
 compute_kl.rss_lambda <- function(data, params, model, l) {
   model <- compute_kl.default(data, params, model, l)
   return(model)
@@ -149,6 +171,8 @@ compute_kl.rss_lambda <- function(data, params, model, l) {
 
 # Expected squared residuals
 #' @keywords internal
+#' @export
+#' @noRd
 get_ER2.rss_lambda <- function(data, model) {
   # Eigen decomposition components
   eigen_R <- get_eigen_R(data, model)
@@ -187,6 +211,8 @@ get_ER2.rss_lambda <- function(data, model) {
 
 # Expected log-likelihood
 #' @keywords internal
+#' @export
+#' @noRd
 Eloglik.rss_lambda <- function(data, model) {
   D <- get_eigen_R(data, model)$values
   d <- model$sigma2 * D + data$lambda
@@ -199,6 +225,8 @@ Eloglik.rss_lambda <- function(data, model) {
 
 # Log-likelihood for RSS
 #' @keywords internal
+#' @export
+#' @noRd
 loglik.rss_lambda <- function(data, params, model, V, ser_stats, l = NULL, ...) {
   # Wakefield ABF using betahat/shat2 from ser_stats.
   lbf <- gaussian_ser_lbf(ser_stats$betahat, ser_stats$shat2, V)
@@ -213,6 +241,8 @@ loglik.rss_lambda <- function(data, params, model, V, ser_stats, l = NULL, ...) 
 }
 
 #' @keywords internal
+#' @export
+#' @noRd
 neg_loglik.rss_lambda <- function(data, params, model, V_param, ser_stats, ...) {
   # Convert parameter to V based on optimization scale (always log for RSS lambda)
   V <- exp(V_param)
@@ -232,6 +262,8 @@ neg_loglik.rss_lambda <- function(data, params, model, V_param, ser_stats, ...) 
 
 # Update fitted values
 #' @keywords internal
+#' @export
+#' @noRd
 update_fitted_values.rss_lambda <- function(data, params, model, l, ...) {
   # Add back lth effect (scaled by slot weight)
   sw_l <- get_slot_weight(model, l)
@@ -244,6 +276,8 @@ update_fitted_values.rss_lambda <- function(data, params, model, l, ...) {
 
 # Update model variance
 #' @keywords internal
+#' @export
+#' @noRd
 update_model_variance.rss_lambda <- function(data, params, model) {
   if (!isTRUE(params$estimate_residual_variance)) return(model)
 
@@ -259,6 +293,8 @@ update_model_variance.rss_lambda <- function(data, params, model) {
 # Update variance components
 #' @keywords internal
 #' @importFrom stats optimize
+#' @export
+#' @noRd
 update_variance_components.rss_lambda <- function(data, params, model, ...) {
   if (!isTRUE(params$estimate_residual_variance)) return(list())
 
@@ -278,6 +314,8 @@ update_variance_components.rss_lambda <- function(data, params, model, ...) {
 
 # Update derived quantities
 #' @keywords internal
+#' @export
+#' @noRd
 update_derived_quantities.rss_lambda <- function(data, params, model) {
   eigen_R <- get_eigen_R(data, model)
   Dinv <- compute_Dinv(model, data)
@@ -305,24 +343,32 @@ update_derived_quantities.rss_lambda <- function(data, params, model) {
 
 # Get scale factors
 #' @keywords internal
-get_scale_factors.rss_lambda <- function(data, params) {
+#' @export
+#' @noRd
+get_scale_factors.rss_lambda <- function(data, params, ...) {
   return(rep(1, data$p))
 }
 
 # Get intercept
 #' @keywords internal
+#' @export
+#' @noRd
 get_intercept.rss_lambda <- function(data, params, model, ...) {
   return(data$intercept_value)
 }
 
 # Get fitted values
 #' @keywords internal
+#' @export
+#' @noRd
 get_fitted.rss_lambda <- function(data, params, model, ...) {
   return(get_fitted.default(data, params, model, ...))
 }
 
 # Get credible sets
 #' @keywords internal
+#' @export
+#' @noRd
 get_cs.rss_lambda <- function(data, params, model, ...) {
   if (is.null(params$coverage) || is.null(params$min_abs_corr)) {
     return(NULL)
@@ -348,18 +394,24 @@ get_cs.rss_lambda <- function(data, params, model, ...) {
 
 # Get variable names
 #' @keywords internal
+#' @export
+#' @noRd
 get_variable_names.rss_lambda <- function(data, model, ...) {
   return(assign_names(data, model, names(data$z)))
 }
 
 # Get univariate z-scores
 #' @keywords internal
+#' @export
+#' @noRd
 get_zscore.rss_lambda <- function(data, params, model, ...) {
   return(get_zscore.default(data, params, model))
 }
 
 # Clean up model object for RSS lambda data
 #' @keywords internal
+#' @export
+#' @noRd
 cleanup_model.rss_lambda <- function(data, params, model, ...) {
   # Remove common fields
   model <- cleanup_model.default(data, params, model, ...)

@@ -23,12 +23,12 @@ for (data_type in c("individual", "rss", "ss")) {
     tol <- 1e-10
 
     if (data_type == "individual") {
-      fit_scalar <- susie(X, y, L = L,
+      fit_scalar <- susie_additive(X, y, L = L,
                           estimate_prior_variance = FALSE,
                           estimate_residual_variance = FALSE,
                           max_iter = 20, tol = 1e-4)
       V_eff <- fit_scalar$V[1]
-      fit_mixture <- susie(X, y, L = L,
+      fit_mixture <- susie_additive(X, y, L = L,
                            prior_variance_grid = c(V_eff),
                            mixture_weights = c(1),
                            estimate_residual_variance = FALSE,
@@ -71,12 +71,12 @@ for (data_type in c("individual", "rss", "ss")) {
 
 test_that("K=1 mixture is numerically identical for L=1 at single iteration", {
   L <- 1
-  fit_scalar <- suppressWarnings(susie(X, y, L = L,
+  fit_scalar <- suppressWarnings(susie_additive(X, y, L = L,
                                        estimate_prior_variance = FALSE,
                                        estimate_residual_variance = FALSE,
                                        max_iter = 1))
   V_eff <- fit_scalar$V[1]
-  fit_mixture <- suppressWarnings(susie(X, y, L = L,
+  fit_mixture <- suppressWarnings(susie_additive(X, y, L = L,
                                         prior_variance_grid = c(V_eff),
                                         mixture_weights = c(1),
                                         estimate_residual_variance = FALSE,

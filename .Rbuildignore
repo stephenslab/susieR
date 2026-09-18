@@ -20,6 +20,10 @@
 ^pixi\.lock$
 ^\.pixi/.*
 ^\.github$
-^susieSlide$
 ^\.positai$
 ^\.claude$
+^validation$
+^artifacts$
+^.*\.Rcheck$
+^.*\.tar\.gz$
+^.*\.zip$

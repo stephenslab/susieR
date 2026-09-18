@@ -20,7 +20,7 @@ setup_susie_ash_test <- function(n = 200, p = 50, k = 5, seed = 42) {
     resid <- y - X[, j] * bhat[j]
     sqrt(sum(resid^2) / ((n - 2) * sum(X[, j]^2)))
   })
-  R_mat <- susieR:::safe_cor(X)
+  R_mat <- susieSlide:::safe_cor(X)
 
   list(X = X, y = y, n = n, p = p,
        XtX = XtX, Xty = Xty, yty = yty,
@@ -31,7 +31,7 @@ setup_susie_ash_test <- function(n = 200, p = 50, k = 5, seed = 42) {
 test_that("susie_ss ash agrees with susie individual-level ash", {
   d <- setup_susie_ash_test(n = 200, p = 50, k = 5, seed = 42)
 
-  fit_ind <- susie(d$X, d$y, L = 5,
+  fit_ind <- susie_additive(d$X, d$y, L = 5,
     unmappable_effects = "ash_filter_archived",
     estimate_residual_variance = TRUE,
     estimate_prior_method = "optim",
@@ -65,7 +65,7 @@ test_that("susie_ss ash agrees with susie individual-level ash across data sizes
       k = params$k, seed = params$seed
     )
 
-    fit_ind <- suppressWarnings(susie(d$X, d$y, L = 5,
+    fit_ind <- suppressWarnings(susie_additive(d$X, d$y, L = 5,
       unmappable_effects = "ash_filter_archived",
       estimate_residual_variance = TRUE,
       estimate_prior_method = "optim",
@@ -95,7 +95,7 @@ test_that("susie_ss ash agrees with susie individual-level ash across data sizes
 test_that("susie individual-level ash output has expected fields and dimensions", {
   d <- setup_susie_ash_test(n = 100, p = 30, k = 3, seed = 123)
 
-  fit_ind <- susie(d$X, d$y, L = 5,
+  fit_ind <- susie_additive(d$X, d$y, L = 5,
     unmappable_effects = "ash_filter_archived",
     estimate_residual_variance = TRUE,
     estimate_prior_method = "optim",

@@ -12,7 +12,7 @@ context("susie / susie_ss SuSiE-inf reference comparison")
 # exercised:
 #
 #   1. susie_ss(XtX, Xty, yty, n, unmappable_effects = "inf")
-#   2. susie(X, y, unmappable_effects = "inf")
+#   2. susie_additive(X, y, unmappable_effects = "inf")
 #
 # Tolerance depends on whether the prior-variance update is closed-form
 # (`estimate_prior_method = "EM"` or `"simple"`) or iterative
@@ -273,7 +273,7 @@ test_that("susie_ss + inf + MLE matches reference (sparse + polygenic, L=5)", {
 })
 
 # =============================================================================
-# Part 3: susie(X, y, unmappable_effects = "inf") - individual-data MoM
+# Part 3: susie_additive(X, y, unmappable_effects = "inf") - individual-data MoM
 # =============================================================================
 
 test_that("susie + inf + MoM matches reference (sparse only, L=5)", {
@@ -307,7 +307,7 @@ test_that("susie + inf + MoM matches reference (sparse + polygenic, L=10)", {
 })
 
 # =============================================================================
-# Part 4: susie(X, y, unmappable_effects = "inf") - individual-data MLE
+# Part 4: susie_additive(X, y, unmappable_effects = "inf") - individual-data MLE
 # =============================================================================
 
 test_that("susie + inf + MLE matches reference (sparse only, L=5)", {

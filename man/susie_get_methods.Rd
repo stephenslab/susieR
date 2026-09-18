@@ -50,7 +50,7 @@ susie_get_pip(res, prune_by_cs = FALSE, prior_tol = 1e-09)
 }
 \arguments{
 \item{res}{A susie fit, typically an output from
-\code{\link{susie}} or one of its variants. For
+\code{\link{susie_additive}} or one of its variants. For
 \code{susie_get_pip} and \code{susie_get_cs}, this may instead be
 the posterior inclusion probability matrix, \code{alpha}.}
 
@@ -64,7 +64,7 @@ tolerance level.}
 \item{prior_tol}{Filter out effects having estimated prior variance
 smaller than this threshold.}
 
-\item{susie_fit}{A susie fit, an output from \code{\link{susie}}.}
+\item{susie_fit}{A susie fit, an output from \code{\link{susie_additive}}.}
 
 \item{num_samples}{The number of draws from the posterior
 distribution.}
@@ -217,7 +217,7 @@ beta[1:4] <- 1
 X <- matrix(rnorm(n * p), nrow = n, ncol = p)
 X <- scale(X, center = TRUE, scale = TRUE)
 y <- drop(X \%*\% beta + rnorm(n))
-s <- susie(X, y, L = 10)
+s <- susie_additive(X, y, L = 10)
 susie_get_objective(s)
 susie_get_objective(s, last_only = FALSE)
 susie_get_residual_variance(s)

@@ -92,7 +92,7 @@ slot_prior_betabinom()
 slot_prior_poisson(C = 5, nu = 8)
 
 # Pass to susie
-# fit <- susie(X, y, slot_prior = slot_prior_betabinom())
+# fit <- susie_additive(X, y, slot_prior = slot_prior_betabinom())
 
 }
 \references{

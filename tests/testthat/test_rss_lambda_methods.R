@@ -945,7 +945,7 @@ test_that("R_mismatch works with and without finite-reference input", {
     fit_warn <- susie_rss(z = z, R = R, n = n, L = 3, R_finite = 10000,
                           R_mismatch = "eb_no_init", estimate_residual_variance = TRUE,
                           max_iter = 2, verbose = FALSE),
-    "incompatible with"
+    "Joint estimation"
   )
 
   fit <- susie_rss(z = z, R = R, n = n, L = 3, R_finite = 10000,
@@ -1192,12 +1192,12 @@ test_that("eval_omega_eloglik_reduced matches pure R reference", {
   lambda <- 0.01
   omega <- c(0.7, 0.3)
 
-  val_R <- susieR:::eval_omega_eloglik_R(panel_R, omega, z, zbar, diag_postb2,
+  val_R <- susieSlide:::eval_omega_eloglik_R(panel_R, omega, z, zbar, diag_postb2,
                                           Z, sigma2, lambda, K, p)
 
-  cache <- susieR:::precompute_omega_cache(X_list, z)
-  iter_cache <- susieR:::precompute_omega_iteration(cache, zbar, diag_postb2, Z)
-  val_reduced <- susieR:::eval_omega_eloglik_reduced(cache, omega, iter_cache,
+  cache <- susieSlide:::precompute_omega_cache(X_list, z)
+  iter_cache <- susieSlide:::precompute_omega_iteration(cache, zbar, diag_postb2, Z)
+  val_reduced <- susieSlide:::eval_omega_eloglik_reduced(cache, omega, iter_cache,
                                                       sigma2, lambda, K, p)
 
   expect_equal(val_R, val_reduced, tolerance = 1e-6)
@@ -1218,7 +1218,7 @@ test_that("eval_omega_eloglik is concave in omega", {
   Z <- matrix(rnorm(2 * p) * 0.05, 2, p)
 
   eloglik <- function(w1) {
-    susieR:::eval_omega_eloglik_R(panel_R, c(w1, 1 - w1), z, zbar,
+    susieSlide:::eval_omega_eloglik_R(panel_R, c(w1, 1 - w1), z, zbar,
                                    diag_postb2, Z, 0.9, 0.01, K, p)
   }
 
@@ -1242,7 +1242,7 @@ test_that("accessor helpers fall through for single panel", {
 })
 
 test_that(".omega_tol has expected fields with positive values", {
-  tol <- susieR:::.omega_tol
+  tol <- susieSlide:::.omega_tol
   expect_true(is.list(tol))
   expect_true("convergence" %in% names(tol))
   expect_true("grid_spacing" %in% names(tol))
@@ -1259,13 +1259,13 @@ test_that("eigen_from_reduced recovers full eigendecomposition", {
   p <- 30; B1 <- 40; B2 <- 35
   X1 <- matrix(rnorm(B1 * p), B1, p)
   X2 <- matrix(rnorm(B2 * p), B2, p)
-  X_list <- lapply(list(X1, X2), susieR:::standardize_X)
+  X_list <- lapply(list(X1, X2), susieSlide:::standardize_X)
   z <- rnorm(p)
 
-  cache <- susieR:::precompute_omega_cache(X_list, z)
+  cache <- susieSlide:::precompute_omega_cache(X_list, z)
 
   omega <- c(0.7, 0.3)
-  eig_reduced <- susieR:::eigen_from_reduced(cache, omega, K = 2, p = p)
+  eig_reduced <- susieSlide:::eigen_from_reduced(cache, omega, K = 2, p = p)
 
   R_omega <- omega[1] * crossprod(X_list[[1]]) + omega[2] * crossprod(X_list[[2]])
   R_omega <- 0.5 * (R_omega + t(R_omega))
@@ -1283,7 +1283,7 @@ test_that("optimize_omega handles vertex optimum", {
   p <- 25; B <- 100
 
   X1 <- matrix(rnorm(B * p), B, p)
-  X_list <- lapply(list(X1, matrix(rnorm(B * p), B, p)), susieR:::standardize_X)
+  X_list <- lapply(list(X1, matrix(rnorm(B * p), B, p)), susieSlide:::standardize_X)
   z <- rnorm(p)
 
   R1 <- crossprod(X_list[[1]])
@@ -1295,11 +1295,11 @@ test_that("optimize_omega handles vertex optimum", {
   Z <- matrix(rnorm(2 * p) * 0.05, 2, p)
 
   eval_fn <- function(omega_vec) {
-    susieR:::eval_omega_eloglik_R(panel_R, omega_vec, z, zbar,
+    susieSlide:::eval_omega_eloglik_R(panel_R, omega_vec, z, zbar,
                                    diag_postb2, Z, 0.9, 0.1, 2, p)
   }
 
-  result <- susieR:::optimize_omega(eval_fn, c(0.5, 0.5), K = 2)
+  result <- susieSlide:::optimize_omega(eval_fn, c(0.5, 0.5), K = 2)
 
   expect_equal(sum(result$omega), 1, tolerance = 1e-10)
   expect_true(all(result$omega >= -1e-10))

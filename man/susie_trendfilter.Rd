@@ -31,10 +31,10 @@ the usual way (by maximizing the ELBO). We have found this strategy
 typically improves reliability of the results by reducing a
 tendency to converge to poor local optima of the ELBO.}
 
-\item{...}{Other arguments passed to \code{\link{susie}}.}
+\item{...}{Other arguments passed to \code{\link{susie_additive}}.}
 }
 \value{
-A "susie" fit; see \code{\link{susie}} for details.
+A "susie" fit; see \code{\link{susie_additive}} for details.
 }
 \description{
 Fits the non-parametric Gaussian regression model

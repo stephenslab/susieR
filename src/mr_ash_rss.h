@@ -142,7 +142,7 @@ inline unordered_map<string, mat> mr_ash_sufficient(const vec& XTy, const mat& X
 		// Exit loop if maximum number of iterations is reached
 		if (t > max_iter) {
 			t = max_iter;  // Clamp to valid index range
-			cerr << "Max number of iterations reached. Try increasing max_iter." << endl;
+			REprintf("Max number of iterations reached. Try increasing max_iter.\n");
 			break;
 		}
 

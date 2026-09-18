@@ -1,0 +1,11 @@
+* checking for file 'C:\Document\Serieux\Travail\Package\git\susieR/DESCRIPTION' ... OK
+* preparing 'susieSlide':
+* checking DESCRIPTION meta-information ... OK
+* cleaning src
+* installing the package (it is needed to build vignettes)
+* creating vignettes ... OK
+* cleaning src
+* checking for LF line-endings in source and make files and shell scripts
+* checking for empty or unneeded directories
+* building 'susieSlide_0.2.0.tar.gz'
+

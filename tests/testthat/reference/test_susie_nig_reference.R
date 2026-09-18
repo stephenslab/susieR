@@ -4,7 +4,7 @@ source(file.path("..", "helper_nig_reference.R"), local = TRUE)
 context("susie NIG reference comparison")
 
 # =============================================================================
-# REFERENCE TESTS FOR susie(estimate_residual_method = "NIG")
+# REFERENCE TESTS FOR susie_additive(estimate_residual_method = "NIG")
 # =============================================================================
 #
 # These tests compare our implementation of the NIG
@@ -1095,7 +1095,7 @@ test_that("NIG matches reference with L=1 + null signal", {
 # #############################################################################
 #
 # For each reference test scenario above, verify that susie_ss()
-# produces the same result as susie() with NIG.
+# produces the same result as susie_additive() with NIG.
 # These tests do NOT require the reference package.
 
 # =============================================================================
@@ -1789,7 +1789,7 @@ test_that("SS matches individual: L=1 + null signal (Part 43)", {
 # #############################################################################
 #
 # For each reference test scenario above, verify that susie_rss()
-# (via the bhat/shat/var_y path) produces the same result as susie()
+# (via the bhat/shat/var_y path) produces the same result as susie_additive()
 # with NIG.
 # These tests do NOT require the reference package.
 

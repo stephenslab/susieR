@@ -6,7 +6,7 @@
 #'   inferences from a fitted susie model.
 #'
 #' @param res A susie fit, typically an output from
-#'   \code{\link{susie}} or one of its variants. For
+#'   \code{\link{susie_additive}} or one of its variants. For
 #'   \code{susie_get_pip} and \code{susie_get_cs}, this may instead be
 #'   the posterior inclusion probability matrix, \code{alpha}.
 #'
@@ -82,7 +82,7 @@
 #' X <- matrix(rnorm(n * p), nrow = n, ncol = p)
 #' X <- scale(X, center = TRUE, scale = TRUE)
 #' y <- drop(X %*% beta + rnorm(n))
-#' s <- susie(X, y, L = 10)
+#' s <- susie_additive(X, y, L = 10)
 #' susie_get_objective(s)
 #' susie_get_objective(s, last_only = FALSE)
 #' susie_get_residual_variance(s)
@@ -187,7 +187,7 @@ susie_get_lfsr <- function(res) {
 
 #' @rdname susie_get_methods
 #'
-#' @param susie_fit A susie fit, an output from \code{\link{susie}}.
+#' @param susie_fit A susie fit, an output from \code{\link{susie_additive}}.
 #'
 #' @param num_samples The number of draws from the posterior
 #'   distribution.
@@ -567,7 +567,7 @@ susie_get_cs_attainable <- function(res, coverage = 0.95, ethres = NULL,
 #'   a diagnostic tool to assess how correlated the reported CS are.
 #'
 #' @param model A SuSiE fit, typically an output from
-#'   \code{\link{susie}} or one of its variants.
+#'   \code{\link{susie_additive}} or one of its variants.
 #'
 #' @param X n by p matrix of values of the p variables (covariates) in
 #'   n samples. When provided, correlation between variables will be
@@ -702,7 +702,7 @@ susie_get_pip <- function(res, prune_by_cs = FALSE, prior_tol = 1e-9) {
 #'
 #' # Initialize susie to ground-truth coefficients.
 #' s = susie_init_coef(which(beta != 0),beta[beta != 0],length(beta))
-#' res = susie(X,y,L = 10,model_init=s)
+#' res = susie_additive(X,y,L = 10,model_init=s)
 #'
 #' @export
 #'

@@ -9,7 +9,7 @@
 #
 # Two paths are exercised:
 #   1. susie_ss(..., unmappable_effects = "inf")    -- sufficient-statistics
-#   2. susie(X, y, unmappable_effects = "inf")      -- individual-level data
+#   2. susie_additive(X, y, unmappable_effects = "inf")      -- individual-level data
 #
 # The ss path is algebraically identical between dev and reference (Task 2
 # only rearranges intermediates), so machine-precision agreement is the
@@ -110,7 +110,7 @@ compare_to_inf_reference <- function(func_name, args, tolerance = 1e-10) {
   dev_env <- load_inf_development_env()
 
   ref_func <- ref_env$env[[func_name]]
-  dev_func <- dev_env$env[[func_name]]
+  dev_func <- dev_env$env[[if(func_name=="susie") "susie_additive" else func_name]]
   if (is.null(ref_func)) stop("'", func_name, "' not found in reference package")
   if (is.null(dev_func)) stop("'", func_name, "' not found in development package")
 

@@ -25,8 +25,8 @@ make_tf <- function(n, order, seed) {
   attr(X, "matrix.type") <- "tfmatrix"
   attr(X, "order")        <- order
   # Use compute_colstats logic directly (center=TRUE, scale=TRUE)
-  cm  <- susieR:::compute_tf_cm(order, n)
-  csd <- susieR:::compute_tf_csd(order, n)
+  cm  <- susieSlide:::compute_tf_cm(order, n)
+  csd <- susieSlide:::compute_tf_csd(order, n)
   attr(X, "scaled:center") <- cm
   attr(X, "scaled:scale")  <- csd
   X
@@ -120,7 +120,7 @@ test_that("compute_Xb: trend-filtering dispatch calls compute_tf_Xb", {
   b <- rnorm(n)
   result   <- compute_Xb(X, b)
   # Reference: use compute_tf_Xb directly
-  expected <- susieR:::compute_tf_Xb(0L, b / csd) - sum(cm * b / csd)
+  expected <- susieSlide:::compute_tf_Xb(0L, b / csd) - sum(cm * b / csd)
   expect_equal(result, expected, tolerance = 1e-8)
   expect_length(result, n)
 })
@@ -173,7 +173,7 @@ test_that("compute_Xty: trend-filtering dispatch calls compute_tf_Xty", {
   set.seed(16)
   y <- rnorm(n)
   result   <- compute_Xty(X, y)
-  expected <- susieR:::compute_tf_Xty(0L, y) / csd - cm / csd * sum(y)
+  expected <- susieSlide:::compute_tf_Xty(0L, y) / csd - cm / csd * sum(y)
   expect_equal(result, expected, tolerance = 1e-8)
 })
 

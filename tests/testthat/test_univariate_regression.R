@@ -306,7 +306,7 @@ test_that("univariate_regression output is usable for estimate_s_rss", {
 
 test_that("calc_z vector Y matches betahat/sebetahat ratio", {
   base_data <- generate_base_data(n = 100, p = 10, k = 0, seed = 37)
-  z        <- susieR:::calc_z(base_data$X, base_data$y, center = FALSE, scale = FALSE)
+  z        <- susieSlide:::calc_z(base_data$X, base_data$y, center = FALSE, scale = FALSE)
   result   <- univariate_regression(base_data$X, base_data$y, center = FALSE, scale = FALSE)
   z_manual <- result$betahat / result$sebetahat
   expect_equal(z, z_manual)
@@ -319,7 +319,7 @@ test_that("calc_z matrix Y returns p x m matrix matching per-column z-scores", {
   n <- 100; p <- 10; m <- 3
   X <- matrix(rnorm(n * p), n, p)
   Y <- matrix(rnorm(n * m), n, m)
-  z_matrix <- susieR:::calc_z(X, Y, center = FALSE, scale = FALSE)
+  z_matrix <- susieSlide:::calc_z(X, Y, center = FALSE, scale = FALSE)
   expect_true(is.matrix(z_matrix))
   expect_equal(dim(z_matrix), c(p, m))
   for (i in seq_len(m)) {
@@ -340,7 +340,7 @@ test_that("calc_z center/scale options match univariate_regression with same fla
     n <- 100; p <- 10
     X <- matrix(rnorm(n * p, mean = 5, sd = 2), n, p)
     y <- rnorm(n, mean = 10, sd = 3)
-    z        <- susieR:::calc_z(X, y, center = cfg$center, scale = cfg$scale)
+    z        <- susieSlide:::calc_z(X, y, center = cfg$center, scale = cfg$scale)
     result   <- univariate_regression(X, y, center = cfg$center, scale = cfg$scale)
     z_manual <- result$betahat / result$sebetahat
     expect_equal(z, z_manual,
@@ -355,7 +355,7 @@ test_that("calc_z matrix Y with center and scale returns finite matrix of correc
   X <- matrix(rnorm(n * p, mean = rep(c(0, 5, -3, 2), each = n * 2)), n, p)
   Y <- matrix(rnorm(n * m, mean = rep(c(0, 10, -5, 3), each = n)), n, m)
   for (i in seq_len(p)) X[, i] <- X[, i] * (i %% 3 + 1)
-  z <- susieR:::calc_z(X, Y, center = TRUE, scale = TRUE)
+  z <- susieSlide:::calc_z(X, Y, center = TRUE, scale = TRUE)
   expect_equal(dim(z), c(p, m))
   expect_true(all(is.finite(z)))
 })

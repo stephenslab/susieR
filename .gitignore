@@ -17,3 +17,8 @@ pixi.lock
 susieR.Rcheck
 **/.*.swp
 **/.*.swo
+**/*.dll
+src/symbols.rds
+susieSlide.Rcheck
+artifacts/
+*.tar.gz

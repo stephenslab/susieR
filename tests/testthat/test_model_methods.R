@@ -92,10 +92,10 @@ test_that("get_objective NIG model returns finite ELBO distinct from default ELB
   beta <- rep(0, p); beta[3] <- 2
   y    <- as.vector(X %*% beta + rnorm(n, sd = 0.5))
 
-  fit_default <- suppressWarnings(susie(X, y, L = 2,
+  fit_default <- suppressWarnings(susie_additive(X, y, L = 2,
                                         estimate_residual_method = "MLE",
                                         max_iter = 5, verbose = FALSE))
-  fit_nig     <- suppressWarnings(susie(X, y, L = 2,
+  fit_nig     <- suppressWarnings(susie_additive(X, y, L = 2,
                                         estimate_residual_method = "NIG",
                                         alpha0 = 2, beta0 = 1,
                                         max_iter = 5, verbose = FALSE))
@@ -363,7 +363,7 @@ test_that("check_convergence.default triggers run_final_ash_pass on ELBO converg
   expect_s3_class(result, "susie")
 })
 
-# ---- check_convergence: end-to-end via susie() ----
+# ---- check_convergence: end-to-end via susie_additive() ----
 
 test_that("susie converges with convergence_method='elbo'", {
   set.seed(22)
@@ -372,7 +372,7 @@ test_that("susie converges with convergence_method='elbo'", {
   b    <- rep(0, p); b[c(1, 10, 20)] <- c(1.5, -1.2, 1.0)
   y    <- as.vector(X %*% b + rnorm(n))
 
-  fit <- susie(X, y, L = 6, convergence_method = "elbo", verbose = FALSE)
+  fit <- susie_additive(X, y, L = 6, convergence_method = "elbo", verbose = FALSE)
 
   expect_true(fit$converged)
   expect_true(all(is.finite(fit$elbo)))
@@ -385,7 +385,7 @@ test_that("susie converges with convergence_method='pip'", {
   b    <- rep(0, p); b[c(1, 10, 20)] <- c(1.5, -1.2, 1.0)
   y    <- as.vector(X %*% b + rnorm(n))
 
-  fit <- susie(X, y, L = 6, convergence_method = "pip", verbose = FALSE)
+  fit <- susie_additive(X, y, L = 6, convergence_method = "pip", verbose = FALSE)
 
   expect_true(fit$converged)
 })
@@ -398,7 +398,7 @@ test_that("susie verbose elbo path emits per-iteration ELBO output", {
   y    <- as.vector(X %*% b + rnorm(n))
 
   expect_message(
-    susie(X, y, L = 5, convergence_method = "elbo", verbose = TRUE),
+    susie_additive(X, y, L = 5, convergence_method = "elbo", verbose = TRUE),
     "ELBO"
   )
 })
@@ -411,7 +411,7 @@ test_that("susie with max_iter=1 does not converge and warns", {
   y    <- as.vector(X %*% b + rnorm(n))
 
   expect_warning(
-    fit <- susie(X, y, L = 6, max_iter = 1, convergence_method = "elbo"),
+    fit <- susie_additive(X, y, L = 6, max_iter = 1, convergence_method = "elbo"),
     "did not converge"
   )
   expect_false(fit$converged)
@@ -426,9 +426,9 @@ test_that("pip and elbo convergence methods both yield finite ELBO traces", {
   b    <- rep(0, p); b[c(2, 15)] <- c(1.5, -1.5)
   y    <- as.vector(X %*% b + rnorm(n))
 
-  fit_elbo <- suppressWarnings(susie(X, y, L = 4,
+  fit_elbo <- suppressWarnings(susie_additive(X, y, L = 4,
                                      convergence_method = "elbo", verbose = FALSE))
-  fit_pip  <- suppressWarnings(susie(X, y, L = 4,
+  fit_pip  <- suppressWarnings(susie_additive(X, y, L = 4,
                                      convergence_method = "pip",  verbose = FALSE))
 
   expect_true(all(is.finite(fit_elbo$elbo)))

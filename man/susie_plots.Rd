@@ -20,7 +20,7 @@ susie_plot_iteration(model, L, file_prefix, pos = NULL)
 }
 \arguments{
 \item{model}{A SuSiE fit, typically an output from
-\code{\link{susie}} or one of its variants. For \code{suse_plot},
+\code{\link{susie_additive}} or one of its variants. For \code{suse_plot},
 the susie fit must have \code{model$z}, \code{model$PIP}, and may
 include \code{model$sets}. \code{model} may also be a vector of
 z-scores or PIPs. For \code{susie_plot_iteration}, \code{model}
@@ -81,7 +81,7 @@ beta[sample(1:1000, 4)] <- 1
 X <- matrix(rnorm(n * p), nrow = n, ncol = p)
 X <- scale(X, center = TRUE, scale = TRUE)
 y <- drop(X \%*\% beta + rnorm(n))
-res <- susie(X, y, L = 10)
+res <- susie_additive(X, y, L = 10)
 susie_plot(res, "PIP")
 susie_plot(res, "PIP", add_bar = TRUE)
 susie_plot(res, "PIP", add_legend = TRUE)
@@ -103,7 +103,7 @@ beta[sample(1:1000, 4)] <- 1
 X <- matrix(rnorm(n * p), nrow = n, ncol = p)
 X <- scale(X, center = TRUE, scale = TRUE)
 y <- drop(X \%*\% beta + rnorm(n))
-res <- susie(X, y, L = 10, track_fit = TRUE)
+res <- susie_additive(X, y, L = 10, track_fit = TRUE)
 susie_plot_iteration(res, L = 10)
 
 }

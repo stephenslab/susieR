@@ -154,7 +154,7 @@ test_that("susie with slot_prior produces valid c_hat output", {
   X <- matrix(rnorm(n * p), n, p)
   b <- rep(0, p); b[1:3] <- 1
   y <- X %*% b + rnorm(n)
-  fit <- susie(X, y, L = 10, slot_prior = slot_prior_poisson(C = 3, nu = 8),
+  fit <- susie_additive(X, y, L = 10, slot_prior = slot_prior_poisson(C = 3, nu = 8),
                verbose = FALSE)
   expect_false(is.null(fit$c_hat))
   expect_equal(length(fit$c_hat), 10)
@@ -168,7 +168,7 @@ test_that("susie without slot_prior does not produce c_hat", {
   n <- 100; p <- 200
   X <- matrix(rnorm(n * p), n, p)
   y <- rnorm(n)
-  fit <- susie(X, y, L = 5, verbose = FALSE)
+  fit <- susie_additive(X, y, L = 5, verbose = FALSE)
   expect_null(fit$c_hat)
 })
 
@@ -180,7 +180,7 @@ test_that("susie with betabinom slot_prior produces valid c_hat output", {
   X <- matrix(rnorm(n * p), n, p)
   b <- rep(0, p); b[1:3] <- 1
   y <- X %*% b + rnorm(n)
-  fit <- susie(X, y, L = 10, slot_prior = slot_prior_betabinom(),
+  fit <- susie_additive(X, y, L = 10, slot_prior = slot_prior_betabinom(),
                verbose = FALSE)
   expect_false(is.null(fit$c_hat))
   expect_equal(length(fit$c_hat), 10)
@@ -195,7 +195,7 @@ test_that("ash model auto-creates betabinom slot_prior with message", {
   X <- matrix(rnorm(n * p), n, p)
   y <- rnorm(n)
   expect_message(
-    fit <- susie(X, y, L = 10, unmappable_effects = "ash",
+    fit <- susie_additive(X, y, L = 10, unmappable_effects = "ash",
                  verbose = FALSE, max_iter = 5),
     "slot_prior was not specified"
   )
@@ -208,7 +208,7 @@ test_that("ash model with explicit slot_prior does not warn about C", {
   X <- matrix(rnorm(n * p), n, p)
   y <- rnorm(n)
   fit <- withCallingHandlers(
-    susie(X, y, L = 10, unmappable_effects = "ash",
+    susie_additive(X, y, L = 10, unmappable_effects = "ash",
           slot_prior = slot_prior_poisson(C = 3, nu = 8),
           verbose = FALSE, max_iter = 5),
     warning = function(w) {
@@ -229,11 +229,11 @@ test_that("c_hat warm start does not increase iteration count", {
   b <- rep(0, p); b[1:3] <- 1
   y <- X %*% b + rnorm(n)
 
-  fit1 <- susie(X, y, L = 10, slot_prior = slot_prior_poisson(C = 3, nu = 8),
+  fit1 <- susie_additive(X, y, L = 10, slot_prior = slot_prior_poisson(C = 3, nu = 8),
                 verbose = FALSE)
 
   sp_warm <- slot_prior_poisson(C = 3, nu = 8, c_hat_init = fit1$c_hat)
-  fit2 <- susie(X, y, L = 10, slot_prior = sp_warm,
+  fit2 <- susie_additive(X, y, L = 10, slot_prior = sp_warm,
                 model_init = fit1, verbose = FALSE)
 
   expect_true(fit2$niter <= fit1$niter)
@@ -247,11 +247,11 @@ test_that("batch and sequential update schedules both converge", {
   X <- matrix(rnorm(n * p), n, p)
   b <- rep(0, p); b[1:3] <- 1
   y <- X %*% b + rnorm(n)
-  fit_batch <- susie(X, y, L = 10,
+  fit_batch <- susie_additive(X, y, L = 10,
                      slot_prior = slot_prior_poisson(C = 3,
                                                      update_schedule = "batch"),
                      verbose = FALSE)
-  fit_seq <- susie(X, y, L = 10,
+  fit_seq <- susie_additive(X, y, L = 10,
                    slot_prior = slot_prior_poisson(C = 3,
                                                    update_schedule = "sequential"),
                    verbose = FALSE)

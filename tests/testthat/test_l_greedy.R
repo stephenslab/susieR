@@ -14,9 +14,9 @@ context("Greedy-L outer loop in susie_workhorse")
 
 test_that("L_greedy = NULL produces bit-identical output to fixed-L susie", {
   d <- .make_greedy_data()
-  fit_fixed <- susie(d$X, d$y, L = 5)
+  fit_fixed <- susie_additive(d$X, d$y, L = 5)
 
-  obj <- susie(d$X, d$y, L = 5, init_only = TRUE)
+  obj <- susie_additive(d$X, d$y, L = 5, init_only = TRUE)
   obj$params$L_greedy <- NULL
   fit_direct <- susie_workhorse(obj$data, obj$params)
 
@@ -29,7 +29,7 @@ test_that("L_greedy = NULL produces bit-identical output to fixed-L susie", {
 
 test_that("L_greedy grows in steps of L_greedy, capped at params$L", {
   d <- .make_greedy_data()
-  obj <- susie(d$X, d$y, L = 10, init_only = TRUE)
+  obj <- susie_additive(d$X, d$y, L = 10, init_only = TRUE)
   obj$params$L_greedy <- 3
   obj$params$lbf_min  <- 0.1
   fit <- susie_workhorse(obj$data, obj$params)
@@ -41,7 +41,7 @@ test_that("L_greedy grows in steps of L_greedy, capped at params$L", {
 
 test_that("L_greedy >= K_true saturates in a single round", {
   d <- .make_greedy_data()
-  obj <- susie(d$X, d$y, L = 12, init_only = TRUE)
+  obj <- susie_additive(d$X, d$y, L = 12, init_only = TRUE)
   obj$params$L_greedy <- 6
   obj$params$lbf_min  <- 0.1
   fit <- susie_workhorse(obj$data, obj$params)
@@ -56,7 +56,7 @@ test_that("K_true > L_greedy keeps growing past the first round", {
   bh <- numeric(J); bh[c(5, 20, 45, 70)] <- c(2.5, -2.0, 1.8, -1.5)
   yh <- Xh %*% bh + rnorm(N, sd = 0.3)
 
-  obj <- susie(Xh, yh, L = 10, init_only = TRUE)
+  obj <- susie_additive(Xh, yh, L = 10, init_only = TRUE)
   obj$params$L_greedy <- 3
   obj$params$lbf_min  <- 0.1
   fit <- susie_workhorse(obj$data, obj$params)
@@ -67,7 +67,7 @@ test_that("K_true > L_greedy keeps growing past the first round", {
 
 test_that("L_greedy = L stops after one round at L", {
   d <- .make_greedy_data()
-  obj <- susie(d$X, d$y, L = 3, init_only = TRUE)
+  obj <- susie_additive(d$X, d$y, L = 3, init_only = TRUE)
   obj$params$L_greedy <- 3
   fit <- susie_workhorse(obj$data, obj$params)
 
@@ -78,7 +78,7 @@ test_that("L_greedy = L stops after one round at L", {
 
 test_that("L_greedy = 1 produces a valid single-effect model", {
   d <- .make_greedy_data()
-  obj <- susie(d$X, d$y, L = 5, init_only = TRUE)
+  obj <- susie_additive(d$X, d$y, L = 5, init_only = TRUE)
   obj$params$L_greedy <- 1
   obj$params$lbf_min  <- 0.1
   fit <- susie_workhorse(obj$data, obj$params)
@@ -92,7 +92,7 @@ test_that("L_greedy = 1 produces a valid single-effect model", {
 test_that("L_greedy is exposed through susie, susie_ss, and susie_rss interfaces", {
   d <- .make_greedy_data()
 
-  fit <- susie(d$X, d$y, L = 8, L_greedy = 3, greedy_lbf_cutoff = 0.1,
+  fit <- susie_additive(d$X, d$y, L = 8, L_greedy = 3, greedy_lbf_cutoff = 0.1,
                verbose = FALSE)
   expect_lte(nrow(fit$alpha), 8)
   expect_gte(nrow(fit$alpha), 3)

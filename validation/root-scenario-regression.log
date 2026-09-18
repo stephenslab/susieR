@@ -1,0 +1,12 @@
+Installed package: C:/Users/willi/AppData/Local/R/win-library/4.6/susieSlide 
+Version: 0.2.0 
+Root package and namespace ownership: PASS
+                mode converged max_field_difference mean_function_mse
+            Additive      TRUE                    0      0.0020958091
+           Recessive      TRUE                    0      0.0008817701
+ Partially_recessive      TRUE                    0      0.0037715748
+            Dominant      TRUE                    0      0.0017549214
+  Partially_dominant      TRUE                    0      0.0010636350
+               Mixed      TRUE                    0      0.0009856385
+All six scenario regressions and slider predictions: PASS
+susieR namespace loaded: FALSE 

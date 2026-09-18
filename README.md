@@ -1,123 +1,186 @@
-# susieR
+# susieSlide
 
-[![CI](https://github.com/stephenslab/susieR/actions/workflows/ci.yml/badge.svg)](https://github.com/stephenslab/susieR/actions/workflows/ci.yml)
-[![CRAN status badge](https://www.r-pkg.org/badges/version/susieR)](https://cran.r-project.org/package=susieR)
-[![Codecov test coverage](https://codecov.io/gh/StatFunGen/susieR/graph/badge.svg)](https://app.codecov.io/gh/stephenslab/susieR)
+This repository's **root package is susieSlide** on branch `susie_slide`.
+It fits one heterozygote slider per SNP and single-effect component. The IBSS
+engine and compiled inference are included here; fitting does not depend on
+an installed susieR package. There is no nested package to select.
 
-The `susieR` package implements a simple new way to perform variable
-selection in multiple regression ($y=Xb+e$). The methods implemented
-here are particularly well-suited to settings where some of the X
-variables are highly correlated, and the true effects are highly
-sparse (e.g. <20 non-zero effects in the vector $b$).  One example of
-this is genetic fine-mapping applications, and this application was a
-major motivation for developing these methods. However, the methods
-should also be useful more generally.
+The root `DESCRIPTION` says `Package: susieSlide`. Open the existing RStudio
+project in this folder and build from this folder. The folder/project filename
+may still contain `susieR`; the `Package` field determines the R namespace.
 
-The methods are based on a new model for sparse multiple regression,
-which we call the "Sum of Single Effects" (SuSiE) model.  This model,
-which is described in [Wang et al. (2020)](https://doi.org/10.1111/rssb.12388), lends itself to a particularly simple and intuitive fitting 
-procedure -- effectively a Bayesian modification of simple forward 
-selection, which we call "Iterative Bayesian Step-wise Selection".
-
-The output of the fitting procedure is a number of "Credible Sets"
-(CSs), which are each designed to have high probability to contain a
-variable with non-zero effect, while at the same time being as small
-as possible. You can think of the CSs as being a set of "highly
-correlated" variables that are each associated with the response: you
-can be confident that one of the variables has a non-zero coefficient,
-but they are too correlated to be sure which one.
-
-The package was initially developed by Gao Wang, Peter Carbonetto,
-Yuxin Zou, Kaiqian Zhang, and Matthew Stephens from the
-[Stephens Lab](https://stephenslab.uchicago.edu) at the University of
-Chicago. It was later extended with new methods and implementations by
-Alexander McCreight from the [StatFunGen Lab](https://wanggroup.org/) at
-Columbia University.
-
-Please
-[post issues](https://github.com/stephenslab/susieR/issues) to ask
-questions, get our support or provide us feedback; please
-[send pull requests](https://github.com/stephenslab/susieR/pulls) if
-you have helped fixing bugs or making improvements to the source code.
-
-## Quick Start
-
-Install susieR from [CRAN](https://cran.r-project.org/package=susieR):
-
-```R
-install.packages("susieR")
+```r
+# From C:/Document/Serieux/Travail/Package/git/susieR:
+devtools::document(roclets = c("rd", "collate", "namespace"))
+devtools::install(upgrade = "never")
 ```
 
-Alternatively, install the latest development version of `susieR`
-from GitHub:
+Use `susieSlide::susie()` for the slider. The original additive entry point
+is explicitly named `susieSlide::susie_additive()`. Other inherited interfaces
+such as `susie_ss()` and `susie_rss()` remain additive and do not estimate
+sliders. Ordinary susieR can be installed alongside this package for comparison.
 
-```R
-# install.packages("remotes")
-remotes::install_github("stephenslab/susieR")
+```r
+fit <- susieSlide::susie(X, y, L = 10, min_obs = 5)
+
+fit$pip                         # SNP inclusion probabilities
+fit$sets                        # familiar credible-set output
+fit$delta                       # L-by-p matrix, aligned with fit$alpha
+fit$delta_cs                    # one row per SNP in each reported CS
+susieSlide::slider_cs_table(fit)
+predict(fit, newx = X_test)      # original 0/1/2 genotype matrix
+coef(fit)                       # additive and heterozygote coefficient columns
 ```
 
-See [here](https://stephenslab.github.io/susieR/articles/mwe.html) for
-a brief illustration of `susieR`. For more documentation and examples
-please visit https://stephenslab.github.io/susieR
+The input must contain original complete hard-call genotypes. Create the
+heterozygote indicator before any centering or other transformation. Missing
+phenotypes can be removed using `na.rm=TRUE`; genotype imputation is not
+performed by this package.
 
-## Citing this work
+## Model and scaling
 
-If you find the `susieR` package or any of the source code in this
-repository useful for your work, please cite both:
+For component l and candidate SNP j, the internal predictor is
 
-> Wang, G., Sarkar, A., Carbonetto, P. & Stephens, M. (2020). A
-> simple new approach to variable selection in regression, with
-> application to genetic fine mapping. *Journal of the Royal
-> Statistical Society, Series B* **82**, 1273–1300.
-> https://doi.org/10.1111/rssb.12388
+```
+z_j(delta_lj) = ((x_j - mean(x_j)) +
+                delta_lj * (I(x_j == 1) - mean(I(x_j == 1)))) / sd(x_j)
+```
 
-> McCreight, A., Cho, Y., Li, R., Nachun, D., Gan, H-Y., Carbonetto, P., Stephens,
-> M., Denault, W.R.P. & Wang, G. (2025). SuSiE 2.0:
-> improved methods and implementations for genetic fine-mapping and
-> phenotype prediction. Submitting to *Genome Biology*.
+The original additive genotype SD is fixed across delta values. Both terms
+use the same divisor. Delta remains in raw-genotype units: -1 is recessive,
+0 additive, and +1 dominant. It does not need to be back-transformed.
+`standardize=FALSE` sets the divisor to one; `intercept=FALSE` omits centering.
+Constant-column scale factors are set to one, as in SuSiE.
 
-If you use any of the summary data methods such as `susie_ss` or 
-`susie_rss`, please also cite:
+The effect coefficient has the same Gaussian prior convention as SuSiE:
+initial variance `scaled_prior_variance * var(y)` on the internal coefficient
+scale, optionally learned separately for each effect. Thus a raw-scale
+coefficient has variance `V_l / sd(x_j)^2` under standardization. Keeping a
+fixed raw-scale prior instead is a different prior specification.
 
-> Zou, Y., Carbonetto, P., Wang, G. & Stephens, M. (2022). Fine-mapping
-> from summary data with the "Sum of Single Effects" model. *PLoS
-> Genetics* **18**, e1010299. https://doi.org/10.1371/journal.pgen.1010299
+Beta is integrated analytically. Delta is estimated by maximizing the
+marginal likelihood in [-1,1]. A compiled solver enumerates every root of
+the cubic derivative in that interval, plus the boundaries. It brackets
+roots using the quadratic derivative's turning points, avoiding a
+unimodality assumption and unstable closed-form cubic divisions.
 
-If you use the Normal-Inverse-Gamma prior on residual variance estimates
-(`estimate_residual_method = "NIG"`), please also cite:
+If any of the counts of genotypes 0, 1, or 2 is below `min_obs`, delta is
+fixed at zero, even when a different fixed delta was supplied. An absent
+class counts as zero; exactly five observations passes the default rule.
+This is an additive fallback, not a statistical test of additivity.
 
-> Denault, W.R.P., Carbonetto, P., Li, R., Alzheimer's Disease Functional
-> Genomics Consortium, Wang, G. & Stephens, M. (2025). Accounting for
-> uncertainty in residual variances improves calibration of the "Sum of
-> Single Effects" model for small sample sizes. *bioRxiv*, 2025-05.
-> Under review for *Nature Methods*.
+## Output and interpretation
 
-If you use infinitesimal effects modeling (`unmappable_effects = "inf"`), 
-please also cite:
+- `delta[l,j]` is conditional on SNP j being the selected SNP for component l.
+  Its row corresponds to the same row of `alpha`, `mu`, and `mu2`.
+- `sets$cs_index` maps reported credible sets to component rows.
+- `mu` and `mu2` are first and second moments on the internal coefficient
+  scale. `mu_delta` is `mu * delta`, valid for this plug-in delta model.
+- `lbf_variable` contains fixed-delta Gaussian log-BFs evaluated at fitted
+  delta, and `lbf` is their SNP-prior-weighted component log evidence score.
+  **These are not integrated over a delta prior.**
+- `coef(fit)` returns two coefficient columns because one additive vector
+  cannot represent a slider prediction. On the original scale,
+  `prediction = intercept + X %*% b + I(X == 1) %*% b_heterozygote`.
+- Fitted values, residual updates, expected squared residuals, residual
+  variance updates, and the conditional ELBO all include both terms.
+- Credible-set purity uses each component's fitted transformed genotype
+  columns. Calling `susieR::susie_get_cs(fit, X=X)` manually would instead
+  apply additive-genotype purity; use the returned `fit$sets`.
+- An explicit null column is included in component matrices when requested,
+  but excluded from SNP PIPs and coefficient rows.
+- Multiple components may select the same SNP with different deltas. The
+  resulting summed effect need not itself have one bounded slider.
 
-> Cui, R., Elzur, R.A., Kanai, M. et al. (2024). Improving fine-mapping
-> by modeling infinitesimal effects. *Nature Genetics* **56**, 162–169.
-> https://doi.org/10.1038/s41588-023-01597-3
+PIPs, effect moments, and credible sets condition on estimated deltas.
+Optimizing many deltas can overfit null data. Example performance does not
+establish genome-wide PIP or credible-set calibration; inspect the null
+diagnostic alongside the effect-recovery examples.
 
-## Developer notes
+## Supported interface
 
+Supports dense and numeric sparse genotype matrices, fixed or estimated
+Gaussian residual/prior variances, scalar/vector/component-specific fixed
+deltas, SNP prior weights, an optional null column, count filtering,
+predictions, summaries, and same-dimension/scaling warm starts. The EM option
+updates the Gaussian effect-prior variance and refreshes the slider posterior
+at the new variance before updating fitted values.
 
-+ The `Makefile` contains various R commands to build and maintain the package. 
-For example to build the website via `pkgdown`:
+The slider entry point does not implement ordinary RSS/summary-statistic input, dosage
+or missing-genotype handling, covariate input, NIG priors, infinitesimal/ash
+effects, slot priors, greedy-L expansion, or refinement. Unsupported options
+raise explicit errors. Covariate-adjusted extensions must construct the
+heterozygote indicator before adjustment and adjust both basis matrices.
 
-   ```bash
-   make pkgdown
-   ```
+Genotype geometry and counts are cached. Residual products are recomputed for
+each single-effect update. The default reconstructs heterozygotes in memory-
+bounded blocks; `cache_heterozygotes=TRUE` trades a second genotype-sized
+matrix for faster repeated products. No dense p-by-p LD matrix is created.
+The package still takes an in-memory genotype matrix: packed-file streaming
+and a full million-variant application are not implemented or benchmarked.
 
-+ When any changes are made to `roxygen2` markup, run
-`make document` to update package `NAMESPACE` and documentation
-files.
+## Build and test
 
+The included engine derives from this repository's `susieR` 0.16.6 at commit
+`8e56a8e038e989856d106d9ca5175cc664fea9d2`. Slider methods dispatch within this
+package. Gaussian priors and the inherited additive engine are retained.
 
-+ To format R codes in the `R` folder,
+From the repository root, using Rtools on Windows:
 
-   ```bash
-   for i in `ls R/*.R`; do bash inst/misc/format_r_code.sh $i; done
-   ```
+```sh
+R CMD INSTALL .
+R CMD build .
+R CMD check --no-manual susieSlide_0.2.0.tar.gz
+```
 
-[susie-preprint]: https://doi.org/10.1101/501114
+From R in the package source directory:
+
+```r
+devtools::test()
+```
+
+Documentation and NAMESPACE are generated from the R sources. Native-code
+registration is generated with `cpp11::cpp_register()` (also run by devtools
+when compiling). If roxygen2 reports a missing `decor` dependency, install it
+with `install.packages("decor")`; this is a development-tool dependency.
+Do not rename only DESCRIPTION: native registration and documentation must
+use the same package name. They are already configured for susieSlide here.
+
+## Reproduce comparisons
+
+From the package source directory:
+
+```sh
+Rscript inst/examples/compare_models.R
+Rscript inst/examples/validation_diagnostics.R
+Rscript inst/examples/plot_results.R
+Rscript inst/examples/benchmark_fit.R
+```
+
+`compare_models.R` runs six inheritance scenarios with correlated hard-call
+genotypes: additive, recessive, partially recessive, dominant, partially
+dominant, and mixed. Ten independent replicates use n=1,000 training and
+2,000 test observations, 80 SNPs, and two causal variants. It compares additive
+SuSiE, the slider, equal-weight stacked coding, and an additional coding-weight
+variational-EM comparator. The main comparison matches effect-prior scales and
+uses L=2; an L=4 sensitivity fit permits stacking to use multiple components
+per biological SNP.
+
+`validation_diagnostics.R` additionally reproduces the core settings inspected
+in the existing susie_mix workhorse: raw 0/1/2, 0/1/1, 0/0/1 columns;
+`standardize=FALSE`, `estimate_prior_method="EM"`, L=10, learned residual
+variance, and uniform predictor weights. Here EM estimates coefficient-prior
+variances, not coding-class weights. Its settings differ from the matched-
+prior experiment and are reported separately. This script also runs null
+examples and an actual one-million-summary compiled inference benchmark.
+
+All raw results and the interpretation are in `validation/` in the source
+checkout. These files are excluded from the installed package. Source scripts
+are also available after installation via
+`system.file("examples", package="susieSlide")`.
+
+The external susieR package is suggested only for the comparison scripts,
+which deliberately compare against a separately installed additive package.
+The current package vignette is `vignettes/slider-model.Rmd`. Inherited
+additive tutorials are preserved in `validation/upstream-vignettes/` for
+reference; they are not built as tutorials for the slider model.

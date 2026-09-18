@@ -34,6 +34,6 @@ y = drop(X \%*\% beta + rnorm(n))
 
 # Initialize susie to ground-truth coefficients.
 s = susie_init_coef(which(beta != 0),beta[beta != 0],length(beta))
-res = susie(X,y,L = 10,model_init=s)
+res = susie_additive(X,y,L = 10,model_init=s)
 
 }

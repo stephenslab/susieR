@@ -13,7 +13,7 @@ collect_ash_diag(fit)
 data.frame with nrow = L * n_ash_iters, or NULL if no diagnostics
 }
 \description{
-Call this after running susie() to rbind all per-iteration diagnostics
+Call this after running susie_additive() to rbind all per-iteration diagnostics
 into a single ML-ready data.frame.
 }
 \examples{
@@ -23,12 +23,12 @@ data(unmappable_data)
 X <- unmappable_data$X; y <- as.vector(unmappable_data$y)
 causal <- which(unmappable_data$beta != 0)
 
-fit <- susie(X, y, L=10, slot_prior=slot_prior_betabinom(),
+fit <- susie_additive(X, y, L=10, slot_prior=slot_prior_betabinom(),
              unmappable_effects="ash", max_iter=50)
 
-df <- susieR:::collect_ash_diag(fit)         # all iterations
-df <- susieR:::label_diag_truth(df, fit, causal) # TP/FP labels
-df <- susieR:::add_delta_features(df)         # temporal features
+df <- susieSlide:::collect_ash_diag(fit)         # all iterations
+df <- susieSlide:::label_diag_truth(df, fit, causal) # TP/FP labels
+df <- susieSlide:::add_delta_features(df)         # temporal features
 
 # Inspect FP slot across iterations:
 subset(df, cs_label == "FP", select = c(iter, slot, sentinel,
@@ -36,10 +36,10 @@ subset(df, cs_label == "FP", select = c(iter, slot, sentinel,
 
 # 4-way comparison (BB+ash vs V0, with/without mr.ash):
 options(susie.skip_mrash = TRUE)
-fit_nomrash <- susie(X, y, L=10, slot_prior=slot_prior_betabinom(),
+fit_nomrash <- susie_additive(X, y, L=10, slot_prior=slot_prior_betabinom(),
                      unmappable_effects="ash", max_iter=50)
 options(susie.skip_mrash = FALSE)
-df_nomrash <- susieR:::collect_ash_diag(fit_nomrash)
+df_nomrash <- susieSlide:::collect_ash_diag(fit_nomrash)
 
 # Decision tree analysis:
 # library(rpart)

@@ -305,12 +305,12 @@ estimate_lambda_bias <- function(r, s, sigma2, R_finite_B, method,
                         10 * pos), na.rm = TRUE)
   upper_u <- sqrt(upper_lambda)
 
-  nll <- function(u) {
+  nll_map <- function(u) {
     lambda_bias <- u^2
     tau <- cache$base + lambda_bias * cache$s
     0.5 * sum(log(tau) + cache$r2 / tau) + log1p((u / prior_scale)^2)
   }
-  lambda_hat <- optimize(nll, interval = c(0, upper_u), tol = 1e-8)$minimum^2
+  lambda_hat <- optimize(nll_map, interval = c(0, upper_u), tol = 1e-8)$minimum^2
 
   if (lambda_hat < 0.1 * se_boundary) 0 else lambda_hat
 }

@@ -10,6 +10,8 @@
 
 # Configure individual data for specified method
 #' @keywords internal
+#' @export
+#' @noRd
 configure_data.individual <- function(data, params) {
   if (params$unmappable_effects == "inf") {
     # Stay in the individual-data path: thin SVD of standardized X, no XtX.
@@ -21,6 +23,8 @@ configure_data.individual <- function(data, params) {
 # Get variance of y
 #' @keywords internal
 #' @importFrom stats var
+#' @export
+#' @noRd
 get_var_y.individual <- function(data, ...) {
   return(var(drop(data$y)))
 }
@@ -37,6 +41,8 @@ get_var_y.individual <- function(data, ...) {
 
 # Initialize SuSiE model
 #' @keywords internal
+#' @export
+#' @noRd
 initialize_susie_model.individual <- function(data, params, var_y, ...) {
 
   # Base model
@@ -78,18 +84,24 @@ initialize_susie_model.individual <- function(data, params, var_y, ...) {
 
 # Initialize fitted values
 #' @keywords internal
+#' @export
+#' @noRd
 initialize_fitted.individual <- function(data, mat_init) {
   return(list(Xr = compute_Xb(data$X, colSums(mat_init$alpha * mat_init$mu))))
 }
 
 # Validate prior variance
 #' @keywords internal
+#' @export
+#' @noRd
 validate_prior.individual <- function(data, params, model, ...) {
   return(validate_prior.default(data, params, model, ...))
 }
 
 # Track core parameters across iterations
 #' @keywords internal
+#' @export
+#' @noRd
 track_ibss_fit.individual <- function(data, params, model, tracking, iter, elbo, ...) {
   if (params$unmappable_effects %in% c("ash", "ash_filter_archived")) {
     return(track_ibss_fit.default(data, params, model, tracking, iter, elbo, ...))
@@ -110,6 +122,8 @@ track_ibss_fit.individual <- function(data, params, model, tracking, iter, elbo,
 
 # Compute residuals for single effect regression
 #' @keywords internal
+#' @export
+#' @noRd
 compute_residuals.individual <- function(data, params, model, l, ...) {
   sw_l <- get_slot_weight(model, l)
 
@@ -157,6 +171,8 @@ compute_residuals.individual <- function(data, params, model, l, ...) {
 
 # Compute SER statistics
 #' @keywords internal
+#' @export
+#' @noRd
 compute_ser_statistics.individual <- function(data, params, model, l, ...) {
   betahat <- (1 / model$predictor_weights) * model$residuals
   shat2   <- model$residual_variance / model$predictor_weights
@@ -188,6 +204,8 @@ compute_ser_statistics.individual <- function(data, params, model, l, ...) {
 
 # Posterior expected log-likelihood for single effect regression
 #' @keywords internal
+#' @export
+#' @noRd
 SER_posterior_e_loglik.individual <- function(data, params, model, l) {
   Eb  <- model$alpha[l, ] * model$mu[l, ]
   Eb2 <- model$alpha[l, ] * model$mu2[l, ]
@@ -246,6 +264,8 @@ calculate_posterior_moments.individual <- function(data, params, model, V, l, ..
 
 # Calculate KL divergence
 #' @keywords internal
+#' @export
+#' @noRd
 compute_kl.individual <- function(data, params, model, l) {
   if (params$unmappable_effects == "inf") {
     # SuSiE-inf: standard form KL = -lbf + SER_posterior_e_loglik (no
@@ -279,6 +299,8 @@ compute_kl.individual <- function(data, params, model, l) {
 
 # Expected squared residuals
 #' @keywords internal
+#' @export
+#' @noRd
 get_ER2.individual <- function(data, model) {
   Xr_L <- compute_MXt(model$alpha * model$mu, data$X)
   postb2 <- model$alpha * model$mu2
@@ -295,6 +317,8 @@ get_ER2.individual <- function(data, model) {
 
 # Expected log-likelihood
 #' @keywords internal
+#' @export
+#' @noRd
 Eloglik.individual <- function(data, model) {
   return(-data$n / 2 * log(2 * pi * model$sigma2) -
            1 / (2 * model$sigma2) * get_ER2(data, model))
@@ -304,6 +328,8 @@ Eloglik.individual <- function(data, model) {
 #' @importFrom stats dnorm
 #' @importFrom stats cor
 #' @keywords internal
+#' @export
+#' @noRd
 loglik.individual <- function(data, params, model, V, ser_stats, l = NULL, ...) {
   # Check if using NIG prior
   if (params$use_NIG) {
@@ -337,6 +363,8 @@ loglik.individual <- function(data, params, model, V, ser_stats, l = NULL, ...) 
 
 #' @importFrom matrixStats logSumExp
 #' @keywords internal
+#' @export
+#' @noRd
 neg_loglik.individual <- function(data, params, model, V_param, ser_stats, ...) {
   # Convert parameter to V based on optimization scale.  SuSiE-inf optimizes
   # on the linear scale; the rest use the log scale.
@@ -368,6 +396,8 @@ neg_loglik.individual <- function(data, params, model, V_param, ser_stats, ...) 
 
 # Update fitted values
 #' @keywords internal
+#' @export
+#' @noRd
 update_fitted_values.individual <- function(data, params, model, l, ...) {
   if (params$unmappable_effects == "inf") {
     # SuSiE-inf: include theta in fitted values; recompute from scratch
@@ -386,6 +416,8 @@ update_fitted_values.individual <- function(data, params, model, l, ...) {
 
 # Update variance components for individual data
 #' @keywords internal
+#' @export
+#' @noRd
 update_variance_components.individual <- function(data, params, model, ...) {
   if (params$unmappable_effects == "inf") {
     # SuSiE-inf: identical math to update_variance_components.ss; all eigenspace.
@@ -419,6 +451,8 @@ update_variance_components.individual <- function(data, params, model, ...) {
 
 # Update derived quantities for individual data
 #' @keywords internal
+#' @export
+#' @noRd
 update_derived_quantities.individual <- function(data, params, model) {
   if (params$unmappable_effects == "inf") {
     # SuSiE-inf: refresh omega caches with new (tau2, sigma2) and update
@@ -459,12 +493,16 @@ update_derived_quantities.individual <- function(data, params, model) {
 
 # Get column scale factors
 #' @keywords internal
-get_scale_factors.individual <- function(data, params) {
+#' @export
+#' @noRd
+get_scale_factors.individual <- function(data, params, ...) {
   return(attr(data$X, "scaled:scale"))
 }
 
 # Get intercept
 #' @keywords internal
+#' @export
+#' @noRd
 get_intercept.individual <- function(data, params, model, ...) {
   if (params$intercept) {
     return(data$mean_y - sum(attr(data$X, "scaled:center") *
@@ -476,6 +514,8 @@ get_intercept.individual <- function(data, params, model, ...) {
 
 # Get Fitted Values
 #' @keywords internal
+#' @export
+#' @noRd
 get_fitted.individual <- function(data, params, model, ...) {
   if (params$intercept) {
     fitted <- model$Xr + data$mean_y
@@ -496,6 +536,8 @@ get_fitted.individual <- function(data, params, model, ...) {
 
 # Get Credible Sets
 #' @keywords internal
+#' @export
+#' @noRd
 get_cs.individual <- function(data, params, model, ...) {
   if (is.null(params$coverage) || is.null(params$min_abs_corr)) {
     return(NULL)
@@ -512,12 +554,16 @@ get_cs.individual <- function(data, params, model, ...) {
 
 # Get Variable Names
 #' @keywords internal
+#' @export
+#' @noRd
 get_variable_names.individual <- function(data, model, ...) {
   return(assign_names(data, model, colnames(data$X)))
 }
 
 # Get univariate z-score
 #' @keywords internal
+#' @export
+#' @noRd
 get_zscore.individual <- function(data, params, model, ...) {
   if (isFALSE(params$compute_univariate_zscore)) {
     return(get_zscore.default(data, params, model))
@@ -543,6 +589,8 @@ get_zscore.individual <- function(data, params, model, ...) {
 
 # Clean up model object for individual data
 #' @keywords internal
+#' @export
+#' @noRd
 cleanup_model.individual <- function(data, params, model, ...) {
   # Remove common fields
   model <- cleanup_model.default(data, params, model, ...)

@@ -68,7 +68,7 @@
 #' slot_prior_poisson(C = 5, nu = 8)
 #'
 #' # Pass to susie
-#' # fit <- susie(X, y, slot_prior = slot_prior_betabinom())
+#' # fit <- susie_additive(X, y, slot_prior = slot_prior_betabinom())
 #'
 # Beta-Binomial: rho ~ Beta(a, b), c_l | rho ~ Bern(rho), rho collapsed.
 # Collapsed update: logit(c_l) = log(a + k_{-l}) - log(b + L-1 - k_{-l}) + lbf_l

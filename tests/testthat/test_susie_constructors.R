@@ -1386,7 +1386,7 @@ test_that("summary_stats_constructor warns for ash + z-only input (standardized 
 
 # --- R_mismatch branches ---
 
-test_that("summary_stats_constructor disables sigma^2 estimation when R_mismatch is active", {
+test_that("summary_stats_constructor warns but permits joint sigma^2 and mismatch estimation", {
   set.seed(104)
   p <- 30
 
@@ -1397,9 +1397,10 @@ test_that("summary_stats_constructor disables sigma^2 estimation when R_mismatch
       estimate_residual_variance = TRUE,
       verbose = FALSE
     ),
-    "incompatible with"
+    "Joint estimation"
   )
-  expect_false(result$params$estimate_residual_variance)
+  # This is the existing behavior of the upstream engine copied into the fork.
+  expect_true(result$params$estimate_residual_variance)
 })
 
 # --- X-based paths ---

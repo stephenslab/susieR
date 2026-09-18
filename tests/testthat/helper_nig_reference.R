@@ -111,16 +111,16 @@ skip_if_no_nig_reference <- function() {
 # -----------------------------------------------------------------------
 # compare_NIG_to_reference
 #
-# Runs susie() with estimate_residual_method = "NIG" on the
-# development package and susie() with small = TRUE on the reference
+# Runs susie_additive() with estimate_residual_method = "NIG" on the
+# development package and susie_additive() with small = TRUE on the reference
 # branch, then compares all output fields.
 #
 # Parameters:
-#   dev_args  - named list of arguments for the development susie() call
+#   dev_args  - named list of arguments for the development susie_additive() call
 #               (must include X and y; estimate_residual_method is set
 #               automatically to "NIG")
 #   ref_args  - (optional) named list of arguments for the reference
-#               susie() call. If NULL, derived from dev_args by mapping
+#               susie_additive() call. If NULL, derived from dev_args by mapping
 #               estimate_residual_method -> small = TRUE and
 #               tol -> tol_small.
 #   tolerance - numeric tolerance for expect_equal comparisons
@@ -180,7 +180,7 @@ compare_NIG_to_reference <- function(dev_args,
   }
 
   ref_func <- ref_env$env[["susie"]]
-  dev_func <- dev_env$env[["susie"]]
+  dev_func <- dev_env$env[["susie_additive"]]
 
   if (is.null(ref_func)) stop("susie() not found in reference package")
   if (is.null(dev_func)) stop("susie() not found in development package")
@@ -283,9 +283,9 @@ expect_equal_NIG_objects <- function(dev_obj, ref_obj,
 # run_ss_and_individual_NIG
 #
 # Given X, y, and extra arguments (L, standardize, intercept, alpha0,
-# beta0, etc.), runs both susie() and susie_ss() with
+# beta0, etc.), runs both susie_additive() and susie_ss() with
 # estimate_residual_method = "NIG", ensuring that the
-# sufficient statistics are computed to match susie()'s internal
+# sufficient statistics are computed to match susie_additive()'s internal
 # preprocessing.
 #
 # Returns list(ind = ..., ss = ...) with both results.
@@ -298,7 +298,7 @@ run_ss_and_individual_NIG <- function(X, y, extra_args = list()) {
   intercept   <- if (!is.null(extra_args$intercept))   extra_args$intercept   else TRUE
   standardize <- if (!is.null(extra_args$standardize)) extra_args$standardize else TRUE
 
-  # Preprocess exactly as susie() does internally
+  # Preprocess exactly as susie_additive() does internally
   y_mean     <- mean(y)
   X_colmeans <- colMeans(X)
 
@@ -327,7 +327,7 @@ run_ss_and_individual_NIG <- function(X, y, extra_args = list()) {
   ind_args <- c(list(X = X, y = y,
                      estimate_residual_method = "NIG"),
                 extra_args)
-  res_ind <- suppressWarnings(do.call(susie, ind_args))
+  res_ind <- suppressWarnings(do.call(susie_additive, ind_args))
 
   # Build SS arguments: remove individual-only params, add SS-specific ones
   ss_extra <- extra_args
@@ -349,10 +349,10 @@ run_ss_and_individual_NIG <- function(X, y, extra_args = list()) {
 # run_rss_and_individual_NIG
 #
 # Given X, y, and extra arguments (L, standardize, intercept, alpha0,
-# beta0, etc.), runs both susie() and susie_rss() with
+# beta0, etc.), runs both susie_additive() and susie_rss() with
 # estimate_residual_method = "NIG", ensuring that the
 # summary statistics (bhat, shat, R, var_y) are computed to match
-# susie()'s internal preprocessing.
+# susie_additive()'s internal preprocessing.
 #
 # Uses the bhat/shat/var_y input path of susie_rss(), which recovers
 # exact sufficient statistics (XtX, Xty, yty) from summary statistics.
@@ -369,7 +369,7 @@ run_rss_and_individual_NIG <- function(X, y, extra_args = list()) {
   intercept   <- if (!is.null(extra_args$intercept))   extra_args$intercept   else TRUE
   standardize <- if (!is.null(extra_args$standardize)) extra_args$standardize else TRUE
 
-  # Preprocess exactly as susie() does internally
+  # Preprocess exactly as susie_additive() does internally
   if (intercept) {
     y_c <- y - mean(y)
     X_c <- scale(X, center = TRUE, scale = FALSE)
@@ -401,7 +401,7 @@ run_rss_and_individual_NIG <- function(X, y, extra_args = list()) {
   ind_args <- c(list(X = X, y = y,
                      estimate_residual_method = "NIG"),
                 extra_args)
-  res_ind <- suppressWarnings(do.call(susie, ind_args))
+  res_ind <- suppressWarnings(do.call(susie_additive, ind_args))
 
   # Build RSS arguments: remove individual-only params, add RSS-specific ones
   rss_extra <- extra_args

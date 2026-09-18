@@ -797,7 +797,7 @@ test_that("NIG final model reports prior variance in y units", {
   y <- rnorm(n, sd = 3)
   scaled_prior_variance <- 0.2
 
-  fit <- susie(X, y, L = 1, estimate_residual_method = "NIG",
+  fit <- susie_additive(X, y, L = 1, estimate_residual_method = "NIG",
                estimate_prior_variance = FALSE,
                scaled_prior_variance = scaled_prior_variance,
                verbose = FALSE)
@@ -821,7 +821,7 @@ test_that("susie with vector scaled_prior_variance runs end-to-end", {
   X <- scale(matrix(rnorm(n * p), nrow = n), center = TRUE, scale = TRUE)
   y <- drop(X %*% beta + rnorm(n))
 
-  fit <- susie(X, y, L = 10, estimate_prior_variance = FALSE,
+  fit <- susie_additive(X, y, L = 10, estimate_prior_variance = FALSE,
                scaled_prior_variance = rep(1, 10))
   expect_length(fit$V, 10)
   expect_true(all(is.finite(fit$V)))
@@ -834,9 +834,9 @@ test_that("vector scaled_prior_variance composes with model_init L expansion", {
   X <- scale(matrix(rnorm(n * p), nrow = n), center = TRUE, scale = TRUE)
   y <- drop(X %*% beta + rnorm(n))
 
-  init <- susie(X, y, L = 2, estimate_prior_variance = TRUE)
+  init <- susie_additive(X, y, L = 2, estimate_prior_variance = TRUE)
   spv <- c(0.1, 0.2, 0.3, 0.4, 0.5)
-  fit <- susie(X, y, L = 5, estimate_prior_variance = FALSE,
+  fit <- susie_additive(X, y, L = 5, estimate_prior_variance = FALSE,
                scaled_prior_variance = spv, model_init = init)
   expect_length(fit$V, 5)
   expect_true(all(is.finite(fit$V)))
@@ -1727,7 +1727,7 @@ test_that("susie ash mode (default path) runs and produces valid structure", {
   set.seed(1008)
   sim <- simulate_regression(n = 120, p = 40, k = 3, signal_sd = 3)
 
-  fit <- suppressWarnings(susie(
+  fit <- suppressWarnings(susie_additive(
     sim$X, sim$y, L = 8, slot_prior = slot_prior_betabinom(),
     unmappable_effects = "ash", max_iter = 30, verbose = FALSE))
 
@@ -1750,7 +1750,7 @@ test_that("susie ash mode on unmappable_data drives masking decision tiers", {
   X <- unmappable_data$X[, 1:300]
   y <- as.vector(unmappable_data$y)
 
-  fit <- suppressWarnings(susie(
+  fit <- suppressWarnings(susie_additive(
     X, y, L = 10, slot_prior = slot_prior_betabinom(),
     unmappable_effects = "ash", max_iter = 30, verbose = FALSE))
 
@@ -1768,7 +1768,7 @@ test_that("susie ash_filter_archived mode exercises compute_ash_masking", {
   X <- unmappable_data$X[, 1:300]
   y <- as.vector(unmappable_data$y)
 
-  fit <- suppressWarnings(susie(
+  fit <- suppressWarnings(susie_additive(
     X, y, L = 10, unmappable_effects = "ash_filter_archived",
     max_iter = 30, verbose = FALSE))
 

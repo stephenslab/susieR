@@ -345,7 +345,7 @@
 #' 
 #' @export
 #' 
-susie <- function(X, y, L = min(10, ncol(X)),
+susie_additive <- function(X, y, L = min(10, ncol(X)),
                   scaled_prior_variance = 0.2,
                   residual_variance = NULL,
                   prior_weights = NULL,
@@ -431,7 +431,7 @@ susie <- function(X, y, L = min(10, ncol(X)),
 
 #' @title SuSiE using Sufficient Statistics
 #'
-#' @inheritParams susie
+#' @inheritParams susie_additive
 #' 
 #' @description Performs SuSiE regression using sufficient statistics (XtX, Xty,
 #' yty, n) instead of individual-level data (X, y).
@@ -662,7 +662,7 @@ susie_ss <- function(XtX, Xty, yty, n,
 #'   algorithm. Default is \code{FALSE}.
 #'
 #' @return In addition to the standard \code{"susie"} output (see
-#'   \code{\link{susie}}), the returned object may contain:
+#'   \code{\link{susie_additive}}), the returned object may contain:
 #'
 #' \item{R_finite_diagnostics}{A list of diagnostics for the
 #'   R-uncertainty correction (only present when \code{R_finite} is provided
@@ -866,6 +866,9 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
 #'   \code{check_null_threshold}. \code{0} (default) takes the larger
 #'   likelihood at face value.
 #' @param check_R If TRUE, verify that \code{R} is positive semidefinite.
+#' @param check_prior If TRUE, check for an excessively large estimated
+#'   effect-prior variance during fitting.
+#' @param r_tol Tolerance for eigenvalue and column-space checks of R.
 #' @param check_z If TRUE, verify that \code{z} lies in the column space
 #'   of \code{R}.
 #' @param z_method The single-variant test that produced \code{z}, either

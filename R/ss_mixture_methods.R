@@ -23,12 +23,16 @@ compute_XtXv_mixture <- function(data, model, v) {
 
 # 1. Initialize fitted values
 #' @keywords internal
+#' @export
+#' @noRd
 initialize_fitted.ss_mixture <- function(data, mat_init) {
   list(XtXr = as.vector(compute_Rv(data, colSums(mat_init$alpha * mat_init$mu))))
 }
 
 # 2. Compute residuals using current R(omega)
 #' @keywords internal
+#' @export
+#' @noRd
 compute_residuals.ss_mixture <- function(data, params, model, l, ...) {
   sw_l <- get_slot_weight(model, l)
   bl <- model$alpha[l, ] * model$mu[l, ]
@@ -59,6 +63,8 @@ compute_residuals.ss_mixture <- function(data, params, model, l, ...) {
 
 # 3. Update fitted values + precompute z-score quantities for omega
 #' @keywords internal
+#' @export
+#' @noRd
 update_fitted_values.ss_mixture <- function(data, params, model, l, ...) {
   sw_l <- get_slot_weight(model, l)
   bl <- model$alpha[l, ] * model$mu[l, ]
@@ -76,6 +82,8 @@ update_fitted_values.ss_mixture <- function(data, params, model, l, ...) {
 
 # 4. Update variance: sigma2 (via default ss chain) + omega M-step
 #' @keywords internal
+#' @export
+#' @noRd
 update_model_variance.ss_mixture <- function(data, params, model) {
   # Sigma2: reuse default chain (est_residual_variance + bounds)
   if (isTRUE(params$estimate_residual_variance)) {
@@ -128,6 +136,8 @@ update_model_variance.ss_mixture <- function(data, params, model) {
 
 # 5. ER2 using current R(omega), not stale data$X
 #' @keywords internal
+#' @export
+#' @noRd
 get_ER2.ss_mixture <- function(data, model) {
   B       <- model$alpha * model$mu
   betabar <- colSums(B)

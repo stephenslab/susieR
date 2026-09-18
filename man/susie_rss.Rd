@@ -349,7 +349,7 @@ is checked using \code{convergence_method = "pip"}.}
 }
 \value{
 In addition to the standard \code{"susie"} output (see
-  \code{\link{susie}}), the returned object may contain:
+  \code{\link{susie_additive}}), the returned object may contain:
 
 \item{R_finite_diagnostics}{A list of diagnostics for the
   R-uncertainty correction (only present when \code{R_finite} is provided

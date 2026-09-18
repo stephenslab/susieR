@@ -9,7 +9,7 @@
 #'   \code{track_fit = TRUE} when calling \code{susie}.
 #'
 #' @param model A SuSiE fit, typically an output from
-#'   \code{\link{susie}} or one of its variants. For \code{suse_plot},
+#'   \code{\link{susie_additive}} or one of its variants. For \code{suse_plot},
 #'   the susie fit must have \code{model$z}, \code{model$PIP}, and may
 #'   include \code{model$sets}. \code{model} may also be a vector of
 #'   z-scores or PIPs. For \code{susie_plot_iteration}, \code{model}
@@ -63,7 +63,7 @@
 #' X <- matrix(rnorm(n * p), nrow = n, ncol = p)
 #' X <- scale(X, center = TRUE, scale = TRUE)
 #' y <- drop(X %*% beta + rnorm(n))
-#' res <- susie(X, y, L = 10)
+#' res <- susie_additive(X, y, L = 10)
 #' susie_plot(res, "PIP")
 #' susie_plot(res, "PIP", add_bar = TRUE)
 #' susie_plot(res, "PIP", add_legend = TRUE)
@@ -304,7 +304,7 @@ susie_plot <- function(model, y, add_bar = FALSE, pos = NULL, b = NULL,
 #' X <- matrix(rnorm(n * p), nrow = n, ncol = p)
 #' X <- scale(X, center = TRUE, scale = TRUE)
 #' y <- drop(X %*% beta + rnorm(n))
-#' res <- susie(X, y, L = 10, track_fit = TRUE)
+#' res <- susie_additive(X, y, L = 10, track_fit = TRUE)
 #' susie_plot_iteration(res, L = 10)
 #'
 #' @importFrom grDevices pdf
@@ -374,15 +374,16 @@ susie_plot_iteration <- function(model, L, file_prefix, pos = NULL) {
   dev.off()
   format <- ".pdf"
   if (has_track) {
+    convert_binary <- .imagemagick_convert()
     cmd <- paste(
-      "convert -delay 30 -loop 0 -density 300 -dispose previous",
-      paste0(file_prefix, ".pdf"),
+      shQuote(convert_binary), "-delay 30 -loop 0 -density 300 -dispose previous",
+      shQuote(paste0(file_prefix, ".pdf")),
       "\\( -clone 0 -set delay 300 \\) -swap 0 +delete",
       "\\( +clone -set delay 300 \\) +swap +delete -coalesce",
-      "-layers optimize", paste0(file_prefix, ".gif")
+      "-layers optimize", shQuote(paste0(file_prefix, ".gif"))
     )
     # nocov start  (needs ImageMagick)
-    if (nzchar(Sys.which("convert"))) {
+    if (nzchar(convert_binary)) {
       message("Creating GIF animation...")
       if (file.exists(paste0(file_prefix, ".gif"))) {
         file.remove(paste0(file_prefix, ".gif"))
@@ -403,6 +404,18 @@ susie_plot_iteration <- function(model, L, file_prefix, pos = NULL) {
   }
   message(paste0("Iterplot saved to ", file_prefix, format, "\n"))
   return(invisible())
+}
+
+.imagemagick_convert <- function() {
+  binary <- unname(Sys.which("convert"))
+  # Windows ships an unrelated filesystem utility with this same name.
+  # Never invoke it as an image converter.
+  if (!nzchar(binary) || grepl("[/\\\\](System32|SysWOW64)[/\\\\]convert\\.exe$",
+                              binary, ignore.case = TRUE)) return("")
+  version <- tryCatch(suppressWarnings(system2(binary, "-version",
+                      stdout = TRUE, stderr = TRUE)), error = function(e) character())
+  if (!any(grepl("ImageMagick", version, fixed = TRUE))) return("")
+  binary
 }
 
 #' @title Plot changepoint data and susie fit using ggplot2

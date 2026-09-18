@@ -114,7 +114,7 @@ compare_to_mismatch_reference <- function(func_name = "susie_rss",
   dev_env <- load_mismatch_development_env()
 
   ref_func <- ref_env$env[[func_name]]
-  dev_func <- dev_env$env[[func_name]]
+  dev_func <- dev_env$env[[if(func_name=="susie") "susie_additive" else func_name]]
   if (is.null(ref_func)) stop("'", func_name, "' not found in reference package")
   if (is.null(dev_func)) stop("'", func_name, "' not found in development package")
 

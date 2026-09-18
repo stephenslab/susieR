@@ -1,5 +1,0 @@
-^validation$
-^artifacts$
-^.*\.Rcheck$
-^.*\.tar\.gz$
-^.*\.zip$

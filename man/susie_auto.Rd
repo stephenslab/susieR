@@ -57,10 +57,10 @@ will halt when the difference in the variational lower bound, or
 \dQuote{ELBO} (the objective function to be maximized), is
 less than \code{tol}.}
 
-\item{\dots}{Additional arguments passed to \code{\link{susie}}.}
+\item{\dots}{Additional arguments passed to \code{\link{susie_additive}}.}
 }
 \value{
-See \code{\link{susie}} for a description of return values.
+See \code{\link{susie_additive}} for a description of return values.
 }
 \description{
 \code{susie_auto} is an attempt to automate reliable
@@ -89,5 +89,5 @@ abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
 
 }
 \seealso{
-\code{\link{susie}}
+\code{\link{susie_additive}}
 }

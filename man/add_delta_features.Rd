@@ -22,9 +22,9 @@ These temporal features help ML models detect trajectories
 }
 \examples{
 \dontrun{
-df <- susieR:::collect_ash_diag(fit)
-df <- susieR:::label_diag_truth(df, fit, causal)
-df <- susieR:::add_delta_features(df)
+df <- susieSlide:::collect_ash_diag(fit)
+df <- susieSlide:::label_diag_truth(df, fit, causal)
+df <- susieSlide:::add_delta_features(df)
 # Now df has delta_c_hat, lag1_c_hat, cum_max_c_hat, etc.
 # Use for decision tree: rpart::rpart(cs_label ~ ., data = df_last_iter)
 }

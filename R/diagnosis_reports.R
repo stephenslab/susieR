@@ -4,7 +4,7 @@
 #   diagnose_bb_ash_iter()              - BB+ash code path
 #   diagnose_ash_filter_archived_iter() - V0 code path
 #
-# Post-run helpers (called via susieR:::):
+# Post-run helpers (called via susieSlide:::):
 #   collect_ash_diag(fit)               - rbind all iterations into ML table
 #   label_diag_truth(df, fit, causal)   - add TP/FP labels
 #   add_delta_features(df)              - add per-slot change-over-iteration features
@@ -12,11 +12,11 @@
 #   compare_ash_methods(df1, df2)       - side-by-side comparison
 #
 # Usage example:
-#   fit <- susie(X, y, L=10, slot_prior=slot_prior_betabinom(),
+#   fit <- susie_additive(X, y, L=10, slot_prior=slot_prior_betabinom(),
 #                unmappable_effects="ash", max_iter=50)
-#   df <- susieR:::collect_ash_diag(fit)
-#   df <- susieR:::label_diag_truth(df, fit, causal)
-#   df <- susieR:::add_delta_features(df)
+#   df <- susieSlide:::collect_ash_diag(fit)
+#   df <- susieSlide:::label_diag_truth(df, fit, causal)
+#   df <- susieSlide:::add_delta_features(df)
 #
 #   # ML analysis: per-slot, per-iteration features with TP/FP labels
 #   # Key columns: iter, slot, c_hat, lbf, purity, V, max_alpha,
@@ -26,7 +26,7 @@
 #   #
 #   # For 4-way comparison (BB+ash/V0 x mrash/no-mrash):
 #   #   options(susie.skip_mrash = TRUE)  # toggle mr.ash off
-#   #   fit_nomrash <- susie(...)
+#   #   fit_nomrash <- susie_additive(...)
 #   #   options(susie.skip_mrash = FALSE) # restore
 #
 # Data.frames accumulated on fit$.diag_env$history during the run.
@@ -329,7 +329,7 @@ diagnose_ash_filter_archived_iter <- function(model, Xcorr, masked,
 
 #' Collect diagnostic data.frames across iterations
 #'
-#' Call this after running susie() to rbind all per-iteration diagnostics
+#' Call this after running susie_additive() to rbind all per-iteration diagnostics
 #' into a single ML-ready data.frame.
 #'
 #' @param fit SuSiE fit object (must have been run with .ash_debug = TRUE)
@@ -342,12 +342,12 @@ diagnose_ash_filter_archived_iter <- function(model, Xcorr, masked,
 #' X <- unmappable_data$X; y <- as.vector(unmappable_data$y)
 #' causal <- which(unmappable_data$beta != 0)
 #'
-#' fit <- susie(X, y, L=10, slot_prior=slot_prior_betabinom(),
+#' fit <- susie_additive(X, y, L=10, slot_prior=slot_prior_betabinom(),
 #'              unmappable_effects="ash", max_iter=50)
 #'
-#' df <- susieR:::collect_ash_diag(fit)         # all iterations
-#' df <- susieR:::label_diag_truth(df, fit, causal) # TP/FP labels
-#' df <- susieR:::add_delta_features(df)         # temporal features
+#' df <- susieSlide:::collect_ash_diag(fit)         # all iterations
+#' df <- susieSlide:::label_diag_truth(df, fit, causal) # TP/FP labels
+#' df <- susieSlide:::add_delta_features(df)         # temporal features
 #'
 #' # Inspect FP slot across iterations:
 #' subset(df, cs_label == "FP", select = c(iter, slot, sentinel,
@@ -355,10 +355,10 @@ diagnose_ash_filter_archived_iter <- function(model, Xcorr, masked,
 #'
 #' # 4-way comparison (BB+ash vs V0, with/without mr.ash):
 #' options(susie.skip_mrash = TRUE)
-#' fit_nomrash <- susie(X, y, L=10, slot_prior=slot_prior_betabinom(),
+#' fit_nomrash <- susie_additive(X, y, L=10, slot_prior=slot_prior_betabinom(),
 #'                      unmappable_effects="ash", max_iter=50)
 #' options(susie.skip_mrash = FALSE)
-#' df_nomrash <- susieR:::collect_ash_diag(fit_nomrash)
+#' df_nomrash <- susieSlide:::collect_ash_diag(fit_nomrash)
 #'
 #' # Decision tree analysis:
 #' # library(rpart)
@@ -427,9 +427,9 @@ label_diag_truth <- function(df, fit, causal) {
 #'
 #' @examples
 #' \dontrun{
-#' df <- susieR:::collect_ash_diag(fit)
-#' df <- susieR:::label_diag_truth(df, fit, causal)
-#' df <- susieR:::add_delta_features(df)
+#' df <- susieSlide:::collect_ash_diag(fit)
+#' df <- susieSlide:::label_diag_truth(df, fit, causal)
+#' df <- susieSlide:::add_delta_features(df)
 #' # Now df has delta_c_hat, lag1_c_hat, cum_max_c_hat, etc.
 #' # Use for decision tree: rpart::rpart(cs_label ~ ., data = df_last_iter)
 #' }
@@ -540,7 +540,7 @@ compare_ash_methods <- function(df1, df2, label1 = "Method1", label2 = "Method2"
 #' Extract ML feature table from a completed BB+ash fit
 #'
 #' Computes per-slot features from the converged model. Call with
-#' susieR:::extract_bb_ash_features(fit, X_or_Xcorr, causal).
+#' susieSlide:::extract_bb_ash_features(fit, X_or_Xcorr, causal).
 #'
 #' @param fit Completed susie fit (with slot_prior + ash)
 #' @param X Design matrix (used to compute Xcorr if needed)

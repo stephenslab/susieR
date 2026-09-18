@@ -276,7 +276,7 @@ test_that("update_variance_components.individual inf+MoM path sets tau2", {
   beta <- rep(0, p); beta[7] <- 2
   y    <- as.vector(X %*% beta + rnorm(n, sd = 0.5))
 
-  fit <- suppressWarnings(susie(X, y, L = 3,
+  fit <- suppressWarnings(susie_additive(X, y, L = 3,
                                 unmappable_effects = "inf",
                                 estimate_residual_method = "MoM",
                                 convergence_method = "pip",
@@ -293,7 +293,7 @@ test_that("update_variance_components.individual ash path preserves positive sig
   beta <- rep(0, p); beta[c(2, 15)] <- c(1, -1)
   y    <- as.vector(X %*% beta + rnorm(n, sd = 0.5))
 
-  fit <- suppressWarnings(susie(X, y, L = 3,
+  fit <- suppressWarnings(susie_additive(X, y, L = 3,
                                 unmappable_effects = "ash",
                                 max_iter = 10, verbose = FALSE))
 
@@ -308,7 +308,7 @@ test_that("calculate_posterior_moments.individual NIG path with V>0 returns a su
   beta <- rep(0, p); beta[5] <- 2
   y    <- as.vector(X %*% beta + rnorm(n, sd = 0.5))
 
-  fit <- suppressWarnings(susie(X, y, L = 1,
+  fit <- suppressWarnings(susie_additive(X, y, L = 1,
                                 estimate_residual_method = "NIG",
                                 alpha0 = 2, beta0 = 1,
                                 max_iter = 10, verbose = FALSE))
@@ -324,7 +324,7 @@ test_that("compute_ser_statistics.individual inf path (optim_bounds = c(0,1)) ru
   beta <- rep(0, p); beta[c(3, 9)] <- c(1.5, -1.5)
   y    <- as.vector(X %*% beta + rnorm(n, sd = 0.5))
 
-  fit <- suppressWarnings(susie(X, y, L = 3,
+  fit <- suppressWarnings(susie_additive(X, y, L = 3,
                                 unmappable_effects = "inf",
                                 estimate_residual_method = "MoM",
                                 convergence_method = "pip",

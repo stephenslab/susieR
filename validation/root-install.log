@@ -1,0 +1,27 @@
+* installing to library 'C:/Users/willi/AppData/Local/R/win-library/4.6'
+* installing *source* package 'susieSlide' ...
+** this is package 'susieSlide' version '0.2.0'
+** using staged installation
+** libs
+specified C++17
+using C++ compiler: 'G__~1.EXE (GCC) 14.3.0'
+using C++17
+g++  -std=gnu++17 -I"C:/PROGRA~1/R/R-46~1.1/include" -DNDEBUG  -I'C:/Users/willi/AppData/Local/R/win-library/4.6/cpp11/include' -I'C:/Users/willi/AppData/Local/R/win-library/4.6/cpp11armadillo/include'   -I"C:/Program Files/rtools45/x86_64-w64-mingw32.static.posix/include"   -fopenmp    -O2 -Wall  -mfpmath=sse -msse2 -mstackrealign    -c caisa.cpp -o caisa.o
+g++  -std=gnu++17 -I"C:/PROGRA~1/R/R-46~1.1/include" -DNDEBUG  -I'C:/Users/willi/AppData/Local/R/win-library/4.6/cpp11/include' -I'C:/Users/willi/AppData/Local/R/win-library/4.6/cpp11armadillo/include'   -I"C:/Program Files/rtools45/x86_64-w64-mingw32.static.posix/include"   -fopenmp    -O2 -Wall  -mfpmath=sse -msse2 -mstackrealign    -c cpp11.cpp -o cpp11.o
+g++  -std=gnu++17 -I"C:/PROGRA~1/R/R-46~1.1/include" -DNDEBUG  -I'C:/Users/willi/AppData/Local/R/win-library/4.6/cpp11/include' -I'C:/Users/willi/AppData/Local/R/win-library/4.6/cpp11armadillo/include'   -I"C:/Program Files/rtools45/x86_64-w64-mingw32.static.posix/include"   -fopenmp    -O2 -Wall  -mfpmath=sse -msse2 -mstackrealign    -c mr_ash_rss.cpp -o mr_ash_rss.o
+g++  -std=gnu++17 -I"C:/PROGRA~1/R/R-46~1.1/include" -DNDEBUG  -I'C:/Users/willi/AppData/Local/R/win-library/4.6/cpp11/include' -I'C:/Users/willi/AppData/Local/R/win-library/4.6/cpp11armadillo/include'   -I"C:/Program Files/rtools45/x86_64-w64-mingw32.static.posix/include"   -fopenmp    -O2 -Wall  -mfpmath=sse -msse2 -mstackrealign    -c slider.cpp -o slider.o
+g++ -shared -s -static-libgcc -o susieSlide.dll tmp.def caisa.o cpp11.o mr_ash_rss.o slider.o -fopenmp -LC:/PROGRA~1/R/R-46~1.1/bin/x64 -lRlapack -LC:/PROGRA~1/R/R-46~1.1/bin/x64 -lRblas -lgfortran -lquadmath -LC:/Program Files/rtools45/x86_64-w64-mingw32.static.posix/lib/x64 -LC:/Program Files/rtools45/x86_64-w64-mingw32.static.posix/lib -LC:/PROGRA~1/R/R-46~1.1/bin/x64 -lR
+installing to C:/Users/willi/AppData/Local/R/win-library/4.6/00LOCK-susieSlide/00new/susieSlide/libs/x64
+** R
+** data
+*** moving datasets to lazyload DB
+** inst
+** byte-compile and prepare package for lazy loading
+** help
+*** installing help indices
+** building package indices
+** installing vignettes
+** testing if installed package can be loaded from temporary location
+** testing if installed package can be loaded from final location
+** testing if installed package keeps a record of temporary installation path
+* DONE (susieSlide)
