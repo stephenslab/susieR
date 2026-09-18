@@ -20,3 +20,6 @@
 ^pixi\.lock$
 ^\.pixi/.*
 ^\.github$
+^susieSlide$
+^\.positai$
+^\.claude$

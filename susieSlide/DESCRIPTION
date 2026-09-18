@@ -1,0 +1,19 @@
+Package: susieSlide
+Type: Package
+Title: Slider Single-Effect Regression for Genetic Fine-Mapping
+Version: 0.1.0
+Authors@R: person("William", "Denault", role = c("aut", "cre"),
+    email = "maintainer@example.org")
+Description: Extends the individual-level Sum of Single Effects regression
+    engine with a bounded, component-specific heterozygote slider. Gaussian
+    effect coefficients are integrated analytically and slider parameters
+    are estimated by empirical Bayes. Includes compiled sufficient-statistic
+    calculations, genotype-count safeguards, and slider-aware predictions
+    and credible-set purity. Uses the extension hooks in susieR 0.16.6.
+License: BSD_3_clause + file LICENSE
+Encoding: UTF-8
+Depends: R (>= 4.1.0)
+Imports: susieR (>= 0.16.6), Matrix, stats
+Suggests: testthat (>= 3.0.0)
+Config/testthat/edition: 3
+NeedsCompilation: yes

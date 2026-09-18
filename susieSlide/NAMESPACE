@@ -1,0 +1,7 @@
+useDynLib(susieSlide, .registration = TRUE)
+export(susie)
+export(slider_cs_table)
+S3method(coef,susie_slide)
+S3method(predict,susie_slide)
+S3method(summary,susie_slide)
+importFrom(stats,coef,predict,sd,var,setNames)
