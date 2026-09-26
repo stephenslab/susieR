@@ -149,3 +149,46 @@ test_that("susie_rss ash works with correlation matrix input", {
   expect_true(is.numeric(fit_rss$sigma2))
   expect_true(length(fit_rss$sets$cs) >= 0)
 })
+
+# ---- unstandardized X (individual-level) ----
+
+test_that("individual-level ash does not depend on the scaling of X and agrees with susie_ss", {
+  # susie() standardizes X internally, but keeps X unscaled and stores the
+  # centering/scaling as attributes. The tests above pass X that is already
+  # standardized, so here X is given on its original scale (uncentered 0/1/2
+  # dosages) with a polygenic background so that theta is non-zero.
+  set.seed(2024)
+  n <- 400
+  p <- 60
+  X <- matrix(rbinom(n * p, 2, runif(p, 0.1, 0.5)), n, p, byrow = TRUE) * 1.0
+  beta_true <- rnorm(p, sd = 0.05)
+  beta_true[c(10, 40)] <- c(0.6, -0.5)
+  y <- c(X %*% beta_true + rnorm(n))
+
+  fit_args <- list(L = 5, unmappable_effects = "ash",
+                   estimate_residual_variance = TRUE, max_iter = 20,
+                   verbose = FALSE)
+  fit_raw <- do.call(susie, c(list(X = X, y = y), fit_args))
+  fit_std <- do.call(susie, c(list(X = scale(X), y = y), fit_args))
+
+  expect_true(any(fit_std$theta != 0))
+  expect_equal(fit_raw$theta, fit_std$theta, tolerance = 1e-6,
+    label = "theta from unstandardized X")
+  expect_equal(fit_raw$sigma2, fit_std$sigma2, tolerance = 1e-6,
+    label = "sigma2 from unstandardized X")
+  expect_equal(susie_get_pip(fit_raw), susie_get_pip(fit_std), tolerance = 1e-6,
+    label = "PIPs from unstandardized X")
+  expect_equal(predict(fit_raw), predict(fit_std), tolerance = 1e-6,
+    label = "fitted values from unstandardized X")
+
+  Xs <- scale(X)
+  yc <- y - mean(y)
+  fit_ss <- do.call(susie_ss, c(list(XtX = crossprod(Xs), Xty = c(crossprod(Xs, yc)),
+                                     yty = sum(yc^2), n = n), fit_args))
+  # mr.ash (individual) and mr.ash.rss (SS) stop at the same convtol but at
+  # slightly different points, so theta agrees to ~1e-4 relative, not exactly
+  expect_equal(fit_raw$theta, fit_ss$theta, tolerance = 1e-3,
+    label = "theta vs susie_ss")
+  expect_equal(fit_raw$sigma2, fit_ss$sigma2, tolerance = 1e-4,
+    label = "sigma2 vs susie_ss")
+})
