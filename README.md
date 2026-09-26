@@ -1,13 +1,9 @@
 # susieSlide
 
 This repository's **root package is susieSlide** on branch `susie_slide`.
-It fits one heterozygote slider per SNP and single-effect component. The IBSS
-engine and compiled inference are included here; fitting does not depend on
-an installed susieR package. There is no nested package to select.
+It fits one heterozygote slider per SNP and single-effect component.  
 
-The root `DESCRIPTION` says `Package: susieSlide`. Open the existing RStudio
-project in this folder and build from this folder. The folder/project filename
-may still contain `susieR`; the `Package` field determines the R namespace.
+The root `DESCRIPTION` says `Package: susieSlide`.  
 
 ```r
 # From C:/Document/Serieux/Travail/Package/git/susieR:
