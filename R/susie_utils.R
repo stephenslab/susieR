@@ -1958,7 +1958,7 @@ update_ash_variance_components <- function(data, model, params) {
   )
 
   if (is_individual) {
-    result$X_theta <- as.vector(data$X %*% theta_new)
+    result$X_theta <- as.vector(compute_Xb(data$X, theta_new))
   } else {
     result$XtX_theta <- as.vector(compute_Rv(data, theta_new))
   }
@@ -2059,7 +2059,7 @@ update_ash_variance_components_filter_archived <- function(data, model, params) 
   )
 
   if (is_individual) {
-    result$X_theta <- as.vector(data$X %*% theta_new)
+    result$X_theta <- as.vector(compute_Xb(data$X, theta_new))
   } else {
     result$XtX_theta <- as.vector(compute_Rv(data, theta_new))
   }
@@ -2356,9 +2356,15 @@ compute_ash_masking <- function(Xcorr, model, params) {
 
 # Run Mr.ASH on individual-level data
 #
-# Computes residuals from raw X, y and calls mr.ash directly.
+# Computes residuals from X, y and calls mr.ash directly.
 #
-# @param X Design matrix (n x p)
+# X is stored unscaled, with its centering and scaling kept in the
+# "scaled:center" and "scaled:scale" attributes, while b_confident and
+# model$theta are on the standardized scale. mr.ash is therefore run on the
+# standardized X, so that theta is on the same scale as the sparse effects and
+# matches compute_ash_from_summary_stats(), which works on the standardized X'X.
+#
+# @param X Design matrix (n x p) with scaled:center/scaled:scale attributes
 # @param y Response vector (n)
 # @param b_confident Vector of confident effects to subtract from residuals
 # @param model Current SuSiE model
@@ -2369,10 +2375,12 @@ compute_ash_masking <- function(Xcorr, model, params) {
 #
 # @keywords internal
 compute_ash_from_individual_data <- function(X, y, b_confident, model, params, convtol = 1e-4) {
-  residuals <- y - X %*% b_confident
+  X_std <- scale_design_matrix(X, center = attr(X, "scaled:center"),
+                               scale = attr(X, "scaled:scale"))
+  residuals <- y - X_std %*% b_confident
 
   mrash_output <- mr.ash(
-    X             = X,
+    X             = X_std,
     y             = residuals,
     intercept     = FALSE,
     standardize   = FALSE,
@@ -2484,7 +2492,7 @@ run_final_ash_pass <- function(data, params, model) {
 
   # Compute fitted theta (data-representation-specific)
   if (is_individual) {
-    model$X_theta <- as.vector(data$X %*% model$theta)
+    model$X_theta <- as.vector(compute_Xb(data$X, model$theta))
   } else {
     model$XtX_theta <- compute_Rv(data, model$theta)
   }
