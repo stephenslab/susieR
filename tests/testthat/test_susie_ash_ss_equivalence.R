@@ -20,7 +20,7 @@ setup_susie_ash_test <- function(n = 200, p = 50, k = 5, seed = 42) {
     resid <- y - X[, j] * bhat[j]
     sqrt(sum(resid^2) / ((n - 2) * sum(X[, j]^2)))
   })
-  R_mat <- susieSlide:::safe_cor(X)
+  R_mat <- susieRSlidePrior:::safe_cor(X)
 
   list(X = X, y = y, n = n, p = p,
        XtX = XtX, Xty = Xty, yty = yty,

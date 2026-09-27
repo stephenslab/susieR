@@ -2,7 +2,7 @@
 #   Rscript inst/examples/compare_models.R
 # Output path and repetitions can be changed through environment variables.
 # All methods use the same Gaussian coefficient prior in additive-SD units.
-library(susieSlide)
+library(susieRSlidePrior)
 stopifnot(requireNamespace("susieR",quietly=TRUE))
 outdir <- Sys.getenv("SLIDE_COMPARISON_OUT","validation")
 dir.create(outdir,recursive=TRUE,showWarnings=FALSE)
@@ -127,7 +127,7 @@ for(rep in seq_len(repetitions)) for(mode in names(modes)) {
             scaled_prior_variance=.5/var(y),estimate_prior_variance=learn_V,
             max_iter=400,tol=1e-7,min_abs_corr=0)
         else if(method=="Slider")
-          fit <- quiet(susieSlide::susie,X,y,L=L,standardize=TRUE,
+          fit <- quiet(susieRSlidePrior::susie,X,y,L=L,standardize=TRUE,
             residual_variance=.36,estimate_residual_variance=FALSE,
             scaled_prior_variance=.5/var(y),estimate_prior_variance=learn_V,
             max_iter=400,tol=1e-7,min_abs_corr=0)

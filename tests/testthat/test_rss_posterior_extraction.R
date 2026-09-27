@@ -2,8 +2,8 @@
 # X_column_scale_factors and intercept absent.
 
 test_that("assume_unit_scale returns 1 (with a hint) on NULL, else unchanged", {
-  expect_equal(susieSlide:::assume_unit_scale(c(1, 2, 3)), c(1, 2, 3))
-  expect_message(v <- susieSlide:::assume_unit_scale(NULL), "assuming 1")
+  expect_equal(susieRSlidePrior:::assume_unit_scale(c(1, 2, 3)), c(1, 2, 3))
+  expect_message(v <- susieRSlidePrior:::assume_unit_scale(NULL), "assuming 1")
   expect_equal(v, 1)
 })
 

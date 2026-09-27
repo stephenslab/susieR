@@ -7,13 +7,14 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-The root package in this repository is `susieSlide`. Its default `susie()`
-fits `x + delta * I(x == 1)`, with `delta` in `[-1, 1]`, separately for each
-candidate SNP and single-effect component. `delta = -1` is recessive,
+The root package in this repository is `susieRSlidePrior`. Its default `susie()`
+fits `x + delta * I(x == 1)` using a fixed finite prior on `delta`, separately
+for each candidate SNP and single-effect component. The default grid is
+`seq(-1, 1, length.out = 17)` with equal probabilities. `delta = -1` is recessive,
 `delta = 0` additive, and `delta = 1` dominant.
 
 ```{r}
-library(susieSlide)
+library(susieRSlidePrior)
 set.seed(341)
 X <- matrix(rbinom(600 * 20, 2, 0.3), 600, 20)
 storage.mode(X) <- "double"
@@ -23,13 +24,21 @@ y <- 0.5 + 1.5 * (X[, 3] == 2) - 0.8 * (X[, 14] >= 1) +
 fit <- susie(X, y, L = 2, min_obs = 5)
 fit$delta_cs$summary
 fit$delta_cs$delta
+fit$delta_prior
+fit$delta_weights
+
+# The supplied probabilities stay fixed throughout this fit.
+w <- rep(1, 17)
+w[9] <- 8
+fit_weighted <- susie(X, y, L = 2, delta_prior = w / sum(w))
+stopifnot(isTRUE(all.equal(fit_weighted$delta_prior, w / sum(w))))
 ```
 
 `delta_cs$summary` lists member SNPs in each reported credible set (CS).
 `delta_cs$delta` is a CS-by-SNP matrix: rows follow `sets$cs`, mapped to
 component rows by `sets$cs_index`; columns include all input SNPs in their
 original order, excluding an explicit null column. Each entry is that
-component's estimated delta for the candidate SNP, even outside the CS.
+component's posterior mean delta for the candidate SNP, even outside the CS.
 The full component-by-SNP matrix remains available as `fit$delta`.
 
 Supply original `0/1/2` genotypes. Centering and standardization are performed
@@ -55,9 +64,15 @@ fixed_zero <- susie(X, y, L = 2, delta = 0)
 max(abs(additive$fitted - fixed_zero$fitted))
 ```
 
-The slider integrates beta analytically and estimates delta by maximizing
-marginal likelihood. Evidence scores, PIPs and credible sets condition on
-fitted delta. Null simulations show additional fitting from optimizing
-delta; genome-wide calibration is not established. The model currently
+The slider integrates beta analytically and sums over the fixed delta prior.
+`alpha_delta[l,j,k]` stores the joint posterior mass for each SNP and slider
+value; summing over k gives the usual SNP-level `alpha`. `mu_delta` retains
+E(beta*delta), so predictions account for their posterior dependence.
+`delta_prior_counts` excludes forced SNPs, null columns and inactive components
+and can supply a later external coding-prior learning workflow. The fitter
+does not perform that M-step. `estimate_prior_method="EM"` concerns only the
+Gaussian beta-prior variance. Supply `delta_prior=NULL` to run the legacy
+continuous plug-in slider instead. CS purity is computed from posterior-mean
+slider codings as a representative-coding diagnostic. The model currently
 requires complete hard-call genotypes. The inherited summary-statistic
 interfaces remain additive and do not estimate sliders.

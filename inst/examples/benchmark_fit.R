@@ -1,6 +1,6 @@
 # End-to-end in-memory fitting timings; no file I/O. Run at package source root.
 # One simulated data set per size, one warm-up, three timed repetitions.
-library(susieSlide)
+library(susieRSlidePrior)
 outdir <- Sys.getenv("SLIDE_COMPARISON_OUT","validation")
 dir.create(outdir,showWarnings=FALSE,recursive=TRUE)
 rows <- list(); i <- 0L
@@ -14,7 +14,7 @@ for(p in c(1000L,10000L)) {
   Z <- sweep(cbind(X,2*(X>=1),2*(X==2)),2,rep(scale,3),"/")
   for(method in c("Additive","Slider","Stack_equal")) {
     call_fit <- function() {
-      fun <- if(method=="Slider") susieSlide::susie else susieR::susie
+      fun <- if(method=="Slider") susieRSlidePrior::susie else susieR::susie
       suppressMessages(fun(if(method=="Stack_equal") Z else X,y,L=2,
         standardize=method!="Stack_equal",scaled_prior_variance=.5/var(y),
         residual_variance=.36,estimate_prior_variance=FALSE,

@@ -1,5 +1,5 @@
 # Run after both comparison scripts, from the package source directory.
-library(susieSlide)
+library(susieRSlidePrior)
 outdir <- Sys.getenv("SLIDE_COMPARISON_OUT","validation")
 summary <- read.csv(file.path(outdir,"comparison_summary.csv"))
 modes <- c("Additive","Recessive","Partially_recessive","Dominant","Partially_dominant","Mixed")

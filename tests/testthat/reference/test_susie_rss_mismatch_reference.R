@@ -33,7 +33,7 @@ context("susie_rss RSS-mismatch reference comparison")
 
 test_that("vignette toy: susie_rss(zflip, Rtoy, n) matches reference", {
   skip_if_no_mismatch_reference()
-  data(SummaryConsistency, package = "susieSlide")
+  data(SummaryConsistency, package = "susieRSlidePrior")
   with(SummaryConsistency, {
     args <- list(z = z, R = ldref, n = 10000)
     compare_to_mismatch_reference("susie_rss", args)
@@ -42,7 +42,7 @@ test_that("vignette toy: susie_rss(zflip, Rtoy, n) matches reference", {
 
 test_that("vignette toy: susie_rss(zfix, Rtoy, n) matches reference", {
   skip_if_no_mismatch_reference()
-  data(SummaryConsistency, package = "susieSlide")
+  data(SummaryConsistency, package = "susieRSlidePrior")
   with(SummaryConsistency, {
     zfix <- z
     zfix[flip_id] <- -zfix[flip_id]
@@ -53,7 +53,7 @@ test_that("vignette toy: susie_rss(zfix, Rtoy, n) matches reference", {
 
 test_that("vignette toy: susie_rss with R_finite = 500, R_mismatch = 'eb' matches reference", {
   skip_if_no_mismatch_reference()
-  data(SummaryConsistency, package = "susieSlide")
+  data(SummaryConsistency, package = "susieRSlidePrior")
   with(SummaryConsistency, {
     args <- list(z = z, R = ldref, n = 10000,
                  R_finite = 500, R_mismatch = "eb")
@@ -67,7 +67,7 @@ test_that("vignette toy: susie_rss with R_finite = 500, R_mismatch = 'eb' matche
 
 test_that("vignette full: susie_rss baseline (no mismatch correction) matches reference", {
   skip_if_no_mismatch_reference()
-  data(rss_mismatch_example, package = "susieSlide")
+  data(rss_mismatch_example, package = "susieRSlidePrior")
   with(rss_mismatch_example, {
     args <- list(bhat = bhat, shat = shat, R = R, n = n)
     compare_to_mismatch_reference("susie_rss", args)
@@ -76,7 +76,7 @@ test_that("vignette full: susie_rss baseline (no mismatch correction) matches re
 
 test_that("vignette full: susie_rss with R_finite = 500 matches reference", {
   skip_if_no_mismatch_reference()
-  data(rss_mismatch_example, package = "susieSlide")
+  data(rss_mismatch_example, package = "susieRSlidePrior")
   with(rss_mismatch_example, {
     args <- list(bhat = bhat, shat = shat, R = R, n = n,
                  R_finite = 500)
@@ -86,7 +86,7 @@ test_that("vignette full: susie_rss with R_finite = 500 matches reference", {
 
 test_that("vignette full: susie_rss with R_finite = 500 + R_mismatch = 'eb' matches reference", {
   skip_if_no_mismatch_reference()
-  data(rss_mismatch_example, package = "susieSlide")
+  data(rss_mismatch_example, package = "susieRSlidePrior")
   with(rss_mismatch_example, {
     args <- list(bhat = bhat, shat = shat, R = R, n = n,
                  R_finite = 500, R_mismatch = "eb")
@@ -96,7 +96,7 @@ test_that("vignette full: susie_rss with R_finite = 500 + R_mismatch = 'eb' matc
 
 test_that("vignette full: susie_rss with R_mismatch = 'eb' only matches reference", {
   skip_if_no_mismatch_reference()
-  data(rss_mismatch_example, package = "susieSlide")
+  data(rss_mismatch_example, package = "susieRSlidePrior")
   with(rss_mismatch_example, {
     args <- list(bhat = bhat, shat = shat, R = R, n = n,
                  R_mismatch = "eb")

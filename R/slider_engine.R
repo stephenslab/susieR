@@ -5,6 +5,7 @@ initialize_susie_model.slide_individual <- function(data,params,var_y,...) {
   model$delta <- matrix(0,nrow(model$alpha),data$p)
   model$slide_s <- matrix(data$xx,nrow(model$alpha),data$p,byrow=TRUE)
   model$component_fitted <- matrix(0,data$n,nrow(model$alpha))
+  if(!is.null(data$delta_prior)) model <- .slide_prior_initialize(data,model)
   class(model) <- c("susie_slide","susie")
   model
 }
@@ -14,10 +15,14 @@ ibss_initialize.slide_individual <- function(data,params) {
   model <- .engine("ibss_initialize.default")(data,params)
   if(!is.null(data$warm)) {
     warm <- data$warm
+    if(!is.null(data$delta_prior))
+      return(.slide_prior_warm_start(data,params,model,warm))
+    if(!is.null(warm$delta_prior))
+      stop("A finite-prior fit cannot initialize a fixed or plug-in slider fit.")
     if(!inherits(warm,"susie_slide") || !identical(dim(warm$alpha),dim(model$alpha)) ||
        !identical(dim(warm$delta),dim(model$delta)) ||
        !isTRUE(all.equal(unname(warm$X_column_scale_factors),unname(data$scale))))
-      stop("model_init must be a susieSlide fit with matching L, SNPs, and genotype scales.")
+      stop("model_init must be a susieRSlidePrior fit with matching L, SNPs, and genotype scales.")
     for(nm in c("alpha","mu","mu2","V","delta")) model[[nm]] <- warm[[nm]]
     if(isTRUE(params$estimate_residual_variance)) model$sigma2 <- warm$sigma2
     model$delta[,data$forced] <- 0
@@ -63,6 +68,20 @@ compute_ser_statistics.slide_individual <- function(data,params,model,l,...) {
 #' @export
 #' @noRd
 loglik.slide_individual <- function(data,params,model,V,ser_stats,l=NULL,...) {
+  if(!is.null(data$delta_prior)) {
+    ser <- .slide_prior_ser(data,model,V)
+    posterior <- .engine("compute_posterior_weights")(ser$summary[,"lbf"]+log(model$pi))
+    if(is.null(l)) return(posterior$lbf_model)
+    model$alpha[l,] <- posterior$alpha
+    model$lbf[l] <- posterior$lbf_model
+    model$lbf_variable[l,] <- ser$summary[,"lbf"]
+    for(field in c("delta","mu","mu2","mu_delta","mu2_delta","mu2_delta2"))
+      model[[field]][l,] <- ser$summary[,field]
+    model$alpha_delta[l,,] <- ser$weights*posterior$alpha
+    model$mu_grid[l,,] <- ser$mu
+    model$mu2_grid[l,,] <- ser$mu2
+    return(model)
+  }
   ser <- .slide_ser(data,model,V,ser_stats)
   # Use the engine's normalization, including its tiny prior-weight offset,
   # so the all-additive path matches this exact susieR version.
@@ -83,6 +102,7 @@ neg_loglik.slide_individual <- function(data,params,model,V_param,ser_stats,...)
 #' @export
 #' @noRd
 calculate_posterior_moments.slide_individual <- function(data,params,model,V,l,...) {
+  if(!is.null(data$delta_prior)) return(model)
   model$mu[l,] <- model$slide_ser[,"mu"]
   model$mu2[l,] <- model$slide_ser[,"mu2"]
   model
@@ -90,19 +110,20 @@ calculate_posterior_moments.slide_individual <- function(data,params,model,V,l,.
 #' @export
 #' @noRd
 SER_posterior_e_loglik.slide_individual <- function(data,params,model,l) {
-  d <- model$delta[l,]
-  linear <- sum(model$alpha[l,]*model$mu[l,]*(model$residuals+d*model$hresiduals))
-  quadratic <- sum(model$alpha[l,]*model$mu2[l,]*model$slide_s[l,])
+  linear <- sum(model$alpha[l,]*(model$mu[l,]*model$residuals+
+                  .slide_mu_delta(model)[l,]*model$hresiduals))
+  quadratic <- sum(model$alpha[l,]*.slide_second_moment(data,model,l))
   -data$n/2*log(2*pi*model$sigma2) -
     (sum(model$raw_residuals^2)-2*linear+quadratic)/(2*model$sigma2)
 }
 #' @export
 #' @noRd
 compute_kl.slide_individual <- function(data,params,model,l) {
-  # Same conjugate SER KL identity as SuSiE, conditional on fitted delta.
-  linear <- sum(model$alpha[l,]*model$mu[l,]*
-                  (model$residuals+model$delta[l,]*model$hresiduals))
-  quadratic <- sum(model$alpha[l,]*model$mu2[l,]*model$slide_s[l,])
+  # The evidence identity includes the categorical slider KL when its prior
+  # is integrated, as well as the SNP and Gaussian coefficient KL terms.
+  linear <- sum(model$alpha[l,]*(model$mu[l,]*model$residuals+
+                  .slide_mu_delta(model)[l,]*model$hresiduals))
+  quadratic <- sum(model$alpha[l,]*.slide_second_moment(data,model,l))
   model$KL[l] <- -model$lbf[l]+(2*linear-quadratic)/(2*model$sigma2)
   model
 }
@@ -122,14 +143,15 @@ post_loglik_prior_hook.slide_individual <- function(data,params,model,ser_stats,
 #' @noRd
 update_fitted_values.slide_individual <- function(data,params,model,l,...) {
   b <- model$alpha[l,]*model$mu[l,]
-  model$component_fitted[,l] <- .slide_product(data,b,b*model$delta[l,])
+  model$component_fitted[,l] <- .slide_product(data,b,
+                          model$alpha[l,]*.slide_mu_delta(model)[l,])
   model$Xr <- model$fitted_without_l+model$component_fitted[,l]
   model
 }
 #' @export
 #' @noRd
 get_ER2.slide_individual <- function(data,model) {
-  sum((data$y-model$Xr)^2)+sum(model$alpha*model$mu2*model$slide_s)-
+  sum((data$y-model$Xr)^2)+sum(model$alpha*.slide_second_moment(data,model))-
     sum(model$component_fitted^2)
 }
 #' @export
@@ -144,6 +166,15 @@ trim_null_effects.slide_individual <- function(data,params,model) {
   null <- which(model$V==0)
   if(length(null)) {
     model$delta[null,] <- 0
+    if(!is.null(data$delta_prior)) {
+      weights <- .slide_grid_weights(data)
+      for(field in c("mu_delta","mu2_delta","mu2_delta2")) model[[field]][null,] <- 0
+      model$mu_grid[null,,] <- model$mu2_grid[null,,] <- 0
+      for(l in null) {
+        model$alpha_delta[l,,] <- weights*model$alpha[l,]
+        model$delta[l,] <- drop(weights %*% data$delta_grid)
+      }
+    }
     model$component_fitted[,null] <- 0
     model$Xr <- rowSums(model$component_fitted)
   }
@@ -154,7 +185,7 @@ trim_null_effects.slide_individual <- function(data,params,model) {
 get_intercept.slide_individual <- function(data,params,model,...) {
   if(!params$intercept) return(0)
   data$mean_y-sum(data$xmean*colSums(model$alpha*model$mu)/data$scale)-
-    sum(data$hmean*colSums(model$alpha*model$mu*model$delta)/data$scale)
+    sum(data$hmean*colSums(model$alpha*.slide_mu_delta(model))/data$scale)
 }
 #' @export
 #' @noRd
@@ -198,6 +229,13 @@ get_cs.slide_individual <- function(data,params,model,...) {
 get_variable_names.slide_individual <- function(data,model,...) {
   model <- .engine("get_variable_names.individual")(data,model,...)
   dimnames(model$delta) <- dimnames(model$alpha)
+  if(!is.null(data$delta_prior)) {
+    for(field in c("mu_delta","mu2_delta","mu2_delta2"))
+      dimnames(model[[field]]) <- dimnames(model$alpha)
+    for(field in c("alpha_delta","mu_grid","mu2_grid"))
+      dimnames(model[[field]]) <- list(rownames(model$alpha),colnames(model$alpha),
+                                       as.character(data$delta_grid))
+  }
   model
 }
 #' @export
@@ -208,7 +246,13 @@ cleanup_model.slide_individual <- function(data,params,model,...) {
   rownames(model$genotype_counts) <- colnames(model$alpha)
   model$delta_forced <- setNames(data$forced,colnames(model$alpha))
   model$input_p <- data$input_p
-  model$mu_delta <- model$mu*model$delta
+  model$mu_delta <- .slide_mu_delta(model)
+  if(!is.null(data$delta_prior)) {
+    model$delta_weights <- apply(model$alpha_delta,c(1,3),sum)
+    free <- which(!data$forced & seq_len(data$p)<=data$input_p)
+    model$delta_prior_counts <- apply(model$alpha_delta[,free,,drop=FALSE],c(1,3),sum)
+    model$delta_prior_counts[model$V==0,] <- 0
+  }
   model$expected_squared_residuals <- get_ER2.slide_individual(data,model)
   for(nm in c("component_fitted","slide_ser","slide_s","hresiduals")) model[[nm]] <- NULL
   .engine("cleanup_model.individual")(data,params,model,...)

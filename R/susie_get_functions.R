@@ -53,6 +53,10 @@
 #' an \code{num_variables} x \code{num_samples} matrix of effect
 #' sizes; \code{gamma}, an \code{num_variables} x \code{num_samples}
 #' matrix of causal status random draws.
+#' For finite-prior slider fits, samples are drawn from the joint SNP-slider
+#' posterior and the result also includes \code{b_heterozygote}; \code{b}
+#' contains the additive coefficients. The lfsr integrates the Gaussian
+#' mixture rather than replacing it by a moment-matched Gaussian.
 #'
 #' \code{susie_get_cs} returns credible sets (CSs) from a susie fit,
 #' as well as summaries of correlation among the variables included in
@@ -180,6 +184,8 @@ susie_get_residual_variance <- function(res) {
 #' @export
 #'
 susie_get_lfsr <- function(res) {
+  if(inherits(res,"susie_slide") && !is.null(res$delta_prior))
+    return(.slide_prior_lfsr(res))
   pos_prob <- pnorm(0, mean = t(res$mu), sd = sqrt(res$mu2 - res$mu^2))
   neg_prob <- 1 - pos_prob
   return(1 - rowSums(res$alpha * t(pmax(pos_prob, neg_prob))))
@@ -198,6 +204,8 @@ susie_get_lfsr <- function(res) {
 #' @export
 #'
 susie_get_posterior_samples <- function(susie_fit, num_samples) {
+  if(inherits(susie_fit,"susie_slide") && !is.null(susie_fit$delta_prior))
+    return(.slide_prior_samples(susie_fit,num_samples))
   # Remove effects having estimated prior variance equals zero.
   if (is.numeric(susie_fit$V)) {
     include_idx <- which(susie_fit$V > 1e-9)

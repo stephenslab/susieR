@@ -12,7 +12,7 @@ ser_native <- function(x,y,V=.8,sigma2=.49,delta=NA_real_,standardize=FALSE,inte
   z <- (x-if(intercept) mean(x) else 0)/s
   h <- (h-if(intercept) mean(h) else 0)/s
   r <- y-if(intercept) mean(y) else 0
-  susieSlide:::slide_ser_native(as.double(sum(z*z)),as.double(sum(z*h)),as.double(sum(h*h)),
+  susieRSlidePrior:::slide_ser_native(as.double(sum(z*z)),as.double(sum(z*h)),as.double(sum(h*h)),
         as.double(sum(z*r)),as.double(sum(h*r)),as.double(V),as.double(sigma2),
         as.double(delta))
 }

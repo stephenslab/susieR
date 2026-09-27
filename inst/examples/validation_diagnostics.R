@@ -3,7 +3,7 @@
 # stacked X, I(X>=1), I(X==2); standardize=FALSE; prior-variance EM;
 # residual variance estimated; uniform predictor priors; L=10.
 # Synthetic Gaussian outcomes are used; GTEx preprocessing is not reproduced.
-library(susieSlide)
+library(susieRSlidePrior)
 outdir <- Sys.getenv("SLIDE_COMPARISON_OUT","validation")
 quiet <- function(fun,...) suppressMessages(fun(...))
 examples <- readRDS(file.path(outdir,"comparison_examples.rds"))
@@ -26,7 +26,7 @@ for(mode in c("Additive","Recessive","Partially_recessive","Dominant","Partially
     Z <- if(method=="Susie_mix_EM") stack(X) else X
     # No class would be dropped by the workhorse's >=5 column-sum rule here.
     stopifnot(all(colSums(Z)>=5))
-    fun <- if(method=="Slider_EM") susieSlide::susie else susieR::susie
+    fun <- if(method=="Slider_EM") susieRSlidePrior::susie else susieR::susie
     warns <- character()
     tm <- system.time(fit <- withCallingHandlers(
       quiet(fun,Z,y,L=10,standardize=FALSE,estimate_prior_method="EM",
@@ -58,7 +58,7 @@ for(rep in 1:30) {
   y <- rnorm(300)
   for(method in c("Additive","Slider","Stack_equal")) {
     Z <- if(method=="Stack_equal") stack(X) else X
-    fun <- if(method=="Slider") susieSlide::susie else susieR::susie
+    fun <- if(method=="Slider") susieRSlidePrior::susie else susieR::susie
     warns <- character()
     fit <- withCallingHandlers(quiet(fun,Z,y,L=3,max_iter=1000,tol=1e-6,min_abs_corr=.5),
       warning=function(w) {warns <<- c(warns,conditionMessage(w)); invokeRestart("muffleWarning")})
@@ -93,7 +93,7 @@ xy <- (sy1+2*sy2-sx*sy/n)/s; hy <- (sy1-n1*sy/n)/s
 fixed <- rep(NA_real_,m); fixed[pmin(n0,n1,n2)<5] <- 0
 times <- numeric(3); check <- numeric(3)
 for(rep in 1:3) {
-  timing <- system.time(result <- susieSlide:::slide_ser_native(xx,xh,hh,xy,hy,.5,.36,fixed))
+  timing <- system.time(result <- susieRSlidePrior:::slide_ser_native(xx,xh,hh,xy,hy,.5,.36,fixed))
   times[rep] <- timing["elapsed"]; check[rep] <- sum(result[,2])
 }
 stopifnot(length(unique(check))==1,all(is.finite(result)),all(abs(result[,1])<=1))

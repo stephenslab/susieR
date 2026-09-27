@@ -20,5 +20,6 @@ susieR.Rcheck
 **/*.dll
 src/symbols.rds
 susieSlide.Rcheck
+susieRSlidePrior.Rcheck
 artifacts/
 *.tar.gz

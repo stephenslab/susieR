@@ -26,9 +26,9 @@ causal <- which(unmappable_data$beta != 0)
 fit <- susie_additive(X, y, L=10, slot_prior=slot_prior_betabinom(),
              unmappable_effects="ash", max_iter=50)
 
-df <- susieSlide:::collect_ash_diag(fit)         # all iterations
-df <- susieSlide:::label_diag_truth(df, fit, causal) # TP/FP labels
-df <- susieSlide:::add_delta_features(df)         # temporal features
+df <- susieRSlidePrior:::collect_ash_diag(fit)         # all iterations
+df <- susieRSlidePrior:::label_diag_truth(df, fit, causal) # TP/FP labels
+df <- susieRSlidePrior:::add_delta_features(df)         # temporal features
 
 # Inspect FP slot across iterations:
 subset(df, cs_label == "FP", select = c(iter, slot, sentinel,
@@ -39,7 +39,7 @@ options(susie.skip_mrash = TRUE)
 fit_nomrash <- susie_additive(X, y, L=10, slot_prior=slot_prior_betabinom(),
                      unmappable_effects="ash", max_iter=50)
 options(susie.skip_mrash = FALSE)
-df_nomrash <- susieSlide:::collect_ash_diag(fit_nomrash)
+df_nomrash <- susieRSlidePrior:::collect_ash_diag(fit_nomrash)
 
 # Decision tree analysis:
 # library(rpart)

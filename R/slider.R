@@ -1,8 +1,8 @@
-#' SuSiE with an empirical-Bayes heterozygote slider
+#' SuSiE with a fixed finite prior on the heterozygote slider
 #'
 #' Fits individual-level genotype effects using \eqn{x+\delta I(x=1)}, with
 #' \eqn{-1\leq\delta\leq1} for each candidate SNP and single-effect component.
-#' This is the main fitting function of the susieSlide package. The IBSS
+#' This is the main fitting function of the susieRSlidePrior package. The IBSS
 #' engine is included in this package; fitting does not load susieR.
 #'
 #' @inheritParams susie_additive
@@ -15,25 +15,32 @@
 #' @param intercept Include an unpenalized intercept by centering both terms.
 #' @param estimate_prior_method Gaussian prior-variance update: optim, EM,
 #'   or simple. Set estimate_prior_variance=FALSE to keep the variance fixed.
-#'   Each likelihood evaluation uses fitted sliders. EM refreshes evidence
-#'   and moments after updating the variance.
+#'   Each likelihood evaluation integrates over the supplied slider prior.
+#'   EM here updates only the Gaussian variance, never slider probabilities.
 #' @param min_obs Nonnegative integer. If any count of genotypes 0, 1, or 2
 #'   is smaller, force delta=0 for that SNP in every component. Zero disables
 #'   this rule. Counts use individuals retained after missing-y removal.
-#' @param delta NULL to estimate sliders; otherwise a fixed scalar, length-p
+#' @param delta NULL to use the slider prior; otherwise a fixed scalar, length-p
 #'   vector, or L-by-p matrix with values in [-1,1]. The min_obs rule takes
 #'   precedence over nonzero fixed values.
+#' @param delta_grid Increasing finite slider support in [-1,1], including
+#'   zero. Defaults to 17 equally spaced values with spacing 0.125.
+#' @param delta_prior Nonnegative weights for delta_grid, normalized to sum
+#'   to one and held fixed throughout fitting. Defaults to uniform weights.
+#'   NULL selects the legacy continuous plug-in slider optimization. An
+#'   explicitly supplied delta overrides the grid prior.
 #' @param chunk_size Maximum SNP block size for heterozygote calculations;
 #'   also capped internally to bound temporary block memory.
 #' @param cache_heterozygotes Cache the full heterozygote matrix; otherwise
 #'   reconstruct it in blocks to avoid another genotype-sized matrix.
 #' @param coverage Credible-set probability, or NULL to omit credible sets.
 #' @param min_abs_corr Minimum absolute correlation for credible-set purity.
-#'   Correlations use each component's fitted transformed genotypes.
+#'   Correlations use each component's posterior-mean slider coding. This
+#'   is a representative-coding diagnostic, not integration over codings.
 #' @param ... Supported additional options: check_null_threshold, prior_tol,
 #'   residual_variance_upperbound, residual_variance_lowerbound, na.rm
 #'   (missing y only), n_purity, median_abs_corr, estimate_residual_method
-#'   (MoM or MLE), track_fit, and model_init. Warm starts require a susieSlide
+#'   (MoM or MLE), track_fit, and model_init. Warm starts require a susieRSlidePrior
 #'   fit with matching dimensions and scales. Other options are rejected.
 #'
 #' @details
@@ -45,14 +52,14 @@
 #' +1 dominant. Setting standardize=FALSE puts the coefficient prior on the
 #' raw genotype scale.
 #'
-#' Beta is integrated analytically. Delta maximizes marginal likelihood over
-#' [-1,1], comparing all stationary points and endpoints with a compiled
-#' solver. Reported log-BFs are plug-in values conditional on fitted delta,
-#' not evidence integrated over a delta prior. PIPs and credible sets also
-#' condition on fitted sliders. Null simulations show additional fitting
-#' from optimizing delta; genome-wide calibration is not established.
+#' Beta is integrated analytically and delta is summed over its finite prior.
+#' The default prior assigns probability 1/17 to each value in seq(-1,1,0.125).
+#' Slider prior probabilities are never learned inside this fitter. Refit
+#' with a different delta_prior to use an external coding-prior learning loop.
+#' With delta_prior=NULL, the legacy compiled solver maximizes marginal
+#' likelihood over [-1,1] instead. A fixed delta uses a single coding.
 #'
-#' Fitted values, residuals, expected squared residuals and the conditional
+#' Fitted values, residuals, expected squared residuals and the variational
 #' ELBO include both basis terms. Distinct components can select the same
 #' SNP with different sliders. Ordinary additive summary statistics do not
 #' contain all the information needed for this model. The legacy additive
@@ -61,7 +68,8 @@
 #'
 #' @return A list of class c("susie_slide","susie") with usual SuSiE fields
 #'   alpha, mu, mu2, pip, sets, lbf, lbf_variable, V, sigma2, elbo and fitted,
-#'   plus delta (L-by-p, aligned with alpha), mu_delta, genotype_counts,
+#'   plus delta (L-by-p posterior means conditional on the SNP), mu_delta,
+#'   genotype_counts,
 #'   delta_forced, delta_cs, and expected_squared_residuals. An explicit null
 #'   column, if requested, appears in component matrices but not SNP PIPs.
 #'   mu and mu2 use internal coefficient units. coef returns additive and
@@ -72,8 +80,18 @@
 #'   columns include all input SNPs in their original order, including SNPs
 #'   outside each CS, and exclude any explicit null column. With no reported
 #'   CSs, the matrix has zero rows and one column per input SNP. Delta is
-#'   estimated separately for each candidate SNP in each component, not
+#'   summarized separately for each candidate SNP in each component, not
 #'   shared across the SNPs in a CS.
+#'   For a finite prior, delta_grid and delta_prior record the fixed prior;
+#'   alpha_delta[l,j,k] is the joint posterior probability of SNP j and grid
+#'   value k in component l. Summing over k recovers alpha. mu_grid and
+#'   mu2_grid contain conditional first/second beta moments for each pair.
+#'   mu_delta is E(beta*delta | SNP, component), generally not mu*delta;
+#'   mu2_delta and mu2_delta2 are E(beta^2*delta) and E(beta^2*delta^2).
+#'   delta_weights sums alpha_delta over SNPs. delta_prior_counts excludes
+#'   count-forced SNPs, explicit null columns and zero-variance components,
+#'   and retains one row per component for a later external learning step.
+#'   No credible-set eligibility filter is applied to these counts.
 #' @seealso \code{\link{slider_cs_table}}, \code{\link{susie_additive}}
 #' @examples
 #' set.seed(1)
@@ -93,8 +111,11 @@ susie <- function(X, y, L = min(10, ncol(X)), scaled_prior_variance = 0.2,
                   min_obs = 5, delta = NULL, chunk_size = 1000L,
                   cache_heterozygotes = FALSE, coverage = 0.95,
                   min_abs_corr = 0.5, max_iter = 100, tol = 1e-3,
-                  verbose = FALSE, ...) {
+                  verbose = FALSE, delta_grid = seq(-1,1,length.out=17),
+                  delta_prior = rep(1/length(delta_grid),length(delta_grid)), ...) {
   call <- match.call()
+  delta_prior <- .slide_validate_prior(delta_grid,delta_prior)
+  delta_grid <- as.numeric(delta_grid)
   if ((!is.matrix(X) && !inherits(X,"sparseMatrix")) ||
       nrow(X)<2 || ncol(X)<1) stop("X must be a sample-by-SNP genotype matrix.")
   values <- if (inherits(X,"sparseMatrix")) X@x else X
@@ -122,7 +143,7 @@ susie <- function(X, y, L = min(10, ncol(X)), scaled_prior_variance = 0.2,
   if (length(dots) && (is.null(names(dots)) || any(!nzchar(names(dots))) ||
                        any(!names(dots) %in% supported)))
     stop("Unsupported slider option(s): ",paste(setdiff(names(dots),supported),collapse=", "),
-         ". See ?susieSlide::susie for the supported individual-level interface.")
+         ". See ?susieRSlidePrior::susie for the supported individual-level interface.")
   if (!is.null(dots$estimate_residual_method) &&
       !dots$estimate_residual_method %in% c("MoM","MLE"))
     stop("The slider currently supports Gaussian residual variance updates (MoM or MLE).")
@@ -174,13 +195,23 @@ susie <- function(X, y, L = min(10, ncol(X)), scaled_prior_variance = 0.2,
   if (!is.null(delta) && data$p>p) delta <- cbind(delta,0)
   data$fixed_delta <- delta
   data$input_p <- p
+  data$delta_prior <- if(is.null(delta)) delta_prior else NULL
+  data$delta_grid <- delta_grid
   data$warm <- warm
   class(data) <- c("slide_individual",class(data))
   fit <- susie_workhorse(data,params)
   fit$call <- call
-  fit$delta_method <- if(is.null(delta)) "empirical Bayes (plug-in)" else "fixed"
-  fit$log_bf_type <- "conditional on fitted delta; beta integrated analytically"
-  fit$objective_type <- "ELBO conditional on component-by-SNP deltas"
+  if(!is.null(data$delta_prior)) {
+    fit$delta_method <- "fixed discrete prior"
+    fit$log_bf_type <- "beta integrated analytically; delta averaged over fixed prior"
+    fit$objective_type <- "ELBO with fixed discrete slider prior"
+    fit$purity_method <- "posterior-mean slider coding"
+  } else {
+    fit$delta_method <- if(is.null(delta)) "empirical Bayes (plug-in)" else "fixed"
+    fit$log_bf_type <- "conditional on fitted delta; beta integrated analytically"
+    fit$objective_type <- "ELBO conditional on component-by-SNP deltas"
+    fit$purity_method <- "fixed or fitted slider coding"
+  }
   fit$delta_cs <- .slider_cs_output(fit)
   fit
 }

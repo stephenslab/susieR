@@ -167,6 +167,10 @@ effect sizes samples and causal status with two components: \code{b},
 an \code{num_variables} x \code{num_samples} matrix of effect
 sizes; \code{gamma}, an \code{num_variables} x \code{num_samples}
 matrix of causal status random draws.
+For finite-prior slider fits, samples are drawn from the joint SNP-slider
+posterior and the result also includes \code{b_heterozygote}; \code{b}
+contains the additive coefficients. The lfsr integrates the Gaussian
+mixture rather than replacing it by a moment-matched Gaussian.
 
 \code{susie_get_cs} returns credible sets (CSs) from a susie fit,
 as well as summaries of correlation among the variables included in

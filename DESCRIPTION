@@ -1,17 +1,18 @@
 Encoding: UTF-8
 Type: Package
-Package: susieSlide
+Package: susieRSlidePrior
 Title: Sum of Single Effects with Genotype Sliders
 Description: Fits genetic effects using the Sum of Single Effects (SuSiE)
     model with a bounded heterozygote slider for each candidate SNP and
     component. Gaussian effect coefficients are integrated analytically;
-    sliders are estimated by empirical Bayes with a rare-genotype additive
-    fallback. Includes the IBSS engine, compiled slider inference,
+    sliders are integrated over a fixed finite prior, with optional legacy
+    empirical-Bayes optimization and a rare-genotype additive fallback.
+    Includes the IBSS engine, compiled slider inference,
     slider-aware predictions and credible sets, and an explicitly named
     additive fitting entry point. Derived from susieR and Wang et al (2020)
     <DOI:10.1101/501114> and Zou et al (2021) <DOI:10.1101/2021.11.03.467167>.
-Date: 2026-09-18
-Version: 0.2.0
+Date: 2026-09-27
+Version: 0.3.0
 Authors@R: c(person("Gao","Wang",role="aut",email="wang.gao@columbia.edu"),
              person("Yuxin","Zou",role="aut"),
              person("Alexander","McCreight",role="aut"),

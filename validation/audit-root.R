@@ -1,18 +1,18 @@
 # Run in a fresh R session from the corrected repository root after installation.
-stopifnot(read.dcf('DESCRIPTION')[1,'Package']=='susieSlide',
-          !file.exists('susieSlide/DESCRIPTION'))
-library(susieSlide)
-stopifnot(packageVersion('susieSlide')>='0.2.0',
+stopifnot(read.dcf('DESCRIPTION')[1,'Package']=='susieRSlidePrior',
+          !file.exists('susieRSlidePrior/DESCRIPTION'))
+library(susieRSlidePrior)
+stopifnot(packageVersion('susieRSlidePrior')>='0.2.0',
           !'susieR' %in% loadedNamespaces(),
-          !'susieR' %in% names(getNamespaceImports('susieSlide')))
-cat('Installed package:',find.package('susieSlide'),'\n')
-cat('Version:',as.character(packageVersion('susieSlide')),'\n')
+          !'susieR' %in% names(getNamespaceImports('susieRSlidePrior')))
+cat('Installed package:',find.package('susieRSlidePrior'),'\n')
+cat('Version:',as.character(packageVersion('susieRSlidePrior')),'\n')
 cat('Root package and namespace ownership: PASS\n')
 examples <- readRDS('validation/comparison_examples.rds')
 modes <- c('Additive','Recessive','Partially_recessive','Dominant','Partially_dominant','Mixed')
 rows <- lapply(modes,function(mode) {
   example <- examples[[paste(mode,2,'Slider',sep='_')]]
-  fit <- suppressMessages(susieSlide::susie(example$X,example$y,L=2,
+  fit <- suppressMessages(susieRSlidePrior::susie(example$X,example$y,L=2,
     standardize=TRUE,residual_variance=.36,estimate_residual_variance=FALSE,
     scaled_prior_variance=.5/var(example$y),estimate_prior_variance=FALSE,
     max_iter=400,tol=1e-7,min_abs_corr=0))

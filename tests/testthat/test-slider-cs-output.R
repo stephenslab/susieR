@@ -21,13 +21,13 @@ test_that("CS delta output retains matrix shape for one SNP and no reported CSs"
   X <- matrix(rep(0:2,each=20),ncol=1)
   y <- X[,1]+rep(c(-.1,.1),30)
   for(null_weight in c(0,.1)) {
-    fit <- quiet(susieSlide::susie,X,y,L=1,delta=.25,null_weight=null_weight,
+    fit <- quiet(susieRSlidePrior::susie,X,y,L=1,delta=.25,null_weight=null_weight,
       estimate_prior_variance=FALSE,estimate_residual_variance=FALSE)
     expect_equal(fit$delta_cs$delta,
                  matrix(.25,1,1,dimnames=list("L1","SNP1")))
     expect_equal(fit$delta_cs$summary$delta,.25)
 
-    fit <- quiet(susieSlide::susie,X,y,L=1,coverage=NULL,null_weight=null_weight,
+    fit <- quiet(susieRSlidePrior::susie,X,y,L=1,coverage=NULL,null_weight=null_weight,
       estimate_prior_variance=FALSE,estimate_residual_variance=FALSE)
     expect_s3_class(fit$delta_cs$summary,"data.frame")
     expect_equal(nrow(fit$delta_cs$summary),0L)

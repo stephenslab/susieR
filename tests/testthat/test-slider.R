@@ -47,7 +47,7 @@ test_that("delta zero matches the actual upstream additive engine", {
                    estimate_prior_variance=estimate,estimate_residual_variance=estimate,
                    residual_variance=.65^2,max_iter=300,tol=1e-8)
       base <- quiet(do.call,susie_additive,args)
-      slide <- quiet(do.call,susieSlide::susie,c(args,list(delta=0)))
+      slide <- quiet(do.call,susieRSlidePrior::susie,c(args,list(delta=0)))
       for(field in c("alpha","mu","mu2","lbf_variable","V","sigma2","fitted","pip","elbo"))
         expect_equal(slide[[field]],base[[field]],tolerance=2e-6,info=field)
       expect_equal(slide$sets,base$sets,tolerance=1e-7)
@@ -56,11 +56,12 @@ test_that("delta zero matches the actual upstream additive engine", {
     }
 })
 
-test_that("slider predictions, expected residuals, and conditional ELBO agree independently", {
+test_that("legacy plug-in predictions, expected residuals, and conditional ELBO agree independently", {
   set.seed(33); X <- genotypes(600,22)
   y <- 1.1*(X[,3]-.7*(X[,3]==1))-.9*(X[,15]+.55*(X[,15]==1))+rnorm(600,sd=.5)
-  fit <- quiet(susieSlide::susie,X,y,L=2,residual_variance=.25,
-                estimate_prior_variance=FALSE,estimate_residual_variance=FALSE,tol=1e-9)
+  fit <- quiet(susieRSlidePrior::susie,X,y,L=2,residual_variance=.25,
+                estimate_prior_variance=FALSE,estimate_residual_variance=FALSE,tol=1e-9,
+                delta_prior=NULL)
   F <- matrix(0,nrow(X),2); expected <- 0; KL <- numeric(2)
   for(l in 1:2) {
     Z <- X+sweep((X==1)*1,2,fit$delta[l,],"*")
@@ -90,7 +91,7 @@ test_that("count threshold includes missing classes and takes precedence over fi
     counts <- c(15,15,15); counts[category+1] <- nrare
     X <- matrix(rep(0:2,counts),ncol=1)
     y <- seq_len(nrow(X))/nrow(X)+X[,1]
-    fit <- quiet(susieSlide::susie,X,y,L=1,delta=1,estimate_prior_variance=FALSE,
+    fit <- quiet(susieRSlidePrior::susie,X,y,L=1,delta=1,estimate_prior_variance=FALSE,
                   estimate_residual_variance=FALSE)
     expect_equal(unname(fit$genotype_counts[1,]),counts)
     expect_equal(unname(fit$delta_forced),nrare<5)
@@ -98,7 +99,7 @@ test_that("count threshold includes missing classes and takes precedence over fi
     expect_equal(predict(fit,newx=X),fit$fitted,tolerance=1e-10)
   }
   X <- cbind(rep(0:2,c(20,20,2)),rep(1,42))
-  fit <- quiet(susieSlide::susie,X,seq_len(42),L=1,estimate_prior_variance=FALSE)
+  fit <- quiet(susieRSlidePrior::susie,X,seq_len(42),L=1,estimate_prior_variance=FALSE)
   expect_true(all(is.finite(fit$mu)))
   expect_true(all(fit$delta==0))
 })
@@ -107,13 +108,13 @@ test_that("allele reversal, sparse inputs, caching, and null columns are handled
   set.seed(52); X <- genotypes(450,12); y <- 1.1*(X[,2]-.6*(X[,2]==1))+rnorm(450,sd=.6)
   args <- list(y=y,L=1,residual_variance=.36,estimate_residual_variance=FALSE,
                 estimate_prior_variance=FALSE,null_weight=.1,tol=1e-8)
-  fit <- quiet(do.call,susieSlide::susie,c(list(X=X),args))
-  flip <- quiet(do.call,susieSlide::susie,c(list(X=2-X),args))
+  fit <- quiet(do.call,susieRSlidePrior::susie,c(list(X=X),args))
+  flip <- quiet(do.call,susieRSlidePrior::susie,c(list(X=2-X),args))
   expect_equal(fit$pip,flip$pip,tolerance=1e-8)
   expect_equal(fit$delta,-flip$delta,tolerance=1e-7)
   expect_equal(fit$fitted,flip$fitted,tolerance=1e-9)
-  sparse <- quiet(do.call,susieSlide::susie,c(list(X=Matrix::Matrix(X,sparse=TRUE)),args))
-  cached <- quiet(do.call,susieSlide::susie,c(list(X=X,cache_heterozygotes=TRUE,chunk_size=3),args))
+  sparse <- quiet(do.call,susieRSlidePrior::susie,c(list(X=Matrix::Matrix(X,sparse=TRUE)),args))
+  cached <- quiet(do.call,susieRSlidePrior::susie,c(list(X=X,cache_heterozygotes=TRUE,chunk_size=3),args))
   expect_equal(sparse$fitted,fit$fitted,tolerance=1e-8)
   expect_equal(cached$fitted,fit$fitted,tolerance=1e-9)
   expect_equal(ncol(fit$delta),ncol(X)+1L)
@@ -128,11 +129,11 @@ test_that("allele reversal, sparse inputs, caching, and null columns are handled
 test_that("learned variances, EM updates, and warm starts converge consistently", {
   set.seed(16); X <- genotypes(600,15); y <- .7*(X[,2]+.6*(X[,2]==1))+rnorm(600,sd=.7)
   for(method in c("optim","EM")) {
-    fit <- quiet(susieSlide::susie,X,y,L=1,estimate_prior_method=method,max_iter=1000,tol=1e-9)
+    fit <- quiet(susieRSlidePrior::susie,X,y,L=1,estimate_prior_method=method,max_iter=1000,tol=1e-9)
     expect_true(fit$converged)
     expect_true(all(diff(fit$elbo)>-1e-6))
     expect_equal(fit$sigma2,fit$expected_squared_residuals/length(y),tolerance=1e-5)
-    warm <- quiet(susieSlide::susie,X,y,L=1,estimate_prior_method=method,
+    warm <- quiet(susieRSlidePrior::susie,X,y,L=1,estimate_prior_method=method,
                    model_init=fit,max_iter=1000,tol=1e-9)
     expect_equal(warm$fitted,fit$fitted,tolerance=1e-5)
     expect_equal(warm$delta,fit$delta,tolerance=1e-5)
@@ -141,16 +142,16 @@ test_that("learned variances, EM updates, and warm starts converge consistently"
 
 test_that("missing outcome counts and invalid/unsupported inputs are explicit", {
   X <- matrix(rep(0:2,each=5),ncol=1); y <- seq_len(15); y[15] <- NA
-  fit <- quiet(susieSlide::susie,X,y,L=1,na.rm=TRUE,delta=1,estimate_prior_variance=FALSE)
+  fit <- quiet(susieRSlidePrior::susie,X,y,L=1,na.rm=TRUE,delta=1,estimate_prior_variance=FALSE)
   expect_equal(unname(fit$genotype_counts[1,]),c(5,5,4))
   expect_true(fit$delta_forced)
   expect_equal(unname(fit$delta[1,1]),0)
-  expect_error(susieSlide::susie(X,y),"finite")
-  expect_error(susieSlide::susie(X+.1,1:15),"hard-call")
-  expect_error(susieSlide::susie(X,1:15,min_obs=-1),"min_obs")
-  expect_error(susieSlide::susie(X,1:15,delta=2),"delta")
-  expect_error(susieSlide::susie(X,1:15,refine=TRUE),"Unsupported")
-  expect_error(susieSlide::susie(X,1:15,estimate_residual_method="NIG"),"Gaussian")
+  expect_error(susieRSlidePrior::susie(X,y),"finite")
+  expect_error(susieRSlidePrior::susie(X+.1,1:15),"hard-call")
+  expect_error(susieRSlidePrior::susie(X,1:15,min_obs=-1),"min_obs")
+  expect_error(susieRSlidePrior::susie(X,1:15,delta=2),"delta")
+  expect_error(susieRSlidePrior::susie(X,1:15,refine=TRUE),"Unsupported")
+  expect_error(susieRSlidePrior::susie(X,1:15,estimate_residual_method="NIG"),"Gaussian")
 })
 
 test_that("non-singleton credible-set purity uses the fitted slider coordinates", {
@@ -158,7 +159,7 @@ test_that("non-singleton credible-set purity uses the fitted slider coordinates"
   X <- genotypes(400,4)
   X[,2] <- X[,1]
   y <- rnorm(400)
-  fit <- quiet(susieSlide::susie,X,y,L=1,delta=c(-1,1,-.4,.4),
+  fit <- quiet(susieRSlidePrior::susie,X,y,L=1,delta=c(-1,1,-.4,.4),
     estimate_prior_variance=FALSE,estimate_residual_variance=FALSE,
     scaled_prior_variance=.0001,coverage=.99,min_abs_corr=0,n_purity=-1)
   expect_length(fit$sets$cs,1)

@@ -4,7 +4,7 @@
 coef.susie_slide <- function(object,...) {
   scale <- object$X_column_scale_factors
   ans <- cbind(additive=c(object$intercept,colSums(object$alpha*object$mu)/scale),
-               heterozygote=c(0,colSums(object$alpha*object$mu*object$delta)/scale))
+               heterozygote=c(0,colSums(object$alpha*.slide_mu_delta(object))/scale))
   snps <- colnames(object$alpha)
   if(is.null(snps)) snps <- paste0("SNP",seq_len(ncol(object$alpha)))
   rownames(ans) <- c("(Intercept)",snps)
@@ -42,7 +42,7 @@ predict.susie_slide <- function(object,newx=NULL,type=c("response","coefficients
 #' Slider coefficients, predictions, and credible-set output
 #'
 #' Extracts output using both the additive and heterozygote terms.
-#' @param fit,object A susieSlide fit.
+#' @param fit,object A susieRSlidePrior fit.
 #' @param newx Complete hard-call genotypes with the same SNPs and allele
 #'   orientation, in the same order. NULL returns training fitted values.
 #' @param type Return response predictions or coefficients.
@@ -58,6 +58,9 @@ predict.susie_slide <- function(object,newx=NULL,type=c("response","coefficients
 #'   outside that CS, excluding an explicit null column). Rows follow
 #'   sets$cs and select component rows using sets$cs_index. summary returns
 #'   the usual SuSiE summary with an additional delta table.
+#'   With a finite slider prior, delta reports the posterior mean given the
+#'   SNP and component. Heterozygote coefficients use E(beta*delta), retaining
+#'   posterior dependence between the slider and effect size.
 #' @importFrom stats setNames
 #' @export
 slider_cs_table <- function(fit) {

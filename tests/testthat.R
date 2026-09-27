@@ -1,3 +1,3 @@
 library(testthat)
-library(susieSlide)
-test_check("susieSlide")
+library(susieRSlidePrior)
+test_check("susieRSlidePrior")

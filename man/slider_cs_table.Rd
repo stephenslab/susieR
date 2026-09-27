@@ -23,7 +23,7 @@ orientation, in the same order. NULL returns training fitted values.}
 
 \item{type}{Return response predictions or coefficients.}
 
-\item{fit, object}{A susieSlide fit.}
+\item{fit, object}{A susieRSlidePrior fit.}
 }
 \value{
 coef returns a two-column matrix, additive and heterozygote,
@@ -37,6 +37,9 @@ coef returns a two-column matrix, additive and heterozygote,
   outside that CS, excluding an explicit null column). Rows follow
   sets$cs and select component rows using sets$cs_index. summary returns
   the usual SuSiE summary with an additional delta table.
+  With a finite slider prior, delta reports the posterior mean given the
+  SNP and component. Heterozygote coefficients use E(beta*delta), retaining
+  posterior dependence between the slider and effect size.
 }
 \description{
 Extracts output using both the additive and heterozygote terms.

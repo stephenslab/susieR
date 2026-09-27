@@ -305,4 +305,4 @@ importFrom(utils,
   modifyList,
   tail
 )
-useDynLib(susieSlide, .registration = TRUE)
+useDynLib(susieRSlidePrior, .registration = TRUE)

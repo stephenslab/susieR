@@ -1,4 +1,4 @@
-# Makefile for susieSlide package
+# Makefile for susieRSlidePrior package
 .PHONY: all install document test test-coverage pkgdown lint style clean deep-clean check check-cran
 
 # Default target
@@ -101,7 +101,7 @@ load:
 
 ## Help
 help:
-	@echo "susieSlide Makefile"
+	@echo "susieRSlidePrior Makefile"
 	@echo ""
 	@echo "Main targets:"
 	@echo "  make              - Document and install (default)"

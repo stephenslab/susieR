@@ -1,9 +1,12 @@
-# susieSlide
+# susieRSlidePrior
 
-This repository's **root package is susieSlide** on branch `susie_slide`.
-It fits one heterozygote slider per SNP and single-effect component.  
+This repository's **root package is susieRSlidePrior** on branch `susie_slide_prior`.
+It integrates a finite heterozygote-slider prior for each SNP and single-effect
+component. The default grid has 17 values from -1 to 1, spaced by 0.125, with
+fixed uniform probabilities. Probability learning belongs to a separate outer
+workflow, as for mixed coding; this fitter never updates `delta_prior`.
 
-The root `DESCRIPTION` says `Package: susieSlide`.  
+The root `DESCRIPTION` says `Package: susieRSlidePrior`.
 
 ```r
 # From C:/Document/Serieux/Travail/Package/git/susieR:
@@ -11,20 +14,30 @@ devtools::document(roclets = c("rd", "collate", "namespace"))
 devtools::install(upgrade = "never")
 ```
 
-Use `susieSlide::susie()` for the slider. The original additive entry point
-is explicitly named `susieSlide::susie_additive()`. Other inherited interfaces
+Use `susieRSlidePrior::susie()` for the slider. The original additive entry point
+is explicitly named `susieRSlidePrior::susie_additive()`. Other inherited interfaces
 such as `susie_ss()` and `susie_rss()` remain additive and do not estimate
-sliders. Ordinary susieR can be installed alongside this package for comparison.
+sliders. Both `susieR` and the original `susieSlide` can be installed alongside
+`susieRSlidePrior` for comparison.
 
 ```r
-fit <- susieSlide::susie(X, y, L = 10, min_obs = 5)
+fit <- susieRSlidePrior::susie(X, y, L = 10, min_obs = 5)
+
+# Supply different fixed probabilities (zeros are allowed).
+w <- rep(1, 17)
+w[9] <- 8                       # put more prior mass on additive coding
+fit <- susieRSlidePrior::susie(X, y, L = 10, delta_prior = w / sum(w))
 
 fit$pip                         # SNP inclusion probabilities
 fit$sets                        # familiar credible-set output
 fit$delta                       # L-by-p matrix, aligned with fit$alpha
+fit$delta_prior                 # supplied probabilities, fixed throughout fitting
+fit$alpha_delta                 # L x p x 17 joint SNP-slider posterior probabilities
+fit$delta_weights               # L x 17 posterior slider probabilities
+fit$delta_prior_counts          # L x 17 counts for an external learning step
 fit$delta_cs$summary             # one row per member SNP in each reported CS
 fit$delta_cs$delta               # reported CSs x all input SNPs
-susieSlide::slider_cs_table(fit)
+susieRSlidePrior::slider_cs_table(fit)
 predict(fit, newx = X_test)      # original 0/1/2 genotype matrix
 coef(fit)                       # additive and heterozygote coefficient columns
 ```
@@ -55,11 +68,13 @@ scale, optionally learned separately for each effect. Thus a raw-scale
 coefficient has variance `V_l / sd(x_j)^2` under standardization. Keeping a
 fixed raw-scale prior instead is a different prior specification.
 
-Beta is integrated analytically. Delta is estimated by maximizing the
-marginal likelihood in [-1,1]. A compiled solver enumerates every root of
-the cubic derivative in that interval, plus the boundaries. It brackets
-roots using the quadratic derivative's turning points, avoiding a
-unimodality assumption and unstable closed-form cubic divisions.
+Beta is integrated analytically and delta is averaged over its fixed discrete
+prior. The compiled kernel reuses the genotype and heterozygote residual scores
+for all grid values; it does not build an n-by-17p matrix. Supply `delta_grid`
+and matching `delta_prior` for a different finite grid (increasing, bounded by
+-1 and 1, including zero). `delta_prior=NULL` explicitly selects the original
+continuous plug-in maximization, and `delta=...` overrides the prior with a
+fixed scalar, SNP vector or component-by-SNP matrix.
 
 If any of the counts of genotypes 0, 1, or 2 is below `min_obs`, delta is
 fixed at zero, even when a different fixed delta was supplied. An absent
@@ -68,7 +83,8 @@ This is an additive fallback, not a statistical test of additivity.
 
 ## Output and interpretation
 
-- `delta[l,j]` is conditional on SNP j being the selected SNP for component l.
+- `delta[l,j]` is the posterior mean conditional on SNP j being selected in
+  component l. It is a summary, not a plug-in coding used to fit the model.
   Its row corresponds to the same row of `alpha`, `mu`, and `mu2`.
 - `sets$cs_index` maps reported credible sets to component rows.
 - `delta_cs$summary` is the member-SNP table returned by `slider_cs_table()`.
@@ -79,36 +95,50 @@ This is an additive fallback, not a statistical test of additivity.
   zero-row matrix with one column per input SNP. Deltas are estimated for
   each candidate SNP within each component, rather than shared across a CS.
 - `mu` and `mu2` are first and second moments on the internal coefficient
-  scale. `mu_delta` is `mu * delta`, valid for this plug-in delta model.
-- `lbf_variable` contains fixed-delta Gaussian log-BFs evaluated at fitted
-  delta, and `lbf` is their SNP-prior-weighted component log evidence score.
-  **These are not integrated over a delta prior.**
+  scale. `mu_delta` is E(beta*delta | SNP, component), which generally differs
+  from `mu * delta`. `mu2_delta` and `mu2_delta2` retain the corresponding
+  second moments for expected residual sums of squares.
+- `alpha_delta[l,j,k]` is the joint posterior mass on SNP j and grid value k.
+  Sum over k to recover `alpha`. `mu_grid` and `mu2_grid` store the conditional
+  Gaussian beta moments for each pair. Together these permit exact posterior
+  sampling within each variational component.
+- `delta_weights` sums joint mass over SNPs. `delta_prior_counts` excludes
+  count-forced SNPs, explicit null columns and zero-variance components. Its
+  rows retain the original components so an outer mixed-coding-style workflow
+  can apply its eligibility rules; no purity filter or M-step is run here.
+- `lbf_variable` integrates over the fixed slider prior; `lbf` also integrates
+  over the SNP prior. Zero prior probabilities receive exactly zero posterior
+  mass. Count-forced additive SNPs have a separate point prior at zero, even
+  when the supplied grid prior has zero additive mass.
 - `coef(fit)` returns two coefficient columns because one additive vector
   cannot represent a slider prediction. On the original scale,
   `prediction = intercept + X %*% b + I(X == 1) %*% b_heterozygote`.
 - Fitted values, residual updates, expected squared residuals, residual
   variance updates, and the conditional ELBO all include both terms.
-- Credible-set purity uses each component's fitted transformed genotype
-  columns. Calling `susieR::susie_get_cs(fit, X=X)` manually would instead
+- Credible-set membership uses SNP probabilities marginalized over delta.
+  Purity uses each component's posterior-mean slider coding as a representative
+  coding diagnostic; it does not average correlations over the posterior.
+  Calling `susieR::susie_get_cs(fit, X=X)` manually would instead
   apply additive-genotype purity; use the returned `fit$sets`.
 - An explicit null column is included in component matrices when requested,
   but excluded from SNP PIPs and coefficient rows.
 - Multiple components may select the same SNP with different deltas. The
   resulting summed effect need not itself have one bounded slider.
 
-PIPs, effect moments, and credible sets condition on estimated deltas.
-Optimizing many deltas can overfit null data. Example performance does not
-establish genome-wide PIP or credible-set calibration; inspect the null
-diagnostic alongside the effect-recovery examples.
+PIPs and effect moments integrate over delta conditional on the supplied
+probabilities. Calibration remains an empirical property to assess. The
+optional legacy plug-in path instead conditions on optimized deltas.
 
 ## Supported interface
 
 Supports dense and numeric sparse genotype matrices, fixed or estimated
 Gaussian residual/prior variances, scalar/vector/component-specific fixed
 deltas, SNP prior weights, an optional null column, count filtering,
-predictions, summaries, and same-dimension/scaling warm starts. The EM option
-updates the Gaussian effect-prior variance and refreshes the slider posterior
-at the new variance before updating fitted values.
+predictions, summaries, and matching-grid/dimension/scaling warm starts. New
+`prior_weights` and `delta_prior` inputs are respected when warm-starting an
+outer coding-prior loop. The `estimate_prior_method="EM"` option updates only
+the Gaussian effect-prior variance and refreshes the posterior at that variance.
+It does not estimate slider probabilities.
 
 The slider entry point does not implement ordinary RSS/summary-statistic input, dosage
 or missing-genotype handling, covariate input, NIG priors, infinitesimal/ash
@@ -134,7 +164,7 @@ From the repository root, using Rtools on Windows:
 ```sh
 R CMD INSTALL .
 R CMD build .
-R CMD check --no-manual susieSlide_0.2.0.tar.gz
+R CMD check --no-manual susieRSlidePrior_0.3.0.tar.gz
 ```
 
 From R in the package source directory:
@@ -148,7 +178,7 @@ registration is generated with `cpp11::cpp_register()` (also run by devtools
 when compiling). If roxygen2 reports a missing `decor` dependency, install it
 with `install.packages("decor")`; this is a development-tool dependency.
 Do not rename only DESCRIPTION: native registration and documentation must
-use the same package name. They are already configured for susieSlide here.
+use the same package name. They are already configured for susieRSlidePrior here.
 
 ## Reproduce comparisons
 
@@ -181,7 +211,7 @@ examples and an actual one-million-summary compiled inference benchmark.
 All raw results and the interpretation are in `validation/` in the source
 checkout. These files are excluded from the installed package. Source scripts
 are also available after installation via
-`system.file("examples", package="susieSlide")`.
+`system.file("examples", package="susieRSlidePrior")`.
 
 The external susieR package is suggested only for the comparison scripts,
 which deliberately compare against a separately installed additive package.
