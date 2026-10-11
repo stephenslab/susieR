@@ -93,12 +93,6 @@ fits side by side, including how many CSs contain the causal variant;
 the part of the region around the CSs and the causal variant.
 
 ```{r helpers}
-truth <- function(x) {
-  b <- numeric(length(x$z))
-  b[x$causal] <- 1
-  b
-}
-
 cs_summary <- function(fit, causal = NULL) {
   cs <- fit$sets$cs
   if (length(cs) == 0) return(data.frame(note = "no credible sets"))
@@ -149,8 +143,10 @@ plot_region <- function(fit, x, main, pad = 30) {
   idx <- c(unlist(fit$sets$cs), x$causal)
   if (length(idx) == 0) idx <- which.max(fit$pip)
   pos <- max(1, min(idx) - pad):min(length(fit$pip), max(idx) + pad)
-  susie_plot(fit, y = "PIP", b = truth(x), pos = pos, add_legend = TRUE,
-             main = main)
+  susie_plot(fit, y = "PIP", pos = pos, add_legend = TRUE, main = main)
+  # Mark the true causal variant in red. Passing b = to susie_plot()
+  # misplaces this marker when pos covers only part of the region.
+  points(x$causal, fit$pip[x$causal], col = 2, pch = 16)
 }
 ```
 
