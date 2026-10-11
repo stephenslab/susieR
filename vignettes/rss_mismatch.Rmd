@@ -67,9 +67,9 @@ them.
 
 | Case | Step | Summary statistics | LD reference | Issue |
 |---|---|---|---|---|
-| `allele_flip` | 1 | GTEx, n = 838 | in-sample GTEx LD | 1% of the variants have the sign of their z-score reversed (6 in this region) |
+| `allele_flip` | 1 | GTEx, n = 838 | in-sample GTEx LD | 1% of the variants have the sign of their z-score reversed (2 in this region) |
 | `ld_mismatch` | 2 | GTEx, n = 838 | 1000 Genomes EUR LD, B = 489 | external LD panel |
-| `ld_mismatch_sketch` | 2 | GTEx, n = 838 | ADSP sketch, B = 10,000 | external LD panel, given as a genotype sketch instead of an LD matrix |
+| `ld_mismatch_sketch` | 2 | GTEx, n = 838 | ADSP sketch, B = 500 | external LD panel, given as a genotype sketch instead of an LD matrix |
 | `ser_fallback` | 3 | GTEx, n = 838 | 1000 Genomes EUR LD, B = 489 | external LD panel |
 | `multi_panel` | 4 | 1000 Genomes AFR (n = 400) + UK Biobank unrelated EUR (n = 400), total n = 800 | AFR and EUR panel LD | no single panel matches the mixed summary statistics |
 
@@ -193,9 +193,9 @@ c(flagged = length(out_flip),
   total_flipped = length(af$flip_id))
 ```
 
-Kriging flags 3 variants, and all 3 are true flips. The other 3 flips are
-at variants with small z-scores, where a sign error changes little, so they
-matter much less for fine-mapping.
+Kriging flags 1 variant, and it is a true flip. The other flip is at a
+variant with a small z-score, where a sign error changes little, so it
+matters much less for fine-mapping.
 
 For reference, the same check on the unflipped z-scores, with the same
 in-sample LD, flags no variants:
@@ -208,7 +208,7 @@ length(kriging_outliers(kr_clean))
 
 ### Fine-mapping before and after the correction
 
-We reverse the sign of the 3 flagged variants and fine-map with the
+We reverse the sign of the flagged variant and fine-map with the
 original, flipped and corrected z-scores.
 
 ```{r fit-flip}
@@ -225,7 +225,7 @@ knitr::kable(fit_table(list(original = fit_clean,
                        causal = af$causal), digits = 3)
 ```
 
-With the flipped z-scores, `susie_rss` reports 6 CSs, none containing the
+With the flipped z-scores, `susie_rss` reports 5 CSs, none containing the
 causal variant, and does not converge. After the correction it reports 1 CS
 containing the causal variant, the same as with the original z-scores.
 
@@ -299,7 +299,7 @@ Instead of a LD matrix, the reference panel can be given as a factor
 matrix (sketch) `X` with p columns (p = number of variants). The workflow is
 unchanged: pass `X` instead of `R`.
 
-Here the reference is a sketch of the ADSP panel with 10,000 rows:
+Here the reference is a sketch of the ADSP panel with 500 rows:
 
 ```{r kriging-sk}
 sk <- cases$ld_mismatch_sketch
@@ -308,8 +308,8 @@ kr_sk$plot
 length(kriging_outliers(kr_sk))
 ```
 
-Kriging again flags nothing. `R_finite` is the number of reference
-individuals the sketch represents, here 10,000.
+Kriging again flags nothing. For a sketch, `R_finite` is the sketch
+dimension, the number of rows of `X`, here 500.
 
 ```{r fit-sk}
 fit_sk_in <- susie_rss(z = sk$z_insample, R = sk$R_insample, n = sk$n)
@@ -321,8 +321,8 @@ knitr::kable(fit_table(list(in_sample_LD = fit_sk_in, ordinary = fit_sk,
                        causal = sk$causal), digits = 3)
 ```
 
-With the sketch, ordinary `susie_rss` reports 8 CSs and does not converge.
-With SuSiE-rRSS (`R_finite = 10000`, `R_mismatch = "eb_mix"`), it reports
+With the sketch, ordinary `susie_rss` reports 4 CSs and does not converge.
+With SuSiE-rRSS (`R_finite = 500`, `R_mismatch = "eb_mix"`), it reports
 1 CS with a single variant, and `SER_fallback` is `FALSE`.
 
 ```{r plot-sk}
@@ -356,8 +356,8 @@ knitr::kable(fit_table(list(in_sample_LD = fit_sf_in, ordinary = fit_sf,
 ```
 
 The ordinary fit reports 4 CSs, none containing the causal variant, and
-does not converge. The SuSiE-rRSS fit converges, but still reports 4 CSs,
-and none of them contain the causal variant. `susie_rss` prints a warning that
+does not converge. The SuSiE-rRSS fit does not converge either and still
+reports 4 CSs, none of which contain the causal variant. `susie_rss` prints a warning that
 the result may be unreliable: `SER_fallback` is `TRUE`.
 
 ### What `SER_fallback` checks
@@ -376,9 +376,9 @@ the result may be unreliable: `SER_fallback` is `TRUE`.
 round(fit_sf_rrss$R_finite_diagnostics$bf_attenuation$cs_max, 2)
 ```
 
-`Q_art` is 0.067, below 0.1, so the residual check passes. But CSs
-loses more than 30 in log Bayes factor, so the sensitivity
-check fails.
+`Q_art` is 0.082, below 0.1, so the residual check passes. But every CS
+loses far more than 30 in log Bayes factor (from 467 to 1199), so the
+sensitivity check fails.
 
 ### The SER model
 
@@ -436,7 +436,7 @@ knitr::kable(data.frame(panel = names(mp$R),
 knitr::kable(cs_summary(fit_mp, mp$causal), digits = 3)
 ```
 
-The estimated weights, 0.474 for AFR and 0.526 for EUR, are close to the
+The estimated weights, 0.409 for AFR and 0.591 for EUR, are close to the
 true proportions of 0.5 and 0.5. The fit reports 1 CS: a single variant,
 which is the causal variant.
 
