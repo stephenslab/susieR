@@ -337,6 +337,8 @@ test_that("eb on well-behaved data yields Q_art near 0 and no flag", {
   expect_lt(d$Q_art, 0.1)
   expect_false(d$artifact_flag)
   expect_equal(d$mode_label, "normal")
+  expect_false(d$SER_fallback)
+  expect_identical(d$SER_fallback, d$R_reliability_flag)
 })
 
 test_that("eb emits one final R warning when reliability flag triggers", {
@@ -360,6 +362,8 @@ test_that("eb emits one final R warning when reliability flag triggers", {
   expect_match(final_warnings, "one-effect credible-set model as in Maller et al. 2012")
   expect_true(fit$R_finite_diagnostics$artifact_flag)
   expect_true(fit$R_finite_diagnostics$R_reliability_flag)
+  expect_identical(fit$R_finite_diagnostics$SER_fallback,
+                   fit$R_finite_diagnostics$R_reliability_flag)
   expect_equal(fit$R_finite_diagnostics$Q_art, 1, tolerance = 1e-6)
   ser <- fit$R_finite_diagnostics$ser_model
   expect_s3_class(ser, "susie")

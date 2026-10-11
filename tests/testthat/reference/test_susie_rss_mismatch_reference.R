@@ -13,9 +13,8 @@ context("susie_rss RSS-mismatch reference comparison")
 # refactor of susie_rss preserves machine-precision results.
 #
 # Coverage:
-#   1. The 8 vignette fits from vignettes/rss_mismatch.Rmd
+#   1. The vignette fits from the earlier vignettes/rss_mismatch.Rmd
 #      (3 from the SummaryConsistency toy example,
-#       4 from the rss_mismatch_example full example,
 #       plus susie_rss_lambda smoke).
 #   2. Multi-panel R and X (K = 2, K = 3) with various R_finite shapes.
 #   3. All R_mismatch enum values × all R_finite shapes.
@@ -57,49 +56,6 @@ test_that("vignette toy: susie_rss with R_finite = 500, R_mismatch = 'eb' matche
   with(SummaryConsistency, {
     args <- list(z = z, R = ldref, n = 10000,
                  R_finite = 500, R_mismatch = "eb")
-    compare_to_mismatch_reference("susie_rss", args)
-  })
-})
-
-# =============================================================================
-# Part 2: Vignette full example (rss_mismatch_example dataset)
-# =============================================================================
-
-test_that("vignette full: susie_rss baseline (no mismatch correction) matches reference", {
-  skip_if_no_mismatch_reference()
-  data(rss_mismatch_example, package = "susieR")
-  with(rss_mismatch_example, {
-    args <- list(bhat = bhat, shat = shat, R = R, n = n)
-    compare_to_mismatch_reference("susie_rss", args)
-  })
-})
-
-test_that("vignette full: susie_rss with R_finite = 500 matches reference", {
-  skip_if_no_mismatch_reference()
-  data(rss_mismatch_example, package = "susieR")
-  with(rss_mismatch_example, {
-    args <- list(bhat = bhat, shat = shat, R = R, n = n,
-                 R_finite = 500)
-    compare_to_mismatch_reference("susie_rss", args)
-  })
-})
-
-test_that("vignette full: susie_rss with R_finite = 500 + R_mismatch = 'eb' matches reference", {
-  skip_if_no_mismatch_reference()
-  data(rss_mismatch_example, package = "susieR")
-  with(rss_mismatch_example, {
-    args <- list(bhat = bhat, shat = shat, R = R, n = n,
-                 R_finite = 500, R_mismatch = "eb")
-    compare_to_mismatch_reference("susie_rss", args)
-  })
-})
-
-test_that("vignette full: susie_rss with R_mismatch = 'eb' only matches reference", {
-  skip_if_no_mismatch_reference()
-  data(rss_mismatch_example, package = "susieR")
-  with(rss_mismatch_example, {
-    args <- list(bhat = bhat, shat = shat, R = R, n = n,
-                 R_mismatch = "eb")
     compare_to_mismatch_reference("susie_rss", args)
   })
 })

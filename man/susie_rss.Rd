@@ -373,11 +373,40 @@ In addition to the standard \code{"susie"} output (see
     \eqn{v_j / \sigma^2 = \tau_j^2 / \sigma^2 - 1}, one number per
     variable; values \eqn{\le 0.2} indicate minimal power loss,
     values \eqn{\gg 1} flag variables where the correction is doing
-    heavy lifting).}
+    heavy lifting);
+  \code{R_reliability_flag} (\code{TRUE} when \code{artifact_flag}
+    (\code{Q_art > artifact_threshold}) or \code{R_sensitivity_flag}
+    (a credible set's log-BF attenuation \eqn{\ge}
+    \code{sensitivity_threshold}) is \code{TRUE});
+  \code{SER_fallback} (identical to \code{R_reliability_flag}; \code{TRUE}
+    means the one-effect model in \code{ser_model} should be used
+    instead of the full fit).}
+
+\item{omega_weights}{For multi-panel input, the estimated panel weights
+  \eqn{\omega}, in the order the panels were supplied. The rest of the
+  fit is a single-reference fit against \eqn{\sum_k \omega_k R_k}.}
+
+\item{single_panel_fits}{For multi-panel input, the K single-panel fits
+  used to choose the panel that initializes the mixture.}
 }
 \description{
 Performs SuSiE regression using z-scores and correlation matrix.
 This is the sufficient-statistics RSS interface. For the specialized
 regularized eigendecomposition likelihood with \code{lambda > 0}, use
 \code{\link{susie_rss_lambda}}.
+}
+\details{
+Multi-panel input: \code{R} may be a list of K correlation
+  matrices, or \code{X} a list of K factor matrices (\eqn{B_k} x p),
+  one per reference panel. The fit has two stages. First, the panel
+  weights \eqn{\omega} are estimated from the data. Then
+  \code{susie_rss} is fit on the fixed weighted reference
+  \eqn{R(\omega) = \sum_k \omega_k R_k}. For \code{X} input
+  this is the stacked factor matrix \eqn{X(\omega) = [\sqrt{\omega_1}
+  \tilde X_1; \ldots; \sqrt{\omega_K} \tilde X_K]}, where
+  \eqn{\tilde X_k} is \eqn{X_k} with columns standardized so that
+  \eqn{\tilde X_k^\top \tilde X_k = R_k}; then
+  \eqn{X(\omega)^\top X(\omega) = R(\omega)}. When \code{R_finite} is
+  set, the refit uses \eqn{B_{\mathrm{eff}} = 1 / \sum_k \omega_k^2 /
+  B_k}.
 }

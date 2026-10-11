@@ -124,6 +124,10 @@ compare_to_mismatch_reference <- function(func_name = "susie_rss",
   else if (identical(ref_args$R_mismatch, "eb_ser_init"))
     ref_args$R_mismatch <- "eb"
 
+  is_list_input <- function(x) is.list(x) && !is.matrix(x)
+  if (is_list_input(args$R) || is_list_input(args$X))
+    skip("Multi-panel susie_rss now refits on the omega-weighted reference; the pinned reference returns the joint mixture fit.")
+
   dev_result <- suppressWarnings(suppressMessages(do.call(dev_func, args)))
   ref_result <- suppressWarnings(suppressMessages(do.call(ref_func, ref_args)))
 
