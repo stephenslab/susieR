@@ -377,7 +377,7 @@ round(fit_sf_rrss$R_finite_diagnostics$bf_attenuation$cs_max, 2)
 ```
 
 `Q_art` is 0.082, below 0.1, so the residual check passes. But every CS
-loses far more than 30 in log Bayes factor (from 467 to 1199), so the
+loses far more than 30 in log Bayes factor, so the
 sensitivity check fails.
 
 ### The SER model
