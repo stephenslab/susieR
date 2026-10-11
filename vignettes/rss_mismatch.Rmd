@@ -49,24 +49,12 @@ data:
 
 ## Load the package and data
 
-```{r load, message = FALSE, eval=FALSE}
+```{r load, message = FALSE}
 library(susieR)
-# The example data are too large to ship with the package, so they are
-# downloaded once per session. Replace data_url with the release asset URL.
-data_url  <- "https://github.com/OWNER/REPO/releases/download/TAG/rss_mismatch_cases.rds"
-data_file <- file.path(tempdir(), basename(data_url))
-if (!file.exists(data_file)) {
-  op <- options(timeout = max(600, getOption("timeout")))
-  try(download.file(data_url, data_file, mode = "wb", quiet = TRUE),
-      silent = TRUE)
-  options(op)
-}
-if (file.exists(data_file)) {
-  cases <- readRDS(data_file)
-} else {
-  cat("The example data could not be downloaded; code is shown but not run.\n")
-  knitr::opts_chunk$set(eval = FALSE)
-}
+data(rss_mismatch_cases, package = "susieR")
+if (!exists("rss_mismatch_cases"))
+  load(file.path("..", "data", "rss_mismatch_cases.RData"))
+cases <- rss_mismatch_cases
 ```
 
 ## Case design
@@ -76,10 +64,6 @@ variant. The first four cases simulate a phenotype from GTEx genotypes
 (n = 838). The multi-panel case simulates phenotypes for an
 African-ancestry cohort and a European-ancestry cohort and meta-analyzes
 them.
-
-```{r}
-cases = readRDS("../data/rss_mismatch_cases_trimmed.rds")
-```
 
 | Case | Step | Summary statistics | LD reference | Issue |
 |---|---|---|---|---|
