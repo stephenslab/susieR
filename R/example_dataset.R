@@ -177,41 +177,76 @@ NULL
 #' data(SummaryConsistency)
 NULL
 
-#' @name rss_mismatch_example
+#' @name rss_mismatch_cases
 #'
-#' @title Real-data SuSiE-RSS example with R-reference mismatch.
+#' @title Simulated Summary Statistics with LD Reference Mismatch.
 #'
-#' @description Summary statistics from one real-data gene region,
-#'   together with a reference correlation matrix computed from a
-#'   real-world 1000 Genomes European reference panel with roughly 500
-#'   samples. The data object is name-free and contains a 500-variant
-#'   subset used to illustrate the `R_finite` and `R_mismatch` options
-#'   in `susie_rss`.
+#' @description Five simulated regions, each with one causal variant and
+#'   121 variants, used to illustrate how \code{susie_rss} handles a
+#'   mismatch between the summary statistics and the LD reference. The
+#'   first four cases simulate a phenotype from GTEx genotypes (n = 838);
+#'   the last is a meta-analysis of an African-ancestry and a
+#'   European-ancestry cohort.
 #'
-#' @format \code{rss_mismatch_example} is a list with the following
-#' elements:
+#' @format \code{rss_mismatch_cases} is a list of five cases. Each case is
+#' a list with the inputs to \code{susie_rss}:
 #'
 #' \describe{
 #'
 #'   \item{z}{z-scores.}
 #'
-#'   \item{bhat}{Estimated marginal regression coefficients.}
+#'   \item{R}{LD matrix; for \code{multi_panel}, a named list of LD
+#'     matrices, one per reference panel.}
 #'
-#'   \item{shat}{Standard errors of \code{bhat}.}
+#'   \item{X}{For \code{ld_mismatch_sketch} only, a genotype sketch
+#'     (factor matrix) of the reference panel, used instead of \code{R}.
+#'     This case also stores \code{R}, a copy of \code{R_insample}.}
 #'
-#'   \item{n}{Reference sample-size estimate used by \code{susie_rss}.}
+#'   \item{n}{Sample size of the summary statistics.}
 #'
-#'   \item{R}{Reference correlation matrix.}}
+#'   \item{B}{Reference panel sample size, or the sketch dimension
+#'     (number of rows of \code{X}), passed as \code{R_finite}; one value
+#'     per panel for \code{multi_panel}. Absent for \code{allele_flip},
+#'     whose LD is in-sample.}
+#'
+#'   \item{causal}{Index of the true causal variant.}}
+#'
+#' The cases are:
+#'
+#' \describe{
+#'
+#'   \item{allele_flip}{In-sample LD, with the sign of the z-score
+#'     reversed at 1\% of the variants. Also contains \code{z_clean}, the
+#'     z-scores before flipping, and \code{flip_id}, the indices of the
+#'     flipped variants.}
+#'
+#'   \item{ld_mismatch}{LD from 489 European individuals in 1000 Genomes.}
+#'
+#'   \item{ld_mismatch_sketch}{The reference panel given as a 500-row
+#'     genotype sketch \code{X} of the ADSP panel.}
+#'
+#'   \item{ser_fallback}{LD from 489 European individuals in 1000 Genomes,
+#'     a region where \code{SER_fallback} is \code{TRUE}.}
+#'
+#'   \item{multi_panel}{Meta-analysis of 400 African-ancestry and 400
+#'     European-ancestry samples, with AFR and EUR panel LD in \code{R}.
+#'     Also contains \code{prop}, the true proportion of samples from each
+#'     ancestry.}}
+#'
+#' \code{ld_mismatch}, \code{ld_mismatch_sketch} and \code{ser_fallback}
+#' also contain \code{z_insample} and \code{R_insample}, the z-scores and
+#' the in-sample LD on the same variants.
 #'
 #' @docType data
 #'
 #' @keywords data
 #'
-#' @seealso The \dQuote{Diagnosing and modeling R-reference mismatch in
-#'   SuSiE-RSS} vignette.
+#' @seealso The \dQuote{Modeling and Accounting for LD Reference Mismatch
+#'   in Summary Statistics Fine-mapping} vignette.
 #'
 #' @examples
-#' data(rss_mismatch_example)
+#' data(rss_mismatch_cases)
+#' names(rss_mismatch_cases)
 NULL
 
 #' @name data_small
