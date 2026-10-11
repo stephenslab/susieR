@@ -12,12 +12,6 @@ vignette: >
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(collapse = TRUE, comment = "#",
                   fig.width = 8, fig.height = 5.5)
-library(Rfast)
-library(mixsqp)
-library(ggplot2)
-for (f in list.files("/sc/arion/projects/ad-omics/haochen/rss_qc/susieR/R/",
-                     full.names = TRUE, pattern = "\\.R$")) source(f)
-library(crayon)
 ```
 
 `susie_rss` fine-maps a region from summary statistics z-scores and an LD
