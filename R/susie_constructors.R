@@ -61,7 +61,8 @@ normalize_prior_weights <- function(prior_weights, p) {
 #' @keywords internal
 #' @noRd
 normalize_summary_stats_input <- function(z = NULL, bhat = NULL,
-                                          shat = NULL) {
+                                          shat = NULL,
+                                          allow_missing_shat = FALSE) {
   if (!is.null(z) && (!is.null(bhat) || !is.null(shat))) {
     stop("Please provide either z or (bhat, shat), but not both.")
   }
@@ -79,9 +80,9 @@ normalize_summary_stats_input <- function(z = NULL, bhat = NULL,
       shat <- as.numeric(shat)
     if (length(bhat) != length(shat))
       stop("The lengths of bhat and shat do not agree.")
-    if (anyNA(bhat) || anyNA(shat))
+    if (anyNA(bhat) || (!allow_missing_shat && anyNA(shat)))
       stop("bhat, shat cannot have missing values.")
-    if (any(shat <= 0))
+    if (any(shat <= 0, na.rm = TRUE))
       stop("shat cannot have zero or negative elements.")
     z <- bhat / shat
     if (!is.null(variable_names))
@@ -980,7 +981,8 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
   }
 
   summary_input <- normalize_summary_stats_input(z = z, bhat = bhat,
-                                                 shat = shat)
+                                                 shat = shat,
+                                                 allow_missing_shat = is.null(var_y))
   z <- summary_input$z
   bhat <- summary_input$bhat
   shat <- summary_input$shat

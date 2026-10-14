@@ -1170,21 +1170,32 @@ test_that("summary_stats_constructor accepts scalar shat and replicates it", {
   expect_s3_class(result$data, "ss")
 })
 
-test_that("summary_stats_constructor rejects missing values in bhat or shat", {
-  p <- 50; R <- diag(p)
-  bhat <- rnorm(p); shat <- abs(rnorm(p))
+test_that("summary_stats_constructor converts missing shat without var_y", {
+  bhat <- c(5, 2, 0.2)
+  result <- suppressMessages(summary_stats_constructor(
+    bhat = bhat, shat = c(1, NaN, 1), R = diag(3), n = NULL))
+  reference <- suppressMessages(summary_stats_constructor(
+    z = c(5, 0, 0.2), R = diag(3), n = NULL))
+  expect_equal(result, reference, tolerance = 1e-10)
 
-  bhat_na <- bhat; bhat_na[5] <- NA
-  expect_error(
-    summary_stats_constructor(bhat = bhat_na, shat = shat, R = R, n = 100),
-    "bhat, shat cannot have missing values"
-  )
+  result <- summary_stats_constructor(
+    bhat = bhat, shat = NA_real_, R = diag(3), n = 1000)
+  reference <- summary_stats_constructor(
+    z = numeric(3), R = diag(3), n = 1000)
+  expect_equal(result, reference, tolerance = 1e-10)
+})
 
-  shat_na <- shat; shat_na[10] <- NA
-  expect_error(
-    summary_stats_constructor(bhat = bhat, shat = shat_na, R = R, n = 100),
-    "bhat, shat cannot have missing values"
-  )
+test_that("summary_stats_constructor keeps missing summary input boundaries", {
+  bhat <- c(5, 2, 0.2)
+  for (n in list(1000, NULL))
+    expect_error(summary_stats_constructor(
+      bhat = bhat, shat = c(1, NA_real_, 1), R = diag(3),
+      n = n, var_y = 1))
+  expect_error(summary_stats_constructor(
+    bhat = c(5, NA_real_, 0.2), shat = c(1, 1, 1), R = diag(3), n = 1000))
+  for (shat in list(c(NA_real_, 0, 1), c(NaN, -1, 1)))
+    expect_error(summary_stats_constructor(
+      bhat = bhat, shat = shat, R = diag(3), n = 1000))
 })
 
 test_that("summary_stats_constructor rejects zero or negative elements in shat", {

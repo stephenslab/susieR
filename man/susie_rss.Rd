@@ -76,11 +76,16 @@ internally.}
 
 \item{bhat}{Alternative summary data giving the estimated effects
 (a vector of length p). This, together with \code{shat}, may be
-provided instead of \code{z}.}
+provided instead of \code{z}. Missing values in \code{bhat} are
+not allowed.}
 
 \item{shat}{Alternative summary data giving the standard errors of
 the estimated effects (a vector of length p). This, together with
-\code{bhat}, may be provided instead of \code{z}.}
+\code{bhat}, may be provided instead of \code{z}.
+For single-panel input with \code{var_y = NULL}, \code{NA} or
+\code{NaN} values in \code{shat} produce missing z-scores, which
+are replaced by zero. Missing \code{shat} is not allowed when
+\code{var_y} is supplied.}
 
 \item{var_y}{The sample variance of y, defined as \eqn{y'y/(n-1)}.
 When the sample variance is not provided, the coefficients
