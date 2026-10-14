@@ -46,7 +46,8 @@
 #'
 #' \code{susie_get_lfsr} returns a vector containing the average lfsr
 #' across variables for each single-effect, weighted by the posterior
-#' inclusion probability (alpha).
+#' inclusion probability (alpha). Each conditional sign probability uses
+#' the posterior mean and variance for the same single-effect and variable.
 #'
 #' \code{susie_get_posterior_samples} returns a list containing the
 #' effect sizes samples and causal status with two components: \code{b},
@@ -180,9 +181,9 @@ susie_get_residual_variance <- function(res) {
 #' @export
 #'
 susie_get_lfsr <- function(res) {
-  pos_prob <- pnorm(0, mean = t(res$mu), sd = sqrt(res$mu2 - res$mu^2))
+  pos_prob <- pnorm(0, mean = res$mu, sd = sqrt(res$mu2 - res$mu^2))
   neg_prob <- 1 - pos_prob
-  return(1 - rowSums(res$alpha * t(pmax(pos_prob, neg_prob))))
+  return(1 - rowSums(res$alpha * pmax(pos_prob, neg_prob)))
 }
 
 #' @rdname susie_get_methods
