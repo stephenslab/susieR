@@ -1168,6 +1168,12 @@ scale_design_matrix <- function(X, center = NULL, scale = NULL) {
   X_centered <- sweep(X, 2, center, "-")
   X_scaled <- sweep(X_centered, 2, scale, "/")
 
+  # Drop the scaling attributes inherited from X: the returned matrix is
+  # already standardized, so compute_Xb()/compute_Xty() must not rescale it.
+  attr(X_scaled, "scaled:center") <- NULL
+  attr(X_scaled, "scaled:scale") <- NULL
+  attr(X_scaled, "d") <- NULL
+
   return(X_scaled)
 }
 
@@ -2356,13 +2362,11 @@ compute_ash_masking <- function(Xcorr, model, params) {
 
 # Run Mr.ASH on individual-level data
 #
-# Computes residuals from X, y and calls mr.ash directly.
-#
-# X is stored unscaled, with its centering and scaling kept in the
-# "scaled:center" and "scaled:scale" attributes, while b_confident and
-# model$theta are on the standardized scale. mr.ash is therefore run on the
-# standardized X, so that theta is on the same scale as the sparse effects and
-# matches compute_ash_from_summary_stats(), which works on the standardized X'X.
+# X is stored on its original scale, with its centering and scaling in the
+# "scaled:center" / "scaled:scale" attributes, while b_confident and
+# model$theta are on the standardized scale. mr.ash is therefore fitted to a
+# standardized copy of X, so theta stays on the same scale as the sparse
+# effects (and as the sufficient-statistics path, where X'X is standardized).
 #
 # @param X Design matrix (n x p) with scaled:center/scaled:scale attributes
 # @param y Response vector (n)
@@ -2375,9 +2379,11 @@ compute_ash_masking <- function(Xcorr, model, params) {
 #
 # @keywords internal
 compute_ash_from_individual_data <- function(X, y, b_confident, model, params, convtol = 1e-4) {
+  residuals <- y - compute_Xb(X, b_confident)
+
+  # mr.ash needs the standardized matrix itself (dense n x p copy).
   X_std <- scale_design_matrix(X, center = attr(X, "scaled:center"),
                                scale = attr(X, "scaled:scale"))
-  residuals <- y - X_std %*% b_confident
 
   mrash_output <- mr.ash(
     X             = X_std,

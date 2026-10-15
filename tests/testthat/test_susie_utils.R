@@ -1682,6 +1682,17 @@ test_that("scale_design_matrix centers and scales with NULL defaults", {
   ref_c <- scale(X, center = cm, scale = FALSE)
   attributes(ref_c) <- list(dim = dim(ref_c))
   expect_equal(scale_design_matrix(X, center = cm), ref_c, tolerance = 1e-10)
+
+  # The standardized copy must not inherit the scaling attributes of X.
+  X_attr <- X
+  attr(X_attr, "scaled:center") <- cm
+  attr(X_attr, "scaled:scale")  <- csd
+  attr(X_attr, "d")             <- colSums(ref_cs^2)
+  X_std <- scale_design_matrix(X_attr, center = cm, scale = csd)
+  expect_null(attr(X_std, "scaled:center"))
+  expect_null(attr(X_std, "scaled:scale"))
+  expect_null(attr(X_std, "d", exact = TRUE))   # attr() would partial-match "dim"
+  expect_equal(X_std, ref_cs, tolerance = 1e-10)
 })
 
 test_that("format_V_summary formats non-zero, zero, and NA entries", {
@@ -1803,6 +1814,71 @@ test_that("susie_ss ash_filter_archived mode runs through summary-stat masking",
   expect_false(is.null(fit$theta))
   expect_length(fit$theta, p)
   expect_true(all(is.finite(fit$theta)))
+})
+
+# ---- SuSiE-ash individual-level backend honours the X scaling attributes ----
+
+# X as stored by individual_data_constructor() (original scale with
+# scaled:center / scaled:scale / d attributes, y centered), plus an explicitly
+# standardized copy with identity attributes. Both must give the same fit.
+.make_ash_attributed_X <- function(n = 150, p = 12, seed = 1012) {
+  set.seed(seed)
+  X <- matrix(rbinom(n * p, 2, runif(p, 0.2, 0.5)), n, p) * 1.0
+  X <- sweep(X, 2, exp(seq(-2, 2, length.out = p)), "*")   # heterogeneous scales
+  b <- rnorm(p, sd = 0.3); b[c(2, 9)] <- c(2, -2)
+  y <- as.vector(scale(X) %*% b + rnorm(n))
+  y <- y - mean(y)
+
+  X_raw <- X
+  cs <- compute_colstats(X_raw, center = TRUE, scale = TRUE)
+  attr(X_raw, "scaled:center") <- cs$cm
+  attr(X_raw, "scaled:scale")  <- cs$csd
+  attr(X_raw, "d")             <- cs$d
+
+  X_std <- scale(X, center = cs$cm, scale = cs$csd)
+  attributes(X_std) <- list(dim = dim(X_std))
+  attr(X_std, "scaled:center") <- rep(0, p)
+  attr(X_std, "scaled:scale")  <- rep(1, p)
+  attr(X_std, "d")             <- colSums(X_std^2)
+
+  list(X_raw = X_raw, X_std = X_std, y = y, n = n, p = p)
+}
+
+test_that("compute_ash_from_individual_data fits mr.ash on the standardized scale of an attributed X", {
+  d <- .make_ash_attributed_X()
+  set.seed(1)
+  b_confident <- rnorm(d$p, sd = 0.1)
+  model  <- list(sigma2 = var(d$y), theta = rep(0, d$p), ash_pi = NULL)
+  params <- list(estimate_residual_variance = TRUE, verbose = FALSE)
+
+  out_raw <- compute_ash_from_individual_data(d$X_raw, d$y, b_confident, model, params)
+  out_std <- compute_ash_from_individual_data(d$X_std, d$y, b_confident, model, params)
+
+  expect_true(any(out_std$beta != 0))
+  for (nm in c("beta", "sigma2", "pi", "sa2", "tau2"))
+    expect_equal(out_raw[[nm]], out_std[[nm]], tolerance = 1e-8, label = nm)
+})
+
+test_that("run_final_ash_pass computes X_theta through the scaling attributes of X", {
+  d <- .make_ash_attributed_X()
+  set.seed(2)
+  L <- 3
+  alpha <- matrix(runif(L * d$p), L, d$p)
+  alpha <- alpha / rowSums(alpha)
+  mu    <- matrix(rnorm(L * d$p, sd = 0.5), L, d$p)
+  model  <- list(alpha = alpha, mu = mu, sigma2 = var(d$y),
+                 theta = rep(0, d$p), ash_pi = NULL)
+  params <- list(estimate_residual_variance = TRUE, verbose = FALSE)
+
+  data_raw <- structure(list(X = d$X_raw, y = d$y, n = d$n, p = d$p), class = "individual")
+  data_std <- structure(list(X = d$X_std, y = d$y, n = d$n, p = d$p), class = "individual")
+  m_raw <- run_final_ash_pass(data_raw, params, model)
+  m_std <- run_final_ash_pass(data_std, params, model)
+
+  expect_equal(m_raw$theta, m_std$theta, tolerance = 1e-8)
+  expect_equal(m_raw$X_theta, as.vector(compute_Xb(d$X_raw, m_raw$theta)), tolerance = 1e-12)
+  expect_equal(m_raw$X_theta, as.vector(d$X_std %*% m_raw$theta), tolerance = 1e-8)
+  expect_equal(m_raw$X_theta, m_std$X_theta, tolerance = 1e-8)
 })
 
 # ---- SuSiE-ash masking decision tiers - direct internal-function drivers ----
