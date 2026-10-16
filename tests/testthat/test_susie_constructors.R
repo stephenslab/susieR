@@ -1190,12 +1190,14 @@ test_that("summary_stats_constructor keeps missing summary input boundaries", {
   for (n in list(1000, NULL))
     expect_error(summary_stats_constructor(
       bhat = bhat, shat = c(1, NA_real_, 1), R = diag(3),
-      n = n, var_y = 1))
+      n = n, var_y = 1), "missing values")
   expect_error(summary_stats_constructor(
-    bhat = c(5, NA_real_, 0.2), shat = c(1, 1, 1), R = diag(3), n = 1000))
+    bhat = c(5, NA_real_, 0.2), shat = c(1, 1, 1), R = diag(3), n = 1000),
+    "missing values")
   for (shat in list(c(NA_real_, 0, 1), c(NaN, -1, 1)))
     expect_error(summary_stats_constructor(
-      bhat = bhat, shat = shat, R = diag(3), n = 1000))
+      bhat = bhat, shat = shat, R = diag(3), n = 1000),
+      "zero or negative")
 })
 
 test_that("summary_stats_constructor rejects zero or negative elements in shat", {
