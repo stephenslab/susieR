@@ -1200,6 +1200,51 @@ test_that("summary_stats_constructor keeps missing summary input boundaries", {
       "zero or negative")
 })
 
+test_that("missing shat with var_y points at the var_y-specific fix", {
+  bhat <- c(5, 2, 0.2)
+  expect_error(
+    susie_rss(bhat = bhat, shat = c(1, NA_real_, 1), R = diag(3),
+              n = 1000, var_y = 1, L = 1, max_iter = 1, coverage = NULL),
+    "omit var_y, or provide z = bhat/shat", fixed = TRUE)
+  expect_error(
+    summary_stats_constructor(bhat = bhat, shat = c(1, NaN, 1), R = diag(3),
+                              n = 1000, var_y = 1),
+    "omit var_y, or provide z = bhat/shat", fixed = TRUE)
+  expect_error(
+    summary_stats_constructor(bhat = c(5, NA_real_, 0.2), shat = c(1, 1, 1),
+                              R = diag(3), n = 1000, var_y = 1),
+    "bhat, shat cannot have missing values", fixed = TRUE)
+})
+
+test_that("low-rank X keeps missing shat on the zeroed-z path", {
+  set.seed(314)
+  n <- 20; p <- 50
+  X <- matrix(rnorm(n * p), n, p)
+  X <- t(t(X) - colMeans(X))
+  bhat <- rnorm(p)
+  shat <- abs(rnorm(p)) + 0.1
+  shat[3] <- NA_real_
+
+  result <- summary_stats_constructor(bhat = bhat, shat = shat, X = X,
+                                      n = n, var_y = NULL, L = 3)
+
+  # Low-rank branch: X kept, R/XtX never formed.
+  expect_null(result$data$XtX)
+  expect_equal(dim(result$data$X), c(n, p))
+
+  z <- result$data$z_marginal
+  expect_length(z, p)
+  expect_equal(z[3], 0)
+  expect_true(all(is.finite(z)))
+
+  # max_iter = 3 is a smoke run, so the non-convergence warning is expected.
+  fit <- suppressWarnings(suppressMessages(
+    susie_rss(bhat = bhat, shat = shat, X = X, n = n, L = 2, max_iter = 3,
+              coverage = NULL)))
+  expect_true(all(is.finite(fit$pip)))
+  expect_equal(unname(fit$pip[3]) >= 0, TRUE)
+})
+
 test_that("summary_stats_constructor rejects zero or negative elements in shat", {
   p <- 50; R <- diag(p); bhat <- rnorm(p); shat <- abs(rnorm(p))
 

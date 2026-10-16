@@ -83,8 +83,13 @@ not allowed.}
 the estimated effects (a vector of length p). This, together with
 \code{bhat}, may be provided instead of \code{z}.
 For single-panel input with \code{var_y = NULL}, \code{NA} or
-\code{NaN} values in \code{shat} produce missing z-scores, which
-are replaced by zero. Missing \code{shat} is not allowed when
+\code{NaN} values in \code{shat} give missing z-scores, which are
+set to zero. A z-score of zero is treated as an observed null
+association, not as missing data. If such a variant is in strong
+LD with a strong signal, this can conflict with \code{R} and
+distort the PIPs, so it is usually better to remove variants with
+missing \code{shat} from \code{bhat}, \code{shat} and \code{R}
+before fitting. Missing \code{shat} is not allowed when
 \code{var_y} is supplied.}
 
 \item{var_y}{The sample variance of y, defined as \eqn{y'y/(n-1)}.
