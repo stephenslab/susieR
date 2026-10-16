@@ -44,6 +44,12 @@ test_that("susie_ser only accepts optim and simple prior methods", {
   )
 })
 
+test_that("susie_ser rejects missing shat even without var_y", {
+  expect_error(susie_ser(bhat = c(5, 2, 0.2), shat = c(1, NA_real_, 1),
+                         n = 1000, coverage = NULL),
+               "bhat, shat cannot have missing values", fixed = TRUE)
+})
+
 # ---- PVE adjustment and z storage ----
 
 test_that("susie_ser applies PVE adjustment when n is provided", {
