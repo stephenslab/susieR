@@ -433,8 +433,7 @@ update_derived_quantities.individual <- function(data, params, model) {
     model$XtOmegay          <- as.vector(data$eigen_vectors %*%
                                            (data$VtXty / omega_res$omega_var))
 
-    b <- colSums(model$alpha * model$mu)
-    model$Xr <- as.vector(compute_Xb(data$X, b + model$theta))
+    model$Xr <- as.vector(compute_Xb(data$X, get_total_effect(model)))
     return(model)
   }
   if (params$unmappable_effects %in% c("ash", "ash_filter_archived")) {

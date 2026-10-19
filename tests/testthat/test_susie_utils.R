@@ -1755,30 +1755,40 @@ test_that("susie ash mode (default path) runs and produces valid structure", {
 
 # ---- SuSiE-ash: per-fit correlation cache and returned fields ----
 
-.make_ash_cache_data <- function(n = 150, p = 20, seed = 1013) {
-  set.seed(seed)
-  X <- matrix(rbinom(n * p, 2, runif(p, 0.1, 0.5)), n, p, byrow = TRUE) * 1.0
-  b <- rnorm(p, sd = 0.05)
-  b[c(3, 12)] <- c(0.8, -0.7)
-  y <- as.vector(X %*% b + rnorm(n))
-  list(X = X, y = y, n = n, p = p)
-}
+.make_ash_cache_data <- function()
+  simulate_dosage_regression(n = 150, p = 20, seed = 1013, causal = c(3, 12),
+                             effects = c(0.8, -0.7))
 
-test_that("get_xcorr misses its cache only once per fit (individual and SS)", {
+test_that("the ash correlation matrix is computed once per fit (individual and SS)", {
   d <- .make_ash_cache_data()
   misses <- 0L
+  full_calls <- 0L   # p x p correlation computations (purity works on sub-matrices)
   orig <- get_xcorr
-  local_mocked_bindings(get_xcorr = function(data) {
-    if (is.null(data$Xcorr_cache)) misses <<- misses + 1L
-    orig(data)
-  }, .package = "susieR")
+  orig_cor <- safe_cor
+  orig_cov2cor <- safe_cov2cor
+  local_mocked_bindings(
+    get_xcorr = function(data) {
+      if (is.null(data$Xcorr_cache)) misses <<- misses + 1L
+      orig(data)
+    },
+    safe_cor = function(...) {
+      if (ncol(..1) == d$p) full_calls <<- full_calls + 1L
+      orig_cor(...)
+    },
+    safe_cov2cor = function(...) {
+      if (ncol(..1) == d$p) full_calls <<- full_calls + 1L
+      orig_cov2cor(...)
+    },
+    .package = "susieR")
 
   fit <- suppressWarnings(suppressMessages(susie(
     d$X, d$y, L = 3, unmappable_effects = "ash", max_iter = 10, verbose = FALSE)))
   expect_gt(fit$niter, 1)
   expect_equal(misses, 1L)
+  expect_equal(full_calls, 1L)
 
   misses <- 0L
+  full_calls <- 0L
   Xs <- scale(d$X)
   yc <- d$y - mean(d$y)
   fit_ss <- suppressWarnings(suppressMessages(susie_ss(
@@ -1786,6 +1796,7 @@ test_that("get_xcorr misses its cache only once per fit (individual and SS)", {
     L = 3, unmappable_effects = "ash", max_iter = 10, verbose = FALSE)))
   expect_gt(fit_ss$niter, 1)
   expect_equal(misses, 1L)
+  expect_equal(full_calls, 1L)
 })
 
 test_that("ash fits return no masking state and no diagnostics by default", {
@@ -1809,12 +1820,14 @@ test_that("options(susie.ash_debug = TRUE) collects per-iteration diagnostics", 
   options(susie.ash_debug = TRUE)
 
   d <- .make_ash_cache_data()
-  fit <- suppressWarnings(suppressMessages(susie(
-    d$X, d$y, L = 3, unmappable_effects = "ash", max_iter = 10, verbose = FALSE)))
-  expect_true(is.environment(fit$.diag_env))
-  diag <- collect_ash_diag(fit)
-  expect_s3_class(diag, "data.frame")
-  expect_gt(nrow(diag), 0)
+  for (method in c("ash", "ash_filter_archived")) {
+    fit <- suppressWarnings(suppressMessages(susie(
+      d$X, d$y, L = 3, unmappable_effects = method, max_iter = 10, verbose = FALSE)))
+    expect_true(is.environment(fit$.diag_env), label = paste("diag_env,", method))
+    diag <- collect_ash_diag(fit)
+    expect_s3_class(diag, "data.frame")
+    expect_gt(nrow(diag), 0)
+  }
 })
 
 test_that("susie ash mode on unmappable_data drives masking decision tiers", {
@@ -1915,8 +1928,8 @@ test_that("compute_ash_from_individual_data fits mr.ash on the standardized scal
   model  <- list(sigma2 = var(d$y), theta = rep(0, d$p), ash_pi = NULL)
   params <- list(estimate_residual_variance = TRUE, verbose = FALSE)
 
-  out_raw <- compute_ash_from_individual_data(d$X_raw, d$y, b_confident, model, params)
-  out_std <- compute_ash_from_individual_data(d$X_std, d$y, b_confident, model, params)
+  out_raw <- suppressWarnings(compute_ash_from_individual_data(d$X_raw, d$y, b_confident, model, params))
+  out_std <- suppressWarnings(compute_ash_from_individual_data(d$X_std, d$y, b_confident, model, params))
 
   expect_true(any(out_std$beta != 0))
   for (nm in c("beta", "sigma2", "pi", "sa2", "tau2"))
@@ -1936,8 +1949,8 @@ test_that("run_final_ash_pass computes X_theta through the scaling attributes of
 
   data_raw <- structure(list(X = d$X_raw, y = d$y, n = d$n, p = d$p), class = "individual")
   data_std <- structure(list(X = d$X_std, y = d$y, n = d$n, p = d$p), class = "individual")
-  m_raw <- run_final_ash_pass(data_raw, params, model)
-  m_std <- run_final_ash_pass(data_std, params, model)
+  m_raw <- suppressWarnings(run_final_ash_pass(data_raw, params, model))
+  m_std <- suppressWarnings(run_final_ash_pass(data_std, params, model))
 
   expect_equal(m_raw$theta, m_std$theta, tolerance = 1e-8)
   expect_equal(m_raw$X_theta, as.vector(compute_Xb(d$X_raw, m_raw$theta)), tolerance = 1e-12)

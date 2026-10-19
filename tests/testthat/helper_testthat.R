@@ -617,6 +617,18 @@ setup_rss_lambda_data <- function(n = 500, p = 50, k = 3, lambda = 0.5,
 # ADDITIONAL SIMULATION FUNCTIONS
 # -----------------------------------------------------------------------------
 
+# Uncentered 0/1/2 dosage regression with a polygenic background and a few
+# large effects; X is left on its original scale.
+simulate_dosage_regression <- function(n, p, seed, causal, effects,
+                                       background_sd = 0.05, intercept = 0) {
+  set.seed(seed)
+  X <- matrix(rbinom(n * p, 2, runif(p, 0.1, 0.5)), n, p, byrow = TRUE) * 1.0
+  b <- rnorm(p, sd = background_sd)
+  b[causal] <- effects
+  y <- as.vector(X %*% b + rnorm(n)) + intercept
+  list(X = X, y = y, n = n, p = p, beta = b)
+}
+
 #' Simulate simple regression data with known causal variables
 #'
 #' @param n Sample size

@@ -492,8 +492,7 @@ update_derived_quantities.ss <- function(data, params, model) {
     model$predictor_weights <- omega_res$diagXtOmegaX
     model$XtOmegay          <- data$eigen_vectors %*% (data$VtXty / omega_res$omega_var)
     # Update fitted values to include theta
-    b          <- colSums(model$alpha * model$mu)
-    model$XtXr <- compute_Rv(data, b + model$theta)
+    model$XtXr <- compute_Rv(data, get_total_effect(model))
     return(model)
   } else {
     return(update_derived_quantities.default(data, params, model))

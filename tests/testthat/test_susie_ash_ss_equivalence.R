@@ -156,14 +156,9 @@ test_that("susie_rss ash works with correlation matrix input", {
 # attributes. The tests above pass an already-standardized X, so here X is
 # given as uncentered 0/1/2 dosages (plus a copy with heterogeneous column
 # scales), with a polygenic background so that theta is non-zero.
-.make_raw_dosage_ash_data <- function(seed = 2024, n = 400, p = 60) {
-  set.seed(seed)
-  X <- matrix(rbinom(n * p, 2, runif(p, 0.1, 0.5)), n, p, byrow = TRUE) * 1.0
-  beta_true <- rnorm(p, sd = 0.05)
-  beta_true[c(10, 40)] <- c(0.6, -0.5)
-  y <- c(X %*% beta_true + rnorm(n))
-  list(X = X, y = y, n = n, p = p)
-}
+.make_raw_dosage_ash_data <- function()
+  simulate_dosage_regression(n = 400, p = 60, seed = 2024, causal = c(10, 40),
+                             effects = c(0.6, -0.5))
 
 .raw_dosage_fit_args <- list(L = 5, estimate_residual_variance = TRUE,
                              max_iter = 20, verbose = FALSE)
@@ -180,7 +175,7 @@ test_that("individual-level ash does not depend on the scaling of X (ash and arc
     fit_het <- suppressMessages(do.call(susie, c(list(X = X_het, y = d$y), args)))
 
     expect_true(any(fit_std$theta != 0), label = paste(method, "theta is non-zero"))
-    # run_final_ash_pass() runs only after convergence.
+    # Compare converged fits, so differences are not an artefact of max_iter.
     expect_true(fit_raw$converged, label = paste(method, "raw fit converged"))
 
     for (nm in c("theta", "sigma2", "tau2", "pip", "fitted")) {

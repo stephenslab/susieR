@@ -1059,3 +1059,19 @@ test_that("susie_get_cs hints (only) when both purity thresholds are set", {
   expect_false(any(grepl(hint, msgs_of(min_abs_corr = 0.5))))                       # min only
   expect_false(any(grepl(hint, msgs_of(min_abs_corr = NULL, median_abs_corr = 0.5)))) # median only
 })
+
+# ---- slot weights in posterior summaries ----
+
+test_that("susie_get_posterior_mean and coef agree on a converged slot-prior fit", {
+  d <- simulate_dosage_regression(n = 200, p = 30, seed = 702, causal = c(5, 25),
+                                  effects = c(0.8, -0.7))
+  fit <- suppressWarnings(suppressMessages(susie(
+    d$X, d$y, L = 5, slot_prior = slot_prior_betabinom(), max_iter = 50, verbose = FALSE)))
+  expect_true(fit$converged)
+  expect_false(is.null(fit$c_hat))
+  expect_equal(susie_get_posterior_mean(fit), coef(fit)[-1], tolerance = 1e-10)
+  # slot-weighted posterior sd: sqrt(sum_l c_l E[b^2] - (c_l E[b])^2) / scale
+  expected_sd <- sqrt(colSums(fit$c_hat * fit$alpha * fit$mu2 -
+                              (fit$c_hat * fit$alpha * fit$mu)^2)) / fit$X_column_scale_factors
+  expect_equal(susie_get_posterior_sd(fit), expected_sd, tolerance = 1e-10)
+})

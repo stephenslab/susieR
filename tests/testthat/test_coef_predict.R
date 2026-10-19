@@ -203,15 +203,12 @@ test_that("predict(newx) equals intercept + newx %*% coef[-1]", {
 
 # ---- intercept / coef / fitted consistency ----
 
-# Uncentered 0/1/2 dosages, so the intercept depends on the column means.
-.make_dosage_data <- function(n = 200, p = 40, seed = 501) {
-  set.seed(seed)
-  X <- matrix(rbinom(n * p, 2, runif(p, 0.1, 0.5)), n, p, byrow = TRUE) * 1.0
-  b <- rnorm(p, sd = 0.05)
-  b[c(3, 20)] <- c(0.8, -0.6)
-  y <- as.vector(X %*% b + rnorm(n)) + 2
-  list(X = X, y = y, n = n, p = p)
-}
+# Uncentered 0/1/2 dosages, so the intercept depends on the column means; a
+# dense background so that inf/ash fits carry a non-zero theta.
+.make_dosage_data <- function()
+  simulate_dosage_regression(n = 200, p = 40, seed = 501, causal = c(3, 20),
+                             effects = c(0.8, -0.6), background_sd = 0.15,
+                             intercept = 2)
 
 test_that("predict(newx = X) reproduces fitted for every unmappable_effects option", {
   d <- .make_dosage_data()
@@ -220,6 +217,8 @@ test_that("predict(newx = X) reproduces fitted for every unmappable_effects opti
       susie(d$X, d$y, L = 5, unmappable_effects = method, max_iter = 20, verbose = FALSE)))
     expect_equal(predict(fit, newx = d$X), fit$fitted, tolerance = 1e-8,
                  label = paste("predict vs fitted,", method))
+    if (method != "none")
+      expect_true(any(fit$theta != 0), label = paste("theta non-zero,", method))
 
     # fitted = mean(y) + standardized X %*% (slot-weighted effects + theta)
     sw <- if (is.null(fit$slot_weights)) 1 else fit$slot_weights
@@ -228,6 +227,15 @@ test_that("predict(newx = X) reproduces fitted for every unmappable_effects opti
     expect_equal(fit$fitted, mean(d$y) + as.vector(scale(d$X) %*% b), tolerance = 1e-8,
                  label = paste("fitted decomposition,", method))
   }
+})
+
+test_that("predict(newx = X) reproduces fitted for inf with a slot prior when max_iter is hit", {
+  d <- .make_dosage_data()
+  fit <- suppressWarnings(suppressMessages(susie(
+    d$X, d$y, L = 5, unmappable_effects = "inf", slot_prior = slot_prior_betabinom(),
+    max_iter = 2, verbose = FALSE)))
+  expect_false(fit$converged)
+  expect_equal(predict(fit, newx = d$X), fit$fitted, tolerance = 1e-8)
 })
 
 test_that("coef and intercept use the slot weights when a slot prior is active", {

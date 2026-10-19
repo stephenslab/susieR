@@ -1773,7 +1773,7 @@ update_ash_variance_components <- function(data, model, params) {
     if (cs_size > 1) {
       cs_indices <- alpha_order[1:cs_size]
       R_cs <- abs(Xcorr[cs_indices, cs_indices])
-      effect_purity[l] <- min(R_cs[upper.tri(R_cs)])
+      effect_purity[l] <- min(upper_tri(R_cs))
     }
   }
 
@@ -2466,7 +2466,7 @@ compute_ash_from_summary_stats <- function(data, b_confident, model, params, con
 #
 # @param data Data object
 # @param params Parameters object
-# @param model Converged SuSiE model
+# @param model SuSiE model at the end of the IBSS loop
 #
 # @return Model with updated theta, tau2, ash_pi, and fitted theta values
 #
