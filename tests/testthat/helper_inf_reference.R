@@ -117,7 +117,7 @@ compare_to_inf_reference <- function(func_name, args, tolerance = 1e-10) {
   dev_result <- suppressWarnings(suppressMessages(do.call(dev_func, args)))
   ref_result <- suppressWarnings(suppressMessages(do.call(ref_func, args)))
 
-  expect_equal_susie_inf_objects(dev_result, ref_result, tolerance)
+  expect_equal_susie_inf_objects(dev_result, ref_result, tolerance, X = args$X)
   invisible(list(dev = dev_result, ref = ref_result))
 }
 
@@ -129,7 +129,8 @@ compare_to_inf_reference <- function(func_name, args, tolerance = 1e-10) {
 # niter, sets) plus the inf-specific (tau2, theta).  Skips fields that are
 # NULL in both objects.
 # -----------------------------------------------------------------------
-expect_equal_susie_inf_objects <- function(dev_obj, ref_obj, tolerance = 1e-10) {
+expect_equal_susie_inf_objects <- function(dev_obj, ref_obj, tolerance = 1e-10,
+                                           X = NULL) {
   # Core posterior
   expect_equal(dev_obj$alpha,  ref_obj$alpha,  tolerance = tolerance,
                info = "alpha differs")
@@ -171,10 +172,17 @@ expect_equal_susie_inf_objects <- function(dev_obj, ref_obj, tolerance = 1e-10) 
                    tolerance = tolerance, info = "sets$purity differs")
   }
 
-  # Intercept (susie only; susie_ss objects may not carry one)
-  if (!is.null(dev_obj$intercept) || !is.null(ref_obj$intercept))
-    expect_equal(dev_obj$intercept, ref_obj$intercept, tolerance = tolerance,
+  # Intercept (susie only; susie_ss objects may not carry one). The reference
+  # intercept omits theta; dev includes it, so put the reference on the dev
+  # convention before comparing.
+  if (!is.null(dev_obj$intercept) || !is.null(ref_obj$intercept)) {
+    ref_intercept <- ref_obj$intercept
+    if (!is.null(X) && !is.null(ref_obj$theta))
+      ref_intercept <- ref_intercept -
+        sum(colMeans(X) * as.vector(ref_obj$theta) / ref_obj$X_column_scale_factors)
+    expect_equal(dev_obj$intercept, ref_intercept, tolerance = tolerance,
                  info = "intercept differs")
+  }
 
   invisible(TRUE)
 }

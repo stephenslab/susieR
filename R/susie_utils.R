@@ -2479,7 +2479,7 @@ compute_ash_from_summary_stats <- function(data, b_confident, model, params, con
 #
 # @keywords internal
 run_final_ash_pass <- function(data, params, model) {
-  b_susie <- colSums(model$alpha * model$mu)
+  b_susie <- colSums(get_slot_weights(model) * model$alpha * model$mu)
   is_individual <- inherits(data, "individual")
 
   # Dispatch to individual (mr.ash) or SS (mr.ash.rss) backend

@@ -23,14 +23,8 @@ coef.susie <- function(object, ...) {
   # SER-fallback fits), else the divide below yields numeric(0).
   scale <- assume_unit_scale(s$X_column_scale_factors)
 
-  # Compute mappable effects
-  mappable_coef <- colSums(s$alpha * s$mu) / scale
-
-  if (!is.null(s$theta)) {
-    total_coef <- mappable_coef + s$theta / scale
-  } else {
-    total_coef <- mappable_coef
-  }
+  # Sparse (slot-weighted) plus unmappable effects, mapped to the scale of X.
+  total_coef <- get_total_effect(s) / scale
 
   # The intercept must occupy the first slot, or `c(NULL, total_coef)` silently
   # returns length p and every coef(fit)[-1] misaligns against names(pip).

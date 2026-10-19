@@ -200,3 +200,62 @@ test_that("predict(newx) equals intercept + newx %*% coef[-1]", {
                drop(coefs[1] + newx %*% coefs[-1]),
                tolerance = 1e-8)
 })
+
+# ---- intercept / coef / fitted consistency ----
+
+# Uncentered 0/1/2 dosages, so the intercept depends on the column means.
+.make_dosage_data <- function(n = 200, p = 40, seed = 501) {
+  set.seed(seed)
+  X <- matrix(rbinom(n * p, 2, runif(p, 0.1, 0.5)), n, p, byrow = TRUE) * 1.0
+  b <- rnorm(p, sd = 0.05)
+  b[c(3, 20)] <- c(0.8, -0.6)
+  y <- as.vector(X %*% b + rnorm(n)) + 2
+  list(X = X, y = y, n = n, p = p)
+}
+
+test_that("predict(newx = X) reproduces fitted for every unmappable_effects option", {
+  d <- .make_dosage_data()
+  for (method in c("none", "inf", "ash", "ash_filter_archived")) {
+    fit <- suppressWarnings(suppressMessages(
+      susie(d$X, d$y, L = 5, unmappable_effects = method, max_iter = 20, verbose = FALSE)))
+    expect_equal(predict(fit, newx = d$X), fit$fitted, tolerance = 1e-8,
+                 label = paste("predict vs fitted,", method))
+
+    # fitted = mean(y) + standardized X %*% (slot-weighted effects + theta)
+    sw <- if (is.null(fit$slot_weights)) 1 else fit$slot_weights
+    b  <- colSums(sw * fit$alpha * fit$mu)
+    if (!is.null(fit$theta)) b <- b + fit$theta
+    expect_equal(fit$fitted, mean(d$y) + as.vector(scale(d$X) %*% b), tolerance = 1e-8,
+                 label = paste("fitted decomposition,", method))
+  }
+})
+
+test_that("coef and intercept use the slot weights when a slot prior is active", {
+  d <- .make_dosage_data()
+  fit <- suppressWarnings(suppressMessages(
+    susie(d$X, d$y, L = 5, slot_prior = slot_prior_betabinom(), max_iter = 20, verbose = FALSE)))
+  expect_false(is.null(fit$c_hat))
+  expected <- colSums(fit$c_hat * fit$alpha * fit$mu) / fit$X_column_scale_factors
+  expect_equal(coef(fit)[-1], expected, tolerance = 1e-8)
+  expect_equal(predict(fit, newx = d$X), fit$fitted, tolerance = 1e-8)
+})
+
+test_that("susie_ss with X_colmeans/y_mean predicts like the individual-level fit", {
+  d <- .make_dosage_data()
+  Xc <- scale(d$X, center = TRUE, scale = FALSE)
+  yc <- d$y - mean(d$y)
+  for (method in c("inf", "ash")) {
+    fit_ind <- suppressWarnings(suppressMessages(
+      susie(d$X, d$y, L = 5, unmappable_effects = method, max_iter = 20, verbose = FALSE)))
+    fit_ss <- suppressWarnings(suppressMessages(susie_ss(
+      XtX = crossprod(Xc), Xty = c(crossprod(Xc, yc)), yty = sum(yc^2), n = d$n,
+      X_colmeans = colMeans(d$X), y_mean = mean(d$y),
+      L = 5, unmappable_effects = method, max_iter = 20, verbose = FALSE)))
+    # mr.ash and mr.ash.rss stop at slightly different points.
+    tol <- if (method == "ash") 1e-3 else 1e-6
+    expect_equal(fit_ss$intercept, fit_ind$intercept, tolerance = tol,
+                 label = paste("intercept,", method))
+    expect_equal(predict(fit_ss, newx = d$X), fit_ind$fitted, tolerance = tol,
+                 label = paste("predict,", method))
+  }
+})

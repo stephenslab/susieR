@@ -518,7 +518,7 @@ get_scale_factors.ss <- function(data, params) {
 # Get intercept
 #' @keywords internal
 get_intercept.ss <- function(data, params, model, ...) {
-  return(data$y_mean - sum(data$X_colmeans * (colSums(model$alpha * model$mu) / model$X_column_scale_factors)))
+  return(data$y_mean - sum(data$X_colmeans * (get_total_effect(model) / model$X_column_scale_factors)))
 }
 
 # Get Fitted Values

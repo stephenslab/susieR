@@ -468,7 +468,7 @@ get_scale_factors.individual <- function(data, params) {
 get_intercept.individual <- function(data, params, model, ...) {
   if (params$intercept) {
     return(data$mean_y - sum(attr(data$X, "scaled:center") *
-                               (colSums(model$alpha * model$mu) / attr(data$X, "scaled:scale"))))
+                               (get_total_effect(model) / attr(data$X, "scaled:scale"))))
   } else {
     return(0)
   }
