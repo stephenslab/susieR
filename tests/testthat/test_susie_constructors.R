@@ -664,6 +664,25 @@ test_that("sufficient_stats_constructor accepts unmappable_effects='ash'", {
   expect_equal(result$params$unmappable_effects, "ash")
 })
 
+test_that("sufficient_stats_constructor standardizes XtX for unmappable effects methods", {
+  base_data <- generate_base_data(n = 100, p = 10, k = 0, seed = 58)
+  ss <- compute_summary_stats(base_data$X, base_data$y)
+
+  for (method in c("inf", "ash")) {
+    expect_message(
+      forced <- suppressWarnings(sufficient_stats_constructor(
+        Xty = ss$Xty, yty = 100, n = ss$n, XtX = ss$XtX,
+        standardize = FALSE, unmappable_effects = method)),
+      "Setting standardize=TRUE")
+    default <- suppressMessages(suppressWarnings(sufficient_stats_constructor(
+      Xty = ss$Xty, yty = 100, n = ss$n, XtX = ss$XtX,
+      unmappable_effects = method)))
+    expect_true(forced$params$standardize)
+    expect_equal(forced$data$XtX, default$data$XtX)
+    expect_equal(forced$data$Xty, default$data$Xty)
+  }
+})
+
 # --- X-path branches ---
 
 test_that("sufficient_stats_constructor errors on ncol(X)/Xty dimension mismatch", {
@@ -1382,6 +1401,32 @@ test_that("summary_stats_constructor warns for ash + z-only input (standardized 
     "standardized scale"
   )
   expect_s3_class(result$data, "ss")
+})
+
+test_that("summary_stats_constructor hints about the standardized scale unless shat, var_y and n are all given", {
+  set.seed(105)
+  p <- 15
+  R <- diag(p)
+  bhat <- rnorm(p, sd = 0.1)
+  shat <- rep(0.05, p)
+
+  # bhat/shat without var_y, and bhat/shat/var_y without n, both run standardized
+  expect_message(
+    suppressWarnings(summary_stats_constructor(bhat = bhat, shat = shat, R = R, n = 200,
+                                               unmappable_effects = "ash")),
+    "standardized scale")
+  expect_message(
+    suppressWarnings(summary_stats_constructor(bhat = bhat, shat = shat, var_y = 1, R = R,
+                                               unmappable_effects = "ash")),
+    "standardized scale")
+
+  # all of them given: original scale, no hint
+  msgs <- character()
+  withCallingHandlers(
+    suppressWarnings(summary_stats_constructor(bhat = bhat, shat = shat, var_y = 1, R = R,
+                                               n = 200, unmappable_effects = "ash")),
+    message = function(m) { msgs <<- c(msgs, conditionMessage(m)); invokeRestart("muffleMessage") })
+  expect_false(any(grepl("standardized scale", msgs)))
 })
 
 # --- R_mismatch branches ---

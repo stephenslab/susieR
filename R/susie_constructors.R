@@ -558,6 +558,14 @@ sufficient_stats_constructor <- function(Xty, yty, n,
 
   prior_weights <- normalize_prior_weights(prior_weights, p)
 
+  # Unmappable effects methods are fitted on standardized X'X, as in
+  # individual_data_constructor().
+  if (unmappable_effects != "none" && !standardize) {
+    warning_message("Unmappable effects methods require scaled data. ",
+                    "Setting standardize=TRUE.", style = "hint")
+    standardize <- TRUE
+  }
+
   # Standardize if requested
   if (!is.null(X)) {
     # Low-rank X path: standardize columns of X
@@ -969,14 +977,14 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
   }
 
 
-  # For SuSiE-ash with summary statistics, recommend providing bhat/shat/var_y
-  # for best agreement with individual-level analysis. The z+R-only path
-  # operates on a standardized scale (var_y=1) and may give different results.
-  if (unmappable_effects %in% c("ash", "ash_filter_archived") && is.null(bhat) && is.null(var_y)) {
-    warning_message("SuSiE-ash with z-scores and R only operates on a ",
-            "standardized scale. For best agreement with ",
-            "individual-level analysis, provide bhat, shat, and ",
-            "var_y instead of z-scores.", style = "hint")
+  # SuSiE-ash runs on the original scale only when shat, var_y and n are all
+  # given (see summary_stats_working_quantities); otherwise var(y) = 1.
+  if (unmappable_effects %in% c("ash", "ash_filter_archived") &&
+      (is.null(shat) || is.null(var_y) || is.null(n))) {
+    warning_message("SuSiE-ash operates on a standardized scale (var(y) = 1) ",
+            "unless bhat, shat, var_y and n are all provided. For best ",
+            "agreement with individual-level analysis, provide all of them.",
+            style = "hint")
   }
 
   summary_input <- normalize_summary_stats_input(z = z, bhat = bhat,
