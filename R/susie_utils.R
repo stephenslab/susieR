@@ -1756,9 +1756,7 @@ update_ash_variance_components <- function(data, model, params) {
   if (is.null(model$force_exposed_iter))     model$force_exposed_iter <- rep(0L, p)
   if (is.null(model$second_chance_used))     model$second_chance_used <- rep(FALSE, p)
 
-  xcorr_result <- get_xcorr(data)
-  Xcorr <- xcorr_result$Xcorr
-  data <- xcorr_result$data
+  Xcorr <- get_xcorr(data)$Xcorr
 
   # c_hat = BB posterior slot-active weight (fallback 1 = V0).
   c_hat <- if (!is.null(model$slot_weights)) model$slot_weights else rep(1, L)
@@ -1915,9 +1913,8 @@ update_ash_variance_components <- function(data, model, params) {
     theta_new[mask] <- 0
   }
 
-  # Diagnostic
-  .ash_debug <- TRUE
-  if (.ash_debug) {
+  # Per-iteration diagnostics (diagnosis_reports.R); off by default.
+  if (isTRUE(getOption("susie.ash_debug", FALSE))) {
     model$ever_uncertain <- model$ever_diffuse > 0
     diag_df <- diagnose_bb_ash_iter(
       model, Xcorr, mask, b_confident,
@@ -1993,10 +1990,8 @@ update_ash_variance_components <- function(data, model, params) {
 update_ash_variance_components_filter_archived <- function(data, model, params) {
   is_individual <- inherits(data, "individual")
 
-  # Step 1: Get correlation matrix (cached after first call)
-  xcorr_result <- get_xcorr(data)
-  Xcorr <- xcorr_result$Xcorr
-  data <- xcorr_result$data
+  # Step 1: Get correlation matrix
+  Xcorr <- get_xcorr(data)$Xcorr
 
   # Step 2: Compute masking (shared 3-case classification)
   mask_result <- compute_ash_masking(Xcorr, model, params)
@@ -2031,9 +2026,8 @@ update_ash_variance_components_filter_archived <- function(data, model, params) 
   theta_new <- mrash_output$beta
   theta_new[masked] <- 0
 
-  # V0 diagnostic: capture data.frame and accumulate on model
-  .ash_debug <- TRUE
-  if (.ash_debug) {
+  # Per-iteration diagnostics (diagnosis_reports.R); off by default.
+  if (isTRUE(getOption("susie.ash_debug", FALSE))) {
     diag_df <- diagnose_ash_filter_archived_iter(
       model, Xcorr, masked, b_confident,
       mask_result$sentinels, mask_result$effect_purity,
@@ -2083,35 +2077,33 @@ update_ash_variance_components_filter_archived <- function(data, model, params) 
 #
 # @keywords internal
 cleanup_ash_fields <- function(model) {
-  # Remove internal tracking fields from the new ash path.
-  # Keep: tau2, theta, ash_pi (user-visible results)
+  # Keep the results (tau2, theta, ash_pi) and, when diagnostics were
+  # requested, .diag_env; drop the fitted-value caches and masking state.
   for (field in c("X_theta", "XtX_theta", "ash_iter", "ash_s0",
-                   "ever_uncertain", "prev_sentinel")) {
+                   "masked", "prev_case", "prev_sentinel",
+                   "ever_diffuse", "ever_uncertain", "diffuse_iter_count",
+                   "ever_unmasked", "unmask_candidate_iters",
+                   "force_exposed_iter", "second_chance_used")) {
     model[[field]] <- NULL
   }
   return(model)
 }
 
 cleanup_ash_fields_filter_archived <- function(model) {
-  # Remove internal tracking fields from the archived filter path.
-  for (field in c("X_theta", "XtX_theta", "ash_iter", "ash_s0",
-                   "masked", "diffuse_iter_count", "prev_sentinel",
-                   "unmask_candidate_iters", "ever_unmasked",
-                   "force_exposed_iter", "ever_diffuse",
-                   "second_chance_used", "prev_case")) {
-    model[[field]] <- NULL
-  }
+  model <- cleanup_ash_fields(model)
+  model$sa2 <- NULL
   return(model)
 }
 
-# Get or compute correlation matrix for ash masking
+# Get or compute the correlation matrix for ash masking
 #
-# For SS data: derives from XtX via safe_cov2cor (cheap scaling).
-# For individual data: computes cor(X) and caches it on the data object.
+# configure_data() computes it once per fit and stores it as data$Xcorr_cache;
+# the per-iteration callers read that cache. Without a cache it is derived
+# from XtX (safe_cov2cor) or computed as cor(X).
 #
 # @param data Data object
 #
-# @return List with Xcorr and (possibly updated) data object
+# @return List with Xcorr and the data object carrying Xcorr_cache
 #
 # @keywords internal
 get_xcorr <- function(data) {
@@ -2435,7 +2427,7 @@ compute_ash_from_summary_stats <- function(data, b_confident, model, params, con
   bhat <- Xtr / XtXdiag
   # Use n-2 df to match PVE adjustment in mr.ash.rss
   shat <- sqrt(pmax(0, (rtr - Xtr^2 / XtXdiag) / ((data$n - 2) * XtXdiag)))
-  R_mat <- safe_cov2cor(data$XtX)
+  R_mat <- get_xcorr(data)$Xcorr
   var_r <- rtr / (data$n - 1)
 
   # Default prior grid (matching mr.ash defaults)

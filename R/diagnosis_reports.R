@@ -12,6 +12,7 @@
 #   compare_ash_methods(df1, df2)       - side-by-side comparison
 #
 # Usage example:
+#   options(susie.ash_debug = TRUE)
 #   fit <- susie(X, y, L=10, slot_prior=slot_prior_betabinom(),
 #                unmappable_effects="ash", max_iter=50)
 #   df <- susieR:::collect_ash_diag(fit)
@@ -29,8 +30,8 @@
 #   #   fit_nomrash <- susie(...)
 #   #   options(susie.skip_mrash = FALSE) # restore
 #
-# Data.frames accumulated on fit$.diag_env$history during the run.
-# Debug flag .ash_debug in susie_utils.R (TRUE = on, never turn off).
+# Data.frames accumulate on fit$.diag_env$history during the run when
+# options(susie.ash_debug = TRUE) is set before fitting.
 
 # nocov start  (debug scaffolding)
 

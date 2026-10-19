@@ -15,6 +15,10 @@ configure_data.individual <- function(data, params) {
     # Stay in the individual-data path: thin SVD of standardized X, no XtX.
     return(add_eigen_decomposition(data, params))
   }
+  if (params$unmappable_effects %in% c("ash", "ash_filter_archived")) {
+    # Correlation matrix used by the ash masking at every iteration.
+    return(get_xcorr(data)$data)
+  }
   return(configure_data.default(data, params))
 }
 

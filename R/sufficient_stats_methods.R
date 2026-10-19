@@ -13,9 +13,12 @@
 configure_data.ss <- function(data, params) {
   if (params$unmappable_effects == "inf") {
     return(add_eigen_decomposition(data, params))
-  } else {
-    return(configure_data.default(data, params))
   }
+  if (params$unmappable_effects %in% c("ash", "ash_filter_archived")) {
+    # Correlation matrix used by the ash masking at every iteration.
+    return(get_xcorr(data)$data)
+  }
+  return(configure_data.default(data, params))
 }
 
 # Get variance of y

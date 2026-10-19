@@ -1753,6 +1753,70 @@ test_that("susie ash mode (default path) runs and produces valid structure", {
   expect_length(fit$pip, sim$p)
 })
 
+# ---- SuSiE-ash: per-fit correlation cache and returned fields ----
+
+.make_ash_cache_data <- function(n = 150, p = 20, seed = 1013) {
+  set.seed(seed)
+  X <- matrix(rbinom(n * p, 2, runif(p, 0.1, 0.5)), n, p, byrow = TRUE) * 1.0
+  b <- rnorm(p, sd = 0.05)
+  b[c(3, 12)] <- c(0.8, -0.7)
+  y <- as.vector(X %*% b + rnorm(n))
+  list(X = X, y = y, n = n, p = p)
+}
+
+test_that("get_xcorr misses its cache only once per fit (individual and SS)", {
+  d <- .make_ash_cache_data()
+  misses <- 0L
+  orig <- get_xcorr
+  local_mocked_bindings(get_xcorr = function(data) {
+    if (is.null(data$Xcorr_cache)) misses <<- misses + 1L
+    orig(data)
+  }, .package = "susieR")
+
+  fit <- suppressWarnings(suppressMessages(susie(
+    d$X, d$y, L = 3, unmappable_effects = "ash", max_iter = 10, verbose = FALSE)))
+  expect_gt(fit$niter, 1)
+  expect_equal(misses, 1L)
+
+  misses <- 0L
+  Xs <- scale(d$X)
+  yc <- d$y - mean(d$y)
+  fit_ss <- suppressWarnings(suppressMessages(susie_ss(
+    XtX = crossprod(Xs), Xty = c(crossprod(Xs, yc)), yty = sum(yc^2), n = d$n,
+    L = 3, unmappable_effects = "ash", max_iter = 10, verbose = FALSE)))
+  expect_gt(fit_ss$niter, 1)
+  expect_equal(misses, 1L)
+})
+
+test_that("ash fits return no masking state and no diagnostics by default", {
+  d <- .make_ash_cache_data()
+  runtime <- c("X_theta", "XtX_theta", "ash_iter", "ash_s0", "masked", "prev_case",
+               "prev_sentinel", "ever_diffuse", "ever_uncertain", "diffuse_iter_count",
+               "ever_unmasked", "unmask_candidate_iters", "force_exposed_iter",
+               "second_chance_used", "sa2", ".diag_env")
+  for (method in c("ash", "ash_filter_archived")) {
+    fit <- suppressWarnings(suppressMessages(susie(
+      d$X, d$y, L = 3, unmappable_effects = method, max_iter = 10, verbose = FALSE)))
+    expect_false(any(runtime %in% names(fit)),
+                 label = paste("no runtime fields,", method))
+    expect_true(all(c("theta", "tau2", "ash_pi") %in% names(fit)))
+  }
+})
+
+test_that("options(susie.ash_debug = TRUE) collects per-iteration diagnostics", {
+  old <- getOption("susie.ash_debug", FALSE)
+  on.exit(options(susie.ash_debug = old), add = TRUE)
+  options(susie.ash_debug = TRUE)
+
+  d <- .make_ash_cache_data()
+  fit <- suppressWarnings(suppressMessages(susie(
+    d$X, d$y, L = 3, unmappable_effects = "ash", max_iter = 10, verbose = FALSE)))
+  expect_true(is.environment(fit$.diag_env))
+  diag <- collect_ash_diag(fit)
+  expect_s3_class(diag, "data.frame")
+  expect_gt(nrow(diag), 0)
+})
+
 test_that("susie ash mode on unmappable_data drives masking decision tiers", {
   # Real unmappable data with genuine LD runs many iterations, exercising
   # cumulative masking state inside update_ash_variance_components().
