@@ -2465,10 +2465,11 @@ compute_ash_from_summary_stats <- function(data, b_confident, model, params, con
   )
 }
 
-# Run final Mr.ASH pass after SuSiE convergence
+# Run the final Mr.ASH pass after the IBSS loop
 #
-# After SuSiE converges, run one final Mr.ASH pass with ALL SuSiE effects
-# removed (unmasked) to get the final unmappable effects estimate.
+# One Mr.ASH pass on the residual after removing ALL SuSiE effects (no
+# masking) gives the reported unmappable effects. It runs whether or not the
+# loop converged, and is skipped under options(susie.skip_mrash = TRUE).
 # Individual-level data uses mr.ash directly; SS data uses mr.ash.rss.
 #
 # @param data Data object
@@ -2479,6 +2480,8 @@ compute_ash_from_summary_stats <- function(data, b_confident, model, params, con
 #
 # @keywords internal
 run_final_ash_pass <- function(data, params, model) {
+  if (isTRUE(getOption("susie.skip_mrash", FALSE))) return(model)
+
   b_susie <- colSums(get_slot_weights(model) * model$alpha * model$mu)
   is_individual <- inherits(data, "individual")
 

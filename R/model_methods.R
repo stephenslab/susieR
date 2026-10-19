@@ -115,13 +115,19 @@ update_model_variance <- function(data, params, model) {
 
 #' @keywords internal
 update_model_variance.default <- function(data, params, model) {
-  if (!isTRUE(params$estimate_residual_variance)) return(model)
-  # Update variance components
+  estimate_sigma2 <- isTRUE(params$estimate_residual_variance)
+  is_ash <- isTRUE(params$unmappable_effects %in% c("ash", "ash_filter_archived"))
+  # SuSiE-ash refits the unmappable effects here, so the update runs even when
+  # the residual variance is fixed; only sigma2 is then left untouched.
+  if (!estimate_sigma2 && !is_ash) return(model)
+
   variance_result <- update_variance_components(data, params, model)
+  if (!estimate_sigma2) variance_result$sigma2 <- NULL
   model           <- modifyList(model, variance_result)
 
   # Apply bounds to residual variance
-  model$sigma2    <- min(max(model$sigma2, params$residual_variance_lowerbound),
+  if (estimate_sigma2)
+    model$sigma2  <- min(max(model$sigma2, params$residual_variance_lowerbound),
                          params$residual_variance_upperbound)
 
   # Update derived quantities after variance component changes
@@ -262,10 +268,6 @@ check_convergence.default <- function(data, params, model, elbo, iter) {
                       conv_tag, mem_used_gb()))
     }
 
-    if (model$converged && !is.null(params$unmappable_effects) &&
-        params$unmappable_effects %in% c("ash", "ash_filter_archived")) {
-      model <- run_final_ash_pass(data, params, model)
-    }
     return(model)
   }
 
@@ -294,10 +296,6 @@ check_convergence.default <- function(data, params, model, elbo, iter) {
                     if (nzchar(extra_str)) paste0("  ", extra_str) else "",
                     if (model$converged) "  converged" else ""))
 
-  if (model$converged && !is.null(params$unmappable_effects) &&
-      params$unmappable_effects %in% c("ash", "ash_filter_archived")) {
-    model <- run_final_ash_pass(data, params, model)
-  }
   return(model)
 }
 
