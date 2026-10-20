@@ -1431,7 +1431,7 @@ test_that("summary_stats_constructor hints about the standardized scale unless s
 
 # --- R_mismatch branches ---
 
-test_that("summary_stats_constructor disables sigma^2 estimation when R_mismatch is active", {
+test_that("summary_stats_constructor keeps sigma^2 estimation and hints when R_mismatch is active", {
   set.seed(104)
   p <- 30
 
@@ -1442,9 +1442,9 @@ test_that("summary_stats_constructor disables sigma^2 estimation when R_mismatch
       estimate_residual_variance = TRUE,
       verbose = FALSE
     ),
-    "incompatible with"
+    "weakly identified"
   )
-  expect_false(result$params$estimate_residual_variance)
+  expect_true(result$params$estimate_residual_variance)
 })
 
 # --- X-based paths ---
