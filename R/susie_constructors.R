@@ -817,9 +817,8 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
   R_finite <- resolve_R_finite(R_finite, if (!is.null(X)) X else R,
                                is_multipanel)
 
-  # sigma^2 and lambda_bias both inflate the residual variance and are
-  # only weakly jointly identified, so sigma^2 is fixed when R_mismatch is
-  # active.
+  # sigma^2 and lambda_bias both inflate the residual variance and are only
+  # weakly jointly identified; estimating both is allowed, with a hint.
     if (R_mismatch != "none" && isTRUE(estimate_residual_variance)) {
       warning_message(
         "Joint estimation of sigma^2 and lambda_bias is weakly identified; ",
