@@ -1168,6 +1168,12 @@ scale_design_matrix <- function(X, center = NULL, scale = NULL) {
   X_centered <- sweep(X, 2, center, "-")
   X_scaled <- sweep(X_centered, 2, scale, "/")
 
+  # Drop the scaling attributes inherited from X: the returned matrix is
+  # already standardized, so compute_Xb()/compute_Xty() must not rescale it.
+  attr(X_scaled, "scaled:center") <- NULL
+  attr(X_scaled, "scaled:scale") <- NULL
+  attr(X_scaled, "d") <- NULL
+
   return(X_scaled)
 }
 
@@ -1750,9 +1756,7 @@ update_ash_variance_components <- function(data, model, params) {
   if (is.null(model$force_exposed_iter))     model$force_exposed_iter <- rep(0L, p)
   if (is.null(model$second_chance_used))     model$second_chance_used <- rep(FALSE, p)
 
-  xcorr_result <- get_xcorr(data)
-  Xcorr <- xcorr_result$Xcorr
-  data <- xcorr_result$data
+  Xcorr <- get_xcorr(data)$Xcorr
 
   # c_hat = BB posterior slot-active weight (fallback 1 = V0).
   c_hat <- if (!is.null(model$slot_weights)) model$slot_weights else rep(1, L)
@@ -1769,7 +1773,7 @@ update_ash_variance_components <- function(data, model, params) {
     if (cs_size > 1) {
       cs_indices <- alpha_order[1:cs_size]
       R_cs <- abs(Xcorr[cs_indices, cs_indices])
-      effect_purity[l] <- min(R_cs[upper.tri(R_cs)])
+      effect_purity[l] <- min(upper_tri(R_cs))
     }
   }
 
@@ -1909,9 +1913,8 @@ update_ash_variance_components <- function(data, model, params) {
     theta_new[mask] <- 0
   }
 
-  # Diagnostic
-  .ash_debug <- TRUE
-  if (.ash_debug) {
+  # Per-iteration diagnostics (diagnosis_reports.R); off by default.
+  if (isTRUE(getOption("susie.ash_debug", FALSE))) {
     model$ever_uncertain <- model$ever_diffuse > 0
     diag_df <- diagnose_bb_ash_iter(
       model, Xcorr, mask, b_confident,
@@ -1958,7 +1961,7 @@ update_ash_variance_components <- function(data, model, params) {
   )
 
   if (is_individual) {
-    result$X_theta <- as.vector(data$X %*% theta_new)
+    result$X_theta <- as.vector(compute_Xb(data$X, theta_new))
   } else {
     result$XtX_theta <- as.vector(compute_Rv(data, theta_new))
   }
@@ -1987,10 +1990,8 @@ update_ash_variance_components <- function(data, model, params) {
 update_ash_variance_components_filter_archived <- function(data, model, params) {
   is_individual <- inherits(data, "individual")
 
-  # Step 1: Get correlation matrix (cached after first call)
-  xcorr_result <- get_xcorr(data)
-  Xcorr <- xcorr_result$Xcorr
-  data <- xcorr_result$data
+  # Step 1: Get correlation matrix
+  Xcorr <- get_xcorr(data)$Xcorr
 
   # Step 2: Compute masking (shared 3-case classification)
   mask_result <- compute_ash_masking(Xcorr, model, params)
@@ -2025,9 +2026,8 @@ update_ash_variance_components_filter_archived <- function(data, model, params) 
   theta_new <- mrash_output$beta
   theta_new[masked] <- 0
 
-  # V0 diagnostic: capture data.frame and accumulate on model
-  .ash_debug <- TRUE
-  if (.ash_debug) {
+  # Per-iteration diagnostics (diagnosis_reports.R); off by default.
+  if (isTRUE(getOption("susie.ash_debug", FALSE))) {
     diag_df <- diagnose_ash_filter_archived_iter(
       model, Xcorr, masked, b_confident,
       mask_result$sentinels, mask_result$effect_purity,
@@ -2059,7 +2059,7 @@ update_ash_variance_components_filter_archived <- function(data, model, params) 
   )
 
   if (is_individual) {
-    result$X_theta <- as.vector(data$X %*% theta_new)
+    result$X_theta <- as.vector(compute_Xb(data$X, theta_new))
   } else {
     result$XtX_theta <- as.vector(compute_Rv(data, theta_new))
   }
@@ -2077,35 +2077,33 @@ update_ash_variance_components_filter_archived <- function(data, model, params) 
 #
 # @keywords internal
 cleanup_ash_fields <- function(model) {
-  # Remove internal tracking fields from the new ash path.
-  # Keep: tau2, theta, ash_pi (user-visible results)
+  # Keep the results (tau2, theta, ash_pi) and, when diagnostics were
+  # requested, .diag_env; drop the fitted-value caches and masking state.
   for (field in c("X_theta", "XtX_theta", "ash_iter", "ash_s0",
-                   "ever_uncertain", "prev_sentinel")) {
+                   "masked", "prev_case", "prev_sentinel",
+                   "ever_diffuse", "ever_uncertain", "diffuse_iter_count",
+                   "ever_unmasked", "unmask_candidate_iters",
+                   "force_exposed_iter", "second_chance_used")) {
     model[[field]] <- NULL
   }
   return(model)
 }
 
 cleanup_ash_fields_filter_archived <- function(model) {
-  # Remove internal tracking fields from the archived filter path.
-  for (field in c("X_theta", "XtX_theta", "ash_iter", "ash_s0",
-                   "masked", "diffuse_iter_count", "prev_sentinel",
-                   "unmask_candidate_iters", "ever_unmasked",
-                   "force_exposed_iter", "ever_diffuse",
-                   "second_chance_used", "prev_case")) {
-    model[[field]] <- NULL
-  }
+  model <- cleanup_ash_fields(model)
+  model$sa2 <- NULL
   return(model)
 }
 
-# Get or compute correlation matrix for ash masking
+# Get or compute the correlation matrix for ash masking
 #
-# For SS data: derives from XtX via safe_cov2cor (cheap scaling).
-# For individual data: computes cor(X) and caches it on the data object.
+# configure_data() computes it once per fit and stores it as data$Xcorr_cache;
+# the per-iteration callers read that cache. Without a cache it is derived
+# from XtX (safe_cov2cor) or computed as cor(X).
 #
 # @param data Data object
 #
-# @return List with Xcorr and (possibly updated) data object
+# @return List with Xcorr and the data object carrying Xcorr_cache
 #
 # @keywords internal
 get_xcorr <- function(data) {
@@ -2356,9 +2354,13 @@ compute_ash_masking <- function(Xcorr, model, params) {
 
 # Run Mr.ASH on individual-level data
 #
-# Computes residuals from raw X, y and calls mr.ash directly.
+# X is stored on its original scale, with its centering and scaling in the
+# "scaled:center" / "scaled:scale" attributes, while b_confident and
+# model$theta are on the standardized scale. mr.ash is therefore fitted to a
+# standardized copy of X, so theta stays on the same scale as the sparse
+# effects (and as the sufficient-statistics path, where X'X is standardized).
 #
-# @param X Design matrix (n x p)
+# @param X Design matrix (n x p) with scaled:center/scaled:scale attributes
 # @param y Response vector (n)
 # @param b_confident Vector of confident effects to subtract from residuals
 # @param model Current SuSiE model
@@ -2369,10 +2371,14 @@ compute_ash_masking <- function(Xcorr, model, params) {
 #
 # @keywords internal
 compute_ash_from_individual_data <- function(X, y, b_confident, model, params, convtol = 1e-4) {
-  residuals <- y - X %*% b_confident
+  residuals <- y - compute_Xb(X, b_confident)
+
+  # mr.ash needs the standardized matrix itself (dense n x p copy).
+  X_std <- scale_design_matrix(X, center = attr(X, "scaled:center"),
+                               scale = attr(X, "scaled:scale"))
 
   mrash_output <- mr.ash(
-    X             = X,
+    X             = X_std,
     y             = residuals,
     intercept     = FALSE,
     standardize   = FALSE,
@@ -2421,7 +2427,7 @@ compute_ash_from_summary_stats <- function(data, b_confident, model, params, con
   bhat <- Xtr / XtXdiag
   # Use n-2 df to match PVE adjustment in mr.ash.rss
   shat <- sqrt(pmax(0, (rtr - Xtr^2 / XtXdiag) / ((data$n - 2) * XtXdiag)))
-  R_mat <- safe_cov2cor(data$XtX)
+  R_mat <- get_xcorr(data)$Xcorr
   var_r <- rtr / (data$n - 1)
 
   # Default prior grid (matching mr.ash defaults)
@@ -2451,21 +2457,24 @@ compute_ash_from_summary_stats <- function(data, b_confident, model, params, con
   )
 }
 
-# Run final Mr.ASH pass after SuSiE convergence
+# Run the final Mr.ASH pass after the IBSS loop
 #
-# After SuSiE converges, run one final Mr.ASH pass with ALL SuSiE effects
-# removed (unmasked) to get the final unmappable effects estimate.
+# One Mr.ASH pass on the residual after removing ALL SuSiE effects (no
+# masking) gives the reported unmappable effects. It runs whether or not the
+# loop converged, and is skipped under options(susie.skip_mrash = TRUE).
 # Individual-level data uses mr.ash directly; SS data uses mr.ash.rss.
 #
 # @param data Data object
 # @param params Parameters object
-# @param model Converged SuSiE model
+# @param model SuSiE model at the end of the IBSS loop
 #
 # @return Model with updated theta, tau2, ash_pi, and fitted theta values
 #
 # @keywords internal
 run_final_ash_pass <- function(data, params, model) {
-  b_susie <- colSums(model$alpha * model$mu)
+  if (isTRUE(getOption("susie.skip_mrash", FALSE))) return(model)
+
+  b_susie <- colSums(get_slot_weights(model) * model$alpha * model$mu)
   is_individual <- inherits(data, "individual")
 
   # Dispatch to individual (mr.ash) or SS (mr.ash.rss) backend
@@ -2484,7 +2493,7 @@ run_final_ash_pass <- function(data, params, model) {
 
   # Compute fitted theta (data-representation-specific)
   if (is_individual) {
-    model$X_theta <- as.vector(data$X %*% model$theta)
+    model$X_theta <- as.vector(compute_Xb(data$X, model$theta))
   } else {
     model$XtX_theta <- compute_Rv(data, model$theta)
   }

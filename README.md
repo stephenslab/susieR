@@ -74,7 +74,8 @@ repository useful for your work, please cite both:
 > McCreight, A., Cho, Y., Li, R., Nachun, D., Gan, H-Y., Carbonetto, P., Stephens,
 > M., Denault, W.R.P. & Wang, G. (2025). SuSiE 2.0:
 > improved methods and implementations for genetic fine-mapping and
-> phenotype prediction. Submitting to *Genome Biology*.
+> phenotype prediction. *bioRxiv*.
+> https://doi.org/10.1101/2025.11.25.690514
 
 If you use any of the summary data methods such as `susie_ss` or 
 `susie_rss`, please also cite:

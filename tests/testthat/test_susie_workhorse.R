@@ -409,3 +409,117 @@ test_that("susie_workhorse verbose greedy-L message includes greedy_lbf_cutoff v
     "greedy_lbf_cutoff"
   )
 })
+
+# ---- SuSiE-ash: update gating and final pass ----
+
+.make_workhorse_ash_data <- function()
+  simulate_dosage_regression(n = 200, p = 40, seed = 601, causal = c(4, 30),
+                             effects = c(0.7, -0.6))
+
+test_that("ash updates run every iteration when the residual variance is fixed", {
+  d <- .make_workhorse_ash_data()
+  calls <- 0L
+  orig <- mr.ash
+  local_mocked_bindings(mr.ash = function(...) { calls <<- calls + 1L; orig(...) },
+                        .package = "susieR")
+  for (method in c("ash", "ash_filter_archived")) {
+    calls <- 0L
+    fit <- suppressWarnings(suppressMessages(susie(
+      d$X, d$y, L = 5, unmappable_effects = method,
+      estimate_residual_variance = FALSE, residual_variance = 0.9,
+      max_iter = 20, verbose = FALSE)))
+    expect_gt(calls, 1L, label = paste("mr.ash calls,", method))   # not only the final pass
+    expect_gte(calls, fit$niter, label = paste("mr.ash calls,", method))
+    expect_equal(unname(fit$sigma2), 0.9, tolerance = 1e-12, label = paste("sigma2,", method))
+    expect_true(any(fit$theta != 0), label = paste("theta,", method))
+  }
+})
+
+test_that("summary-statistics ash updates run every iteration when the residual variance is fixed", {
+  d <- .make_workhorse_ash_data()
+  Xs <- scale(d$X)
+  yc <- d$y - mean(d$y)
+  calls <- 0L
+  orig <- mr.ash.rss
+  local_mocked_bindings(mr.ash.rss = function(...) { calls <<- calls + 1L; orig(...) },
+                        .package = "susieR")
+  for (method in c("ash", "ash_filter_archived")) {
+    calls <- 0L
+    fit_ss <- suppressWarnings(suppressMessages(susie_ss(
+      XtX = crossprod(Xs), Xty = c(crossprod(Xs, yc)), yty = sum(yc^2), n = d$n,
+      L = 5, unmappable_effects = method, estimate_residual_variance = FALSE,
+      residual_variance = 0.9, max_iter = 20, verbose = FALSE)))
+    expect_gt(calls, 1L, label = paste("mr.ash.rss calls,", method))
+    expect_equal(unname(fit_ss$sigma2), 0.9, tolerance = 1e-12, label = paste("sigma2,", method))
+    expect_true(any(fit_ss$theta != 0), label = paste("theta,", method))
+  }
+
+  # susie_rss() defaults to estimate_residual_variance = FALSE.
+  calls <- 0L
+  bhat <- sapply(1:d$p, function(j) sum(Xs[, j] * yc) / sum(Xs[, j]^2))
+  shat <- sapply(1:d$p, function(j)
+    sqrt(sum((yc - Xs[, j] * bhat[j])^2) / ((d$n - 2) * sum(Xs[, j]^2))))
+  fit_rss <- suppressWarnings(suppressMessages(susie_rss(
+    bhat = bhat, shat = shat, R = cor(d$X), var_y = var(d$y), n = d$n,
+    L = 5, unmappable_effects = "ash", max_iter = 20, verbose = FALSE)))
+  expect_gt(calls, 1L)
+  expect_true(any(fit_rss$theta != 0))
+})
+
+test_that("the final ash pass runs once, whether or not the IBSS loop converged", {
+  d <- .make_workhorse_ash_data()
+  calls <- 0L
+  orig <- run_final_ash_pass
+  local_mocked_bindings(run_final_ash_pass = function(...) { calls <<- calls + 1L; orig(...) },
+                        .package = "susieR")
+  fit <- suppressWarnings(suppressMessages(susie(
+    d$X, d$y, L = 5, unmappable_effects = "ash", max_iter = 2, verbose = FALSE)))
+  expect_false(fit$converged)
+  expect_equal(calls, 1L)
+
+  calls <- 0L
+  fit2 <- suppressWarnings(suppressMessages(susie(
+    d$X, d$y, L = 5, unmappable_effects = "ash", max_iter = 50, verbose = FALSE)))
+  expect_true(fit2$converged)
+  expect_equal(calls, 1L)
+})
+
+test_that("run_final_ash_pass removes the slot-weighted sparse effects", {
+  d  <- .make_workhorse_ash_data()
+  cs <- compute_colstats(d$X, center = TRUE, scale = TRUE)
+  X  <- d$X
+  attr(X, "scaled:center") <- cs$cm
+  attr(X, "scaled:scale")  <- cs$csd
+  attr(X, "d")             <- cs$d
+  data  <- structure(list(X = X, y = d$y - mean(d$y), n = d$n, p = d$p), class = "individual")
+  model <- list(alpha = matrix(1 / d$p, 2, d$p), mu = matrix(c(0.5, -0.2), 2, d$p),
+                slot_weights = c(0.3, 0.8), sigma2 = var(d$y),
+                theta = rep(0, d$p), ash_pi = NULL)
+  params <- list(estimate_residual_variance = TRUE, verbose = FALSE)
+
+  seen <- NULL
+  local_mocked_bindings(compute_ash_from_individual_data = function(X, y, b_confident, model, params, ...) {
+    seen <<- b_confident
+    list(beta = rep(0, length(b_confident)), sigma2 = model$sigma2, pi = NULL, sa2 = NULL, tau2 = 0)
+  }, .package = "susieR")
+  run_final_ash_pass(data, params, model)
+  expect_equal(seen, colSums(model$slot_weights * model$alpha * model$mu))
+})
+
+test_that("run_final_ash_pass is a no-op under susie.skip_mrash", {
+  old <- getOption("susie.skip_mrash", FALSE)
+  on.exit(options(susie.skip_mrash = old), add = TRUE)
+  options(susie.skip_mrash = TRUE)
+
+  d  <- .make_workhorse_ash_data()
+  cs <- compute_colstats(d$X, center = TRUE, scale = TRUE)
+  X  <- d$X
+  attr(X, "scaled:center") <- cs$cm
+  attr(X, "scaled:scale")  <- cs$csd
+  attr(X, "d")             <- cs$d
+  data   <- structure(list(X = X, y = d$y - mean(d$y), n = d$n, p = d$p), class = "individual")
+  model  <- list(alpha = matrix(1 / d$p, 2, d$p), mu = matrix(0.1, 2, d$p),
+                 sigma2 = var(d$y), theta = rep(0.05, d$p), ash_pi = NULL)
+  params <- list(estimate_residual_variance = TRUE, verbose = FALSE)
+  expect_identical(run_final_ash_pass(data, params, model), model)
+})

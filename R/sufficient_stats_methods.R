@@ -13,9 +13,12 @@
 configure_data.ss <- function(data, params) {
   if (params$unmappable_effects == "inf") {
     return(add_eigen_decomposition(data, params))
-  } else {
-    return(configure_data.default(data, params))
   }
+  if (params$unmappable_effects %in% c("ash", "ash_filter_archived")) {
+    # Correlation matrix used by the ash masking at every iteration.
+    return(get_xcorr(data)$data)
+  }
+  return(configure_data.default(data, params))
 }
 
 # Get variance of y
@@ -489,8 +492,7 @@ update_derived_quantities.ss <- function(data, params, model) {
     model$predictor_weights <- omega_res$diagXtOmegaX
     model$XtOmegay          <- data$eigen_vectors %*% (data$VtXty / omega_res$omega_var)
     # Update fitted values to include theta
-    b          <- colSums(model$alpha * model$mu)
-    model$XtXr <- compute_Rv(data, b + model$theta)
+    model$XtXr <- compute_Rv(data, get_total_effect(model))
     return(model)
   } else {
     return(update_derived_quantities.default(data, params, model))
@@ -518,7 +520,7 @@ get_scale_factors.ss <- function(data, params) {
 # Get intercept
 #' @keywords internal
 get_intercept.ss <- function(data, params, model, ...) {
-  return(data$y_mean - sum(data$X_colmeans * (colSums(model$alpha * model$mu) / model$X_column_scale_factors)))
+  return(data$y_mean - sum(data$X_colmeans * (get_total_effect(model) / model$X_column_scale_factors)))
 }
 
 # Get Fitted Values

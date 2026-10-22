@@ -115,6 +115,22 @@ get_slot_weight <- function(model, l) {
   if (is.null(model$slot_weights)) 1 else model$slot_weights[l]
 }
 
+# Slot weights for all L effects; all ones when no slot prior is active.
+#' @keywords internal
+get_slot_weights <- function(model) {
+  if (is.null(model$slot_weights)) rep(1, nrow(model$alpha)) else model$slot_weights
+}
+
+# Posterior mean of the total effect on the standardized scale: slot-weighted
+# sparse effects plus the unmappable effects (theta) when present. This is the
+# coefficient vector that fitted values, the intercept and coef() share.
+#' @keywords internal
+get_total_effect <- function(model) {
+  b <- colSums(get_slot_weights(model) * model$alpha * model$mu)
+  if (!is.null(model$theta)) b <- b + model$theta
+  b
+}
+
 # Compute residuals for single effect regression
 #' @keywords internal
 compute_residuals <- function(data, params, model, l, ...) {

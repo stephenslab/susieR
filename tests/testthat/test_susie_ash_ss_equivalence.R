@@ -149,3 +149,84 @@ test_that("susie_rss ash works with correlation matrix input", {
   expect_true(is.numeric(fit_rss$sigma2))
   expect_true(length(fit_rss$sets$cs) >= 0)
 })
+
+# ---- unstandardized X (individual-level) ----
+
+# susie() keeps X on its original scale and stores the centering/scaling as
+# attributes. The tests above pass an already-standardized X, so here X is
+# given as uncentered 0/1/2 dosages (plus a copy with heterogeneous column
+# scales), with a polygenic background so that theta is non-zero.
+.make_raw_dosage_ash_data <- function()
+  simulate_dosage_regression(n = 400, p = 60, seed = 2024, causal = c(10, 40),
+                             effects = c(0.6, -0.5))
+
+.raw_dosage_fit_args <- list(L = 5, estimate_residual_variance = TRUE,
+                             max_iter = 20, verbose = FALSE)
+
+test_that("individual-level ash does not depend on the scaling of X (ash and archived paths)", {
+  d <- .make_raw_dosage_ash_data()
+  # Same standardized X, column scales spanning exp(-3) to exp(3).
+  X_het <- sweep(d$X, 2, exp(seq(-3, 3, length.out = d$p)), "*")
+
+  for (method in c("ash", "ash_filter_archived")) {
+    args <- c(.raw_dosage_fit_args, list(unmappable_effects = method))
+    fit_raw <- suppressMessages(do.call(susie, c(list(X = d$X, y = d$y), args)))
+    fit_std <- suppressMessages(do.call(susie, c(list(X = scale(d$X), y = d$y), args)))
+    fit_het <- suppressMessages(do.call(susie, c(list(X = X_het, y = d$y), args)))
+
+    expect_true(any(fit_std$theta != 0), label = paste(method, "theta is non-zero"))
+    # Compare converged fits, so differences are not an artefact of max_iter.
+    expect_true(fit_raw$converged, label = paste(method, "raw fit converged"))
+
+    for (nm in c("theta", "sigma2", "tau2", "pip", "fitted")) {
+      expect_equal(fit_raw[[nm]], fit_std[[nm]], tolerance = 1e-6,
+        label = sprintf("%s from unstandardized X (%s)", nm, method))
+      expect_equal(fit_het[[nm]], fit_std[[nm]], tolerance = 1e-6,
+        label = sprintf("%s from heterogeneously scaled X (%s)", nm, method))
+    }
+
+    # coef() maps the standardized-scale effects (including theta) back to
+    # the scale of X.
+    expect_equal(coef(fit_raw)[-1],
+                 coef(fit_std)[-1] / attr(scale(d$X), "scaled:scale"),
+                 tolerance = 1e-6,
+                 label = sprintf("coef from unstandardized X (%s)", method))
+    expect_equal(coef(fit_het)[-1],
+                 coef(fit_std)[-1] / attr(scale(X_het), "scaled:scale"),
+                 tolerance = 1e-6,
+                 label = sprintf("coef from heterogeneously scaled X (%s)", method))
+  }
+})
+
+test_that("individual-level ash on unstandardized X agrees with susie_ss", {
+  d <- .make_raw_dosage_ash_data()
+  args <- c(.raw_dosage_fit_args, list(unmappable_effects = "ash"))
+  fit_raw <- suppressMessages(do.call(susie, c(list(X = d$X, y = d$y), args)))
+
+  Xs <- scale(d$X)
+  yc <- d$y - mean(d$y)
+  fit_ss <- suppressMessages(do.call(susie_ss,
+    c(list(XtX = crossprod(Xs), Xty = c(crossprod(Xs, yc)), yty = sum(yc^2), n = d$n),
+      args)))
+
+  # mr.ash and mr.ash.rss stop at slightly different points, so theta agrees
+  # in absolute (not relative) terms; PIPs agree much more tightly.
+  expect_lt(max(abs(fit_raw$theta - fit_ss$theta)), 5e-4)
+  expect_equal(fit_raw$sigma2, fit_ss$sigma2, tolerance = 1e-3,
+    label = "sigma2 vs susie_ss")
+  expect_equal(susie_get_pip(fit_raw), susie_get_pip(fit_ss), tolerance = 1e-5,
+    label = "PIPs vs susie_ss")
+})
+
+test_that("susie_auto with ash does not depend on the scaling of X", {
+  d <- .make_raw_dosage_ash_data()
+  # mr.ash warns about its default prior-variance grid in the small-L stages.
+  fit_raw <- suppressWarnings(suppressMessages(
+    susie_auto(d$X, d$y, unmappable_effects = "ash", verbose = FALSE)))
+  fit_std <- suppressWarnings(suppressMessages(
+    susie_auto(scale(d$X), d$y, unmappable_effects = "ash", verbose = FALSE)))
+
+  expect_lte(nrow(fit_raw$alpha), 8)
+  expect_equal(nrow(fit_raw$alpha), nrow(fit_std$alpha))
+  expect_equal(fit_raw$pip, fit_std$pip, tolerance = 1e-6)
+})

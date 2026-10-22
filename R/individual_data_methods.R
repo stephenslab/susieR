@@ -15,6 +15,10 @@ configure_data.individual <- function(data, params) {
     # Stay in the individual-data path: thin SVD of standardized X, no XtX.
     return(add_eigen_decomposition(data, params))
   }
+  if (params$unmappable_effects %in% c("ash", "ash_filter_archived")) {
+    # Correlation matrix used by the ash masking at every iteration.
+    return(get_xcorr(data)$data)
+  }
   return(configure_data.default(data, params))
 }
 
@@ -429,8 +433,7 @@ update_derived_quantities.individual <- function(data, params, model) {
     model$XtOmegay          <- as.vector(data$eigen_vectors %*%
                                            (data$VtXty / omega_res$omega_var))
 
-    b <- colSums(model$alpha * model$mu)
-    model$Xr <- as.vector(compute_Xb(data$X, b + model$theta))
+    model$Xr <- as.vector(compute_Xb(data$X, get_total_effect(model)))
     return(model)
   }
   if (params$unmappable_effects %in% c("ash", "ash_filter_archived")) {
@@ -468,7 +471,7 @@ get_scale_factors.individual <- function(data, params) {
 get_intercept.individual <- function(data, params, model, ...) {
   if (params$intercept) {
     return(data$mean_y - sum(attr(data$X, "scaled:center") *
-                               (colSums(model$alpha * model$mu) / attr(data$X, "scaled:scale"))))
+                               (get_total_effect(model) / attr(data$X, "scaled:scale"))))
   } else {
     return(0)
   }

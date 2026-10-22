@@ -338,17 +338,14 @@ test_that("check_convergence.default emits message when ELBO is NA on iter=1 wit
   )
 })
 
-# ---- check_convergence: ash final-pass on convergence ----
+# ---- check_convergence: ash convergence has no side effects ----
 
-test_that("check_convergence.default triggers run_final_ash_pass on ELBO convergence with ash", {
+test_that("check_convergence.default converges on ELBO with ash and leaves theta untouched", {
   set.seed(1010)
   setup                          <- setup_individual_data(n = 80, p = 30, L = 3)
   setup$params$unmappable_effects <- "ash"
   setup$params$convergence_method <- "elbo"
   setup$params$tol                <- 0.1
-
-  options(susie.skip_mrash = TRUE)
-  on.exit(options(susie.skip_mrash = NULL), add = TRUE)
 
   model         <- ibss_initialize(setup$data, setup$params)
   model         <- init_ash_fields(model, setup$data$n, setup$data$p, setup$params$L,
@@ -361,6 +358,7 @@ test_that("check_convergence.default triggers run_final_ash_pass on ELBO converg
 
   expect_true(result$converged)
   expect_s3_class(result, "susie")
+  expect_identical(result$theta, model$theta)
 })
 
 # ---- check_convergence: end-to-end via susie() ----

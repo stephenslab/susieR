@@ -118,9 +118,10 @@ susie_get_posterior_mean <- function(res, prior_tol = 1e-9) {
     include_idx <- 1:nrow(res$alpha)
   }
 
-  # Now extract relevant rows from alpha matrix.
+  # Now extract relevant rows from alpha matrix (slot-weighted, as in coef()).
   if (length(include_idx) > 0) {
-    return(colSums((res$alpha * res$mu)[include_idx, , drop = FALSE]) /
+    sw <- get_slot_weights(res)
+    return(colSums((sw * res$alpha * res$mu)[include_idx, , drop = FALSE]) /
       assume_unit_scale(res$X_column_scale_factors))
   } else {
     return(numeric(ncol(res$mu)))
@@ -139,10 +140,12 @@ susie_get_posterior_sd <- function(res, prior_tol = 1e-9) {
     include_idx <- 1:nrow(res$alpha)
   }
 
-  # Now extract relevant rows from alpha matrix.
+  # Now extract relevant rows from alpha matrix. A slot active with
+  # probability c contributes c*E[b^2] - (c*E[b])^2 to the variance.
   if (length(include_idx) > 0) {
-    return(sqrt(colSums((res$alpha * res$mu2 -
-      (res$alpha * res$mu)^2)[include_idx, , drop = FALSE])) /
+    sw <- get_slot_weights(res)
+    return(sqrt(colSums((sw * res$alpha * res$mu2 -
+      (sw * res$alpha * res$mu)^2)[include_idx, , drop = FALSE])) /
       assume_unit_scale(res$X_column_scale_factors))
   } else {
     return(numeric(ncol(res$mu)))

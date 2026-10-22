@@ -945,7 +945,7 @@ test_that("R_mismatch works with and without finite-reference input", {
     fit_warn <- susie_rss(z = z, R = R, n = n, L = 3, R_finite = 10000,
                           R_mismatch = "eb_no_init", estimate_residual_variance = TRUE,
                           max_iter = 2, verbose = FALSE),
-    "incompatible with"
+    "weakly identified"
   )
 
   fit <- susie_rss(z = z, R = R, n = n, L = 3, R_finite = 10000,

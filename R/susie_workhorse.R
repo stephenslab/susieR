@@ -102,6 +102,10 @@ susie_workhorse <- function(data, params) {
 
   }
 
+  # SuSiE-ash: final Mr.ASH pass on the sparse fit the loop ended with.
+  if (isTRUE(params$unmappable_effects %in% c("ash", "ash_filter_archived")))
+    model <- run_final_ash_pass(data, params, model)
+
   # Check final convergence status. Emit both the cosmetic colored
   # message and a real R warning() so callers can `suppressWarnings()`
   # or `expect_warning()` on it (mirrors the Q_art artifact pattern in
