@@ -278,7 +278,7 @@ precompute_rss_lambda_terms <- function(data, model) {
 #   precompute_omega_cache  -- joint SVD for reduced-basis optimization
 #   precompute_omega_iteration -- per-IBSS-iter bilinear forms
 #   eval_omega_eloglik_reduced -- O(r^3) Eloglik evaluator (Cholesky)
-#   eigen_from_reduced      -- recover full p-dim eigen from reduced basis
+#   eigen_from_reduced      -- recover mixture spectrum from reduced basis
 #   eval_omega_eloglik_R    -- O(p^3) reference implementation (testing)
 #   optimize_omega          -- simplex optimizer (Grid+Brent or Frank-Wolfe)
 # =============================================================================
@@ -308,7 +308,9 @@ form_X_meta <- function(X_list, omega) {
   X_meta
 }
 
-# SVD-based eigendecomposition from X matrix (X'X = R)
+# SVD-based eigen representation from X matrix (X'X = R).
+# Zero-padded columns mark implicit null directions; use complementary
+# projection when their residual energy is needed.
 #' @keywords internal
 eigen_from_X <- function(X, p) {
   sv <- svd(X, nu = 0)
@@ -428,7 +430,9 @@ eval_omega_eloglik_reduced <- function(cache, omega, iter_cache,
   -p_eff / 2 * log(2 * pi) + logdet_term - 0.5 * ER2
 }
 
-# Recover full eigendecomposition from reduced basis after omega is chosen.
+# Recover mixture eigenvalues and reference-space eigenvectors.
+# Zero-padded columns mark implicit null directions; use complementary
+# projection when their residual energy is needed.
 # Called once per IBSS iteration (after Brent converges), not per eval.
 #' @keywords internal
 eigen_from_reduced <- function(cache, omega, K, p) {

@@ -399,8 +399,15 @@ low_eigen_projection_fraction <- function(eigen_A, b, eigen_tol,
     return(list(fraction = 0, evaluable = FALSE,
                 low_eigen_count = length(low), eigen_tol = eigen_tol))
   }
-  coeff <- as.numeric(crossprod(V[, low, drop = FALSE], b))
-  list(fraction = sum(coeff^2) / b_norm, evaluable = TRUE,
+  # Use the complement of the high-eigenvalue space. Reduced/SVD
+  # representations can leave null directions implicit, with zero-padded
+  # columns that are not an orthonormal basis for those directions.
+  high <- which(d > eigen_tol)
+  V_high <- V[, high, drop = FALSE]
+  coeff <- as.numeric(crossprod(V_high, b))
+  b_low <- b - as.vector(V_high %*% coeff)
+  fraction <- min(1, sum(b_low^2) / b_norm)
+  list(fraction = fraction, evaluable = TRUE,
        low_eigen_count = length(low), eigen_tol = eigen_tol)
 }
 

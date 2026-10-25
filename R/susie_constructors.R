@@ -1618,8 +1618,8 @@ rss_lambda_constructor <- function(z, R = NULL, X = NULL, n = NULL,
     if (length(colspace) == length(z)) {
       lambda <- 0
     } else {
-      znull <- crossprod(eigen_R$vectors[, -colspace], z)
-      lambda <- sum(znull^2) / length(znull)
+      null_proj <- low_eigen_projection_fraction(eigen_R, z, eigen_tol = 0)
+      lambda <- null_proj$fraction * sum(z^2) / null_proj$low_eigen_count
     }
   }
 

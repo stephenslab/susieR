@@ -2010,3 +2010,18 @@ test_that("susie_rss and susie_rss_lambda reject an invalid z_method", {
   expect_error(susie_rss(z = z, R = R, n = 500, z_method = "bogus"))
   expect_error(susie_rss_lambda(z = z, R = R, n = 500, lambda = 0, z_method = "bogus"))
 })
+
+
+test_that("estimated RSS lambda agrees for low-rank X and its full LD", {
+  set.seed(947)
+  X <- matrix(rnorm(4 * 8), 4, 8)
+  R <- cor(X)
+  full <- eigen(R, symmetric = TRUE)
+  z <- 0.3 * full$vectors[, 8]
+  from_X <- rss_lambda_constructor(z = z, X = X, lambda = "estimate")
+  from_R <- rss_lambda_constructor(z = z, R = R, lambda = "estimate",
+                                   check_z = FALSE)
+  nullity <- sum(full$values < 1e-8)
+  expect_equal(from_R$data$lambda, sum(z^2) / nullity, tolerance = 1e-10)
+  expect_equal(from_X$data$lambda, from_R$data$lambda, tolerance = 1e-10)
+})

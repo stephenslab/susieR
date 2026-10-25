@@ -1191,3 +1191,74 @@ test_that("eb_mix == eb when lambda_bias = 0 (no population term to gate)", {
                                                XtXr_without_l, b_minus_l, r)$infl
   expect_equal(infl_mix, infl_eb)
 })
+
+
+# ---- Low-rank reference null-space regression tests ----
+
+test_that("Q_art includes residuals outside the joint reference span", {
+  cache <- list(r = 2L, V_s = diag(3)[, 1:2],
+                A_list = list(diag(2), diag(2)))
+  data <- structure(list(K = 2L, p = 3L, omega_cache = cache,
+                         omega_init = c(0.5, 0.5)),
+                    class = c("ss_mixture", "ss"))
+  eig <- get_R_mismatch_eigen(data, list(omega = c(0.5, 0.5)))
+
+  null <- compute_Q_art(eig, c(0, 0, 1))
+  expect_true(null$evaluable)
+  expect_equal(null$Q_art, 1, tolerance = 1e-12)
+  expect_equal(null$low_eigen_count, 1L)
+  expect_equal(compute_Q_art(eig, c(1, 0, 1))$Q_art, 0.5,
+               tolerance = 1e-12)
+  expect_equal(compute_Q_art(eig, c(1, 0, 0))$Q_art, 0,
+               tolerance = 1e-12)
+})
+
+test_that("reduced Q_art matches full LD at interior and boundary weights", {
+  set.seed(945)
+  p <- 7L
+  basis <- qr.Q(qr(matrix(rnorm(p * p), p, p)))
+  V_s <- basis[, 1:3]
+  panels <- list(diag(c(4, 1e-5, 0)), diag(c(0, 2e-5, 3)))
+  cache <- list(r = 3L, V_s = V_s, A_list = panels)
+  residuals <- list(basis[, 4], basis[, 2], basis[, 1],
+                    basis[, 1] + 2 * basis[, 2] + 3 * basis[, 4],
+                    rnorm(p))
+  for (omega in list(c(0.4, 0.6), c(1, 0), c(0, 1))) {
+    reduced <- eigen_from_reduced(cache, omega, K = 2, p = p)
+    R <- V_s %*% (omega[1] * panels[[1]] +
+                    omega[2] * panels[[2]]) %*% t(V_s)
+    full <- eigen(R, symmetric = TRUE)
+    cutoff <- 1e-3 * max(full$values)
+    low <- which(full$values <= cutoff)
+    for (residual in residuals) {
+      expected <- sum(crossprod(full$vectors[, low, drop = FALSE],
+                                residual)^2) / sum(residual^2)
+      actual <- compute_Q_art(reduced, residual)
+      expect_equal(actual$Q_art, expected, tolerance = 1e-10)
+      expect_equal(actual$low_eigen_count, length(low))
+      expect_true(actual$evaluable)
+    }
+  }
+})
+
+test_that("low-rank mixture fits report Q_art from the full residual space", {
+  set.seed(946)
+  p <- 24L
+  n <- 500
+  X <- list(matrix(rnorm(5 * p), 5, p), matrix(rnorm(4 * p), 4, p))
+  z <- rnorm(p)
+  z[2] <- 4
+  fit <- suppressWarnings(susie_rss(
+    z = z, X = X, n = n, L = 2, R_finite = c(1000, 2000),
+    R_mismatch = "eb_no_init", max_iter = 5, verbose = FALSE))
+  R <- Reduce(`+`, Map(function(w, x) w * cor(x), fit$omega_weights, X))
+  adjusted_z <- z * sqrt((n - 1) / (z^2 + n - 2))
+  fitted <- sqrt(n - 1) * colSums(fit$alpha * fit$mu)
+  residual <- as.vector(adjusted_z - R %*% fitted)
+  full <- eigen(R, symmetric = TRUE)
+  low <- which(full$values <= 1e-3 * max(full$values))
+  expected <- sum(crossprod(full$vectors[, low, drop = FALSE],
+                            residual)^2) / sum(residual^2)
+  expect_equal(fit$R_finite_diagnostics$Q_art, expected, tolerance = 1e-9)
+  expect_equal(fit$R_finite_diagnostics$artifact_flag, expected > 0.1)
+})
