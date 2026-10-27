@@ -1189,21 +1189,79 @@ test_that("summary_stats_constructor accepts scalar shat and replicates it", {
   expect_s3_class(result$data, "ss")
 })
 
-test_that("summary_stats_constructor rejects missing values in bhat or shat", {
-  p <- 50; R <- diag(p)
-  bhat <- rnorm(p); shat <- abs(rnorm(p))
+test_that("summary_stats_constructor converts missing shat without var_y", {
+  bhat <- c(5, 2, 0.2)
+  result <- suppressMessages(summary_stats_constructor(
+    bhat = bhat, shat = c(1, NaN, 1), R = diag(3), n = NULL))
+  reference <- suppressMessages(summary_stats_constructor(
+    z = c(5, 0, 0.2), R = diag(3), n = NULL))
+  expect_equal(result, reference, tolerance = 1e-10)
 
-  bhat_na <- bhat; bhat_na[5] <- NA
-  expect_error(
-    summary_stats_constructor(bhat = bhat_na, shat = shat, R = R, n = 100),
-    "bhat, shat cannot have missing values"
-  )
+  result <- summary_stats_constructor(
+    bhat = bhat, shat = NA_real_, R = diag(3), n = 1000)
+  reference <- summary_stats_constructor(
+    z = numeric(3), R = diag(3), n = 1000)
+  expect_equal(result, reference, tolerance = 1e-10)
+})
 
-  shat_na <- shat; shat_na[10] <- NA
+test_that("summary_stats_constructor keeps missing summary input boundaries", {
+  bhat <- c(5, 2, 0.2)
+  for (n in list(1000, NULL))
+    expect_error(summary_stats_constructor(
+      bhat = bhat, shat = c(1, NA_real_, 1), R = diag(3),
+      n = n, var_y = 1), "missing values")
+  expect_error(summary_stats_constructor(
+    bhat = c(5, NA_real_, 0.2), shat = c(1, 1, 1), R = diag(3), n = 1000),
+    "missing values")
+  for (shat in list(c(NA_real_, 0, 1), c(NaN, -1, 1)))
+    expect_error(summary_stats_constructor(
+      bhat = bhat, shat = shat, R = diag(3), n = 1000),
+      "zero or negative")
+})
+
+test_that("missing shat with var_y points at the var_y-specific fix", {
+  bhat <- c(5, 2, 0.2)
   expect_error(
-    summary_stats_constructor(bhat = bhat, shat = shat_na, R = R, n = 100),
-    "bhat, shat cannot have missing values"
-  )
+    susie_rss(bhat = bhat, shat = c(1, NA_real_, 1), R = diag(3),
+              n = 1000, var_y = 1, L = 1, max_iter = 1, coverage = NULL),
+    "omit var_y, or provide z = bhat/shat", fixed = TRUE)
+  expect_error(
+    summary_stats_constructor(bhat = bhat, shat = c(1, NaN, 1), R = diag(3),
+                              n = 1000, var_y = 1),
+    "omit var_y, or provide z = bhat/shat", fixed = TRUE)
+  expect_error(
+    summary_stats_constructor(bhat = c(5, NA_real_, 0.2), shat = c(1, 1, 1),
+                              R = diag(3), n = 1000, var_y = 1),
+    "bhat, shat cannot have missing values", fixed = TRUE)
+})
+
+test_that("low-rank X keeps missing shat on the zeroed-z path", {
+  set.seed(314)
+  n <- 20; p <- 50
+  X <- matrix(rnorm(n * p), n, p)
+  X <- t(t(X) - colMeans(X))
+  bhat <- rnorm(p)
+  shat <- abs(rnorm(p)) + 0.1
+  shat[3] <- NA_real_
+
+  result <- summary_stats_constructor(bhat = bhat, shat = shat, X = X,
+                                      n = n, var_y = NULL, L = 3)
+
+  # Low-rank branch: X kept, R/XtX never formed.
+  expect_null(result$data$XtX)
+  expect_equal(dim(result$data$X), c(n, p))
+
+  z <- result$data$z_marginal
+  expect_length(z, p)
+  expect_equal(z[3], 0)
+  expect_true(all(is.finite(z)))
+
+  # max_iter = 3 is a smoke run, so the non-convergence warning is expected.
+  fit <- suppressWarnings(suppressMessages(
+    susie_rss(bhat = bhat, shat = shat, X = X, n = n, L = 2, max_iter = 3,
+              coverage = NULL)))
+  expect_true(all(is.finite(fit$pip)))
+  expect_equal(unname(fit$pip[3]) >= 0, TRUE)
 })
 
 test_that("summary_stats_constructor rejects zero or negative elements in shat", {

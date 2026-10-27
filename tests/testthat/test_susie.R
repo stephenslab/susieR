@@ -635,6 +635,19 @@ test_that("susie_rss (lambda=0) accepts bhat/shat instead of z", {
   expect_equal(rowSums(fit$alpha), rep(1, 5), tolerance = 1e-10)
 })
 
+test_that("susie_rss treats missing shat as zero z without var_y", {
+  bhat <- c(5, 2, 0.2)
+  fit <- susie_rss(bhat = bhat, shat = c(1, NA_real_, 1),
+                   R = diag(3), n = 1000, L = 1, max_iter = 100,
+                   coverage = NULL)
+  reference <- susie_rss(z = c(5, 0, 0.2), R = diag(3), n = 1000,
+                         L = 1, max_iter = 100, coverage = NULL)
+  expect_true(fit$converged)
+  expect_true(reference$converged)
+  for (field in c("alpha", "mu", "mu2", "pip", "V", "sigma2", "elbo"))
+    expect_equal(fit[[field]], reference[[field]], tolerance = 1e-10)
+})
+
 test_that("susie_rss (lambda=0) maf filtering keeps only variables above maf_thresh", {
   set.seed(43)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
