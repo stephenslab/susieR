@@ -160,7 +160,8 @@ inclusion probabilities (PIPs) for all variables.
 
 \code{susie_get_lfsr} returns a vector containing the average lfsr
 across variables for each single-effect, weighted by the posterior
-inclusion probability (alpha).
+inclusion probability (alpha). Each conditional sign probability uses
+the posterior mean and variance for the same single-effect and variable.
 
 \code{susie_get_posterior_samples} returns a list containing the
 effect sizes samples and causal status with two components: \code{b},
