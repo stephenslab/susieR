@@ -35,8 +35,8 @@ susie(
   residual_variance_lowerbound = var(drop(y))/10000,
   refine = FALSE,
   n_purity = 100,
-  alpha0 = 0,
-  beta0 = 0
+  alpha0 = NULL,
+  beta0 = NULL
 )
 
 susie_suff_stat(
@@ -86,8 +86,12 @@ L is set to p.}
 \item{small}{Logical. Useful when fitting susie on data with a
 limited sample size. If set to TRUE, susie is fitted using
 single-effect regression with the Servin and Stephens prior
-instead of the default Gaussian prior. This improves the
-calibration of credible sets.  Default is FALSE.}
+instead of the default Gaussian prior. The single-effect posterior
+is exact at fixed hyperparameters. For multiple effects, generalized
+IBSS is a heuristic with no joint ELBO or calibration guarantee.
+Default is FALSE. An intercept uses \code{n - 1} residual degrees
+of freedom. This option currently supports dense and sparse matrices;
+refinement is unavailable.}
 
 \item{scaled_prior_variance}{The prior variance, divided by
 \code{var(y)} (or by \code{(1/(n-1))yty} for
@@ -95,7 +99,10 @@ calibration of credible sets.  Default is FALSE.}
 non-zero element of b is \code{var(y) * scaled_prior_variance}. The
 value provided should be either a scalar or a vector of length
 \code{L}. If \code{estimate_prior_variance = TRUE}, this provides
-initial estimates of the prior variances.}
+initial estimates of the prior variances. For \code{small = TRUE},
+this instead specifies the variance ratio \eqn{V} in
+\eqn{b_l | \sigma^2 \sim N(0, V_l \sigma^2)}; it is not multiplied
+by \code{var(y)} and may exceed one.}
 
 \item{residual_variance}{Variance of the residual. If
 \code{estimate_residual_variance = TRUE}, this value provides the
@@ -130,7 +137,9 @@ recommended.}
 \code{estimate_residual_variance = TRUE}, the residual variance is
 estimated, using \code{residual_variance} as an initial value. If
 \code{estimate_residual_variance = FALSE}, the residual variance is
-fixed to the value supplied by \code{residual_variance}.}
+fixed to the value supplied by \code{residual_variance}. For
+\code{small = TRUE}, residual variance is integrated out, so this
+option and the residual variance initialization/bounds are ignored.}
 
 \item{estimate_prior_variance}{If \code{estimate_prior_variance =
 TRUE}, the prior variance is estimated (this is a separate
@@ -144,9 +153,10 @@ value supplied to \code{scaled_prior_variance}.}
 variance. When \code{estimate_prior_method = "simple"} is used, the
 likelihood at the specified prior variance is compared to the
 likelihood at a variance of zero, and the setting with the larger
-likelihood is retained. The option "EM" is selected by default  when
- setting small=TRUE, i.e., using SuSiE with Servin and Stephens
-SER}
+likelihood is retained. For \code{small = TRUE}, all three methods
+use the NIG marginal likelihood. The default \code{"optim"} searches
+a log-scale grid and refines local maxima; \code{"EM"} updates
+\eqn{V_l} using \eqn{E[b_l^2/\sigma^2]}.}
 
 \item{check_null_threshold}{When the prior variance is estimated,
 compare the estimate with the null, and set the prior variance to
@@ -215,11 +225,18 @@ to check and escape from local optima (see details).}
 \item{n_purity}{Passed as argument \code{n_purity} to
 \code{\link{susie_get_cs}}.}
 
-\item{alpha0}{Numerical parameter for the NIG prior when using Servin
-and Stephens SER.}
+\item{alpha0}{Twice the shape of the inverse-gamma prior on residual
+variance for \code{small = TRUE}. Defaults to \code{1/sqrt(n)}.
+Nonnegative; use \code{alpha0 = beta0 = 0} for the improper limit,
+in which absolute marginal likelihood is unavailable.}
 
-\item{beta0}{Mumerical parameter for the NIG prior when using Servin
-and Stephens SER.}
+\item{beta0}{Twice the scale of the inverse-gamma prior, in squared
+response units. Defaults to \code{alpha0 * var(y)} (or
+\code{alpha0 * mean(y^2)} without an intercept). This is a
+data-dependent default chosen for invariance to response units.
+If explicitly supplied, multiply it by \eqn{c^2} when multiplying
+\code{y} by \eqn{c}. Finite posterior second moments require
+\code{n - intercept + alpha0 > 2}.}
 
 \item{XtX}{A p by p matrix \eqn{X'X} in which the columns of X
 are centered to have mean zero.}
@@ -283,16 +300,29 @@ A \code{"susie"} object with some or all of the following
 
 \item{intercept}{Intercept (fixed or estimated).}
 
-\item{sigma2}{Residual variance (fixed or estimated).}
+\item{sigma2}{Residual variance (fixed or estimated). For NIG with
+  one effect, the posterior mean residual variance. For multiple
+  effects, the mean of the component residual-variance posterior
+  means, a diagnostic summary rather than a joint posterior estimate.}
 
 \item{V}{Prior variance of the non-zero elements of b, equal to
-  \code{scaled_prior_variance * var(y)}.}
+  \code{scaled_prior_variance * var(y)}. For \code{small = TRUE},
+  the variance ratios \eqn{V_l}, without response-variance scaling.}
+
+\item{nig}{For \code{small = TRUE}, the prior parameters, effective
+  residual dimension, component inverse-gamma posterior \code{shape}
+  and \code{rate}, Student-t \code{scale2}, component marginal
+  \code{loglik}, and \code{sigma2_by_effect}. These describe residual
+  single-effect fits, not a joint posterior for multiple effects.}
 
 \item{elbo}{The value of the variational lower bound, or
   \dQuote{ELBO} (objective function to be maximized), achieved at
-  each iteration of the IBSS fitting procedure.}
-\item{cv_criterion}{The value of the maximum difference between alpha value
-each iteration between, only returned when argument small set to TRUE}
+  each iteration of the IBSS fitting procedure. For NIG with one
+  effect and a proper prior, the exact marginal log likelihood on the
+  residual subspace; otherwise \code{NA}. NIG \code{KL} is \code{NA}.}
+\item{cv_criterion}{For NIG, maximum change in inclusion probabilities
+  and relative changes in means, second moments, and variance ratios.
+  Two consecutive iterations must meet \code{tol_small}.}
 
 \item{fitted}{Vector of length n containing the fitted values of
   the outcome.}

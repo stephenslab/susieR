@@ -44,7 +44,9 @@ single_effect_regression_ss(
 
 \item{X}{An n by p matrix of covariates.}
 
-\item{V}{A scalar giving the (initial) prior variance}
+\item{V}{A scalar giving the (initial) prior variance. For
+\code{small = TRUE}, a variance ratio in
+\eqn{b | \sigma^2 \sim N(0,V\sigma^2)}.}
 
 \item{residual_variance}{The residual variance.}
 
@@ -59,14 +61,13 @@ the null.}
 
 \item{small}{Logical. Useful when fitting susie on data with a limited sample size.
 If set to TRUE, susie is fitted using single-effect regression with the Servin and Stephens prior
-instead of the default Gaussian prior. This improves the calibration of credible sets.
+instead of the default Gaussian prior. This integrates residual variance.
 Default is FALSE.}
 
-\item{alpha0}{Numerical parameter for the NIG prior when using Servin
-and Stephens SER.}
+\item{alpha0}{Twice the inverse-gamma shape for \code{small = TRUE}.}
 
-\item{beta0}{Numerical parameter for the NIG prior when using Servin
-and Stephens SER.}
+\item{beta0}{Twice the inverse-gamma scale, in squared response units,
+for \code{small = TRUE}.}
 
 \item{z}{A p-vector of z scores.}
 

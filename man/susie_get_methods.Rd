@@ -112,7 +112,8 @@ iteration of the IBSS fitting procedure.
 fixed) residual variance parameter.
 
 \code{susie_get_prior_variance} returns the (estimated or fixed)
-prior variance parameters.
+prior variance parameters. For \code{small = TRUE}, these are variance
+ratios relative to residual variance, as stored in \code{V}.
 
 \code{susie_get_posterior_mean} returns the posterior mean for the
 regression coefficients of the fitted susie model.
@@ -135,6 +136,9 @@ effect sizes samples and causal status with two components: \code{b},
 an \code{num_variables} x \code{num_samples} matrix of effect
 sizes; \code{gamma}, an \code{num_variables} x \code{num_samples}
 matrix of causal status random draws.
+For NIG fits, sign probabilities and samples use Student-t component
+posteriors. With multiple effects these are independent draws from the
+gIBSS component approximation, not the joint shared-variance posterior.
 
 \code{susie_get_cs} returns credible sets (CSs) from a susie fit,
 as well as summaries of correlation among the variables included in

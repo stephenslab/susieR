@@ -48,9 +48,17 @@ update_each_effect = function (X, y, s, estimate_prior_variance = FALSE,
       s$V[l]      = res$V
       s$lbf[l]    = res$lbf_model
       s$lbf_variable[l,] = res$lbf
-      s$KL[l]     = -res$loglik +
-        SER_posterior_e_loglik(X,R,s$sigma2,res$alpha * res$mu,
-                               res$alpha * res$mu2)
+      if (small) {
+        s$KL[l] = NA_real_
+        s$nig$shape[l] = res$shape
+        s$nig$rate[l,] = res$rate
+        s$nig$scale2[l,] = res$scale2
+        s$nig$sigma2_by_effect[l] = res$sigma2
+        s$nig$loglik[l] = res$loglik
+      } else
+        s$KL[l] = -res$loglik +
+          SER_posterior_e_loglik(X,R,s$sigma2,res$alpha * res$mu,
+                                 res$alpha * res$mu2)
 
       s$Xr = s$Xr + compute_Xb(X,s$alpha[l,] * s$mu[l,])
     }

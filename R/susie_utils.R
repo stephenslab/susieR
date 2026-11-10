@@ -25,7 +25,8 @@
 #' fixed) residual variance parameter.
 #'
 #' \code{susie_get_prior_variance} returns the (estimated or fixed)
-#' prior variance parameters.
+#' prior variance parameters. For \code{small = TRUE}, these are variance
+#' ratios relative to residual variance, as stored in \code{V}.
 #'
 #' \code{susie_get_posterior_mean} returns the posterior mean for the
 #' regression coefficients of the fitted susie model.
@@ -48,6 +49,9 @@
 #' an \code{num_variables} x \code{num_samples} matrix of effect
 #' sizes; \code{gamma}, an \code{num_variables} x \code{num_samples}
 #' matrix of causal status random draws.
+#' For NIG fits, sign probabilities and samples use Student-t component
+#' posteriors. With multiple effects these are independent draws from the
+#' gIBSS component approximation, not the joint shared-variance posterior.
 #'
 #' \code{susie_get_cs} returns credible sets (CSs) from a susie fit,
 #' as well as summaries of correlation among the variables included in
@@ -91,6 +95,8 @@
 #' @export
 #'
 susie_get_objective = function (res, last_only = TRUE, warning_tol = 1e-6) {
+  if (isTRUE(res$small) && anyNA(res$elbo))
+    stop("No joint evidence is available for multi-effect gIBSS or an improper NIG prior")
   if (!all(diff(res$elbo) >= (-1*warning_tol)))
     warning("Objective is decreasing")
   if (last_only)
@@ -168,6 +174,13 @@ susie_get_residual_variance = function (res)
 #' @export
 #'
 susie_get_lfsr = function (res) {
+  if (isTRUE(res$small)) {
+    score = -res$mu/sqrt(res$nig$scale2)
+    score[res$nig$scale2 == 0] = 0
+    prob = matrix(stats::pt(c(score),df = rep(res$nig$shape,ncol(score))),
+                  nrow(score),ncol(score))
+    return(rowSums(res$alpha*pmin(prob,1-prob)))
+  }
   pos_prob = pnorm(0,mean = t(res$mu),sd = sqrt(res$mu2 - res$mu^2))
   neg_prob = 1 - pos_prob
   return(1 - rowSums(res$alpha * t(pmax(pos_prob,neg_prob))))
@@ -207,8 +220,13 @@ susie_get_posterior_samples = function (susie_fit, num_samples) {
     if (length(include_idx) > 0) {
       for (l in include_idx) {
         gamma_l = rmultinom(1,1,pip[l,])
-        effect_size = rnorm(1,mean = posterior_mean[l,which(gamma_l != 0)],
-                            sd = posterior_sd[l,which(gamma_l != 0)])
+        j = which(gamma_l != 0)
+        if (isTRUE(susie_fit$small))
+          effect_size = posterior_mean[l,j] +
+            sqrt(susie_fit$nig$scale2[l,j])/susie_fit$X_column_scale_factors[j] *
+            stats::rt(1,df = susie_fit$nig$shape[l])
+        else
+          effect_size = rnorm(1,mean = posterior_mean[l,j],sd = posterior_sd[l,j])
         b_l = gamma_l * effect_size
         b = b + b_l
       }

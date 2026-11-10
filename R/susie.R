@@ -87,13 +87,20 @@
 #'   non-zero element of b is \code{var(y) * scaled_prior_variance}. The
 #'   value provided should be either a scalar or a vector of length
 #'   \code{L}. If \code{estimate_prior_variance = TRUE}, this provides
-#'   initial estimates of the prior variances.
+#'   initial estimates of the prior variances. For \code{small = TRUE},
+#'   this instead specifies the variance ratio \eqn{V} in
+#'   \eqn{b_l | \sigma^2 \sim N(0, V_l \sigma^2)}; it is not multiplied
+#'   by \code{var(y)} and may exceed one.
 #'
 #' @param small Logical. Useful when fitting susie on data with a
 #'   limited sample size. If set to TRUE, susie is fitted using
 #'   single-effect regression with the Servin and Stephens prior
-#'   instead of the default Gaussian prior. This improves the
-#'   calibration of credible sets.  Default is FALSE.
+#'   instead of the default Gaussian prior. The single-effect posterior
+#'   is exact at fixed hyperparameters. For multiple effects, generalized
+#'   IBSS is a heuristic with no joint ELBO or calibration guarantee.
+#'   Default is FALSE. An intercept uses \code{n - 1} residual degrees
+#'   of freedom. This option currently supports dense and sparse matrices;
+#'   refinement is unavailable.
 #'
 #' @param residual_variance Variance of the residual. If
 #'   \code{estimate_residual_variance = TRUE}, this value provides the
@@ -128,7 +135,9 @@
 #'   \code{estimate_residual_variance = TRUE}, the residual variance is
 #'   estimated, using \code{residual_variance} as an initial value. If
 #'   \code{estimate_residual_variance = FALSE}, the residual variance is
-#'   fixed to the value supplied by \code{residual_variance}.
+#'   fixed to the value supplied by \code{residual_variance}. For
+#'   \code{small = TRUE}, residual variance is integrated out, so this
+#'   option and the residual variance initialization/bounds are ignored.
 #'
 #' @param estimate_prior_variance If \code{estimate_prior_variance =
 #'   TRUE}, the prior variance is estimated (this is a separate
@@ -142,9 +151,10 @@
 #'   variance. When \code{estimate_prior_method = "simple"} is used, the
 #'   likelihood at the specified prior variance is compared to the
 #'   likelihood at a variance of zero, and the setting with the larger
-#'   likelihood is retained. The option "EM" is selected by default  when
-#'    setting small=TRUE, i.e., using SuSiE with Servin and Stephens
-#'   SER
+#'   likelihood is retained. For \code{small = TRUE}, all three methods
+#'   use the NIG marginal likelihood. The default \code{"optim"} searches
+#'   a log-scale grid and refines local maxima; \code{"EM"} updates
+#'   \eqn{V_l} using \eqn{E[b_l^2/\sigma^2]}.
 #'
 #' @param check_null_threshold When the prior variance is estimated,
 #'   compare the estimate with the null, and set the prior variance to
@@ -213,11 +223,18 @@
 #' @param n_purity Passed as argument \code{n_purity} to
 #'   \code{\link{susie_get_cs}}.
 #'
-#' @param alpha0 Numerical parameter for the NIG prior when using Servin
-#'   and Stephens SER.
+#' @param alpha0 Twice the shape of the inverse-gamma prior on residual
+#'   variance for \code{small = TRUE}. Defaults to \code{1/sqrt(n)}.
+#'   Nonnegative; use \code{alpha0 = beta0 = 0} for the improper limit,
+#'   in which absolute marginal likelihood is unavailable.
 #'
-#' @param beta0 Mumerical parameter for the NIG prior when using Servin
-#'   and Stephens SER.
+#' @param beta0 Twice the scale of the inverse-gamma prior, in squared
+#'   response units. Defaults to \code{alpha0 * var(y)} (or
+#'   \code{alpha0 * mean(y^2)} without an intercept). This is a
+#'   data-dependent default chosen for invariance to response units.
+#'   If explicitly supplied, multiply it by \eqn{c^2} when multiplying
+#'   \code{y} by \eqn{c}. Finite posterior second moments require
+#'   \code{n - intercept + alpha0 > 2}.
 #'
 #' @return A \code{"susie"} object with some or all of the following
 #'   elements:
@@ -239,16 +256,29 @@
 #'
 #' \item{intercept}{Intercept (fixed or estimated).}
 #'
-#' \item{sigma2}{Residual variance (fixed or estimated).}
+#' \item{sigma2}{Residual variance (fixed or estimated). For NIG with
+#'   one effect, the posterior mean residual variance. For multiple
+#'   effects, the mean of the component residual-variance posterior
+#'   means, a diagnostic summary rather than a joint posterior estimate.}
 #'
 #' \item{V}{Prior variance of the non-zero elements of b, equal to
-#'   \code{scaled_prior_variance * var(y)}.}
+#'   \code{scaled_prior_variance * var(y)}. For \code{small = TRUE},
+#'   the variance ratios \eqn{V_l}, without response-variance scaling.}
+#'
+#' \item{nig}{For \code{small = TRUE}, the prior parameters, effective
+#'   residual dimension, component inverse-gamma posterior \code{shape}
+#'   and \code{rate}, Student-t \code{scale2}, component marginal
+#'   \code{loglik}, and \code{sigma2_by_effect}. These describe residual
+#'   single-effect fits, not a joint posterior for multiple effects.}
 #'
 #' \item{elbo}{The value of the variational lower bound, or
 #'   \dQuote{ELBO} (objective function to be maximized), achieved at
-#'   each iteration of the IBSS fitting procedure.}
-#' \item{cv_criterion}{The value of the maximum difference between alpha value
-#' each iteration between, only returned when argument small set to TRUE}
+#'   each iteration of the IBSS fitting procedure. For NIG with one
+#'   effect and a proper prior, the exact marginal log likelihood on the
+#'   residual subspace; otherwise \code{NA}. NIG \code{KL} is \code{NA}.}
+#' \item{cv_criterion}{For NIG, maximum change in inclusion probabilities
+#'   and relative changes in means, second moments, and variance ratios.
+#'   Two consecutive iterations must meet \code{tol_small}.}
 #'
 #' \item{fitted}{Vector of length n containing the fitted values of
 #'   the outcome.}
@@ -347,8 +377,8 @@ susie = function (X,y,L = min(10,ncol(X)),
                    residual_variance_lowerbound = var(drop(y))/1e4,
                    refine = FALSE,
                    n_purity = 100,
-                   alpha0=0,
-                   beta0=0 ) {
+                   alpha0=NULL,
+                   beta0=NULL ) {
 
   # Process input estimate_prior_method.
   estimate_prior_method = match.arg(estimate_prior_method)
@@ -382,19 +412,16 @@ susie = function (X,y,L = min(10,ncol(X)),
     } else
       stop("Input y must not contain missing values")
   }
-  if(small){
-    warning_message("Option 'small' is set to TRUE: SuSiE will be fitted using the general IBSS algorithm. Note that the ELBO only defined in this setting for L=1; convergence is determined based on the numerical stability of the estimated parameters across iterations. The tolerance parameter is now 'tol_small', the estimate_prior_method option  is set to 'EM'. and 'scaled_prior_variance' is ignored ")
-    estimate_prior_method <- "EM"
-    tol <- tol_small
-    if( !(residual_variance_upperbound ==Inf )){
-      warning_message("residual_variance_upperbound set to a different value than default,
-                      when setting small=TRUE this argument is ignored")
-    }
-    if( !(is.null(residual_variance))){
-      warning_message("residual_variance set to a different value than default
-                      when setting small=TRUE this argument is ignored")
-    }
-
+  if (small) {
+    if (refine)
+      stop("refine is unavailable for small=TRUE: gIBSS has no joint ELBO")
+    if (!is.null(attr(X,"matrix.type")))
+      stop("small=TRUE currently supports ordinary dense or sparse matrices")
+    if (!is.null(s_init) && !identical(s_init$V_parameterization,"variance_ratio"))
+      stop("small=TRUE requires s_init from the corrected NIG implementation")
+    tol = tol_small
+    if (!is.null(residual_variance) || !estimate_residual_variance)
+      warning("small=TRUE integrates residual variance; fixed residual variance options are ignored")
   }
   p = ncol(X)
   if (p > 1000 & !requireNamespace("Rfast",quietly = TRUE))
@@ -407,6 +434,28 @@ susie = function (X,y,L = min(10,ncol(X)),
   if( (n <80) & !small ){
     warning_message("The dataset contains fewer than 80 individuals. Credible sets may be poorly calibrated when using the default Gaussian prior with limited data. Consider setting small = TRUE to use the Servin and Stephens prior, which provides better calibration in small sample sizes.",style = "hint")
 
+  }
+  if (small) {
+    if (length(y) != n || any(!is.finite(y)) || any(!is.finite(X)))
+      stop("NIG requires finite X and y with matching sample sizes")
+    if (length(L) != 1 || !is.finite(L) || L < 1 || L != as.integer(L))
+      stop("L must be a positive integer")
+    if (length(max_iter) != 1 || !is.finite(max_iter) || max_iter < 1 ||
+        max_iter != as.integer(max_iter) || length(tol) != 1 ||
+        !is.finite(tol) || tol < 0)
+      stop("Invalid max_iter or tol_small")
+    response_variance = if (intercept) var(drop(y)) else mean(y^2)
+    if (!is.finite(response_variance) || response_variance <= 0)
+      stop("NIG requires a positive response variance")
+    if (is.null(alpha0)) alpha0 = 1/sqrt(n)
+    if (is.null(beta0)) beta0 = alpha0*response_variance
+    if (!is.numeric(scaled_prior_variance) ||
+        !length(scaled_prior_variance) %in% c(1,min(L,p)) ||
+        any(!is.finite(scaled_prior_variance)) || any(scaled_prior_variance < 0))
+      stop("scaled_prior_variance must contain one or L nonnegative variance ratios")
+    if (!is.null(prior_weights) &&
+        (any(!is.finite(prior_weights)) || any(prior_weights < 0)))
+      stop("prior_weights must be finite and nonnegative")
   }
   mean_y = mean(y)
 
@@ -425,10 +474,14 @@ susie = function (X,y,L = min(10,ncol(X)),
   attr(X,"scaled:center") = out$cm
   attr(X,"scaled:scale") = out$csd
   attr(X,"d") = out$d
+  if (small) attr(X,"n_effective") = n - as.integer(intercept)
 
   # Initialize susie fit.
-  s = init_setup(n,p,L,scaled_prior_variance,residual_variance,prior_weights,
-                 null_weight,as.numeric(var(y)),standardize)
+  s = init_setup(n,p,L,scaled_prior_variance,
+                 if (small) response_variance else residual_variance,
+                 prior_weights,null_weight,
+                 if (small) 1 else as.numeric(var(y)),
+                 if (small) FALSE else standardize)
   if (!missing(s_init) && !is.null(s_init)) {
     if (!inherits(s_init,"susie"))
       stop("s_init should be a susie object")
@@ -460,16 +513,28 @@ susie = function (X,y,L = min(10,ncol(X)),
   elbo = rep(as.numeric(NA),max_iter + 1)
   elbo[1] = -Inf;
   tracking = list()
-  if(small ){
-    cv_criterion= rep(as.numeric(NA),max_iter + 1)
-    cv_criterion[1]=1
+  if (small) {
+    L = nrow(s$alpha)
+    s$small = TRUE
+    s$converged = NULL
+    s$V_parameterization = "variance_ratio"
+    s$nig = list(alpha0 = alpha0,beta0 = beta0,
+                 n_effective = attr(X,"n_effective"),
+                 shape = rep(NA_real_,L),rate = matrix(NA_real_,L,p),
+                 scale2 = matrix(NA_real_,L,p),
+                 sigma2_by_effect = rep(NA_real_,L),
+                 loglik = rep(NA_real_,L))
+    cv_criterion = rep(NA_real_,max_iter)
   }
 
   for (i in 1:max_iter) {
     if (track_fit)
       tracking[[i]] = susie_slim(s)
-    if(small & i >1){
-     alpha_old= c(s$alpha)
+    if (small) {
+      alpha_old = s$alpha
+      mu_old = s$mu
+      mu2_old = s$mu2
+      V_old = s$V
     }
     s = update_each_effect(X,y,s,
                            estimate_prior_variance,estimate_prior_method,
@@ -477,27 +542,19 @@ susie = function (X,y,L = min(10,ncol(X)),
                            small=small,
                            alpha0=alpha0,
                            beta0=beta0)
-    if(small & i >1){
-      cv_criterion[i] = max(abs(c(alpha_old) - c(s$alpha)))
-    }
-    if (verbose & L == 1 & small) {
-      print(paste0("objective:",objective_L1_SER(X,y,s)))
-
-      # print( compute_elbo_L1_susie( y=y,X=X,
-      #                               alpha= s$alpha,
-      #                              mu= s$mu,
-      #                              s2= s$mu2-s$mu^2,
-                                   # a=max (alpha0,0.1 )+n,
-                                  # b=  (s$V[1]) + max (beta0,0.1 ), # here the pb #X%*%res_susie_small$mu
-      #                             a0= max (alpha0,0.1 ),
-
-      #                             b0= max (beta0,0.1 ),
-      #                            pi= s$pi)
-      #       )
-    }
-    if (L==1) {
-      elbo[i+1]=objective_L1_SER(X,y,s)
-      s$elbo = elbo
+    if (small) {
+      # Check all fitted quantities: stable alpha alone is insufficient (p=1).
+      relative_change = function(x,old,unit)
+        max(abs(x-old)/(unit + pmax(abs(x),abs(old))))
+      cv_criterion[i] = max(max(abs(s$alpha-alpha_old)),
+        relative_change(s$mu,mu_old,sqrt(response_variance)),
+        relative_change(s$mu2,mu2_old,response_variance),
+        relative_change(s$V,V_old,1))
+      s$sigma2 = mean(s$nig$sigma2_by_effect)
+      if (L == 1)
+        elbo[i+1] = s$nig$loglik[1]
+      if (verbose)
+        print(paste0("max parameter change: ",cv_criterion[i]))
     }
     # Compute objective before updating residual variance because part
     # of the objective s$kl has already been computed under the
@@ -509,19 +566,13 @@ susie = function (X,y,L = min(10,ncol(X)),
         break
       }
     }
-    if (small & i > 2) {
-        d <- (cv_criterion[i] + cv_criterion[i-1])/2
-      if (verbose) 
-        print(paste0("max change in alpha: ",d))
-      if (d < tol) {
-        # this force to have at least 3 consecutive iteration with small
-        # variation in terms of alpha
-        s$converged <- TRUE
-        break
-      }
+    if (small && i >= 2 &&
+        max(cv_criterion[c(i-1,i)]) < tol) {
+      s$converged = TRUE
+      break
     }
 
-    if (estimate_residual_variance) {
+    if (estimate_residual_variance && !small) {
       s$sigma2 = pmax(residual_variance_lowerbound,
                       estimate_residual_variance(X,y,s))
       if (s$sigma2 > residual_variance_upperbound)
@@ -535,7 +586,7 @@ susie = function (X,y,L = min(10,ncol(X)),
   elbo = elbo[2:(i+1)]
   s$elbo = elbo
   if(small){
-    s$cv_criterion=cv_criterion[2:i]
+    s$cv_criterion=cv_criterion[seq_len(i)]
   }
 
   s$niter = i

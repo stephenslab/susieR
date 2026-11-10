@@ -29,7 +29,9 @@
 #'
 #' @param X An n by p matrix of covariates.
 #'
-#' @param V A scalar giving the (initial) prior variance
+#' @param V A scalar giving the (initial) prior variance. For
+#'   \code{small = TRUE}, a variance ratio in
+#'   \eqn{b | \sigma^2 \sim N(0,V\sigma^2)}.
 #'
 #' @param residual_variance The residual variance.
 #'
@@ -43,14 +45,13 @@
 #'   the null.
 #' @param small Logical. Useful when fitting susie on data with a limited sample size.
 #'     If set to TRUE, susie is fitted using single-effect regression with the Servin and Stephens prior
-#'     instead of the default Gaussian prior. This improves the calibration of credible sets.
+#'     instead of the default Gaussian prior. This integrates residual variance.
 #'     Default is FALSE.
 #'
-#' @param alpha0 Numerical parameter for the NIG prior when using Servin
-#'   and Stephens SER.
+#' @param alpha0 Twice the inverse-gamma shape for \code{small = TRUE}.
 #'
-#' @param beta0 Numerical parameter for the NIG prior when using Servin
-#'   and Stephens SER.
+#' @param beta0 Twice the inverse-gamma scale, in squared response units,
+#'   for \code{small = TRUE}.
 #'
 #' @return A list with the following elements:
 #'
@@ -93,6 +94,14 @@ single_effect_regression =
             beta0              = 0) {
 
   optimize_V = match.arg(optimize_V)
+  if (small) {
+    n_effective = attr(X,"n_effective")
+    if (is.null(n_effective))
+      n_effective = nrow(X)
+    return(single_effect_regression_nig(compute_Xty(X,y),attr(X,"d"),
+             sum(y^2),n_effective,V,prior_weights,optimize_V,
+             check_null_threshold,alpha0,beta0))
+  }
   Xty = compute_Xty(X,y)
   betahat = (1/attr(X,"d")) * Xty
   shat2 = residual_variance/attr(X,"d")
@@ -147,76 +156,6 @@ single_effect_regression =
     return(list(alpha = alpha,mu = post_mean,mu2 = post_mean2,lbf = lbf,
                 lbf_model = lbf_model,V = V,loglik = loglik))
   }
-  if(small){
-
-    lbf  = do.call(c, lapply(1:ncol(X), function(j){
-      compute_log_ssbf (x=X[,j],y=y,
-                        s0 =sqrt(V),
-                        alpha0=alpha0,
-                        beta0=beta0)
-    }))
-
-    lpo = lbf + log(prior_weights + sqrt(.Machine$double.eps))
-
-    # Deal with special case of infinite shat2 (e.g., happens if X does
-    # not vary).
-    lbf[is.infinite(shat2)] = 0
-    lpo[is.infinite(shat2)] = 0
-    maxlpo = max(lpo)
-
-    # w is proportional to
-    #
-    #   posterior odds = BF * prior,
-    #
-    # but subtract max for numerical stability.
-    w_weighted = exp(lpo - maxlpo)
-
-    # Posterior prob for each SNP.
-    weighted_sum_w = sum(w_weighted)
-    alpha = w_weighted / weighted_sum_w
-
-
-    if(V <=0){
-      post_mean  = rep(0, ncol(X))
-      post_mean2 = rep(0, ncol(X))
-      post_var   = rep(0, ncol(X))
-      beta_1     = rep(0, ncol(X))
-    }else{
-
-
-      post_mean=do.call(c, lapply(1:ncol(X), function(i){
-        posterior_mean_SS_suff((attr(X,"d")[i]) , Xty[i], s0_t=V)
-      }))
-      yty=t(y)%*%y
-
-
-
-      tt= do.call(rbind, lapply(1:ncol(X), function(i){
-        posterior_var_SS_suff(xtx=(attr(X,"d")[i]) , xty= Xty[i],yty=yty,n= nrow(X), s0_t=V)
-      }))
-      beta_1=tt[,2]
-      post_var=tt[,1]
-      post_mean2=  post_mean^2+post_var
-    }
-
-
-    # BF for single effect model.
-    lbf_model = maxlpo + log(weighted_sum_w)
-    loglik = lbf_model + sum(dnorm(y,0,sqrt(residual_variance),log = TRUE))
-
-    if(optimize_V == "EM"){
-
-      V =sqrt(sum(alpha * (betahat^2 + ( beta_1/(nrow(X)-2))+ shat2 )))  # sum(alpha*(betahat^2+(beta_1/(nrow(X)-2)) ))
-    }
-
-    #    post_mean2 =post_mean^2+ post_var
-    return(list(alpha = alpha,mu = post_mean,mu2 =   post_mean2 ,lbf = lbf,
-                lbf_model = lbf_model,V = V,loglik = loglik))
-  }
-
-
-
-
 }
 
 # Estimate prior variance.
@@ -267,46 +206,6 @@ optimize_prior_variance = function (optimize_V, betahat, shat2, prior_weights,
     V = 0
   return(V)
 }
-#posterior momentsfor Servin and Stephens prior using sufficient statisitics
-
-posterior_moment_SS <- function (x,y,
-                                 s0_t=1,
-                                 alpha0=0,
-                                 beta0=0){
-
-
-  x   <- x - mean(x)
-  y   <- y - mean(y)
-  n   <- length(x)
-  xx  <- sum(x*x)
-  xy  <- sum(x*y)
-  yy  <- sum(y*y)
-  r0  <- s0_t/(s0_t+ 1/xx)
-  sxy <- xy/sqrt(xx*yy)
-
-  s1= r0^2/(xx
-  )
-
-  beta1=  beta0+yy*(1 - r0*sxy^2)
-  alpha1=alpha0+n
-  omega <- (( 1/s0_t^2)+crossprod(x))^-1
-  b_bar<- omega%*%(crossprod(x,y))
-
-  post_var_up <- 0.5*(crossprod(y)  -  b_bar *(omega ^(-1))*b_bar) +beta0
-  post_var_down <- 0.5*(length(y)*(1/omega )) +alpha0
-  post_var <- (post_var_up/post_var_down)* length(y)/(length(y)-2+alpha0)
-  post_moment2=  post_var+b_bar^2
-
-
-
-  out= c(b_bar,  post_moment2, alpha1, beta1, s1)
-  names( out) =c("b_bar",  "post_moment2", "alpha1", "beta1", "s1")
-  return(out)
-}
-
-
-
-
 # In these functions, s2 represents residual_variance, and shat2 is an
 # estimate of it.
 
@@ -374,43 +273,4 @@ lbf = function (V, shat2, T2) {
   l = 0.5*log(shat2/(V + shat2)) + 0.5*T2*(V/(V + shat2))
   l[is.nan(l)] = 0
   return(l)
-}
-
-
-#posterior mean for Servin and Stephens prior using sufficient statisitics
-posterior_mean_SS_suff <- function(xtx,xty, s0_t=1){
-  omega <- (( 1/s0_t^2)+xtx)^-1
-  b_bar<- omega%*%(xty)
-  return( b_bar)
-}
-
-#posterior variance for Servin and Stephens prior using sufficient statisitics
-
-posterior_var_SS_suff <- function (xtx,xty,yty, n,s0_t=1){
-  if(s0_t <0.00001){
-    return(c(0,0))
-  }
-  omega <- (( 1/s0_t^2)+xtx)^-1
-  b_bar<- omega%*%(xty)
-  beta1=(yty  -  b_bar *(omega ^(-1))*b_bar)
-  post_var_up <- 0.5*(yty  -  b_bar *(omega ^(-1))*b_bar)
-  post_var_down <- 0.5*(n*(1/omega ))
-  post_var <- omega*(post_var_up/post_var_down)* n/(n-2)
-  return( c( post_var,beta1))
-}
-
-
-compute_log_ssbf <- function (x, y, s0,
-                              alpha0=0,
-                              beta0=0) {
-  x   <- x - mean(x)
-  y   <- y - mean(y)
-  n   <- length(x)
-  xx  <- sum(x*x)
-  xy  <- sum(x*y)
-  yy  <- sum(y*y)
-  r0  <- s0/(s0 + 1/xx)
-  sxy <- xy/sqrt(xx*yy)
-  ratio= (beta0+ yy*(1 - r0*sxy^2))/(beta0+ yy)
-  return((log(1 - r0) - (n+alpha0)*log(ratio))/2)
 }

@@ -5,3 +5,7 @@
 .RData
 .Ruserdata
 Rplots.pdf
+
+/tmp/
+*.tar.gz
+*.Rcheck/
