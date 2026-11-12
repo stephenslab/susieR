@@ -147,9 +147,9 @@ susie_ser <- function(z = NULL, bhat = NULL, shat = NULL, n = NULL,
     )
     warning_message(
       "susie_ser() uses a one-effect credible-set model as in Maller ",
-      "et al. 2012. Because no LD reference is supplied, credible sets ",
-      "are reported without purity filtering; susie_ser() applies the ",
-      "attainable-coverage filter from SparsePro (Zhang et al. 2023). ",
+      "et al. 2012. Without an LD reference, susie_ser() screens diffuse ",
+      "posteriors by entropy and constructs credible sets at the ",
+      "requested coverage using the full posterior. ",
       "Set coverage = NULL to skip CS construction and silence this hint, ",
       "or call susie_get_cs(fit, Xcorr = R, ...) afterward to apply a ",
       "purity filter.",

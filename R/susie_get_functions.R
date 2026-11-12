@@ -496,19 +496,17 @@ extend_cs_by_correlation <- function(cs, X, Xcorr, threshold, null_index = 0) {
 #'   entropy is at least \code{log(ethres)}. Defaults to
 #'   \code{max(100, 0.1 * p)} where \code{p} is the number of variables.
 #'
-#' @details For each effect \eqn{l}, the \emph{attainable coverage} is
-#'   computed by zeroing every entry of \code{res$alpha} that is not the
-#'   column maximum, then summing across variables. Intuitively, it is
-#'   the coverage effect \eqn{l} could attain if it did not have to
-#'   share probability mass with other effects. Effects with attainable
-#'   coverage at most \code{coverage}, or with attainable-projection
-#'   entropy at least \code{log(ethres)}, are dropped before delegating
-#'   to \code{susie_get_cs}. Any \code{X} or \code{Xcorr} passed through
-#'   \code{...} is ignored, since the procedure is intended for the
-#'   no-LD setting.
+#' @details For each effect \eqn{l}, \emph{attainable coverage} is the sum of its
+#'   original inclusion probabilities over variables for which it has the
+#'   highest inclusion probability among effects. Ties count for each tied
+#'   effect. An effect passes the filter if its attainable coverage exceeds
+#'   \code{coverage} and its entropy after this restriction is below
+#'   \code{log(ethres)}. To construct each reported set, \code{susie_get_cs}
+#'   adds the original single-effect inclusion probabilities in descending
+#'   order until their sum reaches \code{coverage}.
 #'
-#' @param ... Additional arguments (e.g. \code{X} or \code{Xcorr}) accepted
-#'   for compatibility with \code{susie_get_cs}; they are ignored here.
+#' @param ... Additional arguments passed to \code{susie_get_cs}.
+#'   \code{X} and \code{Xcorr} are ignored.
 #'
 #' @export
 #'

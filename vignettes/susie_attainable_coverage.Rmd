@@ -14,18 +14,24 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#", fig.width = 5,
                       fig.height = 3, fig.align = "center", dpi = 120)
 ```
 
-`susie_get_cs_attainable()` is a post-hoc credible-set filter for the
-case when neither a genotype matrix nor an LD reference is available,
-so the usual `min_abs_corr` purity filter in `susie_get_cs()` cannot
-be used. It uses only the fitted `alpha` matrix. For each effect, it
-computes an *attainable coverage*, an idea introduced by
-[SparsePro (Zhang et al. 2023)](https://doi.org/10.1371/journal.pgen.1011104),
-by zeroing every entry of `alpha` that is not the column maximum and
-then summing the rows, which gives the coverage that effect could
-attain if it did not have to share probability mass with other
-effects. A second filter caps the entropy
-of each effect's attainable mass, dropping effects whose mass is
-spread too thinly across many variables.
+`susie_get_cs_attainable()` screens fitted effects when genotype data
+and reference LD are unavailable for purity filtering. For each effect,
+*attainable coverage* is the sum of its original inclusion probabilities
+over variants for which it has the highest inclusion probability among
+effects. Ties count for each tied effect. An effect passes if its
+attainable coverage exceeds `coverage` and its entropy over these
+variants is below `log(ethres)`. To construct each reported set, susieR
+ranks variants using the full single-effect posterior and adds them until
+their original probabilities sum to at least `coverage`.
+
+We use the attainable coverage criterion introduced by
+[SparsePro (Zhang et al. 2023)](https://doi.org/10.1371/journal.pgen.1011104)
+to screen effects. The paper describes reporting sets at the requested
+coverage for effects that pass. At 95%, the
+[released code](https://github.com/zhwm/SparsePro/blob/e13ac87d6e650d7682ff1f33f6f9898d66932d64/sparsepro_zld.py#L65-L85)
+targets $0.95A$, where $A$ is the rounded attainable mass, and can stop
+sooner if the next weight is below 0.01. A reported set can therefore
+contain less than 95% of the full posterior.
 
 ## Example
 
