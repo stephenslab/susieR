@@ -183,7 +183,8 @@ prepare_ser_summary <- function(z, bhat, shat, n, var_y,
     stop("scaled_prior_variance must be a single positive finite numeric.")
 
   summary_input <- normalize_summary_stats_input(z = z, bhat = bhat,
-                                                 shat = shat)
+                                                 shat = shat,
+                                                 allow_missing_shat = FALSE)
   z <- summary_input$z
   bhat <- summary_input$bhat
   shat <- summary_input$shat
