@@ -228,8 +228,6 @@ test_that("susie_get_lfsr pairs posterior moments for each effect and variable",
 })
 
 test_that("susie_get_lfsr preserves point-mass sign probabilities", {
-  # Nonzero point masses have a certain sign. A point mass exactly at zero is
-  # deliberately not pinned here, since its sign is undefined.
   fit <- list(
     alpha = matrix(c(0.4, 0.6), 1),
     mu = matrix(c(-2, 3), 1),
@@ -242,6 +240,13 @@ test_that("susie_get_lfsr preserves point-mass sign probabilities", {
     mu2 = matrix(c(4, 1, 9), 1)
   )
   expect_equal(susie_get_lfsr(fit), 0.15)
+
+  fit$mu2[1, 2] <- 0
+  expect_equal(susie_get_lfsr(fit), 0.3)
+
+  fit$mu[,] <- 0
+  fit$mu2[,] <- 0
+  expect_equal(susie_get_lfsr(fit), 1)
 })
 
 test_that("susie_get_posterior_samples returns binary gamma and non-zero b only where gamma=1", {

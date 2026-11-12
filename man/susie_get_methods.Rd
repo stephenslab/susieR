@@ -162,6 +162,7 @@ inclusion probabilities (PIPs) for all variables.
 across variables for each single-effect, weighted by the posterior
 inclusion probability (alpha). Each conditional sign probability uses
 the posterior mean and variance for the same single-effect and variable.
+A posterior point mass at zero contributes a conditional lfsr of 1.
 
 \code{susie_get_posterior_samples} returns a list containing the
 effect sizes samples and causal status with two components: \code{b},
