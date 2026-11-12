@@ -236,6 +236,20 @@ test_that("susie_ser preserves variable names without inventing blank names", {
   expect_null(names(fit_unnamed$pip))
 })
 
+test_that("susie_ser drops credible sets containing the null effect", {
+  fit <- suppressWarnings(susie_ser(z = c(3, 0, 0, 0, 0), null_weight = 0.9,
+                                    prior_variance = 25,
+                                    estimate_prior_method = "simple"))
+  expect_gt(fit$alpha[1, fit$null_index], 0.5)
+  expect_null(fit$sets$cs)
+  expect_null(fit$sets$coverage)
+
+  fit <- suppressWarnings(susie_ser(z = c(6, 0, 0, 0, 0), null_weight = 0.9,
+                                    prior_variance = 25,
+                                    estimate_prior_method = "simple"))
+  expect_identical(fit$sets$cs, list(L1 = 1L))
+})
+
 # ---- input validation ----
 
 test_that("susie_ser validates summary-statistic inputs", {

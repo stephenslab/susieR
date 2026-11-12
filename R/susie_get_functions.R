@@ -335,6 +335,10 @@ susie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
     function(i) sum(res$alpha[i, ][cs[[i]]])
   )
   include_idx <- include_idx * (lapply(cs, length) > 0)
+  if (null_index > 0) {
+    include_idx <- include_idx &
+      !vapply(cs, function(s) null_index %in% s, logical(1))
+  }
 
   # FIXME: see issue 21
   # https://github.com/stephenslab/susieR/issues/21
@@ -376,14 +380,10 @@ susie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
   # Compute purity for each CS
   purity <- NULL
   for (i in 1:length(cs)) {
-    if (null_index > 0 && null_index %in% cs[[i]]) {
-      purity <- rbind(purity, c(-9, -9, -9))
-    } else {
-      purity <- rbind(
-        purity,
-        matrix(get_purity(cs[[i]], X, Xcorr, squared, n_purity), 1, 3)
-      )
-    }
+    purity <- rbind(
+      purity,
+      matrix(get_purity(cs[[i]], X, Xcorr, squared, n_purity), 1, 3)
+    )
   }
   purity <- as.data.frame(purity)
   if (squared) {
@@ -412,7 +412,7 @@ susie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
     keep <- keep | (purity[, 3] >= if (squared) median_abs_corr^2 else median_abs_corr)
     active <- TRUE
   }
-  if (!active) keep <- purity[, 1] > -1   # no threshold: keep all but the null CS (purity = -9)
+  if (!active) keep[] <- TRUE
   is_pure <- which(keep)
   
   if (length(is_pure) > 0) {
