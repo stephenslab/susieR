@@ -206,6 +206,44 @@ test_that("susie_get_lfsr computes local false sign rate in [0, 1]", {
   expect_true(all(lfsr >= 0 & lfsr <= 1))
 })
 
+test_that("susie_get_lfsr pairs posterior moments for each effect and variable", {
+  fit <- list(
+    alpha = matrix(c(0.2, 0.3, 0.5, 0.5, 0.2, 0.3), 2, byrow = TRUE),
+    mu = matrix(c(0, 2, -6, 4, -3, 0), 2, byrow = TRUE),
+    mu2 = matrix(c(1, 8, 45, 20, 18, 16), 2, byrow = TRUE)
+  )
+  q1 <- 0.1586552539314571
+  q2 <- 0.02275013194817921
+  expected <- c(0.2 * 0.5 + 0.3 * q1 + 0.5 * q2,
+                0.5 * q2 + 0.2 * q1 + 0.3 * 0.5)
+  expect_equal(susie_get_lfsr(fit), expected, tolerance = 1e-12)
+
+  reflected <- fit
+  reflected$mu <- -fit$mu
+  expect_equal(susie_get_lfsr(reflected), expected, tolerance = 1e-12)
+  permuted <- lapply(fit, function(x) x[, c(3, 1, 2), drop = FALSE])
+  expect_equal(susie_get_lfsr(permuted), expected, tolerance = 1e-12)
+  first <- lapply(fit, function(x) x[1, , drop = FALSE])
+  expect_equal(susie_get_lfsr(first), expected[1], tolerance = 1e-12)
+})
+
+test_that("susie_get_lfsr preserves point-mass sign probabilities", {
+  # Nonzero point masses have a certain sign. A point mass exactly at zero is
+  # deliberately not pinned here, since its sign is undefined.
+  fit <- list(
+    alpha = matrix(c(0.4, 0.6), 1),
+    mu = matrix(c(-2, 3), 1),
+    mu2 = matrix(c(4, 9), 1)
+  )
+  expect_equal(susie_get_lfsr(fit), 0)
+  fit <- list(
+    alpha = matrix(c(0.2, 0.3, 0.5), 1),
+    mu = matrix(c(-2, 0, 3), 1),
+    mu2 = matrix(c(4, 1, 9), 1)
+  )
+  expect_equal(susie_get_lfsr(fit), 0.15)
+})
+
 test_that("susie_get_posterior_samples returns binary gamma and non-zero b only where gamma=1", {
   set.seed(18)
   dat <- simulate_regression(n = 100, p = 50, k = 3)
