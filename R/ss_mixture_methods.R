@@ -39,6 +39,16 @@ compute_residuals.ss_mixture <- function(data, params, model, l, ...) {
   model$residual_variance <- model$sigma2
   model$predictor_weights <- rep(data$nm1, data$p)
 
+  # NIG prior: residual sum of squares, as compute_residuals.ss
+  if (params$use_NIG) {
+    sw <- if (!is.null(model$slot_weights)) model$slot_weights else
+            rep(1, nrow(model$alpha))
+    b_minus_l <- colSums(sw * model$alpha * model$mu) - sw_l * bl
+    model$yy_residual <- max(as.numeric(
+      data$yty - 2 * sum(b_minus_l * data$Xty) +
+        sum(b_minus_l * XtXr_without_l)), .Machine$double.eps)
+  }
+
   if (!is.null(data$R_finite_B) && model$sigma2 > .Machine$double.eps) {
     # Region-level scalar lambda_bias is set by fit_R_mismatch once per
     # IBSS iteration; here we just apply it through the slot-specific

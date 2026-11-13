@@ -950,6 +950,8 @@ test_that("R_mismatch works with and without finite-reference input", {
 
   fit <- susie_rss(z = z, R = R, n = n, L = 3, R_finite = 10000,
                    R_mismatch = "eb_no_init", max_iter = 2, verbose = FALSE)
+  # R_mismatch held sigma^2 fixed, as without estimate_residual_variance
+  expect_equal(fit_warn$sigma2, fit$sigma2)
   expect_length(fit$R_finite_diagnostics$lambda_bias, 1)
   expect_length(fit$R_finite_diagnostics$B_corrected, 1)
   expect_true(fit$R_finite_diagnostics$lambda_bias >= 0)

@@ -12,7 +12,12 @@
 #' @keywords internal
 configure_data.ss <- function(data, params) {
   if (params$unmappable_effects == "inf") {
-    return(add_eigen_decomposition(data, params))
+    data <- add_eigen_decomposition(data, params)
+    # Correlation matrix the R-mismatch fit masks theta by at every
+    # iteration (compute_R_mismatch_state)
+    if (!is.null(params$R_mismatch) && params$R_mismatch != "none")
+      data <- get_xcorr(data)$data
+    return(data)
   }
   if (params$unmappable_effects %in% c("ash", "ash_filter_archived")) {
     # Correlation matrix used by the ash masking at every iteration.
@@ -405,12 +410,14 @@ neg_loglik.ss <- function(data, params, model, V_param, ser_stats, ...) {
 
   if (params$unmappable_effects == "inf") {
     # SuSiE-inf: Omega-weighted objective with logSumExp trick
-    # Apply finite-reference R inflation: effective pw = pw / inflation
+    # Apply finite-reference R inflation: effective pw = pw / inflation,
+    # and the score r = pw * betahat with it, r / inflation, as the SER's
+    # likelihood (betahat = r / pw, shat2 = inflation / pw) has them
     pw   <- model$predictor_weights
     infl <- if (!is.null(model$shat2_inflation)) model$shat2_inflation else 1
     return(-logSumExp(
       -0.5 * log(1 + V * pw / infl) +
-        V * model$residuals^2 / (2 * infl * (1 + V * pw / infl)) +
+        V * model$residuals^2 / (2 * infl^2 * (1 + V * pw / infl)) +
         log(model$pi + sqrt(.Machine$double.eps))
     ))
   } else {
@@ -449,26 +456,16 @@ update_fitted_values.ss <- function(data, params, model, l, ...) {
 #' @keywords internal
 update_variance_components.ss <- function(data, params, model, ...) {
   if (params$unmappable_effects == "inf") {
-    # Calculate omega.  model$predictor_weights == diagXtOmegaX is cached at
-    # iter boundaries; no recompute needed.
-    L         <- nrow(model$alpha)
-    omega     <- matrix(rep(model$predictor_weights, L), nrow = L, ncol = data$p, byrow = TRUE) +
-      matrix(rep(1 / model$V, data$p), nrow = L, ncol = data$p, byrow = FALSE)
-
-    # Compute theta for infinitesimal effects.
-    theta <- compute_theta_blup(data, model)
-
-    # Sigma2 and tau2 update
+    # Sigma2 and tau2 update, from the effects' posterior moments. theta
+    # follows them, in update_derived_quantities.ss().
     if (params$estimate_residual_method == "MLE") {
-      mle_result <- mle_unmappable(data, params, model, omega)
+      mle_result <- mle_unmappable(data, params, model)
       return(list(sigma2 = mle_result$sigma2,
-                  tau2   = mle_result$tau2,
-                  theta  = theta))
+                  tau2   = mle_result$tau2))
     } else {
-      mom_result <- mom_unmappable(data, params, model, omega, model$tau2)
+      mom_result <- mom_unmappable(data, params, model, model$tau2)
       return(list(sigma2 = mom_result$sigma2,
-                  tau2   = mom_result$tau2,
-                  theta  = theta))
+                  tau2   = mom_result$tau2))
     }
   } else if (params$unmappable_effects == "ash_filter_archived") {
     # Original filter-based masking (archived for internal diagnostics)
@@ -491,6 +488,9 @@ update_derived_quantities.ss <- function(data, params, model) {
     model$omega_var         <- omega_res$omega_var
     model$predictor_weights <- omega_res$diagXtOmegaX
     model$XtOmegay          <- data$eigen_vectors %*% (data$VtXty / omega_res$omega_var)
+    # theta, the posterior mean of the unmappable effects, at the current
+    # sparse effects and the updated (tau2, sigma2)
+    model$theta <- compute_theta_blup(data, model)
     # Update fitted values to include theta
     model$XtXr <- compute_Rv(data, get_total_effect(model))
     return(model)

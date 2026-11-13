@@ -661,8 +661,15 @@ susie_ss <- function(XtX, Xty, yty, n,
 #'   QC score (\code{Q_art}) that extends the Zou et al. (2022) column-space
 #'   check from the input summary vector to the fitted residual after
 #'   correction. It warns when that residual still projects onto near-null
-#'   directions of the supplied \code{R}, and auto-disables
-#'   \code{estimate_residual_variance} with a warning.
+#'   directions of the supplied \code{R}. The residual variance and the
+#'   regional component both widen the residuals and are only weakly
+#'   identified together, so \code{R_mismatch} keeps the residual
+#'   variance fixed: \code{estimate_residual_variance = TRUE} is set to
+#'   \code{FALSE}, with a warning. With \code{unmappable_effects = "inf"},
+#'   which estimates the residual variance with the unmappable variance, or
+#'   \code{estimate_residual_method = "NIG"}, which integrates it out, the
+#'   regional component is instead estimated by MAP
+#'   (\code{susie_rss_control(mismatch_estimator = "map")}), with a message.
 #'   \code{"eb_mix"} estimates the same regional component as \code{"eb"}, but
 #'   applies the population term locally as \code{w_j * lambda}, where
 #'   \code{w_j} is a per-variant mismatch probability from a two-component

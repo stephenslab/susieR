@@ -194,6 +194,29 @@ test_that("neg_loglik.individual returns a finite scalar", {
   expect_true(is.finite(neg_ll))
 })
 
+test_that("neg_loglik.individual for 'inf' is the SER's log-likelihood with inflated shat2", {
+  set.seed(304)
+  n <- 120; p <- 12
+  X <- matrix(rnorm(n * p), n, p)
+  y <- as.vector(X[, 4] * 2 + rnorm(n, sd = 0.5))
+  obj <- individual_data_constructor(X, y, L = 2, unmappable_effects = "inf",
+                                     convergence_method = "pip")
+  model <- initialize_susie_model.individual(obj$data, obj$params,
+                                             get_var_y.individual(obj$data))
+  model <- compute_residuals.individual(obj$data, obj$params, model, 1)
+  # An inflation of shat2 (individual-level fits have none today; the
+  # objective must still match the SER's likelihood, as neg_loglik.ss does)
+  model$shat2_inflation <- runif(p, 1, 3)
+  ser_stats <- compute_ser_statistics.individual(obj$data, obj$params, model, 1)
+  for (V in c(0.01, 0.1, 0.5)) {
+    lbf <- gaussian_ser_lbf(ser_stats$betahat, ser_stats$shat2, V)
+    expect_equal(
+      neg_loglik.individual(obj$data, obj$params, model, V_param = V,
+                            ser_stats),
+      -logSumExp(lbf + log(model$pi + sqrt(.Machine$double.eps))))
+  }
+})
+
 test_that("SER_posterior_e_loglik.individual returns a finite scalar", {
   set.seed(2)
   setup <- setup_individual_data()
@@ -266,7 +289,8 @@ test_that("update_variance_components.individual inf+MLE path returns positive s
 
   expect_true(is.numeric(result$sigma2) && result$sigma2 > 0)
   expect_true("tau2"  %in% names(result))
-  expect_true("theta" %in% names(result))
+  # theta follows (sigma2, tau2), in update_derived_quantities()
+  expect_false("theta" %in% names(result))
 })
 
 test_that("update_variance_components.individual inf+MoM path sets tau2", {

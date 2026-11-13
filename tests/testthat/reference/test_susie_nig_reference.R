@@ -17,7 +17,7 @@ context("susie NIG reference comparison")
 #   Dev:  estimate_residual_method = "NIG"  <->  Ref: small = TRUE
 #   Dev:  tol (convergence tolerance)                   <->  Ref: tol_small
 #   Dev:  convergence_method = "pip" (auto-set)         <->  Ref: (hard-coded PIP convergence)
-#   Dev:  estimate_prior_method = "EM" (auto-set)       <->  Ref: (forced to EM)
+#   Dev:  estimate_prior_method = "EM" (set by helper)  <->  Ref: (forced to EM)
 #   Dev:  alpha0, beta0                                 <->  Ref: alpha0, beta0
 #
 # The helper function compare_NIG_to_reference() handles

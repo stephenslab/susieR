@@ -142,6 +142,10 @@ compare_NIG_to_reference <- function(dev_args,
     dev_args$check_null_threshold <- -Inf
   if (is.null(dev_args$tol))
     dev_args$tol <- 1e-4
+  # The reference forces EM for the prior variance; dev keeps the requested
+  # method (optim by default), so ask for EM
+  if (is.null(dev_args$estimate_prior_method))
+    dev_args$estimate_prior_method <- "EM"
 
   # Match reference NIG hyperparameter defaults. Dev defaults changed in
   # commit b0b0c40 ("new defaults") from alpha0 = beta0 = 0.1 to

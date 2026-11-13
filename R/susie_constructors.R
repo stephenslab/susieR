@@ -289,14 +289,6 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
   }
 
   # Check for incompatible parameter combination
-  if (unmappable_effects != "none" &&
-      estimate_residual_method == "NIG") {
-    stop("The combination of unmappable_effects = '", unmappable_effects,
-         "' with estimate_residual_method = 'NIG' is not supported. ",
-         "Please use estimate_residual_method = 'MoM' or 'MLE' instead.")
-  }
-
-  # Check for incompatible parameter combination
   if (unmappable_effects %in% c("ash", "ash_filter_archived") && estimate_prior_method == "EM") {
     stop("The combination of unmappable_effects = 'ash' with ",
          "estimate_prior_method = 'EM' is not supported. ",
@@ -818,18 +810,34 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
                                is_multipanel)
 
   # sigma^2 and lambda_bias both inflate the residual variance and are only
-  # weakly jointly identified; estimating both is allowed, with a hint.
-    if (R_mismatch != "none" && isTRUE(estimate_residual_variance)) {
+  # weakly jointly identified. Plain SuSiE and SuSiE-ash then keep sigma^2
+  # fixed. SuSiE-inf estimates sigma^2 with tau^2 and the NIG prior
+  # integrates it out, so there lambda_bias is penalized instead, by its MAP
+  # estimator.
+  if (R_mismatch != "none") {
+    # Why sigma^2 is estimated regardless (NULL when it can be held fixed)
+    sigma2_estimated <-
+      if (unmappable_effects == "inf")
+        "With unmappable_effects = 'inf', sigma^2 is estimated with tau^2"
+      else if (estimate_residual_method == "NIG")
+        "With estimate_residual_method = 'NIG', sigma^2 is integrated out"
+      else NULL
+    if (!is.null(sigma2_estimated)) {
+      if (R_mismatch_method != "map")
+        warning_message(
+          sigma2_estimated, ", so lambda_bias is estimated by MAP ",
+          "(susie_rss_control(mismatch_estimator = \"map\")).",
+          style = "hint")
+      R_mismatch_method <- "map"
+    } else if (isTRUE(estimate_residual_variance)) {
       warning_message(
-        "Joint estimation of sigma^2 and lambda_bias is weakly identified; ",
-        "sigma^2 and lambda_bias can trade off, especially early in EM. ",
-        "Consider track_fit = TRUE to monitor, or set ",
-        "control = susie_rss_control(mismatch_estimator = \"map\") ",
-        "to penalize lambda_bias.",
-        style = "hint"
-      )
+        "sigma^2 and lambda_bias are only weakly identified together, so ",
+        "R_mismatch keeps sigma^2 fixed: setting ",
+        "estimate_residual_variance = FALSE.")
+      estimate_residual_variance <- FALSE
     }
-                               
+  }
+
   if (is_multipanel) {
     if (!is.null(bhat) || !is.null(shat)) {
       stop("Parameters 'bhat' and 'shat' are not supported in the ",
@@ -891,6 +899,12 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
     panels <- if (panel_arg == "R") R else X
     sub <- pick_init_panel_via_subfits(panels, panel_arg, parent_args)
 
+    # Stage 1 only estimates omega, from the sparse effects. Its mixture fit
+    # has no SuSiE-inf (which needs the eigendecomposition of a fixed R), so
+    # SuSiE-inf estimates omega without unmappable effects and is fitted on
+    # the weighted reference in stage 2 (fit_multi_panel_two_stage).
+    stage1_unmappable <- if (unmappable_effects == "inf") "none"
+                         else unmappable_effects
     result <- ss_mixture_constructor(
       z = z, R = R, X = X, n = n, L = L,
       maf = maf, maf_thresh = maf_thresh,
@@ -904,7 +918,7 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
       estimate_prior_method = estimate_prior_method,
       prior_variance_grid = prior_variance_grid,
       mixture_weights = mixture_weights,
-      unmappable_effects = unmappable_effects,
+      unmappable_effects = stage1_unmappable,
       check_null_threshold = check_null_threshold, prior_tol = prior_tol,
       residual_variance_lowerbound = residual_variance_lowerbound,
       residual_variance_upperbound = residual_variance_upperbound,
