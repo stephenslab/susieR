@@ -41,7 +41,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.commit == 'auto'
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           token: ${{ secrets.CI_TOKEN }}
           fetch-depth: 0
@@ -91,7 +91,7 @@ jobs:
           fi
 
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ steps.determine-commit.outputs.commit }}
           fetch-depth: 0
