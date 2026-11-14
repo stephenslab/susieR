@@ -650,7 +650,8 @@ test_that("sufficient_stats_constructor accepts NIG residual method", {
                                          XtX = ss$XtX,
                                          estimate_residual_method = "NIG")
   expect_true(result$params$use_NIG)
-  expect_equal(result$params$estimate_prior_method, "EM")
+  # NIG keeps the requested prior variance method (the default, optim)
+  expect_equal(result$params$estimate_prior_method, "optim")
 })
 
 test_that("sufficient_stats_constructor accepts unmappable_effects='ash'", {
@@ -1431,7 +1432,7 @@ test_that("summary_stats_constructor hints about the standardized scale unless s
 
 # --- R_mismatch branches ---
 
-test_that("summary_stats_constructor keeps sigma^2 estimation and hints when R_mismatch is active", {
+test_that("summary_stats_constructor fixes sigma^2 under R_mismatch, and inf and NIG penalize lambda_bias", {
   set.seed(104)
   p <- 30
 
@@ -1444,7 +1445,36 @@ test_that("summary_stats_constructor keeps sigma^2 estimation and hints when R_m
     ),
     "weakly identified"
   )
-  expect_true(result$params$estimate_residual_variance)
+  expect_false(result$params$estimate_residual_variance)
+  expect_equal(result$params$R_mismatch_method, "mle")
+
+  # SuSiE-inf estimates sigma^2 with tau^2, so lambda_bias is estimated by MAP
+  expect_message(
+    result_inf <- summary_stats_constructor(
+      z = rnorm(p), R = diag(p), n = 500,
+      R_mismatch = "eb_no_init", unmappable_effects = "inf",
+      verbose = FALSE
+    ),
+    "estimated by MAP"
+  )
+  expect_true(result_inf$params$estimate_residual_variance)
+  expect_equal(result_inf$params$R_mismatch_method, "map")
+
+  # The NIG prior integrates sigma^2 out, so it is not held fixed either:
+  # lambda_bias is estimated by MAP, as for SuSiE-inf
+  msgs <- capture_messages(
+    result_nig <- summary_stats_constructor(
+      z = rnorm(p), R = diag(p), n = 500,
+      R_mismatch = "eb_no_init", estimate_residual_method = "NIG",
+      estimate_residual_variance = TRUE,
+      verbose = FALSE
+    )
+  )
+  expect_true(any(grepl("integrated out, so lambda_bias is estimated by MAP",
+                        msgs)))
+  expect_false(any(grepl("keeps sigma\\^2 fixed", msgs)))
+  expect_true(result_nig$params$estimate_residual_variance)
+  expect_equal(result_nig$params$R_mismatch_method, "map")
 })
 
 # --- X-based paths ---

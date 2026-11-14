@@ -432,3 +432,38 @@ test_that("pip and elbo convergence methods both yield finite ELBO traces", {
   expect_true(all(is.finite(fit_elbo$elbo)))
   expect_true(all(is.finite(fit_pip$elbo)))
 })
+
+# ---- trim_null_effects: SuSiE-inf theta at the final fit ----
+
+test_that("SuSiE-inf reports theta at its final sparse effects and variances", {
+  set.seed(31)
+  n <- 300; p <- 40
+  X <- matrix(rnorm(n * p), n, p) %*%
+    chol(0.5^abs(outer(1:p, 1:p, "-")))
+  y <- as.vector(X[, 5] * 0.5 + X %*% rnorm(p, sd = 0.05) + rnorm(n))
+  Xc <- scale(X, scale = FALSE)
+  yc <- y - mean(y)
+  # The posterior mean of the unmappable effects on the standardized
+  # scale, tau2 (sigma2 I + tau2 X'X)^-1 X'(y - X b)
+  theta_at_fit <- function(fit) {
+    csd <- fit$X_column_scale_factors
+    XtX <- t(crossprod(Xc) / csd) / csd
+    b <- colSums(fit$alpha * fit$mu)
+    fit$tau2 * as.vector(solve(fit$sigma2 * diag(p) + fit$tau2 * XtX,
+                               crossprod(Xc, yc) / csd - XtX %*% b))
+  }
+  fit_ss <- suppressWarnings(suppressMessages(susie_ss(
+    crossprod(Xc), as.vector(crossprod(Xc, yc)), sum(yc^2), n, L = 5,
+    unmappable_effects = "inf", verbose = FALSE)))
+  expect_gt(fit_ss$tau2, 0)
+  expect_equal(as.vector(fit_ss$theta), theta_at_fit(fit_ss),
+               tolerance = 1e-10)
+  fit_ind <- suppressWarnings(suppressMessages(susie(
+    X, y, L = 5, unmappable_effects = "inf", verbose = FALSE)))
+  expect_equal(as.vector(fit_ind$theta), theta_at_fit(fit_ind),
+               tolerance = 1e-10)
+  # The fitted values and coefficients carry that theta
+  expect_equal(coef(fit_ind)[-1],
+               (colSums(fit_ind$alpha * fit_ind$mu) + fit_ind$theta) /
+                 fit_ind$X_column_scale_factors, ignore_attr = TRUE)
+})

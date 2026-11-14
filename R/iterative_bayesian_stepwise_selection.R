@@ -108,56 +108,7 @@ ibss_initialize.default <- function(data, params) {
   model$converged <- FALSE
 
   # Initialize slot activity (c_hat) if specified
-  sp <- params$slot_prior
-  if (!is.null(sp)) {
-    if (!is.slot_prior(sp))
-      stop("slot_prior must be created by slot_prior_betabinom() or ",
-           "slot_prior_poisson(). ",
-           "Got class: ", paste(class(sp), collapse=", "))
-    L <- nrow(model$alpha)
-
-    if (inherits(sp, "slot_prior_betabinom")) {
-      a_beta <- sp$a_beta
-      b_beta <- sp$b_beta
-      prior_mean <- a_beta / (a_beta + b_beta)
-
-      if (!is.null(sp$c_hat_init) && length(sp$c_hat_init) == L) {
-        c_hat <- sp$c_hat_init
-      } else {
-        c_hat <- rep(min(prior_mean, 1 - 1e-10), L)
-      }
-
-      model$slot_weights <- c_hat
-      model$c_hat_state <- list(
-        prior_type = "betabinom", a_beta = a_beta, b_beta = b_beta,
-        update_schedule = sp$update_schedule,
-        skip_threshold_multiplier = sp$skip_threshold_multiplier,
-        skip_threshold = 0
-      )
-    } else {
-      C_val <- sp$C
-      nu <- sp$nu
-
-      if (!is.null(sp$c_hat_init) && length(sp$c_hat_init) == L) {
-        c_hat <- sp$c_hat_init
-        a_g <- nu + sum(c_hat)
-      } else {
-        c_hat <- rep(min(C_val / L, 1 - 1e-10), L)
-        a_g <- nu + C_val
-      }
-      b_g <- nu / max(C_val, 1e-6) + 1
-
-      model$slot_weights <- c_hat
-      model$c_hat_state <- list(
-        prior_type = "poisson", C = C_val, nu = nu, a_g = a_g, b_g = b_g,
-        update_schedule = sp$update_schedule,
-        skip_threshold_multiplier = sp$skip_threshold_multiplier,
-        skip_threshold = 0
-      )
-    }
-
-    model <- recompute_fitted_weighted(data, model)
-  }
+  model <- initialize_slot_prior(data, params, model)
 
   # SS-path lambda_bias is stored as a scalar on the model. Only
   # allocate when R_mismatch is active so R_mismatch = "none" returns to the
@@ -274,7 +225,68 @@ ibss_fit <- function(data, params, model) {
 # c_hat[l] = posterior probability that slot l is active.
 # Beta-Binomial: logit(c_l) = log(a + k_{-l}) - log(b + L-1 - k_{-l}) + lbf_l
 # Gamma-Poisson: logit(c_l) = psi(a_g) - log(b_g) - log(L) + lbf_l
+#
+# The slot updates read only per-slot scalars (lbf, c_hat). The fitted values
+# they rescale belong to the data class, so adjust_fitted_for_c_hat and
+# recompute_fitted_weighted are generics on data, which packages building on
+# susie_workhorse (e.g. mvsusieR) extend.
 # =============================================================================
+
+#' Set up slot activity (c_hat) from params$slot_prior; a no-op without one.
+#' Every ibss_initialize method calls it once its model is built.
+#' @keywords internal
+#' @noRd
+initialize_slot_prior <- function(data, params, model) {
+  sp <- params$slot_prior
+  if (is.null(sp)) return(model)
+  if (!is.slot_prior(sp))
+    stop("slot_prior must be created by slot_prior_betabinom() or ",
+         "slot_prior_poisson(). ",
+         "Got class: ", paste(class(sp), collapse=", "))
+  L <- nrow(model$alpha)
+
+  if (inherits(sp, "slot_prior_betabinom")) {
+    a_beta <- sp$a_beta
+    b_beta <- sp$b_beta
+    prior_mean <- a_beta / (a_beta + b_beta)
+
+    if (!is.null(sp$c_hat_init) && length(sp$c_hat_init) == L) {
+      c_hat <- sp$c_hat_init
+    } else {
+      c_hat <- rep(min(prior_mean, 1 - 1e-10), L)
+    }
+
+    model$slot_weights <- c_hat
+    model$c_hat_state <- list(
+      prior_type = "betabinom", a_beta = a_beta, b_beta = b_beta,
+      update_schedule = sp$update_schedule,
+      skip_threshold_multiplier = sp$skip_threshold_multiplier,
+      skip_threshold = 0
+    )
+  } else {
+    C_val <- sp$C
+    nu <- sp$nu
+
+    if (!is.null(sp$c_hat_init) && length(sp$c_hat_init) == L) {
+      c_hat <- sp$c_hat_init
+      a_g <- nu + sum(c_hat)
+    } else {
+      c_hat <- rep(min(C_val / L, 1 - 1e-10), L)
+      a_g <- nu + C_val
+    }
+    b_g <- nu / max(C_val, 1e-6) + 1
+
+    model$slot_weights <- c_hat
+    model$c_hat_state <- list(
+      prior_type = "poisson", C = C_val, nu = nu, a_g = a_g, b_g = b_g,
+      update_schedule = sp$update_schedule,
+      skip_threshold_multiplier = sp$skip_threshold_multiplier,
+      skip_threshold = 0
+    )
+  }
+
+  return(recompute_fitted_weighted(data, model))
+}
 
 #' Update c_hat for slot l after its SER step.
 #' @keywords internal
@@ -299,7 +311,7 @@ update_c_hat <- function(data, model, l) {
   model$slot_weights[l] <- new_c
 
   if (abs(new_c - old_c) > 1e-15) {
-    b_bar_l <- model$alpha[l, ] * model$mu[l, ]
+    b_bar_l <- get_posterior_mean_l(model, l)
     model <- adjust_fitted_for_c_hat(data, model, b_bar_l, new_c - old_c)
   }
 
@@ -315,6 +327,13 @@ update_c_hat <- function(data, model, l) {
 #' @keywords internal
 #' @noRd
 adjust_fitted_for_c_hat <- function(data, model, b_bar_l, delta_weight) {
+  UseMethod("adjust_fitted_for_c_hat")
+}
+
+#' @keywords internal
+#' @noRd
+adjust_fitted_for_c_hat.default <- function(data, model, b_bar_l,
+                                            delta_weight) {
   fitted_field <- detect_fitted_field(model)
   if (fitted_field == "Xr") {
     model$Xr <- model$Xr +
@@ -339,6 +358,12 @@ detect_fitted_field <- function(model) {
 #' @keywords internal
 #' @noRd
 recompute_fitted_weighted <- function(data, model) {
+  UseMethod("recompute_fitted_weighted")
+}
+
+#' @keywords internal
+#' @noRd
+recompute_fitted_weighted.default <- function(data, model) {
   fitted_field <- detect_fitted_field(model)
   L <- nrow(model$alpha)
   c_hat <- model$slot_weights
@@ -395,53 +420,7 @@ ibss_finalize <- function(data, params, model, elbo = NULL, iter = NA_integer_,
   model <- get_variable_names(data, model)
 
   # R diagnostics (from data -> model, following sets/pip/z pattern).
-  # SS / ss_mixture paths store lambda_bias / B_corrected as scalars
-  # (set by fit_R_mismatch once per iteration). The rss_lambda dispatch keeps
-  # the per-slot vector form. Copy whatever shape lives on the model.
-  R_finite_diagnostics <- data$R_finite_diagnostics
-  if (!is.null(R_finite_diagnostics)) {
-    model$R_finite_diagnostics <- R_finite_diagnostics
-    if (!is.null(model$lambda_bias))
-      model$R_finite_diagnostics$lambda_bias <- model$lambda_bias
-    if (!is.null(model$B_corrected))
-      model$R_finite_diagnostics$B_corrected <- model$B_corrected
-    if (!is.null(data$R_mismatch))
-      model$R_finite_diagnostics$R_mismatch <- data$R_mismatch
-    if (!is.null(model$shat2_inflation))
-      model$R_finite_diagnostics$per_variable_penalty <- as.vector(model$shat2_inflation - 1)
-    # Q_art / artifact fields are present only when R_mismatch is active
-    # (set by fit_R_mismatch). Copy whichever exist.
-    for (fld in c("Q_art", "artifact_flag", "artifact_evaluable",
-                  "low_eigen_count", "low_eigen_fraction", "eig_delta",
-                  "mode_label", "R_mismatch_method"))
-      if (!is.null(model[[fld]]))
-        model$R_finite_diagnostics[[fld]] <- model[[fld]]
-    if (!is.null(model$R_mismatch_trace))
-      model$R_finite_diagnostics$R_mismatch_trace <- model$R_mismatch_trace
-    if (!is.null(model$R_mismatch_init))
-      model$R_finite_diagnostics$R_mismatch_init <- model$R_mismatch_init
-    if (!is.null(model$R_mismatch_ser_model))
-      model$R_finite_diagnostics$ser_model <- model$R_mismatch_ser_model
-    threshold <- if (!is.null(params$R_sensitivity_threshold))
-                   params$R_sensitivity_threshold else 30
-    model <- summarize_R_bf_attenuation(model, threshold)
-    model$R_finite_diagnostics$R_reliability_flag <-
-      isTRUE(model$R_finite_diagnostics$artifact_flag) ||
-      isTRUE(model$R_finite_diagnostics$R_sensitivity_flag)
-    if (isTRUE(model$R_finite_diagnostics$R_reliability_flag)) {
-      msg <- paste0("Possible summary statistics and R reference mismatch detected. ",
-                    "Fine-mapping results may be unreliable; inspect ",
-                    "fit$R_finite_diagnostics for details.")
-      if (!is.null(model$R_finite_diagnostics$ser_model)) {
-        msg <- paste0(msg, " A one-effect diagnostic is available at ",
-                      "fit$R_finite_diagnostics$ser_model; it is a ",
-                      "one-effect credible-set model as in Maller et al. 2012, ",
-                      "and its alpha row is the PIP.")
-      }
-      warning_message(msg)
-      warning(msg, call. = FALSE)
-    }
-  }
+  model <- finalize_R_diagnostics(data, params, model)
 
   # Tracking Across Iterations
   if (params$track_fit) {

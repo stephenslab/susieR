@@ -61,6 +61,64 @@ test_that("multi-panel X list: weighted sketch reproduces sum_k omega_k R_k", {
   expect_equal(fit$R_finite_diagnostics$B, 1 / sum(om^2 / c(B1, B2)))
 })
 
+test_that("multi-panel X list: the fit keeps the panels' variable names", {
+  set.seed(24)
+  p <- 10
+  vars <- list(NULL, paste0("v", seq_len(p)))
+  X1 <- matrix(rnorm(30 * p), 30, p, dimnames = vars)
+  X2 <- matrix(rnorm(25 * p), 25, p, dimnames = vars)
+  ref <- form_weighted_reference(list(X1, X2), "X", c(0.4, 0.6))
+  expect_identical(colnames(ref$X), colnames(X1))
+  # X(omega) has more rows than columns, so susie_rss forms R from it, and
+  # z carries no names of its own
+  z <- rnorm(p); z[3] <- 5
+  fit <- suppressWarnings(suppressMessages(susie_rss(
+    z = z, X = list(X1, X2), n = 500, L = 2, max_iter = 20)))
+  expect_identical(names(fit$pip), colnames(X1))
+})
+
+test_that("multi-panel SuSiE-inf: omega without unmappable effects, inf on R(omega)", {
+  set.seed(22)
+  p <- 20; Bn <- 100
+  R1 <- cor(matrix(rnorm(Bn * p), Bn, p))
+  R2 <- cor(matrix(rnorm(Bn * p), Bn, p))
+  z <- rnorm(p); z[5] <- 5
+  fit <- suppressWarnings(suppressMessages(susie_rss(
+    z = z, R = list(R1, R2), n = 1000, L = 3, max_iter = 20,
+    unmappable_effects = "inf")))
+  om <- fit$omega_weights
+  expect_equal(sum(om), 1, tolerance = 1e-12)
+  # Stage 2 is SuSiE-inf on the weighted reference
+  direct <- suppressWarnings(suppressMessages(susie_rss(
+    z = z, R = om[1] * R1 + om[2] * R2, n = 1000, L = 3, max_iter = 20,
+    unmappable_effects = "inf")))
+  expect_equal(fit$pip, direct$pip)
+  expect_equal(fit$theta, direct$theta)
+  expect_equal(fit$tau2, direct$tau2)
+})
+
+test_that("multi-panel NIG: the mixture fit takes the NIG prior", {
+  # The mixture residuals did not carry the residual sum of squares NIG
+  # reads, so a multi-panel NIG fit failed in its first single effect
+  # regression ("replacement has length zero")
+  set.seed(22)
+  p <- 20; Bn <- 100
+  R1 <- cor(matrix(rnorm(Bn * p), Bn, p))
+  R2 <- cor(matrix(rnorm(Bn * p), Bn, p))
+  z <- rnorm(p); z[5] <- 5
+  fit <- suppressWarnings(suppressMessages(susie_rss(
+    z = z, R = list(R1, R2), n = 1000, L = 3, max_iter = 20,
+    estimate_residual_method = "NIG")))
+  om <- fit$omega_weights
+  expect_equal(sum(om), 1, tolerance = 1e-12)
+  expect_gt(fit$pip[5], 0.9)
+  # Stage 2 is NIG on the weighted reference
+  direct <- suppressWarnings(suppressMessages(susie_rss(
+    z = z, R = om[1] * R1 + om[2] * R2, n = 1000, L = 3, max_iter = 20,
+    estimate_residual_method = "NIG")))
+  expect_equal(fit$pip, direct$pip)
+})
+
 test_that("multi-panel verbose message reports each reference panel's weight", {
   set.seed(22)
   p <- 15; Bn <- 80

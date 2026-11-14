@@ -797,7 +797,12 @@ form_weighted_reference <- function(panels, panel_arg, omega) {
     return(list(R = (R_mix + t(R_mix)) / 2, X = NULL))
   }
   X_std <- lapply(panels[keep], standardize_X)
-  list(R = NULL, X = form_X_meta(X_std, omega[keep]))
+  X <- form_X_meta(X_std, omega[keep])
+  # form_X_meta() builds X(omega) afresh; it keeps the panels' variable names
+  # here, since susie_rss names the variables from them when it forms R from
+  # X (as it does when X has at least as many rows as columns)
+  colnames(X) <- colnames(panels[[keep[1]]])
+  list(R = NULL, X = X)
 }
 
 #' @keywords internal

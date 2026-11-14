@@ -347,11 +347,14 @@ neg_loglik.individual <- function(data, params, model, V_param, ser_stats, ...) 
   V <- if (ser_stats$optim_scale == "log") exp(V_param) else V_param
 
   if (params$unmappable_effects == "inf") {
+    # As neg_loglik.ss: effective pw = pw / inflation, and the score
+    # r = pw * betahat with it, r / inflation, as the SER's likelihood
+    # (betahat = r / pw, shat2 = inflation / pw) has them
     pw   <- model$predictor_weights
     infl <- if (!is.null(model$shat2_inflation)) model$shat2_inflation else 1
     return(-logSumExp(
       -0.5 * log(1 + V * pw / infl) +
-        V * model$residuals^2 / (2 * infl * (1 + V * pw / infl)) +
+        V * model$residuals^2 / (2 * infl^2 * (1 + V * pw / infl)) +
         log(model$pi + sqrt(.Machine$double.eps))
     ))
   }
@@ -393,23 +396,15 @@ update_fitted_values.individual <- function(data, params, model, l, ...) {
 update_variance_components.individual <- function(data, params, model, ...) {
   if (params$unmappable_effects == "inf") {
     # SuSiE-inf: identical math to update_variance_components.ss; all eigenspace.
-    # model$predictor_weights == diagXtOmegaX is cached at iter boundaries.
-    L         <- nrow(model$alpha)
-    omega     <- matrix(rep(model$predictor_weights, L), nrow = L, ncol = data$p, byrow = TRUE) +
-      matrix(rep(1 / model$V, data$p), nrow = L, ncol = data$p, byrow = FALSE)
-
-    theta <- compute_theta_blup(data, model)
-
+    # theta follows (sigma2, tau2), in update_derived_quantities.individual().
     if (params$estimate_residual_method == "MLE") {
-      mle_result <- mle_unmappable(data, params, model, omega)
+      mle_result <- mle_unmappable(data, params, model)
       return(list(sigma2 = mle_result$sigma2,
-                  tau2   = mle_result$tau2,
-                  theta  = theta))
+                  tau2   = mle_result$tau2))
     } else {
-      mom_result <- mom_unmappable(data, params, model, omega, model$tau2)
+      mom_result <- mom_unmappable(data, params, model, model$tau2)
       return(list(sigma2 = mom_result$sigma2,
-                  tau2   = mom_result$tau2,
-                  theta  = theta))
+                  tau2   = mom_result$tau2))
     }
   } else if (params$unmappable_effects == "ash_filter_archived") {
     # Original filter-based masking (archived for internal diagnostics)
@@ -432,6 +427,8 @@ update_derived_quantities.individual <- function(data, params, model) {
     model$predictor_weights <- omega_res$diagXtOmegaX
     model$XtOmegay          <- as.vector(data$eigen_vectors %*%
                                            (data$VtXty / omega_res$omega_var))
+    # theta at the current sparse effects and the updated (tau2, sigma2)
+    model$theta <- compute_theta_blup(data, model)
 
     model$Xr <- as.vector(compute_Xb(data$X, get_total_effect(model)))
     return(model)

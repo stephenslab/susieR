@@ -1,7 +1,9 @@
 #' Control parameters for SuSiE RSS
 #'
 #' @param mismatch_estimator Estimator for the region-level mismatch variance:
-#'   \code{"mle"} or \code{"map"}.
+#'   \code{"mle"} or \code{"map"}. With \code{unmappable_effects = "inf"} or
+#'   \code{estimate_residual_method = "NIG"}, which estimate the residual
+#'   variance, it is always \code{"map"}.
 #' @param mixture_reference_p Two-sided reference P-value used to calibrate
 #'   prior odds for \code{R_mismatch = "eb_mix"}.
 #' @param qc_eigen_tol_rel,qc_eigen_tol_abs Relative and absolute cutoffs for
