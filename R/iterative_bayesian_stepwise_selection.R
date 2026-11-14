@@ -64,6 +64,7 @@ ibss_initialize.default <- function(data, params) {
   carried_R_mismatch_diag <- NULL
   if (!is.null(params$model_init)) {
     validate_init(data, params)
+    params$model_init <- model_init_fit_scale(params, params$model_init)
     fd <- params$model_init$R_finite_diagnostics
     if (!is.null(fd))
       carried_R_mismatch_diag <-

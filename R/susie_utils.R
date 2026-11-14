@@ -911,6 +911,32 @@ expand_scaled_prior_variance <- function(scaled_prior_variance, var_y, L) {
   }
 }
 
+# The scale of the initial prior variances: var(y), or 1 under the NIG prior,
+# which fits them relative to the residual variance (the slab s0 =
+# sigma0^2 / sigma^2)
+#' @keywords internal
+#' @noRd
+prior_variance_scale <- function(params, var_y) {
+  if (isTRUE(params$use_NIG)) 1 else var_y
+}
+
+# A model_init's prior variances on the scale the fit works on. Under NIG the
+# fit works with V relative to the residual variance, while a returned NIG fit
+# reports V * rv (finalize_prior_variance) and a fit made without NIG reports V
+# in y units, sigma2 times the relative scale. Without the conversion, a warm
+# start (model_init, or a greedy-L round) rescales V once more at the end.
+#' @keywords internal
+#' @noRd
+model_init_fit_scale <- function(params, model_init) {
+  if (!isTRUE(params$use_NIG) || is.null(model_init$V))
+    return(model_init)
+  s <- if (!is.null(model_init$rv)) model_init$rv else model_init$sigma2
+  if (is.null(s))
+    return(model_init)
+  model_init$V <- ifelse(model_init$V > 0 & s > 0, model_init$V / s, 0)
+  model_init
+}
+
 # Adjust the number of effects
 #' @keywords internal
 adjust_L <- function(params, model_init_pruned, var_y) {
@@ -927,7 +953,8 @@ adjust_L <- function(params, model_init_pruned, var_y) {
     L <- num_effects
   }
 
-  V <- expand_scaled_prior_variance(params$scaled_prior_variance, var_y, L)
+  V <- expand_scaled_prior_variance(params$scaled_prior_variance,
+                                    prior_variance_scale(params, var_y), L)
   model_init <- extract_model_init_fields(
     model_init_pruned, L = L, V = V,
     estimate_residual_variance = params$estimate_residual_variance)

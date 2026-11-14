@@ -65,6 +65,18 @@ test_that("K_true > L_greedy keeps growing past the first round", {
   expect_lte(nrow(fit$alpha), 10)
 })
 
+test_that("NIG greedy rounds do not rescale the prior variance again", {
+  # Each round warm-starts from the last round's returned fit, whose V the
+  # NIG prior reports times rv; with the prior variance fixed, every slot
+  # keeps its relative value
+  d <- .make_greedy_data()
+  fit <- suppressWarnings(suppressMessages(susie(
+    d$X, d$y, L = 6, L_greedy = 2, estimate_residual_method = "NIG",
+    estimate_prior_variance = FALSE, scaled_prior_variance = 0.2)))
+  expect_gt(nrow(fit$alpha), 2)
+  expect_equal(fit$V / fit$rv, rep(0.2, nrow(fit$alpha)), tolerance = 1e-12)
+})
+
 test_that("L_greedy = L stops after one round at L", {
   d <- .make_greedy_data()
   obj <- susie(d$X, d$y, L = 3, init_only = TRUE)

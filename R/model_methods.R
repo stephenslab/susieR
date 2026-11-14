@@ -82,7 +82,7 @@ initialize_matrices.default <- function(data, params, var_y) {
   L <- params$L
   # NIG uses the scaled slab variance s0 = sigma0^2 / sigma^2 during fitting.
   V <- expand_scaled_prior_variance(
-    params$scaled_prior_variance, ifelse(isTRUE(params$use_NIG), 1, var_y), L)
+    params$scaled_prior_variance, prior_variance_scale(params, var_y), L)
   mat_init <- list(
     alpha             = matrix(1 / data$p, L, data$p),
     mu                = matrix(0, L, data$p),
@@ -365,6 +365,31 @@ get_objective.default <- function(data, params, model) {
     stop("get_objective() produced an infinite ELBO value")
   }
   return(objective)
+}
+
+# =============================================================================
+# PRIOR VARIANCE SCALE
+#
+# Map the fitted prior variances to the scale the fit reports, after the IBSS
+# loop and before effects are trimmed.
+# =============================================================================
+
+# The NIG prior fits each effect's prior variance relative to the residual
+# variance (the slab s0 = sigma0^2 / sigma^2) and reports it in y units, times
+# the effect's residual variance posterior mean rv. A generic on data, so
+# packages building on susie_workhorse (e.g. mvsusieR) map their own scale.
+#' @keywords internal
+#' @noRd
+finalize_prior_variance <- function(data, params, model) {
+  UseMethod("finalize_prior_variance")
+}
+
+#' @keywords internal
+#' @noRd
+finalize_prior_variance.default <- function(data, params, model) {
+  if (isTRUE(params$use_NIG))
+    model$V <- model$V * model$rv
+  model
 }
 
 # =============================================================================

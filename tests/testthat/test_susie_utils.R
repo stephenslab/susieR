@@ -862,6 +862,68 @@ test_that("NIG final model reports prior variance in y units", {
   expect_gt(abs(fit$V - scaled_prior_variance), 1)
 })
 
+test_that("finalize_prior_variance reports NIG prior variances in y units", {
+  data <- structure(list(), class = "individual")
+  model <- list(V = c(0.2, 0.3), rv = c(2, 3))
+  expect_equal(finalize_prior_variance(data, list(use_NIG = TRUE), model)$V,
+               c(0.4, 0.9))
+  expect_equal(finalize_prior_variance(data, list(use_NIG = FALSE), model)$V,
+               c(0.2, 0.3))
+})
+
+test_that("susie_workhorse maps prior variances through finalize_prior_variance", {
+  # The generic is an extension point: a data class's method replaces the
+  # default mapping of the fitted prior variances
+  set.seed(5)
+  X <- matrix(rnorm(50 * 10), 50, 10)
+  y <- X[, 2] + rnorm(50)
+  obj <- susie(X, y, L = 2, init_only = TRUE)
+  class(obj$data) <- c("finalize_test", class(obj$data))
+  registerS3method("finalize_prior_variance", "finalize_test",
+                   function(data, params, model) {
+                     model$finalized_by <- "finalize_test"
+                     model
+                   }, envir = asNamespace("susieR"))
+  fit <- susie_workhorse(obj$data, obj$params)
+  expect_identical(fit$finalized_by, "finalize_test")
+})
+
+test_that("NIG warm starts keep the prior variance on its relative scale", {
+  # Under NIG the fit works with prior variances relative to the residual
+  # variance and reports them times rv. A warm start from a returned fit
+  # (model_init) undoes that, and slots added by growing L start on the
+  # relative scale; otherwise V was rescaled once more at the end
+  set.seed(1)
+  n <- 60; p <- 50
+  X <- matrix(rnorm(n * p), n, p)
+  b <- rep(0, p); b[c(5, 20)] <- 1
+  y <- 10 * drop(X %*% b + rnorm(n))
+  fit_nig <- function(...) suppressWarnings(suppressMessages(susie(
+    X, y, estimate_residual_method = "NIG", estimate_prior_variance = FALSE,
+    scaled_prior_variance = 0.2, ...)))
+  fixed <- fit_nig(L = 4)
+  expect_equal(fixed$V / fixed$rv, rep(0.2, 4), tolerance = 1e-12)
+  warm  <- fit_nig(L = 4, model_init = fixed)
+  grown <- fit_nig(L = 6, model_init = fixed)
+  expect_equal(warm$V / warm$rv, rep(0.2, 4), tolerance = 1e-12)
+  expect_equal(grown$V / grown$rv, rep(0.2, 6), tolerance = 1e-12)
+
+  # A fit made without NIG reports V in y units, sigma2 times the relative
+  # scale; a fit without NIG takes a NIG fit's V as reported
+  plain <- suppressWarnings(susie(X, y, L = 4, estimate_prior_variance = FALSE,
+                                  scaled_prior_variance = 0.2))
+  from_plain <- fit_nig(L = 4, model_init = plain)
+  expect_equal(from_plain$V / from_plain$rv, plain$V / plain$sigma2,
+               tolerance = 1e-12)
+  to_plain <- suppressWarnings(susie(X, y, L = 4, model_init = fixed,
+                                     estimate_prior_variance = FALSE))
+  expect_equal(to_plain$V, fixed$V, tolerance = 1e-12)
+
+  # A warm start with neither rv nor sigma2 (one built by hand) keeps its V
+  init <- list(V = c(0.2, 0.3))
+  expect_identical(model_init_fit_scale(list(use_NIG = TRUE), init), init)
+})
+
 test_that("expand_scaled_prior_variance recycles scalar and preserves vector", {
   expect_equal(expand_scaled_prior_variance(0.2, 2.0, 5), rep(0.4, 5))
   expect_equal(expand_scaled_prior_variance(c(0.1, 0.2, 0.3, 0.4, 0.5), 2.0, 5),
