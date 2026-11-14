@@ -294,6 +294,7 @@ calc_stderr = function (X, residuals)
 #' Uses one tolerance for both marginal PIPs and alpha. Lag 1 is ordinary
 #' convergence; larger lags detect a periodic orbit and average alpha over it.
 #'
+#' @importFrom utils tail
 #' @keywords internal
 check_alpha_pip_cycle_convergence <- function(data, params, model) {
   tol <- params$tol

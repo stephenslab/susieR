@@ -246,6 +246,7 @@ optimize_prior_variance <- function(data, params, model, ser_stats,
 #' Shared implementation for one-dimensional scalar-prior updates. Callers
 #' supply likelihood closures on the backend's optimization scale.
 #'
+#' @importFrom stats uniroot
 #' @keywords internal
 #' @noRd
 optimize_scalar_prior_variance <- function(V_init, estimate_prior_method,

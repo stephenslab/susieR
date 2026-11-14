@@ -77,6 +77,7 @@ initialize_susie_model.ss <- function(data, params, var_y, ...) {
     if (params$use_NIG) {
       model$rv <- rep(1, params$L)
       model$marginal_loglik <- rep(as.numeric(NA), params$L)
+      model$nig_B <- rep(0, params$L)
     }
   }
 
@@ -262,6 +263,7 @@ calculate_posterior_moments.ss <- function(data, params, model, V, l, ...) {
       post_mean  <- rep(0, data$p)
       post_mean2 <- rep(0, data$p)
       model$rv[l] <- 1
+      model$nig_B[l] <- 0
     } else {
       nig_ss <- get_nig_sufficient_stats(data, model)
       moments <- compute_posterior_moments_NIG(data$n, model$predictor_weights,
@@ -270,6 +272,10 @@ calculate_posterior_moments.ss <- function(data, params, model, V, l, ...) {
       post_mean  <- moments$post_mean
       post_mean2 <- moments$post_mean2
       model$rv[l] <- sum(model$alpha[l, ] * moments$rv)
+      # The effect's term of nig_eloglik's B, at the prior variance and
+      # shat2 inflation of these moments
+      model$nig_B[l] <- sum(model$alpha[l, ] * model$predictor_weights *
+                              moments$s_j_sq)
     }
     moments <- list(post_mean = post_mean, post_mean2 = post_mean2)
   } else {
@@ -613,6 +619,7 @@ cleanup_model.ss <- function(data, params, model, ...) {
   # Remove NIG specific temporary fields
   if (params$use_NIG) {
     model$marginal_loglik <- NULL
+    model$nig_B <- NULL
   }
   
   return(model)

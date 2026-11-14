@@ -726,6 +726,7 @@ kriging_rss <- function(z, R, n, r_tol = 1e-08,
 # branch to pick the mixture-init panel.
 # =============================================================================
 
+#' @importFrom utils tail
 #' @keywords internal
 #' @noRd
 pick_init_panel_via_subfits <- function(panels, panel_arg, parent_args) {

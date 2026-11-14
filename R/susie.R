@@ -723,8 +723,9 @@ susie_ss <- function(XtX, Xty, yty, n,
 #' \item{single_panel_fits}{For multi-panel input, the K single-panel fits
 #'   used to choose the panel that initializes the mixture.}
 #'
+#' @importFrom utils tail
 #' @export
-#' 
+#'
 susie_rss <- function(z = NULL, R = NULL, n = NULL,
                       X = NULL,
                       bhat = NULL, shat = NULL, var_y = NULL,

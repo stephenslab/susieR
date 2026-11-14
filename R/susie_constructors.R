@@ -1188,6 +1188,7 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
 # SS MULTI-PANEL MIXTURE DATA CONSTRUCTOR
 # =============================================================================
 #'
+#' @importFrom stats cov2cor
 #' @keywords internal
 #' @noRd
 ss_mixture_constructor <- function(z, R = NULL, X = NULL, n,

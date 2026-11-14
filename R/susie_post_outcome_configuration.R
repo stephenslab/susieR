@@ -468,6 +468,8 @@ enumerate_cs_tuples <- function(views, by, cs_only) {
   .logsum(logbf)
 }
 
+#' @importFrom stats setNames
+#' @noRd
 susiex_configurations <- function(views, by, prob_thresh,
                                   max_traits = 20L,
                                   name_by = c("config", "cs")) {

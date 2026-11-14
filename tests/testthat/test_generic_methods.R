@@ -326,3 +326,43 @@ test_that("get_objective.default skips NA entries in KL when computing standard 
   expected_diff <- sum(model_warm$KL[c(2, 4)], na.rm = TRUE)
   expect_equal(obj_zero - obj_na, expected_diff, tolerance = 1e-8)
 })
+
+# ---- nig_eloglik ----
+
+test_that("nig_eloglik reads each effect's B at the state of its moments", {
+  set.seed(10)
+  n <- 80
+  p <- 20
+  X <- matrix(rnorm(n * p), n, p)
+  y <- drop(X[, c(3, 12)] %*% c(1, -0.8) + rnorm(n))
+  # The EM step updates an effect's prior variance after its moments, so B is
+  # at the prior variances from before the sweep
+  obj <- suppressWarnings(suppressMessages(susie(
+    X, y, L = 3, estimate_residual_method = "NIG",
+    estimate_prior_method = "EM", init_only = TRUE, verbose = FALSE)))
+  model <- ibss_initialize(obj$data, obj$params)
+  V_moments <- model$V
+  model <- ibss_fit(obj$data, obj$params, model)
+  expect_false(isTRUE(all.equal(model$V, V_moments)))
+  pw <- model$predictor_weights
+  B <- vapply(1:3, function(l)
+    sum(model$alpha[l, ] * V_moments[l] / (V_moments[l] + 1 / pw)),
+    numeric(1))
+  expect_equal(model$nig_B, B, tolerance = 1e-12)
+  moved <- model
+  moved$V <- 2 * model$V
+  expect_equal(nig_eloglik(obj$data, obj$params, moved),
+               nig_eloglik(obj$data, obj$params, model))
+  # Under reference-LD uncertainty each effect has its own shat2 inflation,
+  # of which the model keeps the last
+  obj <- suppressWarnings(suppressMessages(susie_rss(
+    z = calc_z(X, y), R = cor(X), n = n, L = 3, R_finite = 200,
+    estimate_residual_method = "NIG", init_only = TRUE, verbose = FALSE)))
+  model <- ibss_initialize(obj$data, obj$params)
+  model <- ibss_fit(obj$data, obj$params, model)
+  expect_false(is.null(model$shat2_inflation))
+  moved <- model
+  moved$shat2_inflation <- 2 * model$shat2_inflation
+  expect_equal(nig_eloglik(obj$data, obj$params, moved),
+               nig_eloglik(obj$data, obj$params, model))
+})
