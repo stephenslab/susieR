@@ -1083,7 +1083,7 @@ test_that("eb_mix helper fallbacks are conservative", {
   expect_equal(
     susieR:::compute_mixture_gate(c(1, 2), c(1, 2), R_finite_B = 100,
                                   lambda_bias = 0.1, sigma2 = 1,
-                                  data = list(nm1 = 0)),
+                                  nm1 = 0),
     rep(1, 2)
   )
 })
@@ -1093,10 +1093,10 @@ test_that("stronger marginal evidence raises the mismatch gate", {
   r <- c(A = 6, B = 6) * sqrt(2000)
   w_weak <- susieR:::compute_mixture_gate(
     r, eta2, R_finite_B = 200, lambda_bias = 0.1, sigma2 = 1,
-    data = list(nm1 = 2000), z_marginal = c(A = 0, B = 0), z_ref = 1)
+    nm1 = 2000, z_marginal = c(A = 0, B = 0), z_ref = 1)
   w_strong <- susieR:::compute_mixture_gate(
     r, eta2, R_finite_B = 200, lambda_bias = 0.1, sigma2 = 1,
-    data = list(nm1 = 2000), z_marginal = c(A = 0, B = 4), z_ref = 1)
+    nm1 = 2000, z_marginal = c(A = 0, B = 4), z_ref = 1)
   expect_gt(w_strong[["A"]], w_weak[["A"]])
   expect_gt(w_strong[["B"]], w_weak[["B"]])
 })
@@ -1106,11 +1106,11 @@ test_that("marginal z prior is a region-level shift", {
   r <- c(weak = 2, strong = 2) * sqrt(2000)
   w_weak_region <- susieR:::compute_mixture_gate(
     r, eta2, R_finite_B = 200, lambda_bias = 0.1, sigma2 = 1,
-    data = list(nm1 = 2000),
+    nm1 = 2000,
     z_marginal = c(weak = 0, strong = 0), z_ref = 1)
   w_strong_region <- susieR:::compute_mixture_gate(
     r, eta2, R_finite_B = 200, lambda_bias = 0.1, sigma2 = 1,
-    data = list(nm1 = 2000),
+    nm1 = 2000,
     z_marginal = c(weak = 0, strong = 4), z_ref = 1)
   expect_equal(unname(w_strong_region[["weak"]]),
                unname(w_strong_region[["strong"]]))
@@ -1131,23 +1131,23 @@ test_that("marginal z prior is driven by the strongest marginal evidence", {
 })
 
 test_that("compute_mixture_gate returns probabilities in [0,1]", {
-  data <- list(nm1 = 2000)
   set.seed(1)
   eta2 <- runif(50, 0, 30)
   r <- rnorm(50) * sqrt(2000)
   w <- susieR:::compute_mixture_gate(r, eta2, R_finite_B = 500,
-                                     lambda_bias = 0.05, sigma2 = 1, data)
+                                     lambda_bias = 0.05, sigma2 = 1,
+                                     nm1 = 2000)
   expect_length(w, 50)
   expect_true(all(w >= 0 & w <= 1))
   expect_true(all(is.finite(w)))
 })
 
 test_that("compute_mixture_gate is asymmetric: high-eta leakage corrected, low-eta new signal preserved", {
-  data <- list(nm1 = 2000)
   eta2 <- c(A = 1e-8, B = 100)
   r <- c(A = 6, B = 6) * sqrt(2000)
   w <- susieR:::compute_mixture_gate(r, eta2, R_finite_B = 200,
-                                     lambda_bias = 0.1, sigma2 = 1, data,
+                                     lambda_bias = 0.1, sigma2 = 1,
+                                     nm1 = 2000,
                                      z_marginal = c(A = 0, B = 6),
                                      z_ref = 1)
   expect_gt(w[["B"]], 0.8)
@@ -1261,4 +1261,68 @@ test_that("low-rank mixture fits report Q_art from the full residual space", {
                             residual)^2) / sum(residual^2)
   expect_equal(fit$R_finite_diagnostics$Q_art, expected, tolerance = 1e-9)
   expect_equal(fit$R_finite_diagnostics$artifact_flag, expected > 0.1)
+})
+
+test_that("SuSiE-ash's lambda fit subtracts the signal theta absorbs", {
+  # A reference with weaker LD than the sample's: without theta in its
+  # fitted values, the lambda fit read theta's signal as a mismatch of R
+  # (lambda above 1000) and the fit lost both effects
+  rho_x <- function(n, p, rho) {
+    matrix(rnorm(n * p), n, p) %*% chol(rho^abs(outer(1:p, 1:p, "-")))
+  }
+  set.seed(3)
+  X <- rho_x(2000, 80, 0.8)
+  b <- rep(0, 80)
+  b[c(10, 50)] <- c(0.3, -0.25)
+  ur <- univariate_regression(X, X %*% b + rnorm(2000))
+  R_ref <- cor(rho_x(400, 80, 0.6))
+  fit <- suppressWarnings(suppressMessages(susie_rss(
+    z = ur$betahat / ur$sebetahat, R = R_ref, n = 2000, L = 5,
+    R_finite = 400, R_mismatch = "eb", unmappable_effects = "ash",
+    verbose = FALSE)))
+  expect_lt(fit$R_finite_diagnostics$lambda_bias, 1)
+  expect_true(10 %in% unlist(fit$sets$cs))
+})
+
+test_that("SuSiE-ash's one-effect start counts the effect at its fitted activity", {
+  # SuSiE-ash's default slot prior starts every effect at activity 1/3. The
+  # one-effect start of R_mismatch = "eb" fitted lambda with the effect at
+  # that weight, read the rest of it as a mismatch of R (lambda 0.41), and
+  # flattened the second effect, whose signal theta then took for good
+  rho_x <- function(n, p, rho) {
+    matrix(rnorm(n * p), n, p) %*% chol(rho^abs(outer(1:p, 1:p, "-")))
+  }
+  set.seed(3)
+  X <- rho_x(2000, 80, 0.8)
+  b <- rep(0, 80)
+  b[c(10, 50)] <- c(0.3, -0.25)
+  ur <- univariate_regression(X, X %*% b + rnorm(2000))
+  fit <- suppressWarnings(suppressMessages(susie_rss(
+    z = ur$betahat / ur$sebetahat, R = cor(X), n = 2000, L = 5,
+    R_finite = 400, R_mismatch = "eb", unmappable_effects = "ash",
+    verbose = FALSE)))
+  expect_lt(fit$R_mismatch_init$lambda_bias, 0.1)
+  expect_true(all(c(10, 50) %in% unlist(fit$sets$cs)))
+})
+
+test_that("near_sparse_effects marks high PIPs and their LD neighbourhoods", {
+  Xcorr <- 0.8^abs(outer(1:10, 1:10, "-"))
+  pip <- replace(rep(0, 10), 5, 0.95)
+  # |r| > 0.5 within three variables (0.8^3 = 0.51): variables 2 to 8 have
+  # variable 5 in their neighbourhood
+  expect_equal(which(near_sparse_effects(pip, Xcorr)), 2:8)
+  expect_equal(which(near_sparse_effects(replace(pip, 5, 0.2), Xcorr)), 5L)
+})
+
+test_that("SuSiE-inf's mismatch fit engages on a mismatched reference", {
+  # Its theta, the posterior mean of the unmappable effects, took up the
+  # signal a mismatched R leaves next to the sparse effects, so lambda was
+  # always 0; with theta masked there, lambda is fitted
+  data(rss_mismatch_cases)
+  cs <- rss_mismatch_cases$ld_mismatch
+  fit <- suppressWarnings(suppressMessages(susie_rss(
+    z = cs$z, R = cs$R, n = cs$n, L = 10, R_finite = cs$B,
+    R_mismatch = "eb", unmappable_effects = "inf", verbose = FALSE)))
+  expect_gt(fit$R_finite_diagnostics$lambda_bias, 0)
+  expect_true(cs$causal %in% unlist(fit$sets$cs))
 })

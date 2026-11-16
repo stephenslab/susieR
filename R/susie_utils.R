@@ -294,6 +294,7 @@ calc_stderr = function (X, residuals)
 #' Uses one tolerance for both marginal PIPs and alpha. Lag 1 is ordinary
 #' convergence; larger lags detect a periodic orbit and average alpha over it.
 #'
+#' @importFrom utils tail
 #' @keywords internal
 check_alpha_pip_cycle_convergence <- function(data, params, model) {
   tol <- params$tol
@@ -704,6 +705,15 @@ validate_and_override_params <- function(params) {
     stop("unmappable_effects must be one of 'none', 'inf', or 'ash'.")
   }
 
+  # Check for incompatible parameter combination, here so that every data
+  # type (individual-level, SS and RSS) is checked
+  if (params$unmappable_effects != "none" && use_NIG_method) {
+    stop("The combination of unmappable_effects = '",
+         params$unmappable_effects,
+         "' with estimate_residual_method = 'NIG' is not supported. ",
+         "Please use estimate_residual_method = 'MoM' (the default) instead.")
+  }
+
   # Auto-create Beta-Binomial slot prior for ash mode (identifiability)
   # and report defaults as a single hint. Users who want an
   # uninformative prior can pass slot_prior_betabinom(1, 1).
@@ -837,13 +847,10 @@ validate_and_override_params <- function(params) {
       params$convergence_method <- force_pip("NIG method with L > 1")
     }
 
-    # Override prior variance estimation method (only when estimation is enabled)
-    if (params$estimate_prior_variance && params$estimate_prior_method != "EM") {
-      warning_message("NIG method works better with EM. ",
-                      "Setting estimate_prior_method='EM'.",
-                      style = "hint")
-      params$estimate_prior_method <- "EM"
-    }
+    # The prior variance method is kept. optim, uniroot and simple maximize
+    # the NIG single effect likelihood (neg_loglik -> loglik) at every
+    # iteration; EM takes one step toward it per iteration, so it can need
+    # hundreds of iterations to settle the unused effects at NIG's tol.
   } else {
     params$use_NIG <- FALSE
     params$alpha0 <- NULL
@@ -905,6 +912,32 @@ expand_scaled_prior_variance <- function(scaled_prior_variance, var_y, L) {
   }
 }
 
+# The scale of the initial prior variances: var(y), or 1 under the NIG prior,
+# which fits them relative to the residual variance (the slab s0 =
+# sigma0^2 / sigma^2)
+#' @keywords internal
+#' @noRd
+prior_variance_scale <- function(params, var_y) {
+  if (isTRUE(params$use_NIG)) 1 else var_y
+}
+
+# A model_init's prior variances on the scale the fit works on. Under NIG the
+# fit works with V relative to the residual variance, while a returned NIG fit
+# reports V * rv (finalize_prior_variance) and a fit made without NIG reports V
+# in y units, sigma2 times the relative scale. Without the conversion, a warm
+# start (model_init, or a greedy-L round) rescales V once more at the end.
+#' @keywords internal
+#' @noRd
+model_init_fit_scale <- function(params, model_init) {
+  if (!isTRUE(params$use_NIG) || is.null(model_init$V))
+    return(model_init)
+  s <- if (!is.null(model_init$rv)) model_init$rv else model_init$sigma2
+  if (is.null(s))
+    return(model_init)
+  model_init$V <- ifelse(model_init$V > 0 & s > 0, model_init$V / s, 0)
+  model_init
+}
+
 # Adjust the number of effects
 #' @keywords internal
 adjust_L <- function(params, model_init_pruned, var_y) {
@@ -921,7 +954,8 @@ adjust_L <- function(params, model_init_pruned, var_y) {
     L <- num_effects
   }
 
-  V <- expand_scaled_prior_variance(params$scaled_prior_variance, var_y, L)
+  V <- expand_scaled_prior_variance(params$scaled_prior_variance,
+                                    prior_variance_scale(params, var_y), L)
   model_init <- extract_model_init_fields(
     model_init_pruned, L = L, V = V,
     estimate_residual_variance = params$estimate_residual_variance)
@@ -1280,9 +1314,11 @@ compute_lbf_gradient <- function(alpha, betahat, shat2, V, use_NIG = FALSE) {
 # compute_marginal_loglik, est_residual_variance, update_model_variance
 # =============================================================================
 
-# Method of Moments variance estimation for unmappable effects methods
+# Method of Moments variance estimation for unmappable effects methods. The
+# second moment of each effect is its SER's posterior one (model$mu2), which
+# with R_finite or R_mismatch has the inflated variance its mean has.
 #' @keywords internal
-mom_unmappable <- function(data, params, model, omega, tau2, est_tau2 = TRUE, est_sigma2 = TRUE) {
+mom_unmappable <- function(data, params, model, tau2, est_tau2 = TRUE, est_sigma2 = TRUE) {
   L <- nrow(model$mu)
 
   A <- matrix(0, nrow = 2, ncol = 2)
@@ -1303,7 +1339,7 @@ mom_unmappable <- function(data, params, model, omega, tau2, est_tau2 = TRUE, es
     bl <- model$mu[l, ] * model$alpha[l, ]
     Vtbl <- crossprod(data$eigen_vectors, bl)
     diagVtMV <- diagVtMV - Vtbl^2
-    tmpD <- tmpD + model$alpha[l, ] * (model$mu[l, ]^2 + 1 / omega[l, ])
+    tmpD <- tmpD + model$alpha[l, ] * model$mu2[l, ]
   }
 
   diagVtMV <- diagVtMV + rowSums(sweep(t(data$eigen_vectors_sq), 2, tmpD, `*`))
@@ -1335,9 +1371,10 @@ mom_unmappable <- function(data, params, model, omega, tau2, est_tau2 = TRUE, es
   return(list(sigma2 = sigma2, tau2 = tau2))
 }
 
-# MLE variance estimation for unmappable effects
+# MLE variance estimation for unmappable effects, from the same posterior
+# moments as mom_unmappable
 #' @keywords internal
-mle_unmappable <- function(data, params, model, omega, est_tau2 = TRUE, est_sigma2 = TRUE) {
+mle_unmappable <- function(data, params, model, est_tau2 = TRUE, est_sigma2 = TRUE) {
   L <- nrow(model$alpha)
   r <- length(data$eigen_values)   # rank of the stored eigenspace
 
@@ -1356,7 +1393,7 @@ mle_unmappable <- function(data, params, model, omega, est_tau2 = TRUE, est_sigm
     bl       <- model$mu[l, ] * model$alpha[l, ]
     Vtbl     <- crossprod(data$eigen_vectors, bl)
     diagVtMV <- diagVtMV - Vtbl^2
-    tmpD     <- tmpD + model$alpha[l, ] * (model$mu[l, ]^2 + 1 / omega[l, ])
+    tmpD     <- tmpD + model$alpha[l, ] * model$mu2[l, ]
   }
 
   diagVtMV <- diagVtMV + rowSums(sweep(t(data$eigen_vectors_sq), 2, tmpD, `*`))
@@ -1746,7 +1783,6 @@ update_ash_variance_components <- function(data, model, params) {
   second_chance_wait         <- 3L    # iters after expose before re-mask
   delayed_unmask_iter        <- 2L    # iters unwanted before unmask
 
-  is_individual <- inherits(data, "individual")
   L <- nrow(model$alpha)
   p <- ncol(model$alpha)
   if (is.null(model$ash_iter)) model$ash_iter <- 0L
@@ -1848,7 +1884,7 @@ update_ash_variance_components <- function(data, model, params) {
       current_case[l] <- 3L
       model$diffuse_iter_count[l] <- 0L
       alpha_protected[l, ] <- model$alpha[l, ]
-      b_confident <- b_confident + c_hat[l] * model$alpha[l, ] * model$mu[l, ]
+      b_confident <- b_confident + c_hat[l] * get_posterior_mean_l(model, l)
     }
   }
 
@@ -1861,17 +1897,16 @@ update_ash_variance_components <- function(data, model, params) {
   unstable_case3 <- oscillated & (current_case == 3L)
   model$ever_diffuse[oscillated] <- model$ever_diffuse[oscillated] + 1L
   for (l in which(unstable_case3)) {
-    b_confident <- b_confident - c_hat[l] * model$alpha[l, ] * model$mu[l, ]
+    b_confident <- b_confident - c_hat[l] * get_posterior_mean_l(model, l)
   }
   model$prev_case     <- current_case
   model$prev_sentinel <- sentinels
 
   # Mask: PIP-based union, with per-position persistence
   pip_protected    <- susie_get_pip(alpha_protected)
-  LD_adj           <- abs(Xcorr) > ld_threshold
-  neighborhood_pip <- as.vector(LD_adj %*% pip_protected)
-  want_masked <- (neighborhood_pip > neighborhood_pip_threshold) |
-                 (pip_protected    > pip_threshold) |
+  want_masked <- near_sparse_effects(pip_protected, Xcorr, pip_threshold,
+                                     ld_threshold,
+                                     neighborhood_pip_threshold) |
                  force_mask
 
   # Delayed unmask: count iters a masked position is no longer wanted
@@ -1909,13 +1944,7 @@ update_ash_variance_components <- function(data, model, params) {
       tau2 = if (!is.null(model$tau2)) model$tau2 else 0)
   } else {
     convtol <- if (model$ash_iter < 2) 1e-3 else 1e-4
-    if (is_individual) {
-      ash_result <- compute_ash_from_individual_data(
-        data$X, data$y, b_confident, model, params, convtol)
-    } else {
-      ash_result <- compute_ash_from_summary_stats(
-        data, b_confident, model, params, convtol)
-    }
+    ash_result <- compute_ash(data, b_confident, model, params, convtol)
     theta_new <- ash_result$beta
     theta_new[mask] <- 0
   }
@@ -1967,13 +1996,7 @@ update_ash_variance_components <- function(data, model, params) {
     .diag_env              = model$.diag_env
   )
 
-  if (is_individual) {
-    result$X_theta <- as.vector(compute_Xb(data$X, theta_new))
-  } else {
-    result$XtX_theta <- as.vector(compute_Rv(data, theta_new))
-  }
-
-  return(result)
+  return(c(result, compute_theta_fitted(data, theta_new)))
 }
 
 # Archived: Original filter-based ash variance component update
@@ -2100,6 +2123,20 @@ cleanup_ash_fields_filter_archived <- function(model) {
   model <- cleanup_ash_fields(model)
   model$sa2 <- NULL
   return(model)
+}
+
+# The variables near the sparse effects: those whose PIP (pip) exceeds
+# pip_threshold, or the summed PIP of whose LD neighbourhood (|r| above
+# ld_threshold in Xcorr) exceeds neighborhood_threshold. SuSiE-ash masks
+# theta there (with the PIPs of its protected effects), and SuSiE-inf's
+# R-mismatch fit masks its theta there too (compute_R_mismatch_state).
+#
+# @keywords internal
+near_sparse_effects <- function(pip, Xcorr, pip_threshold = 0.1,
+                                ld_threshold = 0.5,
+                                neighborhood_threshold = 0.4) {
+  neighborhood_pip <- as.vector((abs(Xcorr) > ld_threshold) %*% pip)
+  (neighborhood_pip > neighborhood_threshold) | (pip > pip_threshold)
 }
 
 # Get or compute the correlation matrix for ash masking
@@ -2464,12 +2501,64 @@ compute_ash_from_summary_stats <- function(data, b_confident, model, params, con
   )
 }
 
+# The Mr.ASH backend of SuSiE-ash: mr.ash on individual-level data, mr.ash.rss
+# on sufficient statistics. A generic on data, so packages building on
+# susie_workhorse (e.g. mvsusieR) supply their own backend.
+#
+# @param data Data object
+# @param b_confident Effects to subtract from the residuals
+# @param model Current SuSiE model
+# @param params Parameters object
+# @param convtol Convergence tolerance for the backend
+#
+# @return List with beta, sigma2, pi, sa2, tau2
+#
+# @keywords internal
+compute_ash <- function(data, b_confident, model, params, convtol = 1e-4) {
+  UseMethod("compute_ash")
+}
+
+compute_ash.individual <- function(data, b_confident, model, params,
+                                   convtol = 1e-4) {
+  compute_ash_from_individual_data(data$X, data$y, b_confident, model,
+                                   params, convtol)
+}
+
+compute_ash.default <- function(data, b_confident, model, params,
+                                convtol = 1e-4) {
+  compute_ash_from_summary_stats(data, b_confident, model, params, convtol)
+}
+
+# The fitted values of the unmappable effects theta, which the residuals
+# subtract: X theta on individual-level data, X'X theta on sufficient
+# statistics. A generic on data, as compute_ash().
+#
+# @param data Data object
+# @param theta Unmappable effects
+#
+# @return List with X_theta, or with XtX_theta
+#
+# @keywords internal
+compute_theta_fitted <- function(data, theta) {
+  UseMethod("compute_theta_fitted")
+}
+
+compute_theta_fitted.individual <- function(data, theta) {
+  list(X_theta = as.vector(compute_Xb(data$X, theta)))
+}
+
+compute_theta_fitted.default <- function(data, theta) {
+  list(XtX_theta = as.vector(compute_Rv(data, theta)))
+}
+
 # Run the final Mr.ASH pass after the IBSS loop
 #
 # One Mr.ASH pass on the residual after removing ALL SuSiE effects (no
 # masking) gives the reported unmappable effects. It runs whether or not the
 # loop converged, and is skipped under options(susie.skip_mrash = TRUE).
-# Individual-level data uses mr.ash directly; SS data uses mr.ash.rss.
+# The backend (mr.ash on individual-level data, mr.ash.rss on SS data) and
+# the fitted theta come from compute_ash() and compute_theta_fitted(), and
+# each effect from get_posterior_mean_l().
 #
 # @param data Data object
 # @param params Parameters object
@@ -2481,31 +2570,21 @@ compute_ash_from_summary_stats <- function(data, b_confident, model, params, con
 run_final_ash_pass <- function(data, params, model) {
   if (isTRUE(getOption("susie.skip_mrash", FALSE))) return(model)
 
-  b_susie <- colSums(get_slot_weights(model) * model$alpha * model$mu)
-  is_individual <- inherits(data, "individual")
+  # Slot-weighted sum of the sparse effects
+  sw <- get_slot_weights(model)
+  b_susie <- rep(0, ncol(model$alpha))
+  for (l in seq_len(nrow(model$alpha)))
+    b_susie <- b_susie + sw[l] * get_posterior_mean_l(model, l)
 
-  # Dispatch to individual (mr.ash) or SS (mr.ash.rss) backend
-  if (is_individual) {
-    mrash_output <- compute_ash_from_individual_data(
-      data$X, data$y, b_susie, model, params
-    )
-  } else {
-    mrash_output <- compute_ash_from_summary_stats(data, b_susie, model, params)
-  }
+  mrash_output <- compute_ash(data, b_susie, model, params)
 
   # Update model (shared across both paths)
   model$theta  <- mrash_output$beta
   model$tau2   <- mrash_output$tau2
   model$ash_pi <- mrash_output$pi
 
-  # Compute fitted theta (data-representation-specific)
-  if (is_individual) {
-    model$X_theta <- as.vector(compute_Xb(data$X, model$theta))
-  } else {
-    model$XtX_theta <- compute_Rv(data, model$theta)
-  }
-
-  return(model)
+  # Fitted theta (data-representation-specific)
+  return(modifyList(model, compute_theta_fitted(data, model$theta)))
 }
 
 # Compute ELBO for infinitesimal effects model

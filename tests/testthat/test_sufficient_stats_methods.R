@@ -289,6 +289,23 @@ test_that("neg_loglik.ss returns a finite scalar for unmappable_effects='inf'", 
   expect_true(is.finite(neg_ll))
 })
 
+test_that("neg_loglik.ss for 'inf' is the SER's log-likelihood with inflated shat2", {
+  setup <- setup_ss_data(unmappable_effects = "inf")
+  var_y <- setup$data$yty / (setup$data$n - 1)
+  setup$model <- initialize_susie_model.ss(setup$data, setup$params, var_y)
+  model <- compute_residuals.ss(setup$data, setup$params, setup$model, 1)
+  # The finite-reference inflation of shat2, as R_finite gives it
+  set.seed(11)
+  model$shat2_inflation <- runif(setup$data$p, 1, 3)
+  ser_stats <- compute_ser_statistics.ss(setup$data, setup$params, model, 1)
+  for (V in c(0.01, 0.1, 0.5)) {
+    lbf <- gaussian_ser_lbf(ser_stats$betahat, ser_stats$shat2, V)
+    expect_equal(
+      neg_loglik.ss(setup$data, setup$params, model, V_param = V, ser_stats),
+      -logSumExp(lbf + log(model$pi + sqrt(.Machine$double.eps))))
+  }
+})
+
 # ---- Model updates & fitting ----
 
 test_that("update_fitted_values.ss updates XtXr for unmappable_effects='none'", {
@@ -720,7 +737,7 @@ test_that("susie_ss with unmappable_effects='inf' returns nonneg tau2 and theta 
   expect_length(fit$theta, ss$p)
 })
 
-test_that("update_variance_components.ss inf MoM returns finite positive sigma2, nonneg tau2, and theta of length p", {
+test_that("update_variance_components.ss inf MoM returns finite positive sigma2 and nonneg tau2", {
   ss   <- .make_ss_stats(n = 150, p = 12, seed = 108)
   ctor <- sufficient_stats_constructor(
     XtX = ss$XtX, Xty = ss$Xty, yty = ss$yty, n = ss$n, L = 3,
@@ -738,15 +755,19 @@ test_that("update_variance_components.ss inf MoM returns finite positive sigma2,
   result <- update_variance_components.ss(data, params, model)
 
   expect_type(result, "list")
-  expect_true(all(c("sigma2", "tau2", "theta") %in% names(result)))
+  expect_true(all(c("sigma2", "tau2") %in% names(result)))
+  # theta follows (sigma2, tau2), in update_derived_quantities.ss()
+  expect_false("theta" %in% names(result))
   expect_true(is.finite(result$sigma2) && result$sigma2 > 0)
   expect_true(result$tau2 >= 0)
-  expect_length(result$theta, data$p)
+  updated <- update_derived_quantities.ss(data, params,
+                                          modifyList(model, result))
+  expect_length(updated$theta, data$p)
 })
 
 # ---- inf branch (MLE) via direct call ----
 
-test_that("update_variance_components.ss inf MLE path returns sigma2/tau2/theta via direct call", {
+test_that("update_variance_components.ss inf MLE path returns sigma2/tau2 via direct call", {
   ss <- .make_ss_stats(n = 150, p = 12, seed = 109)
 
   ctor <- sufficient_stats_constructor(
@@ -773,10 +794,10 @@ test_that("update_variance_components.ss inf MLE path returns sigma2/tau2/theta 
   result <- update_variance_components.ss(data, params_mle, model)
 
   expect_type(result, "list")
-  expect_true(all(c("sigma2", "tau2", "theta") %in% names(result)))
+  expect_true(all(c("sigma2", "tau2") %in% names(result)))
+  expect_false("theta" %in% names(result))
   expect_true(is.finite(result$sigma2) && result$sigma2 > 0)
   expect_true(result$tau2 >= 0)
-  expect_length(result$theta, data$p)
 })
 
 # ---- Edge cases ----

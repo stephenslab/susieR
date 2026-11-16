@@ -1115,6 +1115,113 @@ test_that("by = 'outcome' on an mvsusie runs SuSiEx per-outcome on the diagonal"
                c(2L, 2L, 2L))
 })
 
+# ---- Marginals without enumeration; the enumeration ceiling -----------------
+
+test_that("entry point rejects malformed config_probability and max_traits", {
+  fit <- coloc_fit(matrix(0.5, 1, 2), matrix(1, 1, 2))
+  expect_error(susie_post_outcome_configuration(fit, config_probability = NA),
+               "config_probability")
+  expect_error(susie_post_outcome_configuration(fit,
+                                                config_probability = "no"),
+               "config_probability")
+  expect_error(susie_post_outcome_configuration(fit, max_traits = 0),
+               "max_traits")
+  expect_error(susie_post_outcome_configuration(fit, max_traits = 2.5),
+               "max_traits")
+  expect_error(susie_post_outcome_configuration(fit, max_traits = c(2, 3)),
+               "max_traits")
+  expect_error(susie_post_outcome_configuration(fit, max_traits = NA_real_),
+               "max_traits")
+})
+
+test_that("max_traits sets the enumeration ceiling of the entry point", {
+  fits <- list(coloc_real_fit(1), coloc_real_fit(2), coloc_real_fit(3))
+  expect_error(
+    susie_post_outcome_configuration(fits, by = "fit", max_traits = 2),
+    "exceeds the safety ceiling \\(2\\)")
+  res <- susie_post_outcome_configuration(fits, by = "fit", max_traits = 3)
+  expect_equal(nrow(res$susiex[[1]]$config_probability), 8L)
+
+  set.seed(31)
+  A   <- matrix(0, 2, 5); A[1, 2] <- 1; A[2, 4] <- 1
+  arr <- array(rnorm(2 * 5 * 3), dim = c(2, 5, 3),
+               dimnames = list(NULL, NULL, c("o1", "o2", "o3")))
+  mv  <- coloc_mv_fit(A, matrix(0, 2, 5), arr, cs = list(L1 = 1L, L2 = 2L))
+  expect_error(
+    susie_post_outcome_configuration(mv, by = "outcome", max_traits = 2),
+    "exceeds the safety ceiling")
+})
+
+test_that("config_probability = FALSE gives the enumeration's marginals", {
+  set.seed(7)
+  L <- 3; J <- 40; R <- 6
+  vars <- paste0("v", seq_len(J))
+  A <- matrix(0, L, J, dimnames = list(NULL, vars))
+  A[1, 3] <- 1; A[2, 17] <- 1; A[3, 30] <- 1
+  arr <- array(rnorm(L * J * R, sd = 2), dim = c(L, J, R),
+               dimnames = list(NULL, vars, paste0("o", seq_len(R))))
+  arr[1, 3, 1:3] <- 9
+  fit <- coloc_mv_fit(A, matrix(0, L, J), arr,
+                      cs = list(L1 = 3L, L2 = 17L, L3 = 30L))
+
+  full <- susie_post_outcome_configuration(fit, by = "outcome")
+  fast <- susie_post_outcome_configuration(fit, by = "outcome",
+                                           config_probability = FALSE)
+
+  expect_named(fast$susiex, names(full$susiex))
+  for (cs in names(full$susiex)) {
+    expect_null(fast$susiex[[cs]]$config_probability)
+    expect_equal(fast$susiex[[cs]]$config_summary,
+                 full$susiex[[cs]]$config_summary, tolerance = 1e-10)
+  }
+  expect_equal(fast$mvsusie, full$mvsusie)
+})
+
+test_that("closed-form marginals match the enumeration across variant sets", {
+  # Views over partly overlapping variants: a trait lacking a variant
+  # cannot share it, which the closed form scores as BF = 0 there.
+  view_fit <- function(vars, lbf) {
+    coloc_fit(matrix(1 / length(vars), 1, length(vars),
+                     dimnames = list(NULL, vars)),
+              matrix(lbf, 1, length(vars), dimnames = list(NULL, vars)))
+  }
+  fits <- list(a = view_fit(c("r1", "r2", "r3"), c(6, 1, -2)),
+               b = view_fit(c("r2", "r3", "r4"), c(5, 0.5, 3)),
+               c = view_fit(c("r1", "r4"), c(-1, 4)))
+
+  full <- susie_post_outcome_configuration(fits, by = "fit")
+  fast <- susie_post_outcome_configuration(fits, by = "fit",
+                                           config_probability = FALSE)
+
+  expect_equal(fast$susiex[[1]]$config_summary,
+               full$susiex[[1]]$config_summary, tolerance = 1e-10)
+})
+
+test_that("config_probability = FALSE needs no enumeration ceiling", {
+  fits <- list(coloc_real_fit(1), coloc_real_fit(2), coloc_real_fit(3))
+  res <- susie_post_outcome_configuration(fits, by = "fit", max_traits = 2,
+                                          config_probability = FALSE)
+  expect_true(length(res$susiex) >= 1L)
+  expect_null(res$susiex[[1]]$config_probability)
+  raw <- attr(res$susiex[[1]], "raw")
+  expect_null(raw$configs)
+  expect_null(raw$config_prob)
+  expect_length(raw$marginal_prob, 3L)
+})
+
+test_that("the multi-output CS summary reads only the fit's own effect lbf", {
+  # No `lbf` and one `lbf_variable_outcome`: `fit$lbf` would prefix-match
+  # the array. The CS summary's effect lbf is NA instead.
+  arr <- array(c(4, 0, 5, 0), dim = c(1, 2, 2),
+               dimnames = list(NULL, NULL, c("o1", "o2")))
+  fit <- structure(list(alpha = matrix(c(1, 0), 1, 2),
+                        lbf_variable_outcome = arr,
+                        sets = list(cs = list(L1 = 1L))),
+                   class = "mvsusie")
+  expect_warning(res <- susie_post_outcome_configuration(fit), NA)
+  expect_true(is.na(res$mvsusie$L1$cs_summary$lbf))
+})
+
 # ---- Renderer color / NA branches ------------------------------------------
 
 test_that(".print_susiex_table colors active / ambiguous / below / NA cells", {

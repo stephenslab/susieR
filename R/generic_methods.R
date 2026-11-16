@@ -206,8 +206,12 @@ Eloglik.default <- function(data, model) {
 # from get_objective so we don't break the Eloglik(data, model) signature
 # that downstream packages override (mvsusieR, mfsusieR).
 # Decomposition: E_q[||y-Xb||^2 | sigma^2] = A + sigma^2 B,
-#   B = sum_l sum_j alpha^(l)_j * r0^(l)_j * tau_j,
-#   A = get_ER2 - E[sigma^2] * B.
+#   B = sum_l sum_j alpha^(l)_j * r0^(l)_j * tau^(l)_j,
+#   A = get_ER2 - E[sigma^2] * B,
+# each effect's term of B (model$nig_B) recorded with its posterior moments,
+# at the prior variance and shat2 inflation they were computed with (the EM
+# step updates the prior variance after them, and each effect has its own
+# inflation).
 # Eloglik = -n/2 log(2 pi) - n/2 (log b - digamma(a)) - 0.5 (A * a/b + B).
 #' @keywords internal
 nig_eloglik <- function(data, params, model) {
@@ -215,14 +219,7 @@ nig_eloglik <- function(data, params, model) {
   ERSS_marg <- get_ER2(data, model)
   a_post    <- (params$alpha0 + n) / 2
   b_post    <- (params$beta0 + ERSS_marg) / 2
-
-  tau_v <- if (!is.null(model$shat2_inflation)) model$shat2_inflation else 1
-  pw    <- model$predictor_weights
-  B     <- 0
-  for (l in seq_len(nrow(model$alpha))) {
-    r0_l <- model$V[l] / (model$V[l] + tau_v / pw)
-    B    <- B + sum(model$alpha[l, ] * r0_l * tau_v)
-  }
+  B         <- sum(model$nig_B)
   A <- ERSS_marg - (b_post / (a_post - 1)) * B
   -n / 2 * log(2 * pi) - n / 2 * (log(b_post) - digamma(a_post)) -
     0.5 * (A * a_post / b_post + B)

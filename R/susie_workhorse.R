@@ -119,10 +119,10 @@ susie_workhorse <- function(data, params) {
   # Set ELBO from iterations
   model$elbo <- elbo[2:(iter + 1)]
 
-  # For NIG prior, scale prior variance by residual variance mode.
-  if (isTRUE(params$use_NIG))
-    model$V <- model$V * model$rv
-    
+  # Prior variances on the scale the fit reports (the NIG prior fits them
+  # relative to the residual variance)
+  model <- finalize_prior_variance(data, params, model)
+
   # Zero out effects with negligible prior variance
   model <- trim_null_effects(data, params, model)
 

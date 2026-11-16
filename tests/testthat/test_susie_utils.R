@@ -467,10 +467,10 @@ test_that("validate_and_override_params validates and adjusts parameters", {
   nig_params$convergence_method <- "elbo"
   nig_params$estimate_prior_method <- "simple"
   expect_message(result <- validate_and_override_params(nig_params), "PIP-based convergence")
-  expect_message(result <- validate_and_override_params(nig_params), "EM")
   expect_true(result$use_NIG)
   expect_equal(result$convergence_method, "pip")
-  expect_equal(result$estimate_prior_method, "EM")
+  # The prior variance method is kept (each maximizes the NIG likelihood)
+  expect_equal(result$estimate_prior_method, "simple")
 
   # NIG does NOT override convergence method when L = 1
   nig_params_l1 <- valid_params
@@ -506,7 +506,8 @@ test_that("validate_and_override_params validates and adjusts parameters", {
   result <- validate_and_override_params(no_est_params)
   expect_equal(result$estimate_prior_method, "none")
 
-  # NIG with estimate_prior_variance = FALSE: EM override must NOT happen
+  # NIG with estimate_prior_variance = FALSE: the prior variance is not
+  # estimated
   nig_no_prior_params <- valid_params
   nig_no_prior_params$estimate_residual_method <- "NIG"
   nig_no_prior_params$estimate_prior_variance <- FALSE
@@ -515,14 +516,16 @@ test_that("validate_and_override_params validates and adjusts parameters", {
   expect_true(result$use_NIG)
   expect_equal(result$estimate_prior_method, "none")
 
-  # NIG with estimate_prior_variance = TRUE overrides to EM
+  # NIG with estimate_prior_variance = TRUE keeps the requested method
   nig_yes_prior_params <- valid_params
   nig_yes_prior_params$estimate_residual_method <- "NIG"
   nig_yes_prior_params$estimate_prior_variance <- TRUE
   nig_yes_prior_params$estimate_prior_method <- "simple"
-  expect_message(result <- validate_and_override_params(nig_yes_prior_params), "EM")
+  expect_no_message(
+    result <- validate_and_override_params(nig_yes_prior_params),
+    message = "estimate_prior_method")
   expect_true(result$use_NIG)
-  expect_equal(result$estimate_prior_method, "EM")
+  expect_equal(result$estimate_prior_method, "simple")
 
   # NIG rejects invalid alpha0/beta0 combinations
   for (bad_pair in list(
@@ -679,6 +682,58 @@ test_that("validate_and_override_params rejects inf + MLE and overrides inf resi
   expect_true(res_inf$estimate_residual_variance)
 })
 
+test_that("unmappable effects with the NIG prior are rejected on every data type", {
+  # Only individual_data_constructor used to check, so SS and RSS fits failed
+  # later, in the SER ("replacement has length zero")
+  set.seed(5)
+  n <- 200; p <- 20
+  X <- matrix(rnorm(n * p), n, p)
+  y <- X[, 3] + rnorm(n)
+  Xc <- scale(X, scale = FALSE)
+  yc <- y - mean(y)
+  ur <- univariate_regression(X, y)
+  R1 <- cor(X[1:100, ])
+  R2 <- cor(X[101:200, ])
+  for (ue in c("inf", "ash")) {
+    msg <- paste0("The combination of unmappable_effects = '", ue,
+                  "' with estimate_residual_method = 'NIG' is not supported")
+    expect_error(suppressWarnings(suppressMessages(susie_ss(
+      crossprod(Xc), as.vector(crossprod(Xc, yc)), sum(yc^2), n, L = 5,
+      unmappable_effects = ue, estimate_residual_method = "NIG"))), msg)
+    expect_error(suppressWarnings(suppressMessages(susie_rss(
+      z = ur$betahat / ur$sebetahat, R = cor(X), n = n, L = 5,
+      unmappable_effects = ue, estimate_residual_method = "NIG"))), msg)
+    # Multi-panel: SuSiE-inf's stage 1 runs without unmappable effects, so
+    # its stage 2 (SuSiE-inf on the weighted reference) is what is rejected
+    expect_error(suppressWarnings(suppressMessages(susie_rss(
+      z = ur$betahat / ur$sebetahat, R = list(R1, R2), n = n, L = 5,
+      unmappable_effects = ue, estimate_residual_method = "NIG"))), msg)
+  }
+})
+
+test_that("NIG keeps the requested prior variance method and converges", {
+  # NIG used to force EM, whose one step per iteration left the unused
+  # effects' prior variances creeping for hundreds of iterations at NIG's
+  # tol: this fit did not converge within the default max_iter = 100
+  set.seed(3)
+  n <- 2000; p <- 30
+  X <- matrix(rnorm(n * p), n, p) %*% chol(0.6^abs(outer(1:p, 1:p, "-")))
+  y <- X[, 10] * 0.3 + rnorm(n)
+  Xc <- scale(X, scale = FALSE)
+  yc <- y - mean(y)
+  fit_nig <- function(...) suppressWarnings(suppressMessages(susie_ss(
+    crossprod(Xc), as.vector(crossprod(Xc, yc)), sum(yc^2), n, L = 5,
+    estimate_residual_method = "NIG", ...)))
+  fit <- fit_nig()
+  expect_true(fit$converged)
+  expect_lt(fit$niter, 100)
+  # EM, when asked for, reaches the same fit, much more slowly
+  fit_em <- fit_nig(estimate_prior_method = "EM", max_iter = 1000)
+  expect_true(fit_em$converged)
+  expect_gt(fit_em$niter, fit$niter)
+  expect_equal(fit$pip, fit_em$pip, tolerance = 1e-5)
+})
+
 test_that("validate_and_override_params rejects wrong-length scaled_prior_variance", {
   base_params <- list(
     prior_tol = 1e-9,
@@ -805,6 +860,68 @@ test_that("NIG final model reports prior variance in y units", {
   expect_true("rv" %in% names(fit))
   expect_equal(fit$V / fit$rv, scaled_prior_variance, tolerance = 1e-12)
   expect_gt(abs(fit$V - scaled_prior_variance), 1)
+})
+
+test_that("finalize_prior_variance reports NIG prior variances in y units", {
+  data <- structure(list(), class = "individual")
+  model <- list(V = c(0.2, 0.3), rv = c(2, 3))
+  expect_equal(finalize_prior_variance(data, list(use_NIG = TRUE), model)$V,
+               c(0.4, 0.9))
+  expect_equal(finalize_prior_variance(data, list(use_NIG = FALSE), model)$V,
+               c(0.2, 0.3))
+})
+
+test_that("susie_workhorse maps prior variances through finalize_prior_variance", {
+  # The generic is an extension point: a data class's method replaces the
+  # default mapping of the fitted prior variances
+  set.seed(5)
+  X <- matrix(rnorm(50 * 10), 50, 10)
+  y <- X[, 2] + rnorm(50)
+  obj <- susie(X, y, L = 2, init_only = TRUE)
+  class(obj$data) <- c("finalize_test", class(obj$data))
+  registerS3method("finalize_prior_variance", "finalize_test",
+                   function(data, params, model) {
+                     model$finalized_by <- "finalize_test"
+                     model
+                   }, envir = asNamespace("susieR"))
+  fit <- susie_workhorse(obj$data, obj$params)
+  expect_identical(fit$finalized_by, "finalize_test")
+})
+
+test_that("NIG warm starts keep the prior variance on its relative scale", {
+  # Under NIG the fit works with prior variances relative to the residual
+  # variance and reports them times rv. A warm start from a returned fit
+  # (model_init) undoes that, and slots added by growing L start on the
+  # relative scale; otherwise V was rescaled once more at the end
+  set.seed(1)
+  n <- 60; p <- 50
+  X <- matrix(rnorm(n * p), n, p)
+  b <- rep(0, p); b[c(5, 20)] <- 1
+  y <- 10 * drop(X %*% b + rnorm(n))
+  fit_nig <- function(...) suppressWarnings(suppressMessages(susie(
+    X, y, estimate_residual_method = "NIG", estimate_prior_variance = FALSE,
+    scaled_prior_variance = 0.2, ...)))
+  fixed <- fit_nig(L = 4)
+  expect_equal(fixed$V / fixed$rv, rep(0.2, 4), tolerance = 1e-12)
+  warm  <- fit_nig(L = 4, model_init = fixed)
+  grown <- fit_nig(L = 6, model_init = fixed)
+  expect_equal(warm$V / warm$rv, rep(0.2, 4), tolerance = 1e-12)
+  expect_equal(grown$V / grown$rv, rep(0.2, 6), tolerance = 1e-12)
+
+  # A fit made without NIG reports V in y units, sigma2 times the relative
+  # scale; a fit without NIG takes a NIG fit's V as reported
+  plain <- suppressWarnings(susie(X, y, L = 4, estimate_prior_variance = FALSE,
+                                  scaled_prior_variance = 0.2))
+  from_plain <- fit_nig(L = 4, model_init = plain)
+  expect_equal(from_plain$V / from_plain$rv, plain$V / plain$sigma2,
+               tolerance = 1e-12)
+  to_plain <- suppressWarnings(susie(X, y, L = 4, model_init = fixed,
+                                     estimate_prior_variance = FALSE))
+  expect_equal(to_plain$V, fixed$V, tolerance = 1e-12)
+
+  # A warm start with neither rv nor sigma2 (one built by hand) keeps its V
+  init <- list(V = c(0.2, 0.3))
+  expect_identical(model_init_fit_scale(list(use_NIG = TRUE), init), init)
 })
 
 test_that("expand_scaled_prior_variance recycles scalar and preserves vector", {
@@ -1141,29 +1258,31 @@ test_that("mom_unmappable estimates sigma2 and tau2 via method of moments", {
   data <- setup$data; params <- setup$params; model <- setup$model
   params$verbose <- FALSE
 
+  # The second moments of SER posteriors with mean 0 and precision omega
   L <- nrow(model$alpha)
   omega_res <- compute_omega_quantities(data, model$tau2, model$sigma2)
   omega <- matrix(0, L, data$p)
   for (l in seq_len(L)) omega[l, ] <- omega_res$diagXtOmegaX + 1 / model$V[l]
+  model$mu2 <- 1 / omega
 
-  result <- mom_unmappable(data, params, model, omega, tau2 = model$tau2,
+  result <- mom_unmappable(data, params, model, tau2 = model$tau2,
                            est_tau2 = TRUE, est_sigma2 = TRUE)
   expect_true(all(c("sigma2", "tau2") %in% names(result)))
   expect_true(result$sigma2 > 0)
   expect_true(result$tau2 >= 0)
 
-  result_sigma_only <- mom_unmappable(data, params, model, omega, tau2 = 0.01,
+  result_sigma_only <- mom_unmappable(data, params, model, tau2 = 0.01,
                                       est_tau2 = FALSE, est_sigma2 = TRUE)
   expect_true(result_sigma_only$sigma2 > 0)
   expect_equal(result_sigma_only$tau2, 0.01)
 
   params_verbose <- params; params_verbose$verbose <- TRUE
   expect_message(
-    mom_unmappable(data, params_verbose, model, omega, tau2 = model$tau2,
+    mom_unmappable(data, params_verbose, model, tau2 = model$tau2,
                    est_tau2 = TRUE, est_sigma2 = TRUE),
     "Update \\(sigma\\^2,tau\\^2\\) to")
   expect_message(
-    mom_unmappable(data, params_verbose, model, omega, tau2 = 0.01,
+    mom_unmappable(data, params_verbose, model, tau2 = 0.01,
                    est_tau2 = FALSE, est_sigma2 = TRUE),
     "Update sigma\\^2 to")
 })
@@ -1173,26 +1292,28 @@ test_that("mle_unmappable estimates sigma2 and tau2 via MLE", {
   data <- setup$data; params <- setup$params; model <- setup$model
   params$verbose <- FALSE
 
+  # The second moments of SER posteriors with mean 0 and precision omega
   L <- nrow(model$alpha)
   omega_res <- compute_omega_quantities(data, model$tau2, model$sigma2)
   omega <- matrix(0, L, data$p)
   for (l in seq_len(L)) omega[l, ] <- omega_res$diagXtOmegaX + 1 / model$V[l]
+  model$mu2 <- 1 / omega
 
-  result <- mle_unmappable(data, params, model, omega, est_tau2 = TRUE, est_sigma2 = TRUE)
+  result <- mle_unmappable(data, params, model, est_tau2 = TRUE, est_sigma2 = TRUE)
   expect_true(all(c("sigma2", "tau2") %in% names(result)))
   expect_true(result$sigma2 > 0)
   expect_true(result$tau2 >= 0)
 
-  result_sigma_only <- mle_unmappable(data, params, model, omega,
+  result_sigma_only <- mle_unmappable(data, params, model,
                                       est_tau2 = FALSE, est_sigma2 = TRUE)
   expect_true(result_sigma_only$sigma2 > 0)
 
   params_verbose <- params; params_verbose$verbose <- TRUE
   expect_message(
-    mle_unmappable(data, params_verbose, model, omega, est_tau2 = TRUE, est_sigma2 = TRUE),
+    mle_unmappable(data, params_verbose, model, est_tau2 = TRUE, est_sigma2 = TRUE),
     "Update \\(sigma\\^2,tau\\^2\\) to")
   expect_message(
-    mle_unmappable(data, params_verbose, model, omega, est_tau2 = FALSE, est_sigma2 = TRUE),
+    mle_unmappable(data, params_verbose, model, est_tau2 = FALSE, est_sigma2 = TRUE),
     "Update sigma\\^2 to")
 })
 
@@ -1208,10 +1329,11 @@ test_that("mle_unmappable warns and retains previous params when optim fails", {
   omega_res <- compute_omega_quantities(data, model$tau2, model$sigma2)
   omega <- matrix(0, L, data$p)
   for (l in seq_len(L)) omega[l, ] <- omega_res$diagXtOmegaX + 1 / model$V[l]
+  model$mu2 <- 1 / omega
 
   data_bad <- data; data_bad$yty <- 0
   expect_message(
-    result <- mle_unmappable(data_bad, params, model, omega,
+    result <- mle_unmappable(data_bad, params, model,
                              est_tau2 = TRUE, est_sigma2 = TRUE),
     "failed to converge")
   expect_equal(result$sigma2, model$sigma2)

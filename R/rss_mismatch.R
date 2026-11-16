@@ -17,6 +17,10 @@
 #   * per-iteration region-level fit (fit_R_mismatch)
 #   * residual R-mismatch QC diagnostic Q_art (always with R_mismatch)
 #   * Bayes-factor attenuation diagnostic for CS reliability
+#   * final diagnostics on the fitted model (finalize_R_diagnostics)
+#
+# The steps that read the data's LD are generics on data (see
+# get_mixture_omega below).
 #
 # Storage convention on the model:
 #   model$lambda_bias    scalar set once per iteration by fit_R_mismatch
@@ -126,6 +130,68 @@ summarize_R_bf_attenuation <- function(model, threshold = 30) {
   model
 }
 
+# Final R diagnostics on the fitted model (ibss_finalize()): the data's
+# finite-reference diagnostics, with the fitted R-mismatch state, the QC
+# and Bayes-factor attenuation summaries, and the reliability warning.
+# SS / ss_mixture paths store lambda_bias / B_corrected as scalars (set by
+# fit_R_mismatch once per iteration). The rss_lambda dispatch keeps the
+# per-slot vector form. Copy whatever shape lives on the model.
+#' @keywords internal
+#' @noRd
+finalize_R_diagnostics <- function(data, params, model) {
+  UseMethod("finalize_R_diagnostics")
+}
+
+#' @keywords internal
+#' @noRd
+finalize_R_diagnostics.default <- function(data, params, model) {
+  R_finite_diagnostics <- data$R_finite_diagnostics
+  if (is.null(R_finite_diagnostics))
+    return(model)
+  model$R_finite_diagnostics <- R_finite_diagnostics
+  if (!is.null(model$lambda_bias))
+    model$R_finite_diagnostics$lambda_bias <- model$lambda_bias
+  if (!is.null(model$B_corrected))
+    model$R_finite_diagnostics$B_corrected <- model$B_corrected
+  if (!is.null(data$R_mismatch))
+    model$R_finite_diagnostics$R_mismatch <- data$R_mismatch
+  if (!is.null(model$shat2_inflation))
+    model$R_finite_diagnostics$per_variable_penalty <- as.vector(model$shat2_inflation - 1)
+  # Q_art / artifact fields are present only when R_mismatch is active
+  # (set by fit_R_mismatch). Copy whichever exist.
+  for (fld in c("Q_art", "artifact_flag", "artifact_evaluable",
+                "low_eigen_count", "low_eigen_fraction", "eig_delta",
+                "mode_label", "R_mismatch_method"))
+    if (!is.null(model[[fld]]))
+      model$R_finite_diagnostics[[fld]] <- model[[fld]]
+  if (!is.null(model$R_mismatch_trace))
+    model$R_finite_diagnostics$R_mismatch_trace <- model$R_mismatch_trace
+  if (!is.null(model$R_mismatch_init))
+    model$R_finite_diagnostics$R_mismatch_init <- model$R_mismatch_init
+  if (!is.null(model$R_mismatch_ser_model))
+    model$R_finite_diagnostics$ser_model <- model$R_mismatch_ser_model
+  threshold <- if (!is.null(params$R_sensitivity_threshold))
+                 params$R_sensitivity_threshold else 30
+  model <- summarize_R_bf_attenuation(model, threshold)
+  model$R_finite_diagnostics$R_reliability_flag <-
+    isTRUE(model$R_finite_diagnostics$artifact_flag) ||
+    isTRUE(model$R_finite_diagnostics$R_sensitivity_flag)
+  if (isTRUE(model$R_finite_diagnostics$R_reliability_flag)) {
+    msg <- paste0("Possible summary statistics and R reference mismatch detected. ",
+                  "Fine-mapping results may be unreliable; inspect ",
+                  "fit$R_finite_diagnostics for details.")
+    if (!is.null(model$R_finite_diagnostics$ser_model)) {
+      msg <- paste0(msg, " A one-effect diagnostic is available at ",
+                    "fit$R_finite_diagnostics$ser_model; it is a ",
+                    "one-effect credible-set model as in Maller et al. 2012, ",
+                    "and its alpha row is the PIP.")
+    }
+    warning_message(msg)
+    warning(msg, call. = FALSE)
+  }
+  model
+}
+
 # =============================================================================
 # FINITE-REFERENCE SETUP AND DIAGNOSTICS
 # =============================================================================
@@ -215,12 +281,25 @@ compute_R_finite_diagnostics <- function(X = NULL, R = NULL, B, p,
   )
 }
 
+# The R-mismatch steps below that read the data's LD (the current mixture
+# weights and reference size, the eigen basis of the QC diagnostic, the
+# one-effect initialization and its LD coherence, the per-iteration fit and
+# the final diagnostics) are generics on data, with today's bodies as the
+# default methods, which packages building on susie_workhorse (e.g.
+# mvsusieR, with one LD reference per outcome) extend.
+
 # Resolve the current mixture weights for ss_mixture objects. During
 # initialization model$omega may not yet exist, so fall back to the constructor's
 # initial omega rather than an unrelated uniform mixture.
 #' @keywords internal
 #' @noRd
 get_mixture_omega <- function(data, model) {
+  UseMethod("get_mixture_omega")
+}
+
+#' @keywords internal
+#' @noRd
+get_mixture_omega.default <- function(data, model) {
   if (!inherits(data, "ss_mixture") || is.null(data$K))
     return(NULL)
   omega <- if (!is.null(model[["omega"]])) model[["omega"]] else data[["omega_init"]]
@@ -240,6 +319,12 @@ get_mixture_omega <- function(data, model) {
 #' @keywords internal
 #' @noRd
 get_current_R_finite_B <- function(data, model) {
+  UseMethod("get_current_R_finite_B")
+}
+
+#' @keywords internal
+#' @noRd
+get_current_R_finite_B.default <- function(data, model) {
   if (inherits(data, "ss_mixture") && !is.null(data$B_list)) {
     omega <- get_mixture_omega(data, model)
     return(1 / sum(omega^2 / data$B_list))
@@ -263,6 +348,8 @@ get_current_R_finite_B <- function(data, model) {
 # defines a data-driven floor: estimates below 0.1 * SE_0 are zeroed.
 # This both suppresses Brent boundary noise and replaces ad-hoc display
 # thresholds with one rule; "none" short-circuits before optimization.
+# The optimization itself is optimize_lambda_bias(), shared with other
+# likelihoods of the same component.
 #' @keywords internal
 estimate_lambda_bias <- function(r, s, sigma2, R_finite_B, method,
                                  R_mismatch_method = "mle") {
@@ -281,36 +368,45 @@ estimate_lambda_bias <- function(r, s, sigma2, R_finite_B, method,
   fisher_info0 <- 0.5 * sum((cache$s / cache$base)^2)
   se_boundary <- if (fisher_info0 > 0) sqrt(1 / fisher_info0) else Inf
 
-  if (R_mismatch_method == "mle") {
-    upper_lambda <- max(c(1, 100 / R_finite_B, 10 * pos), na.rm = TRUE)
-    nll <- function(lambda_bias) {
-      tau <- cache$base + lambda_bias * cache$s
-      0.5 * sum(log(tau) + cache$r2 / tau)
-    }
-    while (is.finite(upper_lambda) &&
-           upper_lambda < .Machine$double.xmax / 10 &&
-           nll(upper_lambda) < nll(upper_lambda / 2)) {
+  nll <- function(lambda_bias) {
+    tau <- cache$base + lambda_bias * cache$s
+    0.5 * sum(log(tau) + cache$r2 / tau)
+  }
+  prior_scale <- sqrt(max(1 / R_finite_B, 1 / 10000))
+  upper_lambda <- max(c(1, 100 / R_finite_B,
+                        if (R_mismatch_method == "map") 100 * prior_scale^2,
+                        10 * pos), na.rm = TRUE)
+  optimize_lambda_bias(nll, upper_lambda, se_boundary, R_mismatch_method,
+                       prior_scale)
+}
+
+# The estimate of lambda_bias minimizing a negative log-likelihood
+# nll(lambda_bias): the MLE on [0, upper] (upper grows while nll still
+# falls there), or the MAP with a half-Cauchy prior of scale prior_scale on
+# u = sqrt(lambda_bias), searched on [0, sqrt(upper)]. Estimates below
+# 0.1 * se_boundary (the Fisher-information SE at lambda_bias = 0) are
+# zeroed.
+#' @keywords internal
+#' @noRd
+optimize_lambda_bias <- function(nll, upper, se_boundary, method,
+                                 prior_scale) {
+  if (method == "mle") {
+    while (is.finite(upper) &&
+           upper < .Machine$double.xmax / 10 &&
+           nll(upper) < nll(upper / 2)) {
       # nocov start  (defensive)
-      upper_lambda <- upper_lambda * 10
+      upper <- upper * 10
       # nocov end
     }
-    opt <- optimize(nll, interval = c(0, upper_lambda), tol = 1e-8)
+    opt <- optimize(nll, interval = c(0, upper), tol = 1e-8)
     if (nll(0) <= opt$objective)
       return(0)
     return(if (opt$minimum < 0.1 * se_boundary) 0 else opt$minimum)
   }
 
-  prior_scale <- sqrt(max(1 / R_finite_B, 1 / 10000))
-  upper_lambda <- max(c(1, 100 / R_finite_B, 100 * prior_scale^2,
-                        10 * pos), na.rm = TRUE)
-  upper_u <- sqrt(upper_lambda)
-
-  nll <- function(u) {
-    lambda_bias <- u^2
-    tau <- cache$base + lambda_bias * cache$s
-    0.5 * sum(log(tau) + cache$r2 / tau) + log1p((u / prior_scale)^2)
-  }
-  lambda_hat <- optimize(nll, interval = c(0, upper_u), tol = 1e-8)$minimum^2
+  nll_u <- function(u) nll(u^2) + log1p((u / prior_scale)^2)
+  lambda_hat <- optimize(nll_u, interval = c(0, sqrt(upper)),
+                         tol = 1e-8)$minimum^2
 
   if (lambda_hat < 0.1 * se_boundary) 0 else lambda_hat
 }
@@ -343,8 +439,9 @@ compute_shat2_inflation <- function(data, model, XtXr_without_l, b_minus_l, r) {
     # eb_mix estimates the same regional component as eb, then applies only the
     # population term locally as w_j * lambda. Here w_j is the per-variant
     # mismatch probability; the finite-reference term B^{-1} is unchanged.
+    nm1 <- if (!is.null(data$nm1)) data$nm1 else (data$n - 1)
     w <- compute_mixture_gate(r, eta2, R_finite_B, lambda_bias, model$sigma2,
-                              data, z_marginal = data$z_marginal,
+                              nm1, z_marginal = data$z_marginal,
                               z_ref = if (!is.null(data$eb_mix_z_ref))
                                         data$eb_mix_z_ref else
                                         mixture_reference_p_to_z(5e-8))
@@ -426,15 +523,14 @@ estimate_eb_mix_vsig <- function(r_z, tau_det2, pi_signal = 0.5) {
 #   mismatch ~ N(0, tau_det2_j),  signal ~ N(0, V_sig)   [wide]
 #   tau_det2_j = sigma2 + (1/B + lambda) * eta_j^2   [eta-only: drops v_g, preserves new signals]
 # Prior odds are determined by the region-level marginal BF ratio.
-# Returns w_j = Pr(mismatch | r_z_j) in [0, 1].
+# nm1 is n - 1, the scale of r. Returns w_j = Pr(mismatch | r_z_j) in [0, 1].
 #' @keywords internal
-compute_mixture_gate <- function(r, eta2, R_finite_B, lambda_bias, sigma2, data,
+compute_mixture_gate <- function(r, eta2, R_finite_B, lambda_bias, sigma2, nm1,
                                  z_marginal = NULL,
                                  z_ref = mixture_reference_p_to_z(5e-8)) {
   if (!is.numeric(z_ref) || length(z_ref) != 1L ||
       !is.finite(z_ref) || z_ref < 0)
     stop("z_ref must be a single nonnegative finite numeric value.")
-  nm1 <- if (!is.null(data$nm1)) data$nm1 else (data$n - 1)
   if (!is.finite(nm1) || nm1 <= 0) return(rep(1, length(eta2)))
   r_z <- r / sqrt(nm1)
   tau_det2 <- pmax(sigma2 + (1 / R_finite_B + lambda_bias) * eta2,
@@ -487,6 +583,13 @@ apply_inflation_state <- function(model, infl_state) {
 #'   r_fit_j ~ N(0, sigma2 + (1/B + lambda) * xi_fit_j)
 #' using the estimator selected by R_mismatch_method.
 #'
+#' The fitted values include theta, in beta_bar and XtXr_full: for
+#' SuSiE-ash, whose single effect regressions subtract X'X theta, so that
+#' the signal theta absorbs is not read as a mismatch of R; for SuSiE-inf,
+#' theta set to 0 near the sparse effects (near_sparse_effects, as SuSiE-ash
+#' masks its theta), since its posterior mean would otherwise take up the
+#' signal a mismatch of R leaves next to them, and lambda_bias would stay 0.
+#'
 #' The same lambda_bias fit is followed by the Q_art diagnostic; see
 #' compute_Q_art. The diagnostic does not change lambda_bias or the SER
 #' likelihood.
@@ -508,6 +611,19 @@ compute_R_mismatch_state <- function(data, params, model, phase = "sweep") {
   XtXr_full <- if (!is.null(model$XtXr))
                  model$XtXr
                else compute_Rv(data, b_full)
+  is_ash <- params$unmappable_effects %in% c("ash", "ash_filter_archived")
+  if (is_ash && !is.null(model$theta)) {
+    XtXr_full <- XtXr_full + (if (!is.null(model$XtX_theta))
+                                model$XtX_theta
+                              else compute_Rv(data, model$theta))
+    b_full <- b_full + model$theta
+  }
+  if (params$unmappable_effects == "inf" && !is.null(model$theta)) {
+    near <- near_sparse_effects(susie_get_pip(model$alpha),
+                                get_xcorr(data)$Xcorr)
+    b_full    <- b_full + replace(model$theta, near, 0)
+    XtXr_full <- compute_Rv(data, b_full)
+  }
   nm1 <- if (!is.null(data$nm1)) data$nm1 else (data$n - 1)
   if (!is.finite(nm1) || nm1 <= 0) return(model)
 
@@ -600,17 +716,29 @@ compute_R_mismatch_state <- function(data, params, model, phase = "sweep") {
 #' @keywords internal
 #' @noRd
 initialize_R_mismatch <- function(data, params, model) {
+  UseMethod("initialize_R_mismatch")
+}
+
+#' @keywords internal
+#' @noRd
+initialize_R_mismatch.default <- function(data, params, model) {
   R_mismatch <- if (!is.null(params$R_mismatch)) params$R_mismatch else "none"
   R_finite_B <- if (!is.null(model$R_finite_B)) model$R_finite_B else data$R_finite_B
   should_init <- R_mismatch %in% c("eb", "eb_mix", "eb_force_init") ||
-                 (R_mismatch == "eb_ser_init" && is.infinite(R_finite_B))
+                 (R_mismatch == "eb_ser_init" && all(is.infinite(R_finite_B)))
   if (!should_init || !inherits(data, c("ss", "ss_mixture")) ||
       nrow(model$alpha) < 1)
     return(model)
 
   model <- single_effect_update(data, params, model, 1L)
+  # As in a sweep (ibss_fit), the effect's slot activity follows its fit, so
+  # the lambda fit below counts the effect in full rather than at its prior
+  # activity (1/3 under SuSiE-ash's default slot prior), which would read the
+  # rest of it as a mismatch of R.
+  if (!is.null(model$c_hat_state))
+    model <- update_c_hat(data, model, 1L)
   model$R_mismatch_ser_model <- make_R_mismatch_ser_model(data, params, model, 1L)
-  model <- compute_R_mismatch_state(data, params, model, phase = "init_ser")
+  model <- fit_R_mismatch(data, params, model, phase = "init_ser")
   init_coherence <- if (R_mismatch %in% c("eb", "eb_mix")) compute_ser_ld_coherence(data, model, model$alpha[1, ]) else 1
   model$lambda_bias <- init_coherence * model$lambda_bias
   model$R_mismatch_init <- list(
@@ -627,6 +755,12 @@ initialize_R_mismatch <- function(data, params, model) {
 #' @keywords internal
 #' @noRd
 compute_ser_ld_coherence <- function(data, model, alpha) {
+  UseMethod("compute_ser_ld_coherence")
+}
+
+#' @keywords internal
+#' @noRd
+compute_ser_ld_coherence.default <- function(data, model, alpha) {
   alpha <- as.numeric(alpha)
   alpha[!is.finite(alpha) | alpha < 0] <- 0
   if (sum(alpha) <= 0)
@@ -660,10 +794,18 @@ compute_ser_ld_coherence <- function(data, model, alpha) {
   pmin(1, pmax(0, as.numeric(crossprod(alpha, (R * R) %*% alpha))))
 }
 
+# The region-level R-mismatch fit, once per IBSS iteration (phase "sweep")
+# and after the one-effect initialization ("init_ser").
 #' @keywords internal
 #' @noRd
-fit_R_mismatch <- function(data, params, model) {
-  compute_R_mismatch_state(data, params, model, phase = "sweep")
+fit_R_mismatch <- function(data, params, model, phase = "sweep") {
+  UseMethod("fit_R_mismatch")
+}
+
+#' @keywords internal
+#' @noRd
+fit_R_mismatch.default <- function(data, params, model, phase = "sweep") {
+  compute_R_mismatch_state(data, params, model, phase = phase)
 }
 
 #' One-effect diagnostic model for R_mismatch initialization.
@@ -671,6 +813,12 @@ fit_R_mismatch <- function(data, params, model) {
 #' @keywords internal
 #' @noRd
 make_R_mismatch_ser_model <- function(data, params, model, l = 1L) {
+  UseMethod("make_R_mismatch_ser_model")
+}
+
+#' @keywords internal
+#' @noRd
+make_R_mismatch_ser_model.default <- function(data, params, model, l = 1L) {
   ser <- list(
     alpha = model$alpha[l, , drop = FALSE],
     mu = model$mu[l, , drop = FALSE],
@@ -700,6 +848,12 @@ make_R_mismatch_ser_model <- function(data, params, model, l = 1L) {
 # back to the initialized X_meta crossproduct.
 #' @keywords internal
 get_R_mismatch_eigen <- function(data, model) {
+  UseMethod("get_R_mismatch_eigen")
+}
+
+#' @keywords internal
+#' @noRd
+get_R_mismatch_eigen.default <- function(data, model) {
   if (!is.null(model$eigen_R))
     return(model$eigen_R)
   if (!is.null(data$eigen_R) && !inherits(data, "ss_mixture"))

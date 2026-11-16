@@ -140,6 +140,20 @@ test_that("summary tolerates susiex tuples with missing fields (skips them)", {
   expect_equal(s$susiex_n_kept,  1L)
 })
 
+test_that("summary keeps marginals computed without the configuration table", {
+  fits <- list(coloc_real_fit(11), coloc_real_fit(12))
+  res <- susie_post_outcome_configuration(fits, by = "fit",
+                                          config_probability = FALSE)
+  s <- summary(res, color = FALSE, signal_only = FALSE)
+  expect_equal(nrow(s$susiex), length(res$susiex))
+  expect_true(all(is.na(s$susiex$top_pattern)))
+  expect_true(all(is.na(s$susiex$top_prob)))
+  expect_equal(
+    unname(unlist(s$susiex[1, c("trait_1", "trait_2")])),
+    unname(attr(res$susiex[[1]], "raw")$marginal_prob))
+  expect_true(length(capture.output(print(s))) > 0L)
+})
+
 test_that("summary prefixes trait names that collide with reserved column names", {
   # Trait literally named "tuple" must not clobber the CS-tuple column.
   tup <- coloc_tuple(c("tuple", "top_prob"),

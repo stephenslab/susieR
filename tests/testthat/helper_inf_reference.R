@@ -117,8 +117,33 @@ compare_to_inf_reference <- function(func_name, args, tolerance = 1e-10) {
   dev_result <- suppressWarnings(suppressMessages(do.call(dev_func, args)))
   ref_result <- suppressWarnings(suppressMessages(do.call(ref_func, args)))
 
-  expect_equal_susie_inf_objects(dev_result, ref_result, tolerance, X = args$X)
+  expect_equal_susie_inf_objects(dev_result, ref_result, tolerance, X = args$X,
+                                 args = args)
   invisible(list(dev = dev_result, ref = ref_result))
+}
+
+# -----------------------------------------------------------------------
+# inf_theta_at_fit
+#
+# theta in closed form at a fit's final sparse effects and variances: the
+# posterior mean of the unmappable effects on the standardized scale,
+# tau2 (sigma2 I + tau2 X'X)^-1 X'(y - X b), from the fit's arguments
+# (X and y, or XtX and Xty).
+# -----------------------------------------------------------------------
+inf_theta_at_fit <- function(fit, args) {
+  if (!is.null(args$X)) {
+    Xc  <- scale(args$X, center = TRUE, scale = FALSE)
+    XtX <- crossprod(Xc)
+    Xty <- as.vector(crossprod(Xc, args$y - mean(args$y)))
+  } else {
+    XtX <- args$XtX
+    Xty <- as.vector(args$Xty)
+  }
+  csd <- fit$X_column_scale_factors
+  XtX <- t(XtX / csd) / csd
+  b   <- colSums(fit$alpha * fit$mu)
+  fit$tau2 * as.vector(solve(fit$sigma2 * diag(nrow(XtX)) + fit$tau2 * XtX,
+                             Xty / csd - XtX %*% b))
 }
 
 # -----------------------------------------------------------------------
@@ -127,10 +152,12 @@ compare_to_inf_reference <- function(func_name, args, tolerance = 1e-10) {
 # Deep comparison of susie / susie_ss objects with unmappable_effects = "inf".
 # Compares all standard fit fields (alpha, mu, mu2, V, sigma2, elbo, pip,
 # niter, sets) plus the inf-specific (tau2, theta).  Skips fields that are
-# NULL in both objects.
+# NULL in both objects.  The reference reports theta from the variance update
+# before its last sweep; dev reports it at the final fit, so with the fit's
+# arguments (`args`) dev's theta is checked against its closed form there.
 # -----------------------------------------------------------------------
 expect_equal_susie_inf_objects <- function(dev_obj, ref_obj, tolerance = 1e-10,
-                                           X = NULL) {
+                                           X = NULL, args = NULL) {
   # Core posterior
   expect_equal(dev_obj$alpha,  ref_obj$alpha,  tolerance = tolerance,
                info = "alpha differs")
@@ -147,8 +174,9 @@ expect_equal_susie_inf_objects <- function(dev_obj, ref_obj, tolerance = 1e-10,
   # vector on the individual path -- ignore the attribute, compare values.
   expect_equal(dev_obj$tau2,   ref_obj$tau2,   tolerance = tolerance,
                info = "tau2 differs")
-  expect_equal(as.vector(dev_obj$theta), as.vector(ref_obj$theta),
-               tolerance = tolerance, info = "theta differs")
+  if (!is.null(args))
+    expect_equal(as.vector(dev_obj$theta), inf_theta_at_fit(dev_obj, args),
+                 tolerance = tolerance, info = "theta is not at the final fit")
 
   # ELBO & convergence (elbo is a vector; niter / converged are scalars)
   if (!is.null(dev_obj$elbo) || !is.null(ref_obj$elbo))
@@ -173,13 +201,13 @@ expect_equal_susie_inf_objects <- function(dev_obj, ref_obj, tolerance = 1e-10,
   }
 
   # Intercept (susie only; susie_ss objects may not carry one). The reference
-  # intercept omits theta; dev includes it, so put the reference on the dev
-  # convention before comparing.
+  # intercept omits theta; dev includes it (its own, at the final fit), so put
+  # the reference on the dev convention before comparing.
   if (!is.null(dev_obj$intercept) || !is.null(ref_obj$intercept)) {
     ref_intercept <- ref_obj$intercept
-    if (!is.null(X) && !is.null(ref_obj$theta))
+    if (!is.null(X) && !is.null(dev_obj$theta))
       ref_intercept <- ref_intercept -
-        sum(colMeans(X) * as.vector(ref_obj$theta) / ref_obj$X_column_scale_factors)
+        sum(colMeans(X) * as.vector(dev_obj$theta) / ref_obj$X_column_scale_factors)
     expect_equal(dev_obj$intercept, ref_intercept, tolerance = tolerance,
                  info = "intercept differs")
   }
