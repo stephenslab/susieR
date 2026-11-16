@@ -15,6 +15,8 @@ susie_post_outcome_configuration(
   p1 = 1e-04,
   p2 = 1e-04,
   p12 = 5e-06,
+  config_probability = TRUE,
+  max_traits = 20L,
   ...
 )
 }
@@ -55,6 +57,19 @@ Defaults match \code{coloc::coloc.bf_bf}: \code{p1 = p2 = 1e-4},
 \code{p12 = 5e-6}. Only used when \code{"coloc_pairwise"} is in
 \code{method}.}
 
+\item{config_probability}{Logical. If \code{TRUE} (default), the SuSiEx
+output enumerates all \eqn{2^N} configurations into
+\code{config_probability}. If \code{FALSE}, that table is
+\code{NULL} and only the per-trait marginal activation probabilities
+are reported, computed without enumeration: the configuration
+posterior is a mixture over variants of independent per-trait
+activations, so the marginals cost \eqn{O(NJ)} and \code{max_traits}
+does not apply.}
+
+\item{max_traits}{Largest number of trait views for which the
+\eqn{2^N} configurations are enumerated. Default \code{20}; larger
+values take time and memory that double with each further trait.}
+
 \item{...}{Currently ignored.}
 }
 \value{
@@ -67,7 +82,8 @@ components, depending on \code{method}:
     equal to the number of CS tuples considered, named \code{config_1},
     \code{config_2}, etc. Each element has
     components \code{config_probability} (binary trait-activation table
-    with a \code{config_prob} column) and \code{config_summary}
+    with a \code{config_prob} column; \code{NULL} when
+    \code{config_probability = FALSE}) and \code{config_summary}
     (CS-level post-hoc activation summary, with one row per trait). For one
     multi-output \code{mvsusie} or \code{mfsusie} fit, both \code{$susiex}
     and \code{$mvsusie} are named by CS label, e.g. \code{L1}; each

@@ -128,6 +128,17 @@
 #'   Defaults match \code{coloc::coloc.bf_bf}: \code{p1 = p2 = 1e-4},
 #'   \code{p12 = 5e-6}. Only used when \code{"coloc_pairwise"} is in
 #'   \code{method}.
+#' @param config_probability Logical. If \code{TRUE} (default), the SuSiEx
+#'   output enumerates all \eqn{2^N} configurations into
+#'   \code{config_probability}. If \code{FALSE}, that table is
+#'   \code{NULL} and only the per-trait marginal activation probabilities
+#'   are reported, computed without enumeration: the configuration
+#'   posterior is a mixture over variants of independent per-trait
+#'   activations, so the marginals cost \eqn{O(NJ)} and \code{max_traits}
+#'   does not apply.
+#' @param max_traits Largest number of trait views for which the
+#'   \eqn{2^N} configurations are enumerated. Default \code{20}; larger
+#'   values take time and memory that double with each further trait.
 #' @param ... Currently ignored.
 #'
 #' @return \code{NULL} if fewer than two trait views are available for
@@ -139,7 +150,8 @@
 #'     equal to the number of CS tuples considered, named \code{config_1},
 #'     \code{config_2}, etc. Each element has
 #'     components \code{config_probability} (binary trait-activation table
-#'     with a \code{config_prob} column) and \code{config_summary}
+#'     with a \code{config_prob} column; \code{NULL} when
+#'     \code{config_probability = FALSE}) and \code{config_summary}
 #'     (CS-level post-hoc activation summary, with one row per trait). For one
 #'     multi-output \code{mvsusie} or \code{mfsusie} fit, both \code{$susiex}
 #'     and \code{$mvsusie} are named by CS label, e.g. \code{L1}; each
@@ -170,6 +182,8 @@ susie_post_outcome_configuration <- function(input,
                                              p1          = 1e-4,
                                              p2          = 1e-4,
                                              p12         = 5e-6,
+                                             config_probability = TRUE,
+                                             max_traits  = 20L,
                                              ...) {
   by_missing <- missing(by)
   by     <- match.arg(by)
@@ -178,6 +192,15 @@ susie_post_outcome_configuration <- function(input,
   if (!is.numeric(prob_thresh) || length(prob_thresh) != 1L ||
       !is.finite(prob_thresh) || prob_thresh < 0 || prob_thresh > 1) {
     stop("`prob_thresh` must be a single numeric in [0, 1].")
+  }
+  if (!is.logical(config_probability) || length(config_probability) != 1L ||
+      is.na(config_probability)) {
+    stop("`config_probability` must be a single logical (TRUE or FALSE).")
+  }
+  if (!is.numeric(max_traits) || length(max_traits) != 1L ||
+      is.na(max_traits) || max_traits < 1 ||
+      max_traits != round(max_traits)) {
+    stop("`max_traits` must be a single positive whole number.")
   }
   if (!is.numeric(single_effect_lfsr_cutoff) ||
       length(single_effect_lfsr_cutoff) != 1L ||
@@ -205,7 +228,9 @@ susie_post_outcome_configuration <- function(input,
       outcome_names = outcome_names,
       single_effect_lfsr_cutoff = single_effect_lfsr_cutoff,
       prob_thresh = prob_thresh,
-      cs_only = cs_only
+      cs_only = cs_only,
+      config_probability = config_probability,
+      max_traits = max_traits
     )
     if (is.null(multi_output)) return(NULL)
     out$mvsusie <- multi_output$mvsusie
@@ -229,7 +254,10 @@ susie_post_outcome_configuration <- function(input,
     if (identical(method, "susiex")) {
       out$susiex <- susiex_configurations(views,
                                           by          = by,
-                                          prob_thresh = prob_thresh)
+                                          prob_thresh = prob_thresh,
+                                          max_traits  = max_traits,
+                                          config_probability =
+                                            config_probability)
     } else {
       # method == "coloc_pairwise"
       out$coloc_pairwise <- coloc_pairwise_abf(views,
@@ -468,26 +496,58 @@ enumerate_cs_tuples <- function(views, by, cs_only) {
   .logsum(logbf)
 }
 
-#' @importFrom stats setNames
+# Per-trait marginal activation probabilities of one CS tuple without
+# enumerating the 2^N configurations. Taking BF_n(v) = 0 where trait n
+# lacks variant v, a configuration's Bayes factor is the mean over the
+# variant space of prod_{n active} BF_n(v) (.susiex_config_logbf()), so
+# the sum over configurations factorises by variant: the posterior is a
+# mixture over variants v, with weight proportional to
+# prod_n (1 + BF_n(v)), of independent activations with probability
+# BF_n(v) / (1 + BF_n(v)). The marginals equal crossprod(configs,
+# config_prob) of the enumeration.
+.susiex_marginal_prob <- function(tuple, views, variant_keys,
+                                  variant_space) {
+  lbf <- matrix(-Inf, length(variant_space), length(views))
+  for (n in seq_along(views)) {
+    idx <- match(variant_keys[[n]], variant_space)
+    lbf[idx, n] <- views[[n]]$lbf[tuple[n], ]
+  }
+  # log(1 + BF), computed stably for large and for -Inf log BFs.
+  log1p_bf <- pmax(lbf, 0) + log1p(exp(-abs(lbf)))
+  log_w <- rowSums(log1p_bf)
+  w <- exp(log_w - max(log_w))
+  as.vector(crossprod(w / sum(w), plogis(lbf)))
+}
+
+#' @importFrom stats setNames plogis
 #' @noRd
 susiex_configurations <- function(views, by, prob_thresh,
                                   max_traits = 20L,
-                                  name_by = c("config", "cs")) {
+                                  name_by = c("config", "cs"),
+                                  config_probability = TRUE) {
   name_by <- match.arg(name_by)
   N <- length(views)
-  if (N > max_traits) {
+  if (config_probability && N > max_traits) {
     stop("susiex: N = ", N, " traits exceeds the safety ceiling (",
-         max_traits, "); 2^N enumeration would be too large.")
+         max_traits, "); 2^N enumeration would be too large. Raise ",
+         "`max_traits`, or set `config_probability = FALSE` for the ",
+         "per-trait marginals alone.")
   }
 
   cs_tuples <- enumerate_cs_tuples(views, by = by, cs_only = TRUE)
   if (length(cs_tuples) == 0L) return(list())
 
-  configs <- as.matrix(expand.grid(rep(list(c(0L, 1L)), N)))
-  colnames(configs) <- paste0("trait_", seq_len(N))
+  configs <- if (config_probability) {
+    cfg <- as.matrix(expand.grid(rep(list(c(0L, 1L)), N)))
+    colnames(cfg) <- paste0("trait_", seq_len(N))
+    cfg
+  } else {
+    NULL
+  }
   trait_names <- vapply(views, function(v) v$name, character(1))
   variant_keys <- lapply(views, .view_variant_keys)
-  variant_space_size <- length(Reduce(union, variant_keys))
+  variant_space <- Reduce(union, variant_keys)
+  variant_space_size <- length(variant_space)
 
   out <- vector("list", length(cs_tuples))
   for (ti in seq_along(cs_tuples)) {
@@ -514,19 +574,25 @@ susiex_configurations <- function(views, by, prob_thresh,
       next
     }
 
-    logBF_conf    <- vapply(seq_len(nrow(configs)), function(m) {
-      .susiex_config_logbf(
-        config = configs[m, ],
-        tuple = tuple,
-        views = views,
-        variant_keys = variant_keys,
-        variant_space_size = variant_space_size
-      )
-    }, numeric(1))
-    maxlog        <- max(logBF_conf)
-    prob_conf     <- exp(logBF_conf - maxlog)
-    prob_conf     <- prob_conf / sum(prob_conf)
-    marginal_prob <- as.vector(crossprod(configs, prob_conf))
+    if (config_probability) {
+      logBF_conf    <- vapply(seq_len(nrow(configs)), function(m) {
+        .susiex_config_logbf(
+          config = configs[m, ],
+          tuple = tuple,
+          views = views,
+          variant_keys = variant_keys,
+          variant_space_size = variant_space_size
+        )
+      }, numeric(1))
+      maxlog        <- max(logBF_conf)
+      prob_conf     <- exp(logBF_conf - maxlog)
+      prob_conf     <- prob_conf / sum(prob_conf)
+      marginal_prob <- as.vector(crossprod(configs, prob_conf))
+    } else {
+      prob_conf     <- NULL
+      marginal_prob <- .susiex_marginal_prob(tuple, views, variant_keys,
+                                             variant_space)
+    }
     names(logBF_trait) <- names(marginal_prob) <- trait_names
     active <- setNames(marginal_prob >= prob_thresh, trait_names)
 
@@ -752,7 +818,9 @@ mvsusie_cs_purity <- function(fit, label, idx) {
 multi_output_susiex_summary <- function(input, outcome_names = NULL,
                                         single_effect_lfsr_cutoff = 0.05,
                                         prob_thresh = 0.8,
-                                        cs_only) {
+                                        cs_only,
+                                        config_probability = TRUE,
+                                        max_traits = 20L) {
   fit <- as_single_mvsusie_fit(input)
   native <- mvsusie_cs_summary(
     fit,
@@ -773,7 +841,9 @@ multi_output_susiex_summary <- function(input, outcome_names = NULL,
 
   sx <- susiex_configurations(views, by = "outcome",
                               prob_thresh = prob_thresh,
-                              name_by = "cs")
+                              max_traits = max_traits,
+                              name_by = "cs",
+                              config_probability = config_probability)
 
   list(mvsusie = native,
        susiex = sx)
@@ -816,8 +886,10 @@ mvsusie_cs_summary <- function(input, outcome_names = NULL,
     sentinel_lfsr_mat <- as.matrix(sentinel_lfsr_mat)
   }
   effect_lbf <- rep(NA_real_, nrow(fit$alpha))
-  if (!is.null(fit$lbf)) {
-    lbf <- as.numeric(unlist(fit$lbf, use.names = FALSE))
+  # [[ rather than $: on a fit without `lbf`, `$` would prefix-match a
+  # single `lbf_variable_outcome` and read that array as the effect lbfs.
+  if (!is.null(fit[["lbf"]])) {
+    lbf <- as.numeric(unlist(fit[["lbf"]], use.names = FALSE))
     effect_lbf[seq_len(min(length(lbf), length(effect_lbf)))] <- lbf
   }
   variable_names <- mvsusie_names(
@@ -1149,9 +1221,11 @@ summary.susie_post_outcome_configuration <- function(
 # fully filtered.
 #
 # Defensive against per-tuple field omissions: a tuple missing
-# `marginal_prob` or `config_prob` is silently skipped. Trait names that
-# collide with reserved columns are prefixed with "trait_". Trait sets
-# that vary across tuples are unioned.
+# `marginal_prob`, or carrying a malformed `config_prob`, is silently
+# skipped. A tuple without the configuration table (computed with
+# `config_probability = FALSE`) keeps its marginals, with no top pattern.
+# Trait names that collide with reserved columns are prefixed with
+# "trait_". Trait sets that vary across tuples are unioned.
 .summarise_susiex <- function(susiex, signal_only, prob_thresh) {
   if (is.null(susiex) || !is.list(susiex) || length(susiex) == 0L) {
     return(list(df = NULL, n_total = 0L, n_kept = 0L))
@@ -1178,8 +1252,12 @@ summary.susie_post_outcome_configuration <- function(
 
   rows <- lapply(susiex, function(tup) {
     raw <- .susiex_raw(tup)
-    if (!is.list(raw) || is.null(raw$marginal_prob) ||
-        is.null(raw$config_prob) || is.null(raw$configs)) {
+    if (!is.list(raw) || is.null(raw$marginal_prob)) {
+      return(NULL)
+    }
+    marginal_only <- is.null(raw$config_prob) && is.null(raw$configs)
+    if (!marginal_only &&
+        (is.null(raw$config_prob) || is.null(raw$configs))) {
       return(NULL)
     }
     mp <- raw$marginal_prob
@@ -1189,10 +1267,13 @@ summary.susie_post_outcome_configuration <- function(
       if (!any(is.finite(mp) & mp >= prob_thresh)) return(NULL)
     }
     cp <- raw$config_prob
-    if (length(cp) == 0L || !all(is.finite(cp))) return(NULL)
-    top_idx <- which.max(cp)
+    if (!marginal_only && (length(cp) == 0L || !all(is.finite(cp)))) {
+      return(NULL)
+    }
+    top_idx <- if (marginal_only) NA_integer_ else which.max(cp)
     cfg     <- raw$configs
-    top_pat <- if (is.matrix(cfg) && nrow(cfg) >= top_idx) {
+    top_pat <- if (!marginal_only && is.matrix(cfg) &&
+                   nrow(cfg) >= top_idx) {
       paste(cfg[top_idx, ], collapse = "")
     } else NA_character_
     cs_idx_str <- if (!is.null(raw$cs_indices)) {
@@ -1206,7 +1287,7 @@ summary.susie_post_outcome_configuration <- function(
       } else NA_real_
     }
     out$top_pattern <- top_pat
-    out$top_prob    <- as.numeric(cp[top_idx])
+    out$top_prob    <- if (marginal_only) NA_real_ else as.numeric(cp[top_idx])
     out
   })
   rows <- rows[!vapply(rows, is.null, logical(1))]
