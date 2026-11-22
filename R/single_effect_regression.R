@@ -57,6 +57,11 @@ single_effect_regression <- function(data, params, model, l) {
     model <- out$model
 
     model <- set_prior_variance_l(model, l, V)
+    if (isTRUE(params$use_NIG) && params$estimate_prior_method == "EM") {
+      # EM changes V after the E-step; return the posterior at the new V.
+      model <- loglik(data, params, model, V, ser_stats, l)
+      model <- calculate_posterior_moments(data, params, model, V, l)
+    }
     model
   }
 
@@ -84,8 +89,11 @@ gaussian_ser_lbf <- function(betahat, shat2, V) {
 #'
 #' @keywords internal
 #' @noRd
-apply_ser_lbf <- function(model, lbf, shat2, l = NULL) {
-  stable_res  <- lbf_stabilization(lbf, model$pi, shat2)
+apply_ser_lbf <- function(model, lbf, shat2, l = NULL, exact_prior = FALSE) {
+  stable_res <- if (exact_prior)
+    list(lbf = lbf, lpo = lbf + log(model$pi))
+  else
+    lbf_stabilization(lbf, model$pi, shat2)
   weights_res <- compute_posterior_weights(stable_res$lpo)
 
   if (is.null(l))
@@ -314,7 +322,26 @@ optimize_prior_variance.default <- function(data, params, model, ser_stats,
                                             alpha   = NULL,
                                             moments = NULL,
                                             V_init  = NULL) {
-  if (params$estimate_prior_method == "EM") {
+  if (isTRUE(params$use_NIG) && params$estimate_prior_method == "optim") {
+    # Bracket separated modes on log(1 + V * mean(d)), as in the simulations.
+    active <- model$predictor_weights > 0 & model$pi > 0
+    V <- V_init
+    score <- function(v) loglik(data, params, model, v, ser_stats)
+    if (any(active)) {
+      dscale <- mean(model$predictor_weights[active])
+      grid <- seq(0, max(30, log1p(V * dscale) + 2), length.out = 61)
+      scores <- vapply(grid, function(t) score(expm1(t) / dscale), 0.0)
+      peaks <- which(scores >= c(-Inf, head(scores, -1)) &
+                       scores >= c(utils::tail(scores, -1), -Inf))
+      candidates <- c(0, V, expm1(grid[peaks]) / dscale)
+      for (k in peaks) {
+        opt <- optimize(function(t) -score(expm1(t) / dscale),
+                        c(grid[max(1, k - 1)], grid[min(length(grid), k + 1)]))
+        candidates <- c(candidates, expm1(opt$minimum) / dscale)
+      }
+      V <- candidates[which.max(vapply(candidates, score, 0.0))]
+    }
+  } else if (params$estimate_prior_method == "EM") {
     V <- em_update_prior_variance(data, params, model, alpha, moments, V_init)
   } else {
     V <- optimize_scalar_prior_variance(
@@ -330,6 +357,9 @@ optimize_prior_variance.default <- function(data, params, model, ser_stats,
       check_null_threshold = params$check_null_threshold)
   }
 
+  if (isTRUE(params$use_NIG) && params$estimate_prior_method != "none" &&
+      loglik(data, params, model, V, ser_stats) <= params$check_null_threshold)
+    V <- 0
   list(V = V, model = model)
 }
 

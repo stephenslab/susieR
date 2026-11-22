@@ -603,14 +603,14 @@ test_that("susie_ss with NIG prior (L=1) produces well-formed posterior and remo
   expect_s3_class(fit, "susie")
   expect_length(fit$pip, ss$p)
   expect_length(fit$KL, 1)
-  expect_true(all(is.finite(fit$KL)))
+  expect_true(all(is.na(fit$KL)))
   expect_equal(rowSums(fit$alpha), 1, tolerance = 1e-8)
   expect_true(all(is.finite(fit$mu)))
   expect_true(all(fit$mu2 >= fit$mu^2 - 1e-8))
   expect_null(fit$marginal_loglik)
 })
 
-test_that("susie_ss with NIG prior (L>1) sets KL=0 for each component", {
+test_that("susie_ss with NIG prior (L>1) leaves KL undefined for each component", {
   ss <- .make_ss_stats(seed = 102)
 
   fit <- suppressWarnings(suppressMessages(susie_ss(
@@ -620,11 +620,11 @@ test_that("susie_ss with NIG prior (L>1) sets KL=0 for each component", {
 
   expect_s3_class(fit, "susie")
   expect_length(fit$KL, 3)
-  expect_true(all(fit$KL == 0))
+  expect_true(all(is.na(fit$KL)))
   expect_equal(rowSums(fit$alpha), rep(1, 3), tolerance = 1e-8)
 })
 
-test_that("calculate_posterior_moments.ss NIG with V<=0 sets mu/mu2 to zero and rv[l]=1", {
+test_that("calculate_posterior_moments.ss NIG with V=0 retains the null residual variance posterior", {
   ss   <- .make_ss_stats(n = 150, p = 10, seed = 103)
   ctor <- sufficient_stats_constructor(
     XtX = ss$XtX, Xty = ss$Xty, yty = ss$yty, n = ss$n, L = 1,
@@ -636,14 +636,15 @@ test_that("calculate_posterior_moments.ss NIG with V<=0 sets mu/mu2 to zero and 
   data   <- ctor$data
   params <- ctor$params
   var_y  <- get_var_y.ss(data)
-  model  <- initialize_susie_model.ss(data, params, var_y)
+  model  <- ibss_initialize(data, params)
   model  <- compute_residuals.ss(data, params, model, 1)
 
   model  <- calculate_posterior_moments.ss(data, params, model, V = 0, l = 1)
 
   expect_equal(model$mu[1, ],  rep(0, data$p), tolerance = 1e-15)
   expect_equal(model$mu2[1, ], rep(0, data$p), tolerance = 1e-15)
-  expect_equal(model$rv[1], 1, tolerance = 1e-15)
+  expect_equal(model$rv[1], (params$beta0 + ss$yty) /
+                 (params$alpha0 + params$n_effective - 2), tolerance = 1e-15)
 })
 
 test_that("compute_residuals.ss computes a positive yy_residual under the NIG prior", {

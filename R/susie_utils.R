@@ -631,12 +631,8 @@ validate_and_override_params <- function(params) {
 
   tol <- params$tol
   use_NIG_method <- identical(params$estimate_residual_method, "NIG")
-  if (is.null(tol) && use_NIG_method)
-    warning_message("tol was not specified; setting tol = 1e-6 for ",
-                    "the NIG prior to improve convergence.",
-                    style = "hint")
   params$tol <- if (is.null(tol)) {
-    if (use_NIG_method) 1e-6 else 1e-4
+    1e-4
   } else {
     tol
   }
@@ -786,8 +782,8 @@ validate_and_override_params <- function(params) {
   if (use_NIG_method) {
     params$use_NIG <- TRUE
 
-    # Require a valid sample size n. The default alpha0/beta0 scale as
-    # 1/sqrt(n), so n must be a positive finite scalar. susie() infers
+    # Require a valid sample size for the residual degrees of freedom.
+    # susie() infers
     # this from nrow(X); susie_ss()'s constructor enforces it; susie_rss()
     # allows n = NULL by default, so users who select NIG must also
     # supply `n` explicitly.
@@ -799,10 +795,11 @@ validate_and_override_params <- function(params) {
            "pass `n` explicitly.")
     }
 
+    default_prior <- is.null(params$alpha0) && is.null(params$beta0)
     if (is.null(params$alpha0))
-      params$alpha0 <- 1 / sqrt(params$n)
+      params$alpha0 <- 2
     if (is.null(params$beta0))
-      params$beta0 <- 1 / sqrt(params$n)
+      params$beta0 <- params$alpha0 * params$response_variance
 
     # Validate NIG prior parameters: both must be strictly positive for a proper
     # Inverse-Gamma prior. Otherwise compute_null_loglik_NIG() evaluates
@@ -815,7 +812,7 @@ validate_and_override_params <- function(params) {
       stop("estimate_residual_method = \"NIG\" requires ",
            "alpha0 > 0 and beta0 > 0 (proper Inverse-Gamma prior). ",
            "Got alpha0 = ", params$alpha0, ", beta0 = ", params$beta0, ". ",
-           "The default is alpha0 = beta0 = 1/sqrt(n).")
+           "Defaults are alpha0 = 2 and beta0 = alpha0 * response variance.")
     }
 
     # The NIG prior inherently estimates residual variance (integrates out sigma^2).
@@ -832,17 +829,35 @@ validate_and_override_params <- function(params) {
       params$estimate_residual_variance <- TRUE
     }
 
-    # Override convergence method only when L > 1
-    if (params$L > 1 && params$convergence_method != "pip") {
-      params$convergence_method <- force_pip("NIG method with L > 1")
-    }
-
-    # Override prior variance estimation method (only when estimation is enabled)
-    if (params$estimate_prior_variance && params$estimate_prior_method != "EM") {
-      warning_message("NIG method works better with EM. ",
-                      "Setting estimate_prior_method='EM'.",
-                      style = "hint")
-      params$estimate_prior_method <- "EM"
+    if (!is.null(params$model_init) &&
+        !identical(params$model_init$V_parameterization, "variance_ratio"))
+      stop("NIG requires model_init from the corrected variance-ratio implementation.")
+    if (!is.null(params$response_variance) &&
+        (!is.finite(params$response_variance) || params$response_variance <= 0))
+      stop("NIG requires a positive finite response variance.")
+    if (any(!is.finite(params$scaled_prior_variance)))
+      stop("NIG prior variance ratios must be finite.")
+    if (is.null(params$n_effective))
+      params$n_effective <- params$n - as.integer(isTRUE(params$intercept))
+    if (params$n_effective + params$alpha0 <= 2)
+      stop("NIG posterior second moments require n_effective + alpha0 > 2.")
+    if (!is.null(params$refine) && params$refine)
+      stop("Refinement is not supported with NIG: GIBSS has no joint ELBO.")
+    if (params$unmappable_effects != "none" || !is.null(params$slot_prior) ||
+        params$estimate_prior_method == "fixed_mixture")
+      stop("NIG requires a scalar prior per effect, without unmappable effects or slot_prior.")
+    if (params$estimate_prior_method == "uniroot")
+      stop("Use optim, EM or simple for NIG prior estimation.")
+    if (isTRUE(params$verbose)) {
+      msg <- paste0("Using GIBSS with the NIG prior; for L > 1 there is no ",
+                    "joint ELBO. Convergence uses changes in alpha, mu, mu2 and V.")
+      if (default_prior)
+        msg <- paste0(msg, " Default parameterization: b | sigma2 ~ N(0, sigma2 * V), ",
+                      "sigma2 ~ IG(alpha0/2, beta0/2), with alpha0 = 2 and ",
+                      "beta0 = 2 * response variance, fixed before fitting; ",
+                      "V is a variance ratio (initial scaled_prior_variance = ",
+                      paste(params$scaled_prior_variance, collapse = ", "), ").")
+      warning_message(msg, style = "hint")
     }
   } else {
     params$use_NIG <- FALSE
@@ -921,7 +936,8 @@ adjust_L <- function(params, model_init_pruned, var_y) {
     L <- num_effects
   }
 
-  V <- expand_scaled_prior_variance(params$scaled_prior_variance, var_y, L)
+  V <- expand_scaled_prior_variance(
+    params$scaled_prior_variance, if (isTRUE(params$use_NIG)) 1 else var_y, L)
   model_init <- extract_model_init_fields(
     model_init_pruned, L = L, V = V,
     estimate_residual_variance = params$estimate_residual_variance)
@@ -1482,7 +1498,7 @@ nig_kl_inputs <- function(data, params, model, l) {
 compute_lbf_NIG_univariate <- function(x, y, s0, alpha0 = 0, beta0 = 0) {
   x <- x - mean(x)
   y <- y - mean(y)
-  n <- length(x)
+  n <- length(x) - 1
   xx <- sum(x * x)
   xy <- sum(x * y)
   yy <- sum(y * y)
@@ -1492,73 +1508,46 @@ compute_lbf_NIG_univariate <- function(x, y, s0, alpha0 = 0, beta0 = 0) {
   return((log(1 - r0) - (n + alpha0) * log(ratio)) / 2)
 }
 
+# b | sigma2 ~ N(0, sigma2 * V); sigma2 ~ IG(a0/2, b0/2).
+# n is the residual dimension after integrating out the intercept.
+#' @keywords internal
+nig_posterior_parameters <- function(n, xx, xy, yy, V, a0, b0, tau = 1) {
+  if (n + a0 <= 2)
+    stop("NIG posterior second moments require n_effective + alpha0 > 2.")
+  active <- xx > 0
+  explained <- numeric(length(xx))
+  explained[active] <- (xy[active] / sqrt(xx[active]))^2
+  # Orthogonal decomposition avoids cancellation near a perfect fit.
+  omega <- if (V == 0) numeric(length(xx)) else 1 / (xx / tau + 1 / V)
+  rate2 <- b0 + pmax(yy - explained, 0) + explained / (1 + V * xx / tau)
+  list(mu = omega * xy / tau, omega = omega, rate2 = rate2,
+       shape = (n + a0) / 2)
+}
+
 # Compute log Bayes factors under Normal-Inverse-Gamma (NIG) prior
 #' @keywords internal
 compute_lbf_NIG <- function(n, xx, xy, yy, sxy, s0, a0, b0, tau = 1) {
-  r0 <- s0 / (s0 + tau / xx)
-  rss <- yy * (1 - r0 * sxy^2)
-
-  # Update inverse-gamma parameters
-  a1 <- a0 + n
-  b1 <- b0 + rss
-
-  # Compute log Bayes factor for each variable
-  lbf <- -(log(1 + s0 * xx / tau) + a1 * log(b1 / (b0 + yy))) / 2
-
-  return(lbf)
+  post <- nig_posterior_parameters(n, xx, xy, yy, s0, a0, b0, tau)
+  -0.5 * log1p(s0 * xx / tau) - post$shape * log(post$rate2 / (b0 + yy))
 }
 
 # Compute posterior moments under Normal-Inverse-Gamma (NIG) prior
 #' @keywords internal
 compute_posterior_moments_NIG <- function(n, xx, xy, yy, sxy, s0, a0, b0, tau = 1) {
-  r0 <- s0 / (s0 + tau / xx)
-  rss <- yy * (1 - r0 * sxy^2)
-
-  # Update inverse-gamma parameters
-  a1 <- a0 + n
-  b1 <- b0 + rss
-
-  # Compute least-squares estimate for each variable
-  bhat <- xy / xx
-
-  # Compute posterior mean
-  post_mean <- r0 * bhat
-
-  # Compute posterior variance
-  post_var <- b1 / (a1 - 2) * r0 * tau / xx
-
-  # Posterior mean of residual variance under IG((a0+n)/2, (b0+RSS)/2)
-  rv <- (b1 / 2) / (a1 / 2 - 1)
-
-  return(list(
-    post_mean  = post_mean,
-    post_mean2 = post_var + post_mean^2,
-    post_var   = post_var,
-    s_j_sq     = r0 * tau / xx,
-    rv         = rv
-  ))
+  post <- nig_posterior_parameters(n, xx, xy, yy, s0, a0, b0, tau)
+  rv <- post$rate2 / (2 * post$shape - 2)
+  post_var <- post$omega * rv
+  list(post_mean = post$mu, post_mean2 = post$mu^2 + post_var,
+       post_var = post_var, s_j_sq = post$omega, rv = rv,
+       shape = post$shape, rate = post$rate2 / 2,
+       scale2 = post$omega * post$rate2 / (2 * post$shape))
 }
 
-# EM update for prior variance under Normal-Inverse-Gamma (NIG) prior
+# E[b^2/sigma2 | gamma=j] = omega_j + mu_j^2 E[1/sigma2 | gamma=j].
 #' @keywords internal
 update_prior_variance_NIG_EM <- function(n, xx, xy, yy, sxy, pip, s0, a0, b0, tau = 1) {
-  r0   <- s0 / (s0 + tau / xx)
-  rss  <- yy * (1 - r0 * sxy^2)
-
-  # Update inverse-gamma parameters
-  a1   <- a0 + n
-  b1   <- b0 + rss
-
-  # Compute posterior mean and variance component
-  bhat <- xy / xx
-  post_mean  <- r0 * bhat
-  post_var   <- r0 * tau / xx
-
-  u  <- gamma(1/2) / beta(a1/2, 1/2)
-  mb <- post_mean * sqrt(2 / b1) * u
-  vb <- post_var + post_mean^2 * 2 / b1 * (1 / beta(a1/2, 1) - u^2)
-
-  return(sum(pip * (vb + mb^2)))
+  post <- nig_posterior_parameters(n, xx, xy, yy, s0, a0, b0, tau)
+  sum(pip * (post$omega + post$mu^2 * (2 * post$shape) / post$rate2))
 }
 
 # KL divergence for the NIG variational form. KL_beta uses the Gaussian-

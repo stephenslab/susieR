@@ -45,7 +45,8 @@ susie(
   alpha0 = NULL,
   beta0 = NULL,
   init_only = FALSE,
-  slot_prior = NULL
+  slot_prior = NULL,
+  prior = NULL
 )
 }
 \arguments{
@@ -62,7 +63,9 @@ the number of covariates, p, L is set to p.}
 non-zero element of b is \code{var(y) * scaled_prior_variance}. The
 value provided should be either a scalar or a vector of length
 \code{L}. If \code{estimate_prior_variance = TRUE}, this provides
-initial estimates of the prior variances.}
+initial estimates of the prior variances. For NIG, these are variance
+ratios \code{V} in \eqn{b \mid \sigma^2 \sim N(0,\sigma^2 V)};
+they are not multiplied by \code{var(y)}.}
 
 \item{residual_variance}{Variance of the residual. If
 \code{estimate_residual_variance = TRUE}, this value provides the
@@ -181,9 +184,11 @@ variable.}
 
 \item{na.rm}{Drop any missing values in y from both X and y.}
 
-\item{max_iter}{Maximum number of IBSS iterations to perform. For
-\code{susie_rss()} and \code{susie_rss_lambda()}, \code{NULL} uses
-\code{50} with a hint; other interfaces use \code{100}.}
+\item{max_iter}{Maximum number of iterations to perform. When omitted,
+defaults to 300 for NIG. Otherwise, \code{susie} and \code{susie_ss}
+default to 100; \code{susie_rss} and \code{susie_rss_lambda} use
+\code{NULL}, which selects 50 with a hint. An explicitly supplied
+iteration limit is retained.}
 
 \item{L_greedy}{Integer or \code{NULL}. When non-\code{NULL}, run a
 greedy outer loop that grows the number of effects from
@@ -196,19 +201,23 @@ fit.}
 
 \item{tol}{A small, non-negative number specifying the convergence
 tolerance for the IBSS fitting procedure. When \code{NULL}, the
-default is \code{1e-4}; for \code{estimate_residual_method = "NIG"},
-the default is tightened to \code{1e-6}.}
+default is \code{1e-4}. For NIG, this bounds the maximum absolute
+change in \code{alpha} and relative changes in \code{mu}, \code{mu2}
+and \code{V}, for two consecutive iterations.}
 
 \item{convergence_method}{When \code{converge_method = "elbo"} the fitting
 procedure halts when the difference in the variational lower bound, or
 \dQuote{ELBO} (the objective function to be maximized), is
 less than \code{tol}. When \code{converge_method = "pip"} the fitting
 procedure halts when the maximum absolute difference in \code{alpha} is less
-than \code{tol}.}
+than \code{tol}. NIG instead checks changes in all fitted parameters,
+as described for \code{alpha0}.}
 
 \item{verbose}{If \code{verbose = TRUE}, the algorithm's progress,
 a summary of the optimization settings, and refinement progress (if
-\code{refine = TRUE}) are printed to the console.}
+\code{refine = TRUE}) are printed to the console. For NIG, a GIBSS hint
+also describes the default parameterization unless \code{alpha0} or
+\code{beta0} is supplied.}
 
 \item{track_fit}{If \code{track_fit = TRUE}, a compact
 \code{susie_track} object is returned in \code{trace}, containing
@@ -241,17 +250,22 @@ variable whose absolute correlation with a set member exceeds the
 threshold (near-perfectly correlated proxies); \code{0.99} is the
 recommended value.}
 
-\item{alpha0}{Numerical parameter for the NIG prior when using
-\code{estimate_residual_method = "NIG"}. Defaults to
-\code{1/sqrt(n)}, where \code{n} is the sample size. When calling
-\code{susie_rss} with NIG, \code{n} must be supplied; otherwise
-validation errors.}
+\item{alpha0}{Positive parameter of the NIG prior
+\eqn{\sigma^2 \sim IG(\alpha_0/2,\beta_0/2)} (shape and rate).
+Defaults to 2. NIG integrates residual variance separately in each
+single-effect regression, using GIBSS for multiple effects. It checks
+changes in \code{alpha}, \code{mu}, \code{mu2} and \code{V}
+for two consecutive iterations, without a joint ELBO for \code{L > 1}.
+With an intercept, the residual dimension is \code{n - 1};
+\code{susie_ss} and \code{susie_rss} assume centered statistics.
+NIG requires \code{n} for summary statistics and does not support
+refinement, mixture priors, slot activity or unmappable effects.}
 
-\item{beta0}{Numerical parameter for the NIG prior when using
-\code{estimate_residual_method = "NIG"}. Defaults to
-\code{1/sqrt(n)}, where \code{n} is the sample size. When calling
-\code{susie_rss} with NIG, \code{n} must be supplied; otherwise
-validation errors.}
+\item{beta0}{Positive NIG rate parameter (twice the inverse-gamma rate).
+Defaults to \code{alpha0 * var(y)}, fixed from the original response
+before fitting. With \code{intercept = FALSE}, use \code{mean(y^2)};
+with sufficient statistics, use \code{yty/(n - 1)}. Users can supply
+either or both NIG parameters; supplied values are retained.}
 
 \item{init_only}{Logical. If \code{TRUE}, return a list with
 \code{data} and \code{params} objects without running the IBSS
@@ -269,6 +283,11 @@ active effects. When supplied, each single-effect slot has an
 estimated activity probability \code{c_hat}; fitted values and
 PIPs are weighted by these activity probabilities, and convergence
 is checked using \code{convergence_method = "pip"}.}
+
+\item{prior}{Optional prior selection: \code{"gaussian"} or
+\code{"nig"}. The latter is an alias for
+\code{estimate_residual_method = "NIG"}. If both are supplied,
+they must agree. With \code{NULL}, use \code{estimate_residual_method}.}
 }
 \value{
 A \code{"susie"} object with some or all of the following elements:
@@ -290,9 +309,18 @@ A \code{"susie"} object with some or all of the following elements:
 
 \item{sigma2}{Residual variance (fixed or estimated).}
 
-\item{V}{Prior variance of the non-zero elements of b.}
+\item{V}{Prior variance of the non-zero elements of b. For NIG, this is
+  a variance ratio: \eqn{b \mid \sigma^2 \sim N(0,\sigma^2 V)}.
+  The initial ratio is \code{scaled_prior_variance}.}
 
-\item{elbo}{The variational lower bound (or ELBO) achieved at each iteration.}
+\item{nig}{For NIG fits, the prior parameters, residual dimension and
+  conditional posterior shape, rate and Student t squared scale.}
+
+\item{V_parameterization}{For NIG fits, \code{"variance_ratio"}.}
+
+\item{elbo}{The variational lower bound (or ELBO) achieved at each iteration.
+  For NIG, the marginal log-likelihood when \code{L = 1}, and
+  \code{NA} when \code{L > 1}.}
 
 \item{fitted}{Vector of length n containing the fitted values.}
 

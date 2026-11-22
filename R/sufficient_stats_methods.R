@@ -252,21 +252,14 @@ SER_posterior_e_loglik.ss <- function(data, params, model, l) {
 #' @keywords internal
 calculate_posterior_moments.ss <- function(data, params, model, V, l, ...) {
   if (params$use_NIG) {
-    # NIG posterior moments
-    if (V <= 0) {
-      post_mean  <- rep(0, data$p)
-      post_mean2 <- rep(0, data$p)
-      model$rv[l] <- 1
-    } else {
-      nig_ss <- get_nig_sufficient_stats(data, model)
-      moments <- compute_posterior_moments_NIG(data$n, model$predictor_weights,
-                                               model$residuals, nig_ss$yy, nig_ss$sxy,
-                                               V, params$alpha0, params$beta0, nig_ss$tau)
-      post_mean  <- moments$post_mean
-      post_mean2 <- moments$post_mean2
-      model$rv[l] <- sum(model$alpha[l, ] * moments$rv)
-    }
-    moments <- list(post_mean = post_mean, post_mean2 = post_mean2)
+    nig_ss <- get_nig_sufficient_stats(data, model)
+    moments <- compute_posterior_moments_NIG(
+      params$n_effective, model$predictor_weights, model$residuals,
+      nig_ss$yy, nig_ss$sxy, V, params$alpha0, params$beta0, nig_ss$tau)
+    model$rv[l] <- sum(model$alpha[l, ] * moments$rv)
+    model$nig$shape[l] <- moments$shape
+    model$nig$rate[l, ] <- moments$rate
+    model$nig$scale2[l, ] <- moments$scale2
   } else {
     # Standard Gaussian posterior calculations
     shat2 <- model$residual_variance / model$predictor_weights
@@ -285,17 +278,7 @@ calculate_posterior_moments.ss <- function(data, params, model, V, l, ...) {
 #' @keywords internal
 compute_kl.ss <- function(data, params, model, l) {
   if (params$use_NIG) {
-    # NIG KL only valid for L=1 (gIBSS for L>1 has no coherent ELBO; supp. line 503)
-    if (params$L == 1) {
-      ki <- nig_kl_inputs(data, params, model, l)
-      model$KL[l] <- compute_kl_NIG(model$alpha[l, ], model$mu[l, ], model$mu2[l, ],
-                                     model$pi, model$V[l],
-                                     a0 = params$alpha0 / 2, b0 = params$beta0 / 2,
-                                     a_post = ki$a_post, b_post = ki$b_post,
-                                     s_j_sq = ki$s_j_sq)
-    } else {
-      model$KL[l] <- 0
-    }
+    model$KL[l] <- NA_real_
   } else {
     model <- compute_kl.default(data, params, model, l)
   }
@@ -370,7 +353,7 @@ loglik.ss <- function(data, params, model, V, ser_stats, l = NULL, ...) {
   if (params$use_NIG) {
     # NIG log Bayes factors
     nig_ss <- get_nig_sufficient_stats(data, model)
-    lbf <- compute_lbf_NIG(data$n, model$predictor_weights,
+    lbf <- compute_lbf_NIG(params$n_effective, model$predictor_weights,
                             model$residuals, nig_ss$yy, nig_ss$sxy,
                             V, params$alpha0, params$beta0, nig_ss$tau)
   } else {
@@ -378,7 +361,8 @@ loglik.ss <- function(data, params, model, V, ser_stats, l = NULL, ...) {
     lbf <- gaussian_ser_lbf(ser_stats$betahat, ser_stats$shat2, V)
   }
 
-  ser_res <- apply_ser_lbf(model, lbf, ser_stats$shat2, l)
+  ser_res <- apply_ser_lbf(model, lbf, ser_stats$shat2, l,
+                           exact_prior = params$use_NIG)
 
   # Store in model if l is provided, otherwise return lbf_model for prior variance optimization
   if (!is.null(l)) {
@@ -388,7 +372,7 @@ loglik.ss <- function(data, params, model, V, ser_stats, l = NULL, ...) {
 
     # Compute and store marginal log-likelihood for NIG prior
     if (params$use_NIG) {
-      model$marginal_loglik[l] <- compute_marginal_loglik(ser_res$lbf_model, data$n,
+      model$marginal_loglik[l] <- compute_marginal_loglik(ser_res$lbf_model, params$n_effective,
                                                            nig_ss$yy, params$alpha0, params$beta0,
                                                            TRUE)
     }

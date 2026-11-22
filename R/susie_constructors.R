@@ -362,6 +362,8 @@ individual_data_constructor <- function(X, y, L = min(10, ncol(X)),
     alpha0 = alpha0,
     beta0 = beta0,
     n = n,
+    n_effective = n - as.integer(intercept),
+    response_variance = if (intercept) var(drop(y)) else mean(y^2),
     use_NIG = FALSE,  # Will be set by validation function
     intercept = intercept,
     standardize = standardize,
@@ -639,6 +641,8 @@ sufficient_stats_constructor <- function(Xty, yty, n,
     alpha0 = alpha0,
     beta0 = beta0,
     n = n,
+    n_effective = n - 1,  # Sufficient statistics are centered.
+    response_variance = yty / (n - 1),
     use_NIG = FALSE,
     intercept = FALSE,  # SS always uses intercept = FALSE
     standardize = standardize,
@@ -761,8 +765,8 @@ summary_stats_constructor <- function(z = NULL, R = NULL, X = NULL,
 
   model_init <- resolve_model_init(model_init, s_init)
 
-  # NIG prior requires an explicit sample size n: the default alpha0/beta0
-  # scale as 1/sqrt(n) and the NIG marginal likelihood depends on n. Without
+  # NIG prior requires an explicit sample size n for the residual degrees
+  # of freedom and marginal likelihood. Without
   # n, summary_stats_constructor bumps n to 2 internally (see below), which
   # would silently corrupt the NIG posterior. Reject early with a clear error.
   if (estimate_residual_method == "NIG" &&
@@ -1371,6 +1375,8 @@ ss_mixture_constructor <- function(z, R = NULL, X = NULL, n,
     alpha0 = alpha0,
     beta0 = beta0,
     n = n,
+    n_effective = n - 1,
+    response_variance = 1,
     use_NIG = estimate_residual_method == "NIG",
     intercept = FALSE,
     standardize = standardize,

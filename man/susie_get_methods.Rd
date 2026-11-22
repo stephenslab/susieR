@@ -139,7 +139,7 @@ iteration of the IBSS fitting procedure.
 fixed) residual variance parameter.
 
 \code{susie_get_prior_variance} returns the (estimated or fixed)
-prior variance parameters.
+prior variance parameters (variance ratios for NIG fits).
 
 \code{susie_get_posterior_mean} returns the posterior mean for the
 regression coefficients of the fitted susie model. Note this is not
@@ -163,6 +163,8 @@ across variables for each single-effect, weighted by the posterior
 inclusion probability (alpha). Each conditional sign probability uses
 the posterior mean and variance for the same single-effect and variable.
 A posterior point mass at zero contributes a conditional lfsr of 1.
+NIG sign probabilities and posterior samples use the conditional Student t
+distributions obtained by integrating out residual variance.
 
 \code{susie_get_posterior_samples} returns a list containing the
 effect sizes samples and causal status with two components: \code{b},

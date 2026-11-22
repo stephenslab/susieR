@@ -283,7 +283,7 @@ em_update_prior_variance <- function(data, params, model, alpha, moments, V_init
 em_update_prior_variance.default <- function(data, params, model, alpha, moments, V_init) {
   if (!is.null(params$use_NIG) && params$use_NIG) {
     nig_ss <- get_nig_sufficient_stats(data, model)
-    return(update_prior_variance_NIG_EM(data$n, model$predictor_weights,
+    return(update_prior_variance_NIG_EM(params$n_effective, model$predictor_weights,
                                          model$residuals, nig_ss$yy, nig_ss$sxy,
                                          alpha, V_init, params$alpha0, params$beta0,
                                          nig_ss$tau))
@@ -320,9 +320,8 @@ update_variance_components <- function(data, params, model, ...) {
 #' @keywords internal
 update_variance_components.default <- function(data, params, model, ...) {
   if (isTRUE(params$use_NIG)) {
-    # Posterior mean of IG((alpha0+n)/2, (beta0+ERSS)/2)
-    sigma2 <- (params$beta0 + get_ER2(data, model)) /
-              (params$alpha0 + data$n - 2)
+    # GIBSS has one integrated residual variance distribution per effect.
+    sigma2 <- mean(model$rv)
   } else {
     sigma2 <- est_residual_variance(data, model)
   }

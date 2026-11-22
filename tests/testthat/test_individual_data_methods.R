@@ -112,7 +112,9 @@ test_that("calculate_posterior_moments.individual mu2 >= mu^2 (positive variance
 
 test_that("calculate_posterior_moments.individual V=0 zeroes mu and mu2", {
   setup <- setup_individual_data()
-  setup$params$use_NIG <- TRUE
+  setup <- individual_data_constructor(setup$data$X, setup$data$y,
+                                        estimate_residual_method = "NIG")
+  setup$model <- ibss_initialize(setup$data, setup$params)
 
   model <- compute_residuals.individual(setup$data, setup$params, setup$model, l = 1)
   model <- calculate_posterior_moments.individual(setup$data, setup$params, model, V = 0, l = 1)

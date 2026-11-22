@@ -9,15 +9,14 @@ context("susie NIG reference comparison")
 #
 # These tests compare our implementation of the NIG
 # prior, invoked via estimate_residual_method = "NIG",
-# against the reference implementation on the fix-susie-small-sigma-update
-# branch of stephenslab/susieR (commit a999d44), where the equivalent
+# against the corrected simulation implementation in william-denault/susieRsmall
+# (commit c93b09a), where the equivalent
 # feature is invoked via small = TRUE.
 #
 # Parameter mapping between the two interfaces:
 #   Dev:  estimate_residual_method = "NIG"  <->  Ref: small = TRUE
 #   Dev:  tol (convergence tolerance)                   <->  Ref: tol_small
-#   Dev:  convergence_method = "pip" (auto-set)         <->  Ref: (hard-coded PIP convergence)
-#   Dev:  estimate_prior_method = "EM" (auto-set)       <->  Ref: (forced to EM)
+#   Both use GIBSS parameter convergence and retain estimate_prior_method.
 #   Dev:  alpha0, beta0                                 <->  Ref: alpha0, beta0
 #
 # The helper function compare_NIG_to_reference() handles
@@ -40,9 +39,7 @@ test_that("NIG matches reference (small=TRUE) with defaults", {
 
   # Dev: estimate_residual_method = "NIG" (set by helper)
   # Ref: small = TRUE (mapped by helper)
-  # Reference defaults to alpha0 = beta0 = 0.1; dev's current default is
-  # 1/sqrt(n). The helper forces 0.1 on the dev side when the caller
-  # doesn't set these, so both runs use the same NIG hyperparameters.
+  # Both use alpha0 = 2 and beta0 = 2 * var(y) by default.
   dev_args <- list(X = X, y = y, L = 10)
   results  <- compare_NIG_to_reference(dev_args, tolerance = 1e-5)
 
@@ -54,7 +51,6 @@ test_that("NIG matches reference (small=TRUE) with defaults", {
 # =============================================================================
 
 test_that("NIG matches reference with L = 1", {
-  skip("L=1 uses different convergence methods between dev and ref")
   skip_if_no_nig_reference()
 
   set.seed(2)
@@ -352,7 +348,6 @@ test_that("NIG matches reference under null signal", {
 # =============================================================================
 
 test_that("NIG matches reference with L=1, standardize=FALSE", {
-  skip("L=1 uses different convergence methods between dev and ref")
   skip_if_no_nig_reference()
 
   set.seed(16)
@@ -889,7 +884,6 @@ test_that("NIG matches reference with tight tol = 1e-6", {
 
 # Part 39: null_weight = 0.5 (strong null prior)
 test_that("NIG matches reference with null_weight = 0.5", {
-  skip("null_weight + NIG triggers NA in loglik (dev-side bug)")
   skip_if_no_nig_reference()
 
   set.seed(122)
@@ -1037,7 +1031,6 @@ test_that("NIG matches reference with estimate_prior_variance=FALSE + intercept=
 
 # Part 46: L=1 + high noise
 test_that("NIG matches reference with L=1 + high noise", {
-  skip("L=1 uses different convergence methods between dev and ref")
   skip_if_no_nig_reference()
 
   set.seed(129)
@@ -1056,7 +1049,6 @@ test_that("NIG matches reference with L=1 + high noise", {
 
 # Part 47: L=1 + very small n
 test_that("NIG matches reference with L=1 + very small n", {
-  skip("L=1 uses different convergence methods between dev and ref")
   skip_if_no_nig_reference()
 
   set.seed(130)
@@ -1075,7 +1067,6 @@ test_that("NIG matches reference with L=1 + very small n", {
 
 # Part 48: L=1 + null signal (no true effect)
 test_that("NIG matches reference with L=1 + null signal", {
-  skip("L=1 uses different convergence methods between dev and ref")
   skip_if_no_nig_reference()
 
   set.seed(131)
@@ -1118,7 +1109,6 @@ test_that("SS matches individual: defaults (Part 1)", {
 # =============================================================================
 
 test_that("SS matches individual: L = 1 (Part 2)", {
-  skip("L=1 uses different convergence methods between dev and ref")
 
   set.seed(2)
   n <- 100; p <- 50
@@ -1304,7 +1294,6 @@ test_that("SS matches individual: null signal (Part 13)", {
 # =============================================================================
 
 test_that("SS matches individual: L=1, standardize=FALSE (Part 14)", {
-  skip("L=1 uses different convergence methods between dev and ref")
 
   set.seed(16)
   n <- 100; p <- 50
@@ -1663,7 +1652,6 @@ test_that("SS matches individual: tight tol = 1e-6 (Part 35)", {
 # =============================================================================
 
 test_that("SS matches individual: null_weight = 0.5 (Part 36)", {
-  skip("null_weight + NIG triggers NA in loglik (dev-side bug)")
 
   set.seed(122)
   n <- 100; p <- 50
@@ -1747,7 +1735,6 @@ test_that("SS matches individual: standardize=FALSE + custom priors (Part 40)", 
 # =============================================================================
 
 test_that("SS matches individual: L=1 + high noise (Part 41)", {
-  skip("L=1 uses different convergence methods between dev and ref")
 
   set.seed(129)
   n <- 100; p <- 50
@@ -1760,7 +1747,6 @@ test_that("SS matches individual: L=1 + high noise (Part 41)", {
 })
 
 test_that("SS matches individual: L=1 + very small n (Part 42)", {
-  skip("L=1 uses different convergence methods between dev and ref")
 
   set.seed(130)
   n <- 15; p <- 30
@@ -1773,7 +1759,6 @@ test_that("SS matches individual: L=1 + very small n (Part 42)", {
 })
 
 test_that("SS matches individual: L=1 + null signal (Part 43)", {
-  skip("L=1 uses different convergence methods between dev and ref")
 
   set.seed(131)
   n <- 100; p <- 50
@@ -1813,7 +1798,6 @@ test_that("RSS matches individual: defaults (Part 1)", {
 # =============================================================================
 
 test_that("RSS matches individual: L = 1 (Part 2)", {
-  skip("L=1 uses different convergence methods between dev and ref")
 
   set.seed(2)
   n <- 100; p <- 50
@@ -1997,7 +1981,6 @@ test_that("RSS matches individual: null signal (Part 13)", {
 # =============================================================================
 
 test_that("RSS matches individual: L=1, standardize=FALSE (Part 14)", {
-  skip("L=1 uses different convergence methods between dev and ref")
 
   set.seed(16)
   n <- 100; p <- 50
@@ -2355,7 +2338,6 @@ test_that("RSS matches individual: tight tol = 1e-6 (Part 35)", {
 # =============================================================================
 
 test_that("RSS matches individual: null_weight = 0.5 (Part 36)", {
-  skip("null_weight + NIG triggers NA in loglik (dev-side bug)")
 
   set.seed(122)
   n <- 100; p <- 50
@@ -2437,7 +2419,6 @@ test_that("RSS matches individual: standardize=FALSE + custom priors (Part 40)",
 # =============================================================================
 
 test_that("RSS matches individual: L=1 + high noise (Part 41)", {
-  skip("L=1 uses different convergence methods between dev and ref")
 
   set.seed(129)
   n <- 100; p <- 50
@@ -2450,7 +2431,6 @@ test_that("RSS matches individual: L=1 + high noise (Part 41)", {
 })
 
 test_that("RSS matches individual: L=1 + very small n (Part 42)", {
-  skip("L=1 uses different convergence methods between dev and ref")
 
   set.seed(130)
   n <- 15; p <- 30
@@ -2463,7 +2443,6 @@ test_that("RSS matches individual: L=1 + very small n (Part 42)", {
 })
 
 test_that("RSS matches individual: L=1 + null signal (Part 43)", {
-  skip("L=1 uses different convergence methods between dev and ref")
 
   set.seed(131)
   n <- 100; p <- 50

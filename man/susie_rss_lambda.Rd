@@ -163,9 +163,11 @@ returned here may be a subset of the one produced by calling
 skipped). Set to \code{NULL} to disable the minimum-correlation
 clause (e.g. to filter on \code{median_abs_corr} alone).}
 
-\item{max_iter}{Maximum number of IBSS iterations to perform. For
-\code{susie_rss()} and \code{susie_rss_lambda()}, \code{NULL} uses
-\code{50} with a hint; other interfaces use \code{100}.}
+\item{max_iter}{Maximum number of iterations to perform. When omitted,
+defaults to 300 for NIG. Otherwise, \code{susie} and \code{susie_ss}
+default to 100; \code{susie_rss} and \code{susie_rss_lambda} use
+\code{NULL}, which selects 50 with a hint. An explicitly supplied
+iteration limit is retained.}
 
 \item{L_greedy}{Integer or \code{NULL}. When non-\code{NULL}, run a
 greedy outer loop that grows the number of effects from
@@ -178,19 +180,23 @@ fit.}
 
 \item{tol}{A small, non-negative number specifying the convergence
 tolerance for the IBSS fitting procedure. When \code{NULL}, the
-default is \code{1e-4}; for \code{estimate_residual_method = "NIG"},
-the default is tightened to \code{1e-6}.}
+default is \code{1e-4}. For NIG, this bounds the maximum absolute
+change in \code{alpha} and relative changes in \code{mu}, \code{mu2}
+and \code{V}, for two consecutive iterations.}
 
 \item{convergence_method}{When \code{converge_method = "elbo"} the fitting
 procedure halts when the difference in the variational lower bound, or
 \dQuote{ELBO} (the objective function to be maximized), is
 less than \code{tol}. When \code{converge_method = "pip"} the fitting
 procedure halts when the maximum absolute difference in \code{alpha} is less
-than \code{tol}.}
+than \code{tol}. NIG instead checks changes in all fitted parameters,
+as described for \code{alpha0}.}
 
 \item{verbose}{If \code{verbose = TRUE}, the algorithm's progress,
 a summary of the optimization settings, and refinement progress (if
-\code{refine = TRUE}) are printed to the console.}
+\code{refine = TRUE}) are printed to the console. For NIG, a GIBSS hint
+also describes the default parameterization unless \code{alpha0} or
+\code{beta0} is supplied.}
 
 \item{track_fit}{If \code{track_fit = TRUE}, a compact
 \code{susie_track} object is returned in \code{trace}, containing

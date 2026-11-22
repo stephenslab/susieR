@@ -650,7 +650,7 @@ test_that("sufficient_stats_constructor accepts NIG residual method", {
                                          XtX = ss$XtX,
                                          estimate_residual_method = "NIG")
   expect_true(result$params$use_NIG)
-  expect_equal(result$params$estimate_prior_method, "EM")
+  expect_equal(result$params$estimate_prior_method, "optim")
 })
 
 test_that("sufficient_stats_constructor accepts unmappable_effects='ash'", {
