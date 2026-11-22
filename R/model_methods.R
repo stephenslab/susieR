@@ -97,6 +97,15 @@ initialize_matrices.default <- function(data, params, var_y) {
     predictor_weights = rep(as.numeric(NA), data$p)
   )
 
+  if (isTRUE(params$use_NIG)) {
+    mat_init$V_parameterization <- "variance_ratio"
+    mat_init$nig <- list(alpha0 = params$alpha0, beta0 = params$beta0,
+                         n_effective = params$n_effective,
+                         shape = rep(NA_real_, L),
+                         rate = matrix(NA_real_, L, data$p),
+                         scale2 = matrix(NA_real_, L, data$p))
+  }
+
   return(mat_init)
 }
 
@@ -115,6 +124,10 @@ update_model_variance <- function(data, params, model) {
 
 #' @keywords internal
 update_model_variance.default <- function(data, params, model) {
+  if (isTRUE(params$use_NIG)) {
+    model$sigma2 <- mean(model$rv)
+    return(model)
+  }
   estimate_sigma2 <- isTRUE(params$estimate_residual_variance)
   is_ash <- isTRUE(params$unmappable_effects %in% c("ash", "ash_filter_archived"))
   # SuSiE-ash refits the unmappable effects here, so the update runs even when
@@ -195,6 +208,21 @@ format_extra_diag.default <- function(model) {
 #' @keywords internal
 check_convergence.default <- function(data, params, model, elbo, iter) {
   verbose <- isTRUE(params$verbose)
+  if (isTRUE(params$use_NIG)) {
+    old <- model$runtime$previous
+    relative_change <- function(x, previous, unit)
+      max(abs(x - previous) / (unit + pmax(abs(x), abs(previous))))
+    change <- max(max(abs(model$alpha - old$alpha)),
+                  relative_change(model$mu, old$mu, sqrt(params$response_variance)),
+                  relative_change(model$mu2, old$mu2, params$response_variance),
+                  relative_change(model$V, old$V, 1))
+    previous_change <- model$runtime$parameter_change
+    model$converged <- iter >= 2 && max(change, previous_change) < params$tol
+    model$runtime$parameter_change <- change
+    if (verbose)
+      message(sprintf("iter %3d: max parameter change = %.2e", iter, change))
+    return(model)
+  }
   V_str <- format_V_summary(model$V)
   chat_str <- format_chat_summary(model)
   sigma2_str <- format_sigma2_summary(model)
@@ -344,9 +372,8 @@ get_objective.default <- function(data, params, model) {
   } else if (params$use_NIG && nrow(model$alpha) == 1) {
     objective <- model$marginal_loglik[1]
   } else if (isTRUE(params$use_NIG)) {
-    # NIG L>1: KL[l] is gated to 0 (gIBSS has no coherent ELBO); use the
-    # proper variational expected log-likelihood.
-    objective <- nig_eloglik(data, params, model)
+    # GIBSS with multiple effects has no joint ELBO.
+    objective <- NA_real_
   } else {
     # Standard ELBO computation. `na.rm = TRUE` so subclasses that
     # leave KL[l] = NA on null-effect rows (mfsusieR, mvsusieR) do
@@ -389,7 +416,9 @@ trim_null_effects.default <- function(data, params, model) {
   model$mu2[null_idx, ] <- 0
   model$lbf_variable[null_idx, ] <- 0
   model$lbf[null_idx] <- 0
-  model$KL[null_idx] <- 0
+  model$KL[null_idx] <- if (isTRUE(params$use_NIG)) NA_real_ else 0
+  if (!is.null(model$nig))
+    model$nig$scale2[null_idx, ] <- 0
 
   return(model)
 }

@@ -4,8 +4,8 @@
 #
 # These functions compare the local susieR implementation of
 # estimate_residual_method = "NIG" against the reference
-# implementation on stephenslab/susieR@fix-susie-small-sigma-update
-# (commit a999d44), where the equivalent feature is small = TRUE.
+# implementation on william-denault/susieRsmall
+# (commit c93b09a), where the equivalent feature is small = TRUE.
 #
 # This helper parallels helper_reference.R but targets a different
 # reference commit and maps between the two parameter interfaces.
@@ -14,21 +14,21 @@ library(pkgload)
 library(rprojroot)
 
 # Reference package details for the NIG comparison
-.nig_ref_repo   <- "stephenslab/susieR"
-.nig_ref_commit <- "a999d44"
+.nig_ref_repo   <- "william-denault/susieRsmall"
+.nig_ref_commit <- "c93b09acf6af42f8f68c5ae84ed9bc59959f9be3"
 
 # Cached environments (separate from helper_reference.R's globals)
 .nig_ref_env         <- NULL
 .nig_dev_env         <- NULL
 .nig_ref_source_path <- NULL
 
-# Get reference source for the fix-susie-small-sigma-update branch
+# Get reference source for the corrected simulation package
 get_nig_reference_source <- function() {
   if (!is.null(.nig_ref_source_path) && dir.exists(.nig_ref_source_path)) {
     return(.nig_ref_source_path)
   }
 
-  ref_source <- file.path(tempdir(), "susieR_nig_reference_source")
+  ref_source <- file.path(tempdir(), paste0("susieR_nig_reference_", .nig_ref_commit))
 
   if (!dir.exists(ref_source)) {
     message("Downloading NIG reference source from GitHub...")
@@ -56,7 +56,7 @@ get_nig_reference_source <- function() {
   return(ref_source)
 }
 
-# Load the fix-susie-small-sigma-update reference using pkgload
+# Load the corrected simulation reference using pkgload
 load_nig_reference_env <- function() {
   if (!is.null(.nig_ref_env)) {
     return(.nig_ref_env)
@@ -136,24 +136,11 @@ compare_NIG_to_reference <- function(dev_args,
   # Ensure the dev call uses NIG
   dev_args$estimate_residual_method <- "NIG"
 
-  # Match reference behavior: disable V null threshold check and use
-  # the same convergence tolerance as the reference (tol_small = 1e-4)
-  if (is.null(dev_args$check_null_threshold))
-    dev_args$check_null_threshold <- -Inf
+  # The corrected simulation package uses the same NIG defaults.
+  if (is.null(dev_args$max_iter))
+    dev_args$max_iter <- 300
   if (is.null(dev_args$tol))
     dev_args$tol <- 1e-4
-
-  # Match reference NIG hyperparameter defaults. Dev defaults changed in
-  # commit b0b0c40 ("new defaults") from alpha0 = beta0 = 0.1 to
-  # alpha0 = beta0 = 1/sqrt(n), a weakly-informative scaling. The reference
-  # (stephenslab/susieR@a999d44, small = TRUE) still uses 0.1. Force 0.1
-  # on the dev side when the caller hasn't set these so the two runs use
-  # the same prior; the change to 1/sqrt(n) is a deliberate design choice
-  # unrelated to mathematical parity with the reference.
-  if (is.null(dev_args$alpha0))
-    dev_args$alpha0 <- 0.1
-  if (is.null(dev_args$beta0))
-    dev_args$beta0 <- 0.1
 
   # Build reference args by mapping interface differences
   if (is.null(ref_args)) {
@@ -216,7 +203,7 @@ expect_equal_NIG_objects <- function(dev_obj, ref_obj,
 
   # --- Variance parameters ---
   expect_equal(dev_obj$V, ref_obj$V, tolerance = tolerance,
-               info = "V (prior variance, after rv scaling) differs")
+               info = "V (prior variance ratio) differs")
 
   expect_equal(dev_obj$sigma2, ref_obj$sigma2, tolerance = tolerance,
                info = "sigma2 (residual variance) differs")
@@ -228,26 +215,12 @@ expect_equal_NIG_objects <- function(dev_obj, ref_obj,
   }
 
   # --- ELBO / convergence ---
-  # For L = 1 the dev package intentionally uses ELBO convergence while
-  # the reference uses PIP convergence, so niter and elbo may differ.
-  # Only compare these for L > 1.
-  L <- nrow(dev_obj$alpha)
-  if (L > 1) {
-    expect_equal(dev_obj$niter, ref_obj$niter,
-                 info = "Number of iterations differs")
-
-    expect_equal(dev_obj$converged, ref_obj$converged,
-                 info = "Convergence status differs")
-  }
-
-  # For L = 1 the ELBO (loglik) is well-defined; compare if both present
-  # and the iteration counts match (they may differ due to convergence method)
-  if (!is.null(dev_obj$elbo) && !is.null(ref_obj$elbo) &&
-      !all(is.na(dev_obj$elbo)) && !all(is.na(ref_obj$elbo)) &&
-      length(dev_obj$elbo) == length(ref_obj$elbo)) {
-    expect_equal(dev_obj$elbo, ref_obj$elbo, tolerance = tolerance,
-                 info = "ELBO values differ")
-  }
+  expect_equal(dev_obj$niter, ref_obj$niter,
+               info = "Number of iterations differs")
+  expect_equal(dev_obj$converged, ref_obj$converged,
+               info = "Convergence status differs")
+  expect_equal(dev_obj$elbo, ref_obj$elbo, tolerance = tolerance,
+               info = "Marginal log-likelihood values differ")
 
   # --- Fitted values and intercept ---
   if (!is.null(dev_obj$fitted) && !is.null(ref_obj$fitted)) {

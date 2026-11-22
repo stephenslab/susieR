@@ -85,7 +85,7 @@ test_that("get_objective errors when KL contains Inf", {
   expect_error(get_objective(wh$data, wh$params, model), "infinite ELBO value")
 })
 
-test_that("get_objective NIG model returns finite ELBO distinct from default ELBO", {
+test_that("get_objective does not report a joint ELBO for multi-effect NIG", {
   set.seed(9)
   n <- 80; p <- 20
   X    <- matrix(rnorm(n * p), n, p)
@@ -101,11 +101,8 @@ test_that("get_objective NIG model returns finite ELBO distinct from default ELB
                                         max_iter = 5, verbose = FALSE))
 
   expect_true(is.finite(tail(fit_default$elbo, 1)))
-  expect_true(is.finite(tail(fit_nig$elbo, 1)))
-  # NIG and default use different objectives; ELBO values need not be equal.
-  expect_true(!isTRUE(all.equal(tail(fit_default$elbo, 1),
-                                tail(fit_nig$elbo, 1),
-                                tolerance = 1e-6)))
+  expect_true(all(is.na(fit_nig$elbo)))
+  expect_true(is.na(susie_get_objective(fit_nig)))
 })
 
 # ---- format_extra_diag ----

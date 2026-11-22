@@ -88,7 +88,9 @@
 #'   non-zero element of b is \code{var(y) * scaled_prior_variance}. The
 #'   value provided should be either a scalar or a vector of length
 #'   \code{L}. If \code{estimate_prior_variance = TRUE}, this provides
-#'   initial estimates of the prior variances.
+#'   initial estimates of the prior variances. For NIG, these are variance
+#'   ratios \code{V} in \eqn{b \mid \sigma^2 \sim N(0,\sigma^2 V)};
+#'   they are not multiplied by \code{var(y)}.
 #'
 #' @param residual_variance Variance of the residual. If
 #'   \code{estimate_residual_variance = TRUE}, this value provides the
@@ -213,9 +215,11 @@
 #'
 #' @param na.rm Drop any missing values in y from both X and y.
 #'
-#' @param max_iter Maximum number of IBSS iterations to perform. For
-#'   \code{susie_rss()} and \code{susie_rss_lambda()}, \code{NULL} uses
-#'   \code{50} with a hint; other interfaces use \code{100}.
+#' @param max_iter Maximum number of iterations to perform. When omitted,
+#'   defaults to 300 for NIG. Otherwise, \code{susie} and \code{susie_ss}
+#'   default to 100; \code{susie_rss} and \code{susie_rss_lambda} use
+#'   \code{NULL}, which selects 50 with a hint. An explicitly supplied
+#'   iteration limit is retained.
 #'
 #' @param L_greedy Integer or \code{NULL}. When non-\code{NULL}, run a
 #'   greedy outer loop that grows the number of effects from
@@ -228,19 +232,23 @@
 #'
 #' @param tol A small, non-negative number specifying the convergence
 #'   tolerance for the IBSS fitting procedure. When \code{NULL}, the
-#'   default is \code{1e-4}; for \code{estimate_residual_method = "NIG"},
-#'   the default is tightened to \code{1e-6}.
+#'   default is \code{1e-4}. For NIG, this bounds the maximum absolute
+#'   change in \code{alpha} and relative changes in \code{mu}, \code{mu2}
+#'   and \code{V}, for two consecutive iterations.
 #'
 #' @param convergence_method When \code{converge_method = "elbo"} the fitting
 #'   procedure halts when the difference in the variational lower bound, or
 #'   \dQuote{ELBO} (the objective function to be maximized), is
 #'   less than \code{tol}. When \code{converge_method = "pip"} the fitting
 #'   procedure halts when the maximum absolute difference in \code{alpha} is less
-#'   than \code{tol}.
+#'   than \code{tol}. NIG instead checks changes in all fitted parameters,
+#'   as described for \code{alpha0}.
 #'
 #' @param verbose If \code{verbose = TRUE}, the algorithm's progress,
 #'  a summary of the optimization settings, and refinement progress (if
-#'  \code{refine = TRUE}) are printed to the console.
+#'  \code{refine = TRUE}) are printed to the console. For NIG, a GIBSS hint
+#'  also describes the default parameterization unless \code{alpha0} or
+#'  \code{beta0} is supplied.
 #'
 #' @param track_fit If \code{track_fit = TRUE}, a compact
 #'   \code{susie_track} object is returned in \code{trace}, containing
@@ -267,17 +275,27 @@
 #'   threshold (near-perfectly correlated proxies); \code{0.99} is the
 #'   recommended value.
 #'
-#' @param alpha0 Numerical parameter for the NIG prior when using
-#'   \code{estimate_residual_method = "NIG"}. Defaults to
-#'   \code{1/sqrt(n)}, where \code{n} is the sample size. When calling
-#'   \code{susie_rss} with NIG, \code{n} must be supplied; otherwise
-#'   validation errors.
+#' @param prior Optional prior selection: \code{"gaussian"} or
+#'   \code{"nig"}. The latter is an alias for
+#'   \code{estimate_residual_method = "NIG"}. If both are supplied,
+#'   they must agree. With \code{NULL}, use \code{estimate_residual_method}.
 #'
-#' @param beta0 Numerical parameter for the NIG prior when using
-#'   \code{estimate_residual_method = "NIG"}. Defaults to
-#'   \code{1/sqrt(n)}, where \code{n} is the sample size. When calling
-#'   \code{susie_rss} with NIG, \code{n} must be supplied; otherwise
-#'   validation errors.
+#' @param alpha0 Positive parameter of the NIG prior
+#'   \eqn{\sigma^2 \sim IG(\alpha_0/2,\beta_0/2)} (shape and rate).
+#'   Defaults to 2. NIG integrates residual variance separately in each
+#'   single-effect regression, using GIBSS for multiple effects. It checks
+#'   changes in \code{alpha}, \code{mu}, \code{mu2} and \code{V}
+#'   for two consecutive iterations, without a joint ELBO for \code{L > 1}.
+#'   With an intercept, the residual dimension is \code{n - 1};
+#'   \code{susie_ss} and \code{susie_rss} assume centered statistics.
+#'   NIG requires \code{n} for summary statistics and does not support
+#'   refinement, mixture priors, slot activity or unmappable effects.
+#'
+#' @param beta0 Positive NIG rate parameter (twice the inverse-gamma rate).
+#'   Defaults to \code{alpha0 * var(y)}, fixed from the original response
+#'   before fitting. With \code{intercept = FALSE}, use \code{mean(y^2)};
+#'   with sufficient statistics, use \code{yty/(n - 1)}. Users can supply
+#'   either or both NIG parameters; supplied values are retained.
 #'
 #' @param slot_prior Optional slot activity prior created by
 #'   \code{\link{slot_prior_betabinom}} or \code{\link{slot_prior_poisson}}.
@@ -315,9 +333,18 @@
 #'
 #' \item{sigma2}{Residual variance (fixed or estimated).}
 #'
-#' \item{V}{Prior variance of the non-zero elements of b.}
+#' \item{V}{Prior variance of the non-zero elements of b. For NIG, this is
+#'   a variance ratio: \eqn{b \mid \sigma^2 \sim N(0,\sigma^2 V)}.
+#'   The initial ratio is \code{scaled_prior_variance}.}
 #'
-#' \item{elbo}{The variational lower bound (or ELBO) achieved at each iteration.}
+#' \item{nig}{For NIG fits, the prior parameters, residual dimension and
+#'   conditional posterior shape, rate and Student t squared scale.}
+#'
+#' \item{V_parameterization}{For NIG fits, \code{"variance_ratio"}.}
+#'
+#' \item{elbo}{The variational lower bound (or ELBO) achieved at each iteration.
+#'   For NIG, the marginal log-likelihood when \code{L = 1}, and
+#'   \code{NA} when \code{L > 1}.}
 #'
 #' \item{fitted}{Vector of length n containing the fitted values.}
 #'
@@ -383,11 +410,21 @@ susie <- function(X, y, L = min(10, ncol(X)),
                   alpha0 = NULL,
                   beta0 = NULL,
                   init_only = FALSE,
-                  slot_prior = NULL) {
+                  slot_prior = NULL,
+                  prior = NULL) {
 
+  if (!is.null(prior)) {
+    prior <- match.arg(prior, c("gaussian", "nig"))
+    if (!missing(estimate_residual_method) &&
+        (match.arg(estimate_residual_method) == "NIG") != (prior == "nig"))
+      stop("prior and estimate_residual_method select different priors.")
+    if (prior == "nig") estimate_residual_method <- "NIG"
+  }
   # Validate method arguments
   unmappable_effects       <- match.arg(unmappable_effects)
   estimate_residual_method <- match.arg(estimate_residual_method)
+  if (missing(max_iter) && estimate_residual_method == "NIG")
+    max_iter <- 300
   convergence_method       <- match.arg(convergence_method)
   mp <- resolve_mixture_prior(estimate_prior_method, estimate_prior_variance,
                               prior_variance_grid, mixture_weights)
@@ -511,11 +548,21 @@ susie_ss <- function(XtX, Xty, yty, n,
                      refine = FALSE,
                      alpha0 = NULL,
                      beta0 = NULL,
-                     slot_prior = NULL) {
+                     slot_prior = NULL,
+                     prior = NULL) {
 
+  if (!is.null(prior)) {
+    prior <- match.arg(prior, c("gaussian", "nig"))
+    if (!missing(estimate_residual_method) &&
+        (match.arg(estimate_residual_method) == "NIG") != (prior == "nig"))
+      stop("prior and estimate_residual_method select different priors.")
+    if (prior == "nig") estimate_residual_method <- "NIG"
+  }
   # Validate method arguments
   unmappable_effects       <- match.arg(unmappable_effects)
   estimate_residual_method <- match.arg(estimate_residual_method)
+  if (missing(max_iter) && estimate_residual_method == "NIG")
+    max_iter <- 300
   convergence_method       <- match.arg(convergence_method)
   mp <- resolve_mixture_prior(estimate_prior_method, estimate_prior_variance,
                               prior_variance_grid, mixture_weights)
@@ -765,15 +812,25 @@ susie_rss <- function(z = NULL, R = NULL, n = NULL,
                       alpha0 = NULL,
                       beta0 = NULL,
                       init_only = FALSE,
-                      slot_prior = NULL) {
+                      slot_prior = NULL,
+                      prior = NULL) {
 
   # User arguments, captured before validation rewrites them, so the
   # multi-panel two-stage path can refit on the weighted reference.
   rss_args <- mget(names(formals()))
 
+  if (!is.null(prior)) {
+    prior <- match.arg(prior, c("gaussian", "nig"))
+    if (!missing(estimate_residual_method) &&
+        (match.arg(estimate_residual_method) == "NIG") != (prior == "nig"))
+      stop("prior and estimate_residual_method select different priors.")
+    if (prior == "nig") estimate_residual_method <- "NIG"
+  }
   # Validate method arguments
   unmappable_effects       <- match.arg(unmappable_effects)
   estimate_residual_method <- match.arg(estimate_residual_method)
+  if (missing(max_iter) && estimate_residual_method == "NIG")
+    max_iter <- 300
   convergence_method       <- match.arg(convergence_method)
   z_method                 <- match.arg(z_method)
   if (length(R_mismatch) > 1L)

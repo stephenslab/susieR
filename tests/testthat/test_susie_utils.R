@@ -397,6 +397,7 @@ test_that("validate_and_override_params validates and adjusts parameters", {
     refine = FALSE,
     alpha0 = 0.1,
     beta0 = 0.1,
+    response_variance = 1.5,
     n = 100,
     L_greedy = NULL,
     greedy_lbf_cutoff = 0.1
@@ -407,20 +408,20 @@ test_that("validate_and_override_params validates and adjusts parameters", {
   expect_equal(result$tol, 1e-4)
   expect_false(result$use_NIG)
 
-  # NIG auto-tightens tol only when tol is omitted
+  # NIG uses the simulation tolerance unless explicitly supplied
   nig_tol_params <- valid_params
   nig_tol_params$estimate_residual_method <- "NIG"
   nig_tol_params$estimate_prior_method <- "EM"
   nig_tol_params$L <- 1
-  expect_message(result <- validate_and_override_params(nig_tol_params), "tol = 1e-6")
-  expect_equal(result$tol, 1e-6)
+  expect_no_message(result <- validate_and_override_params(nig_tol_params))
+  expect_equal(result$tol, 1e-4)
 
   nig_tol_params$tol <- 1e-4
   expect_no_message(result <- validate_and_override_params(nig_tol_params))
   expect_equal(result$tol, 1e-4)
 
-  expect_equal(result$alpha0, 1 / sqrt(valid_params$n))
-  expect_equal(result$beta0, 1 / sqrt(valid_params$n))
+  expect_equal(result$alpha0, valid_params$alpha0)
+  expect_equal(result$beta0, valid_params$beta0)
 
   # Invalid prior_tol
   bad <- valid_params; bad$prior_tol <- -1
@@ -460,17 +461,15 @@ test_that("validate_and_override_params validates and adjusts parameters", {
   expect_error(validate_and_override_params(refine_params),
                "Refinement is not supported with unmappable effects")
 
-  # NIG overrides convergence method when L > 1
+  # NIG checks all fitted parameters and retains the requested prior method.
   nig_params <- valid_params
   nig_params$L <- 10
   nig_params$estimate_residual_method <- "NIG"
   nig_params$convergence_method <- "elbo"
   nig_params$estimate_prior_method <- "simple"
-  expect_message(result <- validate_and_override_params(nig_params), "PIP-based convergence")
-  expect_message(result <- validate_and_override_params(nig_params), "EM")
+  expect_no_message(result <- validate_and_override_params(nig_params))
   expect_true(result$use_NIG)
-  expect_equal(result$convergence_method, "pip")
-  expect_equal(result$estimate_prior_method, "EM")
+  expect_equal(result$estimate_prior_method, "simple")
 
   # NIG does NOT override convergence method when L = 1
   nig_params_l1 <- valid_params
@@ -515,14 +514,14 @@ test_that("validate_and_override_params validates and adjusts parameters", {
   expect_true(result$use_NIG)
   expect_equal(result$estimate_prior_method, "none")
 
-  # NIG with estimate_prior_variance = TRUE overrides to EM
+  # NIG with estimate_prior_variance = TRUE preserves the requested method
   nig_yes_prior_params <- valid_params
   nig_yes_prior_params$estimate_residual_method <- "NIG"
   nig_yes_prior_params$estimate_prior_variance <- TRUE
   nig_yes_prior_params$estimate_prior_method <- "simple"
-  expect_message(result <- validate_and_override_params(nig_yes_prior_params), "EM")
+  expect_no_message(result <- validate_and_override_params(nig_yes_prior_params))
   expect_true(result$use_NIG)
-  expect_equal(result$estimate_prior_method, "EM")
+  expect_equal(result$estimate_prior_method, "simple")
 
   # NIG rejects invalid alpha0/beta0 combinations
   for (bad_pair in list(
@@ -541,13 +540,13 @@ test_that("validate_and_override_params validates and adjusts parameters", {
     expect_error(validate_and_override_params(p_bad), "alpha0 > 0 and beta0 > 0")
   }
 
-  # NIG fills NULL alpha0/beta0 from n
+  # NIG fixes NULL alpha0/beta0 from the original response variance
   nig_null <- valid_params
   nig_null$estimate_residual_method <- "NIG"
   nig_null$alpha0 <- NULL; nig_null$beta0 <- NULL
   result <- validate_and_override_params(nig_null)
-  expect_equal(result$alpha0, 1 / sqrt(valid_params$n))
-  expect_equal(result$beta0,  1 / sqrt(valid_params$n))
+  expect_equal(result$alpha0, 2)
+  expect_equal(result$beta0, 2 * valid_params$response_variance)
 
   # Non-NIG path does NOT validate alpha0/beta0
   no_nig_bad <- valid_params
@@ -790,7 +789,7 @@ test_that("NIG initial log BF uses scaled prior variance, not var_y-scaled V", {
   expect_gt(max(abs(old_lbf - expected_lbf)), 0.1)
 })
 
-test_that("NIG final model reports prior variance in y units", {
+test_that("NIG final model retains the prior variance ratio", {
   set.seed(947)
   n <- 40; p <- 5
   X <- matrix(rnorm(n * p), n, p)
@@ -803,8 +802,8 @@ test_that("NIG final model reports prior variance in y units", {
                verbose = FALSE)
 
   expect_true("rv" %in% names(fit))
-  expect_equal(fit$V / fit$rv, scaled_prior_variance, tolerance = 1e-12)
-  expect_gt(abs(fit$V - scaled_prior_variance), 1)
+  expect_equal(fit$V, scaled_prior_variance, tolerance = 1e-12)
+  expect_identical(fit$V_parameterization, "variance_ratio")
 })
 
 test_that("expand_scaled_prior_variance recycles scalar and preserves vector", {
@@ -1272,7 +1271,9 @@ test_that("get_nig_sufficient_stats differs from cor() when intercept is not cen
   expected_lbf <- compute_lbf_NIG(n, colSums(X^2), drop(crossprod(X, r)),
                                   sum(r^2), expected, s0 = 1, a0 = 0.1, b0 = 0.1)
   expect_equal(new_lbf, expected_lbf, tolerance = 1e-14)
-  expect_gt(max(abs(old_lbf - expected_lbf)), 1)
+  # The corrected helper derives the reduction from raw crossproducts;
+  # the legacy sxy argument can no longer introduce implicit centering.
+  expect_equal(old_lbf, expected_lbf, tolerance = 1e-14)
 })
 
 test_that("NIG split helpers match bundled formula reference", {

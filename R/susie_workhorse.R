@@ -80,8 +80,13 @@ susie_workhorse <- function(data, params) {
     # Store iteration snapshot for track_fit
     tracking <- track_ibss_fit(data, params, model, tracking, iter, elbo)
 
+    if (isTRUE(params$use_NIG))
+      model$runtime$previous <- model[c("alpha", "mu", "mu2", "V")]
+
     # Update all L effects
     model <- ibss_fit(data, params, model)
+    if (isTRUE(params$use_NIG))
+      model$sigma2 <- mean(model$rv)
 
     # Calculate objective and check convergence
     elbo[iter + 1] <- get_objective(data, params, model)
@@ -111,7 +116,8 @@ susie_workhorse <- function(data, params) {
   # or `expect_warning()` on it (mirrors the Q_art artifact pattern in
   # rss_mismatch.R).
   if (!model$converged) {
-    msg <- paste("IBSS algorithm did not converge in", params$max_iter, "iterations!")
+    algorithm <- if (isTRUE(params$use_NIG)) "GIBSS" else "IBSS"
+    msg <- paste(algorithm, "algorithm did not converge in", params$max_iter, "iterations!")
     warning_message(msg)
     warning(msg, call. = FALSE)
   }
@@ -119,10 +125,6 @@ susie_workhorse <- function(data, params) {
   # Set ELBO from iterations
   model$elbo <- elbo[2:(iter + 1)]
 
-  # For NIG prior, scale prior variance by residual variance mode.
-  if (isTRUE(params$use_NIG))
-    model$V <- model$V * model$rv
-    
   # Zero out effects with negligible prior variance
   model <- trim_null_effects(data, params, model)
 
